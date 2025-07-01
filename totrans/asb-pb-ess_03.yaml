@@ -1,0 +1,1119 @@
+- en: Chapter 2. Going Modular with Ansible Roles
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 第2章：使用Ansible角色实现模块化
+- en: In the last chapter, you learned about writing a simple playbook with Ansible.
+    You also learned about the concepts of plays which map hosts to tasks. Writing
+    tasks in a single playbook may work fine for a very simple setup. However, if
+    we have multiple applications spanning across number of hosts, this will quickly
+    become unmanageable.
+  id: totrans-1
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在上一章中，您学习了如何使用Ansible编写简单的剧本。您还了解了将主机映射到任务的剧本概念。在单个剧本中编写任务可能对于非常简单的设置来说效果不错。然而，如果我们有多个跨多个主机的应用程序，这将很快变得不可管理。
+- en: 'In this chapter, you will be introduced to the following concepts:'
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，您将了解以下概念：
+- en: What makes a role and what are roles used for?
+  id: totrans-3
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 角色是什么，角色的用途是什么？
+- en: How to create roles to provide abstraction?
+  id: totrans-4
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 如何创建角色以提供抽象？
+- en: Organizing content to provide modularity
+  id: totrans-5
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 组织内容以提供模块化
+- en: Using include statements
+  id: totrans-6
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用include语句
+- en: Writing simple tasks and handlers
+  id: totrans-7
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 编写简单的任务和处理器
+- en: Installing packages, managing services, and serving files with Ansible modules
+  id: totrans-8
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用Ansible模块安装包、管理服务和提供文件
+- en: Understanding roles
+  id: totrans-9
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 理解角色
+- en: In real-life scenarios, we will mostly be configuring web servers, database
+    servers, load balancers, middleware queues, and so on. If you take one step back
+    and look at the big picture, you will realize that you are configuring groups
+    of identical servers in a repeatable fashion.
+  id: totrans-10
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在实际场景中，我们大多数情况下配置的是Web服务器、数据库服务器、负载均衡器、中间件队列等。如果退后一步看整体情况，您会发现您实际上是在以可重复的方式配置一组相同的服务器。
+- en: To manage such infrastructures in the most efficient way, we need some abstraction
+    which allows us to define what we need to configure in each of these groups, and
+    call them by name. That's exactly what roles do. Ansible roles allow us to configure
+    groups of nodes at the same time, without repeating ourselves. Roles also provide
+    a way to create modular code, which then can then be shared and reused.
+  id: totrans-11
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了最有效地管理这样的基础设施，我们需要一些抽象机制，允许我们定义在这些组中每个需要配置的内容，并按名称调用它们。这正是角色的作用。Ansible角色允许我们同时配置一组节点，而无需重复自己。角色还提供了一种创建模块化代码的方式，这样的代码可以共享和重用。
+- en: Naming roles
+  id: totrans-12
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 命名角色
+- en: 'A common practice is to create roles that map to each application or component
+    of your infrastructure that you would like to configure. For example:'
+  id: totrans-13
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一种常见的做法是创建与您想要配置的每个应用程序或基础设施组件相对应的角色。例如：
+- en: Nginx
+  id: totrans-14
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Nginx
+- en: MySQL
+  id: totrans-15
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: MySQL
+- en: MongoDB
+  id: totrans-16
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: MongoDB
+- en: Tomcat
+  id: totrans-17
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Tomcat
+- en: The directory layout for roles
+  id: totrans-18
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 角色的目录布局
+- en: Roles are nothing but directories laid out in a specific manner. Roles follow
+    predefined directory layout conventions and expect each component to be in the
+    path meant for it.
+  id: totrans-19
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 角色就是以特定方式布局的目录。角色遵循预定义的目录布局约定，并期望每个组件都在它应该在的路径下。
+- en: 'The following is an example of a role, called Nginx:'
+  id: totrans-20
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是一个角色的示例，名为Nginx：
+- en: '![The directory layout for roles](img/B03800_02_01.jpg)'
+  id: totrans-21
+  prefs: []
+  type: TYPE_IMG
+  zh: '![角色的目录布局](img/B03800_02_01.jpg)'
+- en: 'Let''s now look at the rules of the game and what each of the components in
+    the preceding diagram is for:'
+  id: totrans-22
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在让我们来看一下游戏规则，以及前面图表中每个组件的作用：
+- en: Each role contains a directory which is named after itself, for example, `Nginx`,
+    with `roles/` as its parent directory. Each named role directory contains one
+    or more optional subdirectories. The most common subdirectories to be present
+    are tasks, templates, and handlers. Each of these subdirectories typically contain
+    the `main.yml` file, which is a default file.
+  id: totrans-23
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 每个角色包含一个以其自身命名的目录，例如`Nginx`，其父目录为`roles/`。每个命名的角色目录包含一个或多个可选的子目录。最常见的子目录包括任务、模板和处理器。每个子目录通常包含`main.yml`文件，这是默认文件。
+- en: Tasks contain the core logic, for example, they will have code specifications
+    to install packages, start services, manage files, and so on. If we consider a
+    role to be a movie, a task would be the protagonist.
+  id: totrans-24
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 任务包含核心逻辑，例如，它们会有安装包、启动服务、管理文件等的代码规范。如果我们将角色看作一部电影，那么任务就是主角。
+- en: Tasks alone cannot do everything. Considering our analogy with movies, it's
+    incomplete without the supporting cast. Protagonists have friends, cars, lovers,
+    and antagonists to complete the story. Similarly, tasks consume data, call for
+    static or dynamic files, trigger actions, and so on. That's where files, handlers,
+    templates, defaults, and `vars` come in. Let's look at what these are for.
+  id: totrans-25
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 仅靠任务本身无法完成所有工作。考虑到我们与电影的类比，故事没有配角是完整的。主角有朋友、汽车、爱人和反派来完成故事。同样，任务需要数据、调用静态或动态文件、触发操作等。这就是files、handlers、templates、defaults和`vars`的作用。让我们看看这些是做什么用的。
+- en: Vars and defaults provide data about your application/role, for example, which
+    port your server should run on, the path for storing the application data, which
+    user to run the service as, and so on. Default variables were introduced in version
+    1.3 and these allow us to provide sane defaults. These can later be overridden
+    from other places, for example, `vars`, `group_vars`, and `host_vars`. Variables
+    are merged and precedence rules apply. This gives us a lot of flexibility to configure
+    our servers selectively. For example, running the web server on port `80` on all
+    hosts except for the ones in the staging environment, which should run it on port
+    `8080`.
+  id: totrans-26
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Vars和defaults提供关于你的应用程序/角色的数据，例如你的服务器应该运行在哪个端口、存储应用程序数据的路径、哪个用户应当运行服务等。默认变量在版本1.3中引入，这些变量允许我们提供合理的默认值。之后可以从其他地方覆盖这些默认值，例如`vars`、`group_vars`和`host_vars`。变量会合并，并且优先级规则适用。这给我们提供了很大的灵活性来选择性地配置我们的服务器。例如，除了处于预发布环境的主机外，所有主机都应该在`80`端口上运行Web服务器，而预发布环境的主机则应在`8080`端口上运行。
+- en: Files and templates subdirectories provide options for managing files. Typically,
+    the files subdirectory is used to copy over static files to destination hosts,
+    for example, some application installers archive static text files, and so on.
+    In addition to static files, frequently you may need to manage files that are
+    are generated on the fly. For example, a configuration file that has parameters
+    such as port, user, and memory, which can be provided dynamically using variables.
+    Generating such files requires a special type of primitive, called templates.
+  id: totrans-27
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 文件和模板子目录提供了管理文件的选项。通常，files子目录用于将静态文件复制到目标主机，例如一些应用程序安装包、静态文本文件等。除了静态文件外，你还经常需要管理动态生成的文件。例如，一个配置文件，它具有像端口、用户和内存等参数，可以通过变量动态提供。生成这些文件需要一种特殊的原始类型，叫做模板（templates）。
+- en: Tasks can trigger actions based on the change of a state or a condition. In
+    a movie, the protagonist may chase the antagonist and take revenge based on the
+    provocation or an event. An example event is kidnapping the protagonist's lady
+    love. Similarly, you may need to perform an action on your hosts, for example,
+    restarting a service based on what happened earlier, which could be a change in
+    the state of a configuration file. This trigger-action relationship can be specified
+    using a handler.
+  id: totrans-28
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 任务可以根据状态或条件的变化触发某些操作。在电影中，主角可能会基于挑衅或某个事件追逐反派并报仇。一个例子事件是绑架主角心爱的女士。同样，你可能需要在主机上执行某个操作，例如基于先前发生的事情重新启动服务，这可能是配置文件状态的变化。这种触发-动作关系可以通过处理器（handler）来指定。
+- en: Continuing our analogy, many popular movies have sequels and sometimes even
+    prequels. In such cases, one should watch it in a particular order, as the storyline
+    of a sequel depends on something that happened in the previous movie. Similarly,
+    a role can have a dependency on another role. A very common example is, before
+    installing Tomcat, Java should be present on the system. These dependencies are
+    defined in the meta subdirectory of a role.
+  id: totrans-29
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 继续我们的类比，许多受欢迎的电影都有续集，有时甚至还有前传。在这种情况下，应该按照特定的顺序观看，因为续集的情节依赖于前一部电影中发生的事情。同样，一个角色可能会依赖于另一个角色。一个非常常见的例子是，在安装Tomcat之前，系统上应该安装Java。这些依赖关系在角色的meta子目录中定义。
+- en: Let's get hands-on with this by creating a role for the Nginx application. Let's
+    take a problem statement, try to solve it, and learn about roles in the process.
+  id: totrans-30
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们动手实践一下，创建一个Nginx应用程序的角色。我们来设定一个问题陈述，尝试解决它，并在这个过程中学习角色。
+- en: Consider the following scenario. With the onset of the soccer world cup, we
+    need to create a web server to serve up a page on sports news.
+  id: totrans-31
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 考虑以下场景。在世界杯的到来之际，我们需要创建一个Web服务器来提供体育新闻页面。
+- en: 'Being a follower of agile methodologies, we will do this in phases. In the
+    first phase, we will just install a web server and serve up a home page. Let''s
+    now break this down into the steps we need to take to achieve this:'
+  id: totrans-32
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 作为敏捷方法论的追随者，我们将分阶段进行。在第一阶段，我们将只安装一个 web 服务器并提供首页。现在，让我们把它分解成我们需要采取的步骤：
+- en: Install a web server. In this case, we will use 'Nginx' as it is a lightweight
+    web server.
+  id: totrans-33
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 安装一个 web 服务器。在本例中，我们将使用'Nginx'，因为它是一个轻量级的 web 服务器。
+- en: Manage configuration for the Nginx web server.
+  id: totrans-34
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 管理 Nginx web 服务器的配置。
+- en: Start the web server after installing it.
+  id: totrans-35
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 安装 web 服务器后启动它。
+- en: Copy over an HTML file, which will be served as a home page.
+  id: totrans-36
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 复制一个 HTML 文件，它将作为首页进行展示。
+- en: 'Now that we have identified what steps to take, we also need to map them to
+    the respective module types we will use to achieve each of these:'
+  id: totrans-37
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 既然我们已经确定了需要采取的步骤，我们还需要将它们映射到我们将用来实现每个步骤的相应模块类型：
+- en: Installing Nginx = Package module (apt)
+  id: totrans-38
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 安装 Nginx = 包管理模块 (apt)
+- en: Configuring Nginx = File module (file)
+  id: totrans-39
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 配置 Nginx = 文件模块 (file)
+- en: Starting Nginx = Systems module (service)
+  id: totrans-40
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 启动 Nginx = 系统模块 (service)
+- en: Serve Webpage = Files module (file)
+  id: totrans-41
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 提供网页 = 文件模块 (file)
+- en: Before we start writing code, we will start creating a layout to organize our
+    files.
+  id: totrans-42
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在开始编写代码之前，我们将开始创建布局来组织我们的文件。
+- en: Creating a site-wide playbook, nesting, and using include statements
+  id: totrans-43
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 创建一个全站剧本，进行嵌套并使用包含语句。
+- en: 'As a best practice, we will create a top-level file, which will contain the
+    blueprint of our complete infrastructure. Technically, we can include everything
+    that we need to configure inside just one file. However, that would have two problems:'
+  id: totrans-44
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 作为最佳实践，我们将创建一个顶层文件，该文件将包含我们完整基础设施的蓝图。从技术上讲，我们可以将所有需要配置的内容包含在一个文件中。然而，这会带来两个问题：
+- en: It would quickly get out of control as we start adding tasks, variables, and
+    handlers to this single file. It would be a nightmare to maintain such code.
+  id: totrans-45
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 当我们开始向这个单一文件中添加任务、变量和处理程序时，它会迅速失控。维护这样的代码将变成一场噩梦。
+- en: It would also be difficult to reuse and share such code. One of the advantages
+    of using a tool such as Ansible is its ability to separate data from code. Data
+    is organization-specific, and code is generic. This generic code can then be shared
+    with others. However, if you write everything in a single file, it would be impossible
+    to do so.
+  id: totrans-46
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 这样做也会使得代码的重用和共享变得困难。使用像 Ansible 这样的工具的一个优势是它能够将数据与代码分离。数据是特定于组织的，而代码是通用的。这些通用代码可以与他人共享。然而，如果你把所有东西写在一个文件中，就无法做到这一点。
+- en: 'To avoid this problem, we will start organizing our code in a modular fashion,
+    as follows:'
+  id: totrans-47
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了避免这个问题，我们将开始以模块化的方式组织代码，具体如下：
+- en: We will create roles for each of the applications that we need to configure.
+    In this case, it is Nginx
+  id: totrans-48
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 我们将为需要配置的每个应用程序创建角色。在本例中，它是 Nginx。
+- en: Our web server may need to install more than one application in addition to
+    Nginx, for example, PHP and OpenSSL. To encapsulate all of these, we will create
+    a playbook named `www.yml`.
+  id: totrans-49
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 我们的 web 服务器除了 Nginx 之外，可能还需要安装其他应用程序，例如 PHP 和 OpenSSL。为了封装这些内容，我们将创建一个名为`www.yml`的剧本。
+- en: The preceding playbook that we created will map hosts with the Nginx role. We
+    may add more roles to it later.
+  id: totrans-50
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 我们创建的前述剧本将映射具有 Nginx 角色的主机。我们以后可能会向其中添加更多角色。
+- en: We will add this playbook to the top-level playbook, that is, `site.yml`
+  id: totrans-51
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 我们将把这个剧本添加到顶层剧本中，也就是`site.yml`
+- en: 'The following diagram depicts the preceding steps in a very simple manner:'
+  id: totrans-52
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下图示以非常简单的方式描绘了前述步骤：
+- en: '![Creating a site-wide playbook, nesting, and using include statements](img/B03800_02_02.jpg)'
+  id: totrans-53
+  prefs: []
+  type: TYPE_IMG
+  zh: '![创建全站剧本，嵌套并使用包含语句](img/B03800_02_02.jpg)'
+- en: 'Here is our `site.yml` file:'
+  id: totrans-54
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这是我们的`site.yml`文件：
+- en: '[PRE0]'
+  id: totrans-55
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: The preceding `include` directive assists us with modularizing the code. Instead
+    of writing it all in one file, we split the logic and import what is required.
+    In this case, we will include another playbook, which is called a **nested playbook**.
+  id: totrans-56
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 前述我们创建的`include`指令帮助我们模块化代码。与其把所有内容都写在一个文件中，我们将逻辑拆分并导入所需内容。在这种情况下，我们将包含另一个剧本，它被称为**嵌套剧本**。
+- en: 'The following are some guidelines on what can be included and how:'
+  id: totrans-57
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是一些关于可以包含内容以及如何包含的指南：
+- en: The `include` directive can be used to include tasks, handlers, and even other
+    playbooks
+  id: totrans-58
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`include`指令可以用来包含任务、处理程序甚至其他剧本'
+- en: If you include a playbook inside another like we did in the `site.yml` file,
+    you cannot substitute the variables
+  id: totrans-59
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 如果你像在`site.yml`文件中那样将一个剧本包含在另一个剧本中，你不能替换变量。
+- en: The `include` keyword can be used in combination with regular task/handler specifications
+  id: totrans-60
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`include` 关键字可以与常规的任务/处理程序规范一起使用'
+- en: It's possible to pass parameters with include statements. This is called as
+    **parameterized** **include**
+  id: totrans-61
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 可以使用 `include` 语句传递参数。这被称为 **参数化的** **include**。
+- en: Tip
+  id: totrans-62
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 提示
+- en: '**Roles and auto-includes**'
+  id: totrans-63
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**角色和自动包含**'
+- en: Roles have implicit rules to auto include files. So long as you follow the directory
+    layout conventions, you are assured that all your tasks, handlers, and the rest
+    of the files are included automatically. Hence, it's important to create the subdirectories
+    with the exact names as specified by Ansible.
+  id: totrans-64
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 角色有隐式规则来自动包含文件。只要遵循目录布局规范，就可以确保所有任务、处理程序及其他文件都自动包含。因此，创建子目录时必须严格按照 Ansible 指定的名称。
+- en: Creating the www playbook
+  id: totrans-65
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 创建 www 剧本
+- en: 'We created a site-wide playbook and used an include statement to call another
+    playbook by the name `www.yml`. We will now create this file with one play, which
+    maps our web server hosts to the Nginx role:'
+  id: totrans-66
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们创建了一个全站的剧本，并使用 `include` 语句调用另一个名为 `www.yml` 的剧本。现在我们将创建这个文件，其中包含一个剧本，将我们的
+    Web 服务器主机映射到 Nginx 角色：
+- en: '[PRE1]'
+  id: totrans-67
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: 'The above code works as follows:'
+  id: totrans-68
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 上面的代码工作原理如下：
+- en: Run this code on any host that maps to the `[www]` group specified in the hosts
+    file.
+  id: totrans-69
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在任何映射到主机文件中指定的 `[www]` 组的主机上运行此代码。
+- en: For each directory inside the `roles/nginx/*` file, include `roles/nginx/*/main.yml`
+    to the play. This includes `tasks`, `handlers`, `vars`, `meta`, `default,` and
+    so on. This is where the auto include rules apply.
+  id: totrans-70
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 对于 `roles/nginx/*` 文件中的每个目录，将 `roles/nginx/*/main.yml` 包含到剧本中。这包括 `tasks`、`handlers`、`vars`、`meta`、`default`
+    等文件。这就是自动包含规则的应用场所。
+- en: The default and custom role paths
+  id: totrans-71
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 默认和自定义角色路径
+- en: 'By default, Ansible looks inside the `roles/` subdirectory of the project that
+    we create playbooks for. Being top-class devops engineers, we will follow the
+    best practice to have a centralized, version-controlled repository to store all
+    your roles. We may also end up reusing the roles created by community. Once we
+    do this, we can reuse these roles across multiple projects. In such cases, we
+    will check out the code at one or more locations, for example:'
+  id: totrans-72
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 默认情况下，Ansible 会查看我们为项目创建剧本时的 `roles/` 子目录。作为顶尖的 DevOps 工程师，我们将遵循最佳实践，建立一个集中式的版本控制库来存储所有的角色。我们也可能会重用社区创建的角色。这样一来，我们可以在多个项目中复用这些角色。在这种情况下，我们会在一个或多个位置检出代码，例如：
+- en: '`/deploy/ansible/roles`'
+  id: totrans-73
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`/deploy/ansible/roles`'
+- en: '`/deploy/ansible/community/roles`'
+  id: totrans-74
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`/deploy/ansible/community/roles`'
+- en: 'For nondefault paths, we will need to add the `roles_path` parameter to `ansible.cfg`
+    as shown in the following command:'
+  id: totrans-75
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于非默认路径，我们需要将 `roles_path` 参数添加到 `ansible.cfg` 文件中，如以下命令所示：
+- en: '[PRE2]'
+  id: totrans-76
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: Parameterizing the roles
+  id: totrans-77
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 参数化角色
+- en: 'At times, we may need to override default parameters specified inside vars
+    or the default directory of a role, for example, running web servers on port 8080
+    instead of 80\. In such cases, we can also pass parameters to roles in the preceding
+    playbook, as follows:'
+  id: totrans-78
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有时，我们可能需要覆盖在 vars 或角色的默认目录中指定的默认参数，例如，在端口 8080 上运行 Web 服务器，而不是 80。此时，我们也可以在前面的剧本中将参数传递给角色，如下所示：
+- en: '[PRE3]'
+  id: totrans-79
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: Creating a base role
+  id: totrans-80
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 创建基本角色
+- en: In the previous chapter, we created a simple playbook with all plays written
+    inside the same file. After discovering new and exciting information about roles,
+    we will start refactoring our code and making it modular.
+  id: totrans-81
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在上一章中，我们创建了一个简单的剧本，将所有剧本写在同一个文件中。在发现关于角色的新信息后，我们将开始重构代码并使其模块化。
+- en: Refactoring our code – creating a base role
+  id: totrans-82
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 重构我们的代码 – 创建基本角色
+- en: 'We have written two plays in the `simple_playbook.yml` file. We intended to
+    run the first play on all hosts. This play has tasks to create users, install
+    essential packages, and so on:'
+  id: totrans-83
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们在 `simple_playbook.yml` 文件中编写了两个剧本。我们打算在所有主机上运行第一个剧本。这个剧本包含创建用户、安装基本包等任务：
+- en: '![Refactoring our code – creating a base role](img/B03800_02_03.jpg)'
+  id: totrans-84
+  prefs: []
+  type: TYPE_IMG
+  zh: '![重构我们的代码 – 创建基本角色](img/B03800_02_03.jpg)'
+- en: 'It''s a good practice to combine all such essential tasks and create a base
+    role. You can name it as base, common, essential, or whatever you please, but
+    the concept remains the same. We will now move this code to the base role:'
+  id: totrans-85
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 结合所有这些基本任务并创建一个基本角色是一个好习惯。你可以将其命名为 base、common、essential 等，但概念是相同的。现在我们将把这段代码移动到基本角色中：
+- en: 'Create the directory layout for the base role. Since we are only going to specify
+    tasks, we just need one subdirectory inside the base:'
+  id: totrans-86
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 为基本角色创建目录布局。由于我们只打算指定任务，因此只需要在基本角色中创建一个子目录：
+- en: '[PRE4]'
+  id: totrans-87
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: Create the `main.yml` file inside `roles/base/tasks` to specify tasks for the
+    base role.
+  id: totrans-88
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在 `roles/base/tasks` 中创建 `main.yml` 文件以指定基础角色的任务。
+- en: 'Edit the `main.yml` file and add the following code:'
+  id: totrans-89
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 编辑 `main.yml` 文件并添加以下代码：
+- en: '[PRE5]'
+  id: totrans-90
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: Creating an Nginx role
+  id: totrans-91
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 创建一个 Nginx 角色
+- en: 'We will now create a separate role for Nginx and move the previous code that
+    we wrote in the `simple_playbook.yml` file to it, as follows:'
+  id: totrans-92
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们将为 Nginx 创建一个单独的角色，并将我们在 `simple_playbook.yml` 文件中编写的先前代码移动到其中，如下所示：
+- en: 'Create the directory layout for the Nginx role:'
+  id: totrans-93
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 为 Nginx 角色创建目录布局：
+- en: '[PRE6]'
+  id: totrans-94
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: 'Create the `install.yml` file inside `roles/base`. Move the Nginx-related tasks
+    to it. It should look like this:'
+  id: totrans-95
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在 `roles/base` 中创建 `install.yml` 文件。将与 Nginx 相关的任务移动到此文件中。它应该如下所示：
+- en: '[PRE7]'
+  id: totrans-96
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE7]'
+- en: 'We will also create the `service.yml` file to manage the state of the Nginx
+    daemon:'
+  id: totrans-97
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 我们还将创建 `service.yml` 文件来管理 Nginx 守护程序的状态：
+- en: '[PRE8]'
+  id: totrans-98
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE8]'
+- en: 'We looked at the `include` directive earlier. We will use it to include both
+    the `install.yml` and `service.yml` files in the `main.yml` file, as follows:'
+  id: totrans-99
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 我们之前看过 `include` 指令。我们将使用它来在 `main.yml` 文件中包含 `install.yml` 和 `service.yml`
+    文件，如下所示：
+- en: '[PRE9]'
+  id: totrans-100
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE9]'
+- en: Tip
+  id: totrans-101
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 提示
+- en: '**Best Practice**'
+  id: totrans-102
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**最佳实践**'
+- en: Why are we creating multiple files to hold the code that installs packages and
+    manages services, separately? That's because well-factored roles allow you to
+    selectively enable specific features. For example, at times, you may want to deploy
+    services in multiple phases. In the first phase, you may just want to install
+    and configure applications, and start services only in the second phase of your
+    deployment. In such cases, having modular tasks can help. You can always include
+    them all in the `main.yml` file.
+  id: totrans-103
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为什么我们要创建多个文件来分别安装软件包和管理服务的代码？这是因为良好设计的角色允许您选择性地启用特定功能。例如，有时您可能希望在多个阶段部署服务。在第一阶段，您可能只想安装和配置应用程序，并且仅在部署的第二阶段才启动服务。在这种情况下，具有模块化任务可以帮助。您始终可以将它们全部包含在
+    `main.yml` 文件中。
+- en: Adding role dependencies
+  id: totrans-104
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 添加角色依赖关系
+- en: 'We have some essential tasks specified in the base role. We may keep on adding
+    more tasks which are a prerequisite for the applications that follow. In such
+    cases, we would like our Nginx role to be dependent on the base role. We will
+    now specify this dependency inside the meta subdirectory. Let''s take a look at
+    the following steps:'
+  id: totrans-105
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们在基础角色中指定了一些基本任务。我们可能会继续添加更多任务，这些任务是后续应用程序的先决条件。在这种情况下，我们希望我们的 Nginx 角色依赖于基础角色。现在我们将在
+    meta 子目录中指定这个依赖关系。让我们看看以下步骤：
+- en: Create the `main.yml` file inside the `roles/nginx/meta/main.yml` path.
+  id: totrans-106
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在 `roles/nginx/meta/main.yml` 路径下创建 `main.yml` 文件。
+- en: 'Add the following code to the `main.yml` file inside the `meta` directory:'
+  id: totrans-107
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 将以下代码添加到 `meta` 目录中的 `main.yml` 文件：
+- en: '[PRE10]'
+  id: totrans-108
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE10]'
+- en: The preceding specification will ensure that the base role is always applied
+    before any task in Nginx starts running.
+  id: totrans-109
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 上述规范将确保在任何 Nginx 任务开始运行之前始终应用基础角色。
+- en: Managing files for Nginx
+  id: totrans-110
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 管理 Nginx 的文件
+- en: As per our solution to the scenario, we already have Ansible tasks to install
+    Nginx and to start the service. We still don't have a web page to serve yet, and
+    we did not think about the Nginx site configurations. We don't expect Nginx to
+    magically know about how and where to serve the web page from, do we?
+  id: totrans-111
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 根据我们对场景的解决方案，我们已经有了安装 Nginx 和启动服务的 Ansible 任务。但是，我们还没有要服务的网页，并且我们还没有考虑到 Nginx
+    网站的配置。我们难道期望 Nginx 魔法般地知道如何以及从哪里提供网页吗？
+- en: 'We need to perform the following steps to serve the HTML page:'
+  id: totrans-112
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们需要执行以下步骤来提供 HTML 页面：
+- en: Create a site configuration that lets Nginx know which port to listen to for
+    requests, and what to do when a request comes.
+  id: totrans-113
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建一个站点配置，让 Nginx 知道要监听哪个端口以及当请求到来时应该执行什么操作。
+- en: Create some HTML content, which will be served when an HTTP request comes in.
+  id: totrans-114
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建一些 HTML 内容，当 HTTP 请求到来时将其提供。
+- en: Add code to `tasks/main.yml` to copy over these files.
+  id: totrans-115
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 添加代码到 `tasks/main.yml` 以复制这些文件。
+- en: 'You might have noticed, both steps 1 and 2 require that you create and manage
+    some files on the host, which will run the Nginx web server. You also learned
+    about the file and the subdirectory of a role. You guessed it right. We will use
+    this subdirectory to host our files and have them copied over to all the Nginx
+    hosts with Ansible. So, let''s create these files now using the following command:'
+  id: totrans-116
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 您可能已经注意到，步骤 1 和 2 都要求您在运行 Nginx Web 服务器的主机上创建和管理一些文件。您还了解了角色的文件和子目录。没错，我们将使用这个子目录来托管我们的文件，并使用
+    Ansible 将它们复制到所有 Nginx 主机上。因此，现在让我们使用以下命令创建这些文件：
+- en: '[PRE11]'
+  id: totrans-117
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE11]'
+- en: 'Create a `default.configuration` file to manage the default Nginx site configurations.
+    This file should contain parameters such as port, server name, and web root configurations,
+    as follows:'
+  id: totrans-118
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 创建一个 `default.configuration` 文件来管理默认的 Nginx 网站配置。该文件应包含端口、服务器名称和网站根目录配置等参数，如下所示：
+- en: '[PRE12]'
+  id: totrans-119
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE12]'
+- en: 'We will also create an `index.html` file, which we will push to all web servers:'
+  id: totrans-120
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们还将创建一个 `index.html` 文件，并将其推送到所有的 Web 服务器：
+- en: '[PRE13]'
+  id: totrans-121
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE13]'
+- en: 'Now that we have created these files, we will add tasks to copy these over
+    and put them in `roles/nginx/tasks/configure.yml,` as follows:'
+  id: totrans-122
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 既然我们已经创建了这些文件，我们将添加任务，将这些文件复制过去并放入 `roles/nginx/tasks/configure.yml`，如下所示：
+- en: '[PRE14]'
+  id: totrans-123
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE14]'
+- en: 'We will also update the `main.yaml` file inside tasks to include the newly
+    created file, and add it before the `service.yml` file:'
+  id: totrans-124
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们还将更新 `tasks` 中的 `main.yaml` 文件，以包含新创建的文件，并将其添加到 `service.yml` 文件之前：
+- en: '[PRE15]'
+  id: totrans-125
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE15]'
+- en: Automating events and actions with handlers
+  id: totrans-126
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用处理程序自动化事件和操作
+- en: 'Let''s assume that we are managing Nginx manually, and that we have to change
+    the port that Nginx listens to from the default site to `8080`. What would we
+    do to make this happen? Sure, we would edit the `default.conf` file and change
+    the port from 80 to 8080\. However, would that be enough? Would that make Nginx
+    listen to port 8080 immediately after editing this file? The answer is no. There
+    is one more step involved. Let''s take a look at the following screenshot:'
+  id: totrans-127
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 假设我们手动管理 Nginx，并且需要将 Nginx 监听的端口从默认的 80 改为 `8080`。我们应该怎么做才能实现这一点呢？当然，我们会编辑 `default.conf`
+    文件，将端口从 80 改为 8080。然而，这样就足够了吗？编辑完这个文件后，Nginx 会立即开始监听端口 8080 吗？答案是否定的。还需要一步。让我们来看一下下面的截图：
+- en: '![Automating events and actions with handlers](img/B03800_02_04.jpg)'
+  id: totrans-128
+  prefs: []
+  type: TYPE_IMG
+  zh: '![使用处理程序自动化事件和操作](img/B03800_02_04.jpg)'
+- en: When we change a configuration file, we will typically also restart/reload the
+    service so that it reads our modifications and applies those.
+  id: totrans-129
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当我们更改配置文件时，我们通常也会重启/重新加载服务，以便它能够读取我们的修改并应用这些修改。
+- en: So far, so good. Now let's come back to our Ansible code. We are going to run
+    this code in an automated fashion on a large number of servers, possibly hundreds.
+    Considering this, it's not feasible for us to log in to each system to restart
+    services after every change. This defeats the purpose of automating the process.
+    Now, how do we ask Ansible to take action when an event occurs? That's where handlers
+    can help.
+  id: totrans-130
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 到目前为止，一切顺利。现在，让我们回到我们的 Ansible 代码。我们打算以自动化的方式在大量服务器上运行这段代码，可能是数百台服务器。考虑到这一点，我们不能在每次更改后都登录到每个系统来重启服务。这违背了自动化的目的。那么，当事件发生时，我们如何让
+    Ansible 采取行动呢？这正是处理程序可以帮助的地方。
+- en: You learned that Ansible modules are idempotent. They will enforce a change
+    in state only if there is a configuration drift. When managing with Ansible, we
+    will commit the preceding port change in the `default.conf` file inside `roles/nginx/files`.
+    If we launch an Ansible run after making this change then, while executing, it
+    will compare the file inside our role with the one on the system, detect the configuration
+    drift, and copy it over to the changed file. With Ansible, this is where we will
+    add a notification that will trigger a handler to run. In this case, we will call
+    a handler to restart the Nginx service.
+  id: totrans-131
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你已经了解了 Ansible 模块是幂等的。只有当配置发生漂移时，它们才会强制改变状态。在使用 Ansible 管理时，我们会在 `roles/nginx/files`
+    中提交之前在 `default.conf` 文件中的端口更改。如果我们在做完这个更改后启动 Ansible 执行，它将在执行过程中比较角色中的文件与系统上的文件，检测到配置漂移，并将更改后的文件复制过去。使用
+    Ansible 时，我们将在这里添加一个通知，触发处理程序运行。在这种情况下，我们将调用处理程序来重启 Nginx 服务。
+- en: 'Let''s now add this handler to `roles/nginx/handlers/main.yml`:'
+  id: totrans-132
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，让我们将这个处理程序添加到 `roles/nginx/handlers/main.yml` 中：
+- en: '[PRE16]'
+  id: totrans-133
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE16]'
+- en: Handlers are similar to regular tasks. They specify a module's name, instance,
+    and state. Why do we not add them with regular tasks then? Well, we only need
+    to execute handlers,when an event occurs, not every time we run, ansible. And
+    that's the exact reason why we create a separate section for it.
+  id: totrans-134
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 处理程序类似于常规任务。它们指定一个模块的名称、实例和状态。那么，为什么我们不将它们与常规任务一起添加呢？嗯，我们只需要在事件发生时执行处理程序，而不是每次运行
+    Ansible 时都执行。这正是我们创建单独部分的原因。
+- en: 'Now that we have written the handler, we also need to add a trigger for it.
+    We will do this by adding the `notify` directive to `roles/tasks/nginx/configure.yml`,
+    as follows:'
+  id: totrans-135
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 既然我们已经编写了处理程序，我们还需要为它添加一个触发器。我们通过在 `roles/tasks/nginx/configure.yml` 中添加 `notify`
+    指令来实现，如下所示：
+- en: '![Automating events and actions with handlers](img/B03800_02_05.jpg)'
+  id: totrans-136
+  prefs: []
+  type: TYPE_IMG
+  zh: '![使用处理程序自动化事件和操作](img/B03800_02_05.jpg)'
+- en: Tip
+  id: totrans-137
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 提示
+- en: Even when multiple tasks notify the handler, it will be called only once, toward
+    the end. This will avoid multiple restarts of the same service unnecessarily.
+  id: totrans-138
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 即使多个任务通知了处理器，它也只会在最后被调用一次。这样可以避免不必要的多次重启同一服务。
+- en: 'By now, our Nginx role layout looks more complete and has files, handlers,
+    tasks, and directories with individual tasks to manage each phase of the Nginx
+    setup. The role layout is as follows:'
+  id: totrans-139
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 到现在为止，我们的Nginx角色布局看起来更完整，包含了文件、处理器、任务和目录，每个阶段的Nginx设置都有独立的任务来管理。角色布局如下：
+- en: '![Automating events and actions with handlers](img/B03800_02_06.jpg)'
+  id: totrans-140
+  prefs: []
+  type: TYPE_IMG
+  zh: '![使用处理器自动化事件和动作](img/B03800_02_06.jpg)'
+- en: Adding pre-tasks and post-tasks to playbooks
+  id: totrans-141
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 将`pre-tasks`和`post-tasks`添加到剧本中
+- en: 'We would like to print status messages before and after we begin applying Nginx.
+    Let''s add it to our `www.yml` playbook with the `pre_tasks` and `post_tasks`
+    parameters:'
+  id: totrans-142
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们希望在应用Nginx之前和之后打印状态信息。让我们将其添加到`www.yml`剧本中，使用`pre_tasks`和`post_tasks`参数：
+- en: '[PRE17]'
+  id: totrans-143
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE17]'
+- en: In the preceding example, we only printed some messages using the `echo` command.
+    However, we can create tasks using any of the modules available with Ansible,
+    which can run before, or after, applying roles.
+  id: totrans-144
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在前面的例子中，我们只是用`echo`命令打印了一些消息。然而，我们可以使用Ansible的任何模块来创建任务，这些任务可以在应用角色之前或之后运行。
+- en: Running playbooks with roles
+  id: totrans-145
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用角色运行剧本
+- en: 'Let''s now apply the refactored code to our hosts. We are going to launch only
+    the site-wide playbook, that is, the `site.yml` file and then rely on the include
+    statements and roles to do the magic:'
+  id: totrans-146
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在让我们将重构后的代码应用到我们的主机上。我们将仅启动全站剧本，即`site.yml`文件，然后依赖`include`语句和角色来实现功能：
+- en: '[PRE18]'
+  id: totrans-147
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE18]'
+- en: 'Let''s take a look at the following screenshot:'
+  id: totrans-148
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们看一下以下的截图：
+- en: '![Running playbooks with roles](img/B03800_02_07.jpg)'
+  id: totrans-149
+  prefs: []
+  type: TYPE_IMG
+  zh: '![使用角色运行剧本](img/B03800_02_07.jpg)'
+- en: 'In addition to the output we saw last time, there are some new messages this
+    time. Let''s analyze those:'
+  id: totrans-150
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 除了上次看到的输出之外，这次还有一些新的信息。让我们分析一下这些：
+- en: Before and after, roles are applied, pre-tasks and post-tasks get triggered;
+    this prints messages using the shell module.
+  id: totrans-151
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在应用角色之前和之后，`pre-tasks`和`post-tasks`会被触发；这时通过shell模块打印消息。
+- en: We now have the code to copy to the `config` and .`html` file for our Nginx
+    web server.
+  id: totrans-152
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 现在我们已经有了复制到`config`和`.html`文件的代码，用于我们的Nginx Web服务器。
+- en: We also see that the handler triggers an Nginx service restart. This is due
+    to the change in the state for the `configuration` file, which triggers the handler.
+  id: totrans-153
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 我们还看到处理器触发了Nginx服务的重启。这是由于`configuration`文件的状态发生了变化，从而触发了处理器。
+- en: Tip
+  id: totrans-154
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 提示
+- en: Did you notice that tasks in the base role also get triggered, even when we
+    have not mentioned the base role in the `www` playbook? This is where meta information
+    is useful. Remember we had specified a dependency on the base role inside `meta/main.yml`
+    for Nginx? That's what did the trick.
+  id: totrans-155
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你有没有注意到，即使我们没有在`www`剧本中提到基础角色，基础角色中的任务也会被触发？这就是元数据（meta information）发挥作用的地方。还记得我们在`meta/main.yml`中为Nginx指定了对基础角色的依赖关系吗？这就是起作用的原因。
+- en: 'Dependencies:'
+  id: totrans-156
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 依赖关系：
+- en: '[PRE19]'
+  id: totrans-157
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE19]'
+- en: Review questions
+  id: totrans-158
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 复习问题
+- en: 'Do you think you''ve understood the chapter well enough? Try answering the
+    following questions to test your understanding:'
+  id: totrans-159
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你觉得自己已经充分理解这一章了吗？试着回答以下问题，检验你的理解：
+- en: Roles contain ___ and ___ subdirectories to specify variables/parameters.
+  id: totrans-160
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 角色包含___和___子目录，用于指定变量/参数。
+- en: How do you specify a dependency on another role?
+  id: totrans-161
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如何指定对另一个角色的依赖关系？
+- en: When we add roles to a play, why is it not required that we use the `include`
+    directives? How do the tasks, handlers, and so on, get added to the play automatically?
+  id: totrans-162
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 当我们向剧本中添加角色时，为什么不需要使用`include`指令？任务、处理器等是如何自动添加到剧本中的？
+- en: Why do we have a separate section for handlers if they resemble regular tasks?
+  id: totrans-163
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 为什么我们要为处理器单独设置一个部分，虽然它们和普通任务很相似？
+- en: Which module can be used to copy over static files to destination hosts?
+  id: totrans-164
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 哪个模块可以用于将静态文件复制到目标主机？
+- en: How do you specify the tasks to be run before applying a role in a playbook?
+  id: totrans-165
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如何在剧本中指定角色应用前要运行的任务？
+- en: Summary
+  id: totrans-166
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 总结
+- en: In this chapter, you learned how to use roles to provide abstraction and to
+    help modularizing code for reuse. That's exactly what you see community doing.
+    Creating roles, and sharing them with you. You also learned about `include` directives,
+    directory layout for roles, and adding role dependencies. We then went on to refactor
+    our code and created a base role, the Nginx role. We also looked at how to manage
+    events and take actions using handlers.
+  id: totrans-167
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，你学习了如何使用角色提供抽象，并帮助模块化代码以便重用。这正是你在社区中看到的。创建角色，并与您共享。你还学习了`include`指令、角色的目录结构以及如何添加角色依赖关系。接着，我们对代码进行了重构，并创建了一个基础角色——Nginx角色。我们还探讨了如何管理事件并通过处理器执行操作。
+- en: In the next chapter, we will extend the concepts of roles and start adding dynamic
+    data with variables and templates.
+  id: totrans-168
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一章中，我们将扩展角色的概念，并开始使用变量和模板添加动态数据。

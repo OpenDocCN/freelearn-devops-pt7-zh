@@ -1,0 +1,2029 @@
+- en: User Management
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 用户管理
+- en: User management is one of the most tedious, yet important, aspects of any system.
+    It lays the foundation for many other system functions, such as security and notifications.
+  id: totrans-1
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 用户管理是任何系统中最繁琐但又最重要的方面之一。它为许多其他系统功能奠定基础，例如安全性和通知。
+- en: In this chapter, we will look at the different options available to create user
+    accounts in Jira, and also how to manage users by using groups and project roles.
+    We will also look at how to integrate Jira with external user-management systems,
+    such as **Lightweight Directory Access Protocol** (**LDAP**), for both authentication
+    and user management. Lastly, we will cover how to make Jira participate in various
+    single sign-on environments.
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章我们将探讨在 Jira 中创建用户账户的不同选项，并介绍如何通过使用组和项目角色来管理用户。我们还将讨论如何将 Jira 与外部用户管理系统（例如**轻量级目录访问协议**（**LDAP**））集成，以便进行身份验证和用户管理。最后，我们将介绍如何使
+    Jira 参与各种单点登录环境。
+- en: 'In this chapter, we will cover the following topics:'
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章将涵盖以下主题：
+- en: Creating and importing multiple users
+  id: totrans-4
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 创建和导入多个用户
+- en: Enabling public user signup
+  id: totrans-5
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 启用公共用户注册
+- en: Managing groups and group memberships
+  id: totrans-6
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 管理组和组成员关系
+- en: Managing project roles
+  id: totrans-7
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 管理项目角色
+- en: Managing default project role memberships
+  id: totrans-8
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 管理默认项目角色成员关系
+- en: Deactivating a user
+  id: totrans-9
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 停用用户
+- en: Integrating and importing users from LDAP
+  id: totrans-10
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 从 LDAP 集成并导入用户
+- en: Integrating with LDAP for authentication only
+  id: totrans-11
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 仅通过 LDAP 进行身份验证的集成
+- en: Integrating with Atlassian Crowd
+  id: totrans-12
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 与 Atlassian Crowd 集成
+- en: Setting up single sign-on with Crowd
+  id: totrans-13
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 设置与 Crowd 的单点登录
+- en: Setting up single sign-on with Google
+  id: totrans-14
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 设置与 Google 的单点登录
+- en: Setting up Windows domain single sign-on
+  id: totrans-15
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 设置 Windows 域单点登录
+- en: Creating and importing multiple users
+  id: totrans-16
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 创建和导入多个用户
+- en: As a Jira administrator, it is usually your responsibility to set up accounts
+    for the new user whenever someone new joins the organization. This is usually
+    fine on an ad hoc basis, but from time to time, you might be required to import
+    many users at once. In these cases, you will need some additional tools to help
+    you efficiently enable all these users to access the system without any delay.
+  id: totrans-17
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 作为 Jira 管理员，通常你需要为新加入组织的用户设置账户。对于临时的用户，通常没问题，但有时你可能需要一次性导入大量用户。在这些情况下，你将需要一些额外的工具，帮助你高效地使所有这些用户能够及时访问系统。
+- en: Getting ready
+  id: totrans-18
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 准备工作
+- en: For this recipe, we will need the Jira **command-line interface** (**CLI**).
+    You can retrieve it from [https://marketplace.atlassian.com/plugins/org.swift.jira.cli/cloud/overview](https://marketplace.atlassian.com/plugins/org.swift.jira.cli/cloud/overview).
+  id: totrans-19
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于这个配方，我们需要使用 Jira **命令行界面**（**CLI**）。你可以从[https://marketplace.atlassian.com/plugins/org.swift.jira.cli/cloud/overview](https://marketplace.atlassian.com/plugins/org.swift.jira.cli/cloud/overview)获取它。
+- en: The CLI app has two components. The first component is an app called CLI Connector
+    that you can install via the **Universal Plugin Manager** (**UPM**) just like
+    any other Jira apps. The second component is the actual CLI Client, which we will
+    use to issue commands to Jira. You can download the latest command-line tool (`atlassian-cli-8.x.x-distribution.zip`)
+    from [https://bobswift.atlassian.net/wiki/spaces/info/pages/103022955/Downloads+-+CLI+Clients](https://bobswift.atlassian.net/wiki/spaces/info/pages/103022955/Downloads+-+CLI+Clients).
+  id: totrans-20
+  prefs: []
+  type: TYPE_NORMAL
+  zh: CLI 应用程序有两个组件。第一个组件是一个叫做 CLI Connector 的应用程序，你可以通过**通用插件管理器**（**UPM**）像其他 Jira
+    应用程序一样安装它。第二个组件是实际的 CLI 客户端，我们将用它来向 Jira 发出命令。你可以从[https://bobswift.atlassian.net/wiki/spaces/info/pages/103022955/Downloads+-+CLI+Clients](https://bobswift.atlassian.net/wiki/spaces/info/pages/103022955/Downloads+-+CLI+Clients)下载最新的命令行工具（`atlassian-cli-8.x.x-distribution.zip`）。
+- en: You will also need to have an administrator account, as user creation is an
+    administrative task.
+  id: totrans-21
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你还需要一个管理员账户，因为创建用户是一个管理员任务。
+- en: How to do it...
+  id: totrans-22
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: 'Before we can start using the command-line client to import users into Jira,
+    we first need to prepare our user data. The easiest way to do this is to create
+    a **comma-separated values** (**CSV**) file containing the following information,
+    in the order specified. You can use a spreadsheet application such as Microsoft
+    Excel to create it:'
+  id: totrans-23
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在我们开始使用命令行客户端将用户导入到 Jira 之前，我们首先需要准备用户数据。最简单的方式是创建一个包含以下信息的**逗号分隔值**（**CSV**）文件，并按指定的顺序排列。你可以使用如
+    Microsoft Excel 等电子表格应用程序来创建它：
+- en: '| **Username** | **Password** | **Email** | **Full name** | **Group A** |'
+  id: totrans-24
+  prefs: []
+  type: TYPE_TB
+  zh: '| **用户名** | **密码** | **电子邮件** | **全名** | **组 A** |'
+- en: '| `tester1` | `xxxxx` | `tester1@example.com` | `Test User` | `jira-softwareusers`
+    |'
+  id: totrans-25
+  prefs: []
+  type: TYPE_TB
+  zh: '| `tester1` | `xxxxx` | `tester1@example.com` | `测试用户` | `jira-softwareusers`
+    |'
+- en: 'The following list explains each column of the CSV file:'
+  id: totrans-26
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下列表解释了CSV文件的每一列：
+- en: '**Username**: The username of the user; note that usernames in Jira need to
+    be unique.'
+  id: totrans-27
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**用户名**：用户的用户名；请注意，Jira中的用户名必须是唯一的。'
+- en: '**Password**: The password for the new user. You can leave it blank, and let
+    Jira automatically generate one for you.'
+  id: totrans-28
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**密码**：新用户的密码。你可以留空，Jira会自动为你生成一个密码。'
+- en: '**Email**: The email address for the new user. Emails can be sent out to the
+    user for him/her to reset the password once the account is created.'
+  id: totrans-29
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**电子邮件**：新用户的电子邮件地址。帐户创建后，可以向用户发送电子邮件，以便他/她重置密码。'
+- en: '**Full name**: The full name of the new user.'
+  id: totrans-30
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**全名**：新用户的全名。'
+- en: '**Group**: Groups to add the new user into. If you want to add the user to
+    multiple groups, put each group into its separate column. Note that the group
+    name you specify must already exist in Jira.'
+  id: totrans-31
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**组**：要将新用户添加到的组。如果你想将用户添加到多个组中，请将每个组放在一个单独的列中。请注意，指定的组名必须已经在Jira中存在。'
+- en: 'Now that you have your data file, go through the following steps to import
+    and create the user accounts in Jira:'
+  id: totrans-32
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在你已经有了数据文件，请按照以下步骤导入并在Jira中创建用户账户：
+- en: Unzip the CLI Client into a directory on your computer (for example, `/opt/cli`).
+  id: totrans-33
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 将CLI客户端解压到你计算机上的某个目录（例如，`/opt/cli`）。
+- en: Copy the user's CSV file to a directory on your computer (for example, `/tmp/users.csv`).
+  id: totrans-34
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 将用户的CSV文件复制到你计算机上的某个目录（例如，`/tmp/users.csv`）。
+- en: Open a Command Prompt and navigate to the directory that contains the CLI Client—that
+    is, the directory that contains the `jira.sh ` or `jira.bat` file.
+  id: totrans-35
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 打开命令提示符并导航到包含CLI客户端的目录，即包含`jira.sh`或`jira.bat`文件的目录。
+- en: Make sure that the `jira.shfile` (Linux) or `jira.bat` (Windows) file is executable.
+  id: totrans-36
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 确保`jira.sh`文件（Linux）或`jira.bat`（Windows）是可执行的。
+- en: 'Run the following command to import users; make sure you substitute the administrator
+    username and password in your Jira URL:'
+  id: totrans-37
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 运行以下命令来导入用户；确保在Jira URL中替换管理员的用户名和密码：
+- en: '[PRE0]'
+  id: totrans-38
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: The preceding command assumes you are using Linux. If you are using Windows,
+    use `jira.bat` instead.
+  id: totrans-39
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 上述命令假设你正在使用Linux。如果你使用的是Windows，请改用`jira.bat`。
+- en: 'If everything runs fine, you will see an output similar to the following one
+    on your console:'
+  id: totrans-40
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果一切顺利，你将在控制台看到类似以下的输出：
+- en: '![](img/ac30e11e-645d-4b62-9fe7-0247c063c061.png)'
+  id: totrans-41
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/ac30e11e-645d-4b62-9fe7-0247c063c061.png)'
+- en: The result of the command, as shown in the preceding output, will show every
+    new user added to Jira as defined in the CSV file. Since we did not specify a
+    password for the `Tester Four` user, the user is assigned an autogenerated password.
+    The last line in the output also provides a summary of the number of users added
+    successfully and the number of failed ones, if any.
+  id: totrans-42
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如前面输出所示，命令的结果会显示每个根据CSV文件添加到Jira的新用户。由于我们没有为`Tester Four`用户指定密码，因此该用户将被分配一个自动生成的密码。输出的最后一行还提供了成功添加的用户数量和失败的用户数量（如果有的话）。
+- en: How it works...
+  id: totrans-43
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 它是如何工作的…
+- en: The command-line client that we used to run the `addUserWithFile` command uses
+    Jira's remote APIs to interact with Jira. Jira exposes many of its core functionalities
+    via these APIs, such as the ability to create new users and issues.
+  id: totrans-44
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们用于运行`addUserWithFile`命令的命令行客户端使用Jira的远程API与Jira交互。Jira通过这些API暴露了许多核心功能，例如创建新用户和问题的能力。
+- en: When we run the `addUserWithFile` command, we pass in the CSV file that contains
+    our new users, formatted in a way that the command-line client is able to understand
+    and make an API call to Jira to create those users for us.
+  id: totrans-45
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当我们运行`addUserWithFile`命令时，我们传入一个包含新用户的CSV文件，文件格式符合命令行客户端的要求，使其能够理解并调用Jira的API来为我们创建这些用户。
+- en: However, take note that the same security rules apply when using these remote
+    APIs (with or without the command-line client). So in our case, since creating
+    new users is an administrative task, we need to provide an administrator account
+    in the command.
+  id: totrans-46
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 但请注意，使用这些远程API时（无论是否使用命令行客户端），同样的安全规则适用。因此，在我们的案例中，由于创建新用户是一个管理任务，我们需要在命令中提供管理员账户。
+- en: The Jira CLI app can do a lot more than just create users. Simply run `jira.sh` or `jira.bat` to
+    see a full list of the commands and features it supports. The CLI Connector app
+    installed in Jira provides many more additional remote APIs that will be used
+    by some of the functions in the command-line client.
+  id: totrans-47
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Jira CLI应用程序不仅可以创建用户。只需运行`jira.sh`或`jira.bat`，即可查看它支持的所有命令和功能。安装在Jira中的CLI连接器应用程序提供了许多额外的远程API，这些API将被命令行客户端中的某些功能使用。
+- en: Enabling public user signup
+  id: totrans-48
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 启用公共用户注册
+- en: In the previous recipe, we looked at how to manually create new user accounts
+    and import users from a CSV file. These are the two options that the Jira administrators
+    have when your Jira instance is used internally.
+  id: totrans-49
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在前面的教程中，我们学习了如何手动创建新的用户账户并从 CSV 文件导入用户。这是当你的 Jira 实例用于内部时，Jira 管理员可以选择的两个选项。
+- en: However, if your Jira is set up to be used by the public, such as in a support
+    system, you would want to let your customers freely sign up for a new account,
+    rather than having them wait for the administrator to manually create each account.
+  id: totrans-50
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，如果你的 Jira 设置为公开使用，比如在支持系统中，你就需要让客户自由注册新账户，而不是让他们等待管理员手动创建每个账户。
+- en: How to do it...
+  id: totrans-51
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: 'Go through the following steps to enable public user signup:'
+  id: totrans-52
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 按照以下步骤启用公共用户注册：
+- en: Navigate to Administration > **System** > **General configuration**.
+  id: totrans-53
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 进入 管理 > **系统** > **常规配置**。
+- en: Click on the **Edit Settings **button.
+  id: totrans-54
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击 **编辑设置** 按钮。
+- en: Set the **Mode **option to **Public** and click on **Update**.
+  id: totrans-55
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 将 **模式** 选项设置为 **公开**，然后点击 **更新**。
+- en: How it works...
+  id: totrans-56
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 工作原理...
+- en: Jira can operate in two modes, public and private. In private mode, only the
+    administrator can create new user accounts. For example, you can use the private
+    mode for Jira instances that are used by internal engineering teams to track their
+    projects.
+  id: totrans-57
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Jira 可以在两种模式下运行：公开模式和私有模式。在私有模式下，只有管理员可以创建新的用户账户。例如，你可以为内部工程团队使用的 Jira 实例启用私有模式，用于跟踪他们的项目。
+- en: 'Public mode allows anyone to sign up for new accounts. The new accounts that
+    are created will have normal user permissions, so they will be able to start using
+    Jira immediately:'
+  id: totrans-58
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 公开模式允许任何人注册新账户。创建的新账户将拥有普通用户权限，因此他们可以立即开始使用 Jira：
+- en: '![](img/2f6cb528-d396-4010-ad5a-1d5604446251.png)'
+  id: totrans-59
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/2f6cb528-d396-4010-ad5a-1d5604446251.png)'
+- en: As shown in the preceding screenshot, you can sign up for a new account.
+  id: totrans-60
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如上图所示，你可以注册一个新账户。
+- en: There's more...
+  id: totrans-61
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 更多信息...
+- en: 'To help prevent spammers, Jira comes with the CAPTCHA challenge response feature
+    to make sure there is a real person signing up for a new account and not an automated
+    bot. To enable the CAPTCHA feature, go through the following steps:'
+  id: totrans-62
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了帮助防止垃圾邮件发送者，Jira 提供了 CAPTCHA 挑战响应功能，确保注册新账户的是一个真实的人，而不是自动化机器人。要启用 CAPTCHA
+    功能，请按照以下步骤操作：
+- en: Navigate to Administration > System > General configuration.
+  id: totrans-63
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 进入 管理 > 系统 > 常规配置。
+- en: Click on the Edit Settingsbutton.
+  id: totrans-64
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击 **编辑设置** 按钮。
+- en: Set the CAPTCHA on signupoption to On, and click on Update.
+  id: totrans-65
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 将注册时的 CAPTCHA 选项设置为开启，并点击 更新。
+- en: 'Once you have enabled CAPTCHA, the sign-up form will include a string of randomly
+    generated alphanumeric characters that must be typed in correctly for a new account to
+    be generated, as shown in the following screenshot:'
+  id: totrans-66
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦启用了 CAPTCHA，注册表单将包含一串随机生成的字母数字字符，必须正确输入这些字符，才能生成新的账户，如下图所示：
+- en: '![](img/90238810-51f5-4d5c-ae2a-cb7b8620afb6.png)'
+  id: totrans-67
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/90238810-51f5-4d5c-ae2a-cb7b8620afb6.png)'
+- en: An example of CAPTCHA is shown in the preceding screenshot.
+  id: totrans-68
+  prefs: []
+  type: TYPE_NORMAL
+  zh: CAPTCHA 的示例如上图所示。
+- en: Managing groups and group memberships
+  id: totrans-69
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 管理用户组和用户组成员
+- en: In any information system, a common way of managing users is through the use
+    of groups. Groups are based on positions and responsibilities within an organization;
+    however, it is important to note that groups simply represent a collection of
+    users. In Jira, groups provide an effective way to apply configuration settings,
+    such as permissions and notifications, to users.
+  id: totrans-70
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在任何信息系统中，管理用户的一种常见方式是通过使用用户组。用户组是基于组织内的职位和职责创建的；但是，重要的是要注意，用户组仅仅表示一组用户。在 Jira
+    中，用户组为应用配置设置（例如权限和通知）提供了一个有效的方式。
+- en: Groups are global in Jira—if you belong to the `jira-administrators` group,
+    you will always be in that group regardless of the project you are accessing.
+  id: totrans-71
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 用户组在Jira中是全局性的——如果你属于`jira-administrators`用户组，不管你访问哪个项目，你都将始终在该组中。
+- en: In this recipe, we will look at how to create a new group and add users to it.
+  id: totrans-72
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本教程中，我们将了解如何创建一个新用户组并向其中添加用户。
+- en: How to do it...
+  id: totrans-73
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: 'Go through the following steps to create a new group:'
+  id: totrans-74
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 按照以下步骤创建一个新的用户组：
+- en: Navigate to Administration > User management > Groups.
+  id: totrans-75
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 进入 管理 > 用户管理 > 用户组。
+- en: Enter the new group's name under the Add groupsection.
+  id: totrans-76
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在 **添加用户组** 部分输入新用户组的名称。
+- en: Click on the **Add group **button.
+  id: totrans-77
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击 **添加用户组** 按钮。
+- en: 'Go through the following steps to add users to a group:'
+  id: totrans-78
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 按照以下步骤将用户添加到用户组：
+- en: Navigate to Administration > User management > Groups.
+  id: totrans-79
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 进入 管理 > 用户管理 > 用户组。
+- en: Click on the Edit memberslink for the group you want to manage.
+  id: totrans-80
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击你想管理的组的 编辑成员 链接。
+- en: Type in the usernames for the users you want to add to the group. You can click
+    on the select user icon and use the user picker to find your users.
+  id: totrans-81
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 输入要添加到组中的用户的用户名。你可以点击选择用户图标并使用用户选择器查找你的用户。
+- en: 'Click on the Add selected users button to add users to the group, as shown
+    in the following screenshot:'
+  id: totrans-82
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击 添加选定的用户 按钮，将用户添加到组中，如下图所示：
+- en: '![](img/98162540-cebf-4a6e-a21e-6707638abab5.png)'
+  id: totrans-83
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/98162540-cebf-4a6e-a21e-6707638abab5.png)'
+- en: This allows you to manage users in your group.
+  id: totrans-84
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这样可以让你管理组中的用户。
+- en: There's more...
+  id: totrans-85
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 还有更多...
+- en: 'By editing the group''s membership directly, you can add and remove multiple
+    users to and from a group in one go; however, sometimes you only need to update
+    a single user''s group membership; in these cases, you might find it easier to
+    manage this edit option via the user''s group membership interface. Go through
+    the following steps to edit user groups:'
+  id: totrans-86
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通过直接编辑组的成员资格，你可以一次性添加或移除多个用户；然而，有时你只需要更新单个用户的组成员资格；在这种情况下，你可能会发现通过用户的组成员资格界面来管理编辑选项会更容易。按照以下步骤编辑用户组：
+- en: Navigate to Administration > User management > Users.
+  id: totrans-87
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 进入 管理 > 用户管理 > 用户。
+- en: Select the Edit user groups option from the menu for the user you want to manage.
+  id: totrans-88
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 从你想管理的用户的菜单中选择 编辑用户组 选项。
+- en: Enter the name of the group you want to add the user to. Jira provides a type-ahead
+    feature to help you find the group you want.
+  id: totrans-89
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 输入你要将用户添加到的组的名称。Jira 提供了一个自动完成功能，帮助你找到想要的组。
+- en: 'Click on the Join selected groupsbutton to add users to the group, as shown
+    in the following screenshot:'
+  id: totrans-90
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击 加入选定的组 按钮，将用户添加到组中，如下图所示：
+- en: '![](img/611b4ee2-d5b7-4253-aa42-2905f57ff569.png)'
+  id: totrans-91
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/611b4ee2-d5b7-4253-aa42-2905f57ff569.png)'
+- en: Now we have added our users to a group.
+  id: totrans-92
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经将用户添加到组中。
+- en: Managing project roles
+  id: totrans-93
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 管理项目角色
+- en: Using groups is the default method of managing multiple users in Jira; however,
+    there are some limitations with using groups. The first limitation is that groups
+    are global in Jira. This means that if a user is in a group, then that user is
+    included in all projects in that group.
+  id: totrans-94
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用组是 Jira 中管理多个用户的默认方法；然而，使用组也存在一些限制。第一个限制是，组在 Jira 中是全局的。这意味着，如果一个用户在某个组中，那么该用户会包含在该组的所有项目中。
+- en: In real life, this is often not the case—for example, suppose a user is a manager
+    in a project. He/she may not be a manager in a different project. This becomes
+    a problem when it comes to configuring permissions and notifications.
+  id: totrans-95
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在现实生活中，情况往往并非如此——例如，假设某个用户在一个项目中是经理，但在另一个项目中可能不是经理。这在配置权限和通知时会成为问题。
+- en: The second limitation is that group memberships are controlled by the Jira administrator
+    or central IT administrator if using LDAP. This means that using groups alone
+    to control access to the project means that it is not managed by the project owners,
+    and can result in a bottleneck.
+  id: totrans-96
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 第二个限制是，如果使用 LDAP，组成员资格由 Jira 管理员或中央 IT 管理员控制。这意味着仅使用组来控制对项目的访问意味着它不由项目所有者管理，可能会导致瓶颈。
+- en: So, to address these limitations, Jira provides us with project roles. Project
+    roles are similar to groups; the only difference is that the membership of a project
+    role is defined at the project level.
+  id: totrans-97
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 因此，为了解决这些限制，Jira 提供了项目角色。项目角色类似于组；唯一的区别是，项目角色的成员资格是在项目级别定义的。
+- en: How to do it...
+  id: totrans-98
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: Jira comes with three project roles out of the box—Administrator, Developer,
+    and User. We will first look at how to create a new project role.
+  id: totrans-99
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Jira 默认提供三种项目角色——管理员、开发者和用户。我们将首先了解如何创建新项目角色。
+- en: 'Go through the following steps to create a new project role:'
+  id: totrans-100
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 按照以下步骤创建新项目角色：
+- en: Navigate to Administration > System > Project roles.
+  id: totrans-101
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 进入 管理 > 系统 > 项目角色。
+- en: Enter the new project role's name and description.
+  id: totrans-102
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 输入新项目角色的名称和描述。
+- en: 'Click on the **Add Project Role **button:'
+  id: totrans-103
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击 **添加项目角色** 按钮：
+- en: '![](img/c77bfe3e-6bc0-4533-8546-23b77194daad.png)'
+  id: totrans-104
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/c77bfe3e-6bc0-4533-8546-23b77194daad.png)'
+- en: Just like groups, project roles themselves are global in Jira, but their memberships
+    are local to each project.
+  id: totrans-105
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 就像组一样，项目角色本身在 Jira 中是全局的，但它们的成员资格是针对每个项目本地定义的。
+- en: 'Once the project role has been created, we can start adding users and groups
+    to the relevant role for each project. To add a new user and/or group to a project
+    role, go through the following steps:'
+  id: totrans-106
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦创建了项目角色，我们就可以开始将用户和组添加到每个项目的相关角色中。要向项目角色添加新用户和/或组，请按照以下步骤操作：
+- en: Navigate to the target project.
+  id: totrans-107
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 导航到目标项目。
+- en: Click on the **Administration **tab and select **Users and roles**.
+  id: totrans-108
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击 **管理** 标签并选择 **用户和角色**。
+- en: Click the Add users to a role button.
+  id: totrans-109
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击 “添加用户到角色” 按钮。
+- en: 'Select the user and/or group, select the project role, and click on **Add**,as
+    shown in the following screenshot:'
+  id: totrans-110
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 选择用户和/或组，选择项目角色，然后点击 **添加**，如下图所示：
+- en: '![](img/628e1a17-634b-4de1-af4d-5272ffb08f9f.png)'
+  id: totrans-111
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/628e1a17-634b-4de1-af4d-5272ffb08f9f.png)'
+- en: This will help you manage your project roles.
+  id: totrans-112
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这将帮助你管理项目角色。
+- en: Managing default project role memberships
+  id: totrans-113
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 管理默认项目角色成员
+- en: 'Project role memberships are defined per project; however, there are cases
+    where certain users or groups need to be members of a given project role by default.
+    In fact, Jira has the following default members out of the box:'
+  id: totrans-114
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 项目角色成员是按项目定义的；然而，有些情况下，某些用户或组需要默认成为给定项目角色的成员。事实上，Jira默认有以下成员：
+- en: '**Administrators**: All members of the `jira-administrators` group'
+  id: totrans-115
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**管理员**：所有属于 `jira-administrators` 组的成员'
+- en: '**Developers**: All members of the `jira-developers` group'
+  id: totrans-116
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**开发人员**：所有属于 `jira-developers` 组的成员'
+- en: With these default members, users are automatically added to the project role
+    when a new project is created; this greatly reduces the amount of manual work
+    required from a Jira administrator.
+  id: totrans-117
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用这些默认成员时，当创建新项目时，用户会自动被添加到项目角色中；这大大减少了Jira管理员需要进行的手动工作量。
+- en: How to do it...
+  id: totrans-118
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: 'Go through the following steps to define the default membership for project
+    roles:'
+  id: totrans-119
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 按照以下步骤定义项目角色的默认成员：
+- en: Navigate to Administration > System > Project roles.
+  id: totrans-120
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 导航到 “管理” > “系统” > “项目角色”。
+- en: Click on the Manage Default Memberslink for the project role you want to configure.
+  id: totrans-121
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击要配置的项目角色的 “管理默认成员” 链接。
+- en: Click on the **Edit **link of the **Default Users** column to add users to the
+    project role.
+  id: totrans-122
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击 **默认用户** 列的 “编辑” 链接，将用户添加到项目角色中。
+- en: 'Click on the **Edit **link of the **Default Groups** column to add groups to
+    the project role, as shown in the following screenshot:'
+  id: totrans-123
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击 **默认组** 列的 “编辑” 链接，将组添加到项目角色，如下图所示：
+- en: '![](img/f0ac8357-73f7-4ffb-8df3-7bec458e152c.png)'
+  id: totrans-124
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/f0ac8357-73f7-4ffb-8df3-7bec458e152c.png)'
+- en: This screenshot shows how to add groups to the project role.
+  id: totrans-125
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 此截图展示了如何将组添加到项目角色中。
+- en: How it works...
+  id: totrans-126
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 它是如何工作的...
+- en: Once you have assigned users and groups as the default members of a project
+    role, any newly created project will have those users and groups added to the
+    role. A good practice is to use groups for the default project role membership,
+    as a user's role and responsibilities are likely to change over time.
+  id: totrans-127
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦你将用户和组分配为项目角色的默认成员，任何新创建的项目都会将这些用户和组添加到该角色中。一个好的做法是使用组作为默认项目角色成员，因为用户的角色和责任随着时间的推移可能会发生变化。
+- en: It is important to note that changes to the default membership will *not* be
+    retroactively applied to existing projects.
+  id: totrans-128
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 需要注意的是，对默认成员的更改将*不会* 回溯应用于现有项目。
+- en: Deactivating a user
+  id: totrans-129
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 停用用户
+- en: Once a user has created an issue or comment, Jira will not allow you to delete
+    the user. In fact, deactivating a user is usually a better approach than deleting
+    the user completely. Once the user is deactivated, the user cannot log in to Jira,
+    and this will not count toward your license count.
+  id: totrans-130
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦用户创建了问题或评论，Jira将不允许你删除该用户。实际上，停用用户通常比完全删除用户更为合适。一旦 用户 被停用，该用户将无法登录Jira，并且不会计入你的许可证数量。
+- en: You cannot deactivate a user when you are using external user-management systems,
+    such as LDAP or Crowd from Jira—you need to do so from the user-management system
+    of the source.
+  id: totrans-131
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你使用外部用户管理系统，如LDAP或Jira的Crowd，你无法停用用户——你需要从源的用户管理系统中进行操作。
+- en: How to do it...
+  id: totrans-132
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: 'Go through the following steps to deactivate a user:'
+  id: totrans-133
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 按照以下步骤停用用户：
+- en: Navigate to Administration > User management > Users.
+  id: totrans-134
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 导航到 “管理” > “用户管理” > “用户”。
+- en: Click on the Edit link for the user that is to be deactivated.
+  id: totrans-135
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击要停用的用户的 “编辑” 链接。
+- en: Uncheck the Active option.
+  id: totrans-136
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 取消勾选 “已激活” 选项。
+- en: Click on the Update button to deactivate the user.
+  id: totrans-137
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击 “更新” 按钮以停用用户。
+- en: Deactivated users will not be able to log in to Jira, and will have the Inactive option
+    displayed next to their name.
+  id: totrans-138
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 被停用的用户将无法登录到Jira，并且其名字旁边会显示“已停用”选项。
+- en: Integrating and importing users from LDAP
+  id: totrans-139
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 从LDAP集成和导入用户
+- en: By default, Jira manages its users and groups internally. Most organizations
+    today often use LDAP, such as Microsoft **Active Directory** (**AD**), for centralized
+    user management, and you can integrate Jira with LDAP. Jira supports many different
+    types of LDAP, including AD ([https://docs.microsoft.com/en-us/windows-server/identity/ad-ds/get-started/virtual-dc/active-directory-domain-services-overview](https://docs.microsoft.com/en-us/windows-server/identity/ad-ds/get-started/virtual-dc/active-directory-domain-services-overview)),
+    OpenLDAP ([https://www.openldap.org](https://www.openldap.org)), and more.
+  id: totrans-140
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 默认情况下，Jira 在内部管理其用户和组。如今，大多数组织通常使用 LDAP，例如 Microsoft **Active Directory** (**AD**)，进行集中式用户管理，你可以将
+    Jira 与 LDAP 集成。Jira 支持多种不同类型的 LDAP，包括 AD ([https://docs.microsoft.com/en-us/windows-server/identity/ad-ds/get-started/virtual-dc/active-directory-domain-services-overview](https://docs.microsoft.com/en-us/windows-server/identity/ad-ds/get-started/virtual-dc/active-directory-domain-services-overview))、OpenLDAP
+    ([https://www.openldap.org](https://www.openldap.org)) 等。
+- en: There are two options for integrating Jira with LDAP. In this recipe, we will
+    explore the first option by using an **LDAP connector**, which will periodically
+    synchronize users, their details, and group memberships between Jira and LDAP.
+    We will look at the second option in the next recipe, *Integrating with LDAP for
+    authentication only*.
+  id: totrans-141
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有两种将 Jira 与 LDAP 集成的选项。在本方案中，我们将探讨使用 **LDAP 连接器** 的第一种选项，它会定期同步 Jira 与 LDAP
+    之间的用户、其详细信息和组成员关系。在下一个方案中，我们将探讨第二种选项，*仅用于身份验证的 LDAP 集成*。
+- en: Getting ready
+  id: totrans-142
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 准备工作
+- en: 'For this recipe, you will need to have an LDAP server up and running. You need
+    to make sure that the Jira server is able to access the LDAP server and that there
+    are no network or access issues. For example, you need to make sure that LDAP
+    connectivity is not blocked by firewalls. At a minimum, you will also need to
+    have the following information:'
+  id: totrans-143
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于这个方案，你需要确保有一个正在运行的 LDAP 服务器。你需要确保 Jira 服务器能够访问 LDAP 服务器，并且没有网络或访问问题。例如，确保
+    LDAP 连接没有被防火墙阻挡。最低要求是你还需要以下信息：
+- en: The hostname and port number of the LDAP server.
+  id: totrans-144
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: LDAP 服务器的主机名和端口号。
+- en: The base **Distinguished Name** (**DN**) to search for users and groups.
+  id: totrans-145
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 搜索用户和组的基本 **区分名称** (**DN**)。
+- en: The credentials to access the LDAP server. If you want Jira to be able to make
+    changes to LDAP, make sure that the credentials have write permissions.
+  id: totrans-146
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 访问 LDAP 服务器的凭证。如果你希望 Jira 能够对 LDAP 进行更改，确保凭证具有写权限。
+- en: How to do it...
+  id: totrans-147
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: 'Go through the following steps to integrate Jira with an LDAP server:'
+  id: totrans-148
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 按照以下步骤将 Jira 与 LDAP 服务器集成：
+- en: Navigate to Administration > User management > User Directories.
+  id: totrans-149
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 导航到 管理 > 用户管理 > 用户目录。
+- en: Click on the **Add Directory **button and select either Microsoft Active Directory or LDAP for
+    non-AD directories.
+  id: totrans-150
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击 **添加目录** 按钮，选择 Microsoft Active Directory 或非 AD 目录的 LDAP。
+- en: Enter the LDAP server, schema, and permission settings. Refer to the following
+    table for more details.
+  id: totrans-151
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 输入 LDAP 服务器、架构和权限设置。有关更多详细信息，请参阅以下表格。
+- en: Click on the **Quick Test **button to validate Jira's connectivity to LDAP.
+  id: totrans-152
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击 **快速测试** 按钮，验证 Jira 与 LDAP 的连接性。
+- en: Click on the **Save and Test **button if there are no issues with connecting
+    to LDAP.
+  id: totrans-153
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如果没有连接 LDAP 的问题，点击 **保存并测试** 按钮。
+- en: Type in a username and password to run a quick test. While doing this, make
+    sure that Jira is able to connect to LDAP, to find the user and retrieve the user's
+    group information, and to authenticate against LDAP.
+  id: totrans-154
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 输入用户名和密码以运行快速测试。在此过程中，确保 Jira 能够连接到 LDAP，查找用户并检索用户的组信息，并通过 LDAP 进行身份验证。
+- en: 'The following tables list all the configuration parameters for configuring
+    LDAP. Each table includes the parameters for each section on the configuration
+    page. Let''s have a look at the following table:'
+  id: totrans-155
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下表格列出了配置 LDAP 所有的配置参数。每个表格包括配置页面上每个部分的参数。让我们看一下以下表格：
+- en: '| **Server settings** | **Description** |'
+  id: totrans-156
+  prefs: []
+  type: TYPE_TB
+  zh: '| **服务器设置** | **描述** |'
+- en: '| Name | This is an identifier for the LDAP server. |'
+  id: totrans-157
+  prefs: []
+  type: TYPE_TB
+  zh: '| 名称 | 这是 LDAP 服务器的标识符。 |'
+- en: '| Directory Type | This selects the type of the LDAP server—for example, Microsoft
+    Active Directory. Jira automatically fills in the user and group schema details
+    based on the type selected. |'
+  id: totrans-158
+  prefs: []
+  type: TYPE_TB
+  zh: '| 目录类型 | 选择 LDAP 服务器的类型，例如 Microsoft Active Directory。Jira 会根据选择的类型自动填充用户和组架构的详细信息。
+    |'
+- en: '| Hostname | This is the host of the LDAP server is hosted. |'
+  id: totrans-159
+  prefs: []
+  type: TYPE_TB
+  zh: '| 主机名 | 这是托管 LDAP 服务器的主机。 |'
+- en: '| Port | This is the port that the LDAP server listens to for incoming connections.
+    |'
+  id: totrans-160
+  prefs: []
+  type: TYPE_TB
+  zh: '| 端口 | 这是 LDAP 服务器监听的端口，用于接收传入连接。 |'
+- en: '| Use SSL | This checks whether SSL is being used on LDAP. |'
+  id: totrans-161
+  prefs: []
+  type: TYPE_TB
+  zh: '| 使用 SSL | 该选项检查是否在 LDAP 上使用了 SSL。 |'
+- en: '| Username | This is the user account that Jira uses to access LDAP. This should
+    be a dedicated account for Jira. |'
+  id: totrans-162
+  prefs: []
+  type: TYPE_TB
+  zh: '| 用户名 | 这是 Jira 用于访问 LDAP 的用户帐户。此帐户应为 Jira 专用帐户。 |'
+- en: '| Password | This is the password for the account. |'
+  id: totrans-163
+  prefs: []
+  type: TYPE_TB
+  zh: '| 密码 | 这是帐户的密码。 |'
+- en: 'The following table lists LDAP schema parameters and their descriptions:'
+  id: totrans-164
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下表格列出了 LDAP 架构参数及其描述：
+- en: '| **LDAP schema** | **Description** |'
+  id: totrans-165
+  prefs: []
+  type: TYPE_TB
+  zh: '| **LDAP 架构** | **描述** |'
+- en: '| Base DN | This is the root node where Jira starts the search for users and
+    groups. |'
+  id: totrans-166
+  prefs: []
+  type: TYPE_TB
+  zh: '| 基本 DN | 这是 Jira 开始搜索用户和组的根节点。 |'
+- en: '| Additional User DN | This is the additional DN to further restrict a user
+    search. |'
+  id: totrans-167
+  prefs: []
+  type: TYPE_TB
+  zh: '| 附加用户 DN | 这是进一步限制用户搜索的附加 DN。 |'
+- en: '| Additional Group DN | This is the additional DN to further restrict a group
+    search. |'
+  id: totrans-168
+  prefs: []
+  type: TYPE_TB
+  zh: '| 附加组 DN | 这是进一步限制组搜索的附加 DN。 |'
+- en: 'The following table lists LDAP permissions and their descriptions:'
+  id: totrans-169
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下表格列出了 LDAP 权限及其描述：
+- en: '| **LDAP permission** | **Description** |'
+  id: totrans-170
+  prefs: []
+  type: TYPE_TB
+  zh: '| **LDAP 权限** | **描述** |'
+- en: '| Read Only | Select this option if you do not want Jira to make any changes
+    to LDAP. This is the ideal option if everything, including the user''s group memberships,
+    is managed with LDAP. |'
+  id: totrans-171
+  prefs: []
+  type: TYPE_TB
+  zh: '| 只读 | 如果您不希望 Jira 对 LDAP 进行任何更改，请选择此选项。如果所有内容（包括用户的组成员身份）都通过 LDAP 管理，这是理想的选项。
+    |'
+- en: '| Read Only, with Local Groups | This option is similar to the Read Only option
+    but lets you manage group memberships locally within Jira. With this option, the
+    group membership changes you make will remain in Jira only. This is the ideal
+    option when you only need user information from LDAP and want to manage Jira-related
+    groups locally. |'
+  id: totrans-172
+  prefs: []
+  type: TYPE_TB
+  zh: '| 只读，带本地组 | 此选项类似于只读选项，但允许您在 Jira 中本地管理组成员身份。使用此选项时，您所做的组成员更改将仅保留在 Jira 中。当您只需要来自
+    LDAP 的用户信息并希望本地管理与 Jira 相关的组时，这是理想选项。 |'
+- en: '| Read/Write | Select this option if you want Jira to be able to make direct
+    changes to LDAP, assuming that Jira''s LDAP account has the write permission as
+    well. |'
+  id: totrans-173
+  prefs: []
+  type: TYPE_TB
+  zh: '| 读/写 | 如果您希望 Jira 能够直接更改 LDAP（前提是 Jira 的 LDAP 帐户也具有写权限），请选择此选项。 |'
+- en: 'The following screenshot shows how to test the settings:'
+  id: totrans-174
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下截图展示了如何测试设置：
+- en: '![](img/df2e9c18-8d8b-403a-96de-508acc8cc889.png)'
+  id: totrans-175
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/df2e9c18-8d8b-403a-96de-508acc8cc889.png)'
+- en: After you have added your LDAP server as a user directory, Jira will automatically
+    start synchronizing its user and group data. Depending on the size of your LDAP,
+    it may take a few minutes to complete the initial synchronization. You can click
+    on Back to directory list to go to the directory list link and see the status
+    of the synchronization process.
+  id: totrans-176
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在您将 LDAP 服务器添加为用户目录后，Jira 会自动开始同步其用户和组数据。根据 LDAP 的大小，初始同步可能需要几分钟才能完成。您可以点击“返回目录列表”链接，查看同步过程的状态。
+- en: Once the process is completed, you will be able to see all your LDAP users and
+    groups and use your LDAP credentials to access Jira.
+  id: totrans-177
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦过程完成，您将能够看到所有的 LDAP 用户和组，并使用您的 LDAP 凭据访问 Jira。
+- en: How it works...
+  id: totrans-178
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 它是如何工作的...
+- en: What we have just created in this recipe is called a connector. With a connector,
+    Jira first pulls user and group information from LDAP and then creates a local
+    copy. It then periodically synchronizes any deltas.
+  id: totrans-179
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们刚刚在此配方中创建的内容被称为连接器。通过连接器，Jira 首先从 LDAP 拉取用户和组信息，然后创建本地副本。之后，它会定期同步任何变化。
+- en: All authentication will be delegated to LDAP. So, if a user's password is updated
+    in LDAP, it will be immediately reflected when the user attempts to log in to
+    Jira. It is important to note that, with LDAP, users must still be in the necessary
+    groups (for example, `jira-users`, by default) in order to access Jira, so you
+    need to make sure that you either create a group called `jira-users` in LDAP and
+    add everyone to it or grant the application access to LDAP groups, such as a group
+    called `all-employees`.
+  id: totrans-180
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 所有身份验证将委托给 LDAP。因此，如果用户的密码在 LDAP 中更新，当用户尝试登录 Jira 时，它将立即反映出来。需要注意的是，使用 LDAP
+    时，用户仍然必须在必要的组中（例如，默认情况下为 `jira-users`），才能访问 Jira。因此，您需要确保在 LDAP 中创建一个名为 `jira-users`
+    的组并将所有人添加到其中，或者授予应用程序对 LDAP 组的访问权限，例如名为 `all-employees` 的组。
+- en: Also, note that only users who have access to Jira will count toward your license
+    count. This includes users in groups that have been granted application access
+    to Jira.
+  id: totrans-181
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 此外，请注意，只有具有 Jira 访问权限的用户才会计入您的许可证数量。这包括已获得 Jira 应用访问权限的用户所在的组。
+- en: See also
+  id: totrans-182
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 另请参见
+- en: If you have a large user base in LDAP, and you only want to use LDAP for authentication,
+    you may want to refer to the next recipe, *Integrating with LDAP for authentication
+    only*.
+  id: totrans-183
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你的LDAP中有大量用户，且你只希望使用LDAP进行身份验证，你可以参考下一个教程，*仅用于身份验证的LDAP集成*。
+- en: Integrating with LDAP for authentication only
+  id: totrans-184
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 仅用于身份验证的LDAP集成
+- en: Sometimes, you might need LDAP only for authentication, and want to keep the
+    group membership separate from LDAP for easy management. In this recipe, we will
+    look at how to integrate Jira with LDAP only for authentication.
+  id: totrans-185
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有时，你可能只需要使用LDAP进行身份验证，并希望将用户组成员关系与LDAP分开，以便于管理。在本教程中，我们将介绍如何仅将Jira与LDAP进行身份验证集成。
+- en: Getting ready
+  id: totrans-186
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 准备工作
+- en: For this recipe, you will need to have an LDAP server up and running. You need
+    to make sure that the Jira server is able to access the LDAP server. For more
+    details, refer to the previous recipe, *Integrating and importing users from LDAP*.
+  id: totrans-187
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于本教程，你需要有一个运行中的LDAP服务器。你需要确保Jira服务器能够访问LDAP服务器。更多详情，请参考前一个教程，*从LDAP集成和导入用户*。
+- en: How to do it...
+  id: totrans-188
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: 'Go through the following steps to integrate Jira with an LDAP server exclusively
+    for authentication:'
+  id: totrans-189
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 按照以下步骤将Jira与LDAP服务器仅用于身份验证进行集成：
+- en: Navigate to Administration > User management > User Directories.
+  id: totrans-190
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 转到管理 > 用户管理 > 用户目录。
+- en: Click on the Add Directorybutton and select the Internal with LDAP Authentication option.
+  id: totrans-191
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击添加目录按钮并选择“内部与LDAP身份验证”选项。
+- en: Enter the LDAP server and schema settings. Most of the parameters are identical
+    to those you use when creating a normal LDAP connection, with a few exceptions.
+    Refer to the following table for details.
+  id: totrans-192
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 输入LDAP服务器和架构设置。大多数参数与创建普通LDAP连接时使用的相同，但也有少数例外。请参阅下表获取详细信息。
+- en: Click on the Quick Testbutton to validate Jira connectivity to LDAP.
+  id: totrans-193
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击快速测试按钮以验证Jira与LDAP的连接性。
+- en: Click on the Save and Test button if there are no issues connecting to LDAP.
+  id: totrans-194
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如果与LDAP连接没有问题，点击保存并测试按钮。
+- en: 'The following table lists configuration parameters that are specific for the
+    Internal with LDAP Authentication option:'
+  id: totrans-195
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 下表列出了专门针对“内部与LDAP身份验证”选项的配置参数：
+- en: '| **Server settings** | **Description** |'
+  id: totrans-196
+  prefs: []
+  type: TYPE_TB
+  zh: '| **服务器设置** | **描述** |'
+- en: '| Copy User on Login | This automatically copies the user from LDAP into Jira
+    when the user first successfully logs in to Jira. |'
+  id: totrans-197
+  prefs: []
+  type: TYPE_TB
+  zh: '| 登录时复制用户 | 该选项会在用户首次成功登录Jira时自动将用户从LDAP复制到Jira中。 |'
+- en: '| Default Group Membership | This automatically adds the user into the groups
+    specified here when the user first successfully logs in to Jira. This setting
+    is not retrospectively applied to existing users. This is a useful feature to
+    ensure that every user who can log in to Jira will be added to the necessary groups,
+    such as `jira-users`. |'
+  id: totrans-198
+  prefs: []
+  type: TYPE_TB
+  zh: '| 默认组成员关系 | 该选项会在用户首次成功登录Jira时自动将用户添加到此处指定的组中。此设置不会回溯到现有用户。这个功能可以确保每个能够登录Jira的用户都会被添加到必要的组中，例如`jira-users`。
+    |'
+- en: '| Synchronize Group Memberships | This automatically copies the user''s group
+    membership to Jira when the user successfully logs in. |'
+  id: totrans-199
+  prefs: []
+  type: TYPE_TB
+  zh: '| 同步组成员关系 | 该选项会在用户成功登录时自动将用户的组成员关系复制到Jira。 |'
+- en: How it works...
+  id: totrans-200
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 工作原理...
+- en: 'This authentication option is similar to the previous recipe, but with a number
+    of key differences:'
+  id: totrans-201
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个身份验证选项与前一个教程类似，但有一些关键区别：
+- en: LDAP is only used for authentication
+  id: totrans-202
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: LDAP仅用于身份验证
+- en: Jira does not periodically synchronize the user and group information from LDAP
+    after the initial user login
+  id: totrans-203
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Jira在用户首次登录后不会定期同步来自LDAP的用户和组信息
+- en: Jira has read-only access to LDAP
+  id: totrans-204
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Jira对LDAP具有只读访问权限
+- en: Group membership is managed inside Jira
+  id: totrans-205
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 组成员关系在Jira内部管理
+- en: With this setup, every time a user first successfully logs in to Jira, the user
+    is copied from LDAP to Jira's local user repository, along with the group membership
+    (if configured to do so). Since LDAP is only used at authentication time, with
+    no initial overhead of synchronizing all the user information, this option can
+    provide better performance for organizations that need to synchronize a large
+    user base in LDAP.
+  id: totrans-206
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通过此设置，每当用户首次成功登录Jira时，用户会从LDAP复制到Jira的本地用户库，并附带组成员关系（如果已配置）。由于LDAP仅在身份验证时使用，且没有同步所有用户信息的初始开销，因此对于需要在LDAP中同步大量用户的组织而言，此选项能提供更好的性能。
+- en: Integrating with Atlassian Crowd
+  id: totrans-207
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 与Atlassian Crowd集成
+- en: In the previous recipe, *Integrating with LDAP for authentication only*, we
+    looked at how to integrate Jira with an LDAP server for user and group information.
+    Besides using LDAP, another popular option is to use **Crowd**, which is available
+    at [https://www.atlassian.com/software/crowd/overview](https://www.atlassian.com/software/crowd/overview).
+  id: totrans-208
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在之前的配方中，*仅用于身份验证的LDAP集成*，我们探讨了如何将Jira与LDAP服务器集成以获取用户和组信息。除了使用LDAP，另一个流行的选项是使用**Crowd**，可在[https://www.atlassian.com/software/crowd/overview](https://www.atlassian.com/software/crowd/overview)获取。
+- en: Crowd is a user-identity-management solution from Atlassian, and Jira supports
+    Crowd integration out of the box. With Crowd, you can also set up a single sign-on
+    option with other Crowd-enabled applications.
+  id: totrans-209
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Crowd 是Atlassian的用户身份管理解决方案，Jira原生支持与Crowd的集成。使用Crowd，你还可以与其他支持Crowd的应用程序设置单点登录选项。
+- en: Getting ready
+  id: totrans-210
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 准备开始
+- en: For this recipe, you will need to have a Crowd server up and running. You need
+    to make sure that the Jira server is able to access the Crowd server without any
+    glitches—for example, you need to make sure that it is not blocked by firewalls.
+  id: totrans-211
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于本配方，你需要确保Crowd服务器已经启动并运行。你需要确保Jira服务器能够顺利访问Crowd服务器——例如，确保没有被防火墙阻塞。
+- en: 'At a minimum, you will also need to have the following information:'
+  id: totrans-212
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 至少，你还需要以下信息：
+- en: The Crowd server URL
+  id: totrans-213
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Crowd服务器URL
+- en: Credentials for the registered application in Crowd for Jira
+  id: totrans-214
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Crowd中为Jira注册的应用程序的凭证
+- en: How to do it...
+  id: totrans-215
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: 'Go through the following steps to integrate Jira with Crowd for user management:'
+  id: totrans-216
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 按照以下步骤将Jira与Crowd集成进行用户管理：
+- en: Navigate to Administration > User management > User Directories.
+  id: totrans-217
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 转到 管理 > 用户管理 > 用户目录。
+- en: Click on the Add Directorybutton and select the Atlassian Crowd option.
+  id: totrans-218
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击 添加目录 按钮并选择 Atlassian Crowd 选项。
+- en: Enter the Crowd server settings. Refer to the following table for details.
+  id: totrans-219
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 输入Crowd服务器设置。有关详细信息，请参考下表。
+- en: Click on the Test Settings button to validate Jira's connectivity with Crowd.
+  id: totrans-220
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击 测试设置 按钮以验证Jira与Crowd的连接。
+- en: Click on the Save and Testbutton if there are no issues connecting with Crowd.
+  id: totrans-221
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如果与Crowd连接没有问题，点击 保存并测试 按钮。
+- en: 'The following tables list configuration parameters for setting up integration
+    with Crowd:'
+  id: totrans-222
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 下表列出了设置与Crowd集成的配置参数：
+- en: '| **Server settings** | **Description** |'
+  id: totrans-223
+  prefs: []
+  type: TYPE_TB
+  zh: '| **服务器设置** | **描述** |'
+- en: '| Name | This is an identifier for the Crowd server. |'
+  id: totrans-224
+  prefs: []
+  type: TYPE_TB
+  zh: '| 名称 | 这是Crowd服务器的标识符。 |'
+- en: '| Server URL | This is the Crowd''s server URL. |'
+  id: totrans-225
+  prefs: []
+  type: TYPE_TB
+  zh: '| 服务器URL | 这是Crowd的服务器URL。 |'
+- en: '| Application Name | This is the registered application name for Jira inside
+    Crowd. |'
+  id: totrans-226
+  prefs: []
+  type: TYPE_TB
+  zh: '| 应用程序名称 | 这是Jira在Crowd中的注册应用程序名称。 |'
+- en: '| Application Password | This is the password for the registered application.
+    |'
+  id: totrans-227
+  prefs: []
+  type: TYPE_TB
+  zh: '| 应用程序密码 | 这是注册应用程序的密码。 |'
+- en: '| Crowd Permissions | This is the column header. |'
+  id: totrans-228
+  prefs: []
+  type: TYPE_TB
+  zh: '| Crowd权限 | 这是列标题。 |'
+- en: '| Read Only | Select this option if you do not want Jira to make any changes
+    to Crowd. This is the ideal option if everything, including the user''s group
+    membership, is managed with Crowd. |'
+  id: totrans-229
+  prefs: []
+  type: TYPE_TB
+  zh: '| 只读 | 如果不希望Jira对Crowd进行任何更改，请选择此选项。如果一切，包括用户的组成员身份，都是由Crowd管理的，这个选项是理想的。 |'
+- en: '| Read/Write | Select this option to let Jira synchronize any changes back
+    to Crowd. |'
+  id: totrans-230
+  prefs: []
+  type: TYPE_TB
+  zh: '| 读/写 | 选择此选项以允许Jira将任何更改同步回Crowd。 |'
+- en: 'The advanced settings are listed in the following table:'
+  id: totrans-231
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 高级设置列在下表中：
+- en: '| **Advanced settings** | **Description** |'
+  id: totrans-232
+  prefs: []
+  type: TYPE_TB
+  zh: '| **高级设置** | **描述** |'
+- en: '| Enable Nested Groups | This allows groups to contain other groups as members.
+    |'
+  id: totrans-233
+  prefs: []
+  type: TYPE_TB
+  zh: '| 启用嵌套组 | 这允许组包含其他组作为成员。 |'
+- en: '| Enable Incremental Synchronization | This will only synchronize deltas. Enabling
+    this option can help improve performance. |'
+  id: totrans-234
+  prefs: []
+  type: TYPE_TB
+  zh: '| 启用增量同步 | 这将只同步增量数据。启用此选项可以帮助提高性能。 |'
+- en: '| Synchronization Interval | This determines how often (in minutes) Jira should
+    synchronize with Crowd for changes. Shorter intervals may cause performance issues.
+    |'
+  id: totrans-235
+  prefs: []
+  type: TYPE_TB
+  zh: '| 同步间隔 | 这决定了Jira与Crowd同步更改的频率（单位：分钟）。较短的间隔可能会导致性能问题。 |'
+- en: See also
+  id: totrans-236
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 另见
+- en: Refer to the *Setting up a single sign-on with Crowd* recipe to learn how to
+    take advantage of Crowd's single sign-on capability with Jira and other Crowd-enabled
+    applications.
+  id: totrans-237
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请参阅 *如何设置与Crowd的单点登录* 配方，了解如何利用Crowd的单点登录功能，集成Jira和其他支持Crowd的应用程序。
+- en: Setting up a single sign-on functionality with Crowd
+  id: totrans-238
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 设置与Crowd的单点登录功能
+- en: In previous recipes, we have looked at the different options available for Jira
+    to use external centralized user repositories, including Crowd. One of the advantages
+    of integrating Jira with Crowd is its **single sign-on** (**SSO**) abilities.
+  id: totrans-239
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在之前的教程中，我们已经查看了 Jira 使用外部集中式用户存储库（包括 Crowd）的不同选项。将 Jira 与 Crowd 集成的一个优势是其 **单点登录**
+    (**SSO**) 功能。
+- en: Web-based applications integrated with Crowd are able to participate in an SSO
+    environment, so when a user is logged in to one application, he/she will be automatically
+    logged in to all other applications.
+  id: totrans-240
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 与 Crowd 集成的基于 Web 的应用程序能够参与 SSO 环境，因此当用户登录到一个应用程序时，他/她将自动登录到所有其他应用程序。
+- en: If you are looking for single sign-on functionalities in a Windows environment,
+    where users will be automatically logged on to applications with their workstation,
+    read the next recipe, *Setting up a Windows domain single sign-on*.
+  id: totrans-241
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你正在寻找 Windows 环境中的单点登录功能，在该环境中用户将自动登录到应用程序并与工作站同步，请阅读下一个教程，*设置 Windows 域单点登录*。
+- en: Getting ready
+  id: totrans-242
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 准备工作
+- en: Before you can set up SSO with Crowd, you first need to integrate Jira with
+    Crowd for user management. Refer to the *Integrating with Atlassian Crowd* recipe
+    for details.
+  id: totrans-243
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在你可以通过 Crowd 设置 SSO 之前，你首先需要将 Jira 与 Crowd 集成以进行用户管理。详细信息请参阅 *与 Atlassian Crowd
+    集成* 的教程。
+- en: 'If you have already integrated Jira with Crowd, you will need to have the following
+    information:'
+  id: totrans-244
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你已经将 Jira 与 Crowd 集成，你需要拥有以下信息：
+- en: The application name assigned to Jira in Crowd
+  id: totrans-245
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 分配给 Jira 在 Crowd 中的应用程序名称
+- en: The password for Jira to access Crowd
+  id: totrans-246
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Jira 访问 Crowd 的密码
+- en: A copy of the `crowd.properties` file from the `CROWD_INSTALL/client/conf` directory
+  id: totrans-247
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 从 `CROWD_INSTALL/client/conf` 目录复制一份 `crowd.properties` 文件
+- en: How to do it...
+  id: totrans-248
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: 'Go through the following steps to enable SSO with Crowd:'
+  id: totrans-249
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 按照以下步骤启用与 Crowd 的 SSO：
+- en: Shut down Jira if it is running.
+  id: totrans-250
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如果 Jira 正在运行，请先关闭它。
+- en: Open the `seraph-config.xml` file located in the `JIRA_INSTALL/atlassian-jira/WEB-INF/classes` directory
+    in a text editor.
+  id: totrans-251
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在文本编辑器中打开位于 `JIRA_INSTALL/atlassian-jira/WEB-INF/classes` 目录中的 `seraph-config.xml`
+    文件。
+- en: 'Locate the line that contains `com.atlassian.jira.security.login.JiraSeraphAuthenticator`.
+    Comment it out so that it looks like the following:'
+  id: totrans-252
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 找到包含 `com.atlassian.jira.security.login.JiraSeraphAuthenticator` 的行。将其注释掉，使其看起来如下所示：
+- en: '[PRE1]'
+  id: totrans-253
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: 'Locate the line that contains `com.atlassian.jira.security.login.SSOSeraphAuthenticator`.
+    Uncomment it so that it looks like the following:'
+  id: totrans-254
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 找到包含 `com.atlassian.jira.security.login.SSOSeraphAuthenticator` 的行。取消注释它，使其看起来如下所示：
+- en: '[PRE2]'
+  id: totrans-255
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: Copy the `crowd.properties` file to the `JIRA_INSTALL/atlassian-jira/WEB-INF/classes`
+    directory.
+  id: totrans-256
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 将 `crowd.properties` 文件复制到 `JIRA_INSTALL/atlassian-jira/WEB-INF/classes` 目录。
+- en: Open `crowd.properties` in a text editor and update the properties listed in
+    the following table.
+  id: totrans-257
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在文本编辑器中打开 `crowd.properties` 文件并更新下表中列出的属性。
+- en: Start up Jira again.
+  id: totrans-258
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 重新启动 Jira。
+- en: 'The following table lists the configuration parameters from the `crowd.properties`
+    file:'
+  id: totrans-259
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 下表列出了 `crowd.properties` 文件中的配置参数：
+- en: '| **Parameter** | **Value** |'
+  id: totrans-260
+  prefs: []
+  type: TYPE_TB
+  zh: '| **参数** | **值** |'
+- en: '| `application.name` | This is the application name configured in Crowd for
+    Jira. |'
+  id: totrans-261
+  prefs: []
+  type: TYPE_TB
+  zh: '| `application.name` | 这是在 Crowd for Jira 中配置的应用程序名称。 |'
+- en: '| `application.password` | This is the password for the application. |'
+  id: totrans-262
+  prefs: []
+  type: TYPE_TB
+  zh: '| `application.password` | 这是应用程序的密码。 |'
+- en: '| `application.login.url` | This is Jira''s base URL (you can get this from
+    Jira''s general configurations). |'
+  id: totrans-263
+  prefs: []
+  type: TYPE_TB
+  zh: '| `application.login.url` | 这是 Jira 的基础 URL（你可以从 Jira 的常规配置中获得该 URL）。 |'
+- en: '| `crowd.base.url` | This is Crowd''s base URL. |'
+  id: totrans-264
+  prefs: []
+  type: TYPE_TB
+  zh: '| `crowd.base.url` | 这是 Crowd 的基础 URL。 |'
+- en: '| `session.validationinterval` | This is the duration (in minutes) that a Crowd
+    SSO session will remain valid. Setting this to `0` will invalidate the session
+    immediately, and will have a performance penalty. It is recommended that you set
+    this at a higher value. |'
+  id: totrans-265
+  prefs: []
+  type: TYPE_TB
+  zh: '| `session.validationinterval` | 这是 Crowd SSO 会话保持有效的时间（以分钟为单位）。将此设置为 `0` 将立即使会话失效，并且会产生性能负担。建议将此值设置为更高的值。
+    |'
+- en: Once Jira has started up again, it will participate in SSO sessions in all Crowd
+    SSO-enabled applications—for example, if you have multiple Jira instances integrated
+    with Crowd for SSO, you will only need to log in to one of Jira's.
+  id: totrans-266
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦 Jira 重新启动，它将参与所有启用 Crowd SSO 的应用程序中的 SSO 会话——例如，如果你有多个与 Crowd 集成的 Jira 实例用于
+    SSO，你只需要登录其中一个 Jira 实例。
+- en: Make sure you also have a backup copy of the file before you make any changes.
+  id: totrans-267
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在进行任何更改之前，请确保你已经备份了该文件。
+- en: Setting up a single sign-on with Google
+  id: totrans-268
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 设置与 Google 的单点登录
+- en: If your organization uses Google to manage user details, or you simply want
+    to allow people with valid Google accounts to be able to log into your Jira instance
+    (especially if it is a public instance), you can integrate Jira with Google so
+    that users can log into Jira with their Google account details with a single click.
+  id: totrans-269
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果您的组织使用 Google 来管理用户信息，或者您仅仅希望允许拥有有效 Google 账户的人能够登录到您的 Jira 实例（特别是如果它是一个公共实例），您可以将
+    Jira 与 Google 集成，让用户可以通过点击一次按钮，使用他们的 Google 账户详细信息登录 Jira。
+- en: Getting ready
+  id: totrans-270
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 准备工作
+- en: For this recipe, we will need the Jira CLI. You can get it at [https://docs.appfusions.com/display/GAPPSAUTHJ/Downloads+and+Notes](https://docs.appfusions.com/display/GAPPSAUTHJ/Downloads+and+Notes).
+  id: totrans-271
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于本教程，我们需要 Jira CLI。您可以在[https://docs.appfusions.com/display/GAPPSAUTHJ/Downloads+and+Notes](https://docs.appfusions.com/display/GAPPSAUTHJ/Downloads+and+Notes)下载。
+- en: How to do it...
+  id: totrans-272
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: 'The first step to set up SSO with Google is to create a set of Google API credentials
+    by going through the following steps:'
+  id: totrans-273
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 配置与 Google 的 SSO 的第一步是通过以下步骤创建一组 Google API 凭据：
+- en: Browse to Google API Console at [https://console.developers.google.com/apis/credentials](https://console.developers.google.com/apis/credentials).
+  id: totrans-274
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 访问 Google API 控制台：[https://console.developers.google.com/apis/credentials](https://console.developers.google.com/apis/credentials)。
+- en: Click on the Create credentials drop-down menu.
+  id: totrans-275
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击“创建凭据”下拉菜单。
+- en: Select OAuth client ID and then Web application.
+  id: totrans-276
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 选择 OAuth 客户端 ID，然后选择 Web 应用程序。
+- en: Enter a name for the API credential and your Jira's URL for authorized JavaScript
+    origins.
+  id: totrans-277
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 输入 API 凭据的名称，并输入 Jira 的 URL 作为授权的 JavaScript 来源。
+- en: 'Create the new API credential and note down the Client ID and Client Secret:
+    we will need them both later.'
+  id: totrans-278
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建新的 API 凭据并记下客户端 ID 和客户端密钥：稍后我们会用到它们。
+- en: 'With the Google API credentials created, we can configure the SSO integration:'
+  id: totrans-279
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 创建好 Google API 凭据后，我们可以配置 SSO 集成：
+- en: Navigate to Administration > Manage apps > Google SSO.
+  id: totrans-280
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 进入 管理 > 管理应用 > Google SSO。
+- en: Click on the Edit this configuration… link at the bottom of the page.
+  id: totrans-281
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击页面底部的“编辑此配置…”链接。
+- en: Enter the Client ID and Client Secret from earlier.
+  id: totrans-282
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 输入之前记下的客户端 ID 和客户端密钥。
+- en: Select where you would like the Google sign-in button to appear on the login
+    page.
+  id: totrans-283
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 选择您希望 Google 登录按钮显示在登录页面的位置。
+- en: 'Click on Save to apply the changes:'
+  id: totrans-284
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击“保存”以应用更改：
+- en: '![](img/af9f4404-e758-4c22-8870-7f951569c160.png)'
+  id: totrans-285
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/af9f4404-e758-4c22-8870-7f951569c160.png)'
+- en: Since we will be logging into Jira via Google, it is recommended that you disable
+    web `sudo`, as Jira does not know the Google user account's password.
+  id: totrans-286
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于我们将通过 Google 登录 Jira，建议禁用 web `sudo`，因为 Jira 无法识别 Google 用户账户的密码。
+- en: 'Once you have configured Jira with Google API credentials, a new Sign in with
+    Google button will be displayed on Jira''s login page, as shown in the following
+    screenshot:'
+  id: totrans-287
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 配置好 Google API 凭据后，Jira 登录页面将显示一个新的“使用 Google 登录”按钮，如下图所示：
+- en: '![](img/91619fbb-cae4-4df9-8e65-3b880010c463.png)'
+  id: totrans-288
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/91619fbb-cae4-4df9-8e65-3b880010c463.png)'
+- en: Clicking on that will take you to Google's login page if you are not already
+    logged into Google, or pass you straight through if you are already logged into
+    Google. Now you are ready to log into Jira.
+  id: totrans-289
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 点击该按钮后，如果您尚未登录 Google，它将带您到 Google 的登录页面，或者如果您已经登录 Google，则直接通过，之后您就可以登录 Jira
+    了。
+- en: Setting up a Windows domain single sign-on
+  id: totrans-290
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 配置 Windows 域单点登录
+- en: If your organization is running a Windows domain, you can configure Jira so
+    that users are automatically logged in when they log in to the domain with their
+    workstations.
+  id: totrans-291
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果您的组织运行 Windows 域，您可以配置 Jira，使得用户在使用工作站登录域时能够自动登录。
+- en: Getting ready
+  id: totrans-292
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 准备工作
+- en: For this recipe, we will need the Kerberos SSO Authenticator for Jira. You can
+    get it at [http://www.appfusions.com/display/KBRSCJ/Home](http://www.appfusions.com/display/KBRSCJ/Home).
+  id: totrans-293
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于本教程，我们需要为 Jira 配置 Kerberos SSO 验证器。您可以在[http://www.appfusions.com/display/KBRSCJ/Home](http://www.appfusions.com/display/KBRSCJ/Home)下载。
+- en: 'You will also need to have the following set up:'
+  id: totrans-294
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 您还需要进行以下设置：
+- en: A service account in AD for Jira to use
+  id: totrans-295
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在 AD 中为 Jira 创建的服务账户
+- en: A **service principal name **(**SPN**) for Jira
+  id: totrans-296
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Jira 的 **服务主体名称** (**SPN**)
+- en: How to do it...
+  id: totrans-297
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: Setting up the Windows domain SSO is not a simple task, as it involves many
+    aspects of your network configuration. It is highly recommended that you work
+    with the product vendor and someone who is familiar with your AD environment to
+    ensure a smooth implementation.
+  id: totrans-298
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 配置 Windows 域 SSO 并不是一项简单的任务，因为它涉及到网络配置的多个方面。强烈建议您与产品供应商和熟悉您的 AD 环境的人员合作，以确保顺利实施。
+- en: 'Go through the following steps to set up the Windows domain SSO:'
+  id: totrans-299
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 按照以下步骤设置Windows域SSO：
+- en: Shut down Jira if it is running.
+  id: totrans-300
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如果Jira正在运行，请关闭它。
+- en: Copy `login.conf`, `krb5.conf`, and `spnego-exclusion.properties` to the `JIRA_INSTALL/atlassian-jira/WEB-INF/classes`
+    directory.
+  id: totrans-301
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 将`login.conf`、`krb5.conf`和`spnego-exclusion.properties`复制到`JIRA_INSTALL/atlassian-jira/WEB-INF/classes`目录中。
+- en: Copy `appfusions-jira-seraph-4.0.0.jar` and `appfusions-spnego-r7_3.jar` to
+    the `JIRA_INSTALL/atlassian-jira/WEB-INF/lib` directory.
+  id: totrans-302
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 将`appfusions-jira-seraph-4.0.0.jar`和`appfusions-spnego-r7_3.jar`复制到`JIRA_INSTALL/atlassian-jira/WEB-INF/lib`目录中。
+- en: Open the `web.xml` file located in the `JIRA_INSTALL/atlassian-jira/WEB-INF`
+    directory in a text editor.
+  id: totrans-303
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用文本编辑器打开位于`JIRA_INSTALL/atlassian-jira/WEB-INF`目录中的`web.xml`文件。
+- en: 'Add the following XML snippet before the `THIS MUST BE THE LAST FILTER IN THE
+    DEFINED CHAIN` entry. Make sure you update the values for the following parameters:'
+  id: totrans-304
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在`THIS MUST BE THE LAST FILTER IN THE DEFINED CHAIN`条目之前添加以下XML片段。确保你更新以下参数的值：
+- en: For `spnego.krb5.conf`, use the full path to the `spnego.krb5.conf` file.
+  id: totrans-305
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 对于`spnego.krb5.conf`，使用`spnego.krb5.conf`文件的完整路径。
+- en: For `spnego.login.conf`, use the full path to the `spnego.login.conf` file.
+  id: totrans-306
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 对于`spnego.login.conf`，使用`spnego.login.conf`文件的完整路径。
+- en: For `spnego.preauth.username`, use the username of the service account.
+  id: totrans-307
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 对于`spnego.preauth.username`，使用服务账户的用户名。
+- en: 'For `spnego.preauth.password`, use the password of the service account:'
+  id: totrans-308
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 对于`spnego.preauth.password`，使用服务账户的密码：
+- en: '[PRE3]'
+  id: totrans-309
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: 'Add the following XML snippet before the `login` entry:'
+  id: totrans-310
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在`login`条目之前添加以下XML片段：
+- en: '[PRE4]'
+  id: totrans-311
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: Open the `seraph-config.xml` file located in the `JIRA_INSTALL/atlassian-jira/WEB-INF/classes`
+    directory in a text editor.
+  id: totrans-312
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用文本编辑器打开位于`JIRA_INSTALL/atlassian-jira/WEB-INF/classes`目录中的`seraph-config.xml`文件。
+- en: 'Locate the line that contains `com.atlassian.jira.security.login.JiraSeraphAuthenticator`.
+    Comment it out so that it looks like the following:'
+  id: totrans-313
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 找到包含`com.atlassian.jira.security.login.JiraSeraphAuthenticator`的行。将其注释掉，使其如下所示：
+- en: '[PRE5]'
+  id: totrans-314
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: 'Add the following XML snippet under the line that''s been commented out:'
+  id: totrans-315
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在被注释掉的那一行下方添加以下XML片段：
+- en: '[PRE6]'
+  id: totrans-316
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: Restart Jira.
+  id: totrans-317
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 重启Jira。
+- en: Add your Jira's URL to the local intranet zone in your browser.
+  id: totrans-318
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 将你的Jira网址添加到浏览器的本地内网区域。
+- en: Once Jira is restarted, you should be automatically logged in every time you
+    log into the Windows domain. Make sure you also have a backup copy of the file
+    before making any changes.
+  id: totrans-319
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦Jira重启后，每次你登录Windows域时应该会自动登录。确保在进行任何更改之前，也有该文件的备份副本。

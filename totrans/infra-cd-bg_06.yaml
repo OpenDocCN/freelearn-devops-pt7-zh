@@ -1,0 +1,1509 @@
+- en: '6'
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '6'
+- en: Building upon the Foundations
+  id: totrans-1
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 基础建设的基础
+- en: As we continue to navigate the ever-evolving landscape of cloud computing, it
+    is essential to understand the nuances of deploying high-level designs across
+    different public cloud providers. In this chapter, we will investigate the differences
+    that arise when using cloud-agnostic tools such as Terraform and Ansible.
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 随着我们继续在不断变化的云计算领域中前行，理解如何在不同的公共云提供商之间部署高级设计的细微差别变得至关重要。在本章中，我们将研究使用诸如Terraform和Ansible等云平台无关工具时出现的差异。
+- en: I have found that despite our best efforts to maintain consistency, variations
+    will always crop up when deploying designs across different providers. In this
+    chapter, I will share some of my own experiences addressing these variations and
+    provide some practical approaches for building repeatable deployment processes
+    for various applications and environments.
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我发现，尽管我们竭力保持一致性，但在不同提供商之间部署设计时，总会出现一些变数。在本章中，我将分享一些我自己在处理这些变异时的经验，并提供一些实际的方法，用于构建可重复的部署流程，适用于各种应用和环境。
+- en: We will also discuss the importance of creating modular code, a crucial aspect
+    of streamlining deployment efforts and avoiding duplicating code. By implementing
+    these techniques, we can efficiently and effectively deploy our designs across
+    different public cloud providers.
+  id: totrans-4
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们还将讨论创建模块化代码的重要性，这对于简化部署工作和避免代码重复至关重要。通过实现这些技术，我们可以高效且有效地在不同的公共云提供商之间部署我们的设计。
+- en: 'We will cover the following topics in the chapter:'
+  id: totrans-5
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章将涵盖以下主题：
+- en: Understanding cloud-agnostic tools
+  id: totrans-6
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 理解云平台无关工具
+- en: Understanding the differences between our two cloud deployments
+  id: totrans-7
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 理解我们两个云部署之间的差异
+- en: Understanding the differences between our Terraform and Ansible deployments
+  id: totrans-8
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 理解Terraform和Ansible部署之间的差异
+- en: Introducing more variables
+  id: totrans-9
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 引入更多变量
+- en: Making the code more reusable
+  id: totrans-10
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使代码更具可复用性
+- en: Let’s start by discussing how cloud-agnostic the tools we have been using are.
+  id: totrans-11
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们先讨论一下我们所使用的工具有多么云平台无关。
+- en: Understanding cloud-agnostic tools
+  id: totrans-12
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 理解云平台无关工具
+- en: In [*Chapter 4*](B19537_04.xhtml#_idTextAnchor151), *Deploying to Microsoft
+    Azure*, and [*Chapter 5*](B19537_05.xhtml#_idTextAnchor268), *Deploying to Amazon
+    Web Services*, we use both Terraform and Ansible to target these clouds – so we
+    know they work with both cloud providers, but how much of the code did we reuse?
+  id: totrans-13
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在[*第4章*](B19537_04.xhtml#_idTextAnchor151)，*部署到微软Azure*，以及[*第5章*](B19537_05.xhtml#_idTextAnchor268)，*部署到亚马逊Web服务*中，我们使用了Terraform和Ansible来定位这些云平台——因此我们知道它们与这两个云提供商兼容，但我们复用了多少代码呢？
+- en: The honest answer is very little.
+  id: totrans-14
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 诚实的回答是：几乎没有。
+- en: We used different providers/collections for each of the cloud providers. As
+    a result, there were many allowances we needed to make. While conceptually, the
+    cloud providers offer like-for-like services at a high level; they have evolved
+    in very different ways to achieve the same task.
+  id: totrans-15
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们为每个云提供商使用了不同的提供商/集合。因此，我们需要做出很多调整。虽然从概念上看，云提供商在高层次上提供了相似的服务，但它们在实现相同任务时的方式有很大的差异。
+- en: 'For example, launching something as simple as a virtual machine requires two
+    approaches: deploying services such as networking work requires different considerations
+    and configurations as they simply just work differently.'
+  id: totrans-16
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 例如，启动一个简单的虚拟机需要两种不同的方式：部署诸如网络等服务时，需要考虑和配置不同的因素，因为它们的工作方式本质上不同。
+- en: So why do we call the two tools we have been looking at cloud agnostic? Surely
+    that should mean *they* *just work*.
+  id: totrans-17
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 那么，为什么我们称我们一直在使用的这两个工具为云平台无关工具呢？这难道不意味着*它们* *可以直接工作* 吗？
+- en: In an ideal world, yes, that should be the case. With the trends in AI tools
+    at the time of writing this book in early 2023, we might be close enough to define
+    our **Infrastructure-as-Code** (**IaC**) deployments in natural language, with
+    some constraints and rules, and have it target our cloud of choice.
+  id: totrans-18
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在理想的世界里，是的，应该是这样的。根据2023年初写本书时的AI工具趋势，我们可能已经足够接近，用自然语言定义我们的**基础设施即代码**（**IaC**）部署，带有一些约束和规则，并能够针对我们选择的云平台进行部署。
+- en: While that may be close, it doesn’t exist now.
+  id: totrans-19
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 虽然那可能接近理想，但现在还不存在。
+- en: So back to the here and now with the two tools we have been working with, what
+    changes could we make to how we work to make them as cloud agnostic as possible?
+  id: totrans-20
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 那么回到现在，结合我们一直在使用的两个工具，我们能做出哪些改变，使得我们的工作尽可能做到云平台无关（cloud agnostic）呢？
+- en: As we discovered in [*Chapter 4*](B19537_04.xhtml#_idTextAnchor151), *Deploying
+    to Microsoft Azure*, and [*Chapter 5*](B19537_05.xhtml#_idTextAnchor268), *Deploying
+    to Amazon Web Services*, both Terraform and Ansible have some useful helper functions,
+    tools, and utilities, so the more we can take advantage of these across our deployments,
+    the better.
+  id: totrans-21
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如我们在 [*第 4 章*](B19537_04.xhtml#_idTextAnchor151)《部署到 Microsoft Azure》和 [*第
+    5 章*](B19537_05.xhtml#_idTextAnchor268)《部署到 Amazon Web Services》中发现的那样，Terraform
+    和 Ansible 提供了一些有用的辅助函数、工具和实用程序，因此我们在部署中越多地利用这些工具，效果就会越好。
+- en: Throughout the rest of this chapter, we will look at what we can consistently
+    use across our deployments, no matter which cloud we are targeting.
+  id: totrans-22
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章的其余部分，我们将探讨在我们的部署中，无论目标云是什么，我们都可以一致使用的内容。
+- en: To do this, we need to look at the consistencies across our deployment and then
+    figure out how we can best take them into account in our deployments by developing
+    a more standard approach to writing, managing, and executing our code.
+  id: totrans-23
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为此，我们需要查看我们部署中的一致性，然后找出如何通过制定更标准化的方法来编写、管理和执行代码，来在部署中最好地考虑这些一致性。
+- en: Understand the differences between our Microsoft Azure and Amazon Web Services
+    deployments
+  id: totrans-24
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 理解 Microsoft Azure 和 Amazon Web Services 部署之间的差异
+- en: Let’s summarize our deployment as we have covered the deployment in four separate
+    sets of code across the previous two chapters.
+  id: totrans-25
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们总结一下我们的部署，因为在前两章中，我们已经在四组独立的代码中讨论了部署。
+- en: General
+  id: totrans-26
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 一般
+- en: 'There is just a single service here, and as you can see – it is only available
+    in one of our target cloud providers:'
+  id: totrans-27
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这里只有一个服务，正如你所看到的——它仅在我们的一个目标云提供商中可用：
+- en: '| **Service/Function** | **Microsoft Azure** | **Amazon** **Web Services**
+    |'
+  id: totrans-28
+  prefs: []
+  type: TYPE_TB
+  zh: '| **服务/功能** | **Microsoft Azure** | **Amazon** **Web Services** |'
+- en: '| Resource Container | Resource group | Not available |'
+  id: totrans-29
+  prefs: []
+  type: TYPE_TB
+  zh: '| 资源容器 | 资源组 | 不可用 |'
+- en: There isn’t an equivalent of resource groups within Amazon Web Services, though
+    some could argue that tagging does the same job. However, tags act more as a way
+    of searching for and reporting against your resources rather than collecting them
+    all together in a container, which, as we have seen, can be removed or have permissions
+    applied to them.
+  id: totrans-30
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 Amazon Web Services 中没有与资源组相等的概念，尽管有人可能会认为标签起到了相同的作用。然而，标签更多的是作为查找和报告资源的方式，而不是将所有资源聚集在一个容器中。正如我们所见，这些容器可以被删除或应用权限。
+- en: Network
+  id: totrans-31
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 网络
+- en: 'Next up, we have the network resources; any resources marked with a ***,**
+    while available, are not used in our WordPress deployment:'
+  id: totrans-32
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来，我们有网络资源；任何标记为***的资源，虽然可用，但在我们的 WordPress 部署中并未使用：
+- en: '| **Service /** **Function** | **Microsoft Azure** | **Amazon** **Web Services**
+    |'
+  id: totrans-33
+  prefs: []
+  type: TYPE_TB
+  zh: '| **服务/** **功能** | **Microsoft Azure** | **Amazon** **Web Services** |'
+- en: '| Network | Virtual network | **Virtual Private** **Cloud** (**VPC**) |'
+  id: totrans-34
+  prefs: []
+  type: TYPE_TB
+  zh: '| 网络 | 虚拟网络 | **虚拟私有** **云**（**VPC**） |'
+- en: '| Subnet | Subnet | Subnet |'
+  id: totrans-35
+  prefs: []
+  type: TYPE_TB
+  zh: '| 子网 | 子网 | 子网 |'
+- en: '| Gateway | NAT gateway * | Internet gateway |'
+  id: totrans-36
+  prefs: []
+  type: TYPE_TB
+  zh: '| 网关 | NAT 网关 * | Internet 网关 |'
+- en: '| Route table | Route table * | Route table |'
+  id: totrans-37
+  prefs: []
+  type: TYPE_TB
+  zh: '| 路由表 | 路由表 * | 路由表 |'
+- en: '| Security | Network security groups | Security group |'
+  id: totrans-38
+  prefs: []
+  type: TYPE_TB
+  zh: '| 安全 | 网络安全组 | 安全组 |'
+- en: '| Load balancer | Load Balancer/Application Gateway * | Elastic Load Balancer
+    */Application Load Balancer |'
+  id: totrans-39
+  prefs: []
+  type: TYPE_TB
+  zh: '| 负载均衡器 | 负载均衡器/应用程序网关 * | 弹性负载均衡器*/应用程序负载均衡器 |'
+- en: 'From a service point of view, we have an even coverage of services. At the
+    same time, they are configured slightly differently between the two cloud services:'
+  id: totrans-40
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 从服务的角度来看，我们的服务覆盖面广泛。同时，它们在两个云服务之间的配置略有不同：
+- en: '**Resource name**: All Azure resources require a name.'
+  id: totrans-41
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**资源名称**：所有 Azure 资源都需要一个名称。'
+- en: '**Resource regions and availability zones**: Both clouds have a concept of
+    regions – and in most of those regions, there are multiple availability zones
+    though it is worth pointing out that some secondary regions in Microsoft Azure
+    – for example, UK West, do not have availability zones.'
+  id: totrans-42
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**资源区域和可用区**：两个云都有区域的概念——在大多数区域中，有多个可用区，但值得注意的是，Microsoft Azure 的一些次要区域——例如英国西部，没有可用区。'
+- en: '`10.0.0.0/24`.'
+  id: totrans-43
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`10.0.0.0/24`。'
+- en: '**Subnet addresses**: There were some critical differences between the subnets
+    deployed in our two clouds; for example, in Microsoft Azure, we needed to delegate
+    a particular service to them, whereas, in AWS, we didn’t need to delegate a service.
+    Still, we did pin our subnets to an availability zone within our target region.
+    However, outside of this, the information needed for each cloud is roughly the
+    same.'
+  id: totrans-44
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**子网地址**：我们在两个云中部署的子网之间存在一些关键差异；例如，在 Microsoft Azure 中，我们需要将特定服务委派给它们，而在 AWS
+    中，则不需要委派服务。尽管如此，我们仍然将子网绑定到目标区域内的可用区。不过，除此之外，每个云所需的信息大致相同。'
+- en: Of the network services we are deploying, a few of them would benefit from being
+    configured using loops and passing in variables – though this could get a little
+    complicated as we will need a little logic for both Terraform and Ansible for
+    Azure Services, which may require a service delegated to the subnet.
+  id: totrans-45
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在我们部署的网络服务中，有一些会受益于使用循环和传递变量进行配置——尽管这可能会有些复杂，因为我们需要为 Azure 服务的 Terraform 和 Ansible
+    编写一些逻辑，这可能需要将服务委派到子网。
+- en: Storage
+  id: totrans-46
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 存储
+- en: 'On the face of it, this should be simple as we *just* need to launch and configure
+    some storage; however, as you may remember from our scripts, there are pretty
+    big differences between the two cloud providers in terms of storage:'
+  id: totrans-47
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 表面上看，这应该很简单，因为我们*只*需要启动并配置一些存储；然而，正如你可能从我们的脚本中记得的那样，两大云服务商在存储方面存在相当大的差异：
+- en: '| **Service/Function** | **Microsoft Azure** | **Amazon** **Web Services**
+    |'
+  id: totrans-48
+  prefs: []
+  type: TYPE_TB
+  zh: '| **服务/功能** | **Microsoft Azure** | **Amazon** **Web Services** |'
+- en: '| Storage (**Network File** **System** (**NFS**)) | Storage account with Azure
+    Files enabled | Amazon Elastic File Service |'
+  id: totrans-49
+  prefs: []
+  type: TYPE_TB
+  zh: '| 存储（**网络文件** **系统**（**NFS**）） | 启用 Azure 文件的存储帐户 | 亚马逊弹性文件服务 |'
+- en: '| Private **Domain Name** **System** (**DNS**) | Private DNS zone | Mount targets
+    |'
+  id: totrans-50
+  prefs: []
+  type: TYPE_TB
+  zh: '| 私有 **域名** **系统**（**DNS**） | 私有 DNS 区域 | 挂载目标 |'
+- en: '| Network integration | Private endpoint | Not required |'
+  id: totrans-51
+  prefs: []
+  type: TYPE_TB
+  zh: '| 网络集成 | 私有端点 | 不需要 |'
+- en: As you can see, there are some differences in the way that Microsoft handles
+    network integration of its services in Azure – with the key word there being **integration**.
+  id: totrans-52
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，微软在 Azure 中处理服务网络集成的方式存在一些差异——这里的关键词是 **集成**。
+- en: The most significant and consistent difference between the two cloud providers
+    is how networking works on their **Platform-as-a-Service** (**PaaS**) services.
+  id: totrans-53
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 两大云服务商之间最显著且一致的区别是它们如何在其 **平台即服务**（**PaaS**）服务中处理网络。
+- en: I typically explain that Amazon has built its PaaS services from the ground
+    up to be deployed within an Amazon VPC network.
+  id: totrans-54
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我通常解释，亚马逊从零开始构建其 PaaS 服务，以便在 Amazon VPC 网络中部署。
+- en: By contrast, Microsoft has built its PaaS services to allow you to link them
+    to your virtual network. In some cases, that link is not always bi-directional,
+    so certain PaaS services can only have access to resources within a virtual network
+    rather than being able to be consumed within the virtual network – while this
+    is not the case for any of the services in our example WordPress deployment, it
+    is a consideration you need to make when planning your deployments.
+  id: totrans-55
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 相比之下，微软将其 PaaS 服务构建为允许你将其连接到虚拟网络。在某些情况下，这种连接并非始终是双向的，因此某些 PaaS 服务只能访问虚拟网络内的资源，而不能在虚拟网络内被消费——尽管在我们示例中的
+    WordPress 部署中不存在这种情况，但在规划部署时你需要考虑这一点。
+- en: The information required to launch and configure the services is similar, even
+    with the differences previously described.
+  id: totrans-56
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 启动和配置服务所需的信息相似，即使在之前描述的差异下也是如此。
+- en: Database
+  id: totrans-57
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 数据库
+- en: 'In typical fashion, after explaining that in Microsoft Azure, most PaaS services
+    have a level of virtual network integration rather than being launched directly
+    into the network, we launch one of the network Azure services that is hosted within
+    the virtual network:'
+  id: totrans-58
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 按照惯例，在解释完 Microsoft Azure 中大多数 PaaS 服务具有一定程度的虚拟网络集成，而不是直接部署到网络中之后，我们启动一个托管在虚拟网络中的
+    Azure 网络服务：
+- en: '| **Service/Function** | **Microsoft Azure** | **Amazon** **Web Services**
+    |'
+  id: totrans-59
+  prefs: []
+  type: TYPE_TB
+  zh: '| **服务/功能** | **Microsoft Azure** | **Amazon** **Web Services** |'
+- en: '| Database | Azure Database for MySQL – Flexible Server | Amazon Relational
+    Database Service |'
+  id: totrans-60
+  prefs: []
+  type: TYPE_TB
+  zh: '| 数据库 | Azure MySQL 数据库 – 灵活服务器 | 亚马逊关系数据库服务 |'
+- en: '| Private DNS | Private DNS zone | Subnet group |'
+  id: totrans-61
+  prefs: []
+  type: TYPE_TB
+  zh: '| 私有 DNS | 私有 DNS 区域 | 子网组 |'
+- en: While we don’t need to add a private endpoint when deploying Azure Database
+    for MySQL – Flexible Server, we do need to delegate an entire subnet to the service,
+    so there are a few considerations still to make when planning the deployment.
+  id: totrans-62
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 虽然我们在部署 Azure Database for MySQL – Flexible Server 时不需要添加私有端点，但我们确实需要将整个子网委派给该服务，因此在规划部署时，仍需考虑一些因素。
+- en: Again, the bulk of the information required to launch the services is similar
+    between the two cloud providers.
+  id: totrans-63
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 同样，启动服务所需的大部分信息在两个云提供商之间是相似的。
+- en: Virtual machine (admin)
+  id: totrans-64
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 虚拟机（管理员）
+- en: 'When deploying the admin virtual machine instance, we needed to make a few
+    considerations; however, the information required is similar for each of our two
+    cloud providers:'
+  id: totrans-65
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在部署管理员虚拟机实例时，我们需要做一些考虑；然而，所需的信息对于我们的两个云提供商来说是相似的：
+- en: '| **Service/Function** | **Microsoft Azure** | **Amazon** **Web Services**
+    |'
+  id: totrans-66
+  prefs: []
+  type: TYPE_TB
+  zh: '| **服务/功能** | **Microsoft Azure** | **Amazon** **Web Services** |'
+- en: '| Image | Azure Image from the Azure Marketplace | **Amazon Machine Image**
+    (**AMI**) from the AWS Marketplace |'
+  id: totrans-67
+  prefs: []
+  type: TYPE_TB
+  zh: '| 镜像 | 来自 Azure 市场的 Azure 镜像 | 来自 AWS 市场的 **Amazon 机器镜像** (**AMI**) |'
+- en: '| Compute | Azure Virtual Machine | Amazon **Elastic Compute** **Cloud** (**EC2**)
+    |'
+  id: totrans-68
+  prefs: []
+  type: TYPE_TB
+  zh: '| 计算 | Azure 虚拟机 | Amazon **弹性计算** **云** (**EC2**) |'
+- en: '| Load Balancer Attachment | Required | Required |'
+  id: totrans-69
+  prefs: []
+  type: TYPE_TB
+  zh: '| 负载均衡器附加 | 必需 | 必需 |'
+- en: As you may recall, when we launched our WordPress workload in Amazon Web Services,
+    we needed to adjust our cloud-init script slightly to consider the differences
+    in how some of the services are consumed. All we needed was to build in a bit
+    of logic to check and, if required, wait for our resources to be available.
+  id: totrans-70
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所记得，当我们在 Amazon Web Services 中启动 WordPress 工作负载时，我们需要稍微调整我们的 cloud-init 脚本，以考虑一些服务使用上的差异。我们需要做的只是添加一些逻辑来检查，必要时等待资源可用。
+- en: Virtual machines with scaling (web)
+  id: totrans-71
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 虚拟机与扩展（Web）
+- en: 'Everything we mentioned for deploying the admin virtual machine instance also
+    applies here; there is only really one main difference between the two providers:'
+  id: totrans-72
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们在部署管理员虚拟机实例时提到的所有内容在这里也适用；实际上，两个提供商之间只有一个主要的区别：
+- en: '| **Service/Function** | **Microsoft Azure** | **Amazon** **Web Services**
+    |'
+  id: totrans-73
+  prefs: []
+  type: TYPE_TB
+  zh: '| **服务/功能** | **Microsoft Azure** | **Amazon** **Web Services** |'
+- en: '| Image | Azure Image from the Azure Marketplace | AMI from the AWS Marketplace
+    |'
+  id: totrans-74
+  prefs: []
+  type: TYPE_TB
+  zh: '| 镜像 | 来自 Azure 市场的 Azure 镜像 | 来自 AWS 市场的 AMI |'
+- en: '| Configuration | Not required | Launch configuration |'
+  id: totrans-75
+  prefs: []
+  type: TYPE_TB
+  zh: '| 配置 | 不需要 | 启动配置 |'
+- en: '| Compute | Azure Virtual Machine Scale Sets | Amazon EC2 Auto Scaling Group
+    |'
+  id: totrans-76
+  prefs: []
+  type: TYPE_TB
+  zh: '| 计算 | Azure 虚拟机规模集 | Amazon EC2 自动扩展组 |'
+- en: '| Load Balancer Attachment | Inline | Inline |'
+  id: totrans-77
+  prefs: []
+  type: TYPE_TB
+  zh: '| 负载均衡器附加 | 内联 | 内联 |'
+- en: As you can see, all Azure configurations are inline; however, by contrast, Auto
+    Scaling groups in Amazon Web Services require a launch configuration to use as
+    the base for our deployment.
+  id: totrans-78
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，所有 Azure 配置都是内联的；然而，相比之下，Amazon Web Services 中的 Auto Scaling 组需要一个启动配置作为我们部署的基础。
+- en: Seeing it in action
+  id: totrans-79
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 看看它的实际操作
+- en: As you can see, while the two cloud providers work slightly differently, there
+    is close-enough feature parity for your deployment to take a similar approach,
+    at least at a high level.
+  id: totrans-80
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，虽然两个云提供商的工作方式略有不同，但它们的功能足够接近，至少在高层次上，你可以采取类似的部署方式。
+- en: So, what does all this mean when it comes to being cloud agnostic with a single
+    tool?
+  id: totrans-81
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 那么，使用单一工具进行云无关性到底意味着什么呢？
+- en: Well, as we have already discussed at a high level, the approach is similar,
+    and while the modules/tasks may differ, you can use some of the same logic when
+    it comes to your deployments.
+  id: totrans-82
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 嗯，正如我们在高层次上已经讨论过的那样，方法是相似的，尽管模块/任务可能有所不同，但在部署时你可以使用一些相同的逻辑。
+- en: 'Let’s look at doing this with Terraform code; the code will create a primary
+    network and then use a loop to create four subnets in both Microsoft Azure and
+    Amazon Web Services:'
+  id: totrans-83
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们来看一下如何使用 Terraform 代码实现这一点；代码将创建一个主网络，然后使用循环在 Microsoft Azure 和 Amazon Web
+    Services 中创建四个子网：
+- en: 'First of all, let’s look at the variables we are going to be using to achieve
+    this – to start with, we have the `name`, `region`, and `default` tags:'
+  id: totrans-84
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 首先，让我们看看我们将要使用的变量来实现这一目标 – 从一开始，我们有 `name`、`region` 和 `default` 标签：
+- en: '[PRE0]'
+  id: totrans-85
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: The only variable that will change between our two cloud providers is `region`,
+    as each provider has different region names.
+  id: totrans-86
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在我们两个云提供商之间唯一会变化的变量是 `region`，因为每个提供商的区域名称不同。
+- en: 'Next up, we define the address space:'
+  id: totrans-87
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 接下来，我们定义地址空间：
+- en: '[PRE1]'
+  id: totrans-88
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: 'Nothing too special here still; however, for the subnets, we define the following,
+    from which, while quite lengthy, you should be able to quickly get an idea of
+    what is happening:'
+  id: totrans-89
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 这里没有什么特别的地方; 但是对于子网，我们定义了以下内容，虽然相当冗长，但您应该能够快速了解发生了什么：
+- en: '[PRE2]'
+  id: totrans-90
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: As you can see, we are defining a map here as that will give us something we
+    can loop through. Now let us move on to the `main.tf` files.
+  id: totrans-91
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如您所见，我们在这里定义了一个映射，因为这样可以让我们得到可以循环遍历的内容。现在让我们继续 `main.tf` 文件。
+- en: Information
+  id: totrans-92
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 信息
+- en: Please note that this is not the complete code – please see the GitHub repository
+    that accompanies this title for the full executable code.
+  id: totrans-93
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请注意，这不是完整的代码 - 请查看附带本标题的 GitHub 仓库以获取完整的可执行代码。
+- en: 'We first create the network itself; the following is for AWS, where we are
+    creating a VPC:'
+  id: totrans-94
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 我们首先创建网络本身；以下是为 AWS 创建 VPC 的代码：
+- en: '[PRE3]'
+  id: totrans-95
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: 'Now we have the same task, but this time for Azure, which creates a virtual
+    network:'
+  id: totrans-96
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在我们有了相同的任务，但这次是为了 Azure，它将创建一个虚拟网络：
+- en: '[PRE4]'
+  id: totrans-97
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: As you can see, they are not too dissimilar, and we are applying the same logic
+    of taking the list of tags and adding one using the `merge` function to add the
+    resource name.
+  id: totrans-98
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如您所见，它们并不完全不同，我们正在应用相同的逻辑，使用 `merge` 函数来添加资源名称到标签列表中。
+- en: 'Now that we have our networks, it’s time to loop over the `subnets` variable
+    and add those, starting with AWS again:'
+  id: totrans-99
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在我们有了网络，是时候循环遍历 `subnets` 变量并添加这些内容了，首先从 AWS 开始：
+- en: '[PRE5]'
+  id: totrans-100
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: 'Then the same again, this time for Azure:'
+  id: totrans-101
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 然后再来一次，这次是为了 Azure：
+- en: '[PRE6]'
+  id: totrans-102
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: As you can see, we are using the same approach in both in that we are looping
+    through the `var.subnets` variable using a `for_each` loop.
+  id: totrans-103
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如您所见，我们在两者中都使用了相同的方法，即通过 `for_each` 循环遍历 `var.subnets` 变量。
+- en: We then use `each.value.name` to name the resource, in Azure’s case, using the
+    `name` key, and for AWS, by creating a `Name` tag.
+  id: totrans-104
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后我们使用 `each.value.name` 来命名资源，在 Azure 的情况下，使用 `name` 键，在 AWS 的情况下，通过创建一个 `Name`
+    标签。
+- en: For both, we use the output of creating the network to reference it; for AWS,
+    we use `aws_vpc.network.id`; in Azure, we use `azurerm_virtual_network.network.name`.
+  id: totrans-105
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于两者，我们都使用创建网络的输出来引用它; 对于 AWS，我们使用 `aws_vpc.network.id`；在 Azure 中，我们使用 `azurerm_virtual_network.network.name`。
+- en: This will ensure that Terraform will only attempt to create the subnets once
+    the network they are going to live in has been created.
+  id: totrans-106
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这将确保 Terraform 只在创建它们将要存在的网络后才尝试创建子网。
+- en: We can then use the `cidrsubnet` function to take our address space, which again
+    is being referenced from the network resource we created using `"${aws_vpc.network.cidr_block}"`
+    for AWS and `"${azurerm_virtual_network.network.address_space[0]}"` for Azure.
+  id: totrans-107
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后我们可以使用 `cidrsubnet` 函数来获取我们的地址空间，这里再次引用了我们使用的网络资源创建的内容，使用 `"${aws_vpc.network.cidr_block}"`
+    用于 AWS 和 `"${azurerm_virtual_network.network.address_space[0]}"` 用于 Azure。
+- en: We then use `each.value.address_prefix_size` to define the CIDR size of each
+    subnet, which in our case is `/27`, and `each.value.address_prefix_number` to
+    define where within the address space `/27` is placed.
+  id: totrans-108
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后我们使用 `each.value.address_prefix_size` 来定义每个子网的 CIDR 大小，在我们的情况下是 `/27`，并使用
+    `each.value.address_prefix_number` 来定义 `/27` 在地址空间中的位置。
+- en: As you can see, while the application of variables and functions is slightly
+    different between Amazon Web Services and Microsoft Azure, we can use the same
+    logic to generate and loop through the subnets.
+  id: totrans-109
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如您所见，尽管在 Amazon Web Services 和 Microsoft Azure 之间的变量和函数应用有些许不同，但我们可以使用相同的逻辑来生成并循环遍历子网。
+- en: We can also apply the same logic using Ansible – as we will discuss more in
+    the next section.
+  id: totrans-110
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们也可以使用 Ansible 应用相同的逻辑 – 如我们将在下一节讨论的那样。
+- en: Understanding the differences between our Terraform and Ansible deployments
+  id: totrans-111
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 理解我们的 Terraform 和 Ansible 部署之间的差异
+- en: We have discussed how we can take a cloud-agnostic approach to our deployments
+    when using either Terraform or Ansible, as each tool has built-in functions and
+    logic for manipulating our variables and the output of running tasks.
+  id: totrans-112
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们已经讨论了当使用 Terraform 或 Ansible 时如何采用云不可知的方法来部署，因为每个工具都具有用于操作变量和运行任务输出的内置函数和逻辑。
+- en: Some big differences should have become apparent during the code walk-throughs
+    in [*Chapter 4*](B19537_04.xhtml#_idTextAnchor151), *Deploying to Microsoft Azure*,
+    and [*Chapter 5*](B19537_05.xhtml#_idTextAnchor268), *Deploying to Amazon Web
+    Services*. I am also sure you are forming an opinion on which of the two tools
+    you prefer.
+  id: totrans-113
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在[*第 4 章*](B19537_04.xhtml#_idTextAnchor151)、*部署到 Microsoft Azure* 和[*第 5 章*](B19537_05.xhtml#_idTextAnchor268)、*部署到
+    Amazon Web Services* 的代码漫步中，应该已经显现出了一些明显的差异。我也相信您已经开始倾向于喜欢其中的哪一个工具。
+- en: The two tools are very different in their approach, which is to be expected
+    as they were designed to do two different tasks.
+  id: totrans-114
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这两款工具在方法上有很大的不同，这也是预期中的，因为它们被设计来完成两项不同的任务。
+- en: Terraform is primarily designed to manage infrastructure, whereas Ansible manages
+    server and state configuration, which also includes a level of infrastructure
+    management.
+  id: totrans-115
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Terraform 主要是用于管理基础设施，而 Ansible 则用于管理服务器和状态配置，也包括一定程度的基础设施管理。
+- en: During my day job, I have, and continue to use, both tools – so where does the
+    decision to use one or the other come in?
+  id: totrans-116
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在我的日常工作中，我一直在使用这两款工具，并且继续使用它们——那么，选择使用其中一个工具的决定应该如何做呢？
+- en: 'If a project requires the repeatable deployment and configuration of several
+    PaaS services in either cloud – especially if the resources need to be launched,
+    consumed, and then terminated, then I recommend using Terraform; this is for a
+    few reasons:'
+  id: totrans-117
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果一个项目需要在任何云平台上可重复地部署和配置多个 PaaS 服务——特别是如果这些资源需要被启动、消费然后终止，那么我建议使用 Terraform；原因如下：
+- en: First, it stores everything in its state file, making terminating any workload
+    a lot more straightforward as we discovered when terminating our AWS deployment
+    using Ansible, we needed to build in quite a lot of logic to make sure that the
+    workload was correctly terminated and removed.
+  id: totrans-118
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 首先，它将所有内容存储在其状态文件中，使得终止任何工作负载变得更加简便。正如我们在使用 Ansible 终止 AWS 部署时所发现的，我们需要构建大量的逻辑来确保工作负载正确终止并被移除。
+- en: Secondly, it plays well into **continuous integration/continuous delivery**
+    (**CI/CD**) services such as GitHub Actions, which we will discuss in more detail
+    in [*Chapter 7*](B19537_07.xhtml#_idTextAnchor431), *Leveraging CI/CD in* *the
+    Cloud*.
+  id: totrans-119
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 其次，它很好地与**持续集成/持续交付**（**CI/CD**）服务，如 GitHub Actions 配合使用，我们将在[*第七章*](B19537_07.xhtml#_idTextAnchor431)中更详细地讨论，*在云中利用
+    CI/CD*。
+- en: Finally, I find it has much more coverage and support for some of the newer
+    services and features the cloud providers are introducing. That’s not to knock
+    the Ansible development team; it is just that Ansible, in most cases, appears
+    to lag Terraform with new features depending on which of the clouds you are targeting.
+  id: totrans-120
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 最后，我发现它在云服务提供商推出的一些新服务和新功能方面有更多的覆盖和支持。这并不是要贬低 Ansible 开发团队的工作；只是 Ansible 在大多数情况下，相较于
+    Terraform，似乎在新功能上有所滞后，这取决于你所针对的云平台。
+- en: Some of the reasons to use Terraform are also some of the contributing factors
+    when it comes to choosing to use Ansible – for example, as Ansible does not use
+    state files and dynamically discovers resources, it is a lot more straightforward
+    to manage in-life changes, for instance, ones that are made once the resources
+    have been deployed and the service is in production, as you don’t run the risk
+    of the tool trying to enforce a state it knows about strictly.
+  id: totrans-121
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用 Terraform 的一些原因，实际上也是选择使用 Ansible 的一些促成因素——例如，由于 Ansible 不使用状态文件并且动态发现资源，它在管理生命周期中的变化时要更加直接。例如，一旦资源被部署并且服务进入生产状态，就不会出现工具强行强制执行它已知的状态的风险。
+- en: Also, Ansible can be used if I need to interact with the host at the resource
+    level itself, for example, I need to, **Secure Shell** (**SSH**) into a server
+    that has just been launched or target a Windows Server using WinRM to configure
+    the host to set Apache or **Internet Information** **Services** (**IIS**).
+  id: totrans-122
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 此外，如果我需要在资源级别与主机交互，例如，我需要**安全外壳**（**SSH**）连接到刚启动的服务器，或使用 WinRM 针对 Windows 服务器配置主机以设置
+    Apache 或 **互联网信息服务**（**IIS**），那么也可以使用 Ansible。
+- en: It is great for working with fixed points, meaning that, let’s say, you have
+    been using Ansible to manage the state of the workload, which has been running
+    a virtual machine on-premise when you can likely reuse a lot of that code to target
+    a cloud environment.
+  id: totrans-123
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 它非常适合与固定点一起使用，意味着假设你已经使用 Ansible 来管理工作负载的状态，这些工作负载曾在本地运行虚拟机，而你很可能可以重用很多这些代码，来针对云环境进行配置。
+- en: In these cases, Ansible will be the tool of choice.
+  id: totrans-124
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这些情况下，Ansible 将是首选工具。
+- en: There is also another option – *use both*! That’s right; you can use Ansible
+    to run your Terraform code using the `community.general.terraform` task.
+  id: totrans-125
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 还有另一种选择——*同时使用这两者*！没错，你可以使用 Ansible 来运行你的 Terraform 代码，使用 `community.general.terraform`
+    任务。
+- en: In the code repository accompanying this title, you will find a folder called
+    `ansible-terraform-azure`. This contains an Ansible playbook, which will use Terraform
+    to launch an Azure-hosted virtual machine and then, using Ansible, connect to
+    it, install `index.html` file.
+  id: totrans-126
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本书附带的代码仓库中，你会找到一个名为`ansible-terraform-azure`的文件夹。这个文件夹包含一个Ansible剧本，它将使用Terraform来启动一个Azure托管的虚拟机，然后通过Ansible连接到该虚拟机并安装`index.html`文件。
+- en: 'The task that performs this is as follows:'
+  id: totrans-127
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 执行此操作的任务如下：
+- en: '[PRE7]'
+  id: totrans-128
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE7]'
+- en: As you can see, we are telling the task where our Terraform code is; in this
+    case, it is in the `terrform` folder. We are then passing in several variables,
+    which overwrite the defaults defined in the `variables.tf` file in the `terraform`
+    folder.
+  id: totrans-129
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，我们告诉任务Terraform代码的位置；在本例中，它位于`terrform`文件夹中。然后我们传递了几个变量，这些变量会覆盖在`terraform`文件夹中的`variables.tf`文件中定义的默认值。
+- en: 'As part of the Terraform execution, we are outputting the public IP address
+    and the name of the virtual machine, which we then add to a host group using the
+    following task:'
+  id: totrans-130
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 作为Terraform执行的一部分，我们正在输出公共IP地址和虚拟机的名称，然后通过以下任务将它们添加到主机组中：
+- en: '[PRE8]'
+  id: totrans-131
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE8]'
+- en: 'Before finally setting some facts using the `ansible.builtin.set_fact` module:'
+  id: totrans-132
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在最终使用`ansible.builtin.set_fact`模块设置一些事实之前：
+- en: '[PRE9]'
+  id: totrans-133
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE9]'
+- en: 'If you run the playbook, which you can do by running the following command:'
+  id: totrans-134
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你运行该剧本，可以通过以下命令执行：
+- en: '[PRE10]'
+  id: totrans-135
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE10]'
+- en: 'You should see something like the following output:'
+  id: totrans-136
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你应该会看到类似以下的输出：
+- en: '![Figure 6.1 – Having Ansible run Terraform](img/Figure_6.01_B19537.jpg)'
+  id: totrans-137
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图6.1 – 让Ansible运行Terraform](img/Figure_6.01_B19537.jpg)'
+- en: Figure 6.1 – Having Ansible run Terraform
+  id: totrans-138
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图6.1 – 让Ansible运行Terraform
+- en: 'If you follow the link given in your output (the one in the previous screenshot
+    is no longer active), you should be presented with a web page that looks like
+    the following screen:'
+  id: totrans-139
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你跟随输出中提供的链接（前面截图中的链接已经失效），你应该会看到一个网页，类似下面的屏幕：
+- en: '![Figure 6.2 – Having Ansible run Terraform](img/Figure_6.02_B19537.jpg)'
+  id: totrans-140
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图6.2 – 让Ansible运行Terraform](img/Figure_6.02_B19537.jpg)'
+- en: Figure 6.2 – Having Ansible run Terraform
+  id: totrans-141
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图6.2 – 让Ansible运行Terraform
+- en: 'You can remove everything using the following playbook:'
+  id: totrans-142
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以使用以下剧本移除所有内容：
+- en: '[PRE11]'
+  id: totrans-143
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE11]'
+- en: As you may have imaged, as we are using Terraform to manage the Azure resources,
+    the preceding playbook uses Ansible to run `terraform destroy` rather than us
+    having to set each resource to `absent` as we have had to do in previous Ansible
+    playbooks.
+  id: totrans-144
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如你可能想象的那样，由于我们使用Terraform来管理Azure资源，前面的剧本使用Ansible来运行`terraform destroy`，而不是像以前的Ansible剧本那样手动将每个资源设置为`absent`。
+- en: Now that we have discussed how to use both Ansible and Terraform together to
+    get the best out of both tools, we need to discuss variables next. As you will
+    have noticed, we have used many variables in all our Ansible and Terraform code,
+    so let’s now discuss how we can best use them.
+  id: totrans-145
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经讨论了如何将Ansible和Terraform结合使用，以充分发挥两者的优势，接下来我们需要讨论变量。正如你所注意到的，我们在所有的Ansible和Terraform代码中使用了许多变量，所以现在让我们来讨论如何最好地使用它们。
+- en: Introducing more variables
+  id: totrans-146
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 引入更多变量
+- en: Personally, I try to do everything I can use variables rather than hardcoding
+    values into the code itself – while this can take more time when it comes to writing
+    your code, I highly recommend it as both tools we have looked at allow you to
+    override variables at runtime via the command line.
+  id: totrans-147
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 就我个人而言，我尽量做到使用变量而不是将值硬编码到代码中——尽管这在编写代码时可能需要更多时间，但我强烈推荐这样做，因为我们所讨论的这两个工具都允许你通过命令行在运行时覆盖变量。
+- en: 'To do this in Terraform, you can use the following flag when running the `apply`
+    command:'
+  id: totrans-148
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在Terraform中执行此操作时，可以在运行`apply`命令时使用以下标志：
+- en: '[PRE12]'
+  id: totrans-149
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE12]'
+- en: When running the Terraform code, which we discussed earlier in the chapter,
+    we launched a network in Amazon Web Services to change the region from `us-east-1`,
+    which is the default set within the code, to `eu-west-1` instead.
+  id: totrans-150
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当运行Terraform代码时，正如我们在本章前面讨论的那样，我们在Amazon Web Services中启动了一个网络，将区域从代码中默认设置的`us-east-1`更改为`eu-west-1`。
+- en: 'You can add multiple variables; the following example expands on the previous
+    one by adding a new address space to use:'
+  id: totrans-151
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以添加多个变量；以下示例在前面的基础上扩展，添加了一个新的地址空间：
+- en: '[PRE13]'
+  id: totrans-152
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE13]'
+- en: 'When running Ansible code, for example, in the playbook we executed in the
+    last section, you can run the following command to override a top-level variable:'
+  id: totrans-153
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当运行Ansible代码时，例如，在我们上一节执行的剧本中，你可以运行以下命令来覆盖顶级变量：
+- en: '[PRE14]'
+  id: totrans-154
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE14]'
+- en: 'Here we are changing the host group name to `azure_vms`; you may have noticed
+    that I said top-level variable because many of the variables we are using in the
+    Ansible playbook are multi-level sub-variables – these look like the following:'
+  id: totrans-155
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这里，我们将主机组名称更改为`azure_vms`；你可能已经注意到我说的是顶层变量，因为我们在 Ansible playbook 中使用的许多变量都是多级子变量——这些看起来像以下内容：
+- en: '[PRE15]'
+  id: totrans-156
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE15]'
+- en: 'To override these, we need to pass in multiple variables as JSON; this turns
+    our command into the following:'
+  id: totrans-157
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要覆盖这些，我们需要将多个变量作为 JSON 传递；这将把我们的命令转变为以下内容：
+- en: '[PRE16]'
+  id: totrans-158
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE16]'
+- en: It is important to pass in everything if I try and override a single variable,
+    for example, `title`, as it replaces the whole block, which means that there is
+    no longer a `body` variable, and our playbook run will error.
+  id: totrans-159
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果我尝试覆盖单个变量（例如，`title`），需要传入所有内容，因为它会替换整个块，这意味着不再有`body`变量，我们的 playbook 运行将出错。
+- en: We will use some of these techniques and more in our next chapter, [*Chapter
+    7*](B19537_07.xhtml#_idTextAnchor431), *Leveraging CI/CD in* *the Cloud*.
+  id: totrans-160
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将在下一章[*第 7 章*](B19537_07.xhtml#_idTextAnchor431)《在云中利用 CI/CD》中使用一些这些技术以及更多内容。
+- en: As mentioned at the start of the section, it can sometimes add more time to
+    creating your code when trying to use as many variables as possible – especially
+    if you have quickly prototyped your code to deploy something and have hardcoded
+    some of the values in for ease of use.
+  id: totrans-161
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如本节开始时所提到的，尝试使用尽可能多的变量有时会增加编写代码的时间——尤其是当你快速原型化代码以部署某些内容，并为方便使用而硬编码了一些值时。
+- en: It is possible to use tools such as **ChatGPT** and other AI services to help
+    add variables to take your code and replace hardcoded values quite quickly.
+  id: totrans-162
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 可以使用像**ChatGPT**这样的工具以及其他 AI 服务来帮助添加变量，将代码中的硬编码值快速替换。
+- en: 'Use the following prompt to ask ChatGPT to turn some basic Terraform code into
+    one with variables:'
+  id: totrans-163
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用以下提示请求 ChatGPT 将一些基础的 Terraform 代码转化为包含变量的代码：
+- en: '[PRE17]'
+  id: totrans-164
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE17]'
+- en: resource "azurerm_resource_group" "example" {
+  id: totrans-165
+  prefs: []
+  type: TYPE_NORMAL
+  zh: resource "azurerm_resource_group" "example" {
+- en: name     = "example"
+  id: totrans-166
+  prefs: []
+  type: TYPE_NORMAL
+  zh: name     = "example"
+- en: location = "West Europe"
+  id: totrans-167
+  prefs: []
+  type: TYPE_NORMAL
+  zh: location = "West Europe"
+- en: '}'
+  id: totrans-168
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '}'
+- en: '[PRE18]'
+  id: totrans-169
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE18]'
+- en: 'It gave the following response:'
+  id: totrans-170
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 它给出了以下响应：
+- en: '[PRE19]'
+  id: totrans-171
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE19]'
+- en: As you can see, we have everything we need to copy and paste into our code –
+    at the time of writing, responses from tools such as ChatGPT need to be double-checked,
+    but as mentioned earlier in this chapter – as tools like this get more powerful,
+    it is fully expected that you will be using them a lot more in your day-to-day
+    workflows.
+  id: totrans-172
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，我们已经拥有将其复制并粘贴到代码中的一切——在撰写时，像 ChatGPT 这样的工具的响应需要再次核对，但正如本章前面提到的——随着像这样的工具变得更强大，完全可以预期你将在日常工作流中更多地使用它们。
+- en: One of the advantages of using variables is that it makes our code more reusable,
+    let’s discuss this in a little more detail now.
+  id: totrans-173
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用变量的一个优点是它使我们的代码更具可重用性，接下来我们将更详细地讨论这一点。
+- en: Making the code more reusable
+  id: totrans-174
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 让代码更具可重用性
+- en: As well as using variables, we are also able to reuse *chunks* of code – when
+    we discussed Ansible in [*Chapter 5*](B19537_05.xhtml#_idTextAnchor268), *Deploying
+    to Amazon Web Services*, we discussed *roles*. In Ansible, roles are designed
+    to be called repeatedly, so while we used them to logically split our project
+    into more manageable sections, we can go one step further and have them only perform
+    a single function.
+  id: totrans-175
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 除了使用变量，我们还可以重用*代码块*——当我们在[*第 5 章*](B19537_05.xhtml#_idTextAnchor268)《部署到亚马逊
+    Web 服务》中讨论 Ansible 时，我们讨论了*角色*。在 Ansible 中，角色是为了重复调用而设计的，因此虽然我们使用它们将项目逻辑上分成更易管理的部分，我们还可以更进一步，使其只执行单一功能。
+- en: We can also do the same thing in Terraform. For most of our Azure deployments
+    so far, we have been using a module downloaded from the Terraform registry to
+    manage the region settings.
+  id: totrans-176
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们也可以在 Terraform 中做同样的事情。到目前为止，我们的大多数 Azure 部署都在使用从 Terraform 注册表下载的模块来管理区域设置。
+- en: '**Claranet**, the publisher of that module, also has others – let us look at
+    how we can create a virtual network in Azure using only modules (the complete
+    executable code can be found in this book’s GitHub repository):'
+  id: totrans-177
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**Claranet**，该模块的发布者，还有其他模块——让我们看看如何仅使用模块在 Azure 中创建虚拟网络（完整的可执行代码可以在本书的 GitHub
+    仓库中找到）：'
+- en: 'To start, we need to initialize the region module as we have been doing in
+    our other Terraform code:'
+  id: totrans-178
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 首先，我们需要初始化区域模块，就像我们在其他 Terraform 代码中所做的那样：
+- en: '[PRE20]'
+  id: totrans-179
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE20]'
+- en: 'Once we have the region locked in, we can then use the output of that module
+    to create a resource group:'
+  id: totrans-180
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 一旦我们锁定了区域，就可以使用该模块的输出创建资源组：
+- en: '[PRE21]'
+  id: totrans-181
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE21]'
+- en: As you can see, we are using `module.azure_region.location` to define the location.
+    Then we are passing in some details about our project – as Claranet is a managed
+    service provider, it uses `client_name` and `stack` throughout its modules.
+  id: totrans-182
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，我们使用 `module.azure_region.location` 来定义位置。然后，我们传入一些关于我们项目的细节 —— 由于 Claranet
+    是一家托管服务提供商，它在其模块中使用 `client_name` 和 `stack`。
+- en: 'Next up, we need to create a virtual network:'
+  id: totrans-183
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 接下来，我们需要创建一个虚拟网络：
+- en: '[PRE22]'
+  id: totrans-184
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE22]'
+- en: Again, we can see more of the same information and the CIDR space we want to
+    use.
+  id: totrans-185
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 再次，我们可以看到更多相同的信息以及我们要使用的 CIDR 空间。
+- en: 'The final part is to create the subnet(s):'
+  id: totrans-186
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 最后一步是创建子网：
+- en: '[PRE23]'
+  id: totrans-187
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE23]'
+- en: As you can see, I am using the same logic we used to create the subnets earlier
+    in this chapter using the `cidrsubnet` function in a `for_each` loop across the
+    `subnets` variable.
+  id: totrans-188
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，我正在使用本章前面创建子网时使用的相同逻辑，使用 `cidrsubnet` 函数在 `for_each` 循环中遍历 `subnets` 变量。
+- en: So why would you want to do this?
+  id: totrans-189
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 那么，为什么你想要这样做呢？
+- en: As we saw when we used Terraform to deploy our WordPress workload in Microsoft
+    Azure in [*Chapter 4*](B19537_04.xhtml#_idTextAnchor151), *Deploying to Microsoft
+    Azure*, we had to build in logic to handle changes in subnet settings – in our
+    case, this was to delegate a subnet for use with the Azure Database for MySQL
+    – Flexible Server service.
+  id: totrans-190
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如我们在[*第 4 章*](B19537_04.xhtml#_idTextAnchor151)中所看到的，*部署到 Microsoft Azure*，我们需要在使用
+    Terraform 部署我们的 WordPress 工作负载时，建立处理子网设置更改的逻辑 —— 在我们的案例中，这是为了将子网委托给 Azure Database
+    for MySQL – Flexible Server 服务使用。
+- en: 'The module provided by Claranet has this logic built in; for example, the code
+    to add this would look like the following:'
+  id: totrans-191
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Claranet 提供的模块已经内置了此逻辑；例如，添加此逻辑的代码如下所示：
+- en: '[PRE24]'
+  id: totrans-192
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE24]'
+- en: Claranet has over 80 other modules for Microsoft Azure and Amazon Web Services
+    on Terraform registry, and they are not the only provider to have modules published
+    there – both other providers and individuals have modules published there that
+    are all free to use.
+  id: totrans-193
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Claranet 在 Terraform 注册中心拥有超过 80 个其他的 Microsoft Azure 和 Amazon Web Services
+    模块，而且它们并不是唯一发布模块的提供商 —— 其他提供商和个人也在该平台上发布了模块，并且所有模块都可以免费使用。
+- en: You can also publish your own modules on the Terraform registry or even host
+    them on GitHub as either public or private repositories; the advantage of using
+    modules and taking this approach is that it enables you very quickly to develop
+    your IaC deployments with consistent reusable components.
+  id: totrans-194
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你也可以在 Terraform 注册中心发布自己的模块，甚至将其托管在 GitHub 上，作为公开或私有的代码库；使用模块并采取这种方法的好处是，它使你能够快速开发具有一致可重用组件的
+    IaC 部署。
+- en: So, what about Ansible?
+  id: totrans-195
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 那么，Ansible 呢？
+- en: As already mentioned, you can use roles, which are distributed via Ansible Galaxy
+    – there are far fewer roles there compared to the modules available in Terraform
+    – but you can publish your own or reuse them locally.
+  id: totrans-196
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如前所述，你可以使用角色，角色通过 Ansible Galaxy 分发 —— 与 Terraform 中可用的模块相比，这里的角色少得多 —— 但是你可以发布自己的角色或在本地重用它们。
+- en: Pop quiz
+  id: totrans-197
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 快速测验
+- en: 'Before we finish the chapter, let’s have a quick pop quiz:'
+  id: totrans-198
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在我们结束本章之前，来做一个快速的小测验：
+- en: What is the name of the function we use to work with CIDR ranges in Terraform?
+  id: totrans-199
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在 Terraform 中，我们使用什么函数来处理 CIDR 范围？
+- en: When passing in variables at runtime, which tools use the `--extra-vars` flag,
+    and which one uses `-var`?
+  id: totrans-200
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在运行时传入变量时，哪些工具使用 `--extra-vars` 标志，哪些使用 `-var`？
+- en: What key can be used to loop through a list or map of variables in Terraform
+    tasks or modules?
+  id: totrans-201
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在 Terraform 任务或模块中，哪个关键字可以用来循环遍历变量的列表或映射？
+- en: When working with NFS, which of the two public clouds requires a mount target
+    to be configured?
+  id: totrans-202
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在使用 NFS 时，哪两个公共云平台之一需要配置挂载目标？
+- en: Azure Database for MySQL – Flexible Server requires us to do what to a subnet?
+  id: totrans-203
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: Azure Database for MySQL – Flexible Server 要求我们对子网做什么？
+- en: You can find the answers after the summary.
+  id: totrans-204
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以在总结之后找到答案。
+- en: Summary
+  id: totrans-205
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 总结
+- en: With the use of variables, modules, or roles, you can quickly build up your
+    IaC deployments in a consistent way that can be shared with the rest of your team,
+    allowing everyone to build their environments using a set of shared building blocks.
+  id: totrans-206
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 利用变量、模块或角色，你可以以一致的方式快速构建 IaC 部署，并将其与团队的其他成员共享，允许每个人使用共享构建块来构建自己的环境。
+- en: Another advantage of this approach is that you are deploying the same sort of
+    infrastructure repeatedly for your project because you have multiple environments
+    or multiple customers.
+  id: totrans-207
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这种方法的另一个优势是，由于你有多个环境或多个客户，你正在为项目反复部署相同类型的基础设施。
+- en: Having a set of variables per deployment changing things such as the **stock
+    keeping units** (**SKUs**) or resource names, with everything else being the same,
+    will save time and allow you to manage all your deployments centrally. We will
+    look at how to centrally manage our deployment in our next chapter, [*Chapter
+    7*](B19537_07.xhtml#_idTextAnchor431), *Leveraging CI/CD in* *the Cloud*.
+  id: totrans-208
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 每个部署有一组变量，改变诸如**库存单位** (**SKUs**) 或资源名称等内容，其它部分保持不变，这样可以节省时间并允许你集中管理所有部署。我们将在下一章
+    [*第7章*](B19537_07.xhtml#_idTextAnchor431)，*在云中利用 CI/CD* 中查看如何集中管理我们的部署。
+- en: Before we move on, let us quickly summarize what we have discussed in this chapter.
+    We started by clearing up what we mean by cloud-agnostic tools before looking
+    at the difference between our Amazon Web Services and Microsoft Azure deployments.
+  id: totrans-209
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在我们继续之前，让我们快速总结一下本章讨论的内容。我们从澄清云无关工具的定义开始，然后查看了我们的 Amazon Web Services 和 Microsoft
+    Azure 部署之间的区别。
+- en: We then discussed the differences in the approaches we need to take when choosing
+    to use Terraform or Ansible; we also did a bit of a deep dive into how we can
+    combine the two tools and use Ansible to manage our Terraform deployment.
+  id: totrans-210
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接着我们讨论了选择使用 Terraform 或 Ansible 时所需采取的不同方法；我们还深入探讨了如何将这两个工具结合使用，并利用 Ansible
+    管理我们的 Terraform 部署。
+- en: Further reading
+  id: totrans-211
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 进一步阅读
+- en: 'You can find more details on the services and documentation we have mentioned
+    in this chapter at the following URLs:'
+  id: totrans-212
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以在以下网址找到我们在本章中提到的服务和文档的更多详细信息：
+- en: 'Terraform Registry: [https://registry.terraform.io](https://registry.terraform.io)'
+  id: totrans-213
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 'Terraform 注册中心: [https://registry.terraform.io](https://registry.terraform.io)'
+- en: 'Claranet Terraform modules and providers: [https://registry.terraform.io/namespaces/claranet](https://registry.terraform.io/namespaces/claranet)'
+  id: totrans-214
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 'Claranet Terraform 模块和提供者: [https://registry.terraform.io/namespaces/claranet](https://registry.terraform.io/namespaces/claranet)'
+- en: 'Ansible Galaxy: [https://galaxy.ansible.com](https://galaxy.ansible.com)'
+  id: totrans-215
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 'Ansible Galaxy: [https://galaxy.ansible.com](https://galaxy.ansible.com)'
+- en: 'Ansible Terraform module: [https://docs.ansible.com/ansible/latest/collections/community/general/terraform_module.html](https://docs.ansible.com/ansible/latest/collections/community/general/terraform_module.html)'
+  id: totrans-216
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 'Ansible Terraform 模块: [https://docs.ansible.com/ansible/latest/collections/community/general/terraform_module.html](https://docs.ansible.com/ansible/latest/collections/community/general/terraform_module.html)'
+- en: 'ChatGPT: [https://openai.com/blog/chatgpt/](https://openai.com/blog/chatgpt/)'
+  id: totrans-217
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 'ChatGPT: [https://openai.com/blog/chatgpt/](https://openai.com/blog/chatgpt/)'
+- en: Answers
+  id: totrans-218
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 答案
+- en: 'Here are the answers to the pop quiz:'
+  id: totrans-219
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是小测验的答案：
+- en: What is the name of the function we use to work with CIDR ranges in Terraform?
+    The answer is `cidrsubnet`.
+  id: totrans-220
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在 Terraform 中处理 CIDR 范围时，我们使用的函数名称是什么？答案是 `cidrsubnet`。
+- en: When passing in variables at runtime, which tools use the `--extra-vars` flag,
+    and which one uses `-var`? The `--extra-vars` flag is used by Ansible, and `-var`
+    is Terraform.
+  id: totrans-221
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在运行时传递变量时，哪些工具使用 `--extra-vars` 标志，哪些使用 `-var`？`--extra-vars` 标志用于 Ansible，`-var`
+    用于 Terraform。
+- en: What key can be used to loop through a list or map of variables in Terraform
+    tasks or modules? The key is `for_each` with the value being the variable you
+    wish to loop through.
+  id: totrans-222
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在 Terraform 任务或模块中，哪个键可以用来遍历变量的列表或映射？答案是 `for_each`，其值是你希望遍历的变量。
+- en: When working with NFS, which of the two public clouds requires a mount target
+    to be configured? The answer is Amazon Web Services.
+  id: totrans-223
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在使用 NFS 时，哪一个公共云需要配置挂载目标？答案是 Amazon Web Services。
+- en: Azure Database for MySQL – Flexible Server requires us to do what to a subnet?
+    Azure Database for MySQL – Flexible Server must have an entire subnet delegated
+    to it using the `delegate` key.
+  id: totrans-224
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: Azure Database for MySQL – Flexible Server 要求我们对子网做什么？Azure Database for MySQL
+    – Flexible Server 必须通过 `delegate` 键将整个子网委派给它。
+- en: 'Part 3: CI/CD and Best Practices'
+  id: totrans-225
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 第三部分：CI/CD 和最佳实践
+- en: In this part, we will look at using **Continuous Integration/Continuous Deployment**
+    (**CI/CD**) hosted in the cloud. We will be using GitHub Actions to execute our
+    Terraform and Ansible deployments.
+  id: totrans-226
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本部分中，我们将探讨如何在云中使用**持续集成/持续部署** (**CI/CD**) 。我们将使用 GitHub Actions 来执行我们的 Terraform
+    和 Ansible 部署。
+- en: We will then move on to discussing best practices and some common troubleshooting
+    tips, before finally reviewing a few alternatives to Terraform and Ansible.
+  id: totrans-227
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后我们将讨论最佳实践和一些常见的故障排除技巧，最后回顾一些 Terraform 和 Ansible 的替代工具。
+- en: 'This part has the following chapters:'
+  id: totrans-228
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本部分包含以下章节：
+- en: '[*Chapter 7*](B19537_07.xhtml#_idTextAnchor431)*, Leveraging CI/CD in the Cloud*'
+  id: totrans-229
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '[*第7章*](B19537_07.xhtml#_idTextAnchor431)*, 在云中利用 CI/CD*'
+- en: '[*Chapter 8*](B19537_08.xhtml#_idTextAnchor509)*, Common Troubleshooting Tips
+    and Best Practices*'
+  id: totrans-230
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '[*第8章*](B19537_08.xhtml#_idTextAnchor509)*, 常见故障排除技巧与最佳实践*'
+- en: '[*Chapter 9*](B19537_09.xhtml#_idTextAnchor545)*, Exploring Alternative Infrastructure-as-Code
+    Tools*'
+  id: totrans-231
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '[*第9章*](B19537_09.xhtml#_idTextAnchor545)*, 探索替代基础设施即代码工具*'

@@ -1,0 +1,1694 @@
+- en: '9'
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '9'
+- en: Implementing Automation in a DevOps Workflow
+  id: totrans-1
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 在 DevOps 工作流中实现自动化
+- en: '**DevOps** is a combination of practices, tools, and philosophies that can
+    help increase the speed, efficiency, and security of software development, application
+    delivery, and infrastructure management processes. DevOps practices and methods
+    are common in organizations now due to several advantages, such as faster and
+    frequent deployments, improvement in quality, fewer errors, and high transparency
+    via automation. By combining automation, collaboration, and integration, it is
+    possible to develop and implement efficient DevOps practices, ensuring much higher
+    quality output from your IT operations team.'
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**DevOps** 是一组实践、工具和理念的结合体，旨在帮助提高软件开发、应用交付和基础设施管理过程的速度、效率和安全性。由于许多优势，如更快和更频繁的部署、质量改善、减少错误以及通过自动化实现高度透明性，DevOps
+    的实践和方法现在在组织中非常普遍。通过结合自动化、协作和集成，可以开发并实施高效的 DevOps 实践，从而确保 IT 运维团队提供更高质量的输出。'
+- en: Due to the numerous integrations, supported plugins, and modules, Ansible is
+    a great tool for automating the tasks in your DevOps workflows. Ansible can help
+    you automate different stages in the **software development life cycle** (**SDLC**),
+    such as building applications, scanning the source code, storing artifacts in
+    repositories, deploying the application, configuring application services, and
+    more. Automating such application life cycle processes is known as **continuous
+    integration** and **continuous delivery** (**CI/CD**). There are several choices
+    for CI/CD tools and frameworks, such as Jenkins, CircleCI, GitLab, GitHub Actions,
+    Bamboo, and others.
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于有大量的集成、支持的插件和模块，Ansible 是自动化 DevOps 工作流中任务的优秀工具。Ansible 可以帮助你自动化 **软件开发生命周期**（**SDLC**）的不同阶段，如构建应用程序、扫描源代码、将工件存储到仓库、部署应用程序、配置应用服务等。自动化这些应用生命周期过程称为
+    **持续集成** 和 **持续交付**（**CI/CD**）。CI/CD 工具和框架有多种选择，如 Jenkins、CircleCI、GitLab、GitHub
+    Actions、Bamboo 等。
+- en: This chapter will focus on using Ansible inside the CI/CD and DevOps workflow
+    to deploy and manage applications rather than using Ansible as a CI/CD tool.
+  id: totrans-4
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章将重点介绍在 CI/CD 和 DevOps 工作流中使用 Ansible 来部署和管理应用程序，而不是将 Ansible 作为 CI/CD 工具来使用。
+- en: 'In this chapter, we will cover the following topics:'
+  id: totrans-5
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章将涵盖以下内容：
+- en: A quick introduction to DevOps
+  id: totrans-6
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: DevOps 快速介绍
+- en: Serving applications using a load balancer
+  id: totrans-7
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用负载均衡器提供应用程序
+- en: Rolling updates using Ansible
+  id: totrans-8
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用 Ansible 进行滚动更新
+- en: Using Ansible as a provisioning tool in Terraform
+  id: totrans-9
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在 Terraform 中使用 Ansible 作为配置工具
+- en: First, you will learn how to use Ansible to deploy applications to servers,
+    including the load balancer configuration. You will also learn how to implement
+    rolling updates using Ansible to deploy the application without downtime and interruption.
+    Finally, you will learn how to use Ansible as a provisioner and configuration
+    management tool with the infrastructure management tool Terraform.
+  id: totrans-10
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 首先，你将学习如何使用 Ansible 将应用程序部署到服务器，包括负载均衡器配置。你还将学习如何使用 Ansible 实现滚动更新，以便在没有停机和中断的情况下部署应用程序。最后，你将学习如何将
+    Ansible 用作 Terraform 基础设施管理工具的配置和管理工具。
+- en: Technical requirements
+  id: totrans-11
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 技术要求
+- en: 'The following are the technical requirements for this chapter:'
+  id: totrans-12
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章的技术要求如下：
+- en: A Linux machine for the Ansible control node (with internet access)
+  id: totrans-13
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 用于 Ansible 控制节点的 Linux 机器（需要互联网访问）
+- en: Three Linux machines for installing and configuring applications
+  id: totrans-14
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 用于安装和配置应用程序的三台 Linux 机器
+- en: Basic knowledge of DevOps methodologies, CI/CD tools (Jenkins), and the Git
+    workflow
+  id: totrans-15
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: DevOps 方法论、CI/CD 工具（Jenkins）以及 Git 工作流的基本知识
+- en: Basic knowledge of Terraform
+  id: totrans-16
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Terraform 的基本知识
+- en: All the Ansible code, playbooks, commands, and snippets for this chapter can
+    be found in this book’s GitHub repository at [https://github.com/PacktPublishing/Ansible-for-Real-life-Automation/tree/main/Chapter-09](https://github.com/PacktPublishing/Ansible-for-Real-life-Automation/tree/main/Chapter-09).
+  id: totrans-17
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章的所有 Ansible 代码、剧本、命令和代码片段可以在本书的 GitHub 仓库中找到，链接如下：[https://github.com/PacktPublishing/Ansible-for-Real-life-Automation/tree/main/Chapter-09](https://github.com/PacktPublishing/Ansible-for-Real-life-Automation/tree/main/Chapter-09)。
+- en: A quick introduction to DevOps
+  id: totrans-18
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: DevOps 快速介绍
+- en: 'In simple words, **DevOps** is the combination of **development** (**Dev**)
+    and **operations** (**Ops**), but in reality, DevOps is a combination of ideas,
+    tools, and practices that help increase the speed and efficiency of software development,
+    delivery, and infrastructure management processes. There are several known best
+    practices we can follow and include in the DevOps workflow, as follows:'
+  id: totrans-19
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 简单来说，**DevOps** 是**开发**（**Dev**）和**运维**（**Ops**）的结合，但实际上，DevOps 是由帮助提高软件开发、交付和基础设施管理流程速度和效率的理念、工具和实践组成的组合。我们可以遵循并纳入
+    DevOps 工作流程中的一些已知最佳实践，具体如下：
+- en: Team collaboration and transparent communication
+  id: totrans-20
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 团队协作和透明沟通
+- en: CI/CD
+  id: totrans-21
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: CI/CD
+- en: '**Infrastructure as code** (**IaC**) and automated infrastructure management'
+  id: totrans-22
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**基础设施即代码**（**IaC**）和自动化基础设施管理'
+- en: Containerization and microservices
+  id: totrans-23
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 容器化和微服务
+- en: Logging, monitoring, and feedback loops
+  id: totrans-24
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 日志记录、监控和反馈循环
+- en: One of the key concepts in DevOps practices is to reduce the time and effort
+    required for application life cycle management, such as integration, build, test,
+    release, and deployment. Using DevOps methodologies and tools, it is possible
+    to automate this process. This is known as CI/CD.
+  id: totrans-25
+  prefs: []
+  type: TYPE_NORMAL
+  zh: DevOps 实践中的一个关键概念是减少应用生命周期管理所需的时间和精力，例如集成、构建、测试、发布和部署。通过使用 DevOps 方法论和工具，可以实现这个过程的自动化，这就是所谓的
+    CI/CD。
+- en: Learning about DevOps
+  id: totrans-26
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 学习 DevOps
+- en: 'Refer to the following guides to understand and learn more about DevOps and
+    CI/CD processes:'
+  id: totrans-27
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请参考以下指南，了解更多关于 DevOps 和 CI/CD 过程的内容：
+- en: 'What is DevOps?: [https://aws.amazon.com/devops/what-is-devops/](https://aws.amazon.com/devops/what-is-devops/)'
+  id: totrans-28
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: DevOps 是什么？：[https://aws.amazon.com/devops/what-is-devops/](https://aws.amazon.com/devops/what-is-devops/)
+- en: 'DevOps explained: [https://about.gitlab.com/topics/devops/](https://about.gitlab.com/topics/devops/)'
+  id: totrans-29
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: DevOps 解释：[https://about.gitlab.com/topics/devops/](https://about.gitlab.com/topics/devops/)
+- en: 'Understanding DevOps: [https://www.redhat.com/en/topics/devops](https://www.redhat.com/en/topics/devops)'
+  id: totrans-30
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 了解 DevOps：[https://www.redhat.com/en/topics/devops](https://www.redhat.com/en/topics/devops)
+- en: 'In a typical CI/CD workflow, the developer will push code to the central code
+    repository (a Git server, for example) and whenever there is a change in the repository’s
+    content, a trigger will be sent to the CI/CD tool (such as Jenkins, CircleCI,
+    GitHub Actions, and so on). The following diagram shows a typical CI/CD environment:'
+  id: totrans-31
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在典型的 CI/CD 工作流中，开发人员将代码推送到中央代码仓库（例如 Git 服务器），每当仓库内容发生变化时，CI/CD 工具（如 Jenkins、CircleCI、GitHub
+    Actions 等）将收到触发信号。下图展示了典型的 CI/CD 环境：
+- en: '![Figure 9.1 – A typical workflow in a CI/CD environment ](img/B18383_09_01.jpg)'
+  id: totrans-32
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 9.1 – CI/CD 环境中的典型工作流](img/B18383_09_01.jpg)'
+- en: Figure 9.1 – A typical workflow in a CI/CD environment
+  id: totrans-33
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 9.1 – CI/CD 环境中的典型工作流
+- en: Several tasks are involved in the build, test, delivery, and deployment processes,
+    depending on the application type, application platform, and other environmental
+    factors.
+  id: totrans-34
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 构建、测试、交付和部署过程中涉及多个任务，具体取决于应用类型、应用平台和其他环境因素。
+- en: 'The following diagram shows the typical manual and automated tasks for CI,
+    CD, and continuous deployment processes:'
+  id: totrans-35
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 下图展示了 CI、CD 和持续部署过程中的典型手动和自动化任务：
+- en: '![Figure 9.2 – Typical tasks in the CI/CD process ](img/B18383_09_02.jpg)'
+  id: totrans-36
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 9.2 – CI/CD 过程中的典型任务](img/B18383_09_02.jpg)'
+- en: Figure 9.2 – Typical tasks in the CI/CD process
+  id: totrans-37
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 9.2 – CI/CD 过程中的典型任务
+- en: The application can be a simple JAR file, a compressed image, a container image,
+    or in any other format (we will learn about container management using Ansible
+    in [*Chapter 10*](B18383_10.xhtml#_idTextAnchor178), *Managing Containers Using
+    Ansible*).
+  id: totrans-38
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 应用程序可以是一个简单的 JAR 文件、一个压缩镜像、一个容器镜像或其他任何格式（我们将在[*第 10 章*](B18383_10.xhtml#_idTextAnchor178)中学习使用
+    Ansible 管理容器，*使用 Ansible 管理容器*）。
+- en: '**CI** helps developers merge the software code changes regularly and complete
+    the testing and scanning processes automatically and quickly. The CI process also
+    helps detect the defects, bugs, and security issues in the code quicker and more
+    effectively.'
+  id: totrans-39
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**CI** 帮助开发人员定期合并软件代码更改，并自动快速地完成测试和扫描过程。CI 过程还帮助更快、更有效地发现代码中的缺陷、漏洞和安全问题。'
+- en: The **CD** process involves automated software life cycle operations such as
+    testing the application, scanning, and preparing the application so that it’s
+    ready for the production environment (release).
+  id: totrans-40
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**CD** 过程涉及自动化软件生命周期操作，例如测试应用程序、扫描以及准备应用程序，使其准备好进入生产环境（发布）。'
+- en: Once the application has been built, scanned, and made available in the application
+    repository (application artifacts), it needs to be deployed to production (or
+    the development environment) as per the process. This is the next **CD** process
+    or **continuous deployment** task and depending on the environment, this can be
+    implemented as an automated or semi-automated deployment.
+  id: totrans-41
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦应用程序构建、扫描并在应用程序仓库（应用程序构件）中可用，它需要按照流程部署到生产环境（或开发环境）。这是下一个**CD**过程或**持续部署**任务，根据环境的不同，这可以作为自动化或半自动化部署来实现。
+- en: Continuous delivery versus continuous deployment
+  id: totrans-42
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 持续交付与持续部署
+- en: CD helps in the application life cycle by deploying the application to production
+    so that the latest change in the application will reach the end users automatically
+    as part of the CI/CD process without any manual intervention. The same CI/CD tool
+    or a dedicated tool can be used for the continuous deployment process, depending
+    on your application’s nature, environment, and dependencies.
+  id: totrans-43
+  prefs: []
+  type: TYPE_NORMAL
+  zh: CD通过将应用程序部署到生产环境中，帮助应用程序生命周期管理，使得应用程序中的最新变更能够作为CI/CD流程的一部分自动到达最终用户，无需任何人工干预。可以根据应用程序的性质、环境和依赖性，使用相同的CI/CD工具或专用工具来执行持续部署过程。
+- en: The deployment can be part of the CI/CD pipelines or a separate trigger for
+    the deployment tool, such as **Ansible Automation Platform** (**AAP**) (you will
+    learn how to integrate Ansible inside the CI/CD pipeline using Jenkins in [*Chapter
+    12*](B18383_12.xhtml#_idTextAnchor213), *Integrating Ansible with Your Tools*).
+  id: totrans-44
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 部署可以是CI/CD流水线的一部分，也可以是部署工具的独立触发器，例如**Ansible自动化平台**（**AAP**）（你将在[*第12章*](B18383_12.xhtml#_idTextAnchor213)《将Ansible与工具集成》中学习如何将Ansible集成到CI/CD流水线中）。
+- en: Ansible inside CI/CD tasks
+  id: totrans-45
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: Ansible在CI/CD任务中的应用
+- en: 'Ansible can be used as the tool for most of the tasks in the CI/CD workflows,
+    as follows:'
+  id: totrans-46
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible可以作为CI/CD工作流中大多数任务的工具，如下所示：
+- en: Scanning the application
+  id: totrans-47
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 扫描应用程序
+- en: Building application artifacts
+  id: totrans-48
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 构建应用程序构件
+- en: Running unit and integration tests
+  id: totrans-49
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 运行单元测试和集成测试
+- en: Promoting and testing the application in the staging environment
+  id: totrans-50
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在预生产环境中推广和测试应用程序
+- en: Storing application artifacts in the artifacts repository
+  id: totrans-51
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 将应用程序构件存储在构件仓库中
+- en: Deploying the application to production
+  id: totrans-52
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 将应用程序部署到生产环境
+- en: In the next section, you will learn how to use Ansible to deploy applications
+    to production servers as a continuous deployment tool.
+  id: totrans-53
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一节中，你将学习如何使用Ansible将应用程序作为持续部署工具部署到生产服务器。
+- en: AAP as a CI/CD Tool
+  id: totrans-54
+  prefs: []
+  type: TYPE_NORMAL
+  zh: AAP作为CI/CD工具
+- en: It is possible to use AAP as a CI/CD tool and manage the full life cycle of
+    an application using Ansible playbooks and job templates. You will learn more
+    about this in [*Chapter 12*](B18383_12.xhtml#_idTextAnchor213), *Integrating Ansible
+    with Your Tools*.
+  id: totrans-55
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 可以将AAP作为CI/CD工具，并使用Ansible剧本和作业模板来管理应用程序的完整生命周期。你将会在[*第12章*](B18383_12.xhtml#_idTextAnchor213)《将Ansible与工具集成》中了解更多内容。
+- en: 'It is possible to reduce the software deployment time by using Ansible. Since
+    Ansible can manage the application deployment effectively and efficiently, inside
+    the CI/CD pipeline, Ansible can be used as the primary tool to deploy applications.
+    The following diagram shows how Ansible is used in Jenkins pipeline jobs for deployment
+    purposes (continuous deployment):'
+  id: totrans-56
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用Ansible可以减少软件部署时间。由于Ansible可以高效、有效地管理应用程序部署，因此在CI/CD流水线中，Ansible可以作为主要工具来部署应用程序。下图展示了Ansible如何在Jenkins流水线作业中用于部署目的（持续部署）：
+- en: '![Figure 9.3 – Ansible inside a Jenkins pipeline job ](img/B18383_09_03.jpg)'
+  id: totrans-57
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 9.3 – Jenkins流水线作业中的Ansible](img/B18383_09_03.jpg)'
+- en: Figure 9.3 – Ansible inside a Jenkins pipeline job
+  id: totrans-58
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 9.3 – Jenkins流水线作业中的Ansible
+- en: 'The software build and CI/CD workflow can be triggered by several native Jenkins
+    methods and also by using additional plugins. For example, to activate the build
+    trigger based on Git repository changes and to execute Ansible playbooks from
+    Jenkins, you must perform a few mandatory steps, as follows:'
+  id: totrans-59
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 软件构建和CI/CD工作流可以通过多种Jenkins原生方法触发，也可以通过使用附加插件来触发。例如，要基于Git仓库的变化激活构建触发器，并从Jenkins执行Ansible剧本，你需要按照以下步骤执行一些强制性操作：
+- en: First, you must install and configure the Ansible plugin for Jenkins to use
+    Ansible inside the Jenkins pipeline job. Refer to the documentation at [https://www.jenkins.io/doc/pipeline/steps/ansible/](https://www.jenkins.io/doc/pipeline/steps/ansible/)
+    to learn more about the Ansible plugin for Jenkins.
+  id: totrans-60
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 首先，您必须安装并配置 Jenkins 的 Ansible 插件，以便在 Jenkins 流水线作业中使用 Ansible。请参阅文档 [https://www.jenkins.io/doc/pipeline/steps/ansible/](https://www.jenkins.io/doc/pipeline/steps/ansible/)
+    以了解有关 Jenkins Ansible 插件的更多信息。
+- en: Ansible in Jenkins
+  id: totrans-61
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Jenkins 中的 Ansible
+- en: Refer to [https://plugins.jenkins.io/ansible](https://plugins.jenkins.io/ansible)
+    to learn more about the Ansible plugin for Jenkins.
+  id: totrans-62
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请参阅 [https://plugins.jenkins.io/ansible](https://plugins.jenkins.io/ansible)
+    以了解有关 Jenkins Ansible 插件的更多信息。
+- en: Then, you must install and configure Ansible and its required packages on the
+    Jenkins server (or the Jenkins agent machine) as the Ansible playbook will be
+    executed from the Jenkins machine. (Later, in [*Chapter 12*](B18383_12.xhtml#_idTextAnchor213),
+    *Integrating Ansible with Your Tools*, you will learn how to use Jenkins to call
+    automation jobs in AAP.)
+  id: totrans-63
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 然后，您必须在 Jenkins 服务器（或 Jenkins 代理机器）上安装和配置 Ansible 及其所需的软件包，因为 Ansible playbook
+    将从 Jenkins 机器执行。（稍后在 [*第 12 章*](B18383_12.xhtml#_idTextAnchor213)，*将 Ansible 与您的工具集成*
+    中，您将学习如何使用 Jenkins 调用 AAP 中的自动化作业。）
+- en: 'To trigger the Jenkins pipeline job, the build trigger must be configured on
+    the Jenkins job, as shown in the following screenshot. Copy the URL (`JENKINS_URL/job/ansible-demo/build?token=TOKEN_NAME`)
+    and the `TOKEN` value and use them in the webhook configuration in the Git server:'
+  id: totrans-64
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 要触发 Jenkins 流水线作业，必须在 Jenkins 作业上配置构建触发器，如下截图所示。复制 URL (`JENKINS_URL/job/ansible-demo/build?token=TOKEN_NAME`)
+    和 `TOKEN` 值，并在 Git 服务器中的 webhook 配置中使用它们：
+- en: '![Figure 9.4 – Build trigger configured on the Jenkins pipeline job ](img/B18383_09_04.jpg)'
+  id: totrans-65
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 9.4 – Jenkins 流水线作业上配置的构建触发器](img/B18383_09_04.jpg)'
+- en: Figure 9.4 – Build trigger configured on the Jenkins pipeline job
+  id: totrans-66
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 9.4 – Jenkins 流水线作业上配置的构建触发器
+- en: 'Whenever there is a change in the application code, you need to trigger the
+    Jenkins pipeline job. To do this, we have configured a webhook in the application
+    repository in GitHub, as shown in the following screenshot:'
+  id: totrans-67
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 每当应用程序代码发生变化时，您需要触发 Jenkins 流水线作业。为此，我们在 GitHub 应用程序存储库中配置了一个 webhook，如下截图所示：
+- en: '![Figure 9.5 – Webhook configuration in the GitHub repository ](img/B18383_09_05.jpg)'
+  id: totrans-68
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 9.5 – GitHub 存储库中的 webhook 配置](img/B18383_09_05.jpg)'
+- en: Figure 9.5 – Webhook configuration in the GitHub repository
+  id: totrans-69
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 9.5 – GitHub 存储库中的 webhook 配置
+- en: Additional configurations are available in the GitHub webhook configuration
+    to help you decide on what condition the webhook is to be called. Refer to the
+    GitHub webhook documentation ([https://docs.github.com/en/developers/webhooks-and-events/webhooks/about-webhooks](https://docs.github.com/en/developers/webhooks-and-events/webhooks/about-webhooks))
+    to learn more about webhooks.
+  id: totrans-70
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 GitHub webhook 配置中，还提供了额外的配置选项，帮助您决定何时调用 webhook。请参阅 GitHub webhook 文档 ([https://docs.github.com/en/developers/webhooks-and-events/webhooks/about-webhooks](https://docs.github.com/en/developers/webhooks-and-events/webhooks/about-webhooks))
+    以了解更多关于 webhook 的信息。
+- en: Triggering Jobs with a Simple Webhook
+  id: totrans-71
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用简单 webhook 触发作业
+- en: To learn more about Jenkins and webhooks, read [https://docs.cloudbees.com/docs/admin-resources/latest/triggering-jobs-simple-webhook](https://docs.cloudbees.com/docs/admin-resources/latest/triggering-jobs-simple-webhook)
+  id: totrans-72
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要了解有关 Jenkins 和 webhook 的更多信息，请阅读 [https://docs.cloudbees.com/docs/admin-resources/latest/triggering-jobs-simple-webhook](https://docs.cloudbees.com/docs/admin-resources/latest/triggering-jobs-simple-webhook)
+- en: Using Ansible inside a Jenkins pipeline
+  id: totrans-73
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 在 Jenkins 流水线中使用 Ansible
+- en: 'Once the Ansible plugin has been installed and configured, an Ansible playbook
+    can be executed from the Jenkins server (or the agent) by calling it inside the
+    pipeline stages. The following screenshot shows sample Jenkin pipeline stages
+    being used to utilize Ansible to deploy applications:'
+  id: totrans-74
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 安装并配置了 Ansible 插件后，可以通过在流水线阶段内调用它来从 Jenkins 服务器（或代理）执行 Ansible playbook。以下截图显示了使用
+    Jenkins 流水线阶段的示例来利用 Ansible 部署应用程序：
+- en: '![Figure 9.6 – Jenkins pipeline job stages with Ansible tasks to deploy applications
+    ](img/B18383_09_06.jpg)'
+  id: totrans-75
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 9.6 – Jenkins 流水线作业阶段，包含用于部署应用的 Ansible 任务](img/B18383_09_06.jpg)'
+- en: Figure 9.6 – Jenkins pipeline job stages with Ansible tasks to deploy applications
+  id: totrans-76
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 9.6 – Jenkins 流水线作业阶段，包含用于部署应用的 Ansible 任务
+- en: In the following exercise, I will explain how to deploy website content from
+    the source repository using Ansible for continuous deployment tasks.
+  id: totrans-77
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在接下来的练习中，我将解释如何使用 Ansible 从源存储库部署网站内容，用于持续部署任务。
+- en: 'I will use simple website content (static website) to avoid any complications
+    to help you understand the application deployment concept using Ansible. The playbook
+    can be integrated inside the Jenkins pipeline (or whichever CI/CD tool you are
+    using) to implement the continuous deployment task. Follow these steps:'
+  id: totrans-78
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我将使用简单的网站内容（静态网站），以避免任何复杂性，帮助您理解使用 Ansible 部署应用程序的概念。该剧本可以集成到 Jenkins 管道中（或您使用的任何
+    CI/CD 工具中），以实现持续部署任务。请按照以下步骤进行：
+- en: 'Update the `Chapter-09/hosts` inventory file with `node1` and `node2` as part
+    of the web host group, as follows:'
+  id: totrans-79
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 更新`Chapter-09/hosts`清单文件，将`node1`和`node2`作为 Web 主机组的一部分，如下所示：
+- en: '![](img/B18383_09_07.jpg)'
+  id: totrans-80
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B18383_09_07.jpg)'
+- en: Figure 9.7 – Web hosts in the inventory
+  id: totrans-81
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 9.7 – 清单中的 Web 主机
+- en: 'Create a playbook called `Chapter-09/deploy-web.yaml` and add the following
+    content:'
+  id: totrans-82
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建一个名为`Chapter-09/deploy-web.yaml`的剧本，并添加以下内容：
+- en: '![Figure 9.8 – Playbook for deploying the web application ](img/B18383_09_08.jpg)'
+  id: totrans-83
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 9.8 – 部署 Web 应用程序的剧本](img/B18383_09_08.jpg)'
+- en: Figure 9.8 – Playbook for deploying the web application
+  id: totrans-84
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 9.8 – 部署 Web 应用程序的剧本
+- en: The variables can be kept in a separate file or passed from your CI/CD tool
+    as arguments.
+  id: totrans-85
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 变量可以保存在单独的文件中，也可以作为参数从您的 CI/CD 工具传递。
+- en: 'Add a task that will clean up the application directory and recreate it (this
+    is to ensure any old versions of files are removed from the application path),
+    as follows:'
+  id: totrans-86
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 添加一个任务来清理应用程序目录并重新创建它（这样可以确保从应用程序路径中删除任何旧版本的文件），如下所示：
+- en: '![Figure 9.9 – Tasks to housekeep the application directory ](img/B18383_09_09.jpg)'
+  id: totrans-87
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 9.9 – 清理应用程序目录的任务](img/B18383_09_09.jpg)'
+- en: Figure 9.9 – Tasks to housekeep the application directory
+  id: totrans-88
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 9.9 – 清理应用程序目录的任务
+- en: Add tasks to the same playbook to install the required packages and dependencies.
+    Even if you are deploying the application on the same server, it is a best practice
+    to install and configure dependencies during every deployment. This can include
+    services, packages, system libraries, Python packages, or other files, depending
+    on your application’s type and framework.
+  id: totrans-89
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 向同一个剧本中添加任务，以安装所需的包和依赖项。即使您在同一服务器上部署应用程序，最佳实践是在每次部署时安装并配置依赖项。这可能包括服务、包、系统库、Python
+    包或其他文件，具体取决于应用程序的类型和框架。
+- en: 'It is also possible to mention the specific version of the packages, as shown
+    in the following screenshot. Also add tasks to start `firewalld`, open the firewall
+    port for the web service, and start the web service, as follows:'
+  id: totrans-90
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 也可以提到包的特定版本，如下图所示。还可以添加任务以启动`firewalld`，打开 Web 服务的防火墙端口，并启动 Web 服务，如下所示：
+- en: '![Figure 9.10 – Installing the package and starting the necessary services
+    ](img/B18383_09_10.jpg)'
+  id: totrans-91
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 9.10 – 安装包并启动必要的服务](img/B18383_09_10.jpg)'
+- en: Figure 9.10 – Installing the package and starting the necessary services
+  id: totrans-92
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 9.10 – 安装包并启动必要的服务
+- en: 'The next step is to deploy the website’s content to the application path. (In
+    this exercise, we are using static website content and not a dynamic application.)
+    To identify the servers, update the `index.xhtml` file as follows (we are replacing
+    `SERVER_DETAILS` with custom text that contains node information in the following
+    task):'
+  id: totrans-93
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 下一步是将网站内容部署到应用程序路径中。（在本练习中，我们使用的是静态网站内容，而不是动态应用程序。）为了识别服务器，请按照以下方式更新`index.xhtml`文件（我们将在以下任务中用包含节点信息的自定义文本替换`SERVER_DETAILS`）：
+- en: '![Figure 9.11 – Deploying the application and updating its content ](img/B18383_09_11.jpg)'
+  id: totrans-94
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 9.11 – 部署应用程序并更新其内容](img/B18383_09_11.jpg)'
+- en: Figure 9.11 – Deploying the application and updating its content
+  id: totrans-95
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 9.11 – 部署应用程序并更新其内容
+- en: Add more tasks as needed, such as configuring the web server with more restrictions
+    or custom SSL certificates.
+  id: totrans-96
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 根据需要添加更多任务，例如为 Web 服务器配置更多的限制或自定义 SSL 证书。
+- en: 'It is important to add the verification step as part of automation. We will
+    add automated website verification here. In this case, this is a simple health
+    check to verify whether the website is working or not. Add a new play (not a task)
+    in the same playbook, as follows:'
+  id: totrans-97
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 将验证步骤作为自动化的一部分非常重要。我们将在这里添加自动化的网站验证。在这种情况下，这是一个简单的健康检查，用来验证网站是否正常工作。在同一个剧本中添加一个新的任务（而不是任务），如下所示：
+- en: '![Figure 9.12 – Adding a play to verify the web service ](img/B18383_09_12.jpg)'
+  id: totrans-98
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 9.12 – 添加一个任务来验证 Web 服务](img/B18383_09_12.jpg)'
+- en: Figure 9.12 – Adding a play to verify the web service
+  id: totrans-99
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 9.12 – 添加一个任务来验证 Web 服务
+- en: Note that instead of hardcoding the server names, we are passing the details
+    as Ansible *extra variables*, which will help you pass the server details from
+    your CI/CD tools while executing the Ansible playbook.
+  id: totrans-100
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请注意，我们没有硬编码服务器名称，而是将详细信息作为 Ansible *额外变量* 传递，这将帮助您在执行 Ansible playbook 时从 CI/CD
+    工具传递服务器详细信息。
+- en: 'Whenever we make changes in the application repository ([https://github.com/ginigangadharan/website-demo-one-page](https://github.com/ginigangadharan/website-demo-one-page)),
+    GitHub will trigger the build job in the Jenkins server and the playbook will
+    be executed as part of the pipeline tasks. (We will explore the Jenkins job and
+    pipelines using AAP in [*Chapter 12*](B18383_12.xhtml#_idTextAnchor213), *Integrating
+    Ansible with Your Tools*.) For demonstration and testing purposes, let’s execute
+    the playbook manually from the console, as follows:'
+  id: totrans-101
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 每当我们在应用程序仓库中进行更改时（[https://github.com/ginigangadharan/website-demo-one-page](https://github.com/ginigangadharan/website-demo-one-page)），GitHub
+    将触发 Jenkins 服务器中的构建任务，并且 playbook 将作为流水线任务的一部分执行。（我们将在[*第 12 章*](B18383_12.xhtml#_idTextAnchor213)，*将
+    Ansible 与您的工具集成*中探索 Jenkins 作业和流水线。）为了演示和测试的目的，我们从控制台手动执行 playbook，如下所示：
+- en: 'Execute the playbook and verify the success of tasks (you will get a similar
+    result in the CI/CD console when you execute the playbook via the CI/CD pipeline):'
+  id: totrans-102
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 执行 playbook 并验证任务的成功（当您通过 CI/CD 流水线执行 playbook 时，您将在 CI/CD 控制台中看到类似的结果）：
+- en: '![Figure 9.13 – Ansible playbook output with a health check ](img/B18383_09_13.jpg)'
+  id: totrans-103
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 9.13 – 带健康检查的 Ansible playbook 输出](img/B18383_09_13.jpg)'
+- en: Figure 9.13 – Ansible playbook output with a health check
+  id: totrans-104
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 9.13 – 带健康检查的 Ansible playbook 输出
+- en: The `Verify application health` task is successful, which means the website
+    is working and serving the content.
+  id: totrans-105
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`Verify application health` 任务成功，这意味着网站正在运行并提供内容。'
+- en: 'Verify the website’s content from a web browser, as shown here:'
+  id: totrans-106
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 从网页浏览器中验证网站内容，如下所示：
+- en: '![Figure 9.14 – Website deployed using Ansible ](img/B18383_09_14.jpg)'
+  id: totrans-107
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 9.14 – 使用 Ansible 部署的网站](img/B18383_09_14.jpg)'
+- en: Figure 9.14 – Website deployed using Ansible
+  id: totrans-108
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 9.14 – 使用 Ansible 部署的网站
+- en: 'For practicing further, expand the deployment use case as follows:'
+  id: totrans-109
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为进一步练习，请扩展部署用例，如下所示：
+- en: Deploy other web applications, API applications, or other compressed application
+    files from repositories.
+  id: totrans-110
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 部署其他 Web 应用程序、API 应用程序或来自仓库的其他压缩应用程序文件。
+- en: Include more validations, test cases, scanning tasks, and more as needed as
+    part of the health check.
+  id: totrans-111
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 根据需要包括更多验证、测试用例、扫描任务等，作为健康检查的一部分。
+- en: Use roles to deploy web services, load balancers, databases, and more.
+  id: totrans-112
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用角色部署 Web 服务、负载均衡器、数据库等。
+- en: You will learn about some of these scenarios in [*Chapter 12*](B18383_12.xhtml#_idTextAnchor213),
+    *Integrating Ansible with Your Tools*. In the next section, you will learn how
+    to handle multi-node web server traffic with a load balancer.
+  id: totrans-113
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 您将在[*第 12 章*](B18383_12.xhtml#_idTextAnchor213)，*将 Ansible 与您的工具集成*中学习一些这些场景。在下一节中，您将学习如何使用负载均衡器处理多节点
+    Web 服务器流量。
+- en: Serving applications using a load balancer
+  id: totrans-114
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用负载均衡器服务应用程序
+- en: 'So far, you have learned how to deploy applications to multiple servers using
+    Ansible with all the necessary prerequisites, dependencies, and basic health checks.
+    But if the application or website is running on multiple servers, then you will
+    need to tell the end user about multiple servers so that they can access the website.
+    It is a best practice to serve the application from a single entity such as a
+    load balancer, as shown in the following diagram, so that the end user doesn’t
+    need to know the actual web or application server IP addresses. It will also help
+    you implement high availability and rolling updates for the application:'
+  id: totrans-115
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 到目前为止，您已经学习了如何使用 Ansible 将应用程序部署到多个服务器上，并且具备了所有必要的前提条件、依赖关系和基本健康检查。但是，如果应用程序或网站运行在多个服务器上，您需要告诉最终用户多个服务器的信息，以便他们能够访问网站。将应用程序从单一实体（如负载均衡器）提供服务是一个最佳实践，如下图所示，这样最终用户就不需要了解实际的
+    Web 或应用服务器 IP 地址。这还将帮助您实现高可用性和应用程序的滚动更新：
+- en: '![Figure 9.15 – Website hosted on multiple servers with a load balancer ](img/B18383_09_15.jpg)'
+  id: totrans-116
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 9.15 – 使用负载均衡器托管在多个服务器上的网站](img/B18383_09_15.jpg)'
+- en: Figure 9.15 – Website hosted on multiple servers with a load balancer
+  id: totrans-117
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 9.15 – 使用负载均衡器托管在多个服务器上的网站
+- en: 'Since we are handling the application deployment using Ansible inside the CI/CD
+    workflow, we can include the load balancer installation and configuration tasks
+    inside the pipeline, as shown in the following diagram:'
+  id: totrans-118
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于我们在 CI/CD 工作流中使用 Ansible 处理应用程序部署，因此可以将负载均衡器的安装和配置任务包含在管道中，如下图所示：
+- en: '![Figure 9.16 – Jenkins pipeline with HA Proxy installation ](img/B18383_09_16.jpg)'
+  id: totrans-119
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 9.16 – Jenkins 管道与 HA Proxy 安装](img/B18383_09_16.jpg)'
+- en: Figure 9.16 – Jenkins pipeline with HA Proxy installation
+  id: totrans-120
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 9.16 – Jenkins 管道与 HA Proxy 安装
+- en: 'Since you have deployed website content on `node1` and `node2`, in the following
+    exercise, you will learn how to deploy a simple load balancer using `haproxy`
+    and then configure `node1` and `node2` as backends:'
+  id: totrans-121
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于你已经在`node1`和`node2`上部署了网站内容，在接下来的练习中，你将学习如何使用`haproxy`部署一个简单的负载均衡器，并将`node1`和`node2`配置为后端服务器：
+- en: 'Update the `Chapter-09/hosts` inventory file with `node3` under the `loadbalancer`
+    host group:'
+  id: totrans-122
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 更新`Chapter-09/hosts`库存文件，将`node3`添加到`loadbalancer`主机组下：
+- en: '![Figure 9.17 – Load balancer entry in inventory ](img/B18383_09_17.jpg)'
+  id: totrans-123
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 9.17 – 库存中的负载均衡器条目](img/B18383_09_17.jpg)'
+- en: Figure 9.17 – Load balancer entry in inventory
+  id: totrans-124
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 9.17 – 库存中的负载均衡器条目
+- en: 'Instead of creating a playbook from scratch, use the `haproxy` role by *Jeff
+    Geerling* ([https://galaxy.ansible.com/geerlingguy/haproxy](https://galaxy.ansible.com/geerlingguy/haproxy))
+    from**Ansible Galaxy**, as follows:'
+  id: totrans-125
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 不必从头创建 Playbook，而是使用来自**Ansible Galaxy**的`haproxy`角色，由*Jeff Geerling*提供（[https://galaxy.ansible.com/geerlingguy/haproxy](https://galaxy.ansible.com/geerlingguy/haproxy)），如下所示：
+- en: '![Figure 9.18 – Installing haproxy role from Ansible Galaxy ](img/B18383_09_18.jpg)'
+  id: totrans-126
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 9.18 – 从 Ansible Galaxy 安装 haproxy 角色](img/B18383_09_18.jpg)'
+- en: Figure 9.18 – Installing haproxy role from Ansible Galaxy
+  id: totrans-127
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 9.18 – 从 Ansible Galaxy 安装 haproxy 角色
+- en: 'Create the `Chapter-09/deploy-haproxy.yaml` playbook and include the `geerlingguy.haproxy`
+    role that you installed in the previous step. The following screenshot shows the
+    sample playbook for installing the HAProxy load balancer:'
+  id: totrans-128
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建`Chapter-09/deploy-haproxy.yaml` Playbook，并包括你在上一步安装的`geerlingguy.haproxy`角色。下图显示了用于安装
+    HAProxy 负载均衡器的示例 Playbook：
+- en: '![Figure 9.19 – Playbook to install the HAProxy load balancer ](img/B18383_09_19.jpg)'
+  id: totrans-129
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 9.19 – 安装 HAProxy 负载均衡器的 Playbook](img/B18383_09_19.jpg)'
+- en: Figure 9.19 – Playbook to install the HAProxy load balancer
+  id: totrans-130
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 9.19 – 安装 HAProxy 负载均衡器的 Playbook
+- en: Include the necessary variables for the `geerlingguy.haproxy` role, as shown
+    in the preceding screenshot. It is possible to customize the execution of the
+    role by referring to the role documentation ([https://galaxy.ansible.com/geerlingguy/haproxy](https://galaxy.ansible.com/geerlingguy/haproxy)),
+    but in this demonstration, you will only be adding the load balancer backend and
+    a few other details. (Change the IP address so that it matches your `node1` and
+    `node2` IP addresses, as configured in the inventory.) The role will take care
+    of the `haproxy` installation, configuration, and more. Also, remember to add
+    a task to allow port `80` in the firewall (if you are using a different firewall
+    such as `ufw`, then amend the playbook with the appropriate firewall module).
+  id: totrans-131
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 包括`geerlingguy.haproxy`角色所需的变量，如前面的截图所示。你可以通过参考角色文档（[https://galaxy.ansible.com/geerlingguy/haproxy](https://galaxy.ansible.com/geerlingguy/haproxy)）来自定义角色的执行，但在本演示中，你只需添加负载均衡器后端和一些其他细节。（更改
+    IP 地址，使其与在库存中配置的`node1`和`node2`的 IP 地址匹配。）该角色将处理`haproxy`的安装、配置等。此外，记得添加一个任务以允许防火墙开放端口`80`（如果你使用的是其他防火墙，例如`ufw`，则需要修改
+    Playbook，使用相应的防火墙模块）。
+- en: 'Finally, add a new play in the same playbook (`Chapter-09/deploy-haproxy.yaml`)
+    to automatically validate the load balancer access:'
+  id: totrans-132
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 最后，在相同的 Playbook（`Chapter-09/deploy-haproxy.yaml`）中添加一个新的 Play，用于自动验证负载均衡器的访问：
+- en: '![Figure 9.20 – Adding an Ansible play to verify the load balancer ](img/B18383_09_20.jpg)'
+  id: totrans-133
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 9.20 – 添加 Ansible Play 以验证负载均衡器](img/B18383_09_20.jpg)'
+- en: Figure 9.20 – Adding an Ansible play to verify the load balancer
+  id: totrans-134
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 9.20 – 添加 Ansible Play 以验证负载均衡器
+- en: 'Execute the playbook and verify the output:'
+  id: totrans-135
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 执行 Playbook 并验证输出：
+- en: '![Figure 9.21 – The HAProxy playbook with a health check success ](img/B18383_09_21.jpg)'
+  id: totrans-136
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 9.21 – 含健康检查成功的 HAProxy Playbook](img/B18383_09_21.jpg)'
+- en: Figure 9.21 – The HAProxy playbook with a health check success
+  id: totrans-137
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 9.21 – 含健康检查成功的 HAProxy Playbook
+- en: The `Verify load balancer health` task is successful, which means the load balancer
+    (`haproxy`) is working and serving the content from the backend web servers –
+    that is, `node1` and `node2`.
+  id: totrans-138
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`验证负载均衡器健康`任务成功，这意味着负载均衡器（`haproxy`）正在工作，并从后端 Web 服务器（即`node1`和`node2`）提供内容。'
+- en: 'Verify the website’s content using the load balancer IP address (for example,
+    `http://192.168.56.45`) from a web browser, as shown in the following screenshot:'
+  id: totrans-139
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用负载均衡器 IP 地址（例如，`http://192.168.56.45`）在 Web 浏览器中验证网站的内容，如下图所示：
+- en: '![Figure 9.22 – Website accessed using a load balancer IP ](img/B18383_09_22.jpg)'
+  id: totrans-140
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 9.22 – 使用负载均衡器 IP 访问的网站](img/B18383_09_22.jpg)'
+- en: Figure 9.22 – Website accessed using a load balancer IP
+  id: totrans-141
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 9.22 – 使用负载均衡器 IP 访问的网站
+- en: Once the load balancer is ready, it is possible to enable the DNS for the load
+    balancer and share it with the end users (for example, `website.example.com`).
+    Users don’t need to worry about remembering the IP address of the website or web
+    server. When you have a new version of the website or application, it is possible
+    to update the content without downtime as the load balancer will serve the website
+    from the available web server in the backend.
+  id: totrans-142
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦负载均衡器准备好，可以启用负载均衡器的 DNS 并与最终用户共享（例如，`website.example.com`）。用户无需担心记住网站或 Web
+    服务器的 IP 地址。当你有新版本的网站或应用程序时，可以在没有停机的情况下更新内容，因为负载均衡器会从后台可用的 Web 服务器提供网站。
+- en: In the next section, you will learn how to handle rolling updates for websites
+    and applications without downtime using Ansible.
+  id: totrans-143
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一部分中，你将学习如何使用 Ansible 处理没有停机的滚动更新，适用于网站和应用程序。
+- en: Rolling updates using Ansible
+  id: totrans-144
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用 Ansible 进行滚动更新
+- en: Continuous deployment is a method meant for frequent application deployment
+    (together with CI/CD) and frequent updates of your application or website rather
+    than you having to wait for scheduled downtime and deployment cycles. But you
+    also need to ensure the application will be available during the update process.
+    So far, you have learned that application high availability can be achieved using
+    a load balancer. In this section, you will learn how to update the application
+    on web servers without downtime.
+  id: totrans-145
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 持续部署是一种适用于频繁应用程序部署（结合 CI/CD）和频繁更新应用程序或网站的方法，而不是等待计划的停机和部署周期。但是，你还需要确保应用程序在更新过程中能够保持可用。到目前为止，你已经了解到，可以使用负载均衡器实现应用程序的高可用性。在本节中，你将学习如何在
+    Web 服务器上进行应用程序更新而无需停机。
+- en: Steps involved in an application update
+  id: totrans-146
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 应用程序更新过程中涉及的步骤
+- en: 'Depending on your application’s type and the components involved, the update
+    process may contain different steps and procedures. The following diagram shows
+    the generic steps involved in the application update process, which is running
+    behind a load balancer:'
+  id: totrans-147
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 根据应用程序的类型和涉及的组件，更新过程可能包含不同的步骤和程序。下图展示了应用程序更新过程中的通用步骤，该过程运行在负载均衡器后端：
+- en: '![Figure 9.23 – Steps involved in an application update ](img/B18383_09_23.jpg)'
+  id: totrans-148
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 9.23 – 应用程序更新过程中涉及的步骤](img/B18383_09_23.jpg)'
+- en: Figure 9.23 – Steps involved in an application update
+  id: totrans-149
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 9.23 – 应用程序更新过程中涉及的步骤
+- en: It is possible to automate all such tasks using Ansible, including validating
+    and verifying the services, monitoring tasks, and more.
+  id: totrans-150
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 可以使用 Ansible 自动化所有这些任务，包括验证和检查服务、监控任务等。
+- en: Deploying updates in a batch of managed nodes
+  id: totrans-151
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 在一批托管节点中部署更新
+- en: If you are running the update tasks on all web servers (for example, `node1`
+    and `node2`) in parallel, then there will not be any servers to serve the requests
+    from the load balancer and the website will be down. This is not the desired behavior,
+    so you need to update the web servers in multiple batches instead of all the servers
+    in a single batch. It is possible to achieve this by passing specific remote node
+    names, such as `extra-variable`, but that is not a best practice or method as
+    you need to execute the playbook multiple times to complete the full website update.
+  id: totrans-152
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你在所有 Web 服务器上（例如，`node1` 和 `node2`）并行运行更新任务，则没有服务器来处理来自负载均衡器的请求，网站将会停机。这不是理想的行为，因此你需要将
+    Web 服务器分批更新，而不是一次性更新所有服务器。可以通过传递特定的远程节点名称（例如，`extra-variable`）来实现，但这不是最佳做法或方法，因为你需要多次执行剧本才能完成整个网站的更新。
+- en: CD and Rolling Upgrades Using Ansible
+  id: totrans-153
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用 Ansible 进行 CD 和滚动升级
+- en: Ansible orchestration features are very useful for managing multi-tier applications.
+    Refer to the documentation at [https://docs.ansible.com/ansible/latest/user_guide/guide_rolling_upgrade.xhtml](https://docs.ansible.com/ansible/latest/user_guide/guide_rolling_upgrade.xhtml)
+    to learn more.
+  id: totrans-154
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 编排功能对于管理多层应用程序非常有用。请参考文档 [https://docs.ansible.com/ansible/latest/user_guide/guide_rolling_upgrade.xhtml](https://docs.ansible.com/ansible/latest/user_guide/guide_rolling_upgrade.xhtml)
+    了解更多信息。
+- en: 'Use the `serial` keyword in Ansible to specify the number of managed nodes
+    to be executed at a time:'
+  id: totrans-155
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 Ansible 中使用 `serial` 关键字来指定每次执行时管理节点的数量：
+- en: '![Figure 9.24 – Using serial in Ansible playbook ](img/B18383_09_24.jpg)'
+  id: totrans-156
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 9.24 – 在 Ansible playbook 中使用 serial](img/B18383_09_24.jpg)'
+- en: Figure 9.24 – Using serial in Ansible playbook
+  id: totrans-157
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 9.24 – 在 Ansible playbook 中使用 serial
+- en: 'Here, `serial: 25%` means that the play will be executed for 25% of the total
+    managed nodes at a time.'
+  id: totrans-158
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '这里，`serial: 25%` 表示该任务将在每次执行时只在 25% 的总管理节点上运行。'
+- en: 'The following diagram shows the rolling update flow, where only one node will
+    be executed with the update task. The load balancer will still serve the traffic
+    from another node:'
+  id: totrans-159
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 下图显示了滚动更新流程，其中只有一个节点会执行更新任务，负载均衡器将继续为其他节点提供流量：
+- en: '![Figure 9.25 – Rolling update using Ansible ](img/B18383_09_25.jpg)'
+  id: totrans-160
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 9.25 – 使用 Ansible 进行滚动更新](img/B18383_09_25.jpg)'
+- en: Figure 9.25 – Rolling update using Ansible
+  id: totrans-161
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 9.25 – 使用 Ansible 进行滚动更新
+- en: 'It is also possible to mention the exact number of nodes in a batch by using
+    the `serial: 2` or `serial: 5` keyword. The `serial` keyword is very flexible,
+    and you can even control different batches with a different number or managed
+    nodes, as follows:'
+  id: totrans-162
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '也可以通过使用 `serial: 2` 或 `serial: 5` 关键字来指定批次中的确切节点数量。`serial` 关键字非常灵活，你甚至可以使用不同数量的节点来控制不同的批次，如下所示：'
+- en: '![Figure 9.26 – Using different serial values for host batches ](img/B18383_09_26.jpg)'
+  id: totrans-163
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 9.26 – 对主机批次使用不同的 serial 值](img/B18383_09_26.jpg)'
+- en: Figure 9.26 – Using different serial values for host batches
+  id: totrans-164
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 9.26 – 对主机批次使用不同的 serial 值
+- en: In the next section, you will learn how to use the `serial` keyword to deploy
+    updates on web servers without causing downtime for the application.
+  id: totrans-165
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一部分，你将学习如何使用 `serial` 关键字在 Web 服务器上部署更新而不会导致应用程序停机。
+- en: Deploying updates on multiple servers without service downtime
+  id: totrans-166
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 在多个服务器上部署更新而不造成服务中断
+- en: 'Now that the CI/CD pipeline includes more tasks, let’s replace the application
+    deployment playbook with the rolling update playbook, as shown in the following
+    diagram:'
+  id: totrans-167
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在 CI/CD 流水线包含更多任务，我们将如以下图所示替换应用程序部署的 playbook 为滚动更新 playbook：
+- en: '![Figure 9.27 – The CI/CD pipeline performing a rolling update of the application
+    ](img/B18383_09_27.jpg)'
+  id: totrans-168
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 9.27 – CI/CD 流水线执行应用程序的滚动更新](img/B18383_09_27.jpg)'
+- en: Figure 9.27 – The CI/CD pipeline performing a rolling update of the application
+  id: totrans-169
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 9.27 – CI/CD 流水线执行应用程序的滚动更新
+- en: 'In this exercise, you will use `serial: 1`, which means the operations will
+    be executed only on one managed node at a time. Control this batch size as required
+    based on the number of managed nodes or backend servers:'
+  id: totrans-170
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '在本练习中，你将使用 `serial: 1`，这意味着操作将仅在一个管理节点上执行一次。根据管理节点或后端服务器的数量，根据需要控制此批次大小：'
+- en: Update the website’s content with some changes by creating a new branch in the
+    repository. (Use the [https://github.com/ginigangadharan/website-demo-one-page](https://github.com/ginigangadharan/website-demo-one-page)
+    repository and make a copy for testing purposes.)
+  id: totrans-171
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 通过在仓库中创建一个新分支来更新网站的内容。 （使用 [https://github.com/ginigangadharan/website-demo-one-page](https://github.com/ginigangadharan/website-demo-one-page)
+    仓库并进行复制以进行测试。）
+- en: 'Clone the repository to your local machine and switch to the production branch
+    as follows. Also `checkout` a new branch as `v2`:'
+  id: totrans-172
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 克隆仓库到本地机器并切换到生产分支，如下所示。还要 `checkout` 一个新分支 `v2`：
+- en: '![Figure 9.28 – Clone the repository, checkout to production branch, and create
+    a new branch ](img/B18383_09_28.jpg)'
+  id: totrans-173
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 9.28 – 克隆仓库，切换到生产分支，并创建一个新分支](img/B18383_09_28.jpg)'
+- en: Figure 9.28 – Clone the repository, checkout to production branch, and create
+    a new branch
+  id: totrans-174
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 9.28 – 克隆仓库，切换到生产分支，并创建一个新分支
+- en: 'Update the `index.xhtml` file with some modifications, as follows (for example,
+    add `v2` on the home page to identify the changes):'
+  id: totrans-175
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用以下方式更新 `index.xhtml` 文件进行一些修改（例如，在主页上添加 `v2` 来标识更改）：
+- en: '![Figure 9.29 – Updating index.xhtml in the application repository ](img/B18383_09_29.jpg)'
+  id: totrans-176
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 9.29 – 更新应用程序仓库中的 index.xhtml](img/B18383_09_29.jpg)'
+- en: Figure 9.29 – Updating index.xhtml in the application repository
+  id: totrans-177
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 9.29 – 更新应用程序仓库中的 index.xhtml
+- en: After making these changes, save the file.
+  id: totrans-178
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 做完这些更改后，保存文件。
+- en: 'Commit all changes and push the new branch, `v2`, to the repository:'
+  id: totrans-179
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 提交所有更改并将新分支 `v2` 推送到仓库：
+- en: '![Figure 9.30 – Commit changes and push the v2 branch to origin ](img/B18383_09_30.jpg)'
+  id: totrans-180
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 9.30 – 提交更改并将 v2 分支推送到原始仓库](img/B18383_09_30.jpg)'
+- en: Figure 9.30 – Commit changes and push the v2 branch to origin
+  id: totrans-181
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 9.30 – 提交更改并将 v2 分支推送到原始仓库
+- en: Now, the new branch that contains the new version of the application is available
+    in the GitHub repository. This means we can deploy it to the web servers using
+    the `Chapter-09/deploy-web.yaml` playbook. But for the rolling update, you will
+    create another playbook called `Chapter-09/rolling-update.yaml` and add the rolling
+    update tasks inside.
+  id: totrans-182
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，包含应用程序新版本的新分支已在 GitHub 仓库中可用。这意味着我们可以使用 `Chapter-09/deploy-web.yaml` playbook
+    将其部署到 Web 服务器。但对于滚动更新，您需要创建另一个名为 `Chapter-09/rolling-update.yaml` 的 playbook，并在其中添加滚动更新任务。
+- en: 'Create a new playbook called `Chapter-09/rolling-update.yaml` and add the `serial`
+    keyword, as follows:'
+  id: totrans-183
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建一个新的 playbook，命名为 `Chapter-09/rolling-update.yaml`，并添加 `serial` 关键字，格式如下：
+- en: '![Figure 9.31 – Rolling update playbook ](img/B18383_09_31.jpg)'
+  id: totrans-184
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 9.31 – 滚动更新 playbook](img/B18383_09_31.jpg)'
+- en: Figure 9.31 – Rolling update playbook
+  id: totrans-185
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 9.31 – 滚动更新 playbook
+- en: 'During the update, the node will not be able to serve the web pages. Therefore,
+    you need to inform the load balancer of this. Add a task to disable the host in
+    the `haproxy` backend that you configured earlier. Also, add a task to stop the
+    web service (`httpd`) on the server:'
+  id: totrans-186
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在更新期间，节点将无法提供网页服务。因此，您需要通知负载均衡器这一点。添加一个任务以禁用您之前配置的 `haproxy` 后端中的主机。还需要添加一个任务来停止服务器上的
+    Web 服务（`httpd`）：
+- en: '![Figure 9.32 – Removing the host entry from the load balancer ](img/B18383_09_32.jpg)'
+  id: totrans-187
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 9.32 – 从负载均衡器中移除主机条目](img/B18383_09_32.jpg)'
+- en: Figure 9.32 – Removing the host entry from the load balancer
+  id: totrans-188
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 9.32 – 从负载均衡器中移除主机条目
+- en: 'Please note the `delegate_to: ‘{{ item }}’` line as this task will be running
+    on the load balancer node. The task will loop through the load balancer nodes
+    by using the `with_items: ‘{{ groups.loadbalancer }}’` loop. In our case, there
+    is only one load balancer node.'
+  id: totrans-189
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '请注意 `delegate_to: ‘{{ item }}’` 这一行，因为该任务将在负载均衡器节点上执行。任务将通过 `with_items: ‘{{
+    groups.loadbalancer }}’` 循环遍历负载均衡器节点。在我们的案例中，只有一个负载均衡器节点。'
+- en: 'Now, you have similar tasks in the deployment playbook, as shown in the following
+    screenshot:'
+  id: totrans-190
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在，您的部署 playbook 中有类似的任务，如下图所示：
+- en: '![Figure 9.33 – Cleaning up the directory and deploying the application ](img/B18383_09_33.jpg)'
+  id: totrans-191
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 9.33 – 清理目录并部署应用程序](img/B18383_09_33.jpg)'
+- en: Figure 9.33 – Cleaning up the directory and deploying the application
+  id: totrans-192
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 9.33 – 清理目录并部署应用程序
+- en: 'The default branch is set to production (`application_branch: production`)
+    inside the playbook; we will override the branch name using the `extra-variable`
+    later.'
+  id: totrans-193
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '默认分支在 playbook 中设置为生产（`application_branch: production`）；稍后我们将使用 `extra-variable`
+    覆盖该分支名称。'
+- en: 'Once you have the latest application content, start the web service and add
+    the host back to the load balancer backend, as follows:'
+  id: totrans-194
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 一旦获得最新的应用程序内容，启动 Web 服务并将主机重新添加到负载均衡器后端，如下所示：
+- en: '![Figure 9.34 – Post-deployment configuration ](img/B18383_09_34.jpg)'
+  id: totrans-195
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 9.34 – 部署后的配置](img/B18383_09_34.jpg)'
+- en: Figure 9.34 – Post-deployment configuration
+  id: totrans-196
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 9.34 – 部署后的配置
+- en: 'Finally, add another play in the same playbook to verify the web server access
+    via the load balancer:'
+  id: totrans-197
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 最后，在同一个 playbook 中添加另一个任务来验证通过负载均衡器访问 Web 服务器：
+- en: '![Figure 9.35 – Verifying the play ](img/B18383_09_35.jpg)'
+  id: totrans-198
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 9.35 – 验证 play 的执行](img/B18383_09_35.jpg)'
+- en: Figure 9.35 – Verifying the play
+  id: totrans-199
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 9.35 – 验证 play 的执行
+- en: 'Execute the playbook and check its output. Remember to pass the new branch
+    information as `application_branch=v2`:'
+  id: totrans-200
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 执行 playbook 并检查其输出。记得将新的分支信息作为 `application_branch=v2` 传递：
+- en: '![Figure 9.36 – Ansible rolling update on node1 ](img/B18383_09_36.jpg)'
+  id: totrans-201
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 9.36 – 在 node1 上执行 Ansible 滚动更新](img/B18383_09_36.jpg)'
+- en: Figure 9.36 – Ansible rolling update on node1
+  id: totrans-202
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 9.36 – 在 node1 上执行 Ansible 滚动更新
+- en: 'In the preceding screenshot, the execution is only happening on one node at
+    a time (that is, `node1`) and completes all the tasks for that batch of nodes.
+    Later, the playbook will start the tasks for the new batch (that is, `node2`),
+    as follows:'
+  id: totrans-203
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在前面的截图中，执行过程每次只会在一个节点上进行（即 `node1`），并完成该批次节点的所有任务。稍后，playbook 将开始为新的批次（即 `node2`）执行任务，如下所示：
+- en: '![Figure 9.37 – Ansible rolling update on node2 ](img/B18383_09_37.jpg)'
+  id: totrans-204
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 9.37 – 在 node2 上执行 Ansible 滚动更新](img/B18383_09_37.jpg)'
+- en: Figure 9.37 – Ansible rolling update on node2
+  id: totrans-205
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 9.37 – 在 node2 上执行 Ansible 滚动更新
+- en: As shown in the preceding outputs, the update is happening in the `rolling`
+    method. This means that at any time, one of the web servers will be available
+    to serve the website in the load balancer backend. It is possible to achieve zero
+    downtime during your application update.
+  id: totrans-206
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如前面的输出所示，更新正在以 `rolling` 方式进行。这意味着在任何时候，负载均衡器后端的 Web 服务器都会有一个可用来提供网站服务。通过这种方式，您可以在应用更新过程中实现零停机时间。
+- en: 'Now, let’s verify the website access using the load balancer’s IP address and
+    see the changes (notice the `v2` branch):'
+  id: totrans-207
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，让我们使用负载均衡器的 IP 地址来验证网站访问并查看更改（注意 `v2` 分支）：
+- en: '![Figure 9.38 – Website after the rolling update (v2) ](img/B18383_09_38.jpg)'
+  id: totrans-208
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 9.38 – 滚动更新后的网页（v2）](img/B18383_09_38.jpg)'
+- en: Figure 9.38 – Website after the rolling update (v2)
+  id: totrans-209
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 9.38 – 滚动更新后的网页（v2）
+- en: The process is the same for both static websites and dynamic web applications.
+    Include the exact steps you want to execute during the rolling update.
+  id: totrans-210
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于静态网站和动态 Web 应用程序，过程是相同的。在滚动更新过程中，包含你希望执行的确切步骤。
+- en: CD and Rolling Upgrades
+  id: totrans-211
+  prefs: []
+  type: TYPE_NORMAL
+  zh: CD 和滚动更新
+- en: Refer to [https://docs.ansible.com/ansible/latest/user_guide/guide_rolling_upgrade.xhtml](https://docs.ansible.com/ansible/latest/user_guide/guide_rolling_upgrade.xhtml)
+    for more details about rolling updates using Ansible. Also, check out application
+    deployment ([https://www.ansible.com/use-cases/application-deployment](https://www.ansible.com/use-cases/application-deployment))
+    and Ansible CD ([https://www.ansible.com/use-cases/continuous-delivery](https://www.ansible.com/use-cases/continuous-delivery))
+    use cases.
+  id: totrans-212
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 参考[https://docs.ansible.com/ansible/latest/user_guide/guide_rolling_upgrade.xhtml](https://docs.ansible.com/ansible/latest/user_guide/guide_rolling_upgrade.xhtml)，了解更多关于使用
+    Ansible 进行滚动更新的详细信息。还可以查看应用程序部署（[https://www.ansible.com/use-cases/application-deployment](https://www.ansible.com/use-cases/application-deployment)）和
+    Ansible CD（[https://www.ansible.com/use-cases/continuous-delivery](https://www.ansible.com/use-cases/continuous-delivery)）的使用案例。
+- en: The flexibility of Ansible makes it suitable for implementing automation in
+    most of your DevOps workflows. Instead of using Ansible alone, it is always possible
+    to integrate Ansible with other tools. With AAP and the Ansible API, it is possible
+    to implement more powerful integration in the CI/CD workflow using webhooks, job
+    templates, and callbacks. You will learn about AAP and integration in [*Chapter
+    12*](B18383_12.xhtml#_idTextAnchor213), *Integrating Ansible with Your Tools*.
+    In the next section, you will learn how to use Ansible with Terraform as a provisioning
+    tool.
+  id: totrans-213
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 的灵活性使其适用于在大多数 DevOps 工作流中实现自动化。除了单独使用 Ansible，始终可以将 Ansible 与其他工具集成。通过
+    AAP 和 Ansible API，可以在 CI/CD 工作流中使用 webhooks、作业模板和回调实现更强大的集成。你将会在[*第 12 章*](B18383_12.xhtml#_idTextAnchor213)，*将
+    Ansible 与工具集成*中了解 AAP 和集成的相关内容。在下一节中，你将学习如何将 Ansible 与 Terraform 作为配置工具一起使用。
+- en: Using Ansible as a provisioning tool in Terraform
+  id: totrans-214
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 在 Terraform 中使用 Ansible 作为配置工具
+- en: Ansible can be used as an IaC tool, as you learned in [*Chapter 7*](B18383_07.xhtml#_idTextAnchor125),
+    *Managing Your Virtualization and Cloud Platforms*. At the same time, it is a
+    common practice in the industry to use the right tool for the right task – for
+    example, Terraform for IaC, Ansible for IT automation, Jenkins for CI/CD pipelines,
+    and so on. Instead of comparing similar tools, integrate them in the right place
+    and achieve better results.
+  id: totrans-215
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 可以作为 IaC 工具使用，正如你在[*第 7 章*](B18383_07.xhtml#_idTextAnchor125)，*管理你的虚拟化和云平台*中学到的那样。同时，在行业中有一个常见的做法，就是为不同的任务选择合适的工具——例如，使用
+    Terraform 进行 IaC，使用 Ansible 进行 IT 自动化，使用 Jenkins 进行 CI/CD 管道，等等。与其比较类似的工具，不如在合适的地方将它们集成，进而实现更好的结果。
+- en: '**Terraform** is an open source tool by **HashiCorp** for implementing IaC
+    practices. Terraform can be used to deploy and manage the cloud-based infrastructure
+    and applications using infrastructure code written in a declarative configuration
+    language called **HashiCorp Configuration Language** (**HCL**). Depending on the
+    cloud platform and components, use the provider modules and resources available.
+    Refer to [https://registry.terraform.io/browse/providers](https://registry.terraform.io/browse/providers)
+    to explore the available and supported providers.'
+  id: totrans-216
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**Terraform** 是 **HashiCorp** 提供的开源工具，用于实现 IaC 实践。Terraform 可以用于部署和管理基于云的基础设施和应用程序，使用一种称为
+    **HashiCorp 配置语言**（**HCL**）的声明式配置语言编写基础设施代码。根据云平台和组件的不同，使用可用的提供商模块和资源。参阅[https://registry.terraform.io/browse/providers](https://registry.terraform.io/browse/providers)以探索可用和受支持的提供商。'
+- en: 'For example, the following Terraform code will provide EC2 instances in the
+    AWS platform with the specified **Amazon Machine Images** (**AMIs**) and other
+    details:'
+  id: totrans-217
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 例如，以下 Terraform 代码将为 AWS 平台提供具有指定的 **Amazon 机器镜像**（**AMIs**）和其他细节的 EC2 实例：
+- en: '![Figure 9.39 – Terraform code for EC2 provisioning ](img/B18383_09_39.jpg)'
+  id: totrans-218
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 9.39 – EC2 配置的 Terraform 代码](img/B18383_09_39.jpg)'
+- en: Figure 9.39 – Terraform code for EC2 provisioning
+  id: totrans-219
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 9.39 – EC2 配置的 Terraform 代码
+- en: Terraform is good at handling infrastructure changes and tracking the updates
+    using its state management mechanism. But if you want to configure the operating
+    system-level components, you need to use Terraform provisioners ([https://www.terraform.io/language/resources/provisioners/syntax](https://www.terraform.io/language/resources/provisioners/syntax))
+    as such configurations cannot be represented in the declarative code. Terraform
+    supports many provisioners such as `file`, `local-exec`, `remote-exec`, and so
+    on. Use either the `local-exec` or `remote-exec` provisioner and use Ansible to
+    configure your system, which has been provisioned by Terraform. Choose either
+    method, depending on your environment and other tool integration options.
+  id: totrans-220
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Terraform 擅长处理基础设施变更，并通过其状态管理机制跟踪更新。但如果你想配置操作系统级别的组件，你需要使用 Terraform 配置器（[https://www.terraform.io/language/resources/provisioners/syntax](https://www.terraform.io/language/resources/provisioners/syntax)），因为此类配置无法通过声明性代码表示。Terraform
+    支持许多配置器，如 `file`、`local-exec`、`remote-exec` 等。使用 `local-exec` 或 `remote-exec`
+    配置器，并使用 Ansible 配置通过 Terraform 配置的系统。根据你的环境和其他工具集成选项，选择其中一种方法。
+- en: Using Terraform’s local-exec provisioner with Ansible
+  id: totrans-221
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 使用 Terraform 的 local-exec 配置器与 Ansible
+- en: 'To use the `local-exec` provisioner with Ansible, the machine you are running
+    Terraform on should have Ansible installed and configured since the `ansible-playbook`
+    command will be executed on your local machine, as shown in the following diagram:'
+  id: totrans-222
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要使用 `local-exec` 配置器与 Ansible，运行 Terraform 的机器应已安装并配置 Ansible，因为 `ansible-playbook`
+    命令将在本地机器上执行，如下图所示：
+- en: '![Figure 9.40 – Using Ansible as local-exec with Terraform ](img/B18383_09_40.jpg)'
+  id: totrans-223
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 9.40 – 在 Terraform 中使用 Ansible 作为 local-exec](img/B18383_09_40.jpg)'
+- en: Figure 9.40 – Using Ansible as local-exec with Terraform
+  id: totrans-224
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 9.40 – 在 Terraform 中使用 Ansible 作为 local-exec
+- en: 'You also need to pass the credential details such as the username and SSH private
+    key in the command, as follows:'
+  id: totrans-225
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你还需要在命令中传递凭证详细信息，如用户名和 SSH 私钥，具体如下：
+- en: '![Figure 9.41 – Terraform code for EC2 provisioning with Ansible automation
+    ](img/B18383_09_41.jpg)'
+  id: totrans-226
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 9.41 – 使用 Ansible 自动化的 EC2 配置 Terraform 代码](img/B18383_09_41.jpg)'
+- en: Figure 9.41 – Terraform code for EC2 provisioning with Ansible automation
+  id: totrans-227
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 9.41 – 使用 Ansible 自动化的 EC2 配置 Terraform 代码
+- en: '`ec2-user` in the preceding snippet is the default user account in the AWS
+    Linux AMI. This username or credential can be changed, depending on your EC2 AMI
+    or another source image. For example, create a custom base image in AWS, GCP,
+    Azure, or other cloud platforms, and then use that image to create the instances
+    using Terraform and configure them using Ansible.'
+  id: totrans-228
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`ec2-user` 在前面的代码片段中是 AWS Linux AMI 中的默认用户账户。这个用户名或凭证可以根据你的 EC2 AMI 或其他源镜像进行更改。例如，在
+    AWS、GCP、Azure 或其他云平台中创建自定义基础镜像，然后使用该镜像通过 Terraform 创建实例，并使用 Ansible 配置它们。'
+- en: Using Terraform’s remote-exec provisioner with Ansible
+  id: totrans-229
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 使用 Terraform 的 remote-exec 配置器与 Ansible
+- en: 'If your local machine does not support the installation of Ansible (for example,
+    running Terraform on a Windows machine), then it is possible to use the `remote-exec`
+    provisioner, but you need to ensure that Ansible is installed inside the remote
+    machine provisioned by Terraform. You also need to ensure the playbook and required
+    files have been copied to the target machine before calling the `ansible-playbook`
+    command using the `remote-exec` provisioner. The following diagram shows the high-level
+    workflow in Terraform with Ansible `remote-exec` provisioning:'
+  id: totrans-230
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你的本地机器不支持安装 Ansible（例如，在 Windows 机器上运行 Terraform），则可以使用 `remote-exec` 配置器，但你需要确保
+    Ansible 已安装在 Terraform 配置的远程机器上。你还需要确保在调用 `ansible-playbook` 命令之前，相关的 playbook
+    和必需文件已经复制到目标机器。以下图示展示了使用 Terraform 配合 Ansible `remote-exec` 配置的高级工作流：
+- en: '![Figure 9.42 – Ansible remote-exec provisioning in Terraform ](img/B18383_09_42.jpg)'
+  id: totrans-231
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 9.42 – Terraform 中的 Ansible remote-exec 配置](img/B18383_09_42.jpg)'
+- en: Figure 9.42 – Ansible remote-exec provisioning in Terraform
+  id: totrans-232
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 9.42 – Terraform 中的 Ansible remote-exec 配置
+- en: 'Refer to `Chapter-09/terraform-aws-ansible-lab` for the Terraform code used
+    in the following explanation. Follow these steps:'
+  id: totrans-233
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请参考 `Chapter-09/terraform-aws-ansible-lab` 获取以下说明中使用的 Terraform 代码。按照以下步骤操作：
+- en: 'Use the `user_data` argument to pass the basic commands to be executed during
+    the initialization of the EC2 instance and Ansible installation. These commands
+    can be included in the `user_data` script. A typical user data script can be written
+    as follows:'
+  id: totrans-234
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用 `user_data` 参数将基本命令传递给 EC2 实例初始化和 Ansible 安装过程中要执行的命令。这些命令可以包含在 `user_data`
+    脚本中。一个典型的用户数据脚本可以写成如下：
+- en: '![Figure 9.43 – User data script for installing Ansible inside an EC2 instance
+    ](img/B18383_09_43.jpg)'
+  id: totrans-235
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图9.43 – 用于在EC2实例中安装Ansible的用户数据脚本](img/B18383_09_43.jpg)'
+- en: Figure 9.43 – User data script for installing Ansible inside an EC2 instance
+  id: totrans-236
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图9.43 – 用于在EC2实例中安装Ansible的用户数据脚本
+- en: 'As you saw in the previous example, the EC2 instance creation code will have
+    more components now, as follows:'
+  id: totrans-237
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如您在前面的示例中所见，EC2实例创建代码现在将包含更多组件，如下所示：
+- en: '![Figure 9.44 – EC2 resource with the user_data script ](img/B18383_09_44.jpg)'
+  id: totrans-238
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图9.44 – 带有user_data脚本的EC2资源](img/B18383_09_44.jpg)'
+- en: Figure 9.44 – EC2 resource with the user_data script
+  id: totrans-239
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图9.44 – 带有user_data脚本的EC2资源
+- en: The `user-data-dbnodes.sh` script will be executed when the new EC2 instance
+    is created. All the components, including Ansible, will be installed inside it.
+  id: totrans-240
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`user-data-dbnodes.sh`脚本将在新EC2实例创建时执行。所有组件，包括Ansible，都将在其中安装。'
+- en: 'The next step is copying the required playbooks to the remote EC2 instance.
+    Here, we have used the Terraform `file` provisioner for this. After that, execute
+    the playbook using the `remote-exec` provisioner:'
+  id: totrans-241
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 下一步是将所需的playbooks复制到远程EC2实例。在这里，我们使用了Terraform的`file`配置器。之后，使用`remote-exec`配置器执行playbook：
+- en: '![Figure 9.45 – Copying and executing the playbook inside the EC2 instance
+    using the remote-exec method ](img/B18383_09_45.jpg)'
+  id: totrans-242
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图9.45 – 使用remote-exec方法在EC2实例内复制并执行playbook](img/B18383_09_45.jpg)'
+- en: Figure 9.45 – Copying and executing the playbook inside the EC2 instance using
+    the remote-exec method
+  id: totrans-243
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图9.45 – 使用remote-exec方法在EC2实例内复制并执行playbook
+- en: For further practicing and learning, include the system configuration tasks
+    inside the `dbnode-config.yaml` file, such as creating new users, installing database
+    packages, starting services, mounting disk volumes, and more.
+  id: totrans-244
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了进一步实践和学习，将系统配置任务包含在`dbnode-config.yaml`文件中，如创建新用户、安装数据库包、启动服务、挂载磁盘卷等。
+- en: Refer to *Using Ansible with Terraform* ([https://www.techbeatly.com/using-ansible-with-terraform-ansible-real-life-series](https://www.techbeatly.com/using-ansible-with-terraform-ansible-real-life-series))
+    to learn more and understand Terraform and Ansible integration.
+  id: totrans-245
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 参见*使用Ansible与Terraform*（[https://www.techbeatly.com/using-ansible-with-terraform-ansible-real-life-series](https://www.techbeatly.com/using-ansible-with-terraform-ansible-real-life-series)）以深入了解并理解Terraform与Ansible的集成。
+- en: Summary
+  id: totrans-246
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 总结
+- en: In this chapter, you explored the basic concepts, processes, and technical terms
+    surrounding DevOps, such as CI/CD and continuous deployment. You also learned
+    about some of the possibilities of Ansible integration within the DevOps workflow.
+    Then, you learned how to use Ansible inside a continuous deployment workflow using
+    Jenkins. After that, you learned about how to perform rolling updates without
+    downtime while using Ansible as part of continuous application deployment. Finally,
+    you learned how to integrate Ansible with Terraform for IaC provisioning.
+  id: totrans-247
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章中，您探讨了围绕DevOps的基本概念、过程和技术术语，如CI/CD和持续部署。您还了解了Ansible在DevOps工作流中的一些集成可能性。然后，您学习了如何在持续部署工作流中使用Jenkins中的Ansible。接下来，您了解了如何在不中断服务的情况下执行滚动更新，并将Ansible作为持续应用程序部署的一部分。最后，您了解了如何将Ansible与Terraform集成，以实现基础设施即代码（IaC）配置。
+- en: In the next chapter, you will learn how to build, run, and manage containers
+    using Ansible.
+  id: totrans-248
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一章中，您将学习如何使用Ansible构建、运行和管理容器。
+- en: Further reading
+  id: totrans-249
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 进一步阅读
+- en: 'To learn more about the topics that were covered in this chapter, take a look
+    at the following resources:'
+  id: totrans-250
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 若要了解本章涵盖的更多内容，请查看以下资源：
+- en: '*Use Terraform to Create a FREE Ansible Lab in AWS*: [https://www.techbeatly.com/use-terraform-to-create-a-free-ansible-lab-in-aws](https://www.techbeatly.com/use-terraform-to-create-a-free-ansible-lab-in-aws)'
+  id: totrans-251
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*使用Terraform在AWS中创建免费的Ansible实验室*：[https://www.techbeatly.com/use-terraform-to-create-a-free-ansible-lab-in-aws](https://www.techbeatly.com/use-terraform-to-create-a-free-ansible-lab-in-aws)'
+- en: '*Deep Dive – Automated NetOps – Ansible for Network GitOps*: [https://www.youtube.com/watch?v=JqE13sP2sq8](https://www.youtube.com/watch?v=JqE13sP2sq8)
+    (Video)'
+  id: totrans-252
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*深入了解 – 自动化NetOps – 用于网络GitOps的Ansible*：[https://www.youtube.com/watch?v=JqE13sP2sq8](https://www.youtube.com/watch?v=JqE13sP2sq8)（视频）'
+- en: '*Continuous integration vs. delivery vs. deployment*: [https://www.atlassian.com/continuous-delivery/principles/continuous-integration-vs-delivery-vs-deployment](https://www.atlassian.com/continuous-delivery/principles/continuous-integration-vs-delivery-vs-deployment)'
+  id: totrans-253
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*持续集成与交付与部署*：[https://www.atlassian.com/continuous-delivery/principles/continuous-integration-vs-delivery-vs-deployment](https://www.atlassian.com/continuous-delivery/principles/continuous-integration-vs-delivery-vs-deployment)'
+- en: '*Ansible and HashiCorp: Better Together*: [https://www.hashicorp.com/resources/ansible-terraform-better-together](https://www.hashicorp.com/resources/ansible-terraform-better-together)'
+  id: totrans-254
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*Ansible 和 HashiCorp: 更强组合*: [https://www.hashicorp.com/resources/ansible-terraform-better-together](https://www.hashicorp.com/resources/ansible-terraform-better-together)'
+- en: '*Manages a Terraform deployment*: [https://docs.ansible.com/ansible/latest/collections/community/general/terraform_module.xhtml](https://docs.ansible.com/ansible/latest/collections/community/general/terraform_module.xhtml)'
+  id: totrans-255
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*管理 Terraform 部署*: [https://docs.ansible.com/ansible/latest/collections/community/general/terraform_module.xhtml](https://docs.ansible.com/ansible/latest/collections/community/general/terraform_module.xhtml)'

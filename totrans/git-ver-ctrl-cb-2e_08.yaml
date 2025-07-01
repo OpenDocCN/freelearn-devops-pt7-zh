@@ -1,0 +1,1579 @@
+- en: Recovering from Mistakes
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 从错误中恢复
+- en: 'In this chapter, we will cover the following recipes:'
+  id: totrans-1
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们将介绍以下几种做法：
+- en: Undo – Remove a commit completely
+  id: totrans-2
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 撤销 – 完全移除一个提交
+- en: Undo – Remove a commit and retain changes to files
+  id: totrans-3
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 撤销 – 移除一个提交并保留文件的更改
+- en: Undo – Remove a commit and retain changes in the staging area
+  id: totrans-4
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 撤销 – 移除一个提交并保留暂存区的更改
+- en: Undo – Working with a dirty area
+  id: totrans-5
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 撤销 – 处理脏工作区
+- en: Redo – Recreate the latest commit with new changes
+  id: totrans-6
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 重做 – 使用新更改重新创建最新提交
+- en: Revert – Undo the changes introduced by a commit
+  id: totrans-7
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 还原 – 撤销提交所引入的更改
+- en: Reverting a merge
+  id: totrans-8
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 撤销合并
+- en: Viewing past Git actions with git reflog
+  id: totrans-9
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用 git reflog 查看过去的 Git 操作
+- en: Finding lost changes with git fsck
+  id: totrans-10
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用 git fsck 查找丢失的更改
+- en: Introduction
+  id: totrans-11
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 介绍
+- en: It is possible to correct mistakes made in Git with git push context (without
+    exposing them if the mistake is found before sharing or publishing the change).
+    If the mistake has already been pushed, it is still possible to undo the changes
+    made to the commit that introduced the mistake.
+  id: totrans-12
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 Git 中可以通过 git push 上下文来纠正错误（如果错误在分享或发布更改之前发现，可以不暴露它们）。如果错误已经推送，仍然可以撤销引入错误的提交所做的更改。
+- en: We will look at the `reflog` command and how we can use that and `git fsck`
+    to recover lost information.
+  id: totrans-13
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将查看 `reflog` 命令，了解如何使用它以及 `git fsck` 恢复丢失的信息。
+- en: 'There is no git undo command in core Git, one of the reasons being ambiguity
+    on what needs to be undone, for example, and the last commit, the added file.
+    If you want to undo the last commit, how should that be done? Should the changes
+    introduced to the files by the commit be deleted? For instance, do you just roll
+    back to the last known good commit, or should they be kept so that it could be
+    changed for a better commit? Should the commit message simply be reworded? In
+    this chapter, we''ll explore the possibilities for undoing a commit in several
+    ways, depending on what we want to achieve. We''ll explore four ways to undo a
+    commit:'
+  id: totrans-14
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 Git 核心中没有 git undo 命令，原因之一是对需要撤销的内容存在歧义，例如，最后一个提交，已添加的文件。如果你想撤销最后一个提交，应该怎么做？是否应该删除该提交对文件做出的更改？比如，你是直接回滚到最后一个已知的良好提交，还是保留更改以便进行更好的提交？提交信息是否应该仅仅重新措辞？在本章中，我们将根据要实现的目标，探索多种撤销提交的方式。我们将探讨四种撤销提交的方法：
+- en: Undo everything, just remove the last commit as if it never happened
+  id: totrans-15
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 撤销一切，完全移除最后一个提交，仿佛它从未发生过
+- en: Undo the commit and unstage the files; this takes us back to where we were before
+    we started to add the files
+  id: totrans-16
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 撤销提交并取消暂存文件；这将我们带回到开始添加文件之前的状态
+- en: Undo the commit, but keep the files in the index or staging area so that we
+    can just perform some minor modifications and then complete the commit
+  id: totrans-17
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 撤销提交，但保留文件在暂存区或暂存区域，这样我们可以进行一些小的修改，然后完成提交
+- en: Undo the commit with the dirty work area
+  id: totrans-18
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在脏工作区中撤销提交
+- en: The `undo` and `redo` commands in this chapter are performed on commits that
+    are already published in the example repository. You should usually not perform
+    the undo and redo commands on commits that are already published in a public repository,
+    as you will be rewriting history. However, in the following recipes, we'll use
+    an example repository and execute the operations on published commits so that
+    everyone has the same experience.
+  id: totrans-19
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章中的 `undo` 和 `redo` 命令是针对已经发布的提交进行的操作。通常，你不应该对已经发布的公共仓库中的提交执行撤销和重做操作，因为这会重写历史。然而，在接下来的示例中，我们将使用示例仓库并对已发布的提交执行操作，以便每个人都有相同的体验。
+- en: Undo – Remove a commit completely
+  id: totrans-20
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 撤销 – 完全移除一个提交
+- en: In this example, we'll learn how we can undo a commit as if it had never happened.
+    We'll learn how we can use the reset command to effectively discard the commit
+    and thereby reset our branch to the desired state.
+  id: totrans-21
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这个例子中，我们将学习如何撤销一个提交，仿佛它从未发生过。我们将学习如何使用 reset 命令有效地丢弃提交，从而将我们的分支重置到期望的状态。
+- en: Getting ready
+  id: totrans-22
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 准备工作
+- en: 'In this example, we''ll use the example of the `Git-Version-Control-Cookbook-Second-Edition_hello_world_cookbook` repository,
+    clone the repository, and change our working directory to the cloned one:'
+  id: totrans-23
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这个例子中，我们将使用 `Git-Version-Control-Cookbook-Second-Edition_hello_world_cookbook`
+    仓库，克隆该仓库，并将工作目录切换到克隆的仓库：
+- en: '[PRE0]'
+  id: totrans-24
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: '[PRE1]'
+  id: totrans-25
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: How to do it...
+  id: totrans-26
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: 'First, we''ll try to undo the latest commit in the repository as though it
+    never happened:'
+  id: totrans-27
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 首先，我们将尝试撤销仓库中的最新提交，仿佛它从未发生过：
+- en: 'We''ll make sure that our working directory is clean, no files are in the modified
+    state, and nothing is added to the index:'
+  id: totrans-28
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 我们将确保工作目录干净，没有文件处于修改状态，也没有文件被添加到暂存区：
+- en: '[PRE2]'
+  id: totrans-29
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: 'Also, check what is in our working tree:'
+  id: totrans-30
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 同时，检查一下我们工作树中的内容：
+- en: '[PRE3]'
+  id: totrans-31
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: 'If all works well, we''ll check the log to see the history of the repository.
+    We''ll use the `--oneline` switch to limit the output:'
+  id: totrans-32
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如果一切正常，我们将检查日志以查看仓库的历史。我们将使用`--oneline`选项来限制输出：
+- en: '[PRE4]'
+  id: totrans-33
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: 'The most recent commit is the `3061dc6 Adds Java version of ''hello world''`
+    commit. We will now undo the commit as though it never happened, and the history
+    won''t show it:'
+  id: totrans-34
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 最后一条提交是`3061dc6 Adds Java version of 'hello world'`提交。我们现在将撤销该提交，就像它从未发生过一样，历史中将不再显示它：
+- en: '[PRE5]'
+  id: totrans-35
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: 'Check the log, status, and filesystem, so that you can see what actually happened:'
+  id: totrans-36
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 查看日志、状态和文件系统，这样你就可以看到实际发生了什么：
+- en: '[PRE6]'
+  id: totrans-37
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: The commit is now gone, along with all the changes it introduced (`Makefile`
+    and `HelloWorld.java`).
+  id: totrans-38
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 提交现在已经消失，连同它引入的所有更改（`Makefile` 和 `HelloWorld.java`）。
+- en: In the last output of the `git status` command, you can see that our master
+    branch is one behind `origin/master`. This is similar to what we mentioned at
+    the beginning of the chapter, because we are removing and undoing commits that
+    are already published. Also, as mentioned, you should only perform the undo and
+    redo (`git reset`) operations on commits that are not shared yet. Here, we only
+    show it on the published commits to make the example easy to reproduce.
+  id: totrans-39
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在`git status`命令的最后输出中，你可以看到我们的主分支落后于`origin/master`一个提交。这与我们在章节开头提到的类似，因为我们正在移除和撤销已发布的提交。此外，如前所述，你应该只在尚未共享的提交上执行撤销和重做（`git
+    reset`）操作。在这里，我们仅展示已发布的提交，以便于示例的重现。
+- en: How it works...
+  id: totrans-40
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 它是如何工作的...
+- en: 'Effectively, we are just changing the pointer of the master branch to point
+    to the previous commit **HEAD**, which means the first parent of **HEAD**. Now,
+    the branch will point to **9c7532f**, instead of the commit we removed, **35b29ae**.
+    This is shown in the following diagram:'
+  id: totrans-41
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 实际上，我们只是将主分支的指针指向前一个提交的**HEAD**，也就是说，指向**HEAD**的第一个父提交。现在，分支将指向**9c7532f**，而不是我们移除的提交**35b29ae**。这在下面的图示中展示：
+- en: '![](img/6bc11ec6-a125-4d99-8567-48ab1e4e0b93.png)'
+  id: totrans-42
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/6bc11ec6-a125-4d99-8567-48ab1e4e0b93.png)'
+- en: The preceding diagram also shows that the original **3061dc6** commit is still
+    present in the repository, but new commits on the master branch will start from
+    **9c7532f**; the **3061dc6** commit is called a dangling commit.
+  id: totrans-43
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 上述图示还表明，原始的**3061dc6**提交仍然存在于仓库中，但主分支的新提交将从**9c7532f**开始；**3061dc6**提交被称为悬挂提交。
+- en: You should only perform this undo operation on commits you haven't shared (pushed)
+    yet, since when you create new commits following undo or reset, those commits
+    form a new history that will diverge from the original history of the repository.
+  id: totrans-44
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你应该仅对尚未共享（推送）的提交执行此撤销操作，因为在撤销或重置后创建的新提交会形成一条新的历史，与原始的仓库历史分叉。
+- en: When the reset command is executed, Git looks at the commit pointed to by **HEAD** and
+    finds the parent commit from this. The current branch, master, and the **HEAD** pointer,
+    are then reset to the parent commit, as are the staging area and working tree.
+  id: totrans-45
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当执行重置命令时，Git会查看**HEAD**指向的提交，并从中找到父提交。当前分支、主分支和**HEAD**指针会被重置到父提交，暂存区和工作树也会被重置。
+- en: Undo – Remove a commit and retain changes to files
+  id: totrans-46
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 撤销 – 删除一个提交并保留文件的更改
+- en: Instead of performing the hard reset and thereby losing all the changes the
+    commit introduced, the reset can be performed so that the changes are retained
+    in the working directory.
+  id: totrans-47
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 与其执行硬重置并丢失该提交引入的所有更改，不如执行重置，使更改保留在工作目录中。
+- en: Getting ready
+  id: totrans-48
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 准备工作
+- en: We'll again use the example of the hello world repository. Make a fresh clone
+    of the repository, or reset the master branch if you have already cloned one.
+  id: totrans-49
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们再次使用hello world仓库的示例。如果你已经克隆过仓库，可以重新设置主分支，或者新克隆一个仓库。
+- en: 'You can make a fresh clone as follows:'
+  id: totrans-50
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以按如下方式创建一个新的克隆：
+- en: '[PRE7]'
+  id: totrans-51
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE7]'
+- en: 'You can reset the existing clone as follows:'
+  id: totrans-52
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以按如下方式重置现有的克隆：
+- en: '[PRE8]'
+  id: totrans-53
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE8]'
+- en: How to do it...
+  id: totrans-54
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: 'First, we''ll check whether we have made any changes to files in the working
+    tree (just for the clarity of the example) and the history of the repository:'
+  id: totrans-55
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 首先，我们将检查工作树中的文件是否有任何更改（仅为便于示例的清晰度）以及仓库的历史：
+- en: '[PRE9]'
+  id: totrans-56
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE9]'
+- en: 'Now, we''ll undo the commit and retain the changes introduced to the working
+    tree:'
+  id: totrans-57
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在，我们将撤销该提交并保留引入工作树的更改：
+- en: '[PRE10]'
+  id: totrans-58
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE10]'
+- en: We can see that our commit has been undone, but the changes to the file are
+    preserved in the working tree, so more work can be done in order to create a proper
+    commit.
+  id: totrans-59
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以看到我们的提交已被撤销，但文件的更改保留在工作树中，因此可以继续进行工作，以便创建一个正确的提交。
+- en: How it works...
+  id: totrans-60
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 它是如何工作的...
+- en: 'From the parent commit pointed to by the commit at **HEAD**, Git resets the
+    branch pointer and **HEAD** to point to the parent commit. The staging area is
+    reset, but the working tree is kept as it was before the reset, so the files affected
+    by the `undone` commit will be in a modified state. This is illustrated in the
+    following diagram:'
+  id: totrans-61
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 从指向**HEAD**的提交的父提交开始，Git将重置分支指针和**HEAD**以指向父提交。暂存区被重置，但工作树保持了重置之前的状态，因此受`撤销`提交影响的文件将处于修改状态。下图展示了这一过程：
+- en: '![](img/e13784eb-69eb-47d4-8e68-60a67c7ce54f.png)'
+  id: totrans-62
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/e13784eb-69eb-47d4-8e68-60a67c7ce54f.png)'
+- en: 'The `--mixed` option is the default behavior of `git reset`, so it can be omitted:
+    `git reset HEAD^`'
+  id: totrans-63
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 默认情况下，`--mixed`选项是`git reset`的行为，因此可以省略：`git reset HEAD^`
+- en: Undo – Remove a commit and retain changes in the staging area
+  id: totrans-64
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 撤销 – 删除提交并保留暂存区中的更改
+- en: Of course, it is also possible to undo the commit, but keep the changes to the
+    files in the index or the staging area so that you are ready to recreate the commit
+    with, for example, some minor modifications.
+  id: totrans-65
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当然，也可以撤销提交，但保留索引或暂存区中文件的更改，以便随时可以重新创建提交，例如进行一些微小的修改。
+- en: Getting ready
+  id: totrans-66
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 准备工作
+- en: We'll still use the example of the hello world repository. Make a fresh clone
+    of the repository, or reset the master branch if you have already cloned one.
+  id: totrans-67
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们仍然会使用hello world代码库的示例。如果您已经克隆了代码库，请进行一次新的克隆，或者重置主分支。
+- en: 'Create a fresh clone as follows:'
+  id: totrans-68
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 按以下步骤创建新的克隆：
+- en: '[PRE11]'
+  id: totrans-69
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE11]'
+- en: 'We can reset the existing clone as follows:'
+  id: totrans-70
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以按以下步骤重置现有的克隆：
+- en: '[PRE12]'
+  id: totrans-71
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE12]'
+- en: How to do it...
+  id: totrans-72
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: 'Check whether we have any files in the modified state and check the log:'
+  id: totrans-73
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 检查是否有文件处于修改状态并查看日志：
+- en: '[PRE13]'
+  id: totrans-74
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE13]'
+- en: 'Now, we can undo the commit, while retaining the changes in the index:'
+  id: totrans-75
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在，我们可以撤销提交，同时保留索引中的更改：
+- en: '[PRE14]'
+  id: totrans-76
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE14]'
+- en: You can now make minor (or major) changes to the files you need, add them to
+    the staging area, and create a new commit.
+  id: totrans-77
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，您可以对需要的文件进行微小（或重大）更改，将它们添加到暂存区，并创建一个新的提交。
+- en: How it works...
+  id: totrans-78
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 工作原理...
+- en: Again, Git will reset the branch pointer and **HEAD** to point to the previous
+    commit. However, with the `--soft` option, the index and working directories are
+    not reset, that is, they have the same state as they had before we created the
+    now undone commit.
+  id: totrans-79
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 再次，Git将重置分支指针和**HEAD**以指向前一个提交。但是，使用`--soft`选项时，索引和工作目录不会被重置，即它们的状态与我们创建现在被撤销的提交之前相同。
+- en: 'The following diagram shows the Git state before and after the undo:'
+  id: totrans-80
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下图示展示了撤销前后的Git状态：
+- en: '![](img/4bc521cd-e084-4f77-a755-a04c4fcb7677.png)'
+  id: totrans-81
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/4bc521cd-e084-4f77-a755-a04c4fcb7677.png)'
+- en: Undo – Working with a dirty area
+  id: totrans-82
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 撤销 – 处理脏区
+- en: In the previous examples, we assumed that the working tree was clean, that is,
+    no tracked files were in the modified state. However, this is not always the case,
+    and if a hard reset is carried out, the changes to the modified files will be
+    lost. Fortunately, Git provides a smart way to quickly put stuff away so that
+    it can be retrieved later using the `git stash` command.
+  id: totrans-83
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在前面的示例中，我们假设工作树是干净的，即没有跟踪文件处于修改状态。但这并不总是情况，如果执行硬重置，那些修改过的文件的更改将会丢失。幸运的是，Git提供了一个智能的方式来快速将东西放置到一边，以便稍后可以使用`git
+    stash`命令检索。
+- en: Getting ready
+  id: totrans-84
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 准备工作
+- en: Again, we'll use the example of the hello world repository. Make a fresh clone
+    of the repository, or reset the master branch if you have already cloned one.
+  id: totrans-85
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 再次以hello world代码库为例。如果您已经克隆了代码库，请进行一次新的克隆，或者重置主分支。
+- en: 'We can create the fresh clone as follows:'
+  id: totrans-86
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以按以下步骤创建新的克隆：
+- en: '[PRE15]'
+  id: totrans-87
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE15]'
+- en: 'We can reset the existing clone as follows:'
+  id: totrans-88
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以按以下步骤重置现有的克隆：
+- en: '[PRE16]'
+  id: totrans-89
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE16]'
+- en: 'We''ll also need to have some files in the working condition, so we''ll change
+    `hello_world.c` to the following:'
+  id: totrans-90
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们还需要确保一些文件处于工作状态，因此我们将`hello_world.c`更改为以下内容：
+- en: '[PRE17]'
+  id: totrans-91
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE17]'
+- en: How to do it...
+  id: totrans-92
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: In order to not accidentally delete any changes you have in your working tree
+    when you are about to undo a commit, you can have a look at the current state
+    of your working directory with `git status` command (as we already saw). If you
+    have changes and you want to keep them, you can stash them away before undoing
+    the commit and retrieve them afterward. Git provides a stash command that can
+    put unfinished changes away, so it is easy to make quick context switches without
+    losing work. The stash functionality is described further in [Chapter 11](ea1a1df3-bda4-4d35-b7de-67e38d18bcb0.xhtml),
+    *Tips and Tricks*. For now, you can think of the stash command as a stack where
+    you can put your changes and pop them later.
+  id: totrans-93
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了避免在撤销提交时意外删除工作树中的任何修改，您可以使用 `git status` 命令查看工作目录的当前状态（如我们之前所见）。如果有修改且您希望保留它们，您可以在撤销提交之前将它们存入暂存区，然后稍后取回。Git
+    提供了一个暂存命令，可以将未完成的修改存放起来，因此可以在不丢失工作的情况下快速切换上下文。暂存功能在[第11章](ea1a1df3-bda4-4d35-b7de-67e38d18bcb0.xhtml)，*技巧与窍门*中有进一步描述。目前，您可以将暂存命令看作是一个堆栈，可以将修改放入其中，然后稍后取出。
+- en: 'With the `hello_world.c` file in the working directory modified to the preceding
+    state, we can try to do a hard reset on the `HEAD` commit, keeping our changes
+    to the file by stashing them away before the reset and applying them again later:'
+  id: totrans-94
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在工作目录中，`hello_world.c` 文件已修改到前述状态，我们可以尝试对 `HEAD` 提交进行硬重置，在重置前先将修改存入暂存区，稍后再应用这些修改：
+- en: 'First, check the history:'
+  id: totrans-95
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 首先，检查历史记录：
+- en: '[PRE18]'
+  id: totrans-96
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE18]'
+- en: 'Then, check the status:'
+  id: totrans-97
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 然后，检查状态：
+- en: '[PRE19]'
+  id: totrans-98
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE19]'
+- en: 'As expected, `hello_world.c` was in the modified state; so, stash it away,
+    check the status, and perform the reset:'
+  id: totrans-99
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 正如预期的那样，`hello_world.c` 文件处于修改状态；所以，将其存入暂存区，检查状态，然后执行重置：
+- en: '[PRE20]'
+  id: totrans-100
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE20]'
+- en: 'The reset is done, and we got rid of the commit we wanted. Let''s resurrect
+    the changes we stashed away and check the file:'
+  id: totrans-101
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 重置完成，我们已经删除了想要删除的提交。现在，让我们恢复存入暂存区的修改并检查文件：
+- en: '[PRE21]'
+  id: totrans-102
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE21]'
+- en: So, the file is back to the state it was in before the reset, and we got rid
+    of the unwanted commit.
+  id: totrans-103
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 所以，文件恢复到了重置前的状态，我们也删除了不需要的提交。
+- en: How it works...
+  id: totrans-104
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 它是如何工作的……
+- en: The reset command works as explained in the previous examples but, combined
+    with the stash command, it forms a very useful tool that corrects mistakes even
+    though you have already starting working on something else. The stash command
+    works by saving the current state of your working directory and the staging area.
+    Then, it reverts your working directory to a clean state.
+  id: totrans-105
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 重置命令的工作原理与前面示例中的解释相同，但与暂存命令结合使用时，形成了一种非常有用的工具，即使您已经开始做其他工作，也能纠正错误。暂存命令通过保存工作目录和暂存区的当前状态来工作。然后，它会将工作目录恢复到干净的状态。
+- en: Redo – Recreate the latest commit with new changes
+  id: totrans-106
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 重新做——使用新修改重新创建最新提交
+- en: As with undo, redo can mean a lot of things. In this context, redoing a commit
+    will mean creating almost the same commit again with the same parent(s) as the
+    previous commit, but with different content and/or different commit messages.
+    This is quite useful if you've just created a commit, but have perhaps forgotten
+    to add a necessary file to the staging area before you committed, or if you need
+    to reword the commit message.
+  id: totrans-107
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 与撤销类似，重做也可以有多种含义。在这个上下文中，重做一个提交意味着几乎相同地重新创建一个提交，具有与之前提交相同的父提交，但内容和/或提交信息不同。如果您刚刚创建了一个提交，但可能忘记在提交之前将必要的文件添加到暂存区，或者需要重新编写提交信息，这非常有用。
+- en: Getting ready
+  id: totrans-108
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 准备工作
+- en: Again, we'll use the hello world repository. Make a fresh clone of the repository,
+    or reset the master branch if you have already cloned one.
+  id: totrans-109
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 再次，我们将使用 hello world 仓库。创建该仓库的新克隆，或者如果您已经克隆过，重置主分支。
+- en: 'We can create a fresh clone as follows:'
+  id: totrans-110
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以按如下方式创建一个新的克隆：
+- en: '[PRE22]'
+  id: totrans-111
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE22]'
+- en: 'We can reset an existing clone as follows:'
+  id: totrans-112
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以按如下方式重置现有的克隆：
+- en: '[PRE23]'
+  id: totrans-113
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE23]'
+- en: How to do it...
+  id: totrans-114
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 如何操作……
+- en: Let's pretend we need to redo the latest commit because we need to reword the
+    commit message to include a reference to the issue tracker.
+  id: totrans-115
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 假设我们需要重新做最新的提交，因为我们需要重新编写提交信息以包含对问题追踪器的引用。
+- en: 'Let''s first take a look at the latest commit and make sure the working directory
+    is clean:'
+  id: totrans-116
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 首先查看最新的提交，并确保工作目录是干净的：
+- en: '[PRE24]'
+  id: totrans-117
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE24]'
+- en: 'Now, we can redo the commit and update the commit message with the git commit
+    `--amend` command. This will bring up the default editor, and we can add a reference
+    to the issue tracker in the commit message (`Fixes: RD-31415`):'
+  id: totrans-118
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: '现在，我们可以重新做提交，并使用 `git commit --amend` 命令更新提交信息。这将打开默认编辑器，我们可以在提交信息中添加对问题追踪器的引用（`Fixes:
+    RD-31415`）：'
+- en: '[PRE25]'
+  id: totrans-119
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE25]'
+- en: 'Now, let''s check the log again to see whether everything worked:'
+  id: totrans-120
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在，重新检查日志，看看是否一切正常：
+- en: '[PRE26]'
+  id: totrans-121
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE26]'
+- en: 'We can see that the commit message has changed, but we can''t verify from the
+    log output that the parent of the commit is the same as in the original commit,
+    and so on, as we saw in the first commit we did. To check this, we can use the `git
+    cat-file` command we learned about in [Chapter 1](b475c6bd-71df-4b49-8062-57d065b83f51.xhtml),
+    *Navigating Git*. First, let''s see how the original commit looked:'
+  id: totrans-122
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 我们可以看到提交信息已经更改，但我们无法从日志输出中验证该提交的父提交是否与原始提交相同，以及其他信息，就像我们在第一次提交时看到的那样。为了检查这一点，我们可以使用在[第1章](b475c6bd-71df-4b49-8062-57d065b83f51.xhtml)中学到的`git
+    cat-file`命令，*Git导航*。首先，让我们看看原始提交是什么样的：
+- en: '[PRE27]'
+  id: totrans-123
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE27]'
+- en: The parent commit is `b8c39bb35c4c0b00b6cfb4e0f27354279fb28866`, and the root
+    tree is `d3abe70c50450a4d6d70f391fcbda1a4609d151f`.
+  id: totrans-124
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 父提交是`b8c39bb35c4c0b00b6cfb4e0f27354279fb28866`，根树是`d3abe70c50450a4d6d70f391fcbda1a4609d151f`。
+- en: 'Let''s check the data from the new commit:'
+  id: totrans-125
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 让我们检查一下新提交中的数据：
+- en: '[PRE28]'
+  id: totrans-126
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE28]'
+- en: The parent is the same, that is, `9c7532f5e788b8805ffd419fcf2a071c78493b23`
+    and the root tree is also the same, that is, `d3abe70c50450a4d6d70f391fcbda1a4609d151f`.
+    This is what we expected as we only changed the commit message. If we had added
+    some changes to the staging area and executed `git commit--amend`, we would have
+    included those changes in the commit and the root-tree SHA1 ID would have been
+    different, but the parent commit ID still the same.
+  id: totrans-127
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 父提交是相同的，即`9c7532f5e788b8805ffd419fcf2a071c78493b23`，根树也是相同的，即`d3abe70c50450a4d6d70f391fcbda1a4609d151f`。这是我们预期的结果，因为我们只更改了提交信息。如果我们将一些更改添加到暂存区并执行`git
+    commit --amend`，我们将把这些更改包含在提交中，并且根树的SHA1 ID会发生变化，但父提交ID仍然相同。
+- en: How it works...
+  id: totrans-128
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 它是如何工作的……
+- en: The `--amend` option to git commit is roughly equivalent to performing `git
+    reset --soft HEAD^`, followed by fixing the files needed and adding those to the
+    staging area. Then, we will run git commit reusing the commit message from the
+    previous commit (`git commit -c ORIG_HEAD`).
+  id: totrans-129
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`--amend`选项大致相当于执行`git reset --soft HEAD^`，然后修复需要的文件并将它们添加到暂存区。接着，我们会运行`git
+    commit`并重新使用上一个提交的提交信息（`git commit -c ORIG_HEAD`）。'
+- en: There's more...
+  id: totrans-130
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 还有更多……
+- en: We can also use the `--amend` method to add missing files to our latest commit.
+    Let's say you needed to add the `README.md` file to your latest commit in order
+    to get the documentation up to date, but you have already created the commit,
+    though you have not pushed it yet.
+  id: totrans-131
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们也可以使用`--amend`方法将遗漏的文件添加到最新的提交中。假设你需要将`README.md`文件添加到最新的提交中，以便使文档保持最新，但你已经创建了提交，尽管尚未推送。
+- en: 'You then add the file to the index as you would while starting to craft a new
+    commit. You can check with git status that only the `README.md` file is added:'
+  id: totrans-132
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后，你将文件添加到索引中，就像在开始制作新提交时一样。你可以通过`git status`检查，确认只有`README.md`文件被添加：
+- en: '[PRE29]'
+  id: totrans-133
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE29]'
+- en: 'Now, you can amend the latest commit with `git commit --amend`. The command
+    will include files in the index in the new commit and you can, as with the last
+    example, reword the commit message if needed. It is not needed in this example,
+    so we''ll pass the `--no-edit` option to the command:'
+  id: totrans-134
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，你可以通过`git commit --amend`修改最新的提交。此命令将把索引中的文件包含在新的提交中，像上一个示例一样，你可以在需要时修改提交信息。在这个示例中不需要修改，所以我们将传递`--no-edit`选项给命令：
+- en: '[PRE30]'
+  id: totrans-135
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE30]'
+- en: You can see from the output of the commit command that three files were changed
+    and `README.md` was one of them.
+  id: totrans-136
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以从提交命令的输出中看到，三个文件发生了变化，其中`README.md`是其中之一。
+- en: You can also reset the author information (name, email, and timestamp) with
+    the commit `--amend` command. Just pass along the `--reset-author` option and
+    Git will create a new timestamp and read author information from the configuration
+    or environment, instead of the using information from the old commit object.
+  id: totrans-137
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你还可以通过提交的`--amend`命令重置作者信息（姓名、邮箱和时间戳）。只需传递`--reset-author`选项，Git将创建一个新的时间戳，并从配置或环境中读取作者信息，而不是使用旧提交对象中的信息。
+- en: Revert – Undo the changes introduced by a commit
+  id: totrans-138
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 撤销 – 撤消提交所引入的更改
+- en: Revert can be used to undo a commit in history that has already been published
+    (pushed), whereas this can't be done with the amend or reset options without rewriting
+    history.
+  id: totrans-139
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 撤销可以用于撤销已发布（已推送）历史中的提交，而使用修改或重置选项则无法做到这一点，因为那样会重写历史。
+- en: Revert works by applying the anti-patch introduced by the commit in question.
+    A revert will, by default, create a new commit in history with a commit message
+    that describes which commit has been reverted.
+  id: totrans-140
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 撤销通过应用由目标提交引入的反补丁来工作。默认情况下，撤销将创建一个新提交，并附上描述已撤销提交的提交信息。
+- en: Getting ready
+  id: totrans-141
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 准备开始
+- en: Again, we'll use the hello world repository. Make a fresh clone of the repository,
+    or reset the master branch if you have already cloned one.
+  id: totrans-142
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 再次，我们将使用 hello world 仓库。重新克隆该仓库，或者如果已经克隆过，重置 master 分支。
+- en: 'We can create a fresh clone as follows:'
+  id: totrans-143
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以按如下方式创建一个新的克隆：
+- en: '[PRE31]'
+  id: totrans-144
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE31]'
+- en: 'We can reset the existing clone as follows:'
+  id: totrans-145
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以按如下方式重置现有的克隆：
+- en: '[PRE32]'
+  id: totrans-146
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE32]'
+- en: How to do it...
+  id: totrans-147
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: 'First, we''ll list the commits in the repository:'
+  id: totrans-148
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 首先，我们将列出仓库中的提交：
+- en: '[PRE33]'
+  id: totrans-149
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE33]'
+- en: 'We''ll revert the second commit, `9c7532f`:'
+  id: totrans-150
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 我们将撤销第二个提交 `9c7532f`：
+- en: '[PRE34]'
+  id: totrans-151
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE34]'
+- en: 'When we check the log, we can see that a new commit has been made:'
+  id: totrans-152
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 当我们查看日志时，我们可以看到已经创建了一个新的提交：
+- en: '[PRE35]'
+  id: totrans-153
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE35]'
+- en: We can take a closer look at the two commits with `git show` if we want a closer
+    investigation of what happened.
+  id: totrans-154
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果我们想更仔细地检查发生了什么，可以使用 `git show` 来查看这两个提交。
+- en: How it works...
+  id: totrans-155
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 它是如何工作的...
+- en: The `git revert` command applies the anti-patch of the commit in question to
+    the current `HEAD` pointer. It will generate a new commit with the anti-patch
+    and a commit message that describes the reverted commit(s).
+  id: totrans-156
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`git revert` 命令将相应提交的反补丁应用到当前的 `HEAD` 指针。它将生成一个带有反补丁的新提交，并附带描述被撤销提交的提交消息。'
+- en: There's more...
+  id: totrans-157
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 还有更多...
+- en: It's possible to revert more than one commit in a single revert, for example,
+    `git revert master~6..master~2` will revert the commits from the sixth commit
+    from the bottom in the master to the third commit from the bottom in the master
+    (both included).
+  id: totrans-158
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 可以在一次撤销操作中撤销多个提交，例如，`git revert master~6..master~2` 将撤销从 master 分支底部第六个提交到 master
+    分支底部第三个提交（包括这两个提交）。
+- en: It is also possible not to create a commit while reverting; passing the `-n`
+    option to `git revert` will apply the needed patched, but only to the working
+    tree and the staging area.
+  id: totrans-159
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 也可以在撤销时不创建提交；将 `-n` 选项传递给 `git revert` 将应用所需的补丁，但仅应用于工作区和暂存区。
+- en: Reverting a merge
+  id: totrans-160
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 撤销合并
+- en: Merge commits are a special case when it comes to revert. In order to be able
+    to revert a merge commit, you'll have to specify which parent side of the merge
+    you want to keep. However, when you revert a merge commit, you should keep in
+    mind that though reverting will undo changes to files, it doesn't undo history.
+    This means that when you revert a merge commit, you declare that you will not
+    have any of the changes introduced by the merge in the target branch.
+  id: totrans-161
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 合并提交在撤销时是一个特殊情况。为了能够撤销合并提交，您必须指定希望保留的合并父分支。然而，当您撤销合并提交时，应该记住，尽管撤销将撤销对文件的更改，但它不会撤销历史记录。这意味着，当您撤销合并提交时，您声明将不保留合并引入的任何更改到目标分支。
+- en: The effect of this is that the subsequent merges from the other branch will
+    only bring in changes of commits that are not ancestors of the reverted merge
+    commit.
+  id: totrans-162
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这样做的效果是，来自其他分支的后续合并将只带入不是被撤销合并提交的祖先的提交更改。
+- en: '![](img/8e5563b1-ec5c-4e9f-a13b-89d952260338.png)'
+  id: totrans-163
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/8e5563b1-ec5c-4e9f-a13b-89d952260338.png)'
+- en: In this example, we will learn how to revert a merge commit, and we'll learn
+    how we can merge the branch again, merging all of the changes by reverting to
+    the reverted merge commit.
+  id: totrans-164
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这个示例中，我们将学习如何撤销合并提交，并且我们将学习如何在撤销合并提交后重新合并分支，合并所有的更改。
+- en: Getting ready
+  id: totrans-165
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 准备工作
+- en: Again, we'll use the hello world repository. Make a fresh clone of the repository,
+    or reset the master branch if you have already cloned one.
+  id: totrans-166
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 再次，我们将使用 hello world 仓库。重新克隆该仓库，或者如果已经克隆过，重置 master 分支。
+- en: 'We can create a fresh clone as follows:'
+  id: totrans-167
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以按如下方式创建一个新的克隆：
+- en: '[PRE36]'
+  id: totrans-168
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE36]'
+- en: 'We can reset the existing clone as follows:'
+  id: totrans-169
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以按如下方式重置现有的克隆：
+- en: '[PRE37]'
+  id: totrans-170
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE37]'
+- en: 'In this example, we also need to use some of the other branches in the repository,
+    so we need to create them locally:'
+  id: totrans-171
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这个示例中，我们还需要使用仓库中的其他分支，因此需要在本地创建它们：
+- en: '[PRE38]'
+  id: totrans-172
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE38]'
+- en: How to do it...
+  id: totrans-173
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: On the develop branch, we have just checked that there is a merge commit that
+    introduces hello world programs from languages that start with P.
+  id: totrans-174
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 develop 分支上，我们刚刚检查了存在一个合并提交，该合并提交引入了以字母 P 开头的编程语言中的 hello world 程序。
+- en: 'Unfortunately, the Perl version doesn''t run:'
+  id: totrans-175
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 不幸的是，Perl 版本无法运行：
+- en: '[PRE39]'
+  id: totrans-176
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE39]'
+- en: 'The following steps will help you revert a merge:'
+  id: totrans-177
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下步骤将帮助您撤销一个合并：
+- en: 'Let''s take a look at the history, the latest five commits, and find the merge
+    commit:'
+  id: totrans-178
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 让我们来看一下历史记录，查看最新的五个提交，并找到合并提交：
+- en: '[PRE40]'
+  id: totrans-179
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE40]'
+- en: 'The commit we are looking for is `5ae3beb Merge branch ''feature/p-lang'' into
+    develop`; this adds the commits for hello world in Perl and PHP to the develop
+    branch. We would like the fix of the Perl version to happen on the feature branch,
+    and then merge it to develop when ready. In order to keep `develop` stable, we
+    need to revert the merge commit that introduced the faulty Perl version. Before
+    we perform the merge, let''s just have a look at the content of `HEAD`:'
+  id: totrans-180
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们正在寻找的提交是`5ae3beb Merge branch 'feature/p-lang' into develop`；此提交将hello world的Perl和PHP版本添加到develop分支。我们希望Perl版本的修复在feature分支上进行，修复完成后再合并到develop。为了保持`develop`的稳定性，我们需要撤销引入有问题的Perl版本的合并提交。在执行合并之前，让我们先看看`HEAD`的内容：
+- en: '[PRE41]'
+  id: totrans-181
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE41]'
+- en: 'Revert the merge, keeping the history of the first parent:'
+  id: totrans-182
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 撤销合并，保留第一个父节点的历史：
+- en: '[PRE42]'
+  id: totrans-183
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE42]'
+- en: 'Let''s have a look at the content of our new `HEAD` state:'
+  id: totrans-184
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 让我们看看我们新`HEAD`状态的内容：
+- en: '[PRE43]'
+  id: totrans-185
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE43]'
+- en: The Perl and PHP files introduced in the merge are gone, so the revert did its
+    job.
+  id: totrans-186
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 合并中引入的Perl和PHP文件已经消失，因此撤销操作完成了它的工作。
+- en: How it works...
+  id: totrans-187
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 它是如何工作的...
+- en: The revert command will take the patches introduced by the commit you want to
+    revert and apply the reverse/anti-patch to the working tree. If all goes well,
+    that is, there are no conflicts, a new commit will be made. While reverting a
+    merge commit, only the changes introduced in the mainline (the `-m` option) will
+    be kept, and all the changes introduced in the other side of the merge will be
+    reverted.
+  id: totrans-188
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 撤销命令将获取你想撤销的提交所引入的补丁，并将反向/反补丁应用到工作树。如果一切顺利，即没有冲突，将会生成一个新的提交。在撤销合并提交时，只有主线（`-m`选项）中引入的更改会被保留，合并另一方引入的所有更改都会被撤销。
+- en: There's more...
+  id: totrans-189
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 还有更多内容...
+- en: Though it is easy to revert a merge commit, you might run into issues if you
+    later want to the branch again because the issues on the merge have not been fixed.
+    While reverting the merge commit, you actually tell Git that you do not want any
+    of the changes that the other branch introduced in this branch. So, when you try
+    to merge in the branch again, you will only get the changes from the commits that
+    are not ancestors of the reverted merge commit.
+  id: totrans-190
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 尽管撤销合并提交很容易，但如果以后你想再次合并该分支，你可能会遇到问题，因为合并中的问题尚未解决。在撤销合并提交时，你实际上告诉Git，你不希望在该分支中包含另一个分支所引入的任何更改。因此，当你再次尝试合并该分支时，你只会得到那些不是撤销合并提交的祖先提交中的更改。
+- en: 'We will see this in action by trying to merge the `feature/p-lang` branch with
+    the develop branch again:'
+  id: totrans-191
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将通过再次尝试将`feature/p-lang`分支与develop分支合并来实际演示这一过程：
+- en: '[PRE44]'
+  id: totrans-192
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE44]'
+- en: 'We can solve the conflict just by adding `hello_world.pl`:'
+  id: totrans-193
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们只需添加`hello_world.pl`就可以解决冲突：
+- en: '[PRE45]'
+  id: totrans-194
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE45]'
+- en: 'Let''s check the tree to see whether everything seems alright:'
+  id: totrans-195
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们检查一下树，看看一切是否正常：
+- en: '[PRE46]'
+  id: totrans-196
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE46]'
+- en: The `hello_world.php` file is missing, but this makes sense as the change that
+    introduced it was reverted in the reverted merge commit.
+  id: totrans-197
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`hello_world.php`文件缺失，但这很有意义，因为引入它的更改已经在撤销合并提交中被撤销。'
+- en: 'To perform a proper re-merge, we first have to revert the reverting merge commit;
+    this might seem a bit weird, but it is the way to get the changes from before
+    the revert back into our tree. Then, we can perform another merge of the branch,
+    and we''ll end up with all the changes introduced by the branch we''re merging
+    in. However, we first have to discard the merge commit we just made with a hard
+    reset:'
+  id: totrans-198
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要执行正确的重新合并，我们首先必须撤销撤销合并提交；这可能看起来有些奇怪，但这是将撤销前的更改重新纳入我们树中的方法。然后，我们可以再次合并该分支，最终会得到我们合并分支所引入的所有更改。然而，我们首先需要通过硬重置丢弃我们刚刚做的合并提交：
+- en: '[PRE47]'
+  id: totrans-199
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE47]'
+- en: 'Now, we can revert the reverting merge and re-merge the branch:'
+  id: totrans-200
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，我们可以撤销撤销合并并重新合并该分支：
+- en: '[PRE48]'
+  id: totrans-201
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE48]'
+- en: 'Let''s check the tree for the Perl and PHP files, and see whether the Perl
+    file has been fixed:'
+  id: totrans-202
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们检查一下树，看看Perl和PHP文件，并查看Perl文件是否已修复：
+- en: '[PRE49]'
+  id: totrans-203
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE49]'
+- en: See also
+  id: totrans-204
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 另见
+- en: 'For more information on reverting merges, refer to the following articles:'
+  id: totrans-205
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 欲了解有关撤销合并的更多信息，请参阅以下文章：
+- en: The *How To Revert a Faulty Merge* article at [https://www.kernel.org/pub/software/scm/git/docs/howto/revert-a-faulty-merge.html](https://www.kernel.org/pub/software/scm/git/docs/howto/revert-a-faulty-merge.html)
+  id: totrans-206
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '[https://www.kernel.org/pub/software/scm/git/docs/howto/revert-a-faulty-merge.html](https://www.kernel.org/pub/software/scm/git/docs/howto/revert-a-faulty-merge.html)上的*如何撤销一个错误的合并*文章'
+- en: The *Undoing Merges* article at [http://git-scm.com/blog/2010/03/02/undoing-merges.html](http://git-scm.com/blog/2010/03/02/undoing-merges.html)
+  id: totrans-207
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '[http://git-scm.com/blog/2010/03/02/undoing-merges.html](http://git-scm.com/blog/2010/03/02/undoing-merges.html)上的*撤销合并*文章'
+- en: Viewing past Git actions with git reflog
+  id: totrans-208
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用git reflog查看过去的Git操作
+- en: The `reflog` command stores information on updates to the tip of the branches
+    in Git, where the normal `git log` command shows the ancestry chain from `HEAD`,
+    and the `reflog` command shows what `HEAD` has pointed to in the repository. This
+    is your history in the repository, which tells you how you have moved between
+    branches, created your commits and resets, and so on. Basically, anything that
+    makes `HEAD` point to something new is recorded in the `reflog`. This means that,
+    by going through the `reflog` command, you can find lost commits that none of
+    your branches or other commits point to. This makes the `reflog` command a good
+    starting point for trying to find a lost commit.
+  id: totrans-209
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`reflog` 命令存储了 Git 中更新分支尖端的相关信息，普通的 `git log` 命令显示从 `HEAD` 开始的祖先链，而 `reflog`
+    命令显示 `HEAD` 在仓库中指向的内容。这是你在仓库中的历史，告诉你如何在分支之间移动、创建提交和重置等等。基本上，任何使 `HEAD` 指向新内容的操作都会被记录在
+    `reflog` 中。这意味着，通过查看 `reflog` 命令，你可以找到那些没有被任何分支或其他提交指向的丢失提交。因此，`reflog` 命令是寻找丢失提交的一个很好的起点。'
+- en: Getting ready
+  id: totrans-210
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 准备工作
+- en: Again, we'll use the hello world repository. If you make a fresh clone, make
+    sure to run the scripts for this chapter so that there will be some entries in
+    the `reflog` command.
+  id: totrans-211
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 再次，我们将使用 hello world 仓库。如果你进行一个新的克隆，确保运行本章的脚本，这样 `reflog` 命令中就会有一些条目。
+- en: The scripts can be found on the book's home page. If you just reset the master
+    branch to `origin/master` after performing the recipes in this chapter, everything
+    will be ready.
+  id: totrans-212
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 脚本可以在本书的主页上找到。如果你只是在执行完本章的操作后，将主分支重置为 `origin/master`，那么一切就准备好了。
+- en: 'We can create a fresh clone as follows:'
+  id: totrans-213
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以按如下方式创建一个新的克隆：
+- en: '[PRE50]'
+  id: totrans-214
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE50]'
+- en: 'We can reset an existing clone as follows:'
+  id: totrans-215
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以按如下方式重置现有的克隆：
+- en: '[PRE51]'
+  id: totrans-216
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE51]'
+- en: How to do it...
+  id: totrans-217
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: 'Let''s try to run the `reflog` command and limit ourselves to just the latest seven
+    entries:'
+  id: totrans-218
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 让我们尝试运行 `reflog` 命令，并限制只显示最新的七个条目：
+- en: '[PRE52]'
+  id: totrans-219
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE52]'
+- en: In your repository, the commits will have different SHA-1 hashes due to the
+    fact that the commits generated in the examples will have slightly different content,
+    specifically your username and email address, but the order should be approximately
+    the same.
+  id: totrans-220
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在你的仓库中，由于示例中生成的提交会有略微不同的内容，具体来说是你的用户名和电子邮件地址，因此提交的SHA-1哈希值会有所不同，但顺序应该大致相同。
+- en: We can see the actions we performed in the last example by reverting, committing,
+    and resetting. We can see the merge commit, `2804731`, that we abandoned. It didn't
+    merge in all the changes we wanted it to due to the previous merge and its revert.
+  id: totrans-221
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以看到在上一个示例中通过回退、提交和重置所执行的操作。我们可以看到我们放弃的合并提交 `2804731`。由于之前的合并及其回退，它没有合并我们想要的所有更改。
+- en: 'We can take a closer look at the commit with `git show`:'
+  id: totrans-222
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 我们可以使用 `git show` 更详细地查看该提交：
+- en: '[PRE53]'
+  id: totrans-223
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE53]'
+- en: 'Indeed, this was the commit we chose to abandon in the previous example. We
+    can also look at the tree of the commit, just as we did in the previous example,
+    and check whether they are the same:'
+  id: totrans-224
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 确实，这正是我们在前一个示例中选择放弃的提交。我们也可以像在前一个示例中那样查看提交的树形结构，检查它们是否相同：
+- en: '[PRE54]'
+  id: totrans-225
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE54]'
+- en: From here, there are various ways to resurrect the changes. You can either check
+    out the commit and create a branch; then, you'll have a pointer so that you can
+    easily find it again. You can also check out specific files from the commit with
+    `git checkout` – `path/to/file SHA-1`, or you can use the `git show` or `git cat-file`
+    commands to view the files.
+  id: totrans-226
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 从这里开始，有多种方式可以恢复这些更改。你可以检查提交并创建一个分支；这样，你将有一个指针，方便你再次找到它。你也可以使用 `git checkout`
+    检出特定的文件 —— `path/to/file SHA-1`，或者使用 `git show` 或 `git cat-file` 命令查看文件。
+- en: How it works...
+  id: totrans-227
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 它是如何工作的...
+- en: For every movement of the `HEAD` pointer in the repository, Git stores the commit
+    pointed to and the action for getting there. This can be commit, checkout, reset,
+    revert, merge, rebase, and so on. The information is local to the repository and
+    is not shared on pushes, fetches, and clones. Using the `reflog` command to find
+    the lost commits is fairly easy if you know what you are searching for and the
+    approximate time when you created the commit you are searching for. If you have
+    a lot of reflog history, many commits, switching branches, and so on, it can be
+    hard to search through the `reflog` command due to the amount of noise from the
+    many updates to `HEAD`. The output of the `reflog` command can be a lot of options
+    and, among them, there are options you can also pass on to the normal `git log`
+    command.
+  id: totrans-228
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于仓库中每次`HEAD`指针的移动，Git 会存储指向的提交以及到达该提交的操作。这个操作可以是提交、检出、重置、回退、合并、变基等。信息是本地存储在仓库中的，不会在推送、拉取和克隆时共享。如果你知道你在寻找的内容以及大致的时间点，使用
+    `reflog` 命令查找丢失的提交是相当简单的。如果你有大量的 reflog 历史、许多提交、切换分支等，那么由于 `HEAD` 的多次更新带来的噪音，查找就变得困难。`reflog`
+    命令的输出可能会有很多选项，其中一些选项也可以传递给普通的 `git log` 命令。
+- en: Finding lost changes with git fsck
+  id: totrans-229
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用 git fsck 找回丢失的更改
+- en: Another tool exists in Git that can help you find and recover lost commits and
+    even blobs (files), which is `git fsck`. The `fsck` command tests the object database
+    and verifies the SHA-1 ID of the objects and the connections they make. This command
+    can also be used to find objects that are not reachable from any named reference,
+    as it tests all the objects found in the database, which are in the `.git/objects`
+    folder.
+  id: totrans-230
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git 中还有一个工具可以帮助你找回丢失的提交，甚至是 blob（文件），它就是 `git fsck`。`fsck` 命令会测试对象数据库，验证对象的
+    SHA-1 ID 以及它们之间的连接。这个命令还可以用来查找那些从任何命名引用中不可达的对象，因为它会测试数据库中所有的对象，这些对象位于 `.git/objects`
+    文件夹中。
+- en: Getting ready
+  id: totrans-231
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 准备工作
+- en: Again, we'll use the hello world repository. If you make a fresh clone, make
+    sure to run the scripts for this chapter (`04_undo_dirty.sh`), so there will be
+    some objects for `git fsck` to consider. The scripts can be found on the book's
+    home page. If you just reset the master branch after performing the other recipes
+    in the chapter, everything will be ready.
+  id: totrans-232
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 再次，我们将使用 hello world 仓库。如果你做一个新的克隆，确保运行本章的脚本（`04_undo_dirty.sh`），这样 `git fsck`
+    就会有一些对象可以处理。脚本可以在书的主页找到。如果你在执行完本章其他操作后只重置主分支，一切就绪。
+- en: 'We can create the fresh clone as follows:'
+  id: totrans-233
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以按照以下方式创建新的克隆：
+- en: '[PRE55]'
+  id: totrans-234
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE55]'
+- en: 'We can reset an existing clone as follows:'
+  id: totrans-235
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以按照以下方式重置现有的克隆：
+- en: '[PRE56]'
+  id: totrans-236
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE56]'
+- en: How to do it...
+  id: totrans-237
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 怎么做...
+- en: 'Let''s look for the unreachable objects in the database:'
+  id: totrans-238
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 让我们在数据库中查找不可达的对象：
+- en: '[PRE57]'
+  id: totrans-239
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE57]'
+- en: The object's ID, the SHA-1 hash, will not be the same if you perform the example
+    on your computer, as the committer, author, and timestamp will be different.
+  id: totrans-240
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你在自己的计算机上执行这个示例，对象的 ID（SHA-1 哈希值）将不会相同，因为提交者、作者和时间戳会不同。
+- en: 'We found two commits and one blob. Let''s take a closer look at each of them;
+    the blob first:'
+  id: totrans-241
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 我们找到了两个提交和一个 blob。让我们仔细看看每一个；先看这个 blob：
+- en: '[PRE58]'
+  id: totrans-242
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE58]'
+- en: So, the blob is the `hello_world.c` file from the example, which stashes away
+    your changes before resetting a commit. Here, we stashed away the file, performed
+    a reset, and resurrected the file from the stash, but we never actually performed
+    a commit. The stash command, however, did add the file to the database, so it
+    could find it again, and the file will continue to be there until the garbage
+    collection kicks in, or forever if it is referenced by a commit in the general
+    history.
+  id: totrans-243
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 所以，blob 是示例中的 `hello_world.c` 文件，它在重置提交之前将你的更改存放在暂存区。在这里，我们将文件暂存，执行了重置操作，并从暂存区恢复文件，但我们实际上并没有执行提交。然而，`stash`
+    命令确实将文件添加到了数据库中，这样它就可以再次找到，直到垃圾回收启动，或者如果文件被历史中的提交引用，它将永远存在。
+- en: 'Let''s look more closely at the two commits:'
+  id: totrans-244
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 让我们更仔细地看看这两个提交：
+- en: '[PRE59]'
+  id: totrans-245
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE59]'
+- en: Both of the commits are actually commits we made when we stashed away our changes
+    in the previous example. The stash command creates a commit object with the content
+    of the staging area, and a merge commit merging `HEAD` and the commit with the
+    index with the content of the working directory (tracked files only). As we resurrected
+    our stashed changes in the previous example, we no longer have any reference pointing
+    at the preceding commits; therefore, they are found by `git fsck`.
+  id: totrans-246
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这两个提交实际上是我们在前一个示例中将更改暂存时所做的提交。`stash` 命令会创建一个提交对象，其中包含暂存区的内容，并且会有一个合并提交，合并 `HEAD`
+    和与暂存区内容相关的提交（仅跟踪文件）。正如我们在前一个示例中恢复了暂存的更改，我们不再有任何引用指向之前的提交，因此它们通过 `git fsck` 被找到了。
+- en: How it works...
+  id: totrans-247
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 它是如何工作的……
+- en: The `git fsck` command will test all the objects found in the `.git/objects`
+    folder. When the `--unreachable` option is given, it will report the objects found
+    that can't be reached from another reference; a reference can be a branch, a tag,
+    a commit, a tree, the `reflog`, or changes that have been stashed away.
+  id: totrans-248
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`git fsck` 命令会测试 `.git/objects` 文件夹中找到的所有对象。当给定 `--unreachable` 选项时，它会报告那些无法从其他引用中访问到的对象；引用可以是分支、标签、提交、树、`reflog`
+    或者已经被暂存的更改。'

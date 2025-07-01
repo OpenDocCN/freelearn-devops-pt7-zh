@@ -1,0 +1,1296 @@
+- en: '8'
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '8'
+- en: Helping the Database Team with Automation
+  id: totrans-1
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 帮助数据库团队实现自动化
+- en: Stateful applications, by definition, must save data persistently. So, when
+    we talk about stateful applications, data will come into the picture, and hence,
+    database servers. Choose any supported database software, depending on the type
+    of data you want to store. This includes the number of transactions, the performance
+    that’s required for your application, high availability and failover support,
+    and many other factors. However, there are more important concerns, such as preparing
+    the datastore, installing the necessary dependencies, packages or libraries. In
+    terms of maintenance, this will be a continuous process as we need to take care
+    of backups, data dumps, snapshots, and restoration in case of failure.
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有状态应用程序，按定义必须持久保存数据。因此，当我们谈论有状态应用程序时，数据将成为关键因素，因此也涉及数据库服务器。根据你要存储的数据类型，选择任何支持的数据库软件。这包括事务数量、应用程序所需的性能、高可用性和故障切换支持以及许多其他因素。然而，更重要的考虑因素是准备数据存储、安装必要的依赖项、软件包或库。在维护方面，这将是一个持续的过程，因为我们需要处理备份、数据转储、快照和在故障情况下的恢复。
+- en: Ansible can help you in such situations. There are hundreds of Ansible database
+    modules available that can help you implement your database automation tasks,
+    including database installation, deployment, managing tables, managing users,
+    and many other tasks.
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 可以帮助你应对这种情况。有数百个 Ansible 数据库模块可以帮助你实现数据库自动化任务，包括数据库安装、部署、管理表格、管理用户以及许多其他任务。
+- en: 'In this chapter, we will cover the following topics:'
+  id: totrans-4
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章将涵盖以下主题：
+- en: Ansible for database operations
+  id: totrans-5
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Ansible 在数据库操作中的应用
+- en: Installing database servers
+  id: totrans-6
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 安装数据库服务器
+- en: Creating and managing databases using Ansible
+  id: totrans-7
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用 Ansible 创建和管理数据库
+- en: Automating PostgreSQL operations
+  id: totrans-8
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 自动化 PostgreSQL 操作
+- en: Automating a password reset using ITSM and Ansible
+  id: totrans-9
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用 ITSM 和 Ansible 自动化密码重置
+- en: We will learn how to install the PostgreSQL database servers, create databases,
+    configure database tables, user authentication, and more. You will also learn
+    about the integration opportunities for zero-touch automation while using Ansible
+    and **IT Service Management** (**ITSM**) tools.
+  id: totrans-10
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将学习如何安装 PostgreSQL 数据库服务器，创建数据库，配置数据库表格，用户认证等。你还将了解在使用 Ansible 和**IT 服务管理**（**ITSM**）工具时进行零接触自动化的集成机会。
+- en: Technical requirements
+  id: totrans-11
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 技术要求
+- en: The following are the technical requirements to proceed with this chapter.
+  id: totrans-12
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是继续本章所需的技术要求。
+- en: A Linux machine for the Ansible control node (with internet access)
+  id: totrans-13
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 用于 Ansible 控制节点的 Linux 机器（需要有互联网连接）
+- en: A Linux machine for installing and configuring the PostgreSQL server
+  id: totrans-14
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 用于安装和配置 PostgreSQL 服务器的 Linux 机器
+- en: Basic knowledge about databases (PostgreSQL) and servers
+  id: totrans-15
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 数据库（PostgreSQL）和服务器的基础知识
+- en: All the Ansible code, playbooks, commands, and snippets for this chapter can
+    be found in this book’s GitHub repository at [https://github.com/PacktPublishing/Ansible-for-Real-life-Automation/tree/main/Chapter-08](https://github.com/PacktPublishing/Ansible-for-Real-life-Automation/tree/main/Chapter-08).
+  id: totrans-16
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章的所有 Ansible 代码、剧本、命令和片段可以在本书的 GitHub 仓库中找到，地址为 [https://github.com/PacktPublishing/Ansible-for-Real-life-Automation/tree/main/Chapter-08](https://github.com/PacktPublishing/Ansible-for-Real-life-Automation/tree/main/Chapter-08)。
+- en: Ansible for database operations
+  id: totrans-17
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Ansible 在数据库操作中的应用
+- en: 'Database operations not only involve deploying database servers but also counting
+    the day-to-day operations, such as managing databases, tables, database users,
+    permissions or access. Ansible can talk to most of the well-known database services
+    using the appropriate Ansible modules, as shown in the following diagram:'
+  id: totrans-18
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 数据库操作不仅仅涉及部署数据库服务器，还包括日常操作，如管理数据库、表格、数据库用户、权限或访问。Ansible 可以通过适当的 Ansible 模块与大多数著名的数据库服务进行交互，如下图所示：
+- en: '![Figure 8.1 – Ansible database automation  ](img/B18383_08_01.jpg)'
+  id: totrans-19
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 8.1 – Ansible 数据库自动化](img/B18383_08_01.jpg)'
+- en: Figure 8.1 – Ansible database automation
+  id: totrans-20
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 8.1 – Ansible 数据库自动化
+- en: 'Some of the most common database automation use cases are as follows:'
+  id: totrans-21
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一些最常见的数据库自动化用例如下：
+- en: Deploying standalone database servers
+  id: totrans-22
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 部署独立数据库服务器
+- en: Configure **high availability** (**HA**) database clusters
+  id: totrans-23
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 配置**高可用性**（**HA**）数据库集群
+- en: Creating databases and tables
+  id: totrans-24
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 创建数据库和表格
+- en: Managing user accounts
+  id: totrans-25
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 管理用户账户
+- en: Managing permissions
+  id: totrans-26
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 管理权限
+- en: Managing database and server access
+  id: totrans-27
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 管理数据库和服务器访问
+- en: Backup and restore operations
+  id: totrans-28
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 备份和恢复操作
+- en: Implementing data replication and mirroring
+  id: totrans-29
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 实现数据复制和镜像
+- en: Automated database failovers
+  id: totrans-30
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 自动化数据库故障切换
+- en: With the help of Ansible database collections and modules, we can automate most
+    of these operations. In the next section, you will learn how to install a PostgreSQL
+    database server using Ansible.
+  id: totrans-31
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 Ansible 数据库集合和模块的帮助下，我们可以自动化大多数这些操作。在下一节中，你将学习如何使用 Ansible 安装 PostgreSQL 数据库服务器。
+- en: Please refer to the *Further reading* section at the end of this chapter for
+    more resources.
+  id: totrans-32
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请参考本章结尾的 *进一步阅读* 部分，获取更多资源。
+- en: Installing database servers
+  id: totrans-33
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 安装数据库服务器
+- en: If you are a database administrator or if you know how database servers work,
+    then you know the pain and struggle of managing and maintaining the services and
+    data as per the application’s requirements. Since the introduction of virtualized
+    and cloud-based platforms, provisioning virtual machines, disks, and other resources
+    has become less of a headache. However, we still need automated options to provision
+    database servers and database instances. There are single-click deployment solutions
+    from public **cloud service providers** (**CSPs**) known as **managed database
+    solutions** but in most cases, we do not have much control and transparency over
+    such services if we have more strict requirements. Hence, organizations are forced
+    to use self-hosted database servers and follow manual deployment and management
+    processes.
+  id: totrans-34
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你是数据库管理员，或者你了解数据库服务器的工作原理，那么你一定知道按照应用需求管理和维护服务与数据的痛苦与挑战。自从虚拟化和基于云的平台引入以来，配置虚拟机、磁盘和其他资源已经不再是大问题。然而，我们仍然需要自动化选项来配置数据库服务器和数据库实例。公共**云服务提供商**（**CSPs**）提供了所谓的**托管数据库解决方案**，它们提供一键部署服务，但在大多数情况下，如果我们有更严格的要求，往往无法对这些服务拥有太多控制和透明度。因此，组织不得不使用自托管的数据库服务器，并遵循手动部署和管理过程。
+- en: 'In [*Chapter 7*](B18383_07.xhtml#_idTextAnchor125), *Managing Your Virtualization
+    and Cloud Platforms*, you learned how to automate infrastructure provisioning,
+    including virtual machines and disks. In this chapter, we will explore how to
+    automate database tasks, such as installing database servers, or provisioning
+    databases or tables, as shown in the following diagram:'
+  id: totrans-35
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在[*第 7 章*](B18383_07.xhtml#_idTextAnchor125)，*管理你的虚拟化和云平台*中，你学习了如何自动化基础设施的配置，包括虚拟机和磁盘。在本章中，我们将探讨如何自动化数据库任务，例如安装数据库服务器，或配置数据库或表，如下图所示：
+- en: '![Figure 8.2 – Basic database operations ](img/B18383_08_02.jpg)'
+  id: totrans-36
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 8.2 – 基本数据库操作](img/B18383_08_02.jpg)'
+- en: Figure 8.2 – Basic database operations
+  id: totrans-37
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 8.2 – 基本数据库操作
+- en: Fortunately, Ansible has a good collection of modules and plugins for deploying
+    and managing database servers such as Microsoft SQL, MySQL, PostgreSQL, InfluxDB,
+    MongoDB, ProxySQL or Vertica. You will learn about the basics of Ansible-based
+    database deployment in the following sections.
+  id: totrans-38
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 幸运的是，Ansible 提供了丰富的模块和插件，用于部署和管理数据库服务器，如 Microsoft SQL、MySQL、PostgreSQL、InfluxDB、MongoDB、ProxySQL
+    或 Vertica。在接下来的章节中，你将了解基于 Ansible 的数据库部署基础知识。
+- en: Installing PostgreSQL using Ansible
+  id: totrans-39
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 使用 Ansible 安装 PostgreSQL
+- en: 'Installing PostgreSQL is simple if you refer to the official documentation.
+    However, you need to install all the dependencies and libraries that are required
+    for PostgreSQL. You also need to configure the database server details. Fortunately,
+    there are well-written Ansible roles available in Ansible Galaxy that we can download
+    and use to install and configure PostgreSQL servers (and other database servers).
+    The following screenshot shows us searching for the `postgresql` role in Ansible
+    Galaxy:'
+  id: totrans-40
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果参考官方文档，安装 PostgreSQL 是简单的。然而，你需要安装 PostgreSQL 所需的所有依赖项和库。你还需要配置数据库服务器的详细信息。幸运的是，Ansible
+    Galaxy 上有很多写得很好的 Ansible 角色，我们可以下载并使用它们来安装和配置 PostgreSQL 服务器（以及其他数据库服务器）。下图展示了我们在
+    Ansible Galaxy 中搜索 `postgresql` 角色的过程：
+- en: '![Figure 8.3 – The postgresql role search in Ansible Galaxy ](img/B18383_08_03.jpg)'
+  id: totrans-41
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 8.3 – 在 Ansible Galaxy 中搜索 postgresql 角色](img/B18383_08_03.jpg)'
+- en: Figure 8.3 – The postgresql role search in Ansible Galaxy
+  id: totrans-42
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 8.3 – 在 Ansible Galaxy 中搜索 postgresql 角色
+- en: 'In this exercise, you will install a simple standalone PostgreSQL server using
+    the `geerlingguy.postgresql` Ansible role, which was contributed by community
+    member *Jeff Geerling* ([https://galaxy.ansible.com/geerlingguy/postgresql](https://galaxy.ansible.com/geerlingguy/postgresql)).
+    Follow these steps:'
+  id: totrans-43
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本练习中，你将使用由社区成员 *Jeff Geerling* 贡献的 `geerlingguy.postgresql` Ansible 角色安装一个简单的独立
+    PostgreSQL 服务器，该角色的链接为 [https://galaxy.ansible.com/geerlingguy/postgresql](https://galaxy.ansible.com/geerlingguy/postgresql)。请按照以下步骤进行：
+- en: 'Make sure that your `ansible.cfg` file has been configured with project-specific
+    roles and a collection page:'
+  id: totrans-44
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 确保你的 `ansible.cfg` 文件已根据项目配置了特定的角色和集合页面：
+- en: '![Figure 8.4 - Configure ansible.cfg ](img/B18383_08_04.jpg)'
+  id: totrans-45
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 8.4 - 配置 ansible.cfg](img/B18383_08_04.jpg)'
+- en: Figure 8.4 - Configure ansible.cfg
+  id: totrans-46
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 8.4 - 配置 ansible.cfg
+- en: 'Install the role using the `ansible-galaxy` command, as follows:'
+  id: totrans-47
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用 `ansible-galaxy` 命令安装角色，如下所示：
+- en: '![Figure 8.5 – Installing an Ansible role using the ansible-galaxy command
+    ](img/B18383_08_05.jpg)'
+  id: totrans-48
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 8.5 – 使用 ansible-galaxy 命令安装 Ansible 角色](img/B18383_08_05.jpg)'
+- en: Figure 8.5 – Installing an Ansible role using the ansible-galaxy command
+  id: totrans-49
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 8.5 – 使用 ansible-galaxy 命令安装 Ansible 角色
+- en: 'Create a variable file called `Chapter-08/vars/postgres.yaml` so that you can
+    pass some user details, the database to create, and `hba` entries to update the
+    `geerlingguy.postgresql` role. The role will create the resources automatically
+    based on the variables you are passing to the playbook. Skip this step if you
+    do not wish to create such entries and configurations automatically:'
+  id: totrans-50
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建一个名为 `Chapter-08/vars/postgres.yaml` 的变量文件，以便传递一些用户详细信息、要创建的数据库和 `hba` 条目，更新
+    `geerlingguy.postgresql` 角色。此角色将根据你传递给 Playbook 的变量自动创建资源。如果你不希望自动创建此类条目和配置，可以跳过此步骤：
+- en: '![Figure 8.6 – Variables for PostgreSQL database ](img/B18383_08_06.jpg)'
+  id: totrans-51
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 8.6 – PostgreSQL 数据库的变量](img/B18383_08_06.jpg)'
+- en: Figure 8.6 – Variables for PostgreSQL database
+  id: totrans-52
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 8.6 – PostgreSQL 数据库的变量
+- en: Important Note
+  id: totrans-53
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 重要提示
+- en: '[PRE0]'
+  id: totrans-54
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: 'Create the `Chapter-08/postgres-deploy.yaml` playbook, as follows:'
+  id: totrans-55
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建 `Chapter-08/postgres-deploy.yaml` Playbook，如下所示：
+- en: '![Figure 8.7 – Playbook to deploy PostgreSQL server ](img/B18383_08_07.jpg)'
+  id: totrans-56
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 8.7 – 部署 PostgreSQL 服务器的 Playbook](img/B18383_08_07.jpg)'
+- en: Figure 8.7 – Playbook to deploy PostgreSQL server
+  id: totrans-57
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 8.7 – 部署 PostgreSQL 服务器的 Playbook
+- en: 'Add a task that allows remote connections for PostgreSQL and restart the PostgreSQL
+    service. Finally, allow database port `5432` in the firewall, as shown in the
+    following code snippet. Use other firewall service modules such as `community.general.ufw`
+    if you are using a different firewall:'
+  id: totrans-58
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 添加一个任务，允许 PostgreSQL 的远程连接并重启 PostgreSQL 服务。最后，在防火墙中允许数据库端口 `5432`，如下所示的代码片段。如果使用的是其他防火墙服务模块（例如
+    `community.general.ufw`），请根据需要进行修改：
+- en: '![Figure 8.8 – Tasks for opening the port and database service ](img/B18383_08_08.jpg)'
+  id: totrans-59
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 8.8 – 打开端口和数据库服务的任务](img/B18383_08_08.jpg)'
+- en: Figure 8.8 – Tasks for opening the port and database service
+  id: totrans-60
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 8.8 – 打开端口和数据库服务的任务
+- en: 'Execute the playbook and deploy the PostgreSQL server:'
+  id: totrans-61
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 执行 Playbook 并部署 PostgreSQL 服务器：
+- en: '![Figure 8.9 – Execute Ansible playbook for PostgreSQL deployment ](img/B18383_08_09.jpg)'
+  id: totrans-62
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 8.9 – 执行 Ansible Playbook 部署 PostgreSQL](img/B18383_08_09.jpg)'
+- en: Figure 8.9 – Execute Ansible playbook for PostgreSQL deployment
+  id: totrans-63
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 8.9 – 执行 Ansible Playbook 部署 PostgreSQL
+- en: 'Log in to the database server (`node1`) and verify the database server’s details
+    by switching to the `postgres` user, as follows:'
+  id: totrans-64
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 登录到数据库服务器（`node1`），并通过切换到 `postgres` 用户来验证数据库服务器的详细信息，如下所示：
+- en: '![Figure 8.10 – Logging in to the PostgreSQL database server ](img/B18383_08_10.jpg)'
+  id: totrans-65
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 8.10 – 登录 PostgreSQL 数据库服务器](img/B18383_08_10.jpg)'
+- en: Figure 8.10 – Logging in to the PostgreSQL database server
+  id: totrans-66
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 8.10 – 登录 PostgreSQL 数据库服务器
+- en: 'Open the `psql` client as the `postgres` user, as follows:'
+  id: totrans-67
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 以 `postgres` 用户身份打开 `psql` 客户端，如下所示：
+- en: '![Figure 8.11 – Open psql client on the database server ](img/B18383_08_11.jpg)'
+  id: totrans-68
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 8.11 – 在数据库服务器上打开 psql 客户端](img/B18383_08_11.jpg)'
+- en: Figure 8.11 – Open psql client on the database server
+  id: totrans-69
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 8.11 – 在数据库服务器上打开 psql 客户端
+- en: 'List the existing databases with the `\l` command and verify that `database_demo`
+    was created (as per the variable configuration in the `vars/postgres.yaml` file):'
+  id: totrans-70
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用 `\l` 命令列出现有的数据库，并验证 `database_demo` 是否已创建（根据 `vars/postgres.yaml` 文件中的变量配置）：
+- en: '![Figure 8.12 – Listing the existing databases in the psql command line ](img/B18383_08_12.jpg)'
+  id: totrans-71
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 8.12 – 在 psql 命令行中列出现有的数据库](img/B18383_08_12.jpg)'
+- en: Figure 8.12 – Listing the existing databases in the psql command line
+  id: totrans-72
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 8.12 – 在 psql 命令行中列出现有的数据库
+- en: 'Verify the users list by using the `\du` command as follows:'
+  id: totrans-73
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用 `\du` 命令验证用户列表，如下所示：
+- en: '![Figure 8.13 – Verifying users in the psql command line ](img/B18383_08_13.jpg)'
+  id: totrans-74
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 8.13 – 在 psql 命令行中验证用户](img/B18383_08_13.jpg)'
+- en: Figure 8.13 – Verifying users in the psql command line
+  id: totrans-75
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 8.13 – 在 psql 命令行中验证用户
+- en: 'Exit the `psql` console by using the *Ctrl* + *D* keyboard shortcut or the
+    `\q` command:'
+  id: totrans-76
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用 *Ctrl* + *D* 键盘快捷键或 `\q` 命令退出 `psql` 控制台：
+- en: '![Figure 8.14 – Exiting the psql console ](img/B18383_08_14.jpg)'
+  id: totrans-77
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 8.14 – 退出 psql 控制台](img/B18383_08_14.jpg)'
+- en: Figure 8.14 – Exiting the psql console
+  id: totrans-78
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 8.14 – 退出 psql 控制台
+- en: 'Also, verify the `pg_hba.conf` file; the `geerlingguy.postgresql` role will
+    configure this file based on the content of your variable. Check out the `/var/lib/pgsql/data/pg_hba.conf`
+    file, as follows:'
+  id: totrans-79
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 还需要验证`pg_hba.conf`文件；`geerlingguy.postgresql`角色将根据变量的内容配置此文件。请检查`/var/lib/pgsql/data/pg_hba.conf`文件，方法如下：
+- en: '![Figure 8.15 – Verifying the /var/lib/pgsql/data/pg_hba.conf file ](img/B18383_08_15.jpg)'
+  id: totrans-80
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 8.15 – 验证/var/lib/pgsql/data/pg_hba.conf文件](img/B18383_08_15.jpg)'
+- en: Figure 8.15 – Verifying the /var/lib/pgsql/data/pg_hba.conf file
+  id: totrans-81
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 8.15 – 验证/var/lib/pgsql/data/pg_hba.conf文件
+- en: If you want to access PostgreSQL from remote nodes, you need to make sure that
+    the `pg_hba.conf` file entries have been configured appropriately.
+  id: totrans-82
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果您希望从远程节点访问PostgreSQL，您需要确保`pg_hba.conf`文件中的条目已正确配置。
+- en: It is a best practice to use existing Ansible roles so that you can save a lot
+    of time and effort while developing your automation content. Also, you need to
+    make sure that the Ansible role and its methods are suitable for your environment
+    instead of blindly using them.
+  id: totrans-83
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用现有的Ansible角色是最佳实践，这样可以节省大量时间和精力来开发自动化内容。同时，您需要确保Ansible角色及其方法适合您的环境，而不是盲目使用它们。
+- en: In the next section, you will learn how to update the password for the default
+    `postgres` user.
+  id: totrans-84
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一节中，您将学习如何更新默认`postgres`用户的密码。
+- en: Configuring a password for a default postgres user
+  id: totrans-85
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 配置默认postgres用户的密码
+- en: 'The default user, `postgres`, is configured with no password and the default
+    authentication method is `postgres` user (or the passwords for other admin users).
+    Set or update the password for the `postgres` user as follows:'
+  id: totrans-86
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 默认用户`postgres`没有配置密码，默认的认证方法是`postgres`用户（或其他管理员用户的密码）。按如下方式设置或更新`postgres`用户的密码：
+- en: 'Switch to the `postgres` user:'
+  id: totrans-87
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 切换到`postgres`用户：
+- en: '![Figure 8.16 – Switch to postgres user and open psql cli ](img/B18383_08_16.jpg)'
+  id: totrans-88
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 8.16 – 切换到postgres用户并打开psql命令行](img/B18383_08_16.jpg)'
+- en: Figure 8.16 – Switch to postgres user and open psql cli
+  id: totrans-89
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 8.16 – 切换到postgres用户并打开psql命令行
+- en: 'Change the password, exit the `psql` console and then exit the `postgres` user
+    as follows:'
+  id: totrans-90
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 更改密码，退出`psql`控制台，然后按以下方式退出`postgres`用户：
+- en: '![Figure 8.17 – Change the password and exit from the postgres account ](img/B18383_08_17.jpg)'
+  id: totrans-91
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 8.17 – 更改密码并退出postgres账户](img/B18383_08_17.jpg)'
+- en: Figure 8.17 – Change the password and exit from the postgres account
+  id: totrans-92
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 8.17 – 更改密码并退出postgres账户
+- en: These steps can also be automated in your database installation playbook if
+    required, though this depends on your organization’s requirements.
+  id: totrans-93
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果需要，这些步骤也可以在您的数据库安装Playbook中自动化，尽管这取决于您组织的需求。
+- en: It is also possible to automate other database server installations using Ansible,
+    such as Microsoft SQL Server. We will look at this in the next section.
+  id: totrans-94
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 也可以使用Ansible自动化其他数据库服务器的安装，例如Microsoft SQL Server。我们将在下一节中讨论这个问题。
+- en: Installing Microsoft SQL Server on Linux
+  id: totrans-95
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 在Linux上安装Microsoft SQL Server
+- en: In 2016, Microsoft announced via their blog (refer to the following information
+    box) that Microsoft SQL Server would run on Linux platforms. So, without a Windows
+    server, you can install and use MSSQL databases, and the installation will support
+    the most common Linux platforms, such as **Red Hat Enterprise Linux** (**RHEL**),
+    **SUSE Enterprise Linux Server** (**SLES**), Ubuntu, and so on.
+  id: totrans-96
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 2016年，微软通过其博客（参考以下信息框）宣布Microsoft SQL Server将在Linux平台上运行。因此，在没有Windows服务器的情况下，您可以安装并使用MSSQL数据库，且安装将支持最常见的Linux平台，如**Red
+    Hat企业Linux**（**RHEL**）、**SUSE企业Linux服务器**（**SLES**）、Ubuntu等。
+- en: 'Installing MSSQL is pretty straightforward for Linux, but still, there are
+    several steps involved in terms of configuration and services. When several database
+    servers must be installed as part of the deployment, instead of configuring each
+    manually, it is possible to use Ansible roles and playbooks to achieve this. Follow
+    the steps as per documentation (refer to the following information box) or use
+    any existing contributions from the community; for example, the role available
+    at [galaxy.ansible.com/microsoft/sql](http://galaxy.ansible.com/microsoft/sql)
+    can be used to install MSSQL on Linux:'
+  id: totrans-97
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在Linux上安装MSSQL非常简单，但仍然涉及一些配置和服务步骤。当部署中需要安装多个数据库服务器时，除了手动配置每个服务器外，还可以使用Ansible角色和Playbook来实现这一过程。按照文档中的步骤（参考以下信息框）或使用社区提供的现有贡献；例如，[galaxy.ansible.com/microsoft/sql](http://galaxy.ansible.com/microsoft/sql)上的角色可以用来在Linux上安装MSSQL：
+- en: '![Figure 8.18 – Installing microsoft.sql collection ](img/B18383_08_18.jpg)'
+  id: totrans-98
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 8.18 – 安装microsoft.sql集合](img/B18383_08_18.jpg)'
+- en: Figure 8.18 – Installing microsoft.sql collection
+  id: totrans-99
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 8.18 – 安装 microsoft.sql 集合
+- en: 'The `community.general.mssql_db` community module can be used to add or remove
+    MSSQL databases, as follows:'
+  id: totrans-100
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`community.general.mssql_db` 社区模块可用于添加或删除 MSSQL 数据库，方法如下：'
+- en: '![Figure 8.19 – Creating Microsoft SQL database ](img/B18383_08_19.jpg)'
+  id: totrans-101
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 8.19 – 创建 Microsoft SQL 数据库](img/B18383_08_19.jpg)'
+- en: Figure 8.19 – Creating Microsoft SQL database
+  id: totrans-102
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 8.19 – 创建 Microsoft SQL 数据库
+- en: Explore more automation content for MSSQL in Ansible Galaxy and use it based
+    on your environment’s requirements.
+  id: totrans-103
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 Ansible Galaxy 中探索更多 MSSQL 自动化内容，并根据环境需求使用它。
+- en: Announcing SQL Server on Linux
+  id: totrans-104
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 公布 SQL Server 在 Linux 上的发布
+- en: Microsoft’s announcement about SQL Server availability for Linux platforms can
+    be found at [https://blogs.microsoft.com/blog/2016/03/07/announcing-sql-server-on-linux/](https://blogs.microsoft.com/blog/2016/03/07/announcing-sql-server-on-linux/).
+  id: totrans-105
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 微软关于 SQL Server 在 Linux 平台上可用性的公告可以在[https://blogs.microsoft.com/blog/2016/03/07/announcing-sql-server-on-linux/](https://blogs.microsoft.com/blog/2016/03/07/announcing-sql-server-on-linux/)查看。
+- en: Installation guidance for SQL Server on Linux can be found at [https://docs.microsoft.com/en-us/sql/linux/sql-server-linux-setup](https://docs.microsoft.com/en-us/sql/linux/sql-server-linux-setup).
+  id: totrans-106
+  prefs: []
+  type: TYPE_NORMAL
+  zh: SQL Server 在 Linux 上的安装指南可以在[https://docs.microsoft.com/en-us/sql/linux/sql-server-linux-setup](https://docs.microsoft.com/en-us/sql/linux/sql-server-linux-setup)查看。
+- en: Once the database server has been installed and configured, automate additional
+    tasks, such as creating a new database, creating new tables, adding users or permissions.
+    Use the Ansible collections and modules that are available, such as `community.postgresql`,
+    `community.mysql`, `community.cockroachdb`, `community.cassandra`, and more. We
+    will learn about PostgreSQL database automation in the next section while using
+    the `community.postgresql` Ansible collection.
+  id: totrans-107
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦数据库服务器安装并配置完成，可以自动化其他任务，例如创建新数据库、创建新表、添加用户或权限。使用现有的 Ansible 集合和模块，例如`community.postgresql`、`community.mysql`、`community.cockroachdb`、`community.cassandra`等。我们将在下一节中学习如何使用`community.postgresql`
+    Ansible 集合进行 PostgreSQL 数据库的自动化。
+- en: Creating and managing databases using Ansible
+  id: totrans-108
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用 Ansible 创建和管理数据库
+- en: The community collection for PostgreSQL comes with more than 20 modules and
+    a few plugins. It is possible to use these modules and plugins to automate PostgreSQL
+    database operations, including creating, dropping, and updating databases, tables,
+    users, and other resources in the database server.
+  id: totrans-109
+  prefs: []
+  type: TYPE_NORMAL
+  zh: PostgreSQL 的社区集合包含 20 多个模块和一些插件。可以使用这些模块和插件自动化 PostgreSQL 数据库操作，包括创建、删除和更新数据库、表格、用户和数据库服务器中的其他资源。
+- en: Ansible community.postgresql prerequisites
+  id: totrans-110
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: Ansible `community.postgresql` 前提条件
+- en: 'If you are accessing PostgreSQL from a remote node (for example, an Ansible
+    control node), then you need to install the `psycopg2` Python library on this
+    machine to use these PostgreSQL modules:'
+  id: totrans-111
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你从远程节点（例如 Ansible 控制节点）访问 PostgreSQL，则需要在该机器上安装`psycopg2` Python 库，以使用这些 PostgreSQL
+    模块：
+- en: '[PRE1]'
+  id: totrans-112
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: In the next section, we will execute tasks from the database node itself (`node1`)
+    using Ansible. This library is not required as the database server has already
+    been configured with the required dependencies.
+  id: totrans-113
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一节中，我们将使用 Ansible 从数据库节点本身（`node1`）执行任务。因为数据库服务器已经配置了所需的依赖项，所以此库不是必需的。
+- en: In the next section, you will learn how to manage database operations using
+    Ansible and the `community.postgresql` collection.
+  id: totrans-114
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一节中，你将学习如何使用 Ansible 和`community.postgresql` 集合来管理数据库操作。
+- en: Managing the database life cycle
+  id: totrans-115
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 管理数据库生命周期
+- en: 'In this section, you will learn how to create a database, create tables inside
+    the new database, and then configure users and permissions using Ansible. Follow
+    these steps:'
+  id: totrans-116
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本节中，你将学习如何创建数据库、在新数据库中创建表格，然后使用 Ansible 配置用户和权限。按照以下步骤操作：
+- en: 'Create the `postgres-manage-database.yaml` playbook and add the variables that
+    provide details about the database to be created, tables to be configured, users
+    to be added, and so on. Remember to use Ansible Vault to encrypt sensitive items
+    such as the username and password as follows:'
+  id: totrans-117
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建 `postgres-manage-database.yaml` Playbook，并添加提供关于要创建的数据库、要配置的表格、要添加的用户等详细信息的变量。记得使用
+    Ansible Vault 加密敏感项，如用户名和密码，方法如下：
+- en: '![Figure 8.20 – Playbook to manage the database operations ](img/B18383_08_20.jpg)'
+  id: totrans-118
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 8.20 – 管理数据库操作的 Playbook](img/B18383_08_20.jpg)'
+- en: Figure 8.20 – Playbook to manage the database operations
+  id: totrans-119
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 8.20 – 管理数据库操作的 Playbook
+- en: 'Add a task to create a new PostgreSQL database, as follows:'
+  id: totrans-120
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 添加一个任务来创建一个新的 PostgreSQL 数据库，如下所示：
+- en: '![Figure 8.21 – Task to create database ](img/B18383_08_21.jpg)'
+  id: totrans-121
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 8.21 – 创建数据库的任务](img/B18383_08_21.jpg)'
+- en: Figure 8.21 – Task to create database
+  id: totrans-122
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 8.21 – 创建数据库的任务
+- en: 'Now, add another task to create the table with columns:'
+  id: totrans-123
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在，添加另一个任务来创建包含列的表：
+- en: '![Figure 8.22 – Task to create table inside the database ](img/B18383_08_22.jpg)'
+  id: totrans-124
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 8.22 – 在数据库中创建表的任务](img/B18383_08_22.jpg)'
+- en: Figure 8.22 – Task to create table inside the database
+  id: totrans-125
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 8.22 – 在数据库中创建表的任务
+- en: 'Add one more task for creating users and grant access to the newly created
+    database:'
+  id: totrans-126
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 添加一个任务，用于创建用户并授予对新创建的数据库的访问权限：
+- en: '![Figure 8.23 – Task to create user and grant access to the database ](img/B18383_08_23.jpg)'
+  id: totrans-127
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 8.23 – 创建用户并授予数据库访问权限的任务](img/B18383_08_23.jpg)'
+- en: Figure 8.23 – Task to create user and grant access to the database
+  id: totrans-128
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 8.23 – 创建用户并授予数据库访问权限的任务
+- en: 'Execute the playbook to create the database and other resources:'
+  id: totrans-129
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 执行 playbook 创建数据库和其他资源：
+- en: '![Figure 8.24 – Execute playbook to create database, table and user ](img/B18383_08_24.jpg)'
+  id: totrans-130
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 8.24 – 执行 playbook 创建数据库、表和用户](img/B18383_08_24.jpg)'
+- en: Figure 8.24 – Execute playbook to create database, table and user
+  id: totrans-131
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 8.24 – 执行 playbook 创建数据库、表和用户
+- en: Once the playbook has been created, verify the database and resources on the
+    database server (for example, `node1`).
+  id: totrans-132
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 一旦 playbook 创建完成，验证数据库和数据库服务器（例如 `node1`）上的资源。
+- en: 'Log in to `node1`, switch to the `postgres` user and open the `psql` console.
+    List the databases and you will see the `db_sales` database and the access privilege
+    for `devteam`:'
+  id: totrans-133
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 登录到 `node1`，切换到 `postgres` 用户并打开 `psql` 控制台。列出数据库，你会看到 `db_sales` 数据库和 `devteam`
+    的访问权限：
+- en: '![Figure 8.25 – Log in to the database server and verify details ](img/B18383_08_25.jpg)'
+  id: totrans-134
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 8.25 – 登录数据库服务器并验证详细信息](img/B18383_08_25.jpg)'
+- en: Figure 8.25 – Log in to the database server and verify details
+  id: totrans-135
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 8.25 – 登录数据库服务器并验证详细信息
+- en: 'Verify the user details in `psql`, as follows:'
+  id: totrans-136
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在 `psql` 中验证用户信息，如下所示：
+- en: '![Figure 8.26 – Listing and verifying the newly created user ](img/B18383_08_26.jpg)'
+  id: totrans-137
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 8.26 – 列出并验证新创建的用户](img/B18383_08_26.jpg)'
+- en: Figure 8.26 – Listing and verifying the newly created user
+  id: totrans-138
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 8.26 – 列出并验证新创建的用户
+- en: Verify that the tables have been created as per the playbook.
+  id: totrans-139
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 验证表是否按照 playbook 中的要求已创建。
+- en: 'First, connect to the newly created database from the `psql` console using
+    the `\c` command and then list the tables inside the database using the `\dt`
+    command, as follows:'
+  id: totrans-140
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 首先，通过 `psql` 控制台使用 `\c` 命令连接到新创建的数据库，然后使用 `\dt` 命令列出数据库中的表，如下所示：
+- en: '![Figure 8.27 – Connecting to the newly created database and list tables ](img/B18383_08_27.jpg)'
+  id: totrans-141
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 8.27 – 连接到新创建的数据库并列出表](img/B18383_08_27.jpg)'
+- en: Figure 8.27 – Connecting to the newly created database and list tables
+  id: totrans-142
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 8.27 – 连接到新创建的数据库并列出表
+- en: 'Ensure that the columns that you have created using the Ansible playbook are
+    in the table, as shown here:'
+  id: totrans-143
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 确保你通过 Ansible playbook 创建的列已存在于表中，如下所示：
+- en: '![Figure 8.28 – Database table details ](img/B18383_08_28.jpg)'
+  id: totrans-144
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 8.28 – 数据库表详细信息](img/B18383_08_28.jpg)'
+- en: Figure 8.28 – Database table details
+  id: totrans-145
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 8.28 – 数据库表详细信息
+- en: 'Also verify access for the new user by using the `psql` console with the relevant
+    username and password as follows:'
+  id: totrans-146
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 还可以通过使用相应的用户名和密码在 `psql` 控制台中验证新用户的访问权限，如下所示：
+- en: '![Figure 8.29 – Verifying new user access and the list tables ](img/B18383_08_29.jpg)'
+  id: totrans-147
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 8.29 – 验证新用户访问权限和列出表](img/B18383_08_29.jpg)'
+- en: Figure 8.29 – Verifying new user access and the list tables
+  id: totrans-148
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 8.29 – 验证新用户访问权限和列出表
+- en: Expand the playbook with more details, such as the columns that are required
+    for the tables, more users, permissions, and so on. Refer to the module’s documentation
+    at [https://docs.ansible.com/ansible/latest/collections/community/postgresql/](https://docs.ansible.com/ansible/latest/collections/community/postgresql/)
+    for more details.
+  id: totrans-149
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 扩展 playbook，加入更多细节，例如表所需的列、更多用户、权限等。更多细节请参考模块的文档：[https://docs.ansible.com/ansible/latest/collections/community/postgresql/](https://docs.ansible.com/ansible/latest/collections/community/postgresql/)。
+- en: In the next section, you will learn more about database operations, such as
+    how to manage remote access by automating `pg_hba` configurations, taking database
+    dumps, and so on.
+  id: totrans-150
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在接下来的章节中，你将学习更多关于数据库操作的内容，例如如何通过自动化 `pg_hba` 配置来管理远程访问、如何进行数据库备份等。
+- en: Automating PostgreSQL operations
+  id: totrans-151
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 自动化 PostgreSQL 操作
+- en: With the help of the modules in the `community.postgresql` collection, it is
+    possible to automate more database maintenance and operations. Let’s take a closer
+    look.
+  id: totrans-152
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 借助 `community.postgresql` 集合中的模块，可以自动化更多的数据库维护和操作。让我们深入了解一下。
+- en: Managing PostgreSQL remote access
+  id: totrans-153
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 管理 PostgreSQL 远程访问
+- en: 'Database servers are accessed by applications on remote nodes and this access
+    needs to be configured appropriately and securely. For a test environment, allow
+    wildcard entries (for example, `0.0.0.0/0`), but this is not a recommended practice
+    for production servers. You need to configure the correct IP address or hostname
+    to allow or restrict access to the database. This operation can be automated using
+    the `community.postgresql.postgresql_pg_hba` module, as follows:'
+  id: totrans-154
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 数据库服务器由远程节点上的应用程序访问，必须适当且安全地配置此访问权限。在测试环境中，允许使用通配符条目（例如 `0.0.0.0/0`），但这不是生产服务器的推荐做法。您需要配置正确的
+    IP 地址或主机名以允许或限制对数据库的访问。此操作可以通过使用 `community.postgresql.postgresql_pg_hba` 模块来自动化，方法如下：
+- en: '![Figure 8.30 – Grant user access to database ](img/B18383_08_30.jpg)'
+  id: totrans-155
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 8.30 – 授予用户访问数据库的权限](img/B18383_08_30.jpg)'
+- en: Figure 8.30 – Grant user access to database
+  id: totrans-156
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 8.30 – 授予用户访问数据库的权限
+- en: Managing the `pg_hba` entries using Ansible will allow you to handle the entire
+    life cycle of the database and its access.
+  id: totrans-157
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用 Ansible 管理 `pg_hba` 条目将使您能够处理数据库及其访问的整个生命周期。
+- en: Next, we will learn how to take automated database backups.
+  id: totrans-158
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来，我们将学习如何进行自动化的数据库备份。
+- en: Database backup and restore
+  id: totrans-159
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 数据库备份和恢复
+- en: 'Taking database backups is critical for sensitive and important data. Use Ansible
+    to automate this database dump and schedule daily, weekly, or monthly database
+    backups:'
+  id: totrans-160
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于敏感和重要数据，进行数据库备份至关重要。使用 Ansible 自动化此数据库转储，并安排每日、每周或每月的数据库备份：
+- en: '![Figure 8.31 – Database backup using Ansible ](img/B18383_08_31.jpg)'
+  id: totrans-161
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 8.31 – 使用 Ansible 进行数据库备份](img/B18383_08_31.jpg)'
+- en: Figure 8.31 – Database backup using Ansible
+  id: totrans-162
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 8.31 – 使用 Ansible 进行数据库备份
+- en: The backup will be saved on the managed node. Customize the destination or automatically
+    copy the backups to remote locations such as NFS volumes or cloud storage.
+  id: totrans-163
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 备份将保存在管理节点上。可以自定义目标位置或自动将备份复制到远程位置，例如 NFS 卷或云存储。
+- en: 'Similarly, we can automate the database restore operation as follows:'
+  id: totrans-164
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 同样，我们可以通过以下方式自动化数据库恢复操作：
+- en: '![Figure 8.32 – Restore database from backup file ](img/B18383_08_32.jpg)'
+  id: totrans-165
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 8.32 – 从备份文件恢复数据库](img/B18383_08_32.jpg)'
+- en: Figure 8.32 – Restore database from backup file
+  id: totrans-166
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 8.32 – 从备份文件恢复数据库
+- en: 'Notice `state: restore` in the preceding example. This instructs Ansible to
+    perform a restore operation using the file or archive mentioned in the `target`
+    parameter. The following screenshot shows the full playbook, which can perform
+    backup or restore operations based on the `db_action` value:'
+  id: totrans-167
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '注意上面示例中的 `state: restore`。这指示 Ansible 使用 `target` 参数中提到的文件或归档执行恢复操作。以下截图显示了完整的剧本，可以根据
+    `db_action` 值执行备份或恢复操作：'
+- en: '![Figure 8.33 – PostgreSQL database backup and restore playbook ](img/B18383_08_33.jpg)'
+  id: totrans-168
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 8.33 – PostgreSQL 数据库备份和恢复剧本](img/B18383_08_33.jpg)'
+- en: Figure 8.33 – PostgreSQL database backup and restore playbook
+  id: totrans-169
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 8.33 – PostgreSQL 数据库备份和恢复剧本
+- en: Please refer to the [https://docs.ansible.com/ansible/latest/collections/community/postgresql/postgresql_db_module.xhtml](https://docs.ansible.com/ansible/latest/collections/community/postgresql/postgresql_db_module.xhtml)
+    documentation to learn more about the `community.postgresql.postgresql_db` module.
+  id: totrans-170
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请参考[https://docs.ansible.com/ansible/latest/collections/community/postgresql/postgresql_db_module.xhtml](https://docs.ansible.com/ansible/latest/collections/community/postgresql/postgresql_db_module.xhtml)文档，了解有关
+    `community.postgresql.postgresql_db` 模块的更多信息。
+- en: Ansible PostgreSQL and MySQL Collection
+  id: totrans-171
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible PostgreSQL 和 MySQL 集合
+- en: Please refer to [https://galaxy.ansible.com/community/postgresql](https://galaxy.ansible.com/community/postgresql)
+    for the PostgreSQL community collection and [https://docs.ansible.com/ansible/latest/collections/community/postgresql/](https://docs.ansible.com/ansible/latest/collections/community/postgresql/)
+    for the documentation. Also, check out [https://galaxy.ansible.com/community/mysql](https://galaxy.ansible.com/community/mysql)
+    for the Ansible MySQL collection and modules.
+  id: totrans-172
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请参考[https://galaxy.ansible.com/community/postgresql](https://galaxy.ansible.com/community/postgresql)了解
+    PostgreSQL 社区集合，并参考[https://docs.ansible.com/ansible/latest/collections/community/postgresql/](https://docs.ansible.com/ansible/latest/collections/community/postgresql/)查看文档。同时，您可以访问[https://galaxy.ansible.com/community/mysql](https://galaxy.ansible.com/community/mysql)获取
+    Ansible MySQL 集合和模块。
+- en: In the next section, you will learn about automated database password reset
+    request handling, which you can do using Ansible and your ITSM tool.
+  id: totrans-173
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一部分，您将了解如何处理自动化的数据库密码重置请求，您可以使用 Ansible 和您的 ITSM 工具来实现。
+- en: Automating a password reset using ITSM and Ansible
+  id: totrans-174
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用 ITSM 和 Ansible 自动化密码重置
+- en: 'With the help of ITSM tools and Red Hat Ansible Automation Platform (or community
+    Ansible AWX), it is possible to implement zero-touch automation use cases such
+    as database user password resets, database provisioning, and so on. Users will
+    interact with the ITSM tool, and the tool will interact with Ansible Automation
+    Platform to implement the task implementation, as shown in the following figure:'
+  id: totrans-175
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 借助 ITSM 工具和 Red Hat Ansible 自动化平台（或社区版 Ansible AWX），可以实现零接触自动化用例，例如数据库用户密码重置、数据库预配等。用户将与
+    ITSM 工具交互，而该工具将与 Ansible 自动化平台交互以实现任务执行，如下图所示：
+- en: '![Figure 8.34 – ITSM and Ansible Automation Platform integration for database
+    operations ](img/B18383_08_34.jpg)'
+  id: totrans-176
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 8.34 – ITSM 和 Ansible 自动化平台在数据库操作中的集成](img/B18383_08_34.jpg)'
+- en: Figure 8.34 – ITSM and Ansible Automation Platform integration for database
+    operations
+  id: totrans-177
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 8.34 – ITSM 和 Ansible 自动化平台在数据库操作中的集成
+- en: This **programmatic automation** is one of the best features of Ansible and
+    helps organizations scale their automation landscape by integrating with existing
+    tools and software.
+  id: totrans-178
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这种**程序化自动化**是 Ansible 最佳的功能之一，它通过与现有工具和软件的集成，帮助组织扩展其自动化范围。
+- en: 'Use customized forms or ticketing systems in the ITSM tool, as shown in the
+    following screenshot:'
+  id: totrans-179
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如下截图所示，在 ITSM 工具中使用自定义表单或工单系统：
+- en: '![Figure 8.35 – Jira ticket and its details ](img/B18383_08_35.jpg)'
+  id: totrans-180
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 8.35 – Jira 工单及其详情](img/B18383_08_35.jpg)'
+- en: Figure 8.35 – Jira ticket and its details
+  id: totrans-181
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 8.35 – Jira 工单及其详情
+- en: 'The ITSM tool, such as Jira or ServiceNow, can also be configured with custom
+    fields to collect information, such as the database server’s name, database name,
+    username, and more, as shown in the following screenshot:'
+  id: totrans-182
+  prefs: []
+  type: TYPE_NORMAL
+  zh: ITSM 工具，如 Jira 或 ServiceNow，也可以配置自定义字段来收集信息，例如数据库服务器的名称、数据库名称、用户名等，如下截图所示：
+- en: '![Figure 8.36 – Jira ticket with custom fields ](img/B18383_08_36.jpg)'
+  id: totrans-183
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 8.36 – 带有自定义字段的 Jira 工单](img/B18383_08_36.jpg)'
+- en: Figure 8.36 – Jira ticket with custom fields
+  id: totrans-184
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 8.36 – 带有自定义字段的 Jira 工单
+- en: Automation will not skip your ITSM processes or procedures; the review and approvals
+    will be in place before the task is executed, as shown in *Figure 8.34*.
+  id: totrans-185
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 自动化不会跳过你的 ITSM 流程或程序；在任务执行之前，审查和批准将到位，如*图 8.34*所示。
+- en: Once the approval happens, the ITSM tool will send a notification containing
+    data (such as the database hostname, database name, and username) to Ansible Automation
+    Platform and trigger the automation job. We will look at this in more detail in
+    the next section.
+  id: totrans-186
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦获得批准，ITSM 工具将发送包含数据（如数据库主机名、数据库名称和用户名）的通知到 Ansible 自动化平台，并触发自动化任务。我们将在下一节中详细讨论这一过程。
+- en: Ansible playbook for resetting passwords
+  id: totrans-187
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 重置密码的 Ansible 剧本
+- en: 'The Ansible playbook will be triggered from Ansible Automation Platform based
+    on the Ansible job template and the input data from Jira. Collect the input data
+    from Jira with the custom fields shown in the following screenshot (refer to `Chapter-08/postgres-password-reset.yaml`
+    for more details):'
+  id: totrans-188
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 剧本将根据 Ansible 作业模板和来自 Jira 的输入数据，从 Ansible 自动化平台触发。使用以下截图中显示的自定义字段收集
+    Jira 的输入数据（有关详细信息，请参见`Chapter-08/postgres-password-reset.yaml`）：
+- en: '![Figure 8.37 – Collecting details from Jira in the playbook ](img/B18383_08_37.jpg)'
+  id: totrans-189
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 8.37 – 在剧本中收集来自 Jira 的详情](img/B18383_08_37.jpg)'
+- en: Figure 8.37 – Collecting details from Jira in the playbook
+  id: totrans-190
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 8.37 – 在剧本中收集来自 Jira 的详情
+- en: 'The following task will set the new password for the user:'
+  id: totrans-191
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下任务将为用户设置新密码：
+- en: '![Figure 8.38 – A task for setting a new password ](img/B18383_08_38.jpg)'
+  id: totrans-192
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 8.38 – 设置新密码的任务](img/B18383_08_38.jpg)'
+- en: Figure 8.38 – A task for setting a new password
+  id: totrans-193
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 8.38 – 设置新密码的任务
+- en: 'Once the password reset operation is successful, the following task will update
+    the Jira ticket with the output of the password reset operation:'
+  id: totrans-194
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦密码重置操作成功，以下任务将使用密码重置操作的输出更新 Jira 工单：
+- en: '![Figure 8.39 – Updating the Jira ticket using the community.general.jira module
+    ](img/B18383_08_39.jpg)'
+  id: totrans-195
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 8.39 – 使用 community.general.jira 模块更新 Jira 工单](img/B18383_08_39.jpg)'
+- en: Figure 8.39 – Updating the Jira ticket using the community.general.jira module
+  id: totrans-196
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 8.39 – 使用 community.general.jira 模块更新 Jira 工单
+- en: Expand the playbook by adding tasks that send the new password to the user via
+    email using the `community.general.mail` module. Read more about Ansible Jira
+    module from documentation ([https://docs.ansible.com/ansible/latest/collections/community/general/jira_module.xhtml](https://docs.ansible.com/ansible/latest/collections/community/general/jira_module.xhtml)).
+  id: totrans-197
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 扩展 playbook，添加任务，通过 `community.general.mail` 模块将新密码通过电子邮件发送给用户。更多关于 Ansible
+    Jira 模块的信息，请查阅文档（[https://docs.ansible.com/ansible/latest/collections/community/general/jira_module.xhtml](https://docs.ansible.com/ansible/latest/collections/community/general/jira_module.xhtml)）。
+- en: Summary
+  id: totrans-198
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 总结
+- en: In this chapter, you learned about how Ansible can help you install database
+    servers and manage database operations such as creating databases, creating tables,
+    assigning user permissions, taking database backups, and configuring `pg_hba`.
+    You also learned about the integration opportunities that are provided by the
+    ITSM tools for implementing zero-touch automation with Ansible Automation Platform.
+  id: totrans-199
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章中，你了解了 Ansible 如何帮助你安装数据库服务器，并管理如创建数据库、创建表、分配用户权限、进行数据库备份以及配置 `pg_hba` 等数据库操作。你还了解了
+    ITSM 工具提供的集成机会，借助 Ansible Automation Platform 实现零接触自动化。
+- en: In the next chapter, you will learn how to integrate Ansible with your DevOps
+    practices for deployment, rolling updates, IaC provisioning, and more.
+  id: totrans-200
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一章中，你将学习如何将 Ansible 与 DevOps 实践结合，进行部署、滚动更新、基础设施即代码（IaC）配置等。
+- en: Further reading
+  id: totrans-201
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 进一步阅读
+- en: 'To learn more about the topics that were covered in this chapter, please visit
+    the following links:'
+  id: totrans-202
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要了解本章所涵盖的更多内容，请访问以下链接：
+- en: '*How to send emails using Ansible and Gmail*: [https://www.techbeatly.com/ansible-gmail](https://www.techbeatly.com/ansible-gmail)'
+  id: totrans-203
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*如何使用 Ansible 和 Gmail 发送邮件：* [https://www.techbeatly.com/ansible-gmail](https://www.techbeatly.com/ansible-gmail)'
+- en: '*Using Ansible to deploy Microsoft SQL Server 2019 on Red Hat Enterprise Linux
+    8*: [https://www.redhat.com/sysadmin/mssql-linux-easy](https://www.redhat.com/sysadmin/mssql-linux-easy)'
+  id: totrans-204
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*使用 Ansible 在 Red Hat Enterprise Linux 8 上部署 Microsoft SQL Server 2019：* [https://www.redhat.com/sysadmin/mssql-linux-easy](https://www.redhat.com/sysadmin/mssql-linux-easy)'
+- en: '*Community.Postgresql collection*: [https://docs.ansible.com/ansible/latest/collections/community/postgresql/index.xhtml](https://docs.ansible.com/ansible/latest/collections/community/postgresql/index.xhtml)'
+  id: totrans-205
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*Community.Postgresql 集合：* [https://docs.ansible.com/ansible/latest/collections/community/postgresql/index.xhtml](https://docs.ansible.com/ansible/latest/collections/community/postgresql/index.xhtml)'
+- en: '*Ansible Database modules:* [https://docs.ansible.com/ansible/2.9/modules/list_of_database_modules.xhtml](https://docs.ansible.com/ansible/2.9/modules/list_of_database_modules.xhtml)'
+  id: totrans-206
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*Ansible 数据库模块：* [https://docs.ansible.com/ansible/2.9/modules/list_of_database_modules.xhtml](https://docs.ansible.com/ansible/2.9/modules/list_of_database_modules.xhtml)'
+- en: '*Automating IT Service Management with ServiceNow and Red Hat Ansible Automation
+    Platform*: [https://www.ansible.com/integrations/it-service-management/servicenow](https://www.ansible.com/integrations/it-service-management/servicenow)'
+  id: totrans-207
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*使用 ServiceNow 和 Red Hat Ansible Automation Platform 自动化 IT 服务管理：* [https://www.ansible.com/integrations/it-service-management/servicenow](https://www.ansible.com/integrations/it-service-management/servicenow)'
+- en: '*MongoDB Collection for Ansible*: [https://galaxy.ansible.com/community/mongodb](https://galaxy.ansible.com/community/mongodb)'
+  id: totrans-208
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*Ansible 的 MongoDB 集合：* [https://galaxy.ansible.com/community/mongodb](https://galaxy.ansible.com/community/mongodb)'

@@ -1,0 +1,1379 @@
+- en: Building Containers with Docker
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用 Docker 构建容器
+- en: In recent years, the landscape of the IT industry has dramatically shifted.
+    The rise of highly interactive mobile applications, cloud computing, and streaming
+    media has pushed the limits of the existing IT infrastructure. Users who were
+    once happy with web browsing and email are now taking advantage of the highly
+    interactive services that are available and are continually demanding higher bandwidth,
+    reliability, and more features. In the wake of this shift, IT departments and
+    application developers are continually attempting to find ways to keep up with
+    the increased demand to remain relevant to consumers who depend on their services.
+  id: totrans-1
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 近年来，IT 行业的格局发生了巨大变化。高度互动的移动应用、云计算和流媒体的兴起，推动了现有 IT 基础设施的极限。曾经满足于网页浏览和电子邮件的用户，现在正在利用高度互动的服务，并且不断要求更高的带宽、可靠性和更多的功能。随着这一变化的发生，IT
+    部门和应用程序开发人员不断尝试找到应对日益增加的需求的方法，以保持与依赖其服务的消费者的相关性。
+- en: As an application developer, infrastructure support specialist, or DevOps engineer,
+    you have no doubt seen the radical shift in how infrastructure is supported and
+    maintained. Gone are the days when a developer could write an application in isolation,
+    deploy it across an enterprise, and hand over the keys to operations folks who
+    may only have had a basic understanding of how the application functioned. Today,
+    the development and operations paradigms are intrinsically interwoven in what
+    most enterprises are calling **DevOps**. In the DevOps mindset, operations and
+    support staff work directly with application developers in order to write applications,
+    as well as infrastructure as code. Leveraging this new mindset allows services
+    to go live that may scale multiple tiers and spread between hundreds of servers,
+    data centers, and cloud providers. Once an organization adopts a DevOps mindset,
+    this creates a cultural shift between the various departments. A new team mentality
+    usually emerges, in which developers and operations staff feel a new sense of
+    camaraderie. Developers are happy to contribute to code that makes application
+    deployments easier, and operations staff are happy with the increased ease of
+    use, scaling, and repeatability that comes with new DevOps-enabled applications.
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 作为一名应用程序开发人员、基础设施支持专家或 DevOps 工程师，你无疑已经看到了基础设施支持和维护方式的根本变化。曾经，开发人员可以独立编写应用程序，将其部署到企业内部，并将工作交给那些可能仅对应用程序功能有基本了解的运维人员。而如今，开发和运维的范式在大多数企业中已经紧密交织在一起，这就是许多企业所称的
+    **DevOps**。在 DevOps 思维模式中，运维和支持人员直接与应用开发人员合作，共同编写应用程序，以及基础设施代码。利用这种新的思维方式，服务能够上线，且可扩展多个层次，分布在数百台服务器、数据中心和云服务提供商之间。一旦组织采纳了
+    DevOps 思维模式，这将促使各个部门之间发生文化上的转变。通常会出现一种新的团队意识，开发人员和运维人员会感受到一种新的伙伴关系。开发人员乐于贡献代码，使应用程序部署变得更轻松，而运维人员则对新
+    DevOps 支持的应用程序带来的易用性、扩展性和可重复性感到满意。
+- en: Even within the world of DevOps, containerization has been actively growing
+    and expanding across organizations as a newer and better way to deploy and maintain
+    applications. Like anything else in the world of information technology, we need
+    controlled processes around how containers are built, deployed, and scaled across
+    an organization. Ansible Container provides an abstracted and simple-to-implement
+    methodology for building and running containers at scale. Before we start to learn
+    about Ansible and containerization platforms, we must first examine how applications
+    and services were deployed historically.
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 即便在 DevOps 的世界中，容器化作为一种更新且更好的应用部署和维护方式，正在组织中积极增长和扩展。像信息技术领域的其他任何事物一样，我们需要对容器的构建、部署和在组织内的扩展过程进行控制。Ansible
+    Container 提供了一种抽象且易于实现的方法论，适用于大规模构建和运行容器。在我们开始学习 Ansible 和容器化平台之前，必须首先审视应用程序和服务的历史部署方式。
+- en: 'Before we get started, let''s look at the topics we will address in this chapter:'
+  id: totrans-4
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在我们开始之前，让我们看看本章将涉及的主题：
+- en: '**A historical overview of the DevOps and IT infrastructure**:'
+  id: totrans-5
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**DevOps 和 IT 基础设施的历史概述**：'
+- en: Manual deployments
+  id: totrans-6
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 手动部署
+- en: An introduction to automation
+  id: totrans-7
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 自动化简介
+- en: The virtualization of applications
+  id: totrans-8
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 应用虚拟化
+- en: The containerization of applications
+  id: totrans-9
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 应用容器化
+- en: The orchestrating of containerized applications
+  id: totrans-10
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 容器化应用程序的编排
+- en: '**Building your first Docker container**'
+  id: totrans-11
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**构建你的第一个 Docker 容器**'
+- en: Setting up a lab environment
+  id: totrans-12
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 设置实验环境
+- en: Starting your first Docker container
+  id: totrans-13
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 开始您的第一个Docker容器
+- en: Building your first Docker container
+  id: totrans-14
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 构建您的第一个Docker容器
+- en: Container life cycle management
+  id: totrans-15
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 容器生命周期管理
+- en: DevOps and the shifting IT landscape
+  id: totrans-16
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: DevOps和IT景观的变化
+- en: Let's take a quick look at the evolution of many IT departments, and the response
+    to this radical shift across the industry. Before we delve into learning about
+    containers, it is important to understand the history of deploying applications
+    and services in order to realize which problems containerization addresses, as
+    well as how infrastructure has changed and evolved over the decades.
+  id: totrans-17
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们快速看看许多IT部门的演变以及整个行业对这一根本性转变的响应。在我们深入学习容器之前，了解应用程序和服务部署的历史非常重要，以了解容器化解决了哪些问题，以及基础设施在几十年间如何变化和演进。
+- en: Manual deployments of monolithic applications
+  id: totrans-18
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 大型单体应用的手动部署
+- en: 'The manual deployment of large monolithic applications is where most application
+    deployments start out, and the state of most infrastructure in the late 1990''s
+    and early to mid-2000''s. This approach normally goes something like this:'
+  id: totrans-19
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 大型单体应用的手动部署通常是大多数应用部署的起点，并且在上世纪90年代末和21世纪初期到中期的大多数基础设施状态下。这种方法通常是这样的：
+- en: An organization decides they want to create a new service or application.
+  id: totrans-20
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 组织决定创建新的服务或应用程序。
+- en: The organization commissions a team of developers to write the new service.
+  id: totrans-21
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 组织委托开发团队编写新的服务。
+- en: New servers and networking equipment are racked and stacked to support the new
+    service.
+  id: totrans-22
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 安装新服务器和网络设备以支持新服务。
+- en: The new service is deployed by the operations and engineering teams, who may
+    have little to no understanding of what the new service actually does.
+  id: totrans-23
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 新服务由运维和工程团队部署，这些团队可能对新服务的实际功能一无所知。
+- en: Usually, this approach to deploying an application is characterized by little
+    to no use of automation tools, basic shell or batch scripts, and large complex
+    overheads to maintain the application or deploy upgrades. Culturally, this approach
+    creates information silos in teams, and individuals become responsible for small
+    portions of a complicated overall picture. If a team member is transferred between
+    departments or leaves the organization, havoc can arise when the people who are
+    then responsible for the service are forced to reverse engineer the original thought
+    processes of those who originally developed the application. Documentation may
+    be vague if it exists at all.
+  id: totrans-24
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通常，这种部署应用程序的方法很少或根本不使用自动化工具，只使用基本的Shell或批处理脚本，并且需要大量复杂的工作来维护应用程序或部署升级。在文化上，这种方法在团队之间创建信息孤岛，个人负责复杂整体中的小部分。如果团队成员在部门之间调动或离开组织，那些随后负责服务的人必须逆向工程最初开发应用程序的思维过程，可能会造成混乱。如果有文档存在，其可能模糊不清。
+- en: An introduction to automation
+  id: totrans-25
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 自动化介绍
+- en: The next step in the evolution towards a more flexible, DevOps-oriented architecture
+    is the inclusion of an automation platform that allows operation and support engineers
+    to simplify many aspects of deployment and maintenance tasks within an organization.
+    Automation tools are numerous and varied, depending on the extent to which you
+    wish to automate your applications. Some automation tools work only at an OS-level
+    to ensure that the operating system and applications are running as expected.
+    Other automation tools can use interfaces such as IPMI to remotely power-on bare-metal
+    servers in order to deploy everything from the operating system upward.
+  id: totrans-26
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 迈向更灵活、面向DevOps架构演进的下一步是引入自动化平台，使操作和支持工程师能够简化组织内部部署和维护任务的许多方面。自动化工具种类繁多，具体取决于您希望自动化应用程序的程度。某些自动化工具仅在操作系统级别工作，以确保操作系统和应用程序按预期运行。其他自动化工具可以使用诸如IPMI之类的接口远程启动裸机服务器，以部署从操作系统到上层应用的一切。
+- en: Automation tools are based around the configuration management concepts of *current
+    state* and *desired state*. The goal of an automation platform is to evaluate
+    the current state of a server against a programmatic template that defines the
+    servers desired state and only applies actions on the server that are required
+    to bring it into the desired state. For example, an automation platform checking
+    for NGINX in a running state may look at an Ubuntu 16.04 server and see that NGINX
+    is not currently installed.
+  id: totrans-27
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 自动化工具基于*当前状态*和*期望状态*的配置管理概念。自动化平台的目标是根据一个程序化模板评估服务器的当前状态，并且仅对服务器执行将其带入期望状态所需的操作。例如，一个自动化平台检查
+    NGINX 是否处于运行状态时，可能会查看一台 Ubuntu 16.04 服务器，发现 NGINX 当前未安装。
+- en: To bring this server into the desired state, it may run the command `apt-get
+    install nginx` on the backend to bring that server into compliance. When that
+    same automation tool is evaluating a CentOS server, it may determine that NGINX
+    is installed but not running. To bring this server into compliance, it would run
+    `systemctl start nginx` to bring that server into compliance. Notice that it did
+    not attempt to re-install NGINX. To expand our example, if the automation tool
+    was examining a server that had NGINX both installed and running, it would take
+    no action on that server, as it is already in the desired state. The key to a
+    good automation platform is that the tool only executes the steps required to
+    bring that server into the desired state. This concept is known as **idempotency**,
+    and is a hallmark of most automation platforms.
+  id: totrans-28
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了将此服务器带入期望状态，它可能会在后台运行命令`apt-get install nginx`，使该服务器符合要求。当相同的自动化工具评估一台 CentOS
+    服务器时，它可能会发现 NGINX 已安装但未运行。为了使该服务器符合要求，它会运行`systemctl start nginx`来使服务器符合期望状态。注意，它并没有尝试重新安装
+    NGINX。进一步扩展我们的例子，如果自动化工具检查一台既已安装又已运行 NGINX 的服务器，它将不会对该服务器采取任何操作，因为它已经处于期望状态。一个好的自动化平台的关键在于，该工具仅执行将服务器带入期望状态所需的步骤。这个概念被称为**幂等性**，是大多数自动化平台的一个标志。
+- en: 'We will now look at a handful of open source automation tools and examine how
+    they work and what makes them unique. Having a firm understanding of automation
+    tools and how they work will help you to understand how Ansible Container works,
+    and why it is an invaluable tool for container orchestration:'
+  id: totrans-29
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们将查看一些开源自动化工具，并分析它们是如何工作的以及它们有什么独特之处。深入理解自动化工具及其工作原理将帮助你理解 Ansible Container
+    是如何工作的，以及为什么它是容器编排中不可或缺的工具：
+- en: '**Chef**: Chef is a configuration management tool written by Adam Jacobs in
+    2008 to address specific use cases he was tasked with at the time. Chef code is
+    written in a Ruby-based domain-specific language known as *recipes*. A collection
+    of recipes grouped together for a specific purpose is known as a *cookbook*. Cookbooks
+    are stored on a server, from which clients can periodically download updated recipes
+    using the client software running as a daemon. The *Chef Client* is responsible
+    for evaluating the current state against the desired states described in the cookbooks.'
+  id: totrans-30
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**Chef**：Chef 是由 Adam Jacobs 于 2008 年编写的配置管理工具，旨在解决当时他所面临的具体用例。Chef 代码使用 Ruby
+    基础的领域特定语言编写，称为*recipes*。为了特定目的而将多个 recipes 集合在一起的文件被称为*cookbook*。Cookbook 存储在服务器上，客户端可以定期下载更新的
+    recipes，通过作为守护进程运行的客户端软件来获取。*Chef Client* 负责评估当前状态与 cookbook 中描述的期望状态之间的差异。'
+- en: '**Puppet**: Puppet was written in 2005 by Luke Kaines and, similar to Chef,
+    works on a client-server model. Puppet manifests are written in a Ruby DSL and
+    stored on a dedicated server known as the *Puppet Master*. Clients run a daemon
+    known as the *Puppet Agent*, which is responsible for downloading Puppet manifests
+    and executing them locally across the clients.'
+  id: totrans-31
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**Puppet**：Puppet 是由 Luke Kaines 在 2005 年编写的，类似于 Chef，采用客户端-服务器模型。Puppet 清单使用
+    Ruby DSL 编写，并存储在一个专用服务器上，该服务器被称为*Puppet Master*。客户端运行一个名为*Puppet Agent*的守护进程，负责下载
+    Puppet 清单并在客户端上本地执行。'
+- en: '**Salt**: Salt is a configuration management tool written by Thomas Hatch in
+    2011\. Similar to Puppet and Chef, Salt works primarily on a *client-server* model
+    in which *states* stored on the *Salt Master* are executed on the minions to bring
+    about the desired state. Salt is notable in that it is one of the fastest and
+    most efficient configuration management platforms, as it employs a message bus
+    architecture (ZeroMQ) between the master and nodes. Levering this message bus,
+    it is quickly able to evaluate these messages and take the corresponding action.'
+  id: totrans-32
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**Salt**：Salt是Thomas Hatch于2011年编写的配置管理工具。与Puppet和Chef类似，Salt主要基于*客户端-服务器*模型，其中存储在*Salt
+    Master*上的*states*会在minions上执行，以实现所需的状态。Salt的特点是它是最迅速且高效的配置管理平台之一，因为它在master和节点之间采用了消息总线架构（ZeroMQ）。通过这个消息总线，它能够迅速评估这些消息并采取相应的行动。'
+- en: '**Ansible**: Ansible is perhaps one of the more unique automation platforms
+    of the ones we have looked at thus far. Ansible was written in 2012 by Michael
+    DeHaan to provide a minimal, yet powerful configuration management tool. Ansible
+    *playbooks* are simple YAML files that detail the actions and parameters that
+    will be executed on target hosts in a very readable format. By default, Ansible
+    is agentless and leverages a *push* model, in which playbooks are executed from
+    a centralized location (your laptop, or a dedicated host on the network), and
+    evaluated on a target host over SSH. The only requirements to deploy Ansible are
+    that the hosts you are running playbooks against need to be accessible over SSH,
+    and they must have the correct version of Python installed (2.7 at the time of
+    writing). If these requirements are satisfied, Ansible is an incredibly powerful
+    tool that requires very little effort in terms of knowledge and resources to get
+    started using it. More recently, Ansible launched the Ansible Container project,
+    with the purpose of bringing configuration management paradigms to building and
+    deploying container-based platforms. Ansible is an incredibly flexible and reliable
+    platform for configuration management with a large and healthy open source ecosystem.'
+  id: totrans-33
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**Ansible**：Ansible可能是我们迄今为止所研究的自动化平台中最具独特性的之一。Ansible由Michael DeHaan于2012年编写，旨在提供一个简洁而强大的配置管理工具。Ansible的*playbooks*是简单的YAML文件，详细列出了将在目标主机上执行的操作和参数，格式非常易读。默认情况下，Ansible是无代理的，并采用*推送*模型，其中playbooks从一个集中位置（例如你的笔记本或网络上的专用主机）执行，并通过SSH在目标主机上进行评估。部署Ansible的唯一要求是，你运行playbooks的主机必须能够通过SSH访问，并且必须安装正确版本的Python（撰写时为2.7版）。如果满足这些要求，Ansible将是一个非常强大的工具，入门几乎不需要什么知识和资源。最近，Ansible推出了Ansible
+    Container项目，旨在将配置管理范式引入到基于容器的平台构建和部署中。Ansible是一个极为灵活且可靠的配置管理平台，拥有一个庞大且健康的开源生态系统。'
+- en: So far, we have seen how introducing automation into our infrastructure can
+    help bring us one step closer to realizing the goals of DevOps. With a solid automation
+    platform in place, and the correct workflows to introduce change, we can leverage
+    these tools to truly have control over our infrastructure. While the benefits
+    of automation are great indeed, there are major drawbacks. Incorrectly implemented
+    automation introduces a point of failure into our infrastructure. Before selecting
+    an automation platform, one must consider what will happen in the event that our
+    master server goes down (applicable to tools such as Salt, Chef, and Puppet).
+    Or what will happen if a state, recipe, playbook, or manifest fails to execute
+    on one of your bare metal infrastructure servers. Using configuration management
+    and automation tools is essentially a requirement in today's landscape, and ways
+    to deploy applications which actually simplify and sometimes negate these potential
+    issues are emerging.
+  id: totrans-34
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 到目前为止，我们已经看到将自动化引入基础设施如何帮助我们更接近实现DevOps的目标。通过一个可靠的自动化平台，并配备正确的工作流程来引入变化，我们可以利用这些工具真正掌控我们的基础设施。虽然自动化的好处确实很大，但也存在重大缺点。错误实现的自动化会为我们的基础设施引入一个故障点。在选择自动化平台之前，必须考虑在我们的主服务器故障时会发生什么（适用于Salt、Chef和Puppet等工具）。或者，如果一个状态、食谱、playbook或清单在某个裸机基础设施服务器上执行失败时会发生什么。使用配置管理和自动化工具在今天的环境中已成为一种必需，且出现了一些简化甚至消除这些潜在问题的应用部署方式。
+- en: Virtualization of applications and infrastructure
+  id: totrans-35
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 应用程序和基础设施的虚拟化
+- en: With the rise of cloud computing in recent years, the virtualization of applications
+    and infrastructure has for many organizations replaced traditional in-house deployments
+    of applications and services. Currently, it is proving to be more cost-effective
+    for individuals and companies to rent hardware resources from companies such as
+    Amazon, Microsoft, and Google and spin up virtual instances of servers with exactly
+    the hardware profiles required to run their services.
+  id: totrans-36
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 随着近年来云计算的崛起，许多组织已经用应用程序和基础设施的虚拟化替代了传统的内部部署应用程序和服务。目前，租用像亚马逊、微软和谷歌等公司的硬件资源，创建具有精确硬件配置的虚拟服务器实例，已被证明对个人和公司而言更具成本效益。
+- en: Many configuration management and automation tools today are adding direct API
+    access to these cloud providers to extend the flexibility of your infrastructure.
+    Using Ansible, for example, you can describe exactly the server configuration
+    you require in a playbook, as well as your cloud provider credentials. Executing
+    this playbook will not only spin up your required instances but will also configure
+    them to run your application. What happens if a virtual instance fails? Blow it
+    away and create a new one. With the ushering in of cloud computing, so too comes
+    a new way to look at infrastructure. No longer is a single server or group of
+    servers considered to be *special* and maintained in a specific way. The cloud
+    is introducing DevOps practitioners to the very real concept that infrastructure
+    can be disposable.
+  id: totrans-37
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如今，许多配置管理和自动化工具都在向这些云服务提供商添加直接的 API 访问，以扩展基础设施的灵活性。例如，使用 Ansible，你可以在剧本中精确描述所需的服务器配置，以及云服务提供商的凭证。执行该剧本不仅会启动所需的实例，还会将它们配置为运行你的应用程序。如果一个虚拟实例出现故障怎么办？销毁它并创建一个新的。随着云计算的兴起，基础设施的全新视角也随之而来。单一的服务器或服务器组不再被视为*特殊的*并以特定方式维护。云计算使
+    DevOps 从业者认识到一个非常现实的概念，那就是基础设施可以是一次性的。
+- en: Virtualization, however, is not limited to just cloud providers. Many organizations
+    are currently implementing virtualization in-house using platforms such as ESXi,
+    Xen, and KVM. These platforms allow large servers with a lot of storage, RAM,
+    and CPU resources to host multiple virtual machines that use a portion of the
+    host operating system's resources.
+  id: totrans-38
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，虚拟化不仅仅局限于云服务提供商。许多组织目前正在使用如 ESXi、Xen 和 KVM 等平台在内部实施虚拟化。这些平台允许具有大量存储、内存和 CPU
+    资源的大型服务器托管多个虚拟机，每个虚拟机使用宿主操作系统资源的一部分。
+- en: Considering the benefits that virtualization and automation bring to the table,
+    there are still many drawbacks to adopting such an architecture. For one, virtualization
+    in all its forms can be quite expensive. The more virtual servers you create in
+    a cloud provider, the more expensive your monthly overhead fee will be, not considering
+    the added cost of large hardware profile virtual machines. Furthermore, deployments
+    such as these can be quite resourced-intensive. Even with low specifications,
+    spinning up a large number of virtual machines can take large amounts of storage,
+    RAM, and CPU from the hypervisor hardware.
+  id: totrans-39
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 尽管虚拟化和自动化带来了许多好处，但采用这种架构仍然存在许多缺点。首先，各种形式的虚拟化可能相当昂贵。在云服务提供商中创建更多的虚拟服务器，你的月度开销费用将变得更高，还不算大型硬件配置虚拟机所带来的额外成本。此外，这样的部署可能需要大量的资源。即使是低配置，启动大量虚拟机也会消耗虚拟化主机硬件的巨大存储、内存和
+    CPU 资源。
+- en: Finally, consideration must also be paid to the maintenance and patching of
+    the virtual machine operating systems, as well as the hypervisor operating system.
+    Even though automation platforms and modern hypervisors allow virtual machines
+    to be quickly spun up and destroyed, patching and updates still must be considered
+    for instances that might be kept for weeks or months. Remember, even though the
+    operating system has been virtualized, it is still prone to security vulnerabilities,
+    patching, and maintenance.
+  id: totrans-40
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后，还必须考虑虚拟机操作系统以及虚拟化主机操作系统的维护和补丁更新。尽管自动化平台和现代虚拟化主机允许虚拟机快速启动和销毁，但对于那些可能需要维持数周或数月的实例，补丁和更新依然必须考虑。记住，即使操作系统已经虚拟化，它仍然容易受到安全漏洞、补丁和维护的影响。
+- en: Containerization of applications and infrastructure
+  id: totrans-41
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 应用程序和基础设施的容器化
+- en: Containerization made an entrance on the DevOps scene when Docker was launched
+    in the month of March of 2013\. Even though the concepts of containerization predate
+    Docker, for many working in the field, it was their first introduction to the
+    concept of running an application inside a container. Before we go forward, we
+    must first establish what a container is and what it is not.
+  id: totrans-42
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 容器化技术在2013年3月随着Docker的发布进入了DevOps领域。尽管容器化的概念早于Docker，但对于许多在这一领域工作的人来说，这还是他们第一次接触到在容器内运行应用程序的概念。在继续之前，我们首先需要明确什么是容器，什么不是容器。
+- en: A container is an isolated process in a Linux system that has control groups
+    and kernel namespaces associated with it. Within a container, there is a very
+    thin operating system layer, which has just enough resources to launch and run
+    other processes. The base operating system layer can be based on any operating
+    system, even a different operating system from the one that is running on the
+    host. When a container is run, the container engine allocates access to the host
+    operating system kernel to run the container in isolation from other processes
+    on the host. From the perspective of the application inside the container, it
+    appears to be the only process on that host, even though that same host could
+    be running multiple versions of that container simultaneously.
+  id: totrans-43
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 容器是一个在Linux系统中具有控制组和内核命名空间的隔离进程。在容器内部，有一个非常薄的操作系统层，只有足够的资源来启动和运行其他进程。基础操作系统层可以基于任何操作系统，甚至可以是与主机上运行的操作系统不同的操作系统。当运行容器时，容器引擎会分配访问主机操作系统内核的权限，以便将容器与主机上其他进程隔离开来。从容器内应用程序的角度看，它似乎是主机上唯一的进程，尽管同一主机可能同时运行多个该容器的版本。
+- en: 'The following illustration shows the relationship between the host OS, the
+    container engine, and the containers running on the host:'
+  id: totrans-44
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下插图展示了主机操作系统、容器引擎与主机上运行的容器之间的关系：
+- en: '![](img/501f18aa-1f8f-42b9-a2e4-c17b725fbb8b.png)'
+  id: totrans-45
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/501f18aa-1f8f-42b9-a2e4-c17b725fbb8b.png)'
+- en: 'Figure 1: An Ubuntu 16.04 host running multiple containers with different base
+    operating systems'
+  id: totrans-46
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图1：运行多个容器并使用不同基础操作系统的Ubuntu 16.04主机
+- en: Many beginners at containerization mistake containers for lightweight virtual
+    machines and attempt to fix or modify running containers as you would a VM or
+    a bare metal server that isn't running correctly. Containers are meant to be truly
+    disposable. If a container is not running correctly, they are lightweight enough
+    that one can terminate the existing container and rebuild a new one from scratch
+    in a matter of seconds. If virtual machines and bare metal servers are to be treated
+    as *pets* (cared for, watered, and fed), containers are to be treated as *cattle*
+    (here one minute, deleted and replaced the next minute). I think you get the idea.
+  id: totrans-47
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 许多容器化初学者将容器误认为是轻量级的虚拟机，并试图像处理虚拟机或未正确运行的裸机服务器一样修复或修改正在运行的容器。容器的设计理念是完全可丢弃的。如果容器没有正确运行，它们足够轻量，可以在几秒钟内终止现有容器并从头开始重建一个新的容器。如果虚拟机和裸机服务器应被视为*宠物*（需要照顾、喂养和维护），那么容器应该被视为*牲畜*（在这里一分钟，下一分钟就被删除和替换）。我想你明白这个意思了。
+- en: This implementation differs significantly from traditional virtualization, in
+    that a container can be built quickly from a container source file and start running
+    on a host OS, similar to any other process or daemon in the Linux kernel. Since
+    containers are isolated and extremely thin, one does not have to be concerned
+    about running any unnecessary processes inside of the container, such as SSH,
+    security tools, or monitoring tools. That container exists for a specific purpose,
+    to run a single application. Container runtime environments, such as Docker, provide
+    the necessary resources so that the container can run successfully and provide
+    an interface to the host's software and hardware resources, such as storage and
+    networking.
+  id: totrans-48
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这种实现与传统虚拟化的显著区别在于，容器可以通过容器源文件快速构建，并在主机操作系统上运行，类似于Linux内核中的其他进程或守护进程。由于容器是隔离的且非常精简，因此不必担心容器内部运行任何不必要的进程，例如SSH、安全工具或监控工具。容器的存在是为了特定的目的，即运行一个单一的应用程序。容器运行环境（例如Docker）提供了必要的资源，使得容器能够成功运行，并提供与主机软件和硬件资源（如存储和网络）的接口。
+- en: By their very nature, containers are designed to be portable. A container using
+    a CentOS base image running the Apache web server can be loaded on a CentOS host,
+    an Ubuntu host, or even a Windows host; they all have the same container runtime
+    environment and run in exactly the same way. The benefits of having this type
+    of modularity are immense. For example, a developer can build a container image
+    for *MyAwesomeApplication 1.0* on his or her laptop, using only a few megabytes
+    of storage and memory, and be confident that the container will run exactly the
+    same in production as it does on their laptop. When it's time to upgrade the *MyAwesomeApplication*
+    to version 2.0, the upgrade path is to simply replace the running container image
+    with the newer container image version, significantly simplifying the upgrade
+    process.
+  id: totrans-49
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 容器天生就是为了便于移植设计的。一个使用 CentOS 基础镜像并运行 Apache Web 服务器的容器可以在 CentOS 主机、Ubuntu 主机，甚至是
+    Windows 主机上加载；它们都有相同的容器运行时环境，并且以完全相同的方式运行。拥有这种模块化的好处是巨大的。例如，开发人员可以在自己的笔记本电脑上为
+    *MyAwesomeApplication 1.0* 构建容器镜像，仅使用几个兆字节的存储和内存，并且可以确保该容器在生产环境中与在他们笔记本上的运行方式完全相同。当需要将
+    *MyAwesomeApplication* 升级到 2.0 版本时，升级路径只是简单地用更新的容器镜像版本替换正在运行的容器镜像，从而显著简化了升级过程。
+- en: Combining the portability of running containers in a runtime environment such
+    as Docker with automation tools such as Ansible can provide software developers
+    and operations teams with a powerful combination. New software can be deployed
+    faster, run more reliably, and have a lower maintenance overhead. It is this idea
+    that we will explore further in this book.
+  id: totrans-50
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 将在 Docker 等运行时环境中运行容器的可移植性与 Ansible 等自动化工具相结合，可以为软件开发人员和运维团队提供一个强大的组合。新软件可以更快地部署，运行更加可靠，并且维护开销更低。这正是我们将在本书中进一步探讨的理念。
+- en: Orchestrating of containerized applications
+  id: totrans-51
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 容器化应用程序的编排
+- en: Working towards a more flexible, DevOps-oriented infrastructure does not stop
+    with running applications and tools in containers. By their very nature, containers
+    are portable and flexible. As with anything else in the IT industry, the portability
+    and flexibility that containers bring can be built upon to make something even
+    more useful. Kubernetes and Docker Swarm are two container scheduling platforms
+    that make maintaining and deploying containers even easier.
+  id: totrans-52
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 朝着更灵活、面向 DevOps 的基础设施迈进，并不仅仅是将应用程序和工具运行在容器中。容器天生具有可移植性和灵活性。与IT行业中的其他技术一样，容器所带来的可移植性和灵活性可以被进一步构建，以使其变得更有用。Kubernetes
+    和 Docker Swarm 是两个容器调度平台，它们使得容器的维护和部署变得更加容易。
+- en: Kubernetes and Docker Swarm can proactively maintain the containers running
+    across the hosts in your cluster, making scaling and upgrading containers very
+    easy. If you want to increase the number of containers running in your cluster,
+    you can simply tell the scheduling API to increase the number of replicas, and
+    the containers will automatically scale in real time across nodes in the cluster.
+  id: totrans-53
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Kubernetes 和 Docker Swarm 可以主动维护在集群中各主机上运行的容器，使得容器的扩展和升级变得非常简单。如果你想增加集群中运行的容器数量，你只需告诉调度
+    API 增加副本数，容器将自动在集群中的节点上实时扩展。
+- en: If you want to upgrade the application version, you can similarly instruct these
+    tools to leverage the new container version, and you can watch the rolling upgrade
+    process happen almost instantly. These tools can even provide networking and DNS
+    services between containers, such that the container network traffic can be abstracted
+    away from the host networking altogether. This is just a taste of what container
+    orchestration and scheduling tools such as Docker Swarm and Kubernetes can do
+    for your containerized infrastructure. However, these will be discussed in much
+    greater detail later in the book.
+  id: totrans-54
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你想升级应用程序版本，你也可以类似地指示这些工具使用新的容器版本，并且你几乎可以立刻看到滚动升级过程的发生。这些工具甚至可以提供容器之间的网络和 DNS
+    服务，从而将容器的网络流量与主机网络完全抽象开。这只是 Docker Swarm 和 Kubernetes 等容器编排和调度工具可以为你的容器化基础设施做的一小部分。但这些内容将在本书后续章节中进行更详细的讨论。
+- en: Building your first docker container
+  id: totrans-55
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 构建你的第一个 Docker 容器
+- en: Now that we have covered some introductory information that will serve to bring
+    the reader up to speed on DevOps, configuration management, and containerization,
+    it's time to get our hands dirty and actually build our first Docker container
+    from scratch. This portion of the chapter will walk you through building containers
+    manually and with scripted Dockerfiles. This will provide a foundational knowledge
+    of how the Ansible Container platform works on the backend to automate the building
+    and deployment of container images.
+  id: totrans-56
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经涵盖了一些入门信息，帮助读者了解 DevOps、配置管理和容器化的基本概念，接下来是时候动手实践，实际从零开始构建我们的第一个 Docker
+    容器了。本章这一部分将带你手动构建容器，并通过编写 Dockerfile 脚本来实现。这样可以为你提供关于 Ansible Container 平台如何在后台工作、自动化构建和部署容器镜像的基础知识。
+- en: 'When working with container images, it is important to understand the difference
+    between container *images* and running *instances* of containers.  When you build
+    a container using Ansible Container or manually using Dockerfiles, there is a
+    two-part process required to run a container:  Building the container image, and
+    running an instance of the container:'
+  id: totrans-57
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在使用容器镜像时，理解容器*镜像*和运行的*实例*之间的区别非常重要。当你使用 Ansible Container 或通过 Dockerfile 手动构建容器时，运行容器的过程需要两步：构建容器镜像和运行容器实例：
+- en: '**Building a Container**:The build process involves downloading a base container
+    OS image, and executing the steps outlined in the Dockerfile or Ansible Container
+    playbooks to bring the container into the desired state.  The result of the build
+    process is a cached container image that is ready to launch container instances.
+    The `docker pull` command can also be used to download container images from the
+    internet for your local Docker host to cache.'
+  id: totrans-58
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**构建容器**：构建过程包括下载基础容器操作系统镜像，并执行 Dockerfile 或 Ansible Container 剧本中列出的步骤，将容器构建到所需状态。构建过程的结果是一个已缓存的容器镜像，准备启动容器实例。`docker
+    pull` 命令也可以用来从互联网下载容器镜像，并将其缓存到本地 Docker 主机上。'
+- en: '**Running a Container**:The process of starting a cached container image and
+    running it is known as *running a container*. You can start as many containers
+    you want from a single container image. If you attempt to run a container image
+    that is not already cached on your local Docker host, Docker will attempt to download
+    that container image from the internet.'
+  id: totrans-59
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**运行容器**：启动一个已缓存的容器镜像并运行它的过程被称为*运行容器*。你可以从单个容器镜像启动任意数量的容器。如果你尝试运行一个本地 Docker
+    主机上尚未缓存的容器镜像，Docker 会尝试从互联网下载该镜像。'
+- en: Instantiating the lab environment
+  id: totrans-60
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 实例化实验环境
+- en: I would encourage you to follow along as we perform these lab exercises. To
+    simplify the process of getting an environment that has the tools covered in this
+    book up-and-running, I have created a Git repository with many example lab scenarios
+    covered throughout this book. We will start off by running through a quick tutorial
+    on how to set up the lab on your local workstation or laptop. To install the lab
+    components, I would suggest using a computer with at least 8 GB of RAM, a virtualization-enabled
+    CPU (Intel Core i5 or equivalent), and a 128 GB or higher hard drive. Linux or
+    macOS are the preferred operating systems for installing the lab, as these tools
+    generally work better on Unix-like operating systems. However, all of these tools
+    also support Windows, but your mileage may vary.
+  id: totrans-61
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我鼓励你在我们进行这些实验操作时一同实践。为了简化获得本书中所覆盖工具的环境设置过程，我创建了一个 Git 仓库，里面包含了本书中所覆盖的多个实验场景。我们将从一个快速教程开始，介绍如何在你的本地工作站或笔记本电脑上设置实验环境。为了安装这些实验组件，我建议使用至少配备
+    8 GB RAM、支持虚拟化的 CPU（Intel Core i5 或同等配置）以及 128 GB 或更大硬盘的计算机。Linux 或 macOS 是安装实验环境的首选操作系统，因为这些工具在类
+    Unix 操作系统上运行通常更加稳定。但这些工具同样支持 Windows，只是效果可能因系统而异。
+- en: The lab environment will spin up a disposable Ubuntu 16.04 Vagrant VM which
+    comes preloaded with Docker, Ansible Container, and the various tools you will
+    need to successfully become familiar with how Ansible Container works. A text
+    editor geared towards development is also required and will be used to create
+    and edit examples and lab exercises throughout this book. I would suggest using
+    GitHub Atom or Vim, as both editors support syntax highlighting for YAML documents
+    and Dockerfiles. Both GitHub Atom and Vim are available as free and opensource
+    software and are available cross-platform.
+  id: totrans-62
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 实验环境将启动一个一次性的 Ubuntu 16.04 Vagrant 虚拟机，预装了 Docker、Ansible Container 以及你成功熟悉
+    Ansible Container 工作原理所需的各种工具。还需要一个面向开发的文本编辑器，用于在本书中创建和编辑示例及实验任务。我建议使用 GitHub
+    Atom 或 Vim，因为这两个编辑器都支持 YAML 文档和 Dockerfile 的语法高亮。GitHub Atom 和 Vim 都是免费的开源软件，并且支持跨平台使用。
+- en: Please note, you do not have to install this lab environment in order to learn
+    and understand Ansible Container. It is helpful to follow along and have hands-on
+    experience of working with the technology, but it is not required.
+  id: totrans-63
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请注意，你不必安装这个实验环境也能学习和理解 Ansible Container。虽然跟随本书操作并亲身体验这项技术是有帮助的，但并不是必须的。
+- en: The book should be simple enough to understand without instantiating the lab
+    if you lack the available resources. It should also be noted that you can instantiate
+    your own lab environment on your workstation as well, by installing Ansible, Ansible
+    Container, and Docker. Later in the book, we will cover Kubernetes and OpenShift,
+    so will need those as well for later chapters. These references can be found at
+    the back of the book.
+  id: totrans-64
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本书应该足够简单，即使你没有可用的资源，也能理解内容而无需实例化实验室环境。同时需要注意，你也可以通过在工作站上安装 Ansible、Ansible Container
+    和 Docker 来实例化自己的实验室环境。稍后在本书中，我们将涉及 Kubernetes 和 OpenShift，因此后面的章节也需要这些工具。这些参考资料可以在书本的最后找到。
+- en: 'Installing the lab environment:'
+  id: totrans-65
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 安装实验环境：
+- en: 'Below are the steps required to set up the lab environment on your local workstation.
+    Details on installing Vagrant and Virtualbox for your respective platform can
+    be found on the main websites. Try and download similar version numbers to what
+    is listed to ensure maximum compatibility:'
+  id: totrans-66
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是在你的本地工作站上设置实验环境所需的步骤。关于如何为你的平台安装 Vagrant 和 VirtualBox的详细信息，可以在各自的官方网站找到。尽量下载与列出的版本号相似的版本，以确保最大兼容性：
+- en: 'Download and install Git: [https://git-scm.com/downloads](https://git-scm.com/downloads)'
+  id: totrans-67
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 下载并安装 Git：[https://git-scm.com/downloads](https://git-scm.com/downloads)
+- en: 'Download and install VirtualBox (version 5.1): [https://www.virtualbox.org/wiki/Downloads](https://www.virtualbox.org/wiki/Downloads)'
+  id: totrans-68
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 下载并安装 VirtualBox（版本 5.1）：[https://www.virtualbox.org/wiki/Downloads](https://www.virtualbox.org/wiki/Downloads)
+- en: 'Download and install Vagrant (version 1.9.1): [https://www.vagrantup.com/docs/installation/](https://www.vagrantup.com/docs/installation/)'
+  id: totrans-69
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 下载并安装 Vagrant（版本 1.9.1）：[https://www.vagrantup.com/docs/installation/](https://www.vagrantup.com/docs/installation/)
+- en: 'Clone the Ansible Container Lab Git Repository:'
+  id: totrans-70
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 克隆 Ansible Container Lab Git 仓库：
+- en: '[PRE0]'
+  id: totrans-71
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: 'In your Terminal, navigate to the `ansible_container_lab` Git repository and
+    run: `vagrant up` to start the virtual machine:'
+  id: totrans-72
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在终端中，导航到 `ansible_container_lab` Git 仓库，并运行：`vagrant up` 来启动虚拟机：
+- en: '[PRE1]'
+  id: totrans-73
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: 'If Vagrant and VirtualBox are installed and configured correctly, you should
+    start to see the VM launching on your workstation, similar to the following:'
+  id: totrans-74
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果 Vagrant 和 VirtualBox 已正确安装和配置，你应该开始看到虚拟机在工作站上启动，类似于以下显示：
+- en: '[PRE2]'
+  id: totrans-75
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: 'Once the Vagrant box has successfully booted up, you can execute the command:
+    `vagrant ssh node01` to get access to the VM.'
+  id: totrans-76
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦 Vagrant box 成功启动，你可以执行命令：`vagrant ssh node01` 来访问虚拟机。
+- en: 'When you are done working in the Vagrant virtual machine, you can use the command:
+    `vagrant destroy -f` to terminate the VM. Destroying the VM should be done when
+    you are finished working with the machine for the day, or when you wish to delete
+    and re-create the VM from scratch, should you need to reset it to the original
+    settings.'
+  id: totrans-77
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当你在 Vagrant 虚拟机中完成工作后，可以使用命令：`vagrant destroy -f` 来终止虚拟机。销毁虚拟机应在你完成当天的工作后进行，或者当你希望删除并重新创建虚拟机时进行，以便将其重置为原始设置。
+- en: 'Please note: Any work that is not saved in the `/vagrant` directory in the
+    lab VM will be deleted and will be unrecoverable. The `/vagrant` directory is
+    a shared folder between the root of the `lab` directory on your localhost and
+    the Vagrant VM. Save files here if you want to make them available in the future.'
+  id: totrans-78
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请注意：在实验虚拟机中，任何未保存在`/vagrant`目录中的工作都会被删除且无法恢复。`/vagrant`目录是你本地机器上`lab`目录根目录和Vagrant虚拟机之间的共享文件夹。如果你想要以后使用这些文件，请保存到这个目录中。
+- en: Starting your first Docker container
+  id: totrans-79
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 启动你的第一个Docker容器
+- en: 'By default, the lab environment begins running with the Docker engine already
+    started and running as a service. If you need to install the Docker engine manually,
+    you can do so on Ubuntu or Debian-based distributions of Linux using: `sudo apt-get
+    install docker.io`. Once Docker is installed and running, you can check the status
+    of running containers by executing `docker ps -a`:'
+  id: totrans-80
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 默认情况下，实验环境会在Docker引擎已经启动并作为服务运行的情况下开始。如果你需要手动安装Docker引擎，可以在基于Ubuntu或Debian的Linux发行版上使用：`sudo
+    apt-get install docker.io`。Docker安装并运行后，你可以通过执行`docker ps -a`来检查正在运行的容器状态：
+- en: '[PRE3]'
+  id: totrans-81
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: 'We can see in the preceding output that we have column headers, but no actual
+    information. That''s because we don''t have any container instances running. Let''s
+    check how many container images Docker knows about, using the `docker images`
+    command:'
+  id: totrans-82
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以从前面的输出中看到，我们有列标题，但没有实际的信息。这是因为我们没有运行任何容器实例。让我们使用`docker images`命令来检查Docker知道多少个容器镜像：
+- en: '[PRE4]'
+  id: totrans-83
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: 'Not much going on there either. That''s because we don''t have any container
+    images to play around with yet. Let''s run our first container, the Docker `hello-world`
+    container, using the `docker run` command:'
+  id: totrans-84
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这里也没有发生什么。那是因为我们还没有容器镜像可以使用。让我们通过`docker run`命令来运行我们的第一个容器——Docker的`hello-world`容器：
+- en: '[PRE5]'
+  id: totrans-85
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: 'The command we executed was: `docker run hello-world`. A lot of things happened
+    when we ran that command. The command `docker run` is the Docker command required
+    to start and run a container within the Docker engine. The container we are running
+    is `hello-world`. If you look through the output, you can see that Docker reports
+    that it is `Unable to find image ''hello-world:latest'' locally`. The first step
+    of the Docker run is Docker testing to see if it already has the container image
+    cached locally, so it doesn''t have to download and redownload containers that
+    the host is already running. We validated earlier that we currently have no container
+    images in Docker using the `docker images` command, so Docker searched its default
+    registry (Docker Hub) to download the image from the internet. When Docker downloads
+    a container image, it downloads the image one layer at a time and calculates a
+    hash to ensure that the image was pulled correctly and with integrity. You can
+    see from the preceding output that Docker provides the `sha256` digest, so we
+    can be certain that the correct image was downloaded. Since we didn''t specify
+    a container version, Docker searched the Docker Hub registry for an image called,
+    `hello-world` and downloaded the latest version. When the container executed,
+    it printed the `Hello From Docker` output, which is the job the container is designed
+    to perform.'
+  id: totrans-86
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们执行的命令是：`docker run hello-world`。当我们运行这个命令时，发生了很多事情。命令`docker run`是Docker中启动并运行容器所必需的命令。我们正在运行的容器是`hello-world`。如果你查看输出，你会看到Docker报告说`无法在本地找到镜像
+    'hello-world:latest'`。Docker运行的第一步是测试它是否已经在本地缓存了容器镜像，这样它就不需要重新下载已经在主机上运行的容器。我们之前验证了目前Docker中没有任何容器镜像，所以Docker会从其默认的注册中心（Docker
+    Hub）下载镜像。当Docker下载容器镜像时，它会一次下载一层，并计算一个哈希值，以确保镜像正确并且完整。你可以从前面的输出中看到，Docker提供了`sha256`摘要，这样我们就可以确信下载的是正确的镜像。由于我们没有指定容器版本，Docker会在Docker
+    Hub注册中心搜索名为`hello-world`的镜像，并下载最新版本。当容器执行时，它输出了`Hello From Docker`，这是该容器设计的功能。
+- en: You can also use the `docker ps` command without the `-a` flag to show only
+    containers that are currently running, not exited or stopped containers.
+  id: totrans-87
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你也可以使用`docker ps`命令，省略`-a`标志，这样只会显示当前正在运行的容器，而不是已退出或已停止的容器。
+- en: 'Docker containers are built based on layers. Every time you build a Docker
+    image, each command you run to create the image is a layer in the Docker image.
+    When Docker builds or pulls an image, Docker processes each layer individually,
+    ensuring that the entire container image is pulled or built intact. When you begin
+    to build your own Docker images, it is important to remember: the fewer the layers,
+    the smaller the file size, and the more efficient the image will be. Downloading
+    an image with a lot of layers is not ideal for users consuming your service, nor
+    is it convenient for you to quickly upgrade services if your Docker images take
+    a long time to download.'
+  id: totrans-88
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Docker 容器是基于层构建的。每次构建 Docker 镜像时，你运行的每个命令都会在 Docker 镜像中创建一个层。当 Docker 构建或拉取镜像时，Docker
+    会逐个处理每一层，确保整个容器镜像被完整地拉取或构建。当你开始构建自己的 Docker 镜像时，记住以下几点很重要：层数越少，文件大小越小，镜像效率越高。下载层数很多的镜像对于使用你服务的用户并不理想，而且如果你的
+    Docker 镜像下载时间过长，快速升级服务也不方便。
+- en: 'Now that we have downloaded and run our first container image, let''s take
+    a look at our list of local Docker images again:'
+  id: totrans-89
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经下载并运行了第一个容器镜像，让我们再次查看本地的 Docker 镜像列表：
+- en: '[PRE6]'
+  id: totrans-90
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: 'As you can see, we have the `hello-world` image cached locally. If we reran
+    this container, it would no longer have to pull down the image, unless we specify
+    a higher image version number than what was stored in the local cache. We can
+    now take another look at our `docker ps -a` output:'
+  id: totrans-91
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，我们在本地缓存了 `hello-world` 镜像。如果我们重新运行这个容器，它将不再需要重新拉取镜像，除非我们指定一个比本地缓存中存储的镜像版本更高的版本号。现在我们可以再次查看
+    `docker ps -a` 的输出：
+- en: '[PRE7]'
+  id: totrans-92
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE7]'
+- en: 'From the preceding output, you can see that Docker created a new running container
+    with the container ID: `b0c4093ab38f`. It also listed the name of the source image
+    used to spawn this container, the command executed, (in this case: `/hello`),
+    the time it was created, as well as the current status and container name. You
+    can see that this particular container is no longer running, as the status is
+    `Exited (0)`. This particular container is designed in such a way that it performs
+    one single job and quits once that job has finished. The `Exited (0)` status lets
+    the user know that the execution completed successfully. This functions very similarly
+    to a binary executable, such as `cat` or `echo` commands in a Unix-based system.
+    These commands perform a single job and stop once that job has completed. Building
+    this type of container is useful if your purpose is to provide a user with a container
+    that provides an output, such as parsing text, performing calculations, or even
+    executing jobs on the Docker host. As you will see later, you can even pass parameters
+    to the docker `run` command so that we can modify how the applications inside
+    the container run.'
+  id: totrans-93
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 从上面的输出中，你可以看到 Docker 创建了一个新的正在运行的容器，容器 ID 为 `b0c4093ab38f`。它还列出了用于启动此容器的源镜像的名称、执行的命令（在本例中是：`/hello`）、创建时间、当前状态以及容器名称。你可以看到这个特定的容器已经不再运行，因为它的状态是
+    `Exited (0)`。这个容器的设计方式是执行一个单一任务，任务完成后就退出。`Exited (0)` 状态让用户知道执行已成功完成。这与 Unix 系统中的二进制可执行文件非常相似，比如
+    `cat` 或 `echo` 命令。这些命令执行一个单一任务，完成后就停止。如果你的目的是为用户提供一个执行输出（比如解析文本、进行计算，甚至执行 Docker
+    主机上的任务）的容器，那么构建这种类型的容器是非常有用的。正如你稍后将看到的，你甚至可以向 `docker run` 命令传递参数，从而修改容器内应用程序的运行方式。
+- en: Building your first container
+  id: totrans-94
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 构建你的第一个容器
+- en: Now that we have an understanding of how Docker containers run, as well as how
+    the Docker engine downloads and caches container images, we can start building
+    containers that run services such as web servers and databases. In this lesson,
+    we will build a container from a Dockerfile that will run the Apache web server.
+    We will then expose ports in the Docker engine that will allow us to access the
+    running web service we just instantiated. Let's get started.
+  id: totrans-95
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经了解了 Docker 容器如何运行，以及 Docker 引擎如何下载和缓存容器镜像，我们可以开始构建运行服务的容器，例如 Web 服务器和数据库。在本节课中，我们将从一个
+    Dockerfile 构建一个容器，该容器将运行 Apache Web 服务器。然后我们将在 Docker 引擎中暴露端口，这样我们就可以访问我们刚刚实例化的运行中的
+    Web 服务。让我们开始吧。
+- en: Dockerfiles
+  id: totrans-96
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Dockerfile
+- en: 'As we learned previously, Docker containers consist of layers that are essentially
+    stacked on top of each other to form a Docker container image. These layers consist
+    of commands in a plain-text file that the Docker engine will sequentially execute
+    to build a final image. Each line of a Dockerfile represents a layer in the Docker
+    image. The goal of building our Dockerfiles is to keep them as small and concise
+    as possible so that our container images are not larger than necessary. In the
+    `/vagrant` directory of your VM, create a plain-text file called, `Dockerfile`,
+    and open it in the text editor of your choice. We will start with the following
+    lines, which we will explore one by one:'
+  id: totrans-97
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如我们之前所学，Docker容器由多个层组成，这些层本质上是叠加在一起，形成一个Docker容器镜像。这些层由命令组成，这些命令保存在纯文本文件中，Docker引擎会按顺序执行这些命令来构建最终的镜像。Dockerfile中的每一行代表镜像中的一层。构建Dockerfile的目标是让它们尽可能小巧简洁，这样我们的容器镜像就不会比必要的要大。在你的虚拟机的`/vagrant`目录中，创建一个名为`Dockerfile`的纯文本文件，并使用你喜欢的文本编辑器打开它。我们将从以下几行开始，逐一探讨：
+- en: '[PRE8]'
+  id: totrans-98
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE8]'
+- en: 'Let''s take a look at this Dockerfile line-by-line:'
+  id: totrans-99
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们逐行查看这个Dockerfile：
+- en: '`FROM`: Indicates the base image from which we want our container to be built.
+    In this case, it is the Ubuntu base image, version 16.04\. There are multiple
+    base images, and images with applications prebuilt, that you can leverage, available
+    for free on Docker Hub.'
+  id: totrans-100
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`FROM`：指定我们希望基于哪个镜像来构建容器。在这个例子中，我们使用的是Ubuntu基础镜像，版本16.04。Docker Hub上有多个基础镜像和预构建的应用镜像，可以免费使用。'
+- en: '`RUN`: Any commands you want the container to execute during the build process
+    get passed in with the RUN parameter. We are executing `apt-get update` in tandem
+    with `apt-get install`. We are executing both of these commands using the same
+    `RUN` line in order to keep our container layers as small as possible. It is also
+    a good practice to group package management commands in the same `RUN` lines as
+    well. This ensures that `apt-get install` does not get executed without first
+    updating the sources list. It is important to note that, when a Docker image gets
+    rebuilt, it will only execute the lines that have been changed or added.'
+  id: totrans-101
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`RUN`：任何你希望容器在构建过程中执行的命令都会通过`RUN`参数传入。我们正在同时执行`apt-get update`和`apt-get install`。我们将这两个命令放在同一行`RUN`中执行，以便尽量减小容器层的大小。将包管理命令放在同一行`RUN`中也是一个好习惯，这样可以确保在执行`apt-get
+    install`之前，源列表已经被更新。需要注意的是，当Docker镜像重新构建时，它只会执行那些被更改或添加过的行。'
+- en: '`EXPOSE`: The `EXPOSE` line instructs Docker about which ports should be open
+    on the container to accept incoming connections. If a service requires more than
+    one port, they can be listed separately with spaces.'
+  id: totrans-102
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`EXPOSE`：`EXPOSE`行指示Docker哪些端口应该在容器中开放，以接受外部连接。如果一个服务需要多个端口，可以用空格分开列出它们。'
+- en: '`ENTRYPOINT`: The `ENTRYPOINT` defines which command you want the container
+    to run by default when the container launches. In this example, we are starting
+    the `apache2` web server using `apache2ctl`. If you want your container to be
+    persistent, it is important that you run your application in a daemon mode or
+    a background mode that will not immediately throw an `EXIT` signal. Later in the
+    book, we will look at an open source project called, `dumb-init`, which is an
+    init system for running services in containers.'
+  id: totrans-103
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ENTRYPOINT`：`ENTRYPOINT`定义了当容器启动时，默认运行的命令。在这个例子中，我们使用`apache2ctl`启动`apache2`
+    web服务器。如果你希望容器保持持久运行，重要的是要以守护进程模式或后台模式运行应用，这样容器不会立即发送`EXIT`信号。稍后我们将介绍一个名为`dumb-init`的开源项目，它是一个用于在容器中运行服务的初始化系统。'
+- en: '`CMD`: `CMD` in this example defines the parameters passed into the `ENTRYPOINT`
+    command at runtime. These parameters can be overridden at the time the container
+    is launched by providing additional arguments at the end of your Docker `run`
+    command. All of the commands or arguments you provide in `CMD` are prefixed by `/bin/sh
+    -c`, making it possible to pass in environment variables at runtime. It should
+    also be noted that, depending on how you want the default shell to interpret the
+    application that is being launched inside the container, you can use `ENTRYPOINT`
+    and `CMD` somewhat interchangeably. The online Docker documentation goes into
+    more in-depth details about best practices for using `CMD` versus `ENTRYPOINT`.'
+  id: totrans-104
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`CMD`：在这个示例中，`CMD`定义了在运行时传递给`ENTRYPOINT`命令的参数。这些参数可以通过在启动容器时在`docker run`命令末尾提供额外的参数来覆盖。你在`CMD`中提供的所有命令或参数都以`/bin/sh
+    -c`为前缀，这使得在运行时传递环境变量成为可能。还需要注意的是，根据你希望默认shell如何解释在容器内启动的应用程序，你可以在某些情况下交替使用`ENTRYPOINT`和`CMD`。在线Docker文档中对如何使用`CMD`与`ENTRYPOINT`有更深入的最佳实践说明。'
+- en: Each line within Dockerfile forms a separate layer in the final Docker container
+    image as seen in the following illustration. Usually, developers want to try to
+    make container images as small as possible to minimize disk usage, download, and
+    build time. This is usually accomplished by running multiple commands on the same
+    line in the Dockerfile.
+  id: totrans-105
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Dockerfile中的每一行都会在最终的Docker容器镜像中形成一个独立的层，如下图所示。通常，开发人员希望尽量将容器镜像做得尽可能小，以最小化磁盘使用、下载和构建时间。通常通过在Dockerfile中的同一行上运行多个命令来实现这一点。
+- en: In this example, we are running `apt-get udpate; apt-get install apache2` in
+    order to try and minimize the size of the resulting container image.
+  id: totrans-106
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这个示例中，我们运行了`apt-get udpate; apt-get install apache2`，以尝试将最终容器镜像的大小最小化。
+- en: '![](img/5517a804-6cac-43c2-b83d-a3afe711bd61.png)'
+  id: totrans-107
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/5517a804-6cac-43c2-b83d-a3afe711bd61.png)'
+- en: 'Figure 2: Layers in the Apache2 container image'
+  id: totrans-108
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图2：Apache2容器镜像中的层
+- en: This is by no means an exhaustive list of the commands available for you to
+    use in a Dockerfile. You can export environment variables using `ENV`, copy configuration
+    files and scripts into the container at build time, and even create mount points
+    in the container using the `VOLUME` command. More commands such as these can be
+    found in the official Dockerfile reference guide at [https://docs.docker.com/engine/reference/builder/](https://docs.docker.com/engine/reference/builder/).
+  id: totrans-109
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这并不是Dockerfile中所有可用命令的详尽列表。你可以使用`ENV`导出环境变量，在构建时将配置文件和脚本复制到容器中，甚至使用`VOLUME`命令在容器中创建挂载点。更多这样的命令可以在官方的Dockerfile参考指南中找到，地址是[https://docs.docker.com/engine/reference/builder/](https://docs.docker.com/engine/reference/builder/)。
+- en: 'Now that we understand what goes into the Dockerfile, let''s build in a functional
+    container using the `docker build` command. By default, `docker build` will search
+    in your current directory for a file called `Dockerfile` and will attempt to create
+    a container layer by layer. Execute the following command on your virtual machine:'
+  id: totrans-110
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 既然我们已经了解了Dockerfile的内容，接下来让我们使用`docker build`命令来构建一个功能性的容器。默认情况下，`docker build`会在当前目录中查找名为`Dockerfile`的文件，并尝试逐层创建容器。请在你的虚拟机上执行以下命令：
+- en: '[PRE9]'
+  id: totrans-111
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE9]'
+- en: It is important to pass in an image build tag using the `-t` flag. In this case,
+    we are tagging the image with the name `webservercontainer` and the version `1.0`.
+    This ensures that you can identify the versions you have built from the `docker
+    image list` output.
+  id: totrans-112
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 重要的是使用`-t`标志传递一个镜像构建标签。在这种情况下，我们给镜像打上了`webservercontainer`的标签，并指定了版本`1.0`。这确保你能够通过`docker
+    image list`输出识别你构建的版本。
+- en: 'If you execute the `docker images` command again, you will see that the newly
+    built image is now stored in the local image cache:'
+  id: totrans-113
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你再次执行`docker images`命令，你会看到新构建的镜像现在已存储在本地镜像缓存中：
+- en: '[PRE10]'
+  id: totrans-114
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE10]'
+- en: 'We can launch new container instances now using `docker run`:'
+  id: totrans-115
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们现在可以使用`docker run`启动新的容器实例：
+- en: '[PRE11]'
+  id: totrans-116
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE11]'
+- en: 'This time, we are passing new parameters into `docker run`:'
+  id: totrans-117
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这次，我们在`docker run`中传递了新的参数：
+- en: '`-d`: Indicates that we are going to run this container in detached or background
+    mode. Running containers in this mode will not immediately log the user into the
+    container shell upon starting. Rather, the container will start directly in the
+    background.'
+  id: totrans-118
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`-d`：表示我们将以分离模式或后台模式运行该容器。在这种模式下运行的容器启动时不会立即将用户登录到容器shell中。相反，容器将直接在后台启动。'
+- en: '`--name`: Gives our container a human-readable name so that we can easily understand
+    what the container''s purpose is. If you don''t pass in a name flag, Docker will
+    assign a random name to your container.'
+  id: totrans-119
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`--name`：为我们的容器指定一个易于理解的名称，以便我们可以清楚地了解容器的用途。如果你没有传递名称标志，Docker会为你的容器分配一个随机名称。'
+- en: '`-p`: Allows us to open ports on the host that will be forwarded to the exposed
+    port on the container. In this example, we are forwarding port `80` on the host
+    to port `80` on the container. The syntax for the `-p` flag is always `<HostPort>:<ContainerPort>`.'
+  id: totrans-120
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`-p`：允许我们打开主机上的端口，并将其转发到容器中的暴露端口。在这个示例中，我们将主机上的`80`端口转发到容器中的`80`端口。`-p`标志的语法始终是`<HostPort>:<ContainerPort>`。'
+- en: 'You can test if this container is running by executing the `curl` command on
+    the VM against localhost on port `80`. If all goes well, you should see the default
+    Ubuntu Apache welcome page:'
+  id: totrans-121
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以通过在虚拟机上针对本地主机的`80`端口执行`curl`命令来测试该容器是否正在运行。如果一切顺利，你应该能看到默认的 Ubuntu Apache
+    欢迎页面：
+- en: '[PRE12]'
+  id: totrans-122
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE12]'
+- en: This indicates to us that Docker is listening on the localhost on port `80`
+    and forwarding that connection to the container, also listening on port `80`.
+    The great thing about containers is that you can launch multiple instances of
+    the same container, provided they are listening on the different port numbers.
+    In a matter of seconds, you can create a fleet of containers providing various
+    services, and just as quickly wipe them out.
+  id: totrans-123
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这意味着 Docker 正在监听本地主机的`80`端口，并将该连接转发到容器，也监听`80`端口。容器的一个大优点是，你可以启动多个相同容器的实例，只要它们监听不同的端口号。只需几秒钟，你就可以创建一个提供各种服务的容器集群，并同样快速地清除它们。
+- en: 'Let''s create two more Apache web server containers listening on ports `100`
+    and `200` of the host''s networking interfaces. Note that in the following example,
+    I have provided different name parameters as well as different host ports:'
+  id: totrans-124
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们再创建两个 Apache 网络服务器容器，监听主机网络接口的`100`和`200`端口。请注意，在以下示例中，我提供了不同的名称参数以及不同的主机端口：
+- en: '[PRE13]'
+  id: totrans-125
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE13]'
+- en: 'If you run the same `curl` command again, this time on port `100` and `200`,
+    you will see the same Ubuntu default web server page. That''s boring. Let''s give
+    our containers more personality. We can use the `docker exec` command to log in
+    to running containers and customize them slightly:'
+  id: totrans-126
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你再次运行相同的`curl`命令，这次是针对`100`和`200`端口，你将看到相同的 Ubuntu 默认网页。这有点无聊。让我们给容器增加一些个性。我们可以使用`docker
+    exec`命令登录到正在运行的容器，并稍作自定义：
+- en: '[PRE14]'
+  id: totrans-127
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE14]'
+- en: 'The `docker exec` requires the following flags to access a running container:'
+  id: totrans-128
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`docker exec`命令需要以下标志才能访问正在运行的容器：'
+- en: '`-i`: Run `docker exec` interactively, since we are going to be launching into
+    a Bash shell'
+  id: totrans-129
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`-i`：以交互方式运行`docker exec`，因为我们将启动一个 Bash shell'
+- en: '`-t`: Allocate a pseudo-tty, or terminal session'
+  id: totrans-130
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`-t`：分配一个伪终端或终端会话'
+- en: '`ApacheServer1`: The name (or container ID) of the container we want to log
+    into'
+  id: totrans-131
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ApacheServer1`：我们想要登录的容器的名称（或容器 ID）'
+- en: '`/bin/bash`: The terminal or command we want to launch using the `docker exec`
+    command'
+  id: totrans-132
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`/bin/bash`：我们希望使用`docker exec`命令启动的终端或命令'
+- en: Running the `docker exec` command should drop you directly into the Bash shell
+    of the first Apache container. Run the following command to change the `index.html`
+    file in the Docker container. When you've finished, you can exit out of the container's
+    shell session by typing `exit`.
+  id: totrans-133
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 运行`docker exec`命令后，你应该直接进入第一个 Apache 容器的 Bash shell。运行以下命令来更改 Docker 容器中的`index.html`文件。完成后，你可以通过输入`exit`退出容器的
+    shell 会话。
+- en: '[PRE15]'
+  id: totrans-134
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE15]'
+- en: 'From the Docker host, run the `curl` command again on port `80`. You should
+    see that the page your Apache web server is using has changed:'
+  id: totrans-135
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 从 Docker 主机上，再次在端口`80`上运行`curl`命令。你应该能看到你的 Apache 网络服务器使用的页面已发生变化：
+- en: '[PRE16]'
+  id: totrans-136
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE16]'
+- en: 'Use `docker exec` to log into the other two containers and use `echo` to change
+    the default `index.html` page to something unique to all three web server containers.
+    Your `curl` results should reflect the changes you''ve made:'
+  id: totrans-137
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用`docker exec`登录到另外两个容器，使用`echo`命令将默认的`index.html`页面更改为所有三个网络服务器容器独特的内容。你的`curl`结果应该能反映你所做的更改：
+- en: '[PRE17]'
+  id: totrans-138
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE17]'
+- en: '**Note**: This exercise is for the purposes of demonstrating the `docker exec`
+    command. `docker exec` is not a recommended way to update, fix, or maintain running
+    containers. From a best practices standpoint, you should always rebuild your Docker
+    containers, incrementing the version tag when changes need to be made. This ensures
+    that changes are always recorded in the Dockerfile so containers can be stood
+    up and torn down as quickly as possible.'
+  id: totrans-139
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**注意**：本练习的目的是演示`docker exec`命令。`docker exec`不是更新、修复或维护正在运行的容器的推荐方式。从最佳实践角度来看，当需要进行更改时，你应始终重新构建
+    Docker 容器，并在版本标签上进行递增。这确保了更改始终记录在 Dockerfile 中，因此容器可以尽可能快速地启动和销毁。'
+- en: You may also have noticed that various Linux operating system tools, text editors,
+    and other utilities are not present in the Docker containers. The goal of containers
+    is to provide the bare-minimal footprint required to run your applications. When
+    building your own Dockerfiles, or later, when we explore Ansible Container environments,
+    think through what is going inside your containers and whether or not your container
+    meets the best practices for designing microservices.
+  id: totrans-140
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可能还注意到，许多 Linux 操作系统工具、文本编辑器和其他实用程序在 Docker 容器中是缺失的。容器的目标是提供运行应用程序所需的最小化足迹。在构建自己的
+    Dockerfile 时，或者稍后当我们探索 Ansible 容器环境时，请思考一下容器内部的内容，考虑你的容器是否符合设计微服务的最佳实践。
+- en: Container life cycle management
+  id: totrans-141
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 容器生命周期管理
+- en: 'Docker gives you the benefit of process isolation using Linux control groups
+    and namespaces. Similar to processes in Unix-like operating systems, these processes
+    can be started, stopped, and restarted to implement changes throughout the lifecycle
+    of the container. Docker gives you direct control of the state of your containers
+    by giving you the options to start, stop, reload, and even view containers logs
+    that might be misbehaving, as needed. Docker gives you the benefit of using either
+    the container''s internal ID number or using the container name we assign it when
+    we start using `docker run`. The following is a list of Docker native commands
+    that can be used to manage the lifecycle of a container as you build and iterate
+    through various versions:'
+  id: totrans-142
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Docker 利用 Linux 控制组和命名空间为你提供了进程隔离的优势。与类 Unix 操作系统中的进程类似，这些进程可以在容器生命周期内启动、停止和重启，以实现更改。Docker
+    通过提供启动、停止、重新加载甚至查看容器日志的选项，使你能够直接控制容器的状态，必要时可以查看可能出现问题的容器日志。Docker 让你可以使用容器的内部
+    ID 或在我们启动容器时使用 `docker run` 指定的容器名称。以下是可以用来管理容器生命周期的 Docker 原生命令列表，在你构建和迭代不同版本时可以使用这些命令：
+- en: '`docker stop <ContainerID or Name>`: Stops the running container and processes
+    within the container.'
+  id: totrans-143
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`docker stop <容器ID或名称>`：停止运行中的容器及容器内的进程。'
+- en: '`docker start <ContainerID or Name>`: Starts a stopped or exited container.'
+  id: totrans-144
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`docker start <容器ID或名称>`：启动一个已停止或已退出的容器。'
+- en: '`docker reload <ContainerID or Name>`: If the container is running, reload
+    will gracefully stop the container and start the container to bring it back into
+    a running state. If the container is stopped, reload will start the running container.'
+  id: totrans-145
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`docker reload <容器ID或名称>`：如果容器正在运行，reload 将优雅地停止容器并重新启动容器，以将其恢复到运行状态。如果容器已停止，reload
+    将启动已停止的容器。'
+- en: '`docker logs <ContainerID or Name>`: Displays any logs generated by the container
+    or the application running inside the container leveraging `STDOUT` or `STDERR`.
+    Logs are useful for debugging a misbehaving container without having to `exec`
+    inside the container.'
+  id: totrans-146
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`docker logs <容器ID或名称>`：显示由容器或在容器内运行的应用程序生成的任何日志，利用`STDOUT`或`STDERR`。日志对于调试行为异常的容器非常有用，而无需`exec`进入容器内部。'
+- en: '`docker logs` have a `--follow` flag, useful for streaming live log output.
+    This can be accessed using `docker logs --follow <ContainerID or Name>`.'
+  id: totrans-147
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`docker logs` 有一个 `--follow` 标志，非常适合流式输出实时日志。这可以通过 `docker logs --follow <容器ID或名称>`
+    来访问。'
+- en: 'From the preceding example, we can start, stop, reload, or view the logs of
+    any of the Apache web server containers we built earlier, like so:'
+  id: totrans-148
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 从前面的示例中，我们可以像下面这样开始、停止、重新加载或查看我们之前构建的任何 Apache Web 服务器容器的日志：
+- en: '[PRE18]'
+  id: totrans-149
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE18]'
+- en: Similar to this example, you can validate the status of any containers by looking
+    at the output of `docker ps -a`.
+  id: totrans-150
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 类似于这个示例，你可以通过查看 `docker ps -a` 的输出验证任何容器的状态。
+- en: For all Docker commands, including `docker run`, `exec`, and `build`, you can
+    see all of the options available for a given command by appending the `--help`
+    flag. For example `docker run --help`.
+  id: totrans-151
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于所有 Docker 命令，包括`docker run`、`exec`和`build`，你可以通过添加`--help`标志来查看给定命令的所有可用选项。例如：`docker
+    run --help`。
+- en: References
+  id: totrans-152
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 参考资料
+- en: '**Dockerfile reference guide**: [https://docs.docker.com/engine/reference/builder/](https://docs.docker.com/engine/reference/builder/)'
+  id: totrans-153
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**Dockerfile 参考指南**：[https://docs.docker.com/engine/reference/builder/](https://docs.docker.com/engine/reference/builder/)'
+- en: '**Download Virtualbox**: [https://www.virtualbox.org/wiki/Downloads](https://www.virtualbox.org/wiki/Downloads)'
+  id: totrans-154
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**下载 VirtualBox**：[https://www.virtualbox.org/wiki/Downloads](https://www.virtualbox.org/wiki/Downloads)'
+- en: '**Download Vagrant**:** [https://www.vagrantup.com/docs/installation/](https://www.vagrantup.com/docs/installation/)**'
+  id: totrans-155
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**下载 Vagrant**：[https://www.vagrantup.com/docs/installation/](https://www.vagrantup.com/docs/installation/)'
+- en: '**Download Git**: [https://git-scm.com/downloads](https://git-scm.com/downloads)'
+  id: totrans-156
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**下载 Git**：[https://git-scm.com/downloads](https://git-scm.com/downloads)'
+- en: Summary
+  id: totrans-157
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 总结
+- en: In this chapter, we looked at the history of application deployments across
+    IT infrastructure, as well as the history of containers and why they are revolutionizing
+    software development. We also took our first steps in building Docker containers
+    by running containers manually, as well as by building them from scratch through
+    Dockerfiles.
+  id: totrans-158
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们回顾了应用部署在 IT 基础设施中的历史，以及容器的历史和它们为什么会彻底改变软件开发。我们还通过手动运行容器和通过 Dockerfile
+    从头构建容器，迈出了构建 Docker 容器的第一步。
+- en: I hope that, if you are new to containerization and Docker, this chapter gave
+    you a good starting point from which you can get hands-on in the world of containerization.
+    Dockerfiles are excellent tools for building containers, as they are lightweight,
+    easily version-controlled, and quite portable. However, they are quite limited
+    in the sense that they are the equivalent of a Bash shell script in the world
+    of DevOps. What happens if you need to tweak configuration files, dynamically
+    configure services based on the states of services, or configure containers based
+    on the environmental conditions they will be deployed into? If you have spent
+    time working on configuration management, you will know that, while shell scripts
+    can do the job, there are much better and easier tools available. Ansible Container
+    is exactly the tool we need in order to apply the power of configuration management
+    to the portability and flexibility that containers bring to our infrastructure.
+    In [Chapter 2](089af66a-24d7-4d4d-bcfd-56bfe873ea91.xhtml),* Working with Ansible
+    Container*, you will learn about Ansible Container and see first-hand how quickly
+    we can build and deploy containers.
+  id: totrans-159
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我希望，如果你是容器化和 Docker 的新手，本章能够为你提供一个好的起点，让你能亲身体验容器化的世界。Dockerfile 是构建容器的优秀工具，因为它们轻量、易于版本控制，并且具有很好的可移植性。然而，它们也有局限性，因为它们相当于
+    DevOps 世界中的 Bash 脚本。如果你需要调整配置文件、根据服务的状态动态配置服务，或根据容器将要部署的环境条件配置容器怎么办？如果你曾经在配置管理方面工作过，你会知道，虽然
+    Shell 脚本可以完成这项工作，但实际上有更好、更简单的工具可供使用。Ansible Container 就是我们所需要的工具，它将配置管理的强大功能与容器所带来的可移植性和灵活性结合在一起。在[第
+    2 章](089af66a-24d7-4d4d-bcfd-56bfe873ea91.xhtml)，*使用 Ansible Container*，你将了解 Ansible
+    Container，并亲眼看到我们如何快速构建和部署容器。

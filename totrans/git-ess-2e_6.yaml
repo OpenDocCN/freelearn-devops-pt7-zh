@@ -1,0 +1,733 @@
+- en: Migrating to Git
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 向Git迁移
+- en: You often come to Git after using other versioning systems; there are many different
+    VCS in the world but one of the most popular is **Subversion**, for sure.
+  id: totrans-1
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你经常在使用其他版本控制系统后转向Git；世界上有许多不同的版本控制系统，但其中最受欢迎的之一无疑是**Subversion**。
+- en: Git and Subversion can coexist, as Git has some dedicated commands for exchanging
+    data with Subversion.
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git和Subversion可以共存，因为Git有一些专门的命令用于与Subversion交换数据。
+- en: The purpose of this chapter is to help developers who actually use Subversion
+    to start using Git instantly, even if the rest of the team will continue to use
+    Subversion.
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章的目的是帮助那些实际上使用Subversion的开发人员立即开始使用Git，即使团队的其余成员继续使用Subversion。
+- en: In addition, the chapter covers definitive migration and preserving the changes'
+    history for people who decide to abandon Subversion in favor of Git.
+  id: totrans-4
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 此外，本章还涵盖了决定放弃Subversion转而使用Git的人的最终迁移，以及保存更改历史记录的方法。
+- en: Before starting
+  id: totrans-5
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 在开始之前
+- en: In this first part of the chapter, we will take a look at best practices to
+    maintain safety and work on actual SVN repository with no hassles.
+  id: totrans-6
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章的第一部分，我们将看看在没有麻烦的情况下如何保持安全，并在实际的SVN代码库上工作。
+- en: Bear in mind that the purpose of this chapter is only to give readers some hints;
+    dealing with big and complex repositories deserves a more prudent and articulated
+    approach.
+  id: totrans-7
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请记住，本章的目的是给读者一些提示；处理大型和复杂的代码库需要更加谨慎和细致的方法。
+- en: Installing a Subversion client
+  id: totrans-8
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 安装Subversion客户端
+- en: To be able to do these experiments, you need a Subversion tool; on Windows,
+    the most widely used is the well-known **TortoiseSVN** ([http://tortoisesvn.net](http://tortoisesvn.net/)),
+    which provides command-line tools to both GUI and shell integration.
+  id: totrans-9
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了能够进行这些实验，你需要一个Subversion工具；在Windows上，最广泛使用的是著名的**TortoiseSVN**（[http://tortoisesvn.net](http://tortoisesvn.net/)），它提供了GUI和命令行工具的集成。
+- en: I recommend a full installation of TortoiseSVN, including command-line tools,
+    as we'll need some of them to make experiments.
+  id: totrans-10
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我推荐完整安装TortoiseSVN，包括命令行工具，因为我们将需要其中一些工具来进行实验。
+- en: Working on a Subversion repository using Git
+  id: totrans-11
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用Git在Subversion代码库上工作
+- en: In the first part, we will see the most cautious approach when starting to move
+    away from Subversion, which is to keep the original repository, using Git to fetch
+    and push changes.
+  id: totrans-12
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在第一部分，我们将看到在开始远离Subversion时最谨慎的方法，即保持原始的代码库，使用Git来获取和推送更改。
+- en: For the purpose of learning, we will create a local Subversion repository, using
+    both Subversion and Git to access to its contents.
+  id: totrans-13
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了学习的目的，我们将创建一个本地的Subversion代码库，使用Subversion和Git来访问其内容。
+- en: Creating a local Subversion repository
+  id: totrans-14
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 创建一个本地Subversion代码库
+- en: 'Without the hassle of remote servers, let''s create a local Subversion repository
+    as a container for our experiments:'
+  id: totrans-15
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在没有远程服务器麻烦的情况下，让我们创建一个本地的Subversion代码库，作为我们实验的容器：
+- en: '[PRE0]'
+  id: totrans-16
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: Nothing more, nothing less; the repository is now ready to be filled with folders
+    and files.
+  id: totrans-17
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 没有更多，也没有更少；代码库现在已经准备好可以填充文件夹和文件了。
+- en: Checking out the Subversion repository with the svn client
+  id: totrans-18
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用svn客户端检出Subversion代码库
+- en: 'At this point, we have a working Subversion repository; we can now check it
+    out in a folder of our choice, which will become our *working copy*; in my case,
+    I will use the `C:\Sources` folder:'
+  id: totrans-19
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 到此，我们已经有了一个工作的Subversion代码库；我们现在可以将其检出到我们选择的文件夹，这个文件夹将成为我们的*工作副本*；在我的例子中，我将使用`C:\Sources`文件夹：
+- en: '[PRE1]'
+  id: totrans-20
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: You now have a `MySvnRepo` folder under your `Sources` folder, ready to be filled
+    with your project files; but first, let me remind you of a couple of things.
+  id: totrans-21
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，你在`Sources`文件夹下有了一个`MySvnRepo`文件夹，准备填充你的项目文件；但首先，让我提醒你一些事情。
+- en: 'As you may know, a Subversion repository generally has the following subfolders
+    structure:'
+  id: totrans-22
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如你所知，Subversion代码库通常有以下子文件夹结构：
+- en: '`/trunk`, the main folder, where, generally, you have the code under development'
+  id: totrans-23
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`/trunk`，主文件夹，通常存放正在开发中的代码。'
+- en: '`/tags`, the root folder of the snapshots you usually freeze and leave untouched,
+    for example, `/tags/v1.0`'
+  id: totrans-24
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`/tags`，通常用于冻结并保持不变的快照根文件夹，例如`/tags/v1.0`'
+- en: '`/branches`, the root folder of all the repository branches you will create
+    for features development, for example, `/branches/NewDesign`'
+  id: totrans-25
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`/branches`，所有你为功能开发而创建的分支的根文件夹，例如`/branches/NewDesign`'
+- en: Subversion does not provide a command to initialize a repository with this layout
+    (commonly known as *standard layout*), so we have to build it up by hand.
+  id: totrans-26
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Subversion没有提供一个命令来初始化具有这种布局（通常称为*标准布局*）的代码库，因此我们必须手动构建它。
+- en: 'At this point, we can import a skeleton folder that already contains the three
+    subfolders (`/trunk`, `/branches` and `/tags`), with a command like this:'
+  id: totrans-27
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 此时，我们可以导入一个已经包含三个子文件夹（`/trunk`，`/branches` 和 `/tags`）的骨架文件夹，命令如下：
+- en: '[PRE2]'
+  id: totrans-28
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: 'Otherwise, we can create folders by hand using the `svn mkdir` command:'
+  id: totrans-29
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 否则，我们可以使用 `svn mkdir` 命令手动创建文件夹：
+- en: '[PRE3]'
+  id: totrans-30
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: 'Commit the folders we just created and the repository is ready:'
+  id: totrans-31
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 提交我们刚刚创建的文件夹，仓库就准备好了：
+- en: '[PRE4]'
+  id: totrans-32
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: 'Now, add and commit the first file:'
+  id: totrans-33
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，添加并提交第一个文件：
+- en: '[PRE5]'
+  id: totrans-34
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: 'Feel free to add even more files, or import an existing project if you want
+    to replicate a more real situation; to import files in a Subversion repository,
+    you can use the `svn import` command, as we already have seen before:'
+  id: totrans-35
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你想复制一个更真实的情况，随时可以添加更多文件，或者导入一个现有项目；要导入文件到 Subversion 仓库中，你可以使用 `svn import`
+    命令，正如我们之前所看到的：
+- en: '[PRE6]'
+  id: totrans-36
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: Later, we will add a *tag* and a *branch* to verify how Git interacts with them.
+  id: totrans-37
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 稍后，我们将添加一个*标签*和一个*分支*，以验证 Git 如何与它们交互。
+- en: Cloning a Subversion repository from Git
+  id: totrans-38
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 从 Git 克隆 Subversion 仓库
+- en: Git provides a set of tools for cooperating with Subversion; the base command
+    is actually `git svn`; with `git svn`, you can clone Subversion repositories,
+    retrieve and upload changes, and more.
+  id: totrans-39
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git 提供了一套与 Subversion 协作的工具；基本命令实际上是 `git svn`；通过 `git svn`，你可以克隆 Subversion
+    仓库，检索和上传更改等。
+- en: 'So, wear the Git hat and clone the Subversion repository using the `git svn
+    clone` command:'
+  id: totrans-40
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 所以，戴上 Git 的帽子，使用 `git svn clone` 命令克隆 Subversion 仓库：
+- en: '[PRE7]'
+  id: totrans-41
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE7]'
+- en: As you can see, this time I added the root drive letter `c` to the `file:///`
+    path; in Windows, Git pretends that you provide paths starting from the drive
+    letter.
+  id: totrans-42
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，这次我在 `file:///` 路径中添加了根驱动器字母 `c`；在 Windows 中，Git 假设你提供的路径是从驱动器字母开始的。
+- en: Adding a tag and a branch
+  id: totrans-43
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 添加标签和分支
+- en: Just to have a more realistic situation, I will add a tag and a branch to the
+    Subversion repository; in this manner, we will see how to deal with them while
+    in Git.
+  id: totrans-44
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了让情况更真实一些，我将向 Subversion 仓库添加一个标签和一个分支；这样，我们就可以看到如何在 Git 中处理它们。
+- en: 'So, let''s get back to adding a new file:'
+  id: totrans-45
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 所以，让我们继续添加一个新文件：
+- en: '[PRE8]'
+  id: totrans-46
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE8]'
+- en: 'Then, tag this snapshot of the repository as `v1.0`; as you may know, in Subversion,
+    a tag or a branch are copy of a snapshot:'
+  id: totrans-47
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后，将这个仓库的快照标记为 `v1.0`；如你所知，在 Subversion 中，标签或分支是快照的副本：
+- en: '[PRE9]'
+  id: totrans-48
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE9]'
+- en: 'Once we have a tag, we can even create a branch, supposing we want a place
+    to add bug fixes for the release, `v1.0`:'
+  id: totrans-49
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦我们有了标签，我们甚至可以创建一个分支，假设我们想为 `v1.0` 版本添加一个用于修复 Bug 的地方：
+- en: '[PRE10]'
+  id: totrans-50
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE10]'
+- en: Committing a file to Subversion using Git as a client
+  id: totrans-51
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用 Git 作为客户端向 Subversion 提交文件
+- en: 'Now that we have a running clone of our original Subversion repository, we
+    can use Git as it was a Subversion client. So, add a new file and commit it using
+    Git:'
+  id: totrans-52
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经有了一个正在运行的原始 Subversion 仓库克隆，我们可以像使用 Subversion 客户端一样使用 Git。所以，使用 Git 添加一个新文件并提交它：
+- en: '[PRE11]'
+  id: totrans-53
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE11]'
+- en: 'Now, we have to *push* this file to the Subversion server:'
+  id: totrans-54
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，我们必须将这个文件*推送*到 Subversion 服务器：
+- en: '[PRE12]'
+  id: totrans-55
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE12]'
+- en: Well done!
+  id: totrans-56
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 做得好！
+- en: Retrieving new commits from the Subversion server
+  id: totrans-57
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 从 Subversion 服务器检索新的提交
+- en: 'We can even use Git to fetch changes with the `git svn fetch` command, or directly
+    update the local working copy using `git svn rebase` as a Git counterpart for
+    the `svn update` command:'
+  id: totrans-58
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们甚至可以使用 Git 通过 `git svn fetch` 命令来获取更改，或者直接使用 `git svn rebase` 更新本地工作副本，作为
+    `svn update` 命令的 Git 对应命令：
+- en: '[PRE13]'
+  id: totrans-59
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE13]'
+- en: Git will fetch new commits from the remote Subversion server, as per a `git
+    pull` command; then, it will rebase them on the top of the branch you are in at
+    the moment. Maybe you are wondering why we are using rebasing instead of merging,
+    like the `git pull` command does by default while dealing with a Subversion remote.
+    Using the `merge` command instead of `rebase` while applying remote commits can
+    be harmful; in the past, Git had some troubles dealing with Subversion `svn:mergeinfo `properties
+    ([http://svnbook.red-bean.com/en/1.6/svn.ref.svn.c.mergeinfo.html](http://svnbook.red-bean.com/en/1.6/svn.ref.svn.c.mergeinfo.html)),
+    and even if it supports them ([https://www.git-scm.com/docs/git-svn/2.11.1#git-svn---mergeinfoltmergeinfogt](https://www.git-scm.com/docs/git-svn/2.11.1#git-svn---mergeinfoltmergeinfogt))
+    rebasing is considered a safer option.
+  id: totrans-60
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git 将从远程 Subversion 服务器获取新的提交，类似于 `git pull` 命令；然后，它会将这些提交在你当前所在的分支上进行 rebase。也许你会好奇，为什么我们使用
+    rebase 而不是像 `git pull` 命令默认处理 Subversion 远程仓库时那样使用 merge。使用 `merge` 命令而不是 `rebase`
+    来应用远程提交可能会有害；过去，Git 在处理 Subversion 的 `svn:mergeinfo` 属性时遇到了一些问题（[http://svnbook.red-bean.com/en/1.6/svn.ref.svn.c.mergeinfo.html](http://svnbook.red-bean.com/en/1.6/svn.ref.svn.c.mergeinfo.html)），即使它支持这些属性（[https://www.git-scm.com/docs/git-svn/2.11.1#git-svn---mergeinfoltmergeinfogt](https://www.git-scm.com/docs/git-svn/2.11.1#git-svn---mergeinfoltmergeinfogt)），rebase
+    被认为是更安全的选择。
+- en: Git and Subversion integration is a wide topic; for other commands and options,
+    I recommend to read the main page `git svn --help`.
+  id: totrans-61
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git 与 Subversion 的集成是一个广泛的话题；有关其他命令和选项，我建议你阅读主页面 `git svn --help`。
+- en: Using Git as a Subversion client is not the best we can obtain, but at least
+    it is a way to start using Git even if you cannot abandon Subversion instantly.
+  id: totrans-62
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用 Git 作为 Subversion 客户端并不是我们能得到的最理想的方式，但至少它为你提供了一种方式，可以开始使用 Git，即使你无法立即放弃 Subversion。
+- en: Using Git with a Subversion repository
+  id: totrans-63
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用 Git 作为 Subversion 仓库的客户端
+- en: Using Git as a client of Subversion can raise some confusions, due to the flexibility
+    of Git as compared to the more rigid way Subversion organizes files.
+  id: totrans-64
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用 Git 作为 Subversion 客户端可能会引起一些混淆，因为 Git 比 Subversion 更灵活，Subversion 在文件组织上则较为严格。
+- en: To be sure to maintain a Subversion-friendly way of work, I recommend you follow
+    some simple rules.
+  id: totrans-65
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为确保保持与 Subversion 兼容的工作方式，我建议你遵循一些简单的规则。
+- en: 'First of all, ensure that your Git `master` branch is related to the `trunk`
+    one in Subversion; as we already said, Subversion users usually organize a repository
+    in this way:'
+  id: totrans-66
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 首先，确保你的 Git `master` 分支与 Subversion 中的 `trunk` 分支相关联；正如我们之前所说，Subversion 用户通常以这种方式组织仓库：
+- en: A `/trunk` folder, the main one
+  id: totrans-67
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 一个 `/trunk` 文件夹，即主文件夹
+- en: A `/branches` root folder, where you put all the branches, each one located
+    in a separated subfolder (for example, `/branches/feat-branch`)
+  id: totrans-68
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 一个 `/branches` 根文件夹，存放所有分支，每个分支位于单独的子文件夹中（例如，`/branches/feat-branch`）
+- en: A `/tags` root folder, where you collect all the tags you made (for example,
+    `/tags/v1.0.0`)
+  id: totrans-69
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 一个 `/tags` 根文件夹，存放你创建的所有标签（例如，`/tags/v1.0.0`）
+- en: 'To adhere to this layout, you can use the `--stdlayout` option when cloning
+    a Subversion repository:'
+  id: totrans-70
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要遵循这种布局，你可以在克隆 Subversion 仓库时使用 `--stdlayout` 选项：
+- en: '[PRE14]'
+  id: totrans-71
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE14]'
+- en: In this manner, Git will hook the `/trunk` Subversion branch to the Git `master`
+    one, then replicate all the `/branches` and `/tags` branches in your local Git
+    repository, allowing you to work with them in a 1:1 synchronized context.
+  id: totrans-72
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以这种方式，Git 会将 `/trunk` Subversion 分支与 Git `master` 分支连接起来，然后将所有的 `/branches`
+    和 `/tags` 分支复制到你的本地 Git 仓库，使你能够在一个 1:1 同步的上下文中使用它们。
+- en: Migrating a Subversion repository
+  id: totrans-73
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 迁移 Subversion 仓库
+- en: When possible, it is recommended to completely migrate a Subversion repository
+    to Git; this is quite simple to do and mostly depends on the size of the Subversion
+    repository and the organization.
+  id: totrans-74
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果可能，建议将 Subversion 仓库完全迁移到 Git；这很简单，主要取决于 Subversion 仓库的大小和组织方式。
+- en: If the repository follows the standard layout described earlier, a migration
+    takes only a matter of minutes.
+  id: totrans-75
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果仓库遵循前面描述的标准布局，迁移只需要几分钟的时间。
+- en: Retrieving the list of Subversion users
+  id: totrans-76
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 检索 Subversion 用户列表
+- en: If your Subversion repository has been used by different people, you are probably
+    interested in preserving commit author's names as is even in the new Git repository.
+  id: totrans-77
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你的 Subversion 仓库由不同的人使用，你可能会希望在新的 Git 仓库中保持提交作者的名称不变。
+- en: 'If the `awk` command is available (maybe using Git Bash shell or Cygwin while
+    in Windows), there''s a script here that fetches all the users from Subversion
+    logs and appends them to a text file we can use in Git while cloning to perfectly
+    match Subversion users even in Git-converted commits:'
+  id: totrans-78
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果 `awk` 命令可用（可以在 Windows 系统下使用 Git Bash shell 或 Cygwin），这里有一个脚本，可以从 Subversion
+    日志中获取所有用户并将其附加到一个文本文件中，这样在克隆时，即使是转换为 Git 的提交，也能完美匹配 Subversion 用户：
+- en: '[PRE15]'
+  id: totrans-79
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE15]'
+- en: Now, we will use the `authors.txt` file in the next cloning step.
+  id: totrans-80
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，我们将在下一个克隆步骤中使用 `authors.txt` 文件。
+- en: Cloning the Subversion repository
+  id: totrans-81
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 克隆 Subversion 仓库
+- en: 'To begin the migration, we have to clone the Subversion repository locally,
+    as we did earlier; I again recommend adding the `--stdlayout` option, to preserve
+    branches and tags, and then to adding the `-A` option to let Git *convert* commit
+    authors while cloning:'
+  id: totrans-82
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要开始迁移，我们必须像之前一样在本地克隆 Subversion 仓库；我再次建议添加 `--stdlayout` 选项，以保持分支和标签，然后添加 `-A`
+    选项，让 Git 在克隆时*转换*提交作者：
+- en: '[PRE16]'
+  id: totrans-83
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE16]'
+- en: 'In case the Subversion repository has trunk, branches, and tags located in
+    other paths (so not a standard layout), Git provides you with a way to specify
+    them with the `--trunk`, `--branches` and `--tags` options:'
+  id: totrans-84
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果 Subversion 仓库中的 trunk、branches 和 tags 位于其他路径中（即不是标准布局），Git 提供了一个方法，通过 `--trunk`、`--branches`
+    和 `--tags` 选项来指定它们：
+- en: '[PRE17]'
+  id: totrans-85
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE17]'
+- en: When you fire the `clone` command, remember that **this operation can be time
+    consuming**; in a repository with a thousand commits, it is not unusual to wait
+    for one or two quarters of an hour.
+  id: totrans-86
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当你执行 `clone` 命令时，请记住**此操作可能需要消耗较长时间**；在一个有千次提交的仓库中，等待一两个小时是常见的情况。
+- en: Preserving ignored files
+  id: totrans-87
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 保留被忽略的文件
+- en: 'To preserve the previous ignored files in Subversion, we can append the `svn:ignore`
+    settings to the `.gitignore` file:'
+  id: totrans-88
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了保留之前在 Subversion 中被忽略的文件，我们可以将 `svn:ignore` 设置附加到 `.gitignore` 文件中：
+- en: '[PRE18]'
+  id: totrans-89
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE18]'
+- en: Pushing to a local bare Git repository
+  id: totrans-90
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 推送到本地裸 Git 仓库
+- en: 'Now that we have a local copy of our repository, we can move it to a brand
+    new Git repository. Here, you can already use a remote repository on your server
+    of choice, even GitHub or BitBucket, but I recommend that you use a local bare
+    repository. We may as well do some other little adjustments (such as renaming
+    tags and branches) before pushing files to a blessed repository. So, first initialize
+    a bare repository in a folder of choice:'
+  id: totrans-91
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 既然我们已经有了本地的仓库副本，我们可以将其迁移到一个全新的 Git 仓库。这里，你可以使用你选择的服务器上的远程仓库，甚至是 GitHub 或 BitBucket，但我建议你使用一个本地裸仓库。我们可以在将文件推送到目标仓库之前做一些小的调整（比如重命名标签和分支）。所以，首先在你选择的文件夹中初始化一个裸仓库：
+- en: '[PRE19]'
+  id: totrans-92
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE19]'
+- en: 'Now, make the default branch to match the Subversion `trunk` branch name:'
+  id: totrans-93
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，将默认分支重命名为与 Subversion `trunk` 分支相匹配的名称：
+- en: <pre>**$ git symbolic-ref HEAD refs/heads/trunk**
+  id: totrans-94
+  prefs: []
+  type: TYPE_NORMAL
+  zh: <pre>**$ git symbolic-ref HEAD refs/heads/trunk**
+- en: 'Then, add a `bare` remote pointing to the bare repository we just created:'
+  id: totrans-95
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后，添加一个指向我们刚刚创建的裸仓库的 `bare` 远程仓库：
+- en: '[PRE20]'
+  id: totrans-96
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE20]'
+- en: 'Finally, push the local cloned repository to the new bare one:'
+  id: totrans-97
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后，将本地克隆的仓库推送到新的裸仓库：
+- en: '[PRE21]'
+  id: totrans-98
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE21]'
+- en: We have now a brand new bare repository that is a perfect copy of the original
+    Subversion one. We can now adjust branches and tags to fit the Git usual layout
+    better.
+  id: totrans-99
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们现在有了一个全新的裸仓库，它是原始 Subversion 仓库的完美副本。我们现在可以调整分支和标签，以更好地适应 Git 的常规布局。
+- en: Arrange branches and tags
+  id: totrans-100
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 排列分支和标签
+- en: Now, we can rename branches and tags to obtain a more Git-friendly scenario.
+  id: totrans-101
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，我们可以重命名分支和标签，以获得更适合 Git 的场景。
+- en: Renaming trunk branch to master
+  id: totrans-102
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 将 trunk 分支重命名为 master
+- en: 'Subversion main development branch is `/trunk`, but in Git, you know, we prefer
+    to call the main branch `master`; here''s a way to rename it:'
+  id: totrans-103
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Subversion 的主开发分支是 `/trunk`，但在 Git 中，通常我们称主分支为 `master`；这里有一种方法可以将其重命名：
+- en: '[PRE22]'
+  id: totrans-104
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE22]'
+- en: Converting Subversion tags to Git tags
+  id: totrans-105
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 将 Subversion 标签转换为 Git 标签
+- en: Subversion treats tags as branches; they are all copies of a certain trunk snapshot.
+    In Git, on the contrary, branches, and tags have different significance.
+  id: totrans-106
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Subversion 将标签视为分支；它们都是某个 trunk 快照的副本。而在 Git 中，分支和标签有不同的含义。
+- en: 'To convert Subversion tags'' branches into Git tags, here''s a simple script
+    that does the work:'
+  id: totrans-107
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要将 Subversion 标签的分支转换为 Git 标签，这里有一个简单的脚本来完成这个工作：
+- en: '[PRE23]'
+  id: totrans-108
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE23]'
+- en: Pushing the local repository to a remote
+  id: totrans-109
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 将本地仓库推送到远程
+- en: You now have a local bare Git repository ready to be pushed to a remote server;
+    the result of the conversion is a full Git repository, where branches, tags, and
+    commit history have been preserved. The only thing you have to do by hand is to
+    eventually accommodate Git users.
+  id: totrans-110
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，你已经拥有一个本地裸 Git 仓库，准备推送到远程服务器；转换的结果是一个完整的 Git 仓库，其中分支、标签和提交历史都得到了保留。你唯一需要手动操作的，就是最终调整
+    Git 用户的配置。
+- en: Comparing Git and Subversion commands
+  id: totrans-111
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 比较 Git 和 Subversion 命令
+- en: In the page that follows, you can find a short and partial recap table, where
+    I try to pair the most common Subversion and Git commands to help Subversion users
+    shift their minds from Subversion to Git quickly.
+  id: totrans-112
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在接下来的页面中，你可以找到一张简短且部分的回顾表格，我试图将最常用的 Subversion 和 Git 命令配对，以帮助 Subversion 用户迅速转变思维，快速从
+    Subversion 过渡到 Git。
+- en: 'Remember that Subversion and Git behave differently, so maybe comparing commands
+    is not the best thing to do, but for Git newcomers coming from Subversion, this
+    can help match basic Subversion to the Git counterpart while learning:'
+  id: totrans-113
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请记住，Subversion 和 Git 的行为不同，所以直接比较命令可能不是最好的做法，但对于从 Subversion 转到 Git 的新手来说，这能帮助他们在学习的过程中将
+    Subversion 的基本命令与 Git 对应的命令进行匹配：
+- en: '![](img/a3720c01-92ce-469c-a5d9-b2bba65385a6.png)'
+  id: totrans-114
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/a3720c01-92ce-469c-a5d9-b2bba65385a6.png)'
+- en: Summary
+  id: totrans-115
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 总结
+- en: This chapter barely scratches the surface, but I think it can be useful to get
+    a sense of the topic. If you have wide Subversion repositories, you will probably
+    need a better training before beginning to convert them to Git, but for small
+    to medium ones, now you know the fundamentals to start moving away.
+  id: totrans-116
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章仅仅是浅尝辄止，但我认为它对了解这个话题很有帮助。如果你有大规模的 Subversion 仓库，可能需要在开始转换到 Git 之前做更深入的培训，但对于小型到中型仓库，现在你已经知道了开始迁移的基本知识。
+- en: The only suggestion I want to share with you is to not be in a hurry; start
+    letting Git cooperate with your Subversion server, reorganize the repository when
+    it is messy, take a lot of backups, and finally, try to convert it; you will probably
+    convert it more than once, as I did, but you will get satisfaction in the end.
+  id: totrans-117
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我唯一想与您分享的建议是不要急于求成；先让 Git 与您的 Subversion 服务器合作，在仓库混乱时进行重组，多做备份，最后尝试进行转换；您可能会像我一样多次进行转换，但最终您会获得满足感。
+- en: In the next chapter, I will share with you some useful resources I found during
+    my career as a Git user.
+  id: totrans-118
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一章，我将与您分享我在作为 Git 用户的职业生涯中找到的一些有用资源。

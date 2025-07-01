@@ -1,0 +1,1534 @@
+- en: '3'
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '3'
+- en: Defining Your Inventory
+  id: totrans-1
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 定义你的清单
+- en: As we discussed in the preceding two chapters, Ansible cannot do anything until
+    you tell it which hosts it is responsible for. This is, of course, logical—you
+    wouldn’t want any automation tool, regardless of how easy it is to use and set
+    up, to simply go out and take control of every single device on your network.
+    Hence, at the bare minimum, you must tell Ansible what hosts it is going to automate
+    tasks on, and this, in the most fundamental terms, is what an inventory is.
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如我们在前两章中讨论的那样，Ansible 在你告诉它负责哪些主机之前，什么也做不了。当然，这是合乎逻辑的——你不会希望任何自动化工具，无论它多么容易使用和设置，都能随便控制你网络中的每一台设备。因此，至少，你必须告诉
+    Ansible 它将在哪些主机上执行任务，这从最基本的角度来说，就是清单的作用。
+- en: However, there is so much more to inventories than just a list of automation
+    targets. Ansible inventories can be provided in several formats; they can be either
+    static or dynamic, and they can contain important variables that define how Ansible
+    interacts with each host (or groups of hosts). Hence, they deserve a chapter to
+    themselves, and in this chapter, we shall perform a practical exploration of inventories
+    and how to use them to your best advantage as you automate your infrastructure
+    with Ansible.
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，清单不仅仅是自动化目标的列表。Ansible 清单可以以多种格式提供；它们可以是静态的，也可以是动态的，并且可以包含定义 Ansible 如何与每个主机（或主机组）交互的重要变量。因此，它们值得单独成章，在本章中，我们将实际探讨清单以及如何在使用
+    Ansible 自动化基础设施时充分利用它们。
+- en: 'In this chapter, we will cover the following topics:'
+  id: totrans-4
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章将涵盖以下主题：
+- en: Creating an inventory file and adding hosts
+  id: totrans-5
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 创建清单文件并添加主机
+- en: Generating a dynamic inventory file
+  id: totrans-6
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 生成动态清单文件
+- en: Special host management using patterns
+  id: totrans-7
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用模式进行特殊的主机管理
+- en: Technical requirements
+  id: totrans-8
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 技术要求
+- en: This chapter assumes that you have set up your control host with Ansible, as
+    detailed in [*Chapter 1*](B20846_01.xhtml#_idTextAnchor015), *Getting Started
+    with Ansible*, and you are using the most recent version available—the examples
+    in this chapter were tested with Ansible 8.0 and `ansible-core` 2.15.0\. This
+    chapter also assumes that you have at least one additional host to test against,
+    and this should be Linux-based. Although we will give specific examples of hostnames
+    in this chapter, you are free to substitute them with your own hostnames and/or
+    IP addresses, and details of how to do this will be provided in the appropriate
+    places.
+  id: totrans-9
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章假设你已经根据[*第1章*](B20846_01.xhtml#_idTextAnchor015)《与 Ansible 入门》的详细说明，设置了你的控制主机，并且你正在使用最新版本——本章中的示例是在
+    Ansible 8.0 和 `ansible-core` 2.15.0 上测试的。本章还假设你至少有一个额外的主机来进行测试，这个主机应该是基于 Linux
+    的。虽然我们将在本章中给出主机名的具体示例，但你可以自由地将它们替换为你自己的主机名和/或 IP 地址，相关的替换方法将在适当的地方提供。
+- en: 'The code bundle for this chapter is available here: [https://github.com/PacktPublishing/Practical-Ansible-Second-Edition/tree/main/Chapter%203](https://github.com/PacktPublishing/Practical-Ansible-Second-Edition/tree/main/Chapter%203).'
+  id: totrans-10
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章的代码包可以在这里找到：[https://github.com/PacktPublishing/Practical-Ansible-Second-Edition/tree/main/Chapter%203](https://github.com/PacktPublishing/Practical-Ansible-Second-Edition/tree/main/Chapter%203)。
+- en: Creating an inventory file and adding hosts
+  id: totrans-11
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 创建清单文件并添加主机
+- en: Whenever you see a reference to “*creating an inventory*” in Ansible, you are
+    normally quite safe to assume that it is a static inventory. Ansible supports
+    two types of inventory—static and dynamic—and we will cover the latter of these
+    two later in this chapter. Static inventories are by their very nature static;
+    they are unchanging unless a human manually edits them. This is great when you
+    are starting out and testing Ansible, as it provides you with a very quick and
+    easy way to get up and running quickly. Even in small, closed environments, static
+    inventories are a great way to manage your environment, especially when changes
+    to the infrastructure are infrequent.
+  id: totrans-12
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 每当你在 Ansible 中看到“*创建清单*”的提法时，你通常可以放心地假设它是一个静态清单。Ansible 支持两种类型的清单——静态清单和动态清单——我们将在本章后面介绍后者。静态清单本质上是静态的；除非人为编辑，否则它们不会改变。当你刚开始使用并测试
+    Ansible 时，这种方式非常适用，因为它提供了一种非常快速简便的方式让你快速启动并运行。即使在小型封闭环境中，静态清单也是管理环境的一个很好的方式，特别是在基础设施变化不频繁的情况下。
+- en: 'Most Ansible installations will look for a default inventory file in `/etc/ansible/hosts`
+    (though this path is configurable in the Ansible configuration file, as discussed
+    in [*Chapter 2*](B20846_02.xhtml#_idTextAnchor099), *Understanding the Fundamentals
+    of Ansible*). You are welcome to populate this file or to provide your own inventory
+    for each playbook run, and it is commonplace to see inventories provided alongside
+    playbooks—after all, when you start to build them out with variables and groupings,
+    they become a code asset just as your playbooks and roles do, so it makes sense
+    to commit them to source control alongside your other automation code. As you
+    will have seen in the earlier chapters of this book, Ansible commands use the
+    `-i` flag to specify the location of the inventory file if not using the default.
+    We’ve already seen examples of this in this book, but as a refresher, this might
+    look like the following example:'
+  id: totrans-13
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 大多数Ansible安装会在`/etc/ansible/hosts`中寻找默认的库存文件（尽管这个路径可以在Ansible配置文件中进行配置，正如在[*第2章*](B20846_02.xhtml#_idTextAnchor099)中讨论的，*理解Ansible基础知识*）。你可以选择填充这个文件，或者为每次playbook运行提供自己的库存，通常情况下，库存会与playbook一起提供——毕竟，当你开始用变量和分组来构建它们时，它们就变成了代码资产，就像你的playbook和角色一样，因此将它们与其他自动化代码一起提交到源代码管理中是很有意义的。正如你在本书的前几章中看到的那样，如果不使用默认库存，Ansible命令使用`-i`标志来指定库存文件的位置。我们在本书中已经看到过这些示例，作为复习，它可能看起来像以下示例：
+- en: '[PRE0]'
+  id: totrans-14
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: 'Most static inventory files you will come across are created in INI format,
+    though it is important to note that other formats are supported. The most common
+    format you will find after INI-formatted files are YAML ones—more details of the
+    types of inventory files you can work with may be found here: [https://docs.ansible.com/ansible/latest/user_guide/intro_inventory.xhtml](https://docs.ansible.com/ansible/latest/user_guide/intro_inventory.xhtml).'
+  id: totrans-15
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你遇到的大多数静态库存文件都是以INI格式创建的，尽管需要注意的是，其他格式也是支持的。你在INI格式文件之后最常见的格式是YAML格式——关于你可以使用的库存文件类型的更多细节可以在这里找到：[https://docs.ansible.com/ansible/latest/user_guide/intro_inventory.xhtml](https://docs.ansible.com/ansible/latest/user_guide/intro_inventory.xhtml)。
+- en: In this chapter, we will provide some examples of both INI and YAML formatted
+    inventory files for you to consider, as you must have an awareness of both. Personally,
+    I have worked with Ansible for many years and only worked with either INI-formatted
+    files or dynamic inventories, but they say knowledge is power and so it will do
+    no harm to learn a little about both formats.
+  id: totrans-16
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们将提供一些INI和YAML格式的库存文件示例供你参考，因为你必须了解这两者。就我个人而言，我已经使用Ansible很多年，只与INI格式文件或动态库存文件打过交道，但他们说知识就是力量，因此了解这两种格式对你毫无害处。
+- en: Let’s start by creating a static inventory file. This inventory file will be
+    separate from the default inventory.
+  id: totrans-17
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们从创建一个静态库存文件开始。这个库存文件将与默认库存分开。
+- en: 'Create an inventory file in `/etc/ansible/my_inventory` using the following
+    INI-formatted code:'
+  id: totrans-18
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用以下INI格式的代码在`/etc/ansible/my_inventory`中创建一个库存文件：
+- en: '[PRE1]'
+  id: totrans-19
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: The blank lines between inventory hosts are not required—they have been inserted
+    simply to make the inventory more readable in this book. This inventory file is
+    very simple and does not include any grouping; however, when referencing the inventory,
+    you can still refer to all the hosts together using the special `all` group, which
+    is implicitly defined regardless of how you format and divide your inventory file.
+  id: totrans-20
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 库存主机之间的空行并非必需——它们只是为了让本书中的库存更加易读而插入的。这个库存文件非常简单，没有包含任何分组；然而，在引用库存时，你仍然可以通过特殊的`all`组来引用所有主机，无论你如何格式化和划分库存文件，该组都会被隐式定义。
+- en: Each line in the preceding file contains one inventory host. The first column
+    contains the inventory hostname that Ansible will use (which can be accessed through
+    the `inventory_hostname` magic variable we discussed in [*Chapter 2*](B20846_02.xhtml#_idTextAnchor099),
+    *Understanding the Fundamentals of Ansible*). All the parameters on the same line
+    after that are variables that are assigned to the host. These can be user-defined
+    variables or special Ansible variables, as we have set here.
+  id: totrans-21
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 前述文件中的每一行包含一个库存主机。第一列包含Ansible将使用的库存主机名（可以通过我们在[*第2章*](B20846_02.xhtml#_idTextAnchor099)中讨论的`inventory_hostname`魔法变量访问）。此行之后的所有参数都是分配给该主机的变量。这些变量可以是用户定义的变量或特殊的Ansible变量，正如我们在此设置的那样。
+- en: 'There are many such variables, but the preceding examples specifically include
+    the following:'
+  id: totrans-22
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有很多这样的变量，但前面的示例特别包含了以下内容：
+- en: '`ansible_host`: If the inventory hostname cannot be accessed directly—perhaps
+    because it is not in DNS, for example—this variable contains the hostname or IP
+    address that Ansible will connect to instead'
+  id: totrans-23
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible_host`：如果无法直接访问清单中的主机名——例如，因为它不在 DNS 中——这个变量包含 Ansible 将连接的主机名或 IP
+    地址'
+- en: '`ansible_port`: By default, Ansible attempts all communication over port `22`
+    for SSH—if you have an SSH daemon running on another port, you can tell Ansible
+    about it using this variable'
+  id: totrans-24
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible_port`：默认情况下，Ansible 会尝试通过端口`22`进行所有的 SSH 通信——如果你有一个在其他端口上运行的 SSH 守护进程，你可以通过这个变量告诉
+    Ansible'
+- en: '`ansible_user`: By default, Ansible will attempt to connect to the remote host
+    using the current user account you are running the Ansible command from—you can
+    override this in several ways, of which this is one'
+  id: totrans-25
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible_user`：默认情况下，Ansible 将尝试使用你运行 Ansible 命令时的当前用户账户连接到远程主机——你可以通过几种方式覆盖这一点，这就是其中之一'
+- en: 'Hence, the preceding three hosts can be summarized as follows:'
+  id: totrans-26
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 因此，前面的三台主机可以总结如下：
+- en: The `target1.example.org` host should be connected to using the `192.168.81.142`
+    IP address, on port `3333`
+  id: totrans-27
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`target1.example.org`主机应该通过`192.168.81.142` IP 地址、端口`3333`连接'
+- en: The `target2.example.org` host should be connected to on port `3333` also, but
+    this time, using the `james` user rather than the account running the Ansible
+    command
+  id: totrans-28
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`target2.example.org`主机也应该通过端口`3333`连接，但这次使用`james`用户，而不是运行 Ansible 命令的账户'
+- en: The `target3.example.org` host should be connected to using the `192.168.81.143`
+    IP address, on port `5555`
+  id: totrans-29
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 应该通过`192.168.81.143` IP 地址、端口`5555`来连接`target3.example.org`主机
+- en: In this way, even with no further constructs, you can begin to see the power
+    of static INI-formatted inventories.
+  id: totrans-30
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通过这种方式，即使没有其他的构造，你也能开始看到静态 INI 格式清单的强大功能。
+- en: 'Now, if you wanted to create exactly the same inventory as the preceding, but
+    this time, format it as YAML, you would specify it as follows (we’ll call this
+    file `my_inventory.yaml`):'
+  id: totrans-31
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，如果你想创建与前面相同的清单，但这次将其格式化为 YAML，你可以按如下方式指定它（我们将此文件命名为`my_inventory.yaml`）：
+- en: '[PRE2]'
+  id: totrans-32
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: You may come across inventory file examples containing parameters such as `ansible_ssh_port`,
+    `ansible_ssh_host`, and `ansible_ssh_user`—these variable names (and others like
+    them) were used in Ansible versions before 2.0\. Backward compatibility has been
+    maintained for many of these, but you should update them where possible as this
+    compatibility may be removed at some point in the future.
+  id: totrans-33
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可能会遇到包含如`ansible_ssh_port`、`ansible_ssh_host`和`ansible_ssh_user`等参数的清单文件示例——这些变量名（以及类似的变量名）是在
+    Ansible 2.0 版本之前使用的。尽管许多这些参数保持了向后兼容性，但你应该尽量更新它们，因为这种兼容性可能会在未来某个时刻被移除。
+- en: 'Now, if you were to run the preceding inventory within Ansible using a simple
+    `ansible.builtin.shell` command, the result would appear as follows:'
+  id: totrans-34
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，如果你使用一个简单的`ansible.builtin.shell`命令在 Ansible 中运行前面的清单，结果将如下所示：
+- en: '[PRE3]'
+  id: totrans-35
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: That covers the basics of creating a simple static inventory file. Let’s now
+    expand upon this by adding host groups to the inventory in the next part of this
+    chapter.
+  id: totrans-36
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这涵盖了创建一个简单静态清单文件的基础。接下来，让我们通过在这一章节的下一部分中向清单添加主机组来扩展这一点。
+- en: Using host groups
+  id: totrans-37
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 使用主机组
+- en: There is rarely one playbook that will suit an entire infrastructure, and although
+    it is easy to tell Ansible to use an alternate inventory for a different playbook,
+    this could get very messy, very quickly, with potentially hundreds of small inventory
+    files dotted around your network. You can imagine how quickly this would get unmanageable,
+    and Ansible is supposed to make things more manageable, not the opposite. One
+    possible simple solution to this is to start adding groups to your inventories.
+  id: totrans-38
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 很少有一个 playbook 可以适用于整个基础架构，虽然很容易告诉 Ansible 为不同的 playbook 使用一个替代的清单，但这很快就会变得非常混乱，可能会有成百上千个小的清单文件散布在你的网络中。你可以想象，这样会很快变得无法管理，而
+    Ansible 本应让事情变得更易管理，而不是相反。一个可能的简单解决方案是开始在清单中添加主机组。
+- en: 'Let’s assume you have a simple three-tier web architecture, with multiple hosts
+    in each tier for high availability and/or load balancing. The three tiers in this
+    architecture might be the following:'
+  id: totrans-39
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 假设你有一个简单的三层 Web 架构，每一层有多个主机以实现高可用性和/或负载均衡。这个架构中的三层可能如下：
+- en: Frontend servers
+  id: totrans-40
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 前端服务器
+- en: Application servers
+  id: totrans-41
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 应用服务器
+- en: Database servers
+  id: totrans-42
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 数据库服务器
+- en: With this architecture set out, let’s set about creating an inventory for it,
+    again mixing up the YAML and INI formats to give you experience in both. To keep
+    the examples clear and concise, we’ll assume that you can access all servers using
+    their **Fully Qualified Domain Names** (**FQDNs**), and hence won’t add any host
+    variables in these inventory files. There is nothing to stop you from doing this,
+    of course, and every example is different.
+  id: totrans-43
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在设置好架构之后，我们开始为其创建清单，再次混合使用 YAML 和 INI 格式，以便让你在两者之间获得实践经验。为了保持示例的简洁明了，我们假设你可以通过**完全限定域名**（**FQDNs**）访问所有服务器，因此在这些清单文件中不会添加任何主机变量。当然，你完全可以这么做，每个示例都是不同的。
+- en: 'First of all, let’s create the inventory for the three-tier frontend using
+    the INI format. We will call this file `hostsgroups-ini`, and the contents of
+    this file should look something like this:'
+  id: totrans-44
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 首先，让我们使用 INI 格式为三层前端创建清单。我们将这个文件命名为 `hostsgroups-ini`，该文件的内容应该如下所示：
+- en: '[PRE4]'
+  id: totrans-45
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: In the preceding inventory, we have created three groups, called `frontends`,
+    `apps`, and `databases`. Note that, in INI-formatted inventories, group names
+    go inside square braces. Under each group name goes the server names that belong
+    to each group, so the preceding example shows two servers in each group. Notice
+    the outlier at the top, `loadbalancer.example.org`—this host isn’t in any group.
+    All ungrouped hosts must go at the very top of an INI-formatted file.
+  id: totrans-46
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在前面的清单中，我们创建了三个组，分别叫做 `frontends`、`apps` 和 `databases`。请注意，在 INI 格式的清单中，组名位于方括号内。每个组名下列出属于该组的服务器名称，因此前面的示例显示了每个组中有两个服务器。请注意最上面的例外，`loadbalancer.example.org`——这个主机没有属于任何组。所有未分组的主机必须放在
+    INI 格式文件的最上方。
+- en: Before we proceed any further, it’s worth noting that inventories can also contain
+    groups of groups, which is incredibly useful for processing certain tasks by a
+    different division. The preceding inventory stands in its own right, but what
+    if our frontend servers are built on Ubuntu, and the app and database servers
+    are built on Fedora? There will be some fundamental differences in the ways we
+    handle these hosts—for example, we might use the `ansible.builtin.apt` module
+    to manage packages on Ubuntu and the `ansible.builtin.dnf` module on Fedora.
+  id: totrans-47
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在我们进一步讨论之前，值得注意的是，清单还可以包含“组的组”，这对于通过不同部门处理某些任务非常有用。前面的清单是独立存在的，但如果我们的前端服务器运行在
+    Ubuntu 上，而应用和数据库服务器运行在 Fedora 上呢？在处理这些主机时会有一些根本性的差异——例如，我们可能会使用 `ansible.builtin.apt`
+    模块来管理 Ubuntu 上的包，而在 Fedora 上使用 `ansible.builtin.dnf` 模块。
+- en: 'We could, of course, handle this case using facts gathered from each host as
+    these will contain the operating system details. We could also create a new version
+    of the inventory, as follows:'
+  id: totrans-48
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当然，我们也可以通过收集每个主机的事实来处理这种情况，因为这些事实将包含操作系统的详细信息。我们还可以创建清单的新版本，如下所示：
+- en: '[PRE5]'
+  id: totrans-49
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: With the use of the `children` keyword in the group definition (inside the square
+    braces), we can create groups of groups; hence, we can perform clever groupings
+    to help our playbook design without having to specify each host more than once.
+  id: totrans-50
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在组定义中使用 `children` 关键字（在方括号内），我们可以创建“组的组”；因此，我们可以进行巧妙的分组，以帮助我们的剧本设计，而无需多次指定每个主机。
+- en: 'This structure in INI format is quite readable but takes some getting used
+    to when it is converted into YAML format. The code listed next shows the YAML
+    version of the preceding inventory—the two are identical as far as Ansible is
+    concerned, but it is left to you to decide which format you prefer working with:'
+  id: totrans-51
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这种 INI 格式的结构非常易读，但当它转换为 YAML 格式时，需要一些适应。接下来的代码显示了前面清单的 YAML 版本——就 Ansible 来说，这两者是相同的，但最终由你决定使用哪种格式。
+- en: '[PRE6]'
+  id: totrans-52
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: You can see that the `children` keyword is still used in the YAML-formatted
+    inventory, but now the structure is more hierarchical than it was in the INI format.
+    The indentation might be easier for you to follow, but note how the hosts are
+    ultimately defined at quite a high level of indentation—this format could be more
+    difficult to extend, depending on your desired approach.
+  id: totrans-53
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以看到，`children` 关键字仍然在 YAML 格式的清单中使用，但现在结构比 INI 格式更具层次性。缩进可能更容易跟随，但请注意，主机最终是在相当高的缩进级别下定义的——根据你希望的方式，这种格式可能更难扩展。
+- en: 'When you want to work with any of the groups from the preceding inventory,
+    you would simply reference it either in your playbook or on the command line.
+    Extending our previous example, we can run the following:'
+  id: totrans-54
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当你想使用前面清单中的任何组时，你只需在剧本或命令行中引用它。扩展我们之前的示例，我们可以运行以下命令：
+- en: '[PRE7]'
+  id: totrans-55
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE7]'
+- en: 'Note the `all` keyword in the middle of that line. That is the special `all`
+    group that is implicit in all inventories and is explicitly mentioned in your
+    previous YAML example. If we wanted to run the same command, but this time on
+    just the `fedora` group hosts from the previous YAML inventory, we would run this
+    variation of the command:'
+  id: totrans-56
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 注意那行中的 `all` 关键字。那是所有库存中隐含的特殊 `all` 组，并且在你之前的 YAML 示例中已明确提及。如果我们想运行相同的命令，但这次只对来自之前
+    YAML 库存的 `fedora` 组主机运行，我们将运行以下命令的变体：
+- en: '[PRE8]'
+  id: totrans-57
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE8]'
+- en: As you can see, this is a powerful way of managing your inventory and making
+    it easy to run commands on just the hosts you want. The possibility of creating
+    multiple groups makes life simple, especially when you want to run different tasks
+    on different groups of servers.
+  id: totrans-58
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，这是一种强大的方式，可以管理你的库存，并使得只对你想要的主机运行命令变得轻松。创建多个组的可能性使得管理变得简单，尤其是当你想在不同的服务器组上运行不同的任务时。
+- en: 'As an aside to developing your inventories, it is worth noting that there is
+    a quick shorthand notation that you can use to create multiple hosts. Let’s assume
+    you have 100 app servers, all named sequentially, as follows:'
+  id: totrans-59
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 顺便提一下，在开发库存时，值得注意的是，有一种快捷的简写表示法可以用来创建多个主机。假设你有 100 台应用服务器，它们的名称按顺序排列，如下所示：
+- en: '[PRE9]'
+  id: totrans-60
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE9]'
+- en: 'This is entirely possible, but would be tedious and error-prone to create by
+    hand and would produce some very hard to read and interpret inventories. Luckily,
+    Ansible provides a quick shorthand notation to achieve this, and the following
+    inventory snippet actually produces an inventory with the same 100 app servers
+    that we could create manually:'
+  id: totrans-61
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这是完全可能的，但手动创建将是繁琐且容易出错的，并且会产生一些非常难以阅读和解释的库存文件。幸运的是，Ansible 提供了一种快捷的简写表示法来实现这一点，以下的库存片段实际上生成了一个与我们手动创建的相同的包含
+    100 台应用服务器的库存：
+- en: '[PRE10]'
+  id: totrans-62
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE10]'
+- en: 'It is also possible to use alphabetic ranges as well as numeric ones—extending
+    our example to add some cache servers, you might have the following:'
+  id: totrans-63
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 也可以使用字母范围和数字范围——扩展我们的示例，添加一些缓存服务器，你可能会有如下所示的内容：
+- en: '[PRE11]'
+  id: totrans-64
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE11]'
+- en: 'This is the same as manually creating the following:'
+  id: totrans-65
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这与手动创建以下内容相同：
+- en: '[PRE12]'
+  id: totrans-66
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE12]'
+- en: Now that we’ve completed our exploration of the various static inventory formats
+    and how to create groups (and indeed, child groups), in the next section, let’s
+    expand on our previously brief look at host variables.
+  id: totrans-67
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经完成了对各种静态库存格式以及如何创建组（甚至子组）的探索，在下一部分，让我们扩展一下之前对主机变量的简要介绍。
+- en: Adding host and group variables to your inventory
+  id: totrans-68
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 向库存添加主机和组变量
+- en: We have already touched upon host variables—we saw them earlier in this chapter
+    when we used them to override connection details such as the user account to connect
+    with, the address to connect to, and the port to use. However, there is so much
+    more you can do with Ansible and inventory variables, and it is important to note
+    that they can be defined not only at the host level but also at the group level,
+    which again provides you with some incredibly powerful ways in which you can efficiently
+    manage your infrastructure from one central inventory.
+  id: totrans-69
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们已经触及了主机变量——我们在本章早些时候看到它们时，用它们覆盖了连接详细信息，如连接的用户账户、连接的地址和使用的端口。但是，使用 Ansible
+    和库存变量，你可以做的事情远不止这些，值得注意的是，它们不仅可以在主机级别定义，还可以在组级别定义，这再次为你提供了极其强大的方式来有效管理一个集中库存中的基础设施。
+- en: 'Let’s build on our previous three-tier example and suppose that we need to
+    set two variables for each of our two frontend servers. These are not special
+    Ansible variables but instead are variables entirely of our own choosing, which
+    we will use later on in the playbooks that run against this server. Suppose that
+    these variables are as follows:'
+  id: totrans-70
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们在之前的三层示例基础上构建，并假设我们需要为每个前端服务器设置两个变量。这些不是特殊的 Ansible 变量，而是我们完全自己选择的变量，我们将在稍后运行这些变量的
+    playbook 中使用。假设这些变量如下：
+- en: '`https_port`, which defines the port that the frontend proxy should listen
+    on'
+  id: totrans-71
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`https_port`，它定义了前端代理应该监听的端口'
+- en: '`lb_vip`, which defines the FQDN of the load balancer in front of the frontend
+    servers'
+  id: totrans-72
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`lb_vip`，它定义了前端服务器前负载均衡器的 FQDN'
+- en: 'Let’s see how this is done:'
+  id: totrans-73
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们看看这是如何完成的：
+- en: 'We could simply add these to each of the hosts in the `frontends` part of our
+    inventory file, just as we did before with the Ansible connection variables. In
+    this case, a portion of our INI-formatted inventory might look like this:'
+  id: totrans-74
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 我们可以像之前使用 Ansible 连接变量一样，简单地将它们添加到 `frontends` 部分的每个主机中。在这种情况下，我们的 INI 格式的库存文件的一部分可能如下所示：
+- en: '[PRE13]'
+  id: totrans-75
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE13]'
+- en: 'If we run an ad hoc command against this inventory, we can see the contents
+    of both of these variables:'
+  id: totrans-76
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果我们针对这个库存运行临时命令，我们可以看到这两个变量的内容：
+- en: '[PRE14]'
+  id: totrans-77
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE14]'
+- en: This has worked just as we desired, but the approach is inefficient as you have
+    to add the same variables to every single host.
+  id: totrans-78
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这种方法按预期工作，但效率较低，因为你必须将相同的变量添加到每个主机上。
+- en: 'Luckily, you can assign variables to a host group as well as to hosts individually.
+    If we edited the preceding inventory to achieve this, the `frontends` section
+    would now look like this:'
+  id: totrans-79
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 幸运的是，你可以为主机组分配变量，也可以单独为每个主机分配变量。如果我们编辑前面的库存文件以实现这一点，`frontends` 部分将如下所示：
+- en: '[PRE15]'
+  id: totrans-80
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE15]'
+- en: 'Notice how much more readable that is? Yet, if we run the same command as before
+    against our newly organized inventory, we see that the result is the same:'
+  id: totrans-81
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 注意这次的可读性更高了？然而，如果我们再次运行相同的命令，对照我们新整理的库存文件，你会看到结果还是一样的：
+- en: '[PRE16]'
+  id: totrans-82
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE16]'
+- en: 'There will be times when you want to work with host variables for individual
+    hosts, and times when group variables are more relevant. It is up to you to determine
+    which is better for your scenario; however, remember that host variables can be
+    used in combination. It is also worth noting that host variables override group
+    variables, so if we need to change the connection port to `8444` on the `web01.example.org`
+    one, we could do this as follows:'
+  id: totrans-83
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 有时你需要为单个主机处理主机变量，而有时则更倾向于使用组变量。你可以根据自己的场景来判断哪种方式更好；不过，记住，主机变量可以与组变量一起使用。还需要注意的是，主机变量会覆盖组变量，因此，如果我们需要将
+    `web01.example.org` 主机的连接端口更改为 `8444`，我们可以如下操作：
+- en: '[PRE17]'
+  id: totrans-84
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE17]'
+- en: 'Now, if we run our ad hoc command again with the new inventory, we can see
+    that we have overridden the variable on one host:'
+  id: totrans-85
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，如果我们使用新的库存文件再次运行我们的临时命令，我们可以看到我们已经覆盖了一个主机上的变量：
+- en: '[PRE18]'
+  id: totrans-86
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE18]'
+- en: Of course, doing this for one host alone when there are only two might seem
+    a little pointless, but when you have an inventory with hundreds of hosts in it,
+    this method of overriding one host will suddenly become very valuable.
+  id: totrans-87
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当然，对于只有两个主机的情况，这样做可能显得有些多余，但当你有一个包含数百个主机的库存时，这种覆盖单个主机的方式就会变得非常有价值。
+- en: 'Just for completeness, if we were to add the host variables we defined previously
+    to our YAML version of the inventory, the `frontends` section would appear as
+    follows (the rest of the inventory has been removed to save space):'
+  id: totrans-88
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 完整起见，如果我们将之前定义的主机变量添加到 YAML 格式的库存文件中，那么 `frontends` 部分将如下所示（其他库存部分已删除以节省空间）：
+- en: '[PRE19]'
+  id: totrans-89
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE19]'
+- en: 'Running the same ad hoc command as before, you can see that the result is the
+    same as for our INI-formatted inventory:'
+  id: totrans-90
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 运行与之前相同的临时命令，你会发现结果与我们使用 INI 格式库存文件时相同：
+- en: '[PRE20]'
+  id: totrans-91
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE20]'
+- en: So far, we have covered several ways of providing host variables and group variables
+    to your inventory; however, there is another way that deserves special mention
+    and will become valuable to you as your inventory becomes larger and more complex.
+  id: totrans-92
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 到目前为止，我们已经介绍了几种为库存提供主机变量和组变量的方法；然而，还有一种方法值得特别提及，当你的库存变得更大更复杂时，它将变得非常有价值。
+- en: 'Right now, our examples are small and compact and only contain a handful of
+    groups and variables; however, when you scale this up to a full infrastructure
+    of servers, using a single flat inventory file could, once again, become unmanageable.
+    Luckily, Ansible also provides a solution to this. Two specially named directories,
+    `host_vars` and `group_vars`, are automatically searched for appropriate variable
+    content if they exist within the playbook directory. We can test this out by recreating
+    the preceding frontend variables example using this special directory structure,
+    rather than putting the variables into the inventory file:'
+  id: totrans-93
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 目前，我们的示例很小且紧凑，只包含少量的组和变量；然而，当你将其扩展到完整的服务器基础架构时，使用单一的平面库存文件可能会变得难以管理。幸运的是，Ansible
+    也提供了解决方案。如果在 playbook 目录中存在两个特殊命名的目录 `host_vars` 和 `group_vars`，系统会自动搜索这些目录中的适当变量内容。我们可以通过使用这种特殊的目录结构来重新创建前面的前端变量示例，而不是将变量放入库存文件中：
+- en: 'Let’s start by creating a new directory structure for this purpose:'
+  id: totrans-94
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 让我们首先为此目的创建一个新的目录结构：
+- en: '[PRE21]'
+  id: totrans-95
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE21]'
+- en: 'Now, under this directory, we’ll create two more directories for the variables:'
+  id: totrans-96
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在，在这个目录下，我们将创建两个更多的目录来存放变量：
+- en: '[PRE22]'
+  id: totrans-97
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE22]'
+- en: '---'
+  id: totrans-98
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '---'
+- en: 'https_port: 8444'
+  id: totrans-99
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'https_port: 8444'
+- en: '[PRE23]'
+  id: totrans-100
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE23]'
+- en: 'Similarly, under the `group_vars` directory, create a YAML file named after
+    the group to which we want to assign variables (that is, `frontends.yml`) with
+    the following contents:'
+  id: totrans-101
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 类似地，在 `group_vars` 目录下，创建一个以我们要分配变量的组命名的 YAML 文件（即 `frontends.yml`），并包含以下内容：
+- en: '[PRE24]'
+  id: totrans-102
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE24]'
+- en: 'Finally, we will create our inventory file as before, except that it contains
+    no variables:'
+  id: totrans-103
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 最后，我们将像以前一样创建我们的清单文件，只是它不包含任何变量：
+- en: '[PRE25]'
+  id: totrans-104
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE25]'
+- en: 'Just for clarity, your final directory structure should look like this:'
+  id: totrans-105
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了清晰起见，你最终的目录结构应如下所示：
+- en: '[PRE26]'
+  id: totrans-106
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE26]'
+- en: 'Now, let’s try running our familiar ad hoc command and see what happens:'
+  id: totrans-107
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在，让我们尝试运行熟悉的临时命令，看看会发生什么：
+- en: '[PRE27]'
+  id: totrans-108
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE27]'
+- en: As you can see, this works exactly as before, and without further instruction,
+    Ansible has traversed the directory structure and ingested all the variable files.
+  id: totrans-109
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如你所看到的，这一切和之前完全一样，并且在没有进一步指示的情况下，Ansible 已经遍历了目录结构并加载了所有变量文件。
+- en: 'If you have many hundreds of variables (or need an even finer-grained approach),
+    you can replace the YAML files with directories named after the hosts and groups.
+    Let’s recreate the directory structure, but now with directories instead:'
+  id: totrans-110
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如果你有数百个变量（或者需要更加细粒度的方式），你可以用以主机和组命名的目录替换 YAML 文件。让我们重新创建目录结构，但现在使用目录替代：
+- en: '[PRE28]'
+  id: totrans-111
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE28]'
+- en: Notice how we now have directories named after the `frontends` group and the
+    `web01.example.org` host? Inside the `frontends` directory, we have split the
+    variables into two files, and this can be incredibly useful for logically organizing
+    variables in groups, especially as your playbooks get bigger and more complex.
+    Although we have named the variables files by the name of the variable they contain,
+    this has been done purely to help us understand the code structure here. Each
+    variables file may contain any number of variables, and they need not hold any
+    relation to the filename.
+  id: totrans-112
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 注意我们现在有了以`frontends`组和`web01.example.org`主机命名的目录吗？在`frontends`目录中，我们将变量拆分成了两个文件，这对于逻辑地组织分组变量极其有用，特别是当你的剧本变得更大、更复杂时。虽然我们按变量名称命名了变量文件，这只是为了帮助我们理解代码结构。每个变量文件可以包含任意数量的变量，它们与文件名没有任何关系。
+- en: 'The files themselves are simply an adaptation of our previous ones:'
+  id: totrans-113
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这些文件本身只是我们之前文件的一个改编版本：
+- en: '[PRE29]'
+  id: totrans-114
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE29]'
+- en: 'Even with this more finely divided directory structure, the result of running
+    the ad hoc command is still the same:'
+  id: totrans-115
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 即使使用了这种更精细化的目录结构，运行临时命令的结果仍然是相同的：
+- en: '[PRE30]'
+  id: totrans-116
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE30]'
+- en: 'One final thing of note before we conclude this section is, if you define the
+    same variable at both a group level and a child group level, the variable at the
+    child group level takes precedence. This is not as obvious to figure out as it
+    first sounds. Consider our earlier inventory where we used child groups to differentiate
+    between Fedora and Ubuntu hosts—if we add a variable with the same name to both
+    the `ubuntu` child group and the `frontends` group (which is a `ubuntu` group)
+    as follows, what will the outcome be? The inventory would look like this:'
+  id: totrans-117
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在我们结束这一部分之前，有一点需要特别注意，如果你在组级别和子组级别都定义了相同的变量，子组级别的变量会优先。这个结论不像看起来那么直观。回想一下我们之前的清单，我们使用子组来区分
+    Fedora 和 Ubuntu 主机——如果我们将一个同名变量同时添加到`ubuntu`子组和`frontends`组（`frontends`组是一个`ubuntu`组），会发生什么？清单将会如下所示：
+- en: '[PRE31]'
+  id: totrans-118
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE31]'
+- en: 'Now, let’s run an ad hoc command to see what value of `testvar` is actually
+    set:'
+  id: totrans-119
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，让我们运行一个临时命令，查看实际设置了哪个 `testvar` 的值：
+- en: '[PRE32]'
+  id: totrans-120
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE32]'
+- en: $ sudo dnf install -y cobbler
+  id: totrans-121
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: $ sudo dnf install -y cobbler
+- en: 'cobblerd service is configured to listen on the loopback address by checking
+    the settings in /etc/cobbler/settings—the relevant snippet of the file is shown
+    here and should appear as follows:'
+  id: totrans-122
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: cobblerd 服务配置为监听回环地址，具体设置可在 /etc/cobbler/settings 文件中检查，文件的相关片段如下所示，应如下所示：
+- en: '[PRE33]'
+  id: totrans-123
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE33]'
+- en: '[PRE34]'
+  id: totrans-124
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE34]'
+- en: $ sudo systemctl enable --now cobblerd.service
+  id: totrans-125
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: $ sudo systemctl enable --now cobblerd.service
+- en: '/boot directory, assuming you have installed Cobbler on Fedora 38\. On the
+    test system used for this demo, the following commands were used; however, you
+    must replace the version number in the vmlinuz and initramfs filenames with the
+    appropriate version numbers from your system’s /boot directory:'
+  id: totrans-126
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 假设你已在 Fedora 38 上安装了 Cobbler，/boot 目录中的内容。在用于此演示的测试系统上，使用了以下命令；但是你必须根据系统的 /boot
+    目录中的适当版本号，替换 vmlinuz 和 initramfs 文件名中的版本号：
+- en: '[PRE35]'
+  id: totrans-127
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE35]'
+- en: '[PRE36]'
+  id: totrans-128
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE36]'
+- en: $ sudo cobbler system add --name=frontend01 --profile=webservers --dns-name=frontend01.example.org
+    --interface=eth0
+  id: totrans-129
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: $ sudo cobbler system add --name=frontend01 --profile=webservers --dns-name=frontend01.example.org
+    --interface=eth0
+- en: $ sudo cobbler system add --name=frontend02 --profile=webservers --dns-name=frontend02.example.org
+    --interface=eth0
+  id: totrans-130
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: $ sudo cobbler system add --name=frontend02 --profile=webservers --dns-name=frontend02.example.org
+    --interface=eth0
+- en: '[PRE37]'
+  id: totrans-131
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE37]'
+- en: $ ansible-galaxy collection list | grep community.general
+  id: totrans-132
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: $ ansible-galaxy collection list | grep community.general
+- en: community.general             6.5.0
+  id: totrans-133
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: community.general             6.5.0
+- en: '[PRE38]'
+  id: totrans-134
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE38]'
+- en: $ cat my.cobbler.yml
+  id: totrans-135
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: $ cat my.cobbler.yml
+- en: 'plugin: community.general.cobbler'
+  id: totrans-136
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 插件：community.general.cobbler
+- en: 'ansible-inventory command, which you can use to validate the operation of the
+    dynamic inventory:'
+  id: totrans-137
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: ansible-inventory 命令，你可以用它来验证动态库存的操作：
+- en: '[PRE39]'
+  id: totrans-138
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE39]'
+- en: '[PRE40]'
+  id: totrans-139
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE40]'
+- en: $ ansible -i my.cobbler.yml cobbler_webservers -m ansible.builtin.ping
+  id: totrans-140
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: $ ansible -i my.cobbler.yml cobbler_webservers -m ansible.builtin.ping
+- en: frontend01.example.org | SUCCESS => {
+  id: totrans-141
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: frontend01.example.org | SUCCESS => {
+- en: '"ansible_facts": {'
+  id: totrans-142
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '"ansible_facts": {'
+- en: '"discovered_interpreter_python": "/usr/bin/python3"'
+  id: totrans-143
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '"discovered_interpreter_python": "/usr/bin/python3"'
+- en: '},'
+  id: totrans-144
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '},'
+- en: '"changed": false,'
+  id: totrans-145
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '"changed": false,'
+- en: '"ping": "pong"'
+  id: totrans-146
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '"ping": "pong"'
+- en: '}'
+  id: totrans-147
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '}'
+- en: frontend02.example.org | SUCCESS => {
+  id: totrans-148
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: frontend02.example.org | SUCCESS => {
+- en: '"ansible_facts": {'
+  id: totrans-149
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '"ansible_facts": {'
+- en: '"discovered_interpreter_python": "/usr/bin/python3"'
+  id: totrans-150
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '"discovered_interpreter_python": "/usr/bin/python3"'
+- en: '},'
+  id: totrans-151
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '},'
+- en: '"changed": false,'
+  id: totrans-152
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '"changed": false,'
+- en: '"ping": "pong"'
+  id: totrans-153
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '"ping": "pong"'
+- en: '}'
+  id: totrans-154
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '}'
+- en: '[PRE41]'
+  id: totrans-155
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE41]'
+- en: $ ansible-doc -t inventory community.general.cobbler
+  id: totrans-156
+  prefs: []
+  type: TYPE_NORMAL
+  zh: $ ansible-doc -t inventory community.general.cobbler
+- en: '[PRE42]'
+  id: totrans-157
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE42]'
+- en: '[cobbler_webservers]'
+  id: totrans-158
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '[cobbler_webservers]'
+- en: '[fedora:children]'
+  id: totrans-159
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '[fedora:children]'
+- en: cobbler_webservers
+  id: totrans-160
+  prefs: []
+  type: TYPE_NORMAL
+  zh: cobbler_webservers
+- en: '[PRE43]'
+  id: totrans-161
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE43]'
+- en: $ ansible -i my.cobbler.yml -i static-groups-mix-ini fedora -m ansible.builtin.ping
+  id: totrans-162
+  prefs: []
+  type: TYPE_NORMAL
+  zh: $ ansible -i my.cobbler.yml -i static-groups-mix-ini fedora -m ansible.builtin.ping
+- en: frontend01.example.org | SUCCESS => {
+  id: totrans-163
+  prefs: []
+  type: TYPE_NORMAL
+  zh: frontend01.example.org | SUCCESS => {
+- en: '"ansible_facts": {'
+  id: totrans-164
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '"ansible_facts": {'
+- en: '"discovered_interpreter_python": "/usr/bin/python3"'
+  id: totrans-165
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '"discovered_interpreter_python": "/usr/bin/python3"'
+- en: '},'
+  id: totrans-166
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '},'
+- en: '"changed": false,'
+  id: totrans-167
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '"changed": false,'
+- en: '"ping": "pong"'
+  id: totrans-168
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '"ping": "pong"'
+- en: '}'
+  id: totrans-169
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '}'
+- en: frontend02.example.org | SUCCESS => {
+  id: totrans-170
+  prefs: []
+  type: TYPE_NORMAL
+  zh: frontend02.example.org | SUCCESS => {
+- en: '"ansible_facts": {'
+  id: totrans-171
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '"ansible_facts": {'
+- en: '"discovered_interpreter_python": "/usr/bin/python3"'
+  id: totrans-172
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '"discovered_interpreter_python": "/usr/bin/python3"'
+- en: '},'
+  id: totrans-173
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '},'
+- en: '"changed": false,'
+  id: totrans-174
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '"changed": false,'
+- en: '"ping": "pong"'
+  id: totrans-175
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '"ping": "pong"'
+- en: '}'
+  id: totrans-176
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '}'
+- en: '[PRE44]'
+  id: totrans-177
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE44]'
+- en: loadbalancer.example.org
+  id: totrans-178
+  prefs: []
+  type: TYPE_NORMAL
+  zh: loadbalancer.example.org
+- en: '[frontends]'
+  id: totrans-179
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '[前端]'
+- en: web01.example.org
+  id: totrans-180
+  prefs: []
+  type: TYPE_NORMAL
+  zh: web01.example.org
+- en: web02.example.org
+  id: totrans-181
+  prefs: []
+  type: TYPE_NORMAL
+  zh: web02.example.org
+- en: '[apps]'
+  id: totrans-182
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '[应用]'
+- en: app01.example.org
+  id: totrans-183
+  prefs: []
+  type: TYPE_NORMAL
+  zh: app01.example.org
+- en: app02.example.org
+  id: totrans-184
+  prefs: []
+  type: TYPE_NORMAL
+  zh: app02.example.org
+- en: '[databases]'
+  id: totrans-185
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '[数据库]'
+- en: db01.example.org
+  id: totrans-186
+  prefs: []
+  type: TYPE_NORMAL
+  zh: db01.example.org
+- en: db02.example.org
+  id: totrans-187
+  prefs: []
+  type: TYPE_NORMAL
+  zh: db02.example.org
+- en: '[fedora:children]'
+  id: totrans-188
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '[fedora:children]'
+- en: apps
+  id: totrans-189
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 应用
+- en: databases
+  id: totrans-190
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 数据库
+- en: '[ubuntu:children]'
+  id: totrans-191
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '[ubuntu:children]'
+- en: frontends
+  id: totrans-192
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 前端
+- en: '[PRE45]'
+  id: totrans-193
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE45]'
+- en: $ ansible -i hostgroups-ini all --list-hosts
+  id: totrans-194
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: $ ansible -i hostgroups-ini all --list-hosts
+- en: 'hosts (7):'
+  id: totrans-195
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 主机（7）：
+- en: loadbalancer.example.org
+  id: totrans-196
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: loadbalancer.example.org
+- en: app01.example.org
+  id: totrans-197
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: app01.example.org
+- en: app02.example.org
+  id: totrans-198
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: app02.example.org
+- en: db01.example.org
+  id: totrans-199
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: db01.example.org
+- en: db02.example.org
+  id: totrans-200
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: db02.example.org
+- en: web01.example.org
+  id: totrans-201
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: web01.example.org
+- en: web02.example.org
+  id: totrans-202
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: web02.example.org
+- en: '[PRE46]'
+  id: totrans-203
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE46]'
+- en: $ ansible -i hostgroups-ini '*' --list-hosts
+  id: totrans-204
+  prefs: []
+  type: TYPE_NORMAL
+  zh: $ ansible -i hostgroups-ini '*' --list-hosts
+- en: 'hosts (7):'
+  id: totrans-205
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 主机（7）：
+- en: loadbalancer.example.org
+  id: totrans-206
+  prefs: []
+  type: TYPE_NORMAL
+  zh: loadbalancer.example.org
+- en: app01.example.org
+  id: totrans-207
+  prefs: []
+  type: TYPE_NORMAL
+  zh: app01.example.org
+- en: app02.example.org
+  id: totrans-208
+  prefs: []
+  type: TYPE_NORMAL
+  zh: app02.example.org
+- en: db01.example.org
+  id: totrans-209
+  prefs: []
+  type: TYPE_NORMAL
+  zh: db01.example.org
+- en: db02.example.org
+  id: totrans-210
+  prefs: []
+  type: TYPE_NORMAL
+  zh: db02.example.org
+- en: web01.example.org
+  id: totrans-211
+  prefs: []
+  type: TYPE_NORMAL
+  zh: web01.example.org
+- en: web02.example.org
+  id: totrans-212
+  prefs: []
+  type: TYPE_NORMAL
+  zh: web02.example.org
+- en: '[PRE47]'
+  id: totrans-213
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE47]'
+- en: $ ansible -i hostgroups-ini frontends:apps --list-hosts
+  id: totrans-214
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: $ ansible -i hostgroups-ini frontends:apps --list-hosts
+- en: 'hosts (4):'
+  id: totrans-215
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 主机（4）：
+- en: web01.example.org
+  id: totrans-216
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: web01.example.org
+- en: web02.example.org
+  id: totrans-217
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: web02.example.org
+- en: app01.example.org
+  id: totrans-218
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: app01.example.org
+- en: '! to exclude a specific group—you can combine this with other characters such
+    as : to show (for example) all hosts except those in the apps group. Again, !
+    is a special character in the shell and so you must quote your pattern string
+    in single quotes for it to work, as in this example:'
+  id: totrans-219
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '! 排除特定组——你可以将这个与其他字符组合使用，例如：显示所有主机，但不包括应用组中的主机。再说一次，! 是 shell 中的特殊字符，因此你必须用单引号引用你的模式字符串才能使其工作，如本示例所示：'
+- en: '[PRE48]'
+  id: totrans-220
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE48]'
+- en: $ ansible -i hostgroups-ini 'fedora:&apps' --list-hosts
+  id: totrans-221
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: $ ansible -i hostgroups-ini 'fedora:&apps' --list-hosts
+- en: 'hosts (2):'
+  id: totrans-222
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 主机（2）：
+- en: app01.example.org
+  id: totrans-223
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: app01.example.org
+- en: '* wildcards in a similar manner to what you would use in the shell, as in this
+    example:'
+  id: totrans-224
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '* 使用类似于在 shell 中使用的通配符，就像这个示例：'
+- en: '[PRE49]'
+  id: totrans-225
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE49]'
+- en: '[PRE50]'
+  id: totrans-226
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE50]'
+- en: '[PRE51]'
+  id: totrans-227
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE51]'
+- en: $ ansible-playbook -i hostgroups-ini site.yml --limit frontends:apps
+  id: totrans-228
+  prefs: []
+  type: TYPE_NORMAL
+  zh: $ ansible-playbook -i hostgroups-ini site.yml --limit frontends:apps
+- en: PLAY [A simple playbook for demonstrating inventory patterns] *************************************************************************************
+  id: totrans-229
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 执行 [一个简单的 playbook 来演示库存模式] *************************************************************************************
+- en: TASK [Ping each host] *****************************************************************************************************************************
+  id: totrans-230
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 任务 [Ping 每个主机] *****************************************************************************************************************************
+- en: 'ok: [web02.example.org]'
+  id: totrans-231
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'ok: [web02.example.org]'
+- en: 'ok: [web01.example.org]'
+  id: totrans-232
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'ok: [web01.example.org]'
+- en: 'ok: [app02.example.org]'
+  id: totrans-233
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'ok: [app02.example.org]'
+- en: 'ok: [app01.example.org]'
+  id: totrans-234
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'ok: [app01.example.org]'
+- en: PLAY RECAP ****************************************************************************************************************************************
+  id: totrans-235
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 执行总结 ****************************************************************************************************************************************
+- en: 'app01.example.org          : ok=1    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0'
+  id: totrans-236
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'app01.example.org          : ok=1    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0'
+- en: 'app02.example.org          : ok=1    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0'
+  id: totrans-237
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'app02.example.org          : ok=1    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0'
+- en: 'web01.example.org          : ok=1    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0'
+  id: totrans-238
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'web01.example.org          : ok=1    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0'
+- en: 'web02.example.org          : ok=1    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0'
+  id: totrans-239
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'web02.example.org          : ok=1    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0'
+- en: '[PRE52]'
+  id: totrans-240
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE52]'

@@ -1,0 +1,1805 @@
+- en: '4'
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '4'
+- en: Deploying a LAMP Stack
+  id: totrans-1
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 部署 LAMP 堆栈
+- en: This chapter will look at deploying a complete LAMP stack using the various
+    core modules that ship with Ansible. We will target the local Multipass virtual
+    machine we first used in [*Chapter 1*](B21620_01.xhtml#_idTextAnchor017), *Installing
+    and* *Running Ansible*.
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章将介绍如何使用 Ansible 提供的各种核心模块来部署完整的 LAMP 堆栈。我们将以在 [*第 1 章*](B21620_01.xhtml#_idTextAnchor017)
+    中首次使用的本地 Multipass 虚拟机为目标，*安装和运行 Ansible*。
+- en: 'We will discuss the following:'
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将讨论以下内容：
+- en: The playbook layout – how our playbook is going to be structured
+  id: totrans-4
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 剧本布局 – 我们的剧本将如何构建
+- en: Linux – preparing the Linux server
+  id: totrans-5
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Linux – 准备 Linux 服务器
+- en: Apache – installing and configuring Apache
+  id: totrans-6
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Apache – 安装和配置 Apache
+- en: MariaDB – installing and configuring MariaDB
+  id: totrans-7
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: MariaDB – 安装和配置 MariaDB
+- en: PHP – installing and configuring PHP
+  id: totrans-8
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: PHP – 安装和配置 PHP
+- en: 'This chapter covers the following topics:'
+  id: totrans-9
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章将涵盖以下主题：
+- en: The playbook structure
+  id: totrans-10
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 剧本结构
+- en: The LAMP stack
+  id: totrans-11
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: LAMP 堆栈
+- en: The LAMP playbook
+  id: totrans-12
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: LAMP 剧本
+- en: Before we start writing the playbook, we will discuss the structure we will
+    use after we briefly discuss what we need for the chapter.
+  id: totrans-13
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在开始编写剧本之前，我们将在简要讨论本章所需内容后，讨论我们将使用的结构。
+- en: Technical requirements
+  id: totrans-14
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 技术要求
+- en: We will again use the local Multipass virtual machine we launched in the previous
+    chapters. As we will be installing all the elements of a LAMP stack on the virtual
+    machine, your Multipass virtual machine will need to be able to download packages
+    from the internet; in all, there is around 500 MB of packages and configuration
+    to download.
+  id: totrans-15
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将再次使用在前几章中启动的本地 Multipass 虚拟机。由于我们将把 LAMP 堆栈的所有元素安装到虚拟机上，因此你的 Multipass 虚拟机需要能够从互联网下载软件包；总共有大约
+    500 MB 的软件包和配置需要下载。
+- en: You can find a complete copy of the playbook in the repository accompanying
+    this book at [https://github.com/PacktPublishing/Learn-Ansible-Second-Edition/tree/main/Chapter04](https://github.com/PacktPublishing/Learn-Ansible-Second-Edition/tree/main/Chapter04).
+  id: totrans-16
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以在本书随附的仓库中找到剧本的完整副本，链接地址为 [https://github.com/PacktPublishing/Learn-Ansible-Second-Edition/tree/main/Chapter04](https://github.com/PacktPublishing/Learn-Ansible-Second-Edition/tree/main/Chapter04)。
+- en: The playbook structure
+  id: totrans-17
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 剧本结构
+- en: In [*Chapter 1*](B21620_01.xhtml#_idTextAnchor017), *Installing and Running
+    Ansible*, the playbooks we ran were as basic as possible. They have been in a
+    single file, accompanied by a host inventory file, and, if required, a template
+    file. Then, in [*Chapter 2*](B21620_02.xhtml#_idTextAnchor080), *Exploring Ansible
+    Galaxy*, we extended our playbook files to include roles rather than putting all
+    our tasks, handlers, and variables into one file.
+  id: totrans-18
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 [*第 1 章*](B21620_01.xhtml#_idTextAnchor017)，*安装和运行 Ansible* 中，我们运行的剧本尽可能简单。它们都在一个文件中，附带一个主机清单文件，并且如果需要，还有一个模板文件。然后在
+    [*第 2 章*](B21620_02.xhtml#_idTextAnchor080)，*探索 Ansible Galaxy* 中，我们扩展了我们的剧本文件，开始使用角色，而不是将所有的任务、处理器和变量放在一个文件中。
+- en: 'As you can see from the following layout, there are several folders and files:'
+  id: totrans-19
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 从下面的布局可以看到，包含了几个文件夹和文件：
+- en: "![\uFEFFFigure 4.1 – The folder structure we will use for our playbook](img/B21620_04_1.jpg)"
+  id: totrans-20
+  prefs: []
+  type: TYPE_IMG
+  zh: "![\uFEFF图 4.1 – 我们将使用的剧本文件夹结构](img/B21620_04_1.jpg)"
+- en: Figure 4.1 – The folder structure we will use for our playbook
+  id: totrans-21
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 4.1 – 我们将使用的剧本文件夹结构
+- en: 'While there is a copy of the structure in the repository, let’s work on creating
+    the structure and discuss each item as we create it. The first folder we need
+    to create is our top-level folder. This is the folder that will contain our playbook
+    folders and files:'
+  id: totrans-22
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 虽然仓库中有结构的副本，但我们还是先创建结构，并在创建过程中讨论每个项目。我们需要创建的第一个文件夹是顶层文件夹。这个文件夹将包含我们的剧本文件夹和文件：
+- en: '[PRE0]'
+  id: totrans-23
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: 'The next folder we are going to create is one called `group_vars`. This will
+    contain the variable files used in our playbook. For now, we are going to create
+    a single variable file called `common.yml`:'
+  id: totrans-24
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将创建的下一个文件夹名为 `group_vars`。它将包含在我们的剧本中使用的变量文件。现在，我们将创建一个名为 `common.yml` 的变量文件：
+- en: '[PRE1]'
+  id: totrans-25
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: 'Next, we are going to create two files – our host inventory file, which we
+    will name `hosts`, and our master playbook, which is typically called `site.yml`:'
+  id: totrans-26
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来，我们将创建两个文件 – 我们的主机清单文件，将命名为 `hosts`，以及我们的主剧本，通常命名为 `site.yml`：
+- en: '[PRE2]'
+  id: totrans-27
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: 'The final folder we are going to create manually is called `roles`. Here, we
+    are going to use the `ansible-galaxy` command, which we learned about in [*Chapter
+    2*](B21620_02.xhtml#_idTextAnchor080), *Exploring Ansible Galaxy*, to create a
+    role called `common`. To do this, we use the following commands:'
+  id: totrans-28
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将手动创建的最终文件夹叫做`roles`。在这里，我们将使用我们在[*第二章*](B21620_02.xhtml#_idTextAnchor080)《探索
+    Ansible Galaxy》中学到的`ansible-galaxy`命令来创建一个名为`common`的角色。为此，我们使用以下命令：
+- en: '[PRE3]'
+  id: totrans-29
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: This should create all the files needed to start writing the `common` role.
+  id: totrans-30
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这应该会创建开始编写`common`角色所需的所有文件。
+- en: The `cloud-init.yaml`, `example_key`, `example_key.pub`, and `hosts.example`
+    files are all lifted straight from [*Chapter 1*](B21620_01.xhtml#_idTextAnchor017),
+    *Installing and Running Ansible*, and [*Chapter 2*](B21620_02.xhtml#_idTextAnchor080),
+    *Exploring Ansible Galaxy*, so we will not cover them again in this chapter.
+  id: totrans-31
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`cloud-init.yaml`、`example_key`、`example_key.pub` 和 `hosts.example` 文件均直接来自[*第一章*](B21620_01.xhtml#_idTextAnchor017)《安装与运行
+    Ansible》和[*第二章*](B21620_02.xhtml#_idTextAnchor080)《探索 Ansible Galaxy》，因此我们在本章中不再覆盖它们。'
+- en: Note
+  id: totrans-32
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 注意
+- en: While we will work through each of the files individually in this and the following
+    sections, a complete copy of the playbook is available in the accompanying GitHub
+    repository.
+  id: totrans-33
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 虽然我们将在本节和接下来的各节中逐个处理每个文件，但整个剧本的完整副本可以在随附的 GitHub 仓库中找到。
+- en: Let’s look at each of the four roles in our playbook and install and configure
+    our LAMP stack.
+  id: totrans-34
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们看看剧本中的四个角色，并安装和配置我们的 LAMP 堆栈。
+- en: The LAMP stack
+  id: totrans-35
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: LAMP 堆栈
+- en: 'The LAMP stack is the term used to describe an all-in-one web and database
+    server. Typically, the components are as follows:'
+  id: totrans-36
+  prefs: []
+  type: TYPE_NORMAL
+  zh: LAMP 堆栈是一个用来描述一体化 Web 和数据库服务器的术语。通常，组件如下：
+- en: '**Linux** is the underlying operating system; in our case, we will use Ubuntu
+    22.04'
+  id: totrans-37
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**Linux**是底层操作系统；在我们的案例中，我们将使用 Ubuntu 22.04。'
+- en: '**Apache** is the web server element of the stack'
+  id: totrans-38
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**Apache**是堆栈中的 Web 服务器元素。'
+- en: '**MariaDB** is what we will use as the database component of the stack; typically,
+    it is based on **MySQL**, which could also be used'
+  id: totrans-39
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**MariaDB**是我们将用作堆栈数据库组件的数据库；通常，它基于**MySQL**，也可以使用 MySQL。'
+- en: '**PHP** is the dynamic language used by the web server to generate content'
+  id: totrans-40
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**PHP**是 Web 服务器用于生成内容的动态语言。'
+- en: A common variation of the **LAMP** stack is called **LEMP**; this replaces **Apache**
+    with **NGINX**, which is pronounced *engine-x*, hence the *E* rather than the
+    *N*.
+  id: totrans-41
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**LAMP**堆栈的常见变种被称为**LEMP**；它用**NGINX**代替了**Apache**，NGINX的发音为*engine-x*，因此是*E*而不是*N*。'
+- en: 'We are going to look at creating roles to deal with these components; these
+    are as follows:'
+  id: totrans-42
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将创建角色来处理这些组件；它们如下所示：
+- en: '`common`: This role will prepare our Ubuntu server, installing any supporting
+    packages and services we need'
+  id: totrans-43
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`common`：该角色将为我们的 Ubuntu 服务器做准备，安装我们所需的任何支持包和服务。'
+- en: '`apache`: This role will install the Apache web server and configure a default
+    virtual host'
+  id: totrans-44
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`apache`：该角色将安装 Apache Web 服务器并配置默认虚拟主机。'
+- en: '`mariadb`: This role will not only install MariaDB but also secure the installation
+    and create a default database and user, as well as optionally download and import
+    a database to use'
+  id: totrans-45
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`mariadb`：该角色不仅会安装 MariaDB，还会确保安装安全，并创建默认数据库和用户，还可以选择下载并导入用于测试的数据库。'
+- en: '`php`: This role will install PHP and configure a set of common PHP modules,
+    and if we set the option to a database admin tool written in PHP, we can interact
+    with our test database via the browser'
+  id: totrans-46
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`php`：该角色将安装 PHP 并配置一组常见的 PHP 模块，如果我们将选项设置为一个用 PHP 编写的数据库管理工具，我们可以通过浏览器与我们的测试数据库进行交互。'
+- en: Let us begin by looking at the `common` role.
+  id: totrans-47
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们首先来看一下`common`角色。
+- en: The common role
+  id: totrans-48
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 公共角色
+- en: In the previous section of this chapter, we used the `ansible-galaxy role init`
+    command to create the `common` role. This creates several folders and files; as
+    discussed in [*Chapter 2*](B21620_02.xhtml#_idTextAnchor080), *Exploring Ansible
+    Galaxy*, we will not go into any detail here but instead dive straight into the
+    role itself.
+  id: totrans-49
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章的前一部分中，我们使用`ansible-galaxy role init`命令创建了`common`角色。它创建了几个文件夹和文件；正如在[*第二章*](B21620_02.xhtml#_idTextAnchor080)《探索
+    Ansible Galaxy》中讨论的那样，我们不会在这里深入探讨，而是直接进入角色本身。
+- en: Let’s make a start by adding some tasks.
+  id: totrans-50
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们开始通过添加一些任务来进行。
+- en: Updating installed packages
+  id: totrans-51
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 更新已安装的软件包。
+- en: 'First of all, let’s update our server by adding the following to the beginning
+    of the `roles/common/tasks/main.yml` file:'
+  id: totrans-52
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 首先，让我们通过将以下内容添加到`roles/common/tasks/main.yml`文件的开头来更新我们的服务器：
+- en: '[PRE4]'
+  id: totrans-53
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: You will notice a difference from when we last used the `ansible.builtin.apt
+    module` to update all the installed packages.
+  id: totrans-54
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你会注意到与我们上次使用`ansible.builtin.apt`模块更新所有已安装的软件包时的情况有所不同。
+- en: We now start the task using the `name` key; this will print out the content
+    of the value we assigned to the `name` key when the playbook runs, which will
+    give us a better idea of what is going on during the playbook run, rather than
+    just printing the name of the module that is executed.
+  id: totrans-55
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们通过`name`键启动任务；当Playbook运行时，这将打印出我们赋值给`name`键的内容，这样可以让我们更清楚地了解Playbook运行过程中发生的事情，而不仅仅是打印执行的模块名称。
+- en: Installing common packages
+  id: totrans-56
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 安装常用软件包
+- en: 'Now that we have updated the installed packages, let’s install the packages
+    we want to install on all the Linux servers we will target with the Playbook:'
+  id: totrans-57
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经更新了已安装的软件包，让我们安装所有Playbook将要针对的Linux服务器上需要安装的软件包：
+- en: '[PRE5]'
+  id: totrans-58
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: 'As you can see, we again use the `ansible.builtin.apt` module, and we have
+    added a descriptive name for the task. Rather than providing a list of packages
+    in the task, we use a variable called `common_packages`, which is defined in the
+    `roles/common/defaults/main.yml` file as follows:'
+  id: totrans-59
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，我们再次使用了`ansible.builtin.apt`模块，并且为任务添加了一个描述性名称。我们没有在任务中提供一个包列表，而是使用了一个名为`common_packages`的变量，该变量在`roles/common/defaults/main.yml`文件中定义如下：
+- en: '[PRE6]'
+  id: totrans-60
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: As you can see, we install `ntp`, `sntp`, and `ntp-doc`; we will configure `ntp`
+    shortly. Next, we install `vim`, `git`, and `unzip`, as they are always helpful
+    to have installed on a server.
+  id: totrans-61
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，我们安装了`ntp`、`sntp`和`ntp-doc`；我们将很快配置`ntp`。接下来，我们安装了`vim`、`git`和`unzip`，因为它们在服务器上安装总是非常有用。
+- en: Another thing that you may have noticed is that we pass a list of packages using
+    `{{ common_packages }}` to the `pkg` key in the `ansible.builtin.apt` module,
+    resulting in the module looping through the list of packages we pass in and installing
+    them all in one go, rather than having to call the module to install each package
+    individually.
+  id: totrans-62
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可能还注意到，我们通过`{{ common_packages }}`将包列表传递给`ansible.builtin.apt`模块的`pkg`键，这样模块会遍历我们传入的包列表，并一次性安装它们，而无需调用模块逐个安装每个包。
+- en: Configuring Network Time Protocol (NTP)
+  id: totrans-63
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 配置网络时间协议（NTP）
+- en: Next, we copy the `ntp.conf` file from the `templates` folder, adding the list
+    of NTP servers as we have done in the previous chapters, and then informing Ansible
+    to restart NTP whenever the configuration file changes.
+  id: totrans-64
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来，我们从`templates`文件夹中复制`ntp.conf`文件，像前几章一样添加NTP服务器列表，并告知Ansible每当配置文件更改时重新启动NTP。
+- en: Creating a key, group, and user
+  id: totrans-65
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 创建密钥、组和用户
+- en: 'In the `roles/common/defaults/main.yml` file, the following variable is defined:'
+  id: totrans-66
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在`roles/common/defaults/main.yml`文件中，定义了以下变量：
+- en: '[PRE7]'
+  id: totrans-67
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE7]'
+- en: This is slightly different from the variables we have used so far, as it is
+    a single variable called `users`, which is made up of a single item, and that
+    item contains the `name`, `group`, `state`, and `key` key-value pairs.
+  id: totrans-68
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这与我们迄今为止使用的变量略有不同，因为这是一个名为`users`的单一变量，它由一个项组成，而该项包含`name`、`group`、`state`和`key`键值对。
+- en: 'Because we are using items, we need to change our approach to how we use the
+    variables within the task, the first of which in `roles/common/tasks/main.yml`
+    creates an OpenSSH key pair; if one doesn’t already exist, we need to save it
+    at the path that is defined in the `key` key-value pair:'
+  id: totrans-69
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 因为我们使用了项，我们需要改变在任务中使用变量的方式，第一个在`roles/common/tasks/main.yml`中的任务是创建OpenSSH密钥对；如果尚未存在密钥，我们需要将其保存在`key`键值对中定义的路径下：
+- en: '[PRE8]'
+  id: totrans-70
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE8]'
+- en: Working through the task, you can see that we use the `community.crypto.openssh_keypair`
+    module, in which we pass just one value, which is the path to the file where we
+    would like our OpenSSH key stored.
+  id: totrans-71
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在执行任务时，你可以看到我们使用了`community.crypto.openssh_keypair`模块，在其中我们只传递了一个值，即我们希望存储OpenSSH密钥的文件路径。
+- en: As you can see, we use the `{{ item.key }}` variable to enter the path, but
+    we do not define that the variable is called `users` here; instead, we use the
+    `with_items` option and pass in the `{{ users }}` variable here.
+  id: totrans-72
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，我们使用了`{{ item.key }}`变量来输入路径，但这里并没有定义该变量的名称是`users`；相反，我们使用了`with_items`选项，并在这里传入了`{{
+    users }}`变量。
+- en: 'While we only pass one item in this example, you could take this approach to
+    execute a single task multiple times – for example, if our variable looked like
+    this:'
+  id: totrans-73
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 虽然在这个例子中我们只传递了一个项目，但你也可以采用这种方法来多次执行单个任务——例如，如果我们的变量看起来像这样：
+- en: '[PRE9]'
+  id: totrans-74
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE9]'
+- en: Then, when the task is executed, it would create two OpenSSH keys, and the subsequent
+    tasks, which we will get into in a moment, would create a single group called
+    `lamp` and then two users, `lamp` and `user2`.
+  id: totrans-75
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后，当任务执行时，它会创建两个OpenSSH密钥，随后的任务（稍后我们会讲解）会创建一个名为`lamp`的组，然后创建两个用户，`lamp`和`user2`。
+- en: Back to the task at hand – you will notice that we have defined two other options,
+    `delegate_to` and `become`.
+  id: totrans-76
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 回到当前任务–你会注意到我们定义了另外两个选项，`delegate_to`和`become`。
+- en: If we were to run the `community.crypto.openssh_keypair` module without defining
+    `delegate_to`, then the module will be executed on the remote host, which is not
+    what we want to happen in this case, as we want a copy of the private and public
+    portions of the OpenSSH key on our local machine. Therefore, by using `localhost`
+    as the value in the `delegate_to` option, we tell Ansible to run this task locally.
+  id: totrans-77
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果我们在没有定义`delegate_to`的情况下运行`community.crypto.openssh_keypair`模块，那么该模块将在远程主机上执行，而这并不是我们希望发生的情况，因为我们希望OpenSSH密钥的私钥和公钥部分保存在本地机器上。因此，通过在`delegate_to`选项中使用`localhost`作为值，我们告诉Ansible在本地执行此任务。
+- en: The next option, `become`, tells Ansible not to become an escalated user using
+    the `sudo` command, which is the default action for all the hosts we have defined
+    at the top of our main `site.yml` playbook file – this is because we want the
+    `community.crypto.openssh_keypair` module to run as the user you are logged in
+    as, rather than your local machine’s root user.
+  id: totrans-78
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 下一个选项`become`告诉Ansible不要使用`sudo`命令提升为超级用户，这也是我们在主`site.yml`剧本文件顶部定义的所有主机的默认行为–这是因为我们希望`community.crypto.openssh_keypair`模块作为你登录的用户运行，而不是本地机器的root用户。
+- en: 'The logic for this task, minus the `delegate_to` and `become` options, as we
+    want the remainder of the tasks to be executed against the target machine, is
+    followed through to the remaining tasks in the role, starting with creating the
+    group by executing the `ansible.` `builtin.group` module:'
+  id: totrans-79
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 该任务的逻辑（不包括`delegate_to`和`become`选项，因为我们希望剩余的任务在目标机器上执行）会延续到角色中的剩余任务，首先通过执行`ansible.builtin.group`模块来创建组：
+- en: '[PRE10]'
+  id: totrans-80
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE10]'
+- en: 'Once the group has been created, we can then add the user using `ansible.builtin.user`,
+    or users if we have defined more than one item in the `users` variable:'
+  id: totrans-81
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦组创建完成，我们可以通过`ansible.builtin.user`来添加用户，或者如果我们在`users`变量中定义了多个项，则可以添加多个用户：
+- en: '[PRE11]'
+  id: totrans-82
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE11]'
+- en: 'The final task in the role takes the public portion of the OpenSSH key, which
+    we generated earlier, and adds the contents to the user(s) created during the
+    previous task, using the `ansible.builtin.authorized_key` module:'
+  id: totrans-83
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 角色中的最后一个任务将我们之前生成的OpenSSH密钥的公钥部分，添加到先前任务中创建的用户（或用户们）中，使用`ansible.builtin.authorized_key`模块。
+- en: '[PRE12]'
+  id: totrans-84
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE12]'
+- en: You may have noticed that the value we pass for the `key` option is new to us;
+    this uses the `lookup` plugin to read the file’s contents at the `item.key` path
+    with `.pub` appended to the end, meaning, in our case, it reads the contents of
+    the file at `/tmp/id_ssh_lamp_rsa.pub`. This file is the public portion of the
+    OpenSSH key-pair, which was created when we executed the `"generate a ssh keypair"`
+    task earlier in the role.
+  id: totrans-85
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可能已经注意到我们传递给`key`选项的值对我们来说是新的；它使用`lookup`插件读取路径`item.key`下的文件内容，并在文件名末尾附加`.pub`，这意味着在我们的情况下，它读取`/tmp/id_ssh_lamp_rsa.pub`文件的内容。这个文件是OpenSSH密钥对的公钥部分，它是在我们之前执行`"生成ssh密钥对"`任务时创建的。
+- en: The `lookup` plugin is designed to be executed locally, so in this case, we
+    do not need to use the `delegate_to` and `become` options, as we want the task
+    to be executed on the target host because that is where our user has been created,
+    but we want to populate the `/home/lamp/.ssh/authorized_key` file on the remote
+    host with the contents of the `/tmp/id_ssh_lamp_rsa.pub` file that we have on
+    our local host.
+  id: totrans-86
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`lookup`插件设计为在本地执行，因此在这种情况下，我们不需要使用`delegate_to`和`become`选项，因为我们希望任务在目标主机上执行，因为用户已经在该主机上创建，但我们希望将本地主机上的`/tmp/id_ssh_lamp_rsa.pub`文件的内容填充到远程主机的`/home/lamp/.ssh/authorized_key`文件中。'
+- en: That concludes the tasks in the `common` role; before we move on to the next
+    role, which will install and configure `apache`, you should know one more thing.
+  id: totrans-87
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这就完成了`common`角色中的任务；在我们继续下一个角色（安装和配置`apache`）之前，你需要知道一件事。
+- en: The `"generate a ssh keypair"` task will not overwrite any existing key-pairs
+    when executed, meaning the first time you run the role and no files exist at `/tmp/id_ssh_lamp_rsa`
+    and `/tmp/id_ssh_lamp_rsa.pub`, the key-pair will be created, and on subsequent
+    Playbook runs, as the files now exist, the task will return an `community.crypto.openssh_keypair`
+    module to create the key-pair.
+  id: totrans-88
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`"生成 SSH 密钥对"`任务在执行时不会覆盖任何现有的密钥对，这意味着当你第一次运行此角色并且`/tmp/id_ssh_lamp_rsa`和`/tmp/id_ssh_lamp_rsa.pub`这两个文件不存在时，密钥对将被创建；在随后的
+    Playbook 执行中，由于这些文件已经存在，任务将返回`community.crypto.openssh_keypair`模块来创建密钥对。'
+- en: The Apache role
+  id: totrans-89
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: Apache 角色
+- en: Once the `common` role has finished running our remote host, we will be ready
+    to install and configure the Apache web server.
+  id: totrans-90
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦`common`角色在我们的远程主机上运行完毕，我们就准备好安装和配置 Apache Web 服务器了。
+- en: Installing the Apache packages
+  id: totrans-91
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 安装 Apache 软件包
+- en: 'The first task in `roles/apache/tasks/main.yml` installs the packages we need
+    to run the Apache web server; it uses the `ansible.builtin.apt` module and looks
+    like the following:'
+  id: totrans-92
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`roles/apache/tasks/main.yml`中的第一个任务安装运行 Apache Web 服务器所需的软件包；它使用`ansible.builtin.apt`模块，内容如下：'
+- en: '[PRE13]'
+  id: totrans-93
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE13]'
+- en: 'As you can see, it calls a variable called `{{ apache_packages }}`, which is
+    defined in `roles/apache/defaults/main.yml` as follows:'
+  id: totrans-94
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，它调用了一个名为`{{ apache_packages }}`的变量，该变量在`roles/apache/defaults/main.yml`中定义，如下所示：
+- en: '[PRE14]'
+  id: totrans-95
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE14]'
+- en: As we learned when we walked through the `common` role, this will install the
+    four packages defined in the variable.
+  id: totrans-96
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如我们在走过`common`角色时所学到的，这将安装在变量中定义的四个软件包。
+- en: Once Apache has been installed, which is a single task, we can now progress
+    to configuring our Apache installation.
+  id: totrans-97
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦安装了 Apache（这是一个单独的任务），我们就可以继续配置 Apache 安装了。
+- en: Configuring Apache
+  id: totrans-98
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 配置 Apache
+- en: 'The first task when configuring Apache is to take the user that was created
+    when the `common` role was run and add them to the Apache group; to do this, we
+    run the following task:'
+  id: totrans-99
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 配置 Apache 时的第一个任务是将`common`角色运行时创建的用户添加到 Apache 组中；为此，我们运行以下任务：
+- en: '[PRE15]'
+  id: totrans-100
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE15]'
+- en: 'This takes the `{{ users }}` variable from the previous role and loops over
+    the items defined in the variable, adding the user to the group defined under
+    the `{{ apache_group }}` variable in the `roles/apache/defaults/main.yml` file.
+    A full list of the variables defined to configure Apache, which we will use throughout
+    the next few tasks, is as follows:'
+  id: totrans-101
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 该任务取用了前一个角色中的`{{ users }}`变量，并循环遍历变量中定义的项目，将用户添加到`roles/apache/defaults/main.yml`文件中`{{
+    apache_group }}`变量定义的组中。以下是配置 Apache 时使用的变量的完整列表，这些变量将被我们在接下来的任务中使用：
+- en: '[PRE16]'
+  id: totrans-102
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE16]'
+- en: You may have noticed that the value of the `document_root` variable is a little
+    different from the ones we have used so far; there’ll be more on that in a moment.
+  id: totrans-103
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可能已经注意到，`document_root`变量的值与我们之前使用的有所不同；稍后我们会进一步讨论这一点。
+- en: 'The next task creates a folder within the users directly, which we will use
+    to store the files served via Apache:'
+  id: totrans-104
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 下一个任务将在用户目录中创建一个文件夹，我们将使用它来存储通过 Apache 提供的文件：
+- en: '[PRE17]'
+  id: totrans-105
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE17]'
+- en: As you can see, we use `{{ users.0.name }}` as we did for the `document_root`
+    variable value; why is this?
+  id: totrans-106
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，我们像为`document_root`变量值那样使用`{{ users.0.name }}`；这是为什么呢？
+- en: As we know, the `common` role only creates a single user; we can’t simply use
+    `{{ users.name }}`, as the `name` key exists within an item within the variable,
+    so using `{{ users.name }}` would result in an error, stating that the variable
+    can’t be found.
+  id: totrans-107
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如我们所知，`common`角色只创建了一个用户；我们不能简单地使用`{{ users.name }}`，因为`name`键存在于变量中的某一项内，所以使用`{{
+    users.name }}`会导致错误，提示找不到该变量。
+- en: Because of this, we can reference the first item in the list of items by using
+    its position within the list, which, because Ansible counts from zero, will be
+    `0` rather than `1`.
+  id: totrans-108
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 因此，我们可以通过使用其在列表中的位置来引用列表中的第一个项，因为 Ansible 从零开始计数，所以它的位置是`0`而不是`1`。
+- en: Using the values that we have defined in the defaults for the `common` and `apache`
+    roles, this task will create a folder at `/home/lamp/web/`; the `lamp` user would
+    own the folder and would be assigned to the `www-data` group, which is the group
+    the Apache process will run as.
+  id: totrans-109
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用我们在`common`和`apache`角色的默认值中定义的值，该任务将在`/home/lamp/web/`创建一个文件夹；`lamp`用户将拥有该文件夹，并且该文件夹会分配给`www-data`组，这是
+    Apache 进程运行时所使用的组。
+- en: 'The next task will ensure the correct read, write, and execute permissions
+    are set on the `/``home/lamp/` folder:'
+  id: totrans-110
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 下一个任务将确保在`/home/lamp/`文件夹上设置正确的读取、写入和执行权限：
+- en: '[PRE18]'
+  id: totrans-111
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE18]'
+- en: That task concludes configuring the folder structure needed to serve our web
+    pages; now, it is time to configure Apache itself.
+  id: totrans-112
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 该任务完成了配置我们网页所需的文件夹结构；现在，是时候配置 Apache 了。
+- en: 'The first thing we need to do is remove the default virtual host configuration
+    file; to do this, we will execute the following task:'
+  id: totrans-113
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们需要做的第一件事是删除默认的虚拟主机配置文件；为此，我们将执行以下任务：
+- en: '[PRE19]'
+  id: totrans-114
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE19]'
+- en: This uses the `ansible.builtin.file` module to set the state of the file defined
+    by `{{ vhost_default_file }}` in the `{{ vhost_path }}` folder to `absent`, which
+    means, if the file exists, remove it.
+  id: totrans-115
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这使用 `ansible.builtin.file` 模块将 `{{ vhost_default_file }}` 在 `{{ vhost_path }}`
+    文件夹中的文件状态设置为 `absent`，意味着如果该文件存在，将把它删除。
+- en: 'It also uses `notify` to call the `"Restart apache2"` handler, which is defined
+    as the following task in the `roles/apache/handlers/main.yml` file:'
+  id: totrans-116
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 它还使用 `notify` 来调用 `"Restart apache2"` 处理程序，该处理程序在 `roles/apache/handlers/main.yml`
+    文件中定义，任务如下所示：
+- en: '[PRE20]'
+  id: totrans-117
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE20]'
+- en: Once the default file has been removed, we can add our virtual host configuration
+    file.
+  id: totrans-118
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 删除默认文件后，我们可以添加我们的虚拟主机配置文件。
+- en: 'The template for this virtual host configuration file can be found at `roles/apache/templates/vhost.conf.j2`,
+    and it contains the following:'
+  id: totrans-119
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 该虚拟主机配置文件的模板可以在 `roles/apache/templates/vhost.conf.j2` 找到，内容如下：
+- en: '[PRE21]'
+  id: totrans-120
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE21]'
+- en: When loaded, this configuration file serves the contents of the `{{ document_root
+    }}` folder when someone visits the site’s URL in their browser.
+  id: totrans-121
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 加载后，该配置文件会在有人访问网站 URL 时，提供 `{{ document_root }}` 文件夹中的内容。
+- en: 'The task to deploy this template file to the remote host looks like the following:'
+  id: totrans-122
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 部署该模板文件到远程主机的任务如下所示：
+- en: '[PRE22]'
+  id: totrans-123
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE22]'
+- en: As you can see, this also calls the `"Restart apache2"` handler if there are
+    any changes to the file.
+  id: totrans-124
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如您所见，如果文件有任何更改，它还会调用 `"Restart apache2"` 处理程序。
+- en: With Apache now configured, there is one final task.
+  id: totrans-125
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在 Apache 已经配置好，剩下一个最终任务。
+- en: Optionally copying an index.html file
+  id: totrans-126
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 可选地复制一个 index.html 文件
+- en: 'The final task in this role uses the following `variables` block:'
+  id: totrans-127
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 该角色中的最终任务使用以下`variables`块：
+- en: '[PRE23]'
+  id: totrans-128
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE23]'
+- en: 'As you can see, it contains a heading and some HTML code for the body; these
+    variables are used by the following task:'
+  id: totrans-129
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如您所见，它包含了一个标题和一些 HTML 代码，供后续任务使用：
+- en: '[PRE24]'
+  id: totrans-130
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE24]'
+- en: 'This uses a template that can be found at `roles/apache/templates/index.html.j2`
+    and looks like the following:'
+  id: totrans-131
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这使用一个可以在 `roles/apache/templates/index.html.j2` 找到的模板，内容如下所示：
+- en: '[PRE25]'
+  id: totrans-132
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE25]'
+- en: 'However, the task is only called if the `html_deploy` variable is set to `true`;
+    this is managed by the following statement at the end of the task:'
+  id: totrans-133
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，只有在 `html_deploy` 变量设置为 `true` 时，才会调用该任务；这由任务结尾的以下语句管理：
+- en: '[PRE26]'
+  id: totrans-134
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE26]'
+- en: So, if, for any reason, the `html_deploy` variable is not equal to `true`, then
+    the task will be skipped when the playbook is executed.
+  id: totrans-135
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 因此，如果出于任何原因，`html_deploy` 变量不等于 `true`，那么在执行 playbook 时该任务将被跳过。
+- en: That’s all we need to do to install and configure Apache; let us now look at
+    installing the M in LAMP and review the role to install and configure MariaDB.
+  id: totrans-136
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这就是我们安装和配置 Apache 所需要做的全部工作；现在让我们来看看安装 LAMP 中的 M，并审视安装和配置 MariaDB 的角色。
+- en: The MariaDB role
+  id: totrans-137
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: MariaDB 角色
+- en: Of the four roles we cover in this chapter, this, the MariaDB one, is the most
+    complicated, as it installs MariaDB, configures it, and optionally downloads and
+    imports a sample database.
+  id: totrans-138
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章介绍的四个角色中，MariaDB 角色是最复杂的，因为它安装 MariaDB、配置它，并可选地下载并导入一个示例数据库。
+- en: Let’s start by covering the installation.
+  id: totrans-139
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们从安装开始讲解。
+- en: Installing MariaDB
+  id: totrans-140
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 安装 MariaDB
+- en: You may have started to spot a trend in the roles; the tasks always start with
+    installing a few packages, and MariaDB is no different.
+  id: totrans-141
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 您可能已经开始发现角色中的趋势：任务通常从安装几个软件包开始，而 MariaDB 也不例外。
+- en: 'The task from `roles/mariadb/tasks/main.yml` is as follows:'
+  id: totrans-142
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 来自 `roles/mariadb/tasks/main.yml` 的任务如下：
+- en: '[PRE27]'
+  id: totrans-143
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE27]'
+- en: 'The `mariadb_packages` variable in `roles/mariadb/defaults/main.yml` looks
+    like the following:'
+  id: totrans-144
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`roles/mariadb/defaults/main.yml` 中的 `mariadb_packages` 变量如下所示：'
+- en: '[PRE28]'
+  id: totrans-145
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE28]'
+- en: As you can see, we installed the MariaDB client and server. Also, we installed
+    the `python3-pymysql` package; this is required for the tasks that need to interact
+    with MariaDB once it is installed to function. Without it, Ansible cannot establish
+    a connection to and interact with our MariaDB server.
+  id: totrans-146
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如您所见，我们安装了 MariaDB 客户端和服务器。同时，我们安装了 `python3-pymysql` 包；这是与 MariaDB 交互的任务所必需的，一旦
+    MariaDB 安装完成才能正常工作。如果没有它，Ansible 将无法与我们的 MariaDB 服务器建立连接并进行交互。
+- en: 'Once the packages have been installed, we need to start the MariaDB server
+    by using the following task:'
+  id: totrans-147
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦软件包安装完成，我们需要通过以下任务启动 MariaDB 服务器：
+- en: '[PRE29]'
+  id: totrans-148
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE29]'
+- en: You might be thinking, why aren’t we using a handler as we have done for previous
+    tasks? Well, handlers are only called once the playbook execution has been completed
+    and Ansible knows all the services that need to be restarted.
+  id: totrans-149
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可能在想，为什么我们没有像之前的任务一样使用处理程序（handler）？实际上，处理程序只有在剧本执行完成后，Ansible 知道所有需要重启的服务时才会被调用。
+- en: However, in this case, we need to interact with the MariaDB service to be able
+    to configure it as part of the playbook run, so rather than using a handler, we
+    just start the service as a task using the same block we would use as the handler.
+  id: totrans-150
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，在这种情况下，我们需要与 MariaDB 服务进行交互，以便在剧本运行时能够进行配置，因此我们没有使用处理程序，而是像处理程序一样在任务中启动该服务。
+- en: Now that MariaDB is installed and started, we can start the configuration.
+  id: totrans-151
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在 MariaDB 已经安装并启动，我们可以开始配置。
+- en: Configuring MariaDB
+  id: totrans-152
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 配置 MariaDB
+- en: 'Before we dive into the tasks, quickly look at the variables in `roles/mariadb/defaults/main.yml`,
+    which will be used to configure our MariaDB server:'
+  id: totrans-153
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在我们开始任务之前，快速查看一下 `roles/mariadb/defaults/main.yml` 中的变量，这些变量将用于配置我们的 MariaDB
+    服务器：
+- en: '[PRE30]'
+  id: totrans-154
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE30]'
+- en: Now that we know what variables we will use, it’s time to work through the configuration,
+    which is a little complex due to the default way that MariaDB is configured when
+    it starts immediately after installation.
+  id: totrans-155
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们知道将要使用哪些变量，是时候开始处理配置了，由于 MariaDB 在安装后立即启动时的默认配置方式，这个过程有点复杂。
+- en: By default, MariaDB starts with no password in place, meaning that anyone can
+    connect to the database as the root user, which is not ideal, so the first thing
+    we need to do is to secure our installation by setting the root password.
+  id: totrans-156
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 默认情况下，MariaDB 启动时没有设置密码，这意味着任何人都可以作为 root 用户连接到数据库，这是不理想的，因此我们需要做的第一件事就是通过设置
+    root 密码来保护我们的安装。
+- en: That sounds easy enough, you might be thinking to yourself.
+  id: totrans-157
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 听起来还挺简单的，你可能在心里这么想。
+- en: Technically, it is; however, if the playbook were to be run a second time, meaning
+    that there is now a password set, then the task we are about to define, which
+    sets the initial password, will error, as we need to configure the task not to
+    use a password. Once the password has been set, the server will only accept a
+    connection using the already set password.
+  id: totrans-158
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 从技术上讲，是的；然而，如果剧本第二次运行时，也就是密码已经设置的情况下，我们接下来定义的任务将会出错，因为我们需要配置任务不要使用密码。一旦密码设置完成，服务器只会接受使用已设置密码的连接。
+- en: We also need to consider that once a password has been configured, we need to
+    use that password each time we need to connect to the MariaDB server – so we need
+    an easy way to ensure we can connect smoothly once the password has been set.
+  id: totrans-159
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们还需要考虑，一旦配置了密码，每次需要连接 MariaDB 服务器时，都需要使用该密码——所以我们需要一种简便的方式来确保密码设置完成后能够顺利连接。
+- en: Luckily, there is a function built into MariaDB and MySQL that allows you to
+    put your credentials into a file on the server; the file should be placed in the
+    home directory of the user you are logged in as. Once in place, each time you
+    attempt to connect to the database server using that user, the database client
+    will read the file and connect you, without you having to type the credentials
+    – this file should be called `~/.my.cnf` (the `~/` part is a shortcut for the
+    user’s home folder).
+  id: totrans-160
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 幸运的是，MariaDB 和 MySQL 都内置了一个功能，可以让你将凭证存储在服务器上的一个文件中；这个文件应该放在你登录用户的主目录下。一旦文件放置好，每次你尝试以该用户连接数据库时，数据库客户端都会读取该文件并自动连接，而无需你输入凭证——这个文件应该被命名为
+    `~/.my.cnf`（`~/` 部分是指用户的主文件夹）。
+- en: For our scenario, this works because we can check for the presence of the `~/.my.cnf`
+    file, and if it is not there, then it will be safe to assume that the password
+    has not been configured yet.
+  id: totrans-161
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于我们的场景来说，这种方式有效，因为我们可以检查 `~/.my.cnf` 文件是否存在，如果文件不存在，就可以安全地假设密码尚未配置。
+- en: 'The task that checks for the presence of the file is as follows:'
+  id: totrans-162
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 检查文件是否存在的任务如下：
+- en: '[PRE31]'
+  id: totrans-163
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE31]'
+- en: This uses the `ansible.builtin.stat` module to check for the file and then uses
+    the `register` option to register a runtime variable, called `mycnf`.
+  id: totrans-164
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这使用了 `ansible.builtin.stat` 模块来检查文件的存在性，然后使用 `register` 选项注册一个名为 `mycnf` 的运行时变量。
+- en: Now that we have a dynamically registered variable that contains details on
+    whether the `~/.my.cnf` file exists on the remote host’s filesystem or not, we
+    can now proceed with changing the password or skip the task if the `~/.my.cnf`
+    file is present.
+  id: totrans-165
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们有了一个动态注册的变量，它包含了有关远程主机文件系统中 `~/.my.cnf` 文件是否存在的详细信息，我们可以根据这个信息来更改密码，或者如果
+    `~/.my.cnf` 文件存在，则跳过任务。
+- en: 'Ansible has several built-in modules to interact with MySQL and MariaDB; the
+    one we will use here is `ansible.builtin.mysql_user`:'
+  id: totrans-166
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 有几个内置模块可与 MySQL 和 MariaDB 进行交互；我们在这里使用的是 `ansible.builtin.mysql_user`：
+- en: '[PRE32]'
+  id: totrans-167
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE32]'
+- en: In the task, we instruct Ansible to set the password for the user defined in
+    the `{{ mariadb_root_username }}` variable to the password stored in the `{{ mariadb_root_password
+    }}` variable, giving the user full admin access to all the databases across all
+    possible host combinations, which are defined in the `{{ mariadb_hosts }}`, which
+    we loop over using the `with_items` function.
+  id: totrans-168
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在任务中，我们指示 Ansible 将 `{{ mariadb_root_username }}` 变量中定义的用户的密码设置为 `{{ mariadb_root_password
+    }}` 变量中存储的密码，从而授予该用户对所有数据库的完全管理员访问权限，这些数据库由 `{{ mariadb_hosts }}` 定义，并通过 `with_items`
+    函数进行循环。
+- en: When logging in to do this, Ansible should use the `{{ mariadb_root_username
+    }}` username and connect over a Unix socket, which can be found at `/var/run/mysqld/mysqld.sock`;
+    this means we don’t have to establish a network connection to interact with the
+    database because, if we did, Ansible wouldn’t be able to connect, as it can’t
+    send a blank password.
+  id: totrans-169
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当登录执行此操作时，Ansible 应使用 `{{ mariadb_root_username }}` 用户名并通过 Unix 套接字连接，该套接字位于
+    `/var/run/mysqld/mysqld.sock`；这意味着我们不需要建立网络连接来与数据库交互，因为如果这样做，Ansible 将无法连接，因为它无法发送空密码。
+- en: Finally, only run this task when the `mycnf.stat.exists` variable is equal to
+    `false`.
+  id: totrans-170
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后，只有在 `mycnf.stat.exists` 变量等于 `false` 时，才运行此任务。
+- en: Now that we have set the actual password and secured the MariaDB installation,
+    we need to create the `~/.my.cnf` file to carry on with the configuration.
+  id: totrans-171
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经设置了实际密码并确保了 MariaDB 安装的安全性，我们需要创建 `~/.my.cnf` 文件以继续配置。
+- en: 'To do this, we will again use a template, which can be found at `roles/mariadb/templates/my.cnf.j2`.
+    This template looks like the following:'
+  id: totrans-172
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了完成此操作，我们将再次使用模板，模板文件位于 `roles/mariadb/templates/my.cnf.j2`。该模板如下所示：
+- en: '[PRE33]'
+  id: totrans-173
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE33]'
+- en: As you can see, it contains the username and password needed to connect to the
+    database server.
+  id: totrans-174
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如您所见，它包含连接到数据库服务器所需的用户名和密码。
+- en: 'Because the file contains credentials, when the task creates the file on the
+    server, we need to ensure that the file can only be read and written to by the
+    root user, by setting the read, write, and execute permissions of the file as
+    it is created:'
+  id: totrans-175
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于文件包含凭证，当任务在服务器上创建文件时，我们需要确保该文件只能由 root 用户读取和写入，通过设置文件创建时的读取、写入和执行权限：
+- en: '[PRE34]'
+  id: totrans-176
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE34]'
+- en: 'Now that we have the `~/.my.cnf` file on the remote host, we can progress with
+    securing our MariaDB installation; the subsequent task removes the `anonymous`
+    user, again looping through the hosts that user could be associated with:'
+  id: totrans-177
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们在远程主机上有了 `~/.my.cnf` 文件，我们可以继续进行 MariaDB 安装的安全配置；接下来的任务是移除 `anonymous` 用户，再次循环遍历该用户可能关联的主机：
+- en: '[PRE35]'
+  id: totrans-178
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE35]'
+- en: 'The final task that deals with securing our MariaDB installation removes the
+    default `test` database:'
+  id: totrans-179
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最终的任务是对我们的 MariaDB 安装进行安全处理，它会移除默认的 `test` 数据库：
+- en: '[PRE36]'
+  id: totrans-180
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE36]'
+- en: The remainder of the tasks in the role, such as copying the `index.html` file
+    in the `apache` role, are optional, so let’s review those tasks now.
+  id: totrans-181
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 角色中的其余任务，如在 `apache` 角色中复制 `index.html` 文件，是可选的，我们现在来回顾这些任务。
+- en: Downloading and importing the example database
+  id: totrans-182
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 下载和导入示例数据库
+- en: 'There is one more block of variables in `roles/mariadb/defaults/main.yml`;
+    these deal with downloading and importing an example database. There are a lot
+    of keys in the `mariadb_sample_database` variable, starting with the flag to enable
+    the option, the URL of the file to download, and the path to save it to:'
+  id: totrans-183
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`roles/mariadb/defaults/main.yml` 中还有一块变量，它们用于下载和导入示例数据库。`mariadb_sample_database`
+    变量中包含许多键值，首先是启用选项的标志、要下载的文件的 URL，以及保存路径：'
+- en: '[PRE37]'
+  id: totrans-184
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE37]'
+- en: 'Next, we have the name of the example database being created as well as the
+    username and password to use for the new database:'
+  id: totrans-185
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来，我们有示例数据库的名称以及用于新数据库的用户名和密码：
+- en: '[PRE38]'
+  id: totrans-186
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE38]'
+- en: 'Finally, there is a list of the files that need to be imported. The first two
+    files contain the schema:'
+  id: totrans-187
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后，是需要导入的文件列表。前两个文件包含架构：
+- en: '[PRE39]'
+  id: totrans-188
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE39]'
+- en: 'The remaining files contain the actual data to be loaded:'
+  id: totrans-189
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 剩余的文件包含实际需要加载的数据：
+- en: '[PRE40]'
+  id: totrans-190
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE40]'
+- en: 'Now that we know what variables are defined, we can work through the remaining
+    tasks, the first of which downloads and unarchives the ZIP file that contains
+    the example database files:'
+  id: totrans-191
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们知道了定义的变量，我们可以处理剩余的任务，第一个任务是下载并解压包含示例数据库文件的 ZIP 文件：
+- en: '[PRE41]'
+  id: totrans-192
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE41]'
+- en: As you can see, the `ansible.builtin.unarchive` module allows you to download
+    and unarchive the file, meaning we can do everything we need in a single task.
+    Also, we only run the `when` task when the `mariadb_sample_database.create_database`
+    equals `true`. We will do this for the remainder of the tasks and even expand
+    upon the `when` statement toward the end of the role.
+  id: totrans-193
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，`ansible.builtin.unarchive` 模块允许你下载并解压文件，这意味着我们可以在一个任务中完成所有操作。另外，只有当 `mariadb_sample_database.create_database`
+    为 `true` 时，`when` 任务才会执行。我们将在剩下的任务中继续这样做，甚至会在角色的最后扩展 `when` 条件。
+- en: 'The next task creates the example database:'
+  id: totrans-194
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 下一步任务是创建示例数据库：
+- en: '[PRE42]'
+  id: totrans-195
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE42]'
+- en: 'Once the database has been created, we can run a task that creates the user
+    and assigns permissions to the newly created user to access the database we just
+    added:'
+  id: totrans-196
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦数据库创建完成，我们可以运行一个任务，创建用户并分配权限，使其能够访问我们刚刚添加的数据库：
+- en: '[PRE43]'
+  id: totrans-197
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE43]'
+- en: We are now down to the final two tasks, and here is where we need to add a little
+    more logic to our playbook to ensure that we only import the example data once;
+    if we don’t have the logic in place, we can run into all sorts of problems if
+    the playbook is rerun and could risk data being overwritten or duplicate data
+    being inserted if the import task is allowed to run again.
+  id: totrans-198
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们只剩下最后两个任务，这里需要在我们的 playbook 中加入更多逻辑，确保我们只导入一次示例数据；如果没有这些逻辑，当 playbook 被重新运行时，可能会遇到各种问题，甚至有数据被覆盖或重复插入的风险，如果导入任务再次运行的话。
+- en: 'As the databases are stored on the host’s filesystem, we can use the same logic
+    that we used to check for the presence of the `~/.my.cnf` file, but this time,
+    we check for a database file:'
+  id: totrans-199
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于数据库存储在主机的文件系统中，我们可以使用与检查`~/.my.cnf`文件存在性时相同的逻辑，不过这次我们检查的是数据库文件：
+- en: '[PRE44]'
+  id: totrans-200
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE44]'
+- en: 'We register a variable called `db_imported`, which we will use with the `when`
+    condition of the next and final task; this is the one that loops through `mariadb_sample_database.dump_files`
+    and imports the databases:'
+  id: totrans-201
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们注册了一个名为 `db_imported` 的变量，接下来会用它与下一个任务的 `when` 条件配合使用；这个任务会遍历 `mariadb_sample_database.dump_files`
+    并导入数据库：
+- en: '[PRE45]'
+  id: totrans-202
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE45]'
+- en: We have changed the `when` condition slightly here; rather than referencing
+    `mariadb_sample_database.create_database`, we only use `db_imported`.
+  id: totrans-203
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们稍微改变了 `when` 条件；这里不再引用 `mariadb_sample_database.create_database`，而是只使用 `db_imported`。
+- en: The first part ensures that the playbook doesn’t error if we decide not to import
+    the database by setting `mariadb_sample_database.create_database` to `false`,
+    as `db_imported` can only be defined if `mariadb_sample_database.create_database`
+    is set to `true`, as the task that sets the `db_imported` variable is only ever
+    executed when that condition is met.
+  id: totrans-204
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 第一个部分确保在我们决定不导入数据库时，playbook 不会出错，方法是将 `mariadb_sample_database.create_database`
+    设置为 `false`，因为只有当 `mariadb_sample_database.create_database` 设置为 `true` 时，`db_imported`
+    才能被定义，因为设置 `db_imported` 变量的任务只有在满足该条件时才会执行。
+- en: As you can also see, we use `and`, thus adding a second condition to the `when`
+    statement; this means that the task will only be executed if `db_imported is defined`
+    and `not db_imported.stat.exists` are both met.
+  id: totrans-205
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如你所看到的，我们使用了 `and`，从而为 `when` 语句添加了第二个条件；这意味着该任务只有在同时满足 `db_imported is defined`
+    和 `not db_imported.stat.exists` 时才会执行。
+- en: That final task brings us to the end of the MariaDB role and leaves us with
+    one role to work through – the PHP role.
+  id: totrans-206
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后一个任务将带我们完成 MariaDB 角色的工作，接下来我们只剩一个角色要处理——PHP 角色。
+- en: The PHP role
+  id: totrans-207
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: PHP 角色
+- en: This, our final role, installs PHP, optionally copies a PHP Info file along
+    with it, and installs a database management interface written in PHP, called Adminer,
+    so that we can access the database server we used in the previous role.
+  id: totrans-208
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们的这个最终角色安装 PHP，选项上可以附带一个 PHP 信息文件，并且安装一个用 PHP 编写的数据库管理界面，叫做 Adminer，这样我们就可以访问前一个角色中使用的数据库服务器。
+- en: Installing the PHP packages
+  id: totrans-209
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 安装 PHP 包
+- en: It should come as no surprise to you that the first task executed in the PHP
+    role installs the packages needed for us to run PHP.
+  id: totrans-210
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对你来说，PHP 角色中执行的第一个任务是安装我们运行 PHP 所需的包，应该不是什么惊讶的事。
+- en: 'The full list of packages is defined in the `roles/php/default/main.yml` file,
+    as follows:'
+  id: totrans-211
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 所有包的完整列表在`roles/php/default/main.yml`文件中定义，内容如下：
+- en: '[PRE46]'
+  id: totrans-212
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE46]'
+- en: 'The task itself looks familiar:'
+  id: totrans-213
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个任务本身看起来很熟悉：
+- en: '[PRE47]'
+  id: totrans-214
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE47]'
+- en: The thing to note is that we restart Apache once PHP is installed because we
+    run PHP as an Apache module. So, once installed, Apache needs to be restarted
+    to load in the module and enable PHP on our Apache web server.
+  id: totrans-215
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 需要注意的是，PHP 安装完毕后，我们重启 Apache，因为我们以 Apache 模块的形式运行 PHP。所以，一旦安装完成，Apache 需要重启以加载模块，并在
+    Apache 网络服务器上启用 PHP。
+- en: That’s it. PHP is installed, and Apache asks to be restarted; everything from
+    here is optional.
+  id: totrans-216
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 就是这样。PHP 已经安装，Apache 请求重启；从这里开始的一切都是可选的。
+- en: Copying the PHP Info file
+  id: totrans-217
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 复制 PHP 信息文件
+- en: 'The next task is a simple one that copies `roles/php/files/info.php` to the
+    web root of the server if the `php_info` variable is set to `true`:'
+  id: totrans-218
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 下一个任务是一个简单的任务，如果 `php_info` 变量设置为 `true`，则将 `roles/php/files/info.php` 复制到服务器的网页根目录：
+- en: '[PRE48]'
+  id: totrans-219
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE48]'
+- en: The only difference is that we copy the file from our local host to the remote
+    one with this task – we do not use the `ansible.builtin.template` module this
+    time but instead, the `ansible.builtin.copy` one. This is because `info.php` is
+    made up of three lines of code, none of which we need to update based on the environment
+    or any variables we set.
+  id: totrans-220
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 唯一的区别是我们通过这个任务将文件从本地主机复制到远程主机——这次我们不使用 `ansible.builtin.template` 模块，而是使用 `ansible.builtin.copy`
+    模块。因为 `info.php` 只有三行代码，这些代码不需要根据环境或我们设置的任何变量进行更新。
+- en: Installing and configuring Adminer
+  id: totrans-221
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 安装和配置 Adminer
+- en: 'The variables for the remaining tasks in the `roles/php/default/main.yml` file
+    look like the following:'
+  id: totrans-222
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`roles/php/default/main.yml` 文件中的其余任务的变量如下所示：'
+- en: '[PRE49]'
+  id: totrans-223
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE49]'
+- en: 'They define where to download the file from and where on the remote to download
+    it to, which is where the first of the three tasks comes in, as this creates the
+    folder on the remote virtual machines filesystem for us to download Adminer to:'
+  id: totrans-224
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 它们定义了从哪里下载文件，以及将文件下载到远程主机的哪个位置，这就是三项任务中的第一项，因为它会在远程虚拟机的文件系统上创建一个文件夹，以便我们下载 Adminer：
+- en: '[PRE50]'
+  id: totrans-225
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE50]'
+- en: 'Once we have the download target folder created, we can download Adminer itself:'
+  id: totrans-226
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦我们创建了下载目标文件夹，就可以下载 Adminer 本身：
+- en: '[PRE51]'
+  id: totrans-227
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE51]'
+- en: As you may have spotted from the download URL and destination, Adminer is a
+    single PHP file that we save as `index.php`. So, how will we access Adminer via
+    our Apache web server?
+  id: totrans-228
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如您可能从下载 URL 和目标位置中发现的，Adminer 是一个单独的 PHP 文件，我们将其保存为 `index.php`。那么，如何通过我们的
+    Apache web 服务器访问 Adminer 呢？
+- en: 'Well, to do that, we need to copy across another virtual host configuration
+    file:'
+  id: totrans-229
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 好的，为了做到这一点，我们需要再复制一个虚拟主机配置文件：
+- en: '[PRE52]'
+  id: totrans-230
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE52]'
+- en: As you can see, this renders and copies across `roles/php/templates/adminer.conf.j2`
+    to `adminer.conf`, the site-enabled folder on our remote host, and instructs the
+    Apache service to restart to load the newly added configuration.
+  id: totrans-231
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如您所见，它渲染并将 `roles/php/templates/adminer.conf.j2` 复制到 `adminer.conf`，即远程主机上的
+    site-enabled 文件夹，并指示 Apache 服务重新启动以加载新增的配置。
+- en: 'The `adminer.conf.j2` file contains the following:'
+  id: totrans-232
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`adminer.conf.j2` 文件包含以下内容：'
+- en: '[PRE53]'
+  id: totrans-233
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE53]'
+- en: This tells Apache that whenever someone visits `http://someurl/adminer/`, the
+    Adminer `index.php` file should be served.
+  id: totrans-234
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这告诉 Apache，当有人访问 `http://someurl/adminer/` 时，应该提供 Adminer 的 `index.php` 文件。
+- en: With that task covered, we have completed the walk-through of the four roles
+    that go into installing and configuring our LAMP stack, and now it is time to
+    review and execute the playbook itself.
+  id: totrans-235
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 完成这个任务后，我们已经完成了安装和配置 LAMP 堆栈的四个角色的演示，现在是时候回顾并执行 playbook 本身了。
+- en: The LAMP playbook
+  id: totrans-236
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: LAMP playbook
+- en: 'As mentioned at the start of this chapter when we discussed the playbook structure,
+    the main playbook file is called `site.yml`, which contains the following:'
+  id: totrans-237
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如我们在本章开始时讨论 playbook 结构时提到的，主 playbook 文件名为 `site.yml`，其内容如下所示：
+- en: '[PRE54]'
+  id: totrans-238
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE54]'
+- en: 'As you can see, it calls the four roles we have already walked through and
+    also loads a `variables` file from `group_vars/common.yml`; this file contains
+    an override for `html_body`, which is configured in `roles/apache/defaults/main.yml`
+    and looks like the following:'
+  id: totrans-239
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如您所见，它调用了我们已经走过的四个角色，并且加载了来自 `group_vars/common.yml` 的 `variables` 文件；这个文件包含了
+    `html_body` 的重写配置，该配置在 `roles/apache/defaults/main.yml` 中配置，内容如下所示：
+- en: '[PRE55]'
+  id: totrans-240
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE55]'
+- en: This means that when we run the playbook, the `index.hml` page will have links
+    to `info.php` and the `/adminer` URL to access the additional content easily.
+  id: totrans-241
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这意味着当我们运行 playbook 时，`index.hml` 页面将包含指向 `info.php` 和 `/adminer` URL 的链接，以便轻松访问附加内容。
+- en: Note
+  id: totrans-242
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 注意
+- en: The `Chapter04` folder in the GitHub repo that accompanies this title contains
+    the example hosts file and keys to launch a local virtual machine using Multipass.
+    If you are following along, refer to the instructions in [*Chapter 1*](B21620_01.xhtml#_idTextAnchor017),
+    *Installing and Running Ansible*, for how to launch the virtual machine and prepare
+    your own `hosts` file.
+  id: totrans-243
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本书附带的 GitHub 仓库中的 `Chapter04` 文件夹包含了示例的 hosts 文件和密钥，用于使用 Multipass 启动本地虚拟机。如果您在跟随教程，请参考
+    [*第 1 章*](B21620_01.xhtml#_idTextAnchor017)，*安装和运行 Ansible*，了解如何启动虚拟机并准备自己的 `hosts`
+    文件。
+- en: 'So, without further ado, let’s run the playbook:'
+  id: totrans-244
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 所以，不再拖延，让我们运行 playbook：
+- en: '[PRE56]'
+  id: totrans-245
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE56]'
+- en: 'On the first run, this should give us some output that looks like the following:'
+  id: totrans-246
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在第一次运行时，这应该会给我们输出如下内容：
+- en: '[PRE57]'
+  id: totrans-247
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE57]'
+- en: As you can see, the Playbook has made 26 changes to the target virtual machine.
+  id: totrans-248
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，Playbook 已对目标虚拟机进行了 26 次更改。
+- en: 'Let’s run the playbook a second time:'
+  id: totrans-249
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们再运行一次 playbook：
+- en: '[PRE58]'
+  id: totrans-250
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE58]'
+- en: 'Then, in the play recap, you should see that some tasks were skipped:'
+  id: totrans-251
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后，在 play recap 中，你应该会看到一些任务被跳过：
+- en: '[PRE59]'
+  id: totrans-252
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE59]'
+- en: 'As expected, one of those tasks was updating the root password for the database
+    user:'
+  id: totrans-253
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如预期的那样，其中一项任务是更新数据库用户的 root 密码：
+- en: '[PRE60]'
+  id: totrans-254
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE60]'
+- en: 'The second task that is skipped is importing the database files:'
+  id: totrans-255
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 被跳过的第二个任务是导入数据库文件：
+- en: '[PRE61]'
+  id: totrans-256
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE61]'
+- en: Both are to be expected, as that is how we configured the tasks to respond on
+    subsequent Playbook runs.
+  id: totrans-257
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这两项都是预期的，因为我们是如此配置任务以便在后续的 Playbook 运行中响应。
+- en: 'Now, if you open your browser and enter `http://` and then the name of your
+    Ansible host (for me, this was [http://192.168.64.20.nip.io](http://192.168.64.20.nip.io);
+    I suspect yours will be different, so the link will likely not work), then you
+    should be greeted by the `index.html` page that Ansible generated:'
+  id: totrans-258
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，如果你打开浏览器，输入 `http://` 然后是你的 Ansible 主机名称（对我来说是 [http://192.168.64.20.nip.io](http://192.168.64.20.nip.io)；我怀疑你的地址会有所不同，所以这个链接可能无法使用），你应该会看到
+    Ansible 生成的 `index.html` 页面：
+- en: '![Figure 4.2 – Success !!! – viewing the index.html page](img/B21620_04_2.jpg)'
+  id: totrans-259
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 4.2 – 成功！！！– 查看 index.html 页面](img/B21620_04_2.jpg)'
+- en: Figure 4.2 – Success !!! – viewing the index.html page
+  id: totrans-260
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 4.2 – 成功！！！– 查看 index.html 页面
+- en: 'Clicking on the link for the PHP Info file should take you to something like
+    [http://192.168.64.20.nip.io/info.php](http://192.168.64.20.nip.io/info.php),
+    which will display information on your PHP installation:'
+  id: totrans-261
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 点击 PHP 信息文件的链接应会将你带到类似于 [http://192.168.64.20.nip.io/info.php](http://192.168.64.20.nip.io/info.php)
+    的页面，该页面将显示你的 PHP 安装信息：
+- en: '![Figure 4.3 – Viewing the PHP Info page](img/B21620_04_3.jpg)'
+  id: totrans-262
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 4.3 – 查看 PHP 信息页面](img/B21620_04_3.jpg)'
+- en: Figure 4.3 – Viewing the PHP Info page
+  id: totrans-263
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 4.3 – 查看 PHP 信息页面
+- en: 'The final link to click is the one for Adminer; clicking it will take you to
+    [http://192.168.64.20.nip.io/adminer/](http://192.168.64.20.nip.io/adminer/),
+    which will prompt you to log in:'
+  id: totrans-264
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最终点击的链接是 Adminer 的链接；点击它会将你带到 [http://192.168.64.20.nip.io/adminer/](http://192.168.64.20.nip.io/adminer/)，并提示你登录：
+- en: '![Figure 4.4 – The Adminer login page](img/B21620_04_4.jpg)'
+  id: totrans-265
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 4.4 – Adminer 登录页面](img/B21620_04_4.jpg)'
+- en: Figure 4.4 – The Adminer login page
+  id: totrans-266
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 4.4 – Adminer 登录页面
+- en: 'To log in, use the following credentials:'
+  id: totrans-267
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要登录，请使用以下凭据：
+- en: '`root`'
+  id: totrans-268
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`root`'
+- en: '`Pa55W0rd123`'
+  id: totrans-269
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`Pa55W0rd123`'
+- en: '`employees`'
+  id: totrans-270
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`employees`'
+- en: 'Once logged in, you will be taken straight to an overview of the **employees**
+    database:'
+  id: totrans-271
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 登录后，你将直接进入 **employees** 数据库的概览页面：
+- en: '![Figure 4.5 – The employees database overview](img/B21620_04_5.jpg)'
+  id: totrans-272
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 4.5 – 员工数据库概览](img/B21620_04_5.jpg)'
+- en: Figure 4.5 – The employees database overview
+  id: totrans-273
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 4.5 – 员工数据库概览
+- en: Feel free to click around, and once you have finished, ensure that you terminate
+    the Multipass virtual machine; instructions on how to do this can be found at
+    the end of [*Chapter 1*](B21620_01.xhtml#_idTextAnchor017), *Installing and* *Running
+    Ansible*.
+  id: totrans-274
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 随意点击，完成后，确保终止 Multipass 虚拟机；如何终止的说明可以在 [*第 1 章*](B21620_01.xhtml#_idTextAnchor017)
+    *安装和运行 Ansible* 章节的结尾找到。
+- en: Summary
+  id: totrans-275
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 总结
+- en: In this chapter, we worked through writing a playbook that installs a LAMP stack
+    on our Multipass virtual machine. We created four roles, one for each element
+    of the stack, and within each of the roles, we built in a bit of logic that can
+    be overridden to deploy additional elements, such as test HTML and PHP pages,
+    and we also built in the option to create a test database that contains over 40,000
+    records.
+  id: totrans-276
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章中，我们编写了一个 playbook，该 playbook 在我们的 Multipass 虚拟机上安装了 LAMP 堆栈。我们创建了四个角色，每个角色代表堆栈中的一个元素，在每个角色中，我们构建了一些逻辑，可以覆盖这些逻辑以部署额外的元素，例如测试
+    HTML 和 PHP 页面，还构建了创建包含超过 40,000 条记录的测试数据库的选项。
+- en: So far, we installed some basic packages. In the next chapter, we will write
+    a playbook that installs, configures, and maintains a WordPress installation.
+  id: totrans-277
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 到目前为止，我们已经安装了一些基本的软件包。在下一章中，我们将编写一个 playbook，该 playbook 安装、配置并维护 WordPress 安装。
+- en: This updated playbook will reuse some of the elements from the roles we covered
+    in this chapter and make some improvements, as some of the elements we covered
+    in this chapter were a little too simplistic. The biggest change is that we will
+    not use a hardcoded password for the database instance moving forward.
+  id: totrans-278
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 更新后的 playbook 将重用我们在本章中覆盖的一些元素，并进行一些改进，因为我们在本章中涉及的一些元素有些过于简单。最大的变化是，我们将不再使用硬编码的数据库实例密码。
+- en: Further reading
+  id: totrans-279
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 深入阅读
+- en: 'You can find the project pages for the third-party tools covered throughout
+    the chapter at the following URLs:'
+  id: totrans-280
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以在以下网址找到本章中涉及的第三方工具的项目页面：
+- en: '**Apache**: [https://httpd.apache.org/](https://httpd.apache.org/)'
+  id: totrans-281
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**Apache**: [https://httpd.apache.org/](https://httpd.apache.org/)'
+- en: '**MariaDB**: [https://mariadb.org/](https://mariadb.org/)'
+  id: totrans-282
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**MariaDB**: [https://mariadb.org/](https://mariadb.org/)'
+- en: '**Datacharmer test** **database**: [https://github.com/datacharmer/test_db](https://github.com/datacharmer/test_db)'
+  id: totrans-283
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**Datacharmer 测试** **数据库**: [https://github.com/datacharmer/test_db](https://github.com/datacharmer/test_db)'
+- en: '**PHP**: [https://php.net/](https://php.net/)'
+  id: totrans-284
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**PHP**: [https://php.net/](https://php.net/)'
+- en: '**Adminer**: [https://www.adminer.org](https://www.adminer.org)'
+  id: totrans-285
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**Adminer**: [https://www.adminer.org](https://www.adminer.org)'
+- en: '**NGINX**: [https://nginx.org](https://nginx.org)'
+  id: totrans-286
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**NGINX**: [https://nginx.org](https://nginx.org)'

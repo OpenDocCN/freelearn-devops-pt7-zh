@@ -1,0 +1,2573 @@
+- en: '11'
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '11'
+- en: Highly Available Cloud Deployments
+  id: totrans-1
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 高可用云部署
+- en: Continuing with our AWS deployment, we will start to deploy services into the
+    network we created in the previous chapter, and by the end of the chapter, we
+    will be left with a highly available WordPress installation.
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 继续我们的 AWS 部署，我们将开始将服务部署到我们在上一章创建的网络中，到本章结束时，我们将拥有一个高可用的 WordPress 安装。
+- en: 'Building on top of the roles we created in the previous chapter, we will be
+    doing the following:'
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 基于我们在上一章创建的角色，我们将执行以下操作：
+- en: Launching and configuring an Application Load Balancer
+  id: totrans-4
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 启动和配置应用负载均衡器
+- en: Launching and configuring Amazon **Relational Database Service** (**RDS**) (database)
+  id: totrans-5
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 启动和配置 Amazon **关系型数据库服务**（**RDS**）（数据库）
+- en: Launching and configuring Amazon **Elastic File System** (**EFS**) (shared storage)
+  id: totrans-6
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 启动和配置 Amazon **弹性文件系统**（**EFS**）（共享存储）
+- en: Launching an **Elastic Compute Cloud** (**EC2**) instance and creating an **Amazon
+    Machine Image** (**AMI**) from it (deploying the WordPress code)
+  id: totrans-7
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 启动 **弹性计算云**（**EC2**）实例并从中创建 **Amazon 机器镜像**（**AMI**）（部署 WordPress 代码）
+- en: Launching and configuring a launch template to use the newly created AMI and
+    autoscaling group (high availability)
+  id: totrans-8
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 启动和配置一个启动模板，使用新创建的 AMI 和自动扩展组（高可用性）
+- en: 'The chapter covers the following topics:'
+  id: totrans-9
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章涵盖以下主题：
+- en: Planning the deployment
+  id: totrans-10
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 规划部署
+- en: The Playbook
+  id: totrans-11
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 操作手册
+- en: Running the Playbook
+  id: totrans-12
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 运行操作手册
+- en: Terminating all the resources
+  id: totrans-13
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 终止所有资源
+- en: Technical requirements
+  id: totrans-14
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 技术要求
+- en: As in the previous chapter, we will be using AWS; you will need the access key
+    and secret key we created in the previous chapter to launch the resources needed
+    for our highly available WordPress installation. Please note that we will be launching
+    resources that incur charges. Again, you can find the complete playbook in the
+    `Chapter11` folder of the accompanying GitHub repository at [https://github.com/PacktPublishing/Learn-Ansible-Second-Edition/tree/main/Chapter11/](https://github.com/PacktPublishing/Learn-Ansible-Second-Edition/tree/main/Chapter11/).
+  id: totrans-15
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 和上一章一样，我们将使用 AWS；你需要我们在上一章创建的访问密钥和秘密密钥来启动所需的资源，以实现我们的高可用 WordPress 安装。请注意，我们将启动会产生费用的资源。同样，你可以在附带的
+    GitHub 仓库中的 `Chapter11` 文件夹找到完整的操作手册，地址为 [https://github.com/PacktPublishing/Learn-Ansible-Second-Edition/tree/main/Chapter11/](https://github.com/PacktPublishing/Learn-Ansible-Second-Edition/tree/main/Chapter11/)。
+- en: Planning the deployment
+  id: totrans-16
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 规划部署
+- en: 'Before diving into the playbooks, we should get an idea of what we are trying
+    to achieve. As mentioned, we will build on our AWS **Virtual Private Cloud** (**VPC**)
+    role by adding instances and storage; our final deployment will look like the
+    following diagram:'
+  id: totrans-17
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在深入研究操作手册之前，我们应该先了解我们要实现的目标。如前所述，我们将在我们的 AWS **虚拟私有云**（**VPC**）角色上构建，添加实例和存储；我们的最终部署将如以下图所示：
+- en: '![Figure 11.1 – An overview of what we shall be launching](img/B21620_11_01.jpg)'
+  id: totrans-18
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 11.1 – 我们将要启动的概览](img/B21620_11_01.jpg)'
+- en: Figure 11.1 – An overview of what we shall be launching
+  id: totrans-19
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 11.1 – 我们将要启动的概览
+- en: 'In the diagram, we have the following:'
+  id: totrans-20
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在图中，我们有以下内容：
+- en: 2 x EC2 instances (t2.micro), deployed across different availability zones
+  id: totrans-21
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 2 x EC2 实例 (t2.micro)，部署在不同的可用区
+- en: 1 x RDS instances (t2.micro)
+  id: totrans-22
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 1 x RDS 实例 (t2.micro)
+- en: 1 x EFS storage across three availability zones
+  id: totrans-23
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 1 x EFS 存储，跨越三个可用区
+- en: Before we talk about the deployment itself, based on the diagram and specifications
+    here, how much is this deployment going to cost us to run?
+  id: totrans-24
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在我们讨论部署本身之前，根据这里的图示和规格，运行此部署的成本是多少？
+- en: Costing the deployment
+  id: totrans-25
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 部署成本估算
+- en: 'The cost of running this deployment in the EU-West-1 region is as follows:'
+  id: totrans-26
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 EU-West-1 区域运行此部署的成本如下：
+- en: '| **Instance Type** | **#** **Number** | **Instance cost** | **Total** **Monthly
+    Cost** |'
+  id: totrans-27
+  prefs: []
+  type: TYPE_TB
+  zh: '| **实例类型** | **#** **数量** | **实例费用** | **每月总费用** |'
+- en: '| EC2 instances (t2.micro) | x2 | $9.20 | $18.40 |'
+  id: totrans-28
+  prefs: []
+  type: TYPE_TB
+  zh: '| EC2 实例 (t2.micro) | x2 | $9.20 | $18.40 |'
+- en: '| RDS instance (t2.micro) | x1 | $13.14 | $13.14 |'
+  id: totrans-29
+  prefs: []
+  type: TYPE_TB
+  zh: '| RDS 实例 (t2.micro) | x1 | $13.14 | $13.14 |'
+- en: '| Application Load Balancer | x1 | $24.24 | $24.24 |'
+  id: totrans-30
+  prefs: []
+  type: TYPE_TB
+  zh: '| 应用负载均衡器 | x1 | $24.24 | $24.24 |'
+- en: '| EFS | 5GB | $0.88 | $4.40 |'
+  id: totrans-31
+  prefs: []
+  type: TYPE_TB
+  zh: '| EFS | 5GB | $0.88 | $4.40 |'
+- en: '| **Total** |  |  | $61.83 |'
+  id: totrans-32
+  prefs: []
+  type: TYPE_TB
+  zh: '| **总计** |  |  | $61.83 |'
+- en: Table 11.1 – Cost of running the deployment
+  id: totrans-33
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 表 11.1 – 部署运行成本
+- en: There will be a few other minor costs, such as bandwidth and storing the AMI
+    that contains our software stack. We could also consider increasing these costs
+    by adding additional redundancy, such as updating our RDS instance to a multi-AZ
+    RDS primary and stand-by instance deployment and increasing the number of EC2
+    instances.
+  id: totrans-34
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 还有一些其他的次要费用，比如带宽和存储包含我们软件堆栈的AMI。我们也可以考虑通过增加冗余来提高这些费用，例如将我们的RDS实例更新为多AZ的RDS主实例和备份实例部署，并增加EC2实例的数量。
+- en: However, this introduces additional complexity to our deployment, as we are
+    about to spend the rest of the chapter covering the playbook, which will be deploying
+    the resources. I want to keep this playbook as simple as possible for now.
+  id: totrans-35
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，这为我们的部署引入了额外的复杂性，因为我们将花费余下的章节来介绍playbook，playbook将负责部署资源。我现在希望将这个playbook保持尽可能简单。
+- en: WordPress considerations and high availability
+  id: totrans-36
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: WordPress的考虑因素和高可用性
+- en: So far, we have been launching WordPress on a single server, which is fine.
+    Still, as we are trying to remove as many of the single points of failure within
+    our deployment as possible, we must put a little thought into how we initially
+    configure and launch our deployment.
+  id: totrans-37
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 到目前为止，我们一直在单台服务器上启动WordPress，这是可以的。但因为我们希望尽可能消除部署中的单点故障，我们必须认真思考如何初始配置和启动我们的部署。
+- en: 'First, let’s discuss the order we need to launch our deployment. The primary
+    order in which we will need to tackle the elements is as follows:'
+  id: totrans-38
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 首先，让我们讨论一下我们需要启动部署的顺序。我们需要处理元素的主要顺序如下：
+- en: '**VPC, subnets, internet gateway, routing, and security groups**: These are
+    all needed to launch our deployment.'
+  id: totrans-39
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**VPC、子网、互联网网关、路由和安全组**：这些都是启动我们部署所需要的。'
+- en: '**The Application Elastic Load Balancer**: We will be using the public hostname
+    of the Elastic Load Balancer for our installation, so this needs to be launched
+    before we start our installation.'
+  id: totrans-40
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**应用弹性负载均衡器**：我们将在安装过程中使用弹性负载均衡器的公共主机名，因此在我们开始安装之前，需要先启动它。'
+- en: '**The RDS database instance**: Our database instance must be available before
+    we launch our installation, as we need to create the WordPress database and bootstrap
+    the installation.'
+  id: totrans-41
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**RDS数据库实例**：我们的数据库实例必须在我们启动安装之前可用，因为我们需要创建WordPress数据库并引导安装过程。'
+- en: '**The EFS storage**: We need some storage to share between the EC2 instances
+    we will be launching next.'
+  id: totrans-42
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**EFS存储**：我们需要一些存储来在接下来启动的EC2实例之间共享。'
+- en: So far, so good; however, this is where we have to start taking WordPress into
+    account.
+  id: totrans-43
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 到目前为止，一切顺利；然而，这也是我们必须开始考虑WordPress的时候。
+- en: As some of you may know from experience, the current version of WordPress is
+    not designed to be spread across multiple servers. We can apply plenty of hacks
+    and workarounds to make WordPress play nicely in this sort of deployment; however,
+    this chapter is about something other than the finer points of deploying WordPress.
+    Instead, it is about using Ansible to deploy a multi-tiered web application.
+  id: totrans-44
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如一些有经验的人所知道的那样，当前版本的WordPress并不是为了在多个服务器上分布而设计的。我们可以应用很多技巧和变通方法，使WordPress在这种部署方式中正常工作；然而，本章的重点并不是部署WordPress的细节问题。而是使用Ansible来部署一个多层次的Web应用程序。
+- en: Because of this, we will be going for the most basic of the multi-instance WordPress
+    options by deploying our code and content on the EFS volume. This means that all
+    we must do is install our LEMP stack. It should be noted that this option could
+    be more performant at a large scale, but it will serve our needs.
+  id: totrans-45
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 因此，我们将选择最基础的多实例WordPress选项，将代码和内容部署到EFS卷上。这意味着我们需要做的就是安装LEMP堆栈。需要注意的是，这个选项在大规模部署时可能会更具性能优势，但它能够满足我们的需求。
+- en: 'Now, back to the list of tasks. When it comes to launching our instances, we
+    need to do the following:'
+  id: totrans-46
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，回到任务列表。当涉及到启动我们的实例时，我们需要执行以下操作：
+- en: Launch a temporary EC2 instance running Ubuntu to reuse parts of existing playbooks.
+  id: totrans-47
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 启动一个临时的运行Ubuntu的EC2实例，以便重用现有的playbook中的部分内容。
+- en: Update the operating system and install the software stack, supporting tools,
+    and configuration needed for us to install and run our WordPress installation.
+  id: totrans-48
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 更新操作系统并安装软件堆栈、支持工具和配置，以便我们安装并运行WordPress。
+- en: Mount the EFS volume, set the correct permissions, and configure it to mount
+    when the instance boots.
+  id: totrans-49
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 挂载EFS卷，设置正确的权限，并配置其在实例启动时自动挂载。
+- en: Bootstrap WordPress itself.
+  id: totrans-50
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 引导启动WordPress本身。
+- en: Create an AMI from our temporary instance and then terminate the temporary instance
+    as it will not be needed now.
+  id: totrans-51
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 从临时实例创建一个 AMI，然后终止该临时实例，因为它现在不再需要。
+- en: Create a launch template that uses the AMI we just created.
+  id: totrans-52
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建一个启动模板，使用我们刚刚创建的 AMI。
+- en: Create an autoscaling group and attach the launch configuration; it should also
+    register our WordPress instances with the Elastic Load Balancer.
+  id: totrans-53
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建一个自动伸缩组并附加启动配置；它还应该将我们的 WordPress 实例注册到 Elastic Load Balancer。
+- en: Further playbook runs, which will update the operating system and non-WordPress
+    configuration, should repeat the process with the existing instances up and running,
+    and then, once the AMI is built, it should be deployed alongside the current instances,
+    which will then be terminated once the new instances are registered with the Elastic
+    Load Balancer and receiving traffic.
+  id: totrans-54
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 后续的 Playbook 运行将更新操作系统和非 WordPress 配置，应当在现有实例已启动并运行的情况下重复这一过程；一旦 AMI 创建完成，它应与当前实例一同部署，并且在新实例注册到
+    Elastic Load Balancer 并接收流量后，旧实例将被终止。
+- en: This will allow us to update our operating system packages and configurations
+    without downtime if everything goes as planned!
+  id: totrans-55
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这将允许我们在不造成停机的情况下更新操作系统的软件包和配置，如果一切按计划进行的话！
+- en: Now that we have an idea of what we are trying to achieve, let’s make a start
+    on our playbook.
+  id: totrans-56
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们大概了解了要实现的目标，让我们开始编写我们的 Playbook。
+- en: The Playbook
+  id: totrans-57
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Playbook
+- en: We will use the Playbook we looked at in [*Chapter 10*](B21620_10.xhtml#_idTextAnchor458),
+    *Building Out a Cloud Network*, as a starting point, as all the roles are relevant
+    to our deployment, and it already has the structure we need for our playbook.
+  id: totrans-58
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将使用在 [*第 10 章*](B21620_10.xhtml#_idTextAnchor458) 中查看的 Playbook 作为起点，*构建云网络*，因为所有角色都与我们的部署相关，而且它已经具备了我们所需的
+    Playbook 结构。
+- en: We will also be using the roles to deploy and configure WordPress and the supporting
+    software stack we used in [*Chapter 9*](B21620_09.xhtml#_idTextAnchor411), *Moving
+    to the Cloud*, with a few tweaks, which are needed as we are targeting AWS and
+    not Microsoft Azure; I will let you know when we get to them.
+  id: totrans-59
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们还将使用角色来部署和配置 WordPress 及我们在 [*第 9 章*](B21620_09.xhtml#_idTextAnchor411) 中使用的支持软件栈，*迁移到云端*，并做一些调整，因为我们面向的是
+    AWS 而不是 Microsoft Azure；当我们遇到这些调整时，我会告诉你。
+- en: Unlike previous chapters, we will first look at the `site.yml` file to get an
+    idea of the order in which we will run the roles.
+  id: totrans-60
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 与之前的章节不同，我们首先查看 `site.yml` 文件，以了解我们将执行角色的顺序。
+- en: 'There are three stages in the file, starting with the stage that deploys and
+    configures our underlying AWS resources:'
+  id: totrans-61
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 文件中有三个阶段，从部署和配置我们基础 AWS 资源的阶段开始：
+- en: '[PRE0]'
+  id: totrans-62
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: As you can see, this is the same as the `site.yml` file from [*Chapter 10*](B21620_10.xhtml#_idTextAnchor458),
+    *Building Out a Cloud Network*, with additional roles added to the list from the
+    `securitygroups` role downwards.
+  id: totrans-63
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，这与来自 [*第 10 章*](B21620_10.xhtml#_idTextAnchor458) 的 `site.yml` 文件相同，*构建云网络*，只是从
+    `securitygroups` 角色开始，列表中添加了额外的角色。
+- en: 'By the time our Playbook run gets to the second stage:'
+  id: totrans-64
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当我们的 Playbook 执行到第二阶段时：
+- en: '[PRE1]'
+  id: totrans-65
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: A file called `group_vars/generated_aws_endpoints.yml` will have been generated,
+    and there should be a temporary virtual machine instance up and running, meaning
+    SSH should be accessible to the host running the Playbook.
+  id: totrans-66
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一个名为`group_vars/generated_aws_endpoints.yml`的文件会被生成，并且应该有一个临时虚拟机实例正在运行，这意味着可以通过
+    SSH 访问运行 Playbook 的主机。
+- en: Once this stage has been completed, our temporary virtual machine instance should
+    have our software stack installed. WordPress will be freshly installed if this
+    is the first time the playbook has been run, or if the playbook has detected an
+    existing WordPress installation and left it alone unless there have been any changes
+    to the plugin configuration from within the playbook.
+  id: totrans-67
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦这一阶段完成，我们的临时虚拟机实例应该已经安装了我们的软件栈。如果这是首次运行 Playbook，WordPress 会被全新安装；如果 Playbook
+    检测到已有的 WordPress 安装并保持不变，除非 Playbook 内的插件配置有任何更改。
+- en: 'The final stage is then run:'
+  id: totrans-68
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最终阶段是执行：
+- en: '[PRE2]'
+  id: totrans-69
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: This stage creates an AMI from the temporary virtual machine instance, terminates
+    the temporary instance as we no longer need it, creates a new version of our launch
+    template, and then creates/updates the Auto Scaling Group to deploy the new version
+    on the EC2 instances.
+  id: totrans-70
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这一阶段从临时虚拟机实例创建一个 AMI，终止临时实例（因为我们不再需要它），创建一个新的启动模板版本，然后创建/更新自动伸缩组，以便在 EC2 实例上部署新版本。
+- en: Sounds simple? Well, let’s find out.
+  id: totrans-71
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 听起来很简单？好吧，让我们来看看。
+- en: The variables
+  id: totrans-72
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 变量
+- en: Out of the box, there is a single variables file called `group_vars/common.yml`
+    that contains all the static variables needed to deploy our environment.
+  id: totrans-73
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 开箱即用时，有一个名为`group_vars/common.yml`的单一变量文件，包含了部署我们环境所需的所有静态变量。
+- en: Some additional files will be created in the `group_vars` folder throughout
+    the Playbook run; they will contain some dynamically generated resources, such
+    as passwords, resource names/endpoints, and other information.
+  id: totrans-74
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在Playbook运行过程中，`group_vars`文件夹内将创建一些附加文件；它们将包含一些动态生成的资源，如密码、资源名称/端点和其他信息。
+- en: We will discuss these files in more detail when we look at the tasks that create
+    and interact with them; for now, we will look at the static variables defined
+    within `group_vars/common.yml`, starting with the base application configuration.
+  id: totrans-75
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将在查看创建和与之交互的任务时更详细地讨论这些文件；现在，我们将查看`group_vars/common.yml`中定义的静态变量，从基础应用配置开始。
+- en: Application and resource configuration
+  id: totrans-76
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 应用程序和资源配置
+- en: 'We start the configuration with the option to enable/disable debug when running
+    the Playbook. By default, it is set to `false`; however, when running the Playbook,
+    I recommend switching it to `true` and reviewing the output:'
+  id: totrans-77
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们从配置中开始，提供了启用/禁用调试的选项。默认情况下，设置为`false`；然而，在运行Playbook时，我建议将其切换为`true`并查看输出：
+- en: '[PRE3]'
+  id: totrans-78
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: 'Next, we have the application name, region, and environment reference:'
+  id: totrans-79
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来，我们有应用程序名称、区域和环境参考：
+- en: '[PRE4]'
+  id: totrans-80
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: 'The next block of variables defines details for the WordPress database; as
+    we will be using the Amazon RDS service, we are just using the variables that
+    are defined later in the file, so we only have to update the information in one
+    place:'
+  id: totrans-81
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 下一个块的变量定义了WordPress数据库的详细信息；由于我们将使用Amazon RDS服务，我们只使用文件后面定义的变量，因此只需要在一个地方更新信息：
+- en: '[PRE5]'
+  id: totrans-82
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: 'The next block is the various variables used to configure WordPress itself:'
+  id: totrans-83
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 下一个块是用于配置WordPress本身的各种变量：
+- en: '[PRE6]'
+  id: totrans-84
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: There are no significant changes to when we last defined these in [*Chapter
+    9*](B21620_09.xhtml#_idTextAnchor411)*, Moving to the Cloud*, apart from using
+    the `aws_endpoints.lb` variable, which won’t be known until the Elastic Load Balancer
+    has been launched. Also, for ease of use, we are reusing the password, which will
+    be dynamically generated later in the file, as the WordPress admin password.
+  id: totrans-85
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 除了使用`aws_endpoints.lb`变量（在Elastic Load Balancer启动之前无法知道）之外，自我们在[*第9章*](B21620_09.xhtml#_idTextAnchor411)《迁移到云端》一文中最后一次定义这些变量以来，没有什么重大变化。为了方便使用，我们重新利用了将在文件后面动态生成的密码作为WordPress管理员密码。
+- en: Stack configuration
+  id: totrans-86
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 堆栈配置
+- en: 'The next section overrides the defaults in the `roles/stack_install` role:'
+  id: totrans-87
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 下一部分覆盖了`roles/stack_install`角色中的默认设置：
+- en: '[PRE7]'
+  id: totrans-88
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE7]'
+- en: 'We have removed `mariadb-server` from the list of packages as we no longer
+    need to install or configure a local database server, and we have added four packages
+    at the end (all labeled `# Added for AWS`). These packages install the software
+    required to mount the EFS filesystem using the NFS protocol, which leads us nicely
+    into the next block:'
+  id: totrans-89
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们已从软件包列表中移除了`mariadb-server`，因为我们不再需要安装或配置本地数据库服务器，并且在最后添加了四个软件包（全部标注为`# Added
+    for AWS`）。这些软件包安装了使用NFS协议挂载EFS文件系统所需的软件，这样我们顺利进入下一个块：
+- en: '[PRE8]'
+  id: totrans-90
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE8]'
+- en: As you can see, this defines some basic information on where the EFS filesystem
+    should be mounted, with what options and the type of filesystem it is.
+  id: totrans-91
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，这里定义了一些关于EFS文件系统应该挂载的位置、使用的选项以及它的文件系统类型的基本信息。
+- en: Resource names
+  id: totrans-92
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 资源名称
+- en: 'This next section builds up the names of the resources we are going to be deploying;
+    there is nothing too special happening here – it is just defined like this, so
+    we don’t have to update repeated information in several places manually:'
+  id: totrans-93
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 下一部分构建了我们要部署的资源名称；这里没有什么特别的内容——它只是这样定义的，以便我们无需手动更新多个地方的重复信息：
+- en: '[PRE9]'
+  id: totrans-94
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE9]'
+- en: 'We will not be covering the full `playbook_dict` block here as there is not
+    much to see, although as a reminder, this is what the start of it looks like:'
+  id: totrans-95
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们不会在这里覆盖完整的`playbook_dict`块，因为没有太多内容可看，不过提醒一下，这就是它开始的样子：
+- en: '[PRE10]'
+  id: totrans-96
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE10]'
+- en: It just continues defining service names. The following section is where we
+    start to define the variables used for the AWS resource deployment.
+  id: totrans-97
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 它继续定义服务名称。接下来的部分是我们开始定义用于AWS资源部署的变量。
+- en: EC2 configuration
+  id: totrans-98
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: EC2 配置
+- en: 'The `ec2` variable is split into a few different layers. Layers for the auto-scaling
+    group, the AMI, and the SSH keypair follow some general settings:'
+  id: totrans-99
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`ec2`变量分为几个不同的层。用于自动扩展组、AMI和SSH密钥对的层遵循一些通用设置：'
+- en: '[PRE11]'
+  id: totrans-100
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE11]'
+- en: The variables are used across instances apart from the `public_ip` reference,
+    which is only used when launching the temporary virtual machine instance to bootstrap
+    WordPress.
+  id: totrans-101
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这些变量跨实例使用，除了`public_ip`引用，它仅在启动临时虚拟机实例以引导WordPress时使用。
+- en: 'The next layer defines some details about the auto-scaling group and launch
+    template when used; they help define how many instances are launched, how updated
+    instances are rolled out, and also, how the load balancer will check to see if
+    they are healthy:'
+  id: totrans-102
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 下一层定义了关于自动扩展组和启动模板的一些细节；它们有助于定义启动多少实例、如何更新实例以及负载均衡器如何检查它们是否健康：
+- en: '[PRE12]'
+  id: totrans-103
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE12]'
+- en: 'Next, we define the details about the base AMI we will use; as you can see,
+    we are using Ubuntu 22.04, which is supplied by Canonical, the publisher and maintainer
+    of Ubuntu:'
+  id: totrans-104
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来，我们定义了我们将使用的基本AMI的详细信息；如你所见，我们使用的是由Canonical发布和维护的Ubuntu 22.04：
+- en: '[PRE13]'
+  id: totrans-105
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE13]'
+- en: 'Finally, we have some details on the keypair to upload to AWS and use when
+    launching our Virtual Machine instances:'
+  id: totrans-106
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后，我们有一些关于上传到AWS并在启动虚拟机实例时使用的密钥对的详细信息：
+- en: '[PRE14]'
+  id: totrans-107
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE14]'
+- en: Next up are the variables used when launching the RDS service.
+  id: totrans-108
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来是启动RDS服务时使用的变量。
+- en: RDS configuration
+  id: totrans-109
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: RDS 配置
+- en: 'These are all standard, apart from the `rds.db_password` variable:'
+  id: totrans-110
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这些都是标准配置，除了`rds.db_password`变量：
+- en: '[PRE15]'
+  id: totrans-111
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE15]'
+- en: As you can see, we are using a lookup module to add a random password to the
+    `group_vars/generated_rds_passwordfile` file; we are instructing the module to
+    generate a 30-character random password comprising letters and numbers only.
+  id: totrans-112
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，我们使用查找模块将一个随机密码添加到`group_vars/generated_rds_passwordfile`文件中；我们指示该模块生成一个由字母和数字组成的30字符随机密码。
+- en: EFS configuration
+  id: totrans-113
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: EFS 配置
+- en: 'Here, we define the variables used to tell Ansible to wait and how long when
+    creating the EFS resource:'
+  id: totrans-114
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这里，我们定义了用于告诉Ansible在创建EFS资源时等待多长时间的变量：
+- en: '[PRE16]'
+  id: totrans-115
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE16]'
+- en: VPC and subnet configuration
+  id: totrans-116
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: VPC 和子网配置
+- en: This block remains unchanged from [*Chapter 10*](B21620_10.xhtml#_idTextAnchor458),
+    *Building Out a* *Cloud Network*.
+  id: totrans-117
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这一块与[*第10章*](B21620_10.xhtml#_idTextAnchor458)《构建云网络》中的内容保持一致。
+- en: Security group configuration
+  id: totrans-118
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 安全组配置
+- en: 'Most of this block is unchanged from [*Chapter 10*](B21620_10.xhtml#_idTextAnchor458),
+    *Building Out a Cloud Network*, as we now define the SSH port as `ec2.ssh_port`.
+    I have updated the EC2 group to use this reference rather than hardcoding port
+    22 into the block. The only other addition is the following:'
+  id: totrans-119
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个部分与[*第10章*](B21620_10.xhtml#_idTextAnchor458)《构建云网络》中的内容大部分相同，唯一的不同是我们现在将SSH端口定义为`ec2.ssh_port`。我已更新EC2组，使用此引用，而不是将端口22硬编码到此块中。唯一的其他新增项是：
+- en: '[PRE17]'
+  id: totrans-120
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE17]'
+- en: These will be used throughout the playbook when we query the AWS API for information
+    on our security groups.
+  id: totrans-121
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这些将在整个Playbook中使用，当我们查询AWS API以获取有关安全组的信息时。
+- en: The final block
+  id: totrans-122
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 最后的块
+- en: 'As per [*Chapter 10*](B21620_10.xhtml#_idTextAnchor458), *Building Out a Cloud
+    Network*, this contains the following:'
+  id: totrans-123
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 根据[*第10章*](B21620_10.xhtml#_idTextAnchor458)《构建云网络》，其中包含以下内容：
+- en: '[PRE18]'
+  id: totrans-124
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE18]'
+- en: That concludes our whistle-stop tour of the `group_vars/common.yml` file; as
+    you can see, structure- and content-wise, we are following the same patterns as
+    the last few chapters, where we group variables into logical blocks and trying
+    to reuse references as much as possible throughout so that we don’t have to repeat
+    information repeatedly.
+  id: totrans-125
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这就结束了我们对`group_vars/common.yml`文件的快速浏览；如你所见，无论在结构还是内容上，我们都遵循了过去几章的相同模式，按逻辑将变量分组，并尽量在整个过程中重复使用引用，以避免重复信息。
+- en: The Playbook roles
+  id: totrans-126
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: Playbook角色
+- en: Now that we have covered the variables, we can work through the roles in the
+    order they appear in the `site.yml` file.
+  id: totrans-127
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经介绍了变量，我们可以按`site.yml`文件中出现的顺序处理这些角色。
+- en: The VPC, subnets, gateway, and security groups roles
+  id: totrans-128
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: VPC、子网、网关和安全组角色
+- en: There are no changes to these roles from [*Chapter 10*](B21620_10.xhtml#_idTextAnchor458),
+    *Building Out a Cloud Network*; they are just dropped in place and work as expected.
+    The remaining roles in this section of the Playbook will reference the output
+    of these roles when referring to subnets, security groups, and the VPC.
+  id: totrans-129
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这些角色与[*第10章*](B21620_10.xhtml#_idTextAnchor458)《构建云网络》中的内容没有变化；它们只是直接放置并按预期工作。Playbook中这一部分的剩余角色将在引用子网、安全组和VPC时，引用这些角色的输出。
+- en: The Application Elastic Load Balancer (ELB) role
+  id: totrans-130
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 应用程序弹性负载均衡器（ELB）角色
+- en: In this role, we will deploy two resources, the first of which is a target group.
+    This will be used when we launch our auto-scaling virtual machine instances –
+    we attach our instances to the target group. Then, the target group is attached
+    to the Application Elastic Load Balancer, which we will also launch in this role.
+  id: totrans-131
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在此角色中，我们将部署两个资源，第一个是目标组。在我们启动自动扩展虚拟机实例时，这个目标组将被使用——我们将实例附加到目标组上。然后，目标组被附加到我们将在此角色中启动的应用弹性负载均衡器。
+- en: 'The task itself is pretty static, as you can see from the code for the following
+    task:'
+  id: totrans-132
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 该任务本身是相对静态的，如以下任务代码所示：
+- en: '[PRE19]'
+  id: totrans-133
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE19]'
+- en: We are just referencing variables, with the only dynamic content being the ID
+    of the VPC, which is referenced from the `vpc_output` variable we registered when
+    launching the VPC in the VPC role.
+  id: totrans-134
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们只是引用变量，唯一的动态内容是VPC的ID，这是通过`vpc_output`变量引用的，该变量在VPC角色中启动VPC时已注册。
+- en: 'As we are registering some output in this role, we will continue by adding
+    a debug task straight after; in this case, the task looks like the following:'
+  id: totrans-135
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于我们在此角色中注册了一些输出，我们将继续在后面添加一个调试任务；在这种情况下，任务如下所示：
+- en: '[PRE20]'
+  id: totrans-136
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE20]'
+- en: As we have already covered in [*Chapter 10*](B21620_10.xhtml#_idTextAnchor458),
+    *Building Out a Cloud Network*, we will not be repeating these tasks in our overview
+    of the Playbook unless we are doing something different – so, from now on, if
+    we are registering an output, please assume that a debug task immediately follows.
+  id: totrans-137
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如我们在[*第10章*](B21620_10.xhtml#_idTextAnchor458)《构建云网络》中已经讨论过的，我们在概述Playbook时不会重复这些任务，除非我们做的是不同的事情——所以，从现在开始，如果我们正在注册一个输出，请假设会紧接着进行一个调试任务。
+- en: There is one more bit of information we need before we create the ELB, and that’s
+    the ID of the security group.
+  id: totrans-138
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在创建ELB之前，我们还需要一个信息，那就是安全组的ID。
+- en: 'To get this, we can loop through the `security_groups_with_rules_output` variable
+    and use `set_fact` to set the `group_id` when the `group_name` contains the contents
+    of the `elb_seach_string` variable:'
+  id: totrans-139
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了获取这一信息，我们可以遍历`security_groups_with_rules_output`变量，并在`group_name`包含`elb_seach_string`变量内容时使用`set_fact`来设置`group_id`：
+- en: '[PRE21]'
+  id: totrans-140
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE21]'
+- en: Whenever we need the ID of a security group, we will use this same pattern but
+    update the name of the fact that is being set and the corresponding search steering
+    variable.
+  id: totrans-141
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 每当我们需要安全组的ID时，我们将使用相同的模式，但更新设置的事实名称和相应的搜索引导变量。
+- en: 'The following task provisions the Application Elastic Load Balancer, which
+    will be used to distribute HTTP requests across our auto-scaling managed virtual
+    machine instances to serve our WordPress site:'
+  id: totrans-142
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下任务配置应用弹性负载均衡器，用于将HTTP请求分发到我们的自动扩展管理虚拟机实例，以便为我们的WordPress网站提供服务：
+- en: '[PRE22]'
+  id: totrans-143
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE22]'
+- en: As you can see, we are attaching the Application Elastic Load Balancer to the
+    subnets defined listed in the `subnet_public_ids`, and we are attaching the security
+    group with the ID defined in the `elb_group_id` fact that registered in the previous
+    task.
+  id: totrans-144
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，我们将应用弹性负载均衡器附加到`subnet_public_ids`中列出的子网，并将安全组附加到之前任务中注册的`elb_group_id`事实。
+- en: We are then configuring a listener on port `80` to accept HTTP traffic and forward
+    it to the Target Group we launched at the start of the role – which concludes
+    the Application Elastic Load balancer role.
+  id: totrans-145
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后，我们配置一个`80`端口的监听器，以接受HTTP流量并将其转发到我们在角色开始时启动的目标组——这就完成了应用弹性负载均衡器的角色。
+- en: The Elastic File System (EFS) role
+  id: totrans-146
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 弹性文件系统（EFS）角色
+- en: The role starts with the task which sets the `efs_group_id` using the `efs_seach_string`
+    variable. Once we know the ID of the security group we are applying to the EFS
+    service, we can move on to the next task.
+  id: totrans-147
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 该角色从设置`efs_group_id`的任务开始，使用`efs_seach_string`变量。一旦我们知道应用到EFS服务的安全组ID，就可以继续执行下一个任务。
+- en: 'This task generates a file using a template and places it in the `group_vars`
+    folder:'
+  id: totrans-148
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 该任务使用模板生成一个文件，并将其放入`group_vars`文件夹中：
+- en: '[PRE23]'
+  id: totrans-149
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE23]'
+- en: 'The template file used to populate the file at `group_vars/generated_efs_targets.yml`
+    looks like the following:'
+  id: totrans-150
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 用于填充`group_vars/generated_efs_targets.yml`文件的模板文件如下所示：
+- en: '[PRE24]'
+  id: totrans-151
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE24]'
+- en: 'Here, we are using a Jinja2 `for` loop to loop through the contents of `subnet_storage_ids`,
+    which will create a file that looks something like the following:'
+  id: totrans-152
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这里，我们使用Jinja2的`for`循环遍历`subnet_storage_ids`的内容，这将创建一个类似以下内容的文件：
+- en: '[PRE25]'
+  id: totrans-153
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE25]'
+- en: This means that when we create the EFS file system, it will be available across
+    all the availability zones in our chosen region.
+  id: totrans-154
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这意味着当我们创建EFS文件系统时，它将在我们选择的区域的所有可用区中可用。
+- en: 'Well, it will be once we load in the contents of the file we have just loaded,
+    which we do in the next task, as you can see here:'
+  id: totrans-155
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 好的，一旦我们加载了刚才加载的文件内容，它就会完成，这在下一个任务中实现，正如你在这里看到的：
+- en: '[PRE26]'
+  id: totrans-156
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE26]'
+- en: 'We now have everything in place to create the EFS file system, which is done
+    using this task:'
+  id: totrans-157
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经做好了创建 EFS 文件系统的所有准备工作，这可以通过以下任务来完成：
+- en: '[PRE27]'
+  id: totrans-158
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE27]'
+- en: It can take a few minutes to create the file system, and we must wait until
+    this task has succeeded before we continue, which is why we are using the wait
+    flag. If we don’t wait, we increase the risk that the file system will not be
+    ready by the time our virtual machine is launched and unable to mount it, which
+    will cause the Playbook execution to fail.
+  id: totrans-159
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 创建文件系统可能需要几分钟，我们必须等到此任务成功完成后才能继续，这就是为什么我们要使用等待标志。如果不等待，我们会增加文件系统在虚拟机启动时未准备好，无法挂载的风险，这将导致
+    Playbook 执行失败。
+- en: Speaking of tasks that take a while, the next role deals with launching the
+    Amazon RDS instance, which we will use as the database for our WordPress site.
+    This task can take up to 10 minutes to complete.
+  id: totrans-160
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 说到需要一些时间的任务，下一个角色处理的是启动 Amazon RDS 实例，我们将把它作为 WordPress 网站的数据库。这个任务最多可能需要 10
+    分钟才能完成。
+- en: The Amazon RDS role
+  id: totrans-161
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: Amazon RDS 角色
+- en: There are two main parts to the role; the first does a similar task to the one
+    we had to do in the previous role when we created the targets for the EFS to be
+    attached to.
+  id: totrans-162
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 该角色主要由两部分组成；第一部分执行的任务类似于我们在前一个角色中创建 EFS 目标时所做的任务。
+- en: The RDS service differs in that rather than passing in the subnets manually
+    when we deploy the service, we can create a group natively on the AWS side and
+    then reference it when we launch the RDS instance.
+  id: totrans-163
+  prefs: []
+  type: TYPE_NORMAL
+  zh: RDS 服务的不同之处在于，当我们部署服务时，不需要手动传递子网，而是可以在 AWS 端原生创建一个组，然后在启动 RDS 实例时引用它。
+- en: 'The task to create the RDS subnet group looks like the following:'
+  id: totrans-164
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 创建 RDS 子网组的任务如下所示：
+- en: '[PRE28]'
+  id: totrans-165
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE28]'
+- en: Once we have created the subnet group, we need to find the security group ID
+    using the `rds_seach_string` variable and set a fact called `rds_group_id`.
+  id: totrans-166
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 创建子网组后，我们需要使用 `rds_seach_string` 变量找到安全组 ID，并设置一个名为 `rds_group_id` 的事实。
+- en: 'Now we have all the information we need to launch the RDS instance, the task
+    for which looks like the following:'
+  id: totrans-167
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经拥有了启动 RDS 实例所需的所有信息，执行这个任务看起来如下：
+- en: '[PRE29]'
+  id: totrans-168
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE29]'
+- en: As mentioned at the end of the previous task, this can take quite a while to
+    deploy, typically just over 10 minutes, so when we run the Playbook, this task
+    will appear to have stalled.
+  id: totrans-169
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如上一任务结束时提到的，这个过程可能需要一些时间，通常超过 10 分钟，因此当我们运行 Playbook 时，这个任务看起来会好像已经停止了。
+- en: So please do not worry – it is busy working away in the background.
+  id: totrans-170
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 所以请不要担心——它正在后台忙碌地工作。
+- en: Once this role has finished running, we will have all the core AWS resources
+    we need to launch an EC2 instance, perform the software configuration, and install
+    WordPress.
+  id: totrans-171
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦此角色执行完成，我们将拥有启动 EC2 实例、进行软件配置并安装 WordPress 所需的所有核心 AWS 资源。
+- en: The temporary EC2 instance role
+  id: totrans-172
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 临时 EC2 实例角色
+- en: Before we work through the tasks that launch the temporary instance, let’s go
+    into a little more detail on why we need a temporary EC2 instance in the first
+    place.
+  id: totrans-173
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在我们开始执行启动临时实例的任务之前，先详细了解一下我们为什么需要临时 EC2 实例。
+- en: As we mentioned in the introduction, this instance will be running Ubuntu, and
+    we will be targeting it with slightly modified copies of the `stack_install`,
+    `stack_config`, and `wordpress` roles that we first ran locally in [*Chapter 5*](B21620_05.xhtml#_idTextAnchor253),
+    *Deploying WordPress*, and against a single cloud instance in [*Chapter 9*](B21620_09.xhtml#_idTextAnchor411),
+    *Moving to* *the Cloud*.
+  id: totrans-174
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如我们在简介中提到的，这个实例将运行 Ubuntu，我们将用稍微修改过的 `stack_install`、`stack_config` 和 `wordpress`
+    角色来操作它，这些角色最早是在 [*第 5 章*](B21620_05.xhtml#_idTextAnchor253) *部署 WordPress* 中本地运行过的，后来又在
+    [*第 9 章*](B21620_09.xhtml#_idTextAnchor411) *迁移到云* 中针对单一云实例运行过。
+- en: One of the modifications we will be making to the roles is installing the software
+    needed to mount our EFS, which we will then use to store the WordPress code and
+    supporting files for our WordPress installation, meaning that we have everything
+    we need file-wise for WordPress on a shared file system we can then mount on multiple
+    virtual machine instances.
+  id: totrans-175
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将对角色进行的修改之一是安装挂载 EFS 所需的软件，接下来我们将使用它来存储 WordPress 代码和支持文件，以便在共享文件系统中存储所有 WordPress
+    所需的文件，并可以在多个虚拟机实例上挂载。
+- en: The second change is that rather than installing a database server on our local
+    instance, we will be using the Amazon RDS database service for WordPress, meaning
+    that we can have multiple instances of WordPress, all being able to connect to
+    a single remote database.
+  id: totrans-176
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 第二个变化是，我们不再在本地实例上安装数据库服务器，而是使用Amazon RDS数据库服务来支持WordPress，这意味着我们可以拥有多个WordPress实例，它们都能够连接到一个单一的远程数据库。
+- en: Great, you may be thinking to yourself, but that doesn’t explain why this is
+    a temporary instance.
+  id: totrans-177
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 很好，你可能会想，这样说不错，但这并没有解释为什么这是一个临时实例。
+- en: Well, once everything has been installed, mounted, configured, and WordPress
+    bootstrapped, we will be making our own **Amazon Machine Image** (**AMI**) and
+    terminating the temporary EC2 instance. Once it’s been terminated, we will take
+    the AMI and configure our Auto Scaling Group to use the newly created image, which
+    will either trigger the deployment of new hosts if it is our first time running
+    the Playbook or it will launch more instances and terminate the old ones if we
+    have already had virtual machine instances running our WordPress installation.
+  id: totrans-178
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 好的，一旦一切安装、挂载、配置完毕并且WordPress已经启动，我们将创建自己的**Amazon机器镜像**（**AMI**），并终止临时的EC2实例。终止后，我们将使用该AMI并配置我们的自动扩展组以使用新创建的镜像，如果这是我们第一次运行操作手册，系统将触发新主机的部署；如果我们已经有运行WordPress安装的虚拟机实例，它将启动更多实例并终止旧的实例。
+- en: When these virtual machine instances boot up using our custom AMI, they will
+    already have NGINX and PHP installed and configured, ready to serve WordPress,
+    and the EFS containing our WordPress files will be mounted, meaning that our servers
+    will be good to go as soon as they are deployed.
+  id: totrans-179
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当这些虚拟机实例使用我们自定义的AMI启动时，它们将已经安装并配置好NGINX和PHP，准备好为WordPress提供服务，而且包含我们WordPress文件的EFS将被挂载，这意味着我们的服务器一旦部署就能立即运行。
+- en: All of this means our WordPress installation should be sound to scale up if
+    we have an influx of traffic hitting the site for whatever reason, and all instances
+    of our virtual machines will be running a known good configuration; in fact, it
+    will be the same configuration as the other hosts serving our WordPress site.
+  id: totrans-180
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 所有这些意味着，如果我们因为任何原因遇到流量激增，我们的WordPress安装应该能够良好地扩展，而且我们所有的虚拟机实例都将运行一个已知的、良好的配置；事实上，它将与为我们的WordPress网站提供服务的其他主机使用相同的配置。
+- en: Just as important, as we are not relying on anything on the local virtual machine
+    instances filesystem, we are just as good at automatically scaling down by terminating
+    hosts automatically when the influx of traffic has subsided without the risk of
+    data loss or availability.
+  id: totrans-181
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 同样重要的是，由于我们不依赖本地虚拟机实例的文件系统中的任何内容，我们在流量激增后能够自动缩放，通过自动终止主机来减少实例数量，而不会有数据丢失或可用性问题的风险。
+- en: If this approach is planned right – in theory, we don’t even need SSH access
+    to the hosts launched by the Auto Scaling Group as we should never need to manage
+    them manually, and we can treat them as short-lived instances where we don’t have
+    to care if they are running or terminated – just that we have the desired of instances
+    delivering our application.
+  id: totrans-182
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果这个方法计划得当——理论上，我们甚至不需要通过SSH访问由自动扩展组启动的主机，因为我们不需要手动管理它们，我们可以将它们视为短期实例，完全不需要关心它们是否正在运行或已经终止——只需要确保有足够的实例来交付我们的应用。
+- en: So, now that we know why we are taking this approach, let’s return to the Playbook
+    and look at the tasks needed to get this temporary EC2 instance up and running
+    to the point where we can SSH to it and install our software and WordPress.
+  id: totrans-183
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 所以，现在我们知道了为什么要采用这种方法，让我们回到操作手册，看看需要完成哪些任务，以使这个临时的EC2实例能够启动并运行，直到我们可以通过SSH连接它并安装我们的软件和WordPress。
+- en: 'The first task is to get a list of all the Ubuntu AMIs using the variables
+    we covered earlier in the chapter:'
+  id: totrans-184
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 第一个任务是使用我们在本章之前介绍的变量，获取所有Ubuntu AMI的列表：
+- en: '[PRE30]'
+  id: totrans-185
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE30]'
+- en: The list of AMIs returned will contain all of the various AMI versions for our
+    chosen Ubuntu version; we only need to know the ID of the latest version published
+    by Canonical (the publisher and maintainer of Ubuntu) so we know we are using
+    the most up-to-date image that contains the latest patches and any bug fixes.
+  id: totrans-186
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 返回的AMI列表将包含我们所选Ubuntu版本的所有不同AMI版本；我们只需要知道由Canonical（Ubuntu的发布者和维护者）发布的最新版本的ID，这样我们就能确保使用的是包含最新补丁和修复的最新镜像。
+- en: 'Luckily, each AMI returned in the list has a key called `creation_date`, the
+    value of which, as you may have guessed, is the date and time the AMI was published.
+    This means we can run the following task to get the ID of the latest version of
+    the AMI:'
+  id: totrans-187
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 幸运的是，列表中返回的每个 AMI 都有一个名为 `creation_date` 的键，值为 AMI 发布的日期和时间。正如你可能猜到的，这意味着我们可以运行以下任务来获取最新版本
+    AMI 的 ID：
+- en: '[PRE31]'
+  id: totrans-188
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE31]'
+- en: As you can see, this takes the content of the list, which is defined as `ubuntu_ami_info.images`,
+    sorts the list by `creation_date`, and then takes the ID of the `last` AMI in
+    the list as, by default, they are sorted in ascending order.
+  id: totrans-189
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，上一任务获取了列表的内容，这个列表被定义为 `ubuntu_ami_info.images`，并根据 `creation_date` 排序，然后取列表中最后一个
+    AMI 的 ID，因为默认情况下，它们是按升序排序的。
+- en: Now that we know the ID of the most up-to-date Ubuntu AMI, we can progress with
+    more preparation work before launching our EC2 instance.
+  id: totrans-190
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 既然我们已经知道了最新的 Ubuntu AMI 的 ID，我们可以继续进行更多的准备工作，为启动我们的 EC2 实例做准备。
+- en: 'We now need to create an SSH key pair on the AWS side. This will contain the
+    public portion of the SSH key we will use to access the EC2 instance when it is
+    launched – the task to configure this looks like the following and uses the variables
+    we covered earlier in the chapter to get the contents of the public portion of
+    our SSH key:'
+  id: totrans-191
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，我们需要在 AWS 端创建一个 SSH 密钥对。这个密钥对将包含我们用来访问启动后的 EC2 实例的 SSH 密钥的公钥部分 —— 配置此任务的步骤如下，它使用我们在本章之前提到的变量来获取公钥部分的内容：
+- en: '[PRE32]'
+  id: totrans-192
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE32]'
+- en: Finally, before we launch our EC2 instance, we need the ID of the security group,
+    which allows the public IP address of our host running Ansible SSH access to the
+    EC2 instance. To do this, we set a fact called `ec2_group_id` using the `ec2_seach_string`
+    variable to find the correct group ID.
+  id: totrans-193
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后，在我们启动 EC2 实例之前，我们需要安全组的 ID，这个安全组允许我们运行 Ansible SSH 的主机通过公共 IP 地址访问 EC2 实例。为此，我们使用
+    `ec2_seach_string` 变量查找正确的组 ID，并设置一个名为 `ec2_group_id` 的事实。
+- en: 'Now, we have everything in place to launch the EC2 instance using the following
+    task:'
+  id: totrans-194
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，我们已准备好通过以下任务启动 EC2 实例：
+- en: '[PRE33]'
+  id: totrans-195
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE33]'
+- en: The only thing pointed out in the preceding task is that when we add the value
+    for the `vpc_subnet_id` we can only pass in a single ID. As we don’t need this
+    virtual machine instance to be highly available, that is not a problem, so we
+    are using the first ID in the list of subnet IDs by using the `{{` `subnet_compute_ids[0]
+    }}`.
+  id: totrans-196
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在前一个任务中指出的唯一事项是，当我们为 `vpc_subnet_id` 添加值时，只能传入单个 ID。由于我们不需要这个虚拟机实例具有高可用性，因此这不是问题，所以我们使用子网
+    ID 列表中的第一个 ID，即 `{{ subnet_compute_ids[0] }}`。
+- en: When launching an EC2 instance in AWS, it goes through a few stages and, by
+    default, the `amazon.aws.ec2_instance` module creates the instance and doesn’t
+    wait for the status to change from *creating* to *running*.
+  id: totrans-197
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当在 AWS 中启动 EC2 实例时，它会经历几个阶段，默认情况下，`amazon.aws.ec2_instance` 模块会创建实例，但不会等待状态从
+    *creating* 变为 *running*。
+- en: 'Our next task polls the AWS API waiting for the status of our EC2 instance
+    to be *running*:'
+  id: totrans-198
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 下一步任务会轮询 AWS API，等待我们的 EC2 实例的状态变为 *running*：
+- en: '[PRE34]'
+  id: totrans-199
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE34]'
+- en: As you can see, the previous task takes the ID of our newly created EC2 instance
+    and polls the AWS API every `5` seconds, a maximum of `50` times, until the value
+    of `ec2_tmp_instance_state.instances[0].state.name` is equal to `running`.
+  id: totrans-200
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，前一个任务获取了我们新创建的 EC2 实例的 ID，并每隔 `5` 秒轮询 AWS API，最多轮询 `50` 次，直到 `ec2_tmp_instance_state.instances[0].state.name`
+    的值变为 `running`。
+- en: You might think to yourself that it seems a bit overkill to do that, and 99%
+    of the time, you would be correct – it usually takes no more than a few checks
+    for the status to change. Still, there is the odd occasion that AWS might be on
+    a “go-slow,” and during testing, I have seen it take up to 15 checks, or just
+    over a minute, for the status to change, so we need to take this delay into account
+    in our Playbook as it could break the Playbook execution if we don’t.
+  id: totrans-201
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可能会觉得，这样做有点过于繁琐，99%的情况下，你是对的 —— 状态通常在检查几次后就会改变。不过，也有偶尔 AWS 系统会比较“慢”，在测试中，我曾看到状态变化最多需要检查
+    15 次，或者大约一分钟的时间。因此，我们需要在 Playbook 中考虑到这个延迟，因为如果不考虑，可能会导致 Playbook 执行失败。
+- en: 'The next task takes the details, the DNS name and IP address, of our now-running
+    EC2 instance and adds them to the host group called `vmgroup`:'
+  id: totrans-202
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 下一步任务是获取当前正在运行的 EC2 实例的详细信息，包括 DNS 名称和 IP 地址，并将其添加到名为 `vmgroup` 的主机组中：
+- en: '[PRE35]'
+  id: totrans-203
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE35]'
+- en: Before we hand off to the next role, we should perform one more check.
+  id: totrans-204
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在交给下一个角色之前，我们应该再进行一次检查。
+- en: 'Sometimes, the Ansible Playbook works through the tasks so quickly that it
+    is possible that even though our EC2 instance has a status of *running*, it does
+    not mean that the host has finished booting, and SSH is started and is accessible:'
+  id: totrans-205
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有时，Ansible Playbook 执行任务太快，以至于即使我们的 EC2 实例状态显示为 *running*，也不意味着主机已经完全启动，SSH
+    已启动并可访问：
+- en: '[PRE36]'
+  id: totrans-206
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE36]'
+- en: Now that we have confirmation that our EC2 host is accessible to our machine
+    running Ansible using SSH, we can proceed to the final role in this section of
+    the `site.yml` file.
+  id: totrans-207
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，我们已经确认 EC2 主机可以通过 SSH 连接到运行 Ansible 的机器，接下来可以继续执行 `site.yml` 文件中这一部分的最后一个角色。
+- en: The endpoints role
+  id: totrans-208
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 端点角色
+- en: 'This role has a single task, which creates a file at `generated_aws_endpoints.yml`
+    containing the name of the AWS endpoints for the EFS, RDS, and ELB resources we
+    have created:'
+  id: totrans-209
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个角色有一个任务，它会创建一个文件 `generated_aws_endpoints.yml`，其中包含我们创建的 EFS、RDS 和 ELB 资源的
+    AWS 端点名称：
+- en: '[PRE37]'
+  id: totrans-210
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE37]'
+- en: 'The `endponts.j2` template file looks like the following:'
+  id: totrans-211
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`endponts.j2` 模板文件如下所示：'
+- en: '[PRE38]'
+  id: totrans-212
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE38]'
+- en: Both the RDS and ELB endpoints are straightforward enough; for the EFS, you
+    might notice something at the end – what is that for?
+  id: totrans-213
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 无论是 RDS 还是 ELB 端点都很直接；对于 EFS，你可能会注意到最后有点不同——那是做什么用的？
+- en: None of the output that is registered under the `efs_output.efs` variable contains
+    just the address of the EFS endpoint. The one we are using, `filesystem_address`,
+    has information on the file system mount, which is represented by appending `:/`
+    to the end of the DNS address we need.
+  id: totrans-214
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 `efs_output.efs` 变量下注册的输出中没有任何内容仅包含 EFS 端点的地址。我们使用的 `filesystem_address` 包含文件系统挂载的信息，这通过在我们需要的
+    DNS 地址末尾附加 `:/` 来表示。
+- en: To get around this, we are using the `split` function, passing `:` as the delimiter
+    and then taking the first section, which is defined as `0`, meaning that we end
+    up with everything before the `:`, which is the DNS name we are after.
+  id: totrans-215
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了解决这个问题，我们使用了 `split` 函数，传递 `:` 作为分隔符，然后取第一个部分（定义为 `0`），意味着我们得到的是 `:` 之前的所有内容，这就是我们要找的
+    DNS 名称。
+- en: Now that we have a populated `group_vars/generated_aws_endpoints.yml` file,
+    we can load it into the second section of the `site.yml` file as a variable file,
+    saving us from having to interact with the AWS from our EC2 instance.
+  id: totrans-216
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，我们已经有了填充好的 `group_vars/generated_aws_endpoints.yml` 文件，可以将它作为变量文件加载到 `site.yml`
+    文件的第二部分，这样我们就不需要从 EC2 实例与 AWS 进行交互了。
+- en: So, now that we have our EC2 instance up and running, let’s get our software
+    stack installed, configured, and WordPress bootstrapped.
+  id: totrans-217
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，既然我们的 EC2 实例已经启动并运行，让我们安装、配置软件堆栈，并引导 WordPress。
+- en: The stack install role
+  id: totrans-218
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 堆栈安装角色
+- en: The tasks in this role remain unchanged from the previous times we have executed
+    the Playbook because all the changes we have made are in the `stack_packages`
+    variable we are passing in.
+  id: totrans-219
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个角色中的任务与我们之前执行 Playbook 时没有变化，因为我们所做的所有更改都在我们传递的 `stack_packages` 变量中。
+- en: 'As a reminder, this role does the following:'
+  id: totrans-220
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 提醒一下，这个角色执行以下操作：
+- en: Updates the APT cache and ensures that the installed packages are running the
+    latest available versions – which shouldn’t be too many as we are using the newest
+    AMI
+  id: totrans-221
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 更新 APT 缓存并确保已安装的软件包运行的是最新版本——由于我们使用的是最新的 AMI，因此更新的数量不应该太多。
+- en: Imports the APT keys for the additional repositories we will be enabling
+  id: totrans-222
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 导入我们将启用的附加仓库的 APT 密钥
+- en: Installs the packages containing details of the additional repositories and
+    enables them
+  id: totrans-223
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 安装包含附加仓库详细信息的包并启用它们
+- en: Installs the packages listed in the `system_packages`, `extra_packages`, and
+    `stack_packages` variables – `system_packages` and `extra_packages` contain the
+    default values we have been using throughout, and because we are passing the updated
+    `stack_packages` variable via the `group_vars/common.yml` file, this overrides
+    the default values from previous chapters which are still defined in the `roles/stack_install/defaults/main.yml`
+    file
+  id: totrans-224
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 安装 `system_packages`、`extra_packages` 和 `stack_packages` 变量中列出的包——`system_packages`
+    和 `extra_packages` 包含我们一直使用的默认值，因为我们通过 `group_vars/common.yml` 文件传递了更新后的 `stack_packages`
+    变量，这会覆盖之前章节中仍在 `roles/stack_install/defaults/main.yml` 文件中定义的默认值。
+- en: This leaves us with all the base software we need to install on the EC2 instance.
+  id: totrans-225
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这为我们提供了安装在 EC2 实例上的所有基础软件。
+- en: The stack configuration role
+  id: totrans-226
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 堆栈配置角色
+- en: Unlike the previous role, there are some amendments to this role, starting with
+    additional tasks out of the gate.
+  id: totrans-227
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 与之前的角色不同，这个角色做了一些修改，首先是增加了额外的任务。
+- en: 'Three tasks are added to the top of `roles/stack_config/tasks/main.yml`, the
+    first of which is a continuation of the checks we did towards the end of the roles
+    in the last section of the `site.yml` file:'
+  id: totrans-228
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 三个任务被添加到`roles/stack_config/tasks/main.yml`的顶部，第一个任务是对上一节`site.yml`文件最后部分中的角色检查的延续：
+- en: '[PRE39]'
+  id: totrans-229
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE39]'
+- en: As you can see, this checks that port `2049` is accessible at the endpoint defined
+    in `aws_endpoints.efs`; the reason why this is there is that while the EFS service
+    is ready, it may take a little while for the DNS records for the endpoint to be
+    updated and accessible within the VPC. As we will soon attempt to mount the EFS
+    filesystem, we must ensure it is accessible before proceeding.
+  id: totrans-230
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，这检查了端口`2049`是否在`aws_endpoints.efs`定义的端点处可访问；之所以这么做，是因为虽然EFS服务已经准备就绪，但DNS记录更新并在VPC内可访问可能需要一点时间。由于我们接下来将尝试挂载EFS文件系统，因此必须确保在继续之前它是可访问的。
+- en: 'The next task is to ensure that the RPC Bind service is up and running; we
+    will need to mount the EFS file system:'
+  id: totrans-231
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来的任务是确保RPC Bind服务正常运行；我们需要挂载EFS文件系统：
+- en: '[PRE40]'
+  id: totrans-232
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE40]'
+- en: 'The final additional task mounts the EFS and ensures that it is added to the
+    file system configuration to ensure that from now on, the EFS is mounted when
+    the EC2 instance boots:'
+  id: totrans-233
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最终的附加任务是挂载EFS，并确保将其添加到文件系统配置中，以确保从现在开始，EFS会在EC2实例启动时挂载：
+- en: '[PRE41]'
+  id: totrans-234
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE41]'
+- en: As you will have already seen from when we covered the variables at the start
+    of the chapter, we are mounting the EFS at `/var/www/`; we are making sure to
+    do this before the following two tasks to ensure that our WordPress `users` home
+    directory is created on the share.
+  id: totrans-235
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你在本章开始时看到的，我们将EFS挂载在`/var/www/`；我们确保在执行接下来的两个任务之前进行此操作，以确保我们的WordPress `users`主目录在共享目录中创建。
+- en: These two tasks remain unchanged from the last time we installed WordPress,
+    as does the value of `wordpress_system.home`, which is `/var/www/wordpress`.
+  id: totrans-236
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这两个任务从上次安装WordPress以来没有变化，`wordpress_system.home`的值也是不变的，即`/var/www/wordpress`。
+- en: 'So, now that we have created our WordPress user and group, we can proceed with
+    the rest of the tasks:'
+  id: totrans-237
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经创建了WordPress用户和组，我们可以继续执行剩下的任务：
+- en: Update `/etc/nginx/nginx.conf` with some sensible defaults
+  id: totrans-238
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用一些合理的默认值更新`/etc/nginx/nginx.conf`。
+- en: Create the configuration for our default host at `/etc/nginx/conf.d/default.conf`
+  id: totrans-239
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在`/etc/nginx/conf.d/default.conf`中创建我们默认主机的配置。
+- en: Create the `/etc/nginx/global` directory and copy the `restrictions.conf` and
+    `wordpress_shared.conf` files there
+  id: totrans-240
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 创建`/etc/nginx/global`目录，并将`restrictions.conf`和`wordpress_shared.conf`文件复制到该目录。
+- en: The next task is more of a quality-of-life improvement to do with the way our
+    Playbook deals with PHP, as this Playbook is designed to keep our WordPress installation
+    up to date by taking the base Ubuntu image and bootstrapping from scratch each
+    time rather than managing the configuration in place. It is possible that the
+    version of PHP could change at some point during the life of our WordPress installation.
+  id: totrans-241
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来的任务更多是一个生活质量的提升，涉及到我们的Playbook如何处理PHP。这个Playbook的设计目的是通过使用基础的Ubuntu镜像，每次从头启动并保持我们的WordPress安装最新，而不是管理现有的配置。PHP的版本在我们WordPress安装的生命周期中可能会发生变化。
+- en: 'So far, whenever the `stack_config` role has been executed, it has been using
+    the following variables:'
+  id: totrans-242
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 到目前为止，每当执行`stack_config`角色时，它都使用了以下变量：
+- en: '[PRE42]'
+  id: totrans-243
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE42]'
+- en: As you can see, `8.1` is a hardcoded value. While we can overwrite these variables
+    at the variable level elsewhere in our configuration, it would be better to work
+    out which version of PHP is installed at runtime and reference that.
+  id: totrans-244
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，`8.1`是一个硬编码值。虽然我们可以在配置的其他地方以变量级别覆盖这些变量，但最好在运行时找出安装的PHP版本并引用它。
+- en: 'To do this, we can update these values as follows:'
+  id: totrans-245
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为此，我们可以按照以下方式更新这些值：
+- en: '[PRE43]'
+  id: totrans-246
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE43]'
+- en: This means we now must find a way to populate the `php_version` variable with
+    the relevant version of PHP.
+  id: totrans-247
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这意味着我们现在必须找到一种方法，将`php_version`变量填充为相关的PHP版本。
+- en: 'To do this, we can run the `php -v` command, which returns a lot of information
+    on the version of PHP installed. We then use the `head` and a few `cut` commands
+    on the Linux command line using the `ansible.builtin.shell` and not a built-in
+    Ansible function:'
+  id: totrans-248
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为此，我们可以运行`php -v`命令，它会返回有关安装的PHP版本的大量信息。然后，我们使用`head`和几个`cut`命令在Linux命令行中，使用`ansible.builtin.shell`而不是Ansible内置函数：
+- en: '[PRE44]'
+  id: totrans-249
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE44]'
+- en: 'Here is a detailed breakdown of the command we are getting Ansible to run:'
+  id: totrans-250
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这是我们要求Ansible执行的命令的详细分解：
+- en: '`php -v`: This command, when run, outputs the version information of the PHP
+    installed on the host the command is being executed on; this output is typically
+    a multi-line text that includes the PHP version along with additional information
+    on how the version of the PHP was compiled.'
+  id: totrans-251
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`php -v`：此命令运行时，会输出主机上安装的 PHP 版本信息；该输出通常是多行文本，包括 PHP 版本及其编译方式的附加信息。'
+- en: '`|`: This symbol is known as a pipe. It takes the command output on its left
+    (in this case, `php -v`) and uses it as the input for the command on its right.
+    It’s a way of passing data between programs.'
+  id: totrans-252
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`|`：这个符号被称为管道（pipe）。它将左侧命令的输出（在此例中为 `php -v`）作为输入传递给右侧的命令。它是一种在程序之间传递数据的方式。'
+- en: '`head -n 1`: This command processes the input received from the previous command;
+    the head command outputs the first part of the files or data it receives. `-n
+    1` is an option that tells `head` to output only the first line. So, in our case,
+    `head -n 1` takes the multiple lines of output from `php -v` and returns just
+    the very first line.'
+  id: totrans-253
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`head -n 1`：此命令处理来自上一个命令的输入；`head` 命令输出接收到的文件或数据的第一部分。`-n 1` 是一个选项，告诉 `head`
+    只输出第一行。所以，在我们的例子中，`head -n 1` 会从 `php -v` 的多行输出中只返回第一行。'
+- en: '`|`: Another pipe, which again passes the command output on its left, `head
+    -n 1`, to the command on its right.'
+  id: totrans-254
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`|`：另一个管道，仍然是将其左侧命令 `head -n 1` 的输出传递给右侧的命令。'
+- en: '`cut -d '' '' -f 2`: This command is used for cutting out sections of each
+    input line. `-d '' ''` is an option where `-d` stands for the delimiter, and `''
+    ''` (a space) is the delimiter being used. This tells cut to divide each line
+    into sections based on spaces. `-f 2` means *field 2*. This option tells the `cut`
+    command to select the second field of the line in the standard format of the PHP
+    version output; this field should be the version number.'
+  id: totrans-255
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`cut -d '' '' -f 2`：此命令用于切割每行输入的部分。`-d '' ''` 是一个选项，其中 `-d` 表示分隔符，`'' ''`（空格）是使用的分隔符。此命令告诉
+    `cut` 根据空格将每行分割成多个部分。`-f 2` 表示*第二个字段*。此选项告诉 `cut` 命令选择标准格式下 PHP 版本输出的第二个字段，该字段应为版本号。'
+- en: '`|`: Again, we have another pipe, passing the output, now just the version
+    number, to the following command.'
+  id: totrans-256
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`|`：再次出现管道，将输出结果（现在仅包含版本号）传递给下一个命令。'
+- en: '`cut -c 1-3`: This further processes the version number. `-c 1-3` tells `cut`
+    to return only the characters in positions `1` through `3` of the string it receives.
+    For a typical PHP version such as `8.2.1`, this would result in `8.2`, which is
+    precisely what we need to proceed with the rest of our tasks.'
+  id: totrans-257
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`cut -c 1-3`：此命令进一步处理版本号。`-c 1-3` 告诉 `cut` 仅返回字符串中位置为 `1` 到 `3` 的字符。对于典型的 PHP
+    版本，如 `8.2.1`，结果将是 `8.2`，这正是我们继续执行其他任务所需的版本号。'
+- en: 'We can then take the output and register it as `php_version_output`, and set
+    the `php_version` variable as a fact:'
+  id: totrans-258
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后我们可以将输出注册为 `php_version_output`，并将 `php_version` 变量设置为事实（fact）：
+- en: '[PRE45]'
+  id: totrans-259
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE45]'
+- en: Now that we have the PHP version, we can proceed with the remainder of the PHP
+    tasks, which copy the `www.conf` file to `/etc/php/{{ php_version }}/fpm/pool.d/www.conf`
+    and also update the `PHP.ini` file at `/etc/php/{{` `php_version }}/fpm/php.ini`.
+  id: totrans-260
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经获取了 PHP 版本，可以继续进行其他 PHP 任务，这些任务包括将 `www.conf` 文件复制到 `/etc/php/{{ php_version
+    }}/fpm/pool.d/www.conf`，并更新 `/etc/php/{{ php_version }}/fpm/php.ini` 中的 `PHP.ini`
+    文件。
+- en: With those files in place, we start the PHP-FPM and NGINX services, ensuring
+    that they are set to start on boot.
+  id: totrans-261
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有了这些文件，我们启动 PHP-FPM 和 NGINX 服务，并确保它们设置为开机自启。
+- en: The final task in the role is to create the `~/.my.cnf` file and populate it
+    with the information of our Amazon RDS instance. All of the other MariaDB tasks,
+    which are there to start and configure our local MariaDB server, are commented
+    out as we no longer install a local database server, so we don’t need to run the
+    tasks to configure it.
+  id: totrans-262
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 角色中的最后一个任务是创建 `~/.my.cnf` 文件，并将我们的 Amazon RDS 实例信息填充进去。所有其他 MariaDB 任务都已被注释掉，因为我们不再安装本地数据库服务器，因此不需要运行这些配置本地数据库的任务。
+- en: The WordPress role
+  id: totrans-263
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: WordPress 角色
+- en: There are just two tasks commented out in this role. The tasks that create the
+    database and the database user are not needed because when the Amazon RDS instance
+    started, the database and user were made for us, meaning these two tasks are redundant.
+  id: totrans-264
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 该角色中只有两个任务被注释掉。创建数据库和数据库用户的任务不需要，因为当 Amazon RDS 实例启动时，数据库和用户已经为我们创建好了，意味着这两个任务是多余的。
+- en: All other tasks remain; for more details, see [*Chapter 5*](B21620_05.xhtml#_idTextAnchor253),
+    *Deploying WordPress*.
+  id: totrans-265
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 其他任务保持不变；欲了解更多详情，请参见[*第5章*](B21620_05.xhtml#_idTextAnchor253)，*部署WordPress*。
+- en: The EC2 AMI role
+  id: totrans-266
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: EC2 AMI角色
+- en: Now that our software stack is installed and configured and WordPress is sorted,
+    it is time to create the AMI from our temporary instance.
+  id: totrans-267
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们的软件栈已安装并配置完毕，WordPress也已设置好，是时候从临时实例创建AMI了。
+- en: 'The first thing we need to do is get the details on our temporary EC2 instance;
+    as our host group contains the DNS name of the instance, we can use this:'
+  id: totrans-268
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们首先需要做的是获取临时EC2实例的详细信息；由于我们的主机组包含实例的DNS名称，我们可以使用以下方式：
+- en: '[PRE46]'
+  id: totrans-269
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE46]'
+- en: 'Now that we have the information on the instance we would like to create the
+    AMI from registered as `our_instance`, we can proceed with the AMI creation:'
+  id: totrans-270
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经将要从中创建AMI的实例信息注册为`our_instance`，可以继续进行AMI创建：
+- en: '[PRE47]'
+  id: totrans-271
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE47]'
+- en: There are just a few things to point out here. As you can see, we are using
+    `ansible_date_time` to generate the `date` and get the current time as an `hour`
+    and `minute`. We are using this both to give a unique name for the AMI and add
+    a tag called `buildDate`.
+  id: totrans-272
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这里有几点需要注意。如你所见，我们正在使用`ansible_date_time`来生成`date`并获取当前时间的`hour`和`minute`。我们将其用于为AMI提供唯一名称，并添加一个名为`buildDate`的标签。
+- en: The reason why we are using both the date and time is that it could be possible
+    that we will need to create multiple AMIs on a single day, so it is important
+    that we can easily identify them by name.
+  id: totrans-273
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们使用日期和时间的原因是可能会在同一天内创建多个AMI，因此需要确保通过名称能够轻松识别它们。
+- en: 'Once the AMI is created, we do not need the temporary instance, so we can terminate
+    it:'
+  id: totrans-274
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦AMI创建完成，我们不再需要临时实例，因此可以终止它：
+- en: '[PRE48]'
+  id: totrans-275
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE48]'
+- en: 'Once the EC2 instance has been terminated, there is one more task in the role:'
+  id: totrans-276
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦EC2实例被终止，角色中还有一项任务：
+- en: '[PRE49]'
+  id: totrans-277
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE49]'
+- en: 'This does exactly what it says: it pauses the Playbook execution for 2 minutes.'
+  id: totrans-278
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这正是它所说的功能：它将暂停Playbook执行2分钟。
+- en: I have included this because there was the odd occasion where the AMI was created
+    and shown as available. Still, for some reason, it takes a short while for it
+    to appear in the results when we query the Amazon API to find our AMIs, so rather
+    than introduce a potential error when the next role starts, I have found it best
+    to wait a minute or two.
+  id: totrans-279
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我添加这一点是因为曾经有过AMI已创建并显示为可用的情况，但由于某些原因，在我们查询Amazon API以查找AMI时，它需要稍微等待一段时间才能出现在结果中，因此为了避免下一角色开始时可能发生的错误，我发现最好等待一到两分钟。
+- en: The auto-scaling role
+  id: totrans-280
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 自动扩展角色
+- en: We have arrived at the final role of the Playbook; in this role, we will create
+    all the resources needed to deploy EC2 instances using our newly created AMI and
+    register them with the ELB to access our WordPress site.
+  id: totrans-281
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们已经进入Playbook的最后一个角色；在这个角色中，我们将创建部署EC2实例所需的所有资源，使用新创建的AMI并将其注册到ELB上，以便访问我们的WordPress站点。
+- en: 'The first thing we need to do is grab a list of all our AMIs from the API:'
+  id: totrans-282
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们首先需要做的是从API获取我们所有AMI的列表：
+- en: '[PRE50]'
+  id: totrans-283
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE50]'
+- en: 'Now that we have a list of AMIs, we need to filter out the most recent one.
+    To do this, we use the same logic that we used when launching the temporary EC2
+    instance:'
+  id: totrans-284
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已有AMI列表，我们需要筛选出最新的一个。为此，我们使用与启动临时EC2实例时相同的逻辑：
+- en: '[PRE51]'
+  id: totrans-285
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE51]'
+- en: 'Now that we have filtered our list of AMIs down to the latest one, we need
+    to set two facts, one for the name of the AMI and the other containing the ID
+    of the AMI:'
+  id: totrans-286
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经将AMI列表筛选到最新的那个，我们需要设置两个事实，一个是AMI的名称，另一个是AMI的ID：
+- en: '[PRE52]'
+  id: totrans-287
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE52]'
+- en: The final bit of information we need before we start creating/updating resources
+    is the ID of the security group we are using for the EC2 instances.
+  id: totrans-288
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在我们开始创建/更新资源之前，需要的最后一条信息是我们用于EC2实例的安全组ID。
+- en: As before, we use the `ec2_seach_string` variable to find the correct group
+    ID and set a fact called `ec2_group_id`.
+  id: totrans-289
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如之前所述，我们使用`ec2_seach_string`变量来查找正确的组ID，并设置一个名为`ec2_group_id`的事实。
+- en: Next up, we need to create or update a launch template if one already exists.
+  id: totrans-290
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来，我们需要创建或更新启动模板（如果已有模板）。
+- en: 'A launch template contains the basic configuration for the instances we will
+    be launching in the auto-scaling group:'
+  id: totrans-291
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 启动模板包含我们将在自动扩展组中启动的实例的基本配置：
+- en: '[PRE53]'
+  id: totrans-292
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE53]'
+- en: With this task, we create the launch template and then publish a version called
+    after the name of our AMI so that we can quickly identify it; we then attach the
+    corresponding AMI ID and security group ID and set the spec of the instances we
+    want to launch.
+  id: totrans-293
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在此任务中，我们创建了启动模板，并发布了一个以 AMI 名称命名的版本，以便我们可以快速识别它；然后，我们附加了相应的 AMI ID 和安全组 ID，并设置了要启动实例的规格。
+- en: With the launch template in place, we need to gather a few more bits of information
+    from the AWS API before creating the auto-scaling group.
+  id: totrans-294
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在启动模板准备好之后，我们需要从 AWS API 获取更多信息，然后才能创建自动扩展组。
+- en: 'First, we need the ID of the target group that we created in the ELB role:'
+  id: totrans-295
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 首先，我们需要在 ELB 角色中创建的目标组的 ID：
+- en: '[PRE54]'
+  id: totrans-296
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE54]'
+- en: 'We then need the IDs of the subnets where we are going to be deploying the
+    EC2 instances launched as part of auto-scaling group, the following task gathers
+    information on the subnets:'
+  id: totrans-297
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后，我们需要获取子网的 ID，这些子网将用于部署作为自动扩展组一部分的 EC2 实例，以下任务会收集子网的信息：
+- en: '[PRE55]'
+  id: totrans-298
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE55]'
+- en: 'Now that we have the information on the subnets, we need to extract just the
+    IDs of each of the subnets and create a list:'
+  id: totrans-299
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经有了子网的信息，需要仅提取每个子网的 ID 并创建一个列表：
+- en: '[PRE56]'
+  id: totrans-300
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE56]'
+- en: 'This is the final bit of information we need, and we can now proceed with creating
+    or updating the auto-scaling group:'
+  id: totrans-301
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这是我们需要的最后一部分信息，现在可以继续创建或更新自动扩展组：
+- en: '[PRE57]'
+  id: totrans-302
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE57]'
+- en: There is quite a lot happening in this, the final resource we will be launching,
+    so let’s go into more detail.
+  id: totrans-303
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这是我们将要启动的最终资源，发生的事情相当多，因此我们需要更详细地了解。
+- en: First, we have the basic configuration standard across most of the AWS-related
+    modules we have called throughout this Playbook; here, we are setting the name,
+    region, and state of the resource, which will be `present` for this playbook.
+  id: totrans-304
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 首先，我们有 AWS 相关模块中的基本配置标准，这些模块在整个 Playbook 中都有调用；在这里，我们设置了资源的名称、区域和状态，对于本 Playbook，状态将设置为
+    `present`。
+- en: Next up, we must provide the Target Group `target_group_arns` key specifies
+    the ARNs of the target groups for the load balancer, which we set to the first
+    target group ARN from `elb_target_group_output` and then the `launch_template`
+    key references the launch template by its name, set to the value of `launch_template_name`.
+  id: totrans-305
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来，我们必须提供目标组的 `target_group_arns` 键，指定负载均衡器的目标组 ARN，我们将其设置为 `elb_target_group_output`
+    中的第一个目标组 ARN，然后 `launch_template` 键通过其名称引用启动模板，设置为 `launch_template_name` 的值。
+- en: Now we have the size and capacity settings; the `min_size`, `max_size`, and
+    `desired_capacity` keys are set using `ec2.asg.min_size`, `ec2.asg.max_size`,
+    and `ec2.asg.desired_capacity` variables, which define the auto-scaling group’s
+    minimum, maximum, and desired number of instances.
+  id: totrans-306
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经有了大小和容量设置；`min_size`、`max_size` 和 `desired_capacity` 键分别使用 `ec2.asg.min_size`、`ec2.asg.max_size`
+    和 `ec2.asg.desired_capacity` 变量进行设置，这些变量定义了自动扩展组的最小、最大和期望实例数。
+- en: We then have the health check configuration, setting the `health_check_period`
+    and `health_check_type` keys to control how the health of the instances in the
+    **auto scaling group** (**ASG**) is checked.
+  id: totrans-307
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来是健康检查配置，设置 `health_check_period` 和 `health_check_type` 键，以控制如何检查 **自动扩展组**
+    (**ASG**) 中实例的健康状况。
+- en: Now we have the Instance Replacement Settings. The `replace_all_instances` and
+    `replace_batch_size` keys instruct whether all instances should be replaced and
+    provide the batch size for replacing instances, respectively.
+  id: totrans-308
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们有了实例替换设置。`replace_all_instances` 和 `replace_batch_size` 键分别指示是否替换所有实例，并提供替换实例的批量大小。
+- en: Then, we have the Network Configuration, setting `vpc_zone_identifier` to use
+    the list of subnet IDs stored in `subnet_ec2_ids` to distribute the instances
+    in the ASG across those subnets and availability zones.
+  id: totrans-309
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后，我们设置了网络配置，设置 `vpc_zone_identifier` 来使用存储在 `subnet_ec2_ids` 中的子网 ID 列表，将 ASG
+    中的实例分布到这些子网和可用区中。
+- en: Next up are the Wait Settings, which control whether the task should wait for
+    the instances to have a status of `running` and the maximum time to wait for that
+    condition to be met.
+  id: totrans-310
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来是等待设置，控制任务是否应该等待实例的状态为 `running`，并指定等待该条件满足的最长时间。
+- en: Finally, you will have noticed that we are tagging in a pretty different way
+    than we have been doing throughout the rest of the Playbook; the task defines
+    several tags (`Name`, `Project`, `Environment`, and `Deployed_by`) with respective
+    values, all marked to propagate at launch, which means that the EC2 instances
+    launched by the auto-scaling group will each inherit these tags when they are
+    launched.
+  id: totrans-311
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后，你会注意到，我们在这里标记的方式与Playbook的其余部分有所不同；该任务定义了几个标签（`Name`、`Project`、`Environment`和`Deployed_by`）以及相应的值，所有标签都标记为在启动时传播，这意味着由自动扩展组启动的EC2实例在启动时会继承这些标签。
+- en: This concludes our walk-through of the Playbook. As you will have seen, we extended
+    our original AWS networking Playbook from [*Chapter 10*](B21620_10.xhtml#_idTextAnchor458),
+    *Building Out a Cloud Network*, to encompass more services as well as integrating
+    our WordPress roles from the Playbook we covered in [*Chapter 5*](B21620_05.xhtml#_idTextAnchor253),
+    *Deploying WordPress* – all that is left now is run the playbook.
+  id: totrans-312
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这就是我们对Playbook的演练总结。如你所见，我们扩展了原始的AWS网络Playbook，从[*第10章*](B21620_10.xhtml#_idTextAnchor458)，“构建云网络”，将更多的服务整合进来，并结合了我们在[*第5章*](B21620_05.xhtml#_idTextAnchor253)，“部署WordPress”中讨论的WordPress角色——现在剩下的就是运行Playbook了。
+- en: Running the Playbook
+  id: totrans-313
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 运行Playbook
+- en: 'Now that we have all the roles needed to deploy our resources into AWS, we
+    can run the playbook. To start with, we need to let Ansible know our access key
+    and secret by running the following commands with your own credentials to set
+    the environment variables:'
+  id: totrans-314
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们有了部署资源到AWS所需的所有角色，我们可以运行Playbook。首先，我们需要通过运行以下命令，并使用你自己的凭证设置环境变量，告诉Ansible我们的访问密钥和密钥：
+- en: '[PRE58]'
+  id: totrans-315
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE58]'
+- en: 'With environment variables set, you kick off the Ansible run by using the following
+    command:'
+  id: totrans-316
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 设置好环境变量后，通过以下命令启动Ansible运行：
+- en: '[PRE59]'
+  id: totrans-317
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE59]'
+- en: Unlike previous chapters, where we just looked at the end of the playbook run,
+    here we will look at some highlights of what happens when we deploy our resources.
+  id: totrans-318
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 与前几章不同，我们这里只关注部署资源时发生的重点，而不是只看Playbook运行结束时的结果。
+- en: Playbook run highlights
+  id: totrans-319
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: Playbook运行亮点
+- en: This is not the complete playbook output, and when running the playbook, I have
+    not enabled debug, so all those tasks will be skipped.
+  id: totrans-320
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这不是完整的Playbook输出，在运行Playbook时，我没有启用调试，因此所有这些任务都将被跳过。
+- en: 'We start with the VPC:'
+  id: totrans-321
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们从VPC开始：
+- en: '[PRE60]'
+  id: totrans-322
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE60]'
+- en: 'We now have somewhere to put the subnets once we have gathered some information
+    on the availability zones in our chosen region:'
+  id: totrans-323
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦我们收集到我们选择区域的可用区信息，我们就有地方放置子网了：
+- en: '[PRE61]'
+  id: totrans-324
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE61]'
+- en: 'Once we have that information, it will loop through and include the `create_subnet.yml`
+    tasks:'
+  id: totrans-325
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦我们获得了这些信息，Playbook会循环执行并包括`create_subnet.yml`任务：
+- en: '[PRE62]'
+  id: totrans-326
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE62]'
+- en: 'We then get the results of each of the four included task runs, the first of
+    which looks like the following:'
+  id: totrans-327
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接着，我们获取每个包含的四个任务运行的结果，第一个结果如下所示：
+- en: '[PRE63]'
+  id: totrans-328
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE63]'
+- en: As you can see, a subnet is created for each of the zones in the `eu-west-1`
+    region – this is then repeated three more times. Once the subnets have all been
+    added, we grab more information on what has been created.
+  id: totrans-329
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，为`eu-west-1`区域的每个可用区创建了一个子网——这一过程会重复三次。所有子网添加完成后，我们会获取更多关于已创建内容的信息。
+- en: 'Next, the Internet Gateway role is run:'
+  id: totrans-330
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来，运行Internet Gateway角色：
+- en: '[PRE64]'
+  id: totrans-331
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE64]'
+- en: 'As you may have remembered, there isn’t much happening in that role, unlike
+    the next one, which adds the network security groups, where we start by getting
+    your current public IP address:'
+  id: totrans-332
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所记得，在那个角色中并没有发生太多事情，不像下一个角色，它会添加网络安全组，我们首先通过获取你当前的公共IP地址开始：
+- en: '[PRE65]'
+  id: totrans-333
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE65]'
+- en: 'As you may recall, we create the two groups in two parts – first, we create
+    the base groups:'
+  id: totrans-334
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所记得，我们将两个组分两部分创建——首先，我们创建基础组：
+- en: '[PRE66]'
+  id: totrans-335
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE66]'
+- en: 'Then we get information on the bases we have just launched and set them as
+    facts:'
+  id: totrans-336
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后，我们获取刚刚启动的基础的相关信息并将其设置为事实：
+- en: '[PRE67]'
+  id: totrans-337
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE67]'
+- en: 'Lastly, we then add the rules; you will notice from the output that we are
+    passing in the IDs of the groups we have created so that we can use them as part
+    of the rules:'
+  id: totrans-338
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后，我们添加规则；你会从输出中看到，我们传入了我们所创建的组的ID，以便将它们作为规则的一部分使用：
+- en: '[PRE68]'
+  id: totrans-339
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE68]'
+- en: 'Now, with the rules configured, we can start deploying some resources that
+    use them, starting with the Target Group and ELB:'
+  id: totrans-340
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，规则配置完毕后，我们可以开始部署一些使用这些规则的资源，从目标组和ELB开始：
+- en: '[PRE69]'
+  id: totrans-341
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE69]'
+- en: 'Then EFS:'
+  id: totrans-342
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后是EFS：
+- en: '[PRE70]'
+  id: totrans-343
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE70]'
+- en: 'Now RDS:'
+  id: totrans-344
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在是RDS：
+- en: '[PRE71]'
+  id: totrans-345
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE71]'
+- en: 'Now it is time to create the temporary EC2 instance. First, we find the AMI
+    to use:'
+  id: totrans-346
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在是时候创建临时的EC2实例了。首先，我们找到要使用的AMI：
+- en: '[PRE72]'
+  id: totrans-347
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE72]'
+- en: 'Then, we create the SSH key pair:'
+  id: totrans-348
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接着，我们创建SSH密钥对：
+- en: '[PRE73]'
+  id: totrans-349
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE73]'
+- en: 'Then, we create the EC2 instance itself:'
+  id: totrans-350
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后，我们创建EC2实例本身：
+- en: '[PRE74]'
+  id: totrans-351
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE74]'
+- en: 'With the instance configured, we need to wait for it to have a status of **running**:'
+  id: totrans-352
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在实例配置好后，我们需要等待它的状态变为 **running**：
+- en: '[PRE75]'
+  id: totrans-353
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE75]'
+- en: 'Now that the instance is running, we add the newly launching EC2 instance to
+    our host group:'
+  id: totrans-354
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在实例正在运行，我们将新启动的 EC2 实例添加到我们的主机组：
+- en: '[PRE76]'
+  id: totrans-355
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE76]'
+- en: 'Before we move on to connecting to the EC2 host to install and configure the
+    software stack and WordPress, we generate the endpoints variables file:'
+  id: totrans-356
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在我们继续连接 EC2 主机以安装和配置软件栈及 WordPress 之前，我们生成端点变量文件：
+- en: '[PRE77]'
+  id: totrans-357
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE77]'
+- en: 'That concludes the first section of the `site.yml` file, and we can now SSH
+    into the temporary EC2 host and install everything:'
+  id: totrans-358
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这标志着 `site.yml` 文件的第一部分结束，我们现在可以通过 SSH 登录到临时 EC2 主机并安装一切：
+- en: '[PRE78]'
+  id: totrans-359
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE78]'
+- en: 'We then progress with the installation, which, as we have already discussed,
+    is pretty much the same set of tasks that we covered *in* [*Chapter 5*](B21620_05.xhtml#_idTextAnchor253),
+    *Deploying WordPress*, and [*Chapter 9*](B21620_09.xhtml#_idTextAnchor411), *Moving
+    to the Cloud* – except for these tasks, which mount the EFS file system:'
+  id: totrans-360
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后，我们继续执行安装，正如我们之前讨论的，这几乎与我们在 [*第五章*](B21620_05.xhtml#_idTextAnchor253)中讨论的
+    *部署 WordPress*，以及 [*第九章*](B21620_09.xhtml#_idTextAnchor411)中讨论的 *迁移到云端* 相同 ——
+    除了这些任务，它们会挂载 EFS 文件系统：
+- en: '[PRE79]'
+  id: totrans-361
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE79]'
+- en: 'These tasks get the PHP version and set it as a fact:'
+  id: totrans-362
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这些任务获取 PHP 版本并将其设置为事实：
+- en: '[PRE80]'
+  id: totrans-363
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE80]'
+- en: 'Once that is complete, NGINX and PHP-FPM are restarted:'
+  id: totrans-364
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦完成，NGINX 和 PHP-FPM 会被重启：
+- en: '[PRE81]'
+  id: totrans-365
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE81]'
+- en: This concludes the tasks that bootstrap our temporary EC2 instance. We can now
+    move back to our local machine and run the final section of the `sites.yml` file.
+  id: totrans-366
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这标志着引导临时 EC2 实例的任务结束。我们现在可以回到本地机器并运行 `sites.yml` 文件的最后部分。
+- en: 'First, we create the AMI and terminate the temporary EC2 instance:'
+  id: totrans-367
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 首先，我们创建 AMI 并终止临时 EC2 实例：
+- en: '[PRE82]'
+  id: totrans-368
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE82]'
+- en: 'Then, we wait for two minutes:'
+  id: totrans-369
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后，我们等待两分钟：
+- en: '[PRE83]'
+  id: totrans-370
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE83]'
+- en: 'Now, we grab the details of the AMI we just created:'
+  id: totrans-371
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，我们获取刚才创建的 AMI 的详细信息：
+- en: '[PRE84]'
+  id: totrans-372
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE84]'
+- en: 'Once we have those details, we create (or if we have already run the playbook,
+    update) the Launch Template:'
+  id: totrans-373
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦我们有了这些详细信息，我们就创建（或如果我们已经运行过 Playbook，则更新）启动模板：
+- en: '[PRE85]'
+  id: totrans-374
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE85]'
+- en: 'Now, we gather the information needed for us to create/update the Auto Scaling
+    Group:'
+  id: totrans-375
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，我们收集创建/更新自动扩展组所需的信息：
+- en: '[PRE86]'
+  id: totrans-376
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE86]'
+- en: 'Then we create the list of subnets the Auto Scaling Group will use:'
+  id: totrans-377
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后我们创建自动扩展组将使用的子网列表：
+- en: '[PRE87]'
+  id: totrans-378
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE87]'
+- en: 'The preceding output is repeated twice for the other two subnets we will be
+    using; then, we finally create/update the Auto Scaling Group:'
+  id: totrans-379
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 前面的输出会重复两次，以适应我们将要使用的其他两个子网；然后，我们最终创建/更新自动扩展组：
+- en: '[PRE88]'
+  id: totrans-380
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE88]'
+- en: 'Now, we have come to the end of our Playbook run, and we get the recap:'
+  id: totrans-381
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，我们已经来到了我们的 Playbook 执行的尾声，接下来是回顾：
+- en: '[PRE89]'
+  id: totrans-382
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE89]'
+- en: When I ran the playbook, it took just over 20 minutes to complete the first
+    time, with subsequent runs taking around 10 minutes to finish.
+  id: totrans-383
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当我运行 Playbook 时，第一次运行花费了超过 20 分钟，随后的运行大约需要 10 分钟才能完成。
+- en: So, from a single command and in 20ish minutes, we have a highly available vanilla
+    WordPress installation. If you find out the public URL of your Elastic Load Balancer
+    from the AWS console or by checking the value of the `elb` key in the `group_vars/generated_aws_endpoints.yml`
+    file, you should be able to see your site.
+  id: totrans-384
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 所以，凭借一条命令和大约 20 分钟的时间，我们就能得到一个高可用的原生 WordPress 安装。如果你从 AWS 控制台获取到弹性负载均衡器的公共
+    URL，或者通过检查 `group_vars/generated_aws_endpoints.yml` 文件中的 `elb` 键值，你应该能够看到你的网站。
+- en: Terminating all the resources
+  id: totrans-385
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 终止所有资源
+- en: 'Before we complete this chapter, we need to look at terminating the resources;
+    to do this, you can run the following:'
+  id: totrans-386
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在我们完成这一章之前，我们需要看看如何终止这些资源；为此，你可以运行以下命令：
+- en: '[PRE90]'
+  id: totrans-387
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE90]'
+- en: 'This removes everything in the reverse order that we launched it, starting
+    with the Auto Scaling Group:'
+  id: totrans-388
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这会按照我们启动资源的相反顺序删除一切，从自动扩展组开始：
+- en: '[PRE91]'
+  id: totrans-389
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE91]'
+- en: 'As there can be more than one AMI, we gather some facts and then loop through
+    removing everything that is returned:'
+  id: totrans-390
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于可能有多个 AMI，我们收集一些信息，然后循环删除所有返回的内容：
+- en: '[PRE92]'
+  id: totrans-391
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE92]'
+- en: 'We then remove more one-off resources:'
+  id: totrans-392
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接着，我们删除更多一次性资源：
+- en: '[PRE93]'
+  id: totrans-393
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE93]'
+- en: 'As the security groups reference each other, we need to create a list of them
+    in reverse order so we can attempt to delete a group that is referenced by the
+    next one we are going to delete:'
+  id: totrans-394
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于安全组相互引用，我们需要按相反顺序创建它们的列表，以便能够尝试删除下一个要删除的组所引用的组：
+- en: '[PRE94]'
+  id: totrans-395
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE94]'
+- en: You may have noticed that it failed towards the end; that is because the AWS
+    API is having a little trouble keeping up, and the playbook is running a little
+    ahead of the results it is returning.
+  id: totrans-396
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可能注意到它在接近尾声时失败了；这是因为 AWS API 有点跟不上，Playbook 运行的速度超过了它返回的结果。
+- en: 'We check a few more tasks:'
+  id: totrans-397
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们检查了更多任务：
+- en: '[PRE95]'
+  id: totrans-398
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE95]'
+- en: 'Next, we have the subnets:'
+  id: totrans-399
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来，我们来处理子网：
+- en: '[PRE96]'
+  id: totrans-400
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE96]'
+- en: 'Finally, we get to the VPC and recap:'
+  id: totrans-401
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后，我们回顾一下VPC：
+- en: '[PRE97]'
+  id: totrans-402
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE97]'
+- en: Once the playbook has finished running, I recommend you log in to the AWS console
+    and double-check that everything has been correctly removed, as you don’t want
+    to incur any unexpected costs.
+  id: totrans-403
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦操作手册运行完毕，我建议您登录AWS控制台，仔细检查确保一切已正确删除，以避免产生任何意外费用。
+- en: Summary
+  id: totrans-404
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 总结
+- en: In this chapter, we have taken our AWS deployment to the next level by creating
+    and launching a highly available WordPress installation. By leveraging the various
+    services offered by AWS, we engineered out any single points of failure regarding
+    the availability of instances and our use of availability zones.
+  id: totrans-405
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们通过创建并启动一个高度可用的WordPress安装，将我们的AWS部署提升到了一个新水平。通过利用AWS提供的各种服务，我们消除了关于实例可用性和可用区使用的任何单点故障。
+- en: We also built logic into our playbook to use the same command to launch a new
+    deployment or update the operating system on an existing one with a rolling deployment
+    of new instance AMIs that contain our updated packages, leading to zero downtime
+    during deployment.
+  id: totrans-406
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们还在我们的操作手册中加入了逻辑，使得使用相同的命令可以启动新的部署或更新现有的操作系统，通过滚动部署包含更新包的新实例AMI，确保在部署过程中零停机时间。
+- en: While the WordPress deployment is as simple as possible, deploying the production-ready
+    images would remain similar when using a more complicated application.
+  id: totrans-407
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 虽然WordPress的部署尽可能简化，但在使用更复杂的应用程序时，部署生产就绪的镜像将保持类似的方式。
+- en: In our next chapter, we will look at moving from the public to the private cloud
+    and how Ansible interacts with VMware.
+  id: totrans-408
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一章中，我们将讨论如何从公共云迁移到私有云，以及Ansible如何与VMware互动。

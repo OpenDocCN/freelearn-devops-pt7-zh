@@ -1,0 +1,1285 @@
+- en: '9'
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '9'
+- en: Moving to the Cloud
+  id: totrans-1
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 向云端迁移
+- en: This chapter will move from using our local virtual machine to using Ansible
+    to launch instances with a public cloud provider.
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章将从使用本地虚拟机转向使用 Ansible 启动与公共云提供商交互的实例。
+- en: For this chapter, we will be using Microsoft Azure, and we are targeting this
+    provider as it allows us to launch virtual machines and interact with them without
+    having too much configuration overhead.
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章中，我们将使用 Microsoft Azure，选择该云服务提供商是因为它允许我们启动虚拟机并与其进行交互，而无需过多的配置工作。
+- en: We will then look at adapting our WordPress playbook to interact with the newly
+    launched Microsoft Azure instance.
+  id: totrans-4
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将继续研究如何调整我们的 WordPress 剧本以便与新启动的 Microsoft Azure 实例进行交互。
+- en: 'In this chapter, we will cover the following topics:'
+  id: totrans-5
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们将涵盖以下主题：
+- en: An introduction to Microsoft Azure
+  id: totrans-6
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Microsoft Azure 介绍
+- en: Launching instances in Microsoft Azure
+  id: totrans-7
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在 Microsoft Azure 启动实例
+- en: Bootstrapping WordPress
+  id: totrans-8
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 启动 WordPress
+- en: Technical requirements
+  id: totrans-9
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 技术要求
+- en: In this chapter, we will launch instances in a public cloud, so if you are following
+    along, you will need a Microsoft Azure account. As with other chapters, complete
+    versions of the playbooks can be found in the repository in the chapters folder
+    at [https://github.com/PacktPublishing/Learn-Ansible-Second-Edition/tree/main/Chapter09](https://github.com/PacktPublishing/Learn-Ansible-Second-Edition/tree/main/Chapter09).
+  id: totrans-10
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们将启动一个公共云实例，因此如果你跟随本书操作，你将需要一个 Microsoft Azure 账户。与其他章节一样，完整的剧本版本可以在章节文件夹中找到，地址为[https://github.com/PacktPublishing/Learn-Ansible-Second-Edition/tree/main/Chapter09](https://github.com/PacktPublishing/Learn-Ansible-Second-Edition/tree/main/Chapter09)。
+- en: An introduction to Microsoft Azure
+  id: totrans-11
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Microsoft Azure 介绍
+- en: In 2008, Microsoft took its first significant step into cloud computing by introducing
+    Windows Azure, a cloud-based data center service. This launch marked a pivotal
+    moment in what many people saw as a traditional software company’s history, signaling
+    a strategic shift toward cloud computing.
+  id: totrans-12
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 2008 年，微软通过推出 Windows Azure，迈出了其进入云计算领域的第一步，Windows Azure 是一种基于云的数据中心服务。这次发布标志着许多人所认为的传统软件公司历史的一个转折点，宣告着微软在战略上转向云计算。
+- en: Developed under the internal project *Project Red Dog*, Windows Azure represented
+    Microsoft’s answer to the growing demand for scalable, accessible, and flexible
+    computing resources.
+  id: totrans-13
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Windows Azure 是在内部项目*Project Red Dog*下开发的，代表了微软对日益增长的可扩展、可访问和灵活计算资源需求的回应。
+- en: 'Windows Azure was initially rolled out with five core components, each designed
+    to offer distinct capabilities within the cloud computing spectrum:'
+  id: totrans-14
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Windows Azure 最初推出时包含五个核心组件，每个组件都旨在提供云计算领域内不同的功能：
+- en: '**Microsoft SQL Data Services**: This component offered a cloud version of
+    Microsoft’s SQL database, simplifying the complexities associated with hosting
+    and managing databases in a cloud environment.'
+  id: totrans-15
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**Microsoft SQL 数据服务**：此组件提供了 Microsoft SQL 数据库的云版本，简化了在云环境中托管和管理数据库的复杂性。'
+- en: '**Microsoft .NET Services**: As a **platform as a service** (**PaaS**) offering,
+    it enabled developers to deploy their .NET-based applications within a Microsoft-managed
+    runtime, streamlining the development process.'
+  id: totrans-16
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**Microsoft .NET 服务**：作为一种**平台即服务**（**PaaS**）产品，它使开发人员能够在 Microsoft 管理的运行时环境中部署基于
+    .NET 的应用程序，从而简化了开发过程。'
+- en: '**Microsoft SharePoint** and **Microsoft Dynamics**: These **software as a
+    service** (**SaaS**) offerings provided cloud-based versions of the company’s
+    renowned intranet and **customer relationship management** (**CRM**) products,
+    enhancing collaboration and customer engagement.'
+  id: totrans-17
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**Microsoft SharePoint** 和 **Microsoft Dynamics**：这些**软件即服务**（**SaaS**）产品提供了公司知名的企业内联网和**客户关系管理**（**CRM**）产品的云版本，提升了协作与客户互动。'
+- en: '**Windows Azure (IaaS)**: An **infrastructure-as-a-service** (**IaaS**) solution,
+    this allowed users to create and control virtual machines, storage, and networking
+    services, addressing diverse compute workloads.'
+  id: totrans-18
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**Windows Azure（IaaS）**：一种**基础设施即服务**（**IaaS**）解决方案，允许用户创建并控制虚拟机、存储和网络服务，处理各种计算工作负载。'
+- en: The preceding four definitions are from an older book I wrote, *Infrastructure
+    as Code* *for Beginners*.
+  id: totrans-19
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 之前的四个定义摘自我写的旧书《*基础设施即代码* 初学者指南》。
+- en: Central to Windows Azure’s architecture was the Red Dog operating system, a
+    specially modified version of Windows NT. This system was engineered to include
+    a cloud layer, ensuring the smooth delivery of data center services.
+  id: totrans-20
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Windows Azure 架构的核心是 Red Dog 操作系统，它是一个特别修改过的 Windows NT 版本。该系统被设计为包含一个云层，确保数据中心服务的顺利交付。
+- en: By 2014, reflecting its expanded range of services and a growing emphasis on
+    Linux-based workloads, Microsoft rebranded the service as Microsoft Azure. This
+    change underscored the platform’s evolution beyond Windows-centric solutions.
+  id: totrans-21
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 到 2014 年，随着服务范围的扩大和对基于 Linux 的工作负载的重视，Microsoft 将该服务更名为 Microsoft Azure。这一变化突显了该平台超越
+    Windows 为中心的解决方案的演变。
+- en: Fast forward to 2020, and it was evident that Microsoft Azure had embraced a
+    more inclusive approach, with over half of its virtual machine cores and a significant
+    number of Azure Marketplace images being Linux-based.
+  id: totrans-22
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 快进到 2020 年，显然 Microsoft Azure 已经采取了更加包容的方法，超过一半的虚拟机核心和大量 Azure Marketplace 镜像都是基于
+    Linux 的。
+- en: This shift demonstrated Microsoft’s broader adoption of Linux and open-source
+    technologies, which remain integral to their current cloud service offerings at
+    the time of writing.
+  id: totrans-23
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这一转变展示了 Microsoft 更广泛采用 Linux 和开源技术，这些技术在写作时仍然是其当前云服务产品的重要组成部分。
+- en: Launching instances in Microsoft Azure
+  id: totrans-24
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 在 Microsoft Azure 中启动实例
+- en: If you followed along in [*Chapter 7*](B21620_07.xhtml#_idTextAnchor336), *Ansible
+    Windows Modules*, you will have already launched a virtual machine in Microsoft
+    Azure using the Azure CLI.
+  id: totrans-25
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你跟着[*第7章*](B21620_07.xhtml#_idTextAnchor336)《Ansible Windows 模块》一起操作，你应该已经使用
+    Azure CLI 在 Microsoft Azure 中启动了一个虚拟机。
+- en: Reminder
+  id: totrans-26
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 提醒
+- en: For instructions on how to install and configure the Azure CLI, please see the
+    documentation at [https://learn.microsoft.com/en-us/cli/azure/install-azure-cli/](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli/).
+    Remember, if you are following along on a Windows host, then make sure to install
+    the Azure CLI within your Windows Subsystem for Linux installation alongside where
+    you installed Ansible.
+  id: totrans-27
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有关如何安装和配置 Azure CLI 的说明，请参阅[https://learn.microsoft.com/en-us/cli/azure/install-azure-cli/](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli/)中的文档。记住，如果你是在
+    Windows 主机上操作，确保在安装 Ansible 的同一位置，在 Windows Subsystem for Linux 中安装 Azure CLI。
+- en: 'When talking through launching the Windows virtual machine, we did the following:'
+  id: totrans-28
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在讨论启动 Windows 虚拟机时，我们做了以下工作：
+- en: We created a resource group to collect all the resources for our virtual machine
+    workload.
+  id: totrans-29
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 我们创建了一个资源组，以便将所有虚拟机工作负载的资源收集在一起。
+- en: We then created a virtual network and subnet to attach to the machine’s network
+    interface.
+  id: totrans-30
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 然后我们创建了一个虚拟网络和子网，并将其附加到机器的网络接口上。
+- en: We then created a network security group to secure our virtual machine.
+  id: totrans-31
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 然后我们创建了一个网络安全组来保护我们的虚拟机。
+- en: Once we had the basics, we launched a Windows virtual machine, attaching a public
+    IP address directly to the network interface.
+  id: totrans-32
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 一旦我们有了基础，我们启动了一个 Windows 虚拟机，并将一个公共 IP 地址直接附加到网络接口上。
+- en: Finally, we deployed a virtual machine extension that executed the PowerShell
+    script on our Windows host to enable the WinRM protocol, allowing us to connect
+    to and interact with the host using Ansible.
+  id: totrans-33
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 最后，我们部署了一个虚拟机扩展，在我们的 Windows 主机上执行 PowerShell 脚本，以启用 WinRM 协议，允许我们使用 Ansible
+    连接并与主机进行交互。
+- en: This chapter will repeat, tweak, and add to these steps using Ansible and the
+    Azure collection of modules.
+  id: totrans-34
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章将使用 Ansible 和 Azure 模块集重复、调整并补充这些步骤。
+- en: Preparing Ansible for Microsoft Azure
+  id: totrans-35
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 为 Microsoft Azure 准备 Ansible
+- en: 'Before we dive into the Ansible role, which will launch our resources, we need
+    to do a little preparation; first, let’s ensure that the Azure collection is installed
+    by running the following:'
+  id: totrans-36
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在我们深入探讨 Ansible 角色之前，该角色将启动我们的资源，我们需要做一些准备工作；首先，让我们通过运行以下命令来确保安装了 Azure 集合：
+- en: '[PRE0]'
+  id: totrans-37
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: 'Next, we must install the Python modules that allow the Azure collection to
+    interact with the Azure APIs. To do this, we need to run the following command:'
+  id: totrans-38
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来，我们必须安装允许 Azure 集合与 Azure API 交互的 Python 模块。为此，我们需要运行以下命令：
+- en: '[PRE1]'
+  id: totrans-39
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: 'With the necessary supporting Python modules installed, the next step is to
+    ensure that you have signed into your Microsoft Azure account using the Azure
+    CLI. To do this, run the following command and follow the onscreen prompts:'
+  id: totrans-40
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在安装了必要的支持 Python 模块后，下一步是确保你已使用 Azure CLI 登录到你的 Microsoft Azure 帐户。为此，请运行以下命令并按照屏幕上的提示进行操作：
+- en: '[PRE2]'
+  id: totrans-41
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: If you have access to more than one Azure subscription using your account, you
+    should ensure that the subscription you intend to launch your resources in is
+    selected.
+  id: totrans-42
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你使用的帐户可以访问多个 Azure 订阅，请确保选择了你打算启动资源的订阅。
+- en: 'To do this, you can list all the subscriptions and, if needed, switch to the
+    right subscription by running the following commands:'
+  id: totrans-43
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为此，你可以列出所有订阅，并在需要时通过运行以下命令切换到正确的订阅：
+- en: '[PRE3]'
+  id: totrans-44
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: Ensure you replace `<subscription_id>` with the correct subscription ID from
+    the `az account` `list` command.
+  id: totrans-45
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 确保您将`<subscription_id>`替换为从`az account` `list`命令获取的正确订阅 ID。
+- en: Note
+  id: totrans-46
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 注意
+- en: Using the `az account set` command only applies to your current session; if
+    you close your terminal window and reopen a new session, you must ensure you have
+    changed subscriptions again.
+  id: totrans-47
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用`az account set`命令只会影响当前会话；如果关闭终端窗口并重新打开新会话，您必须确保再次更改订阅。
+- en: Reviewing the variables
+  id: totrans-48
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 审查变量
+- en: There are several variables across the roles we will use to deploy our Azure
+    resources and configure WordPress. The first ones we will look at can be found
+    in the `group_vars/common.yml` file.
+  id: totrans-49
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将在多个角色中使用几个变量来部署 Azure 资源并配置 WordPress。我们首先要查看的变量可以在`group_vars/common.yml`文件中找到。
+- en: To start with, we have some `debug_output`, outputs the contents of the variables
+    that are registered during the playbook run; setting this to `true` is helpful
+    to pull back information on the Azure resources once they have launched during
+    the development of the role.
+  id: totrans-50
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 首先，我们有一些`debug_output`，它会输出在 playbook 运行期间注册的变量内容；将其设置为`true`可以帮助我们在开发角色时拉取已启动的
+    Azure 资源信息。
+- en: The second feature flag is `generate_key`; if this is set to `true`, then a
+    private and public key pair will be created by Ansible if one does not exist at
+    `~/.ssh/id_rsa`.
+  id: totrans-51
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 第二个功能标志是`generate_key`；如果设置为`true`，那么 Ansible 将在`~/.ssh/id_rsa`目录下创建一个公私钥对（如果该对不存在的话）。
+- en: The playbook will use the key in this location when launching a virtual machine,
+    so one must exist, as without it, Ansible cannot connect to the newly launched
+    virtual machine.
+  id: totrans-52
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Playbook 在启动虚拟机时会使用此位置的密钥，因此必须确保该密钥存在，否则 Ansible 无法连接到新启动的虚拟机。
+- en: 'These two variables look like the following:'
+  id: totrans-53
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这两个变量如下所示：
+- en: '[PRE4]'
+  id: totrans-54
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: 'Next, in `group_vars/common.yml`, we define some information about our `app`
+    workload; this contains a mixture of details about the application and some of
+    the Azure details like the Azure region the workload will be launched in (`location`
+    and `location_short`) as well as the name that our WordPress site will be accessible
+    on ( `public_dns_name`):'
+  id: totrans-55
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来，在`group_vars/common.yml`文件中，我们定义了一些关于我们的`app`工作负载的信息；这些信息包含了应用程序的细节以及一些
+    Azure 相关的内容，如工作负载将要启动的 Azure 区域（`location` 和 `location_short`），以及我们的 WordPress
+    网站可访问的名称（`public_dns_name`）：
+- en: '[PRE5]'
+  id: totrans-56
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: 'The final set of variables, which are defined in the `group_vars/common.yml`
+    file, are for the tags that will be applied to each Azure resource that Ansible
+    will launch:'
+  id: totrans-57
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后一组变量定义在`group_vars/common.yml`文件中，用于应用到每个 Azure 资源的标签，这些资源将由 Ansible 启动：
+- en: '[PRE6]'
+  id: totrans-58
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: The next set of variables we will be using can be found in `roles/azure/defaults/main.yml`,
+    which are used to deploy our resources.
+  id: totrans-59
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将使用的下一组变量可以在`roles/azure/defaults/main.yml`中找到，这些变量用于部署我们的资源。
+- en: 'The first block of variables defines a quick dictionary of Azure service names
+    for use when it comes to naming our resources:'
+  id: totrans-60
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 第一组变量定义了一个快速的 Azure 服务名称字典，方便我们在命名资源时使用：
+- en: '[PRE7]'
+  id: totrans-61
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE7]'
+- en: 'Next, we define the resource names – as per [*Chapter 7*](B21620_07.xhtml#_idTextAnchor336),
+    *Ansible Windows Modules*, I am naming the resources as close to the cloud adoption
+    framework recommendations as possible:'
+  id: totrans-62
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来，我们定义资源名称——根据[*第七章*](B21620_07.xhtml#_idTextAnchor336)《Ansible Windows 模块》中的内容，我将资源名称尽可能接近云采用框架的推荐做法：
+- en: '[PRE8]'
+  id: totrans-63
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE8]'
+- en: 'Now that all the naming is out of the way, we can start defining the networking
+    variables:'
+  id: totrans-64
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在所有的命名工作完成后，我们可以开始定义网络相关的变量：
+- en: '[PRE9]'
+  id: totrans-65
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE9]'
+- en: 'Next, in networking, we have two lists of IPs – one is for fixed IPs, and the
+    other is the IP address discovered when the playbook runs:'
+  id: totrans-66
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来，在网络配置中，我们有两个 IP 地址列表——一个是固定 IP 地址，另一个是在 playbook 运行时发现的 IP 地址：
+- en: '[PRE10]'
+  id: totrans-67
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE10]'
+- en: 'The next block of variables takes the preceding lists of IP addresses and uses
+    them when creating the two network security group rules:'
+  id: totrans-68
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 下一组变量使用先前的 IP 地址列表，在创建两个网络安全组规则时使用这些列表：
+- en: '[PRE11]'
+  id: totrans-69
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE11]'
+- en: As you can see, the first rule, `allowHTTP`, opens port `80` to the world; but
+    `allowSSH` locks down the SSH port to the IP addresses in our two lists. To do
+    this, we take the list of IP addresses in the `trusted_ips` variable, append the
+    content of `dynamic_ips,` and then finally only display the unique items in the
+    list so any duplicate entries are removed.
+  id: totrans-70
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如您所见，第一个规则`allowHTTP`打开了`80`端口给全世界；但是`allowSSH`则限制了 SSH 端口，仅允许我们两个列表中的 IP 地址访问。为此，我们从`trusted_ips`变量中获取
+    IP 地址列表，追加`dynamic_ips`的内容，然后仅显示列表中的唯一条目，以去除任何重复项。
+- en: 'The final networking block defines the basics needed to launch Azure Load Balancer:'
+  id: totrans-71
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后一组网络变量定义了启动 Azure 负载均衡器所需的基本设置：
+- en: '[PRE12]'
+  id: totrans-72
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE12]'
+- en: 'Now we have the virtual machine configuration:'
+  id: totrans-73
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们有了虚拟机配置：
+- en: '[PRE13]'
+  id: totrans-74
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE13]'
+- en: 'Then, finally, just two variables that define the location and the host group
+    of our newly launched virtual machine will be placed:'
+  id: totrans-75
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后，我们将放置定义新启动的虚拟机的位置和主机组的两个变量：
+- en: '[PRE14]'
+  id: totrans-76
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE14]'
+- en: Now that we have covered all of the variables needed to launch our Azure resources,
+    we can work through the tasks that do the actual work, all of which can be found
+    in `roles/azure/tasks/main.yml`.
+  id: totrans-77
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经涵盖了启动 Azure 资源所需的所有变量，我们可以开始执行实际工作的任务，所有这些任务都可以在 `roles/azure/tasks/main.yml`
+    中找到。
+- en: The resource group task
+  id: totrans-78
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 资源组任务
+- en: 'The first task we are going to look at is creating the resource group where
+    all of the other Azure resources are going to be placed:'
+  id: totrans-79
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将要看的第一个任务是创建资源组，这是所有其他 Azure 资源的存放地点：
+- en: '[PRE15]'
+  id: totrans-80
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE15]'
+- en: As you can see, there is not much to it; it takes the `name`, `location`, and
+    `tags` variables we defined and creates the resource group using the `azure. collection.azure_rm_resourcegroup`
+    module. The task output is then registered as a variable, allowing us to reuse
+    the output in later tasks.
+  id: totrans-81
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如您所见，这里没有太多内容；它使用我们定义的 `name`、`location` 和 `tags` 变量，并使用 `azure.collection.azure_rm_resourcegroup`
+    模块创建资源组。然后将任务输出注册为变量，允许我们在后续任务中重用输出。
+- en: 'The next task prints the contents of the `resource_group_output` register variable
+    on the screen if `debug_output` is set to `true`; if it is `false`, then the task
+    is skipped:'
+  id: totrans-82
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果 `debug_output` 设置为 `true`，则下一个任务将在屏幕上打印 `resource_group_output` 注册变量的内容；如果设置为
+    `false`，则跳过该任务：
+- en: '[PRE16]'
+  id: totrans-83
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE16]'
+- en: This is a common pattern throughout the Azure role, so we will not cover this
+    task again. Assume that if the task registers its output, there is a supporting
+    debug task immediately after. Now that we have our resource group, we can make
+    a start on configuring the networking.
+  id: totrans-84
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这是 Azure 角色中常见的模式，因此我们不会再次涵盖这个任务。假设如果任务注册了其输出，那么后续将有支持调试任务。现在我们有了我们的资源组，我们可以开始配置网络了。
+- en: The networking tasks
+  id: totrans-85
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 网络任务
+- en: 'The first task launches the virtual network, placing it in the resource group
+    we just created:'
+  id: totrans-86
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 第一个任务启动了虚拟网络，并将其放置在我们刚刚创建的资源组中：
+- en: '[PRE17]'
+  id: totrans-87
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE17]'
+- en: As you can see, when referencing the resource group name, we use the registered
+    output from the previous task by using `{{ resource_group_output.state.name }}`.
+    Again, this is going to be a common thread throughout the remaining tasks.
+  id: totrans-88
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如您所见，当引用资源组名称时，我们使用前一个任务的注册输出，使用 `{{ resource_group_output.state.name }}`。同样，这将贯穿剩余的任务。
+- en: 'Note, we are not defining the subnet as part of creating the virtual network;
+    this is possible as we are only adding a single subnet, but it is considered best
+    practice to use the `azure.collection.azure_rm_subnet` module to add subnets as
+    this approach means that you can loop through adding subnets with a `with_items`
+    statement:'
+  id: totrans-89
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 注意，我们在创建虚拟网络时未定义子网；这是因为我们仅添加了一个子网，但使用 `azure.collection.azure_rm_subnet` 模块添加子网是最佳实践，因为这种方法可以通过
+    `with_items` 语句循环添加子网：
+- en: '[PRE18]'
+  id: totrans-90
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE18]'
+- en: With the virtual network now populated with subnets, we can move on to creating
+    the network security group.
+  id: totrans-91
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在虚拟网络已经填充了子网，我们可以继续创建网络安全组。
+- en: 'As you may remember, when we looked at the variables, we used a variable called
+    `your_public_ip`, so our next task is to discover the external IP address of the
+    host running Ansible using the `community.general.ipify_facts` module:'
+  id: totrans-92
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 您可能还记得，当我们查看变量时，我们使用了一个名为 `your_public_ip` 的变量，所以我们的下一个任务是使用 `community.general.ipify_facts`
+    模块来发现运行 Ansible 的主机的外部 IP 地址：
+- en: '[PRE19]'
+  id: totrans-93
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE19]'
+- en: 'As you can see, there is not much to this, but we are not registering a variable
+    called `your_public_ip`; this is done as a separate task that uses the `ansible.builtin.set_fact`
+    module:'
+  id: totrans-94
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如您所见，这里没有太多内容，但我们没有注册一个名为 `your_public_ip` 的变量；这是作为一个单独的任务完成的，使用 `ansible.builtin.set_fact`
+    模块：
+- en: '[PRE20]'
+  id: totrans-95
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE20]'
+- en: 'Now we know the IP address, we can create the network security group:'
+  id: totrans-96
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们知道了 IP 地址，我们可以创建网络安全组了：
+- en: '[PRE21]'
+  id: totrans-97
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE21]'
+- en: So far, so good; the next piece of networking configuration we need to do is
+    to launch Azure Load Balancer. This is the first deviation from the resources
+    we launched in [*Chapter 7*](B21620_07.xhtml#_idTextAnchor336), *Ansible Windows
+    Modules*, so why is that?
+  id: totrans-98
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 到目前为止，一切顺利；我们需要做的下一个网络配置是启动 Azure 负载均衡器。这是我们在[*第7章*](B21620_07.xhtml#_idTextAnchor336)，*Ansible
+    Windows 模块*中启动的资源的第一个偏离，原因是什么呢？
+- en: While Microsoft allows you to directly assign a public IP address to a virtual
+    machine’s network interface in Azure, it is generally frowned upon and not considered
+    best practice – having a networking resource such as Azure Load Balancer to route
+    and distribute your traffic to one or more hosts is deemed to be more secure as
+    you are putting a layer between the virtual machine and the public internet.
+  id: totrans-99
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 虽然 Microsoft 允许你直接将公共 IP 地址分配给 Azure 中虚拟机的网络接口，但通常不推荐这样做，并且这不是最佳实践——使用像 Azure
+    负载均衡器这样的网络资源来路由和分发流量到一个或多个主机被认为更为安全，因为这样你就把虚拟机和公共互联网之间增加了一层防护。
+- en: Also, having traffic pass through a load balancer, even when running a single
+    virtual machine like ours, allows you to perform a basic health check to see whether
+    the port to which the load balancer sends traffic is healthy.
+  id: totrans-100
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 此外，即使像我们这样运行单台虚拟机，通过负载均衡器传递流量也能让你进行基本的健康检查，查看负载均衡器发送流量的端口是否健康。
+- en: 'The first task we need to run when launching Azure Load Balancer is to create
+    a public IP address resource, which will be attached to the load balancer when
+    we launch it:'
+  id: totrans-101
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 启动 Azure 负载均衡器时，我们需要执行的第一个任务是创建一个公共 IP 地址资源，这个资源将在启动负载均衡器时附加到负载均衡器上：
+- en: '[PRE22]'
+  id: totrans-102
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE22]'
+- en: Now that the public IP address is defined, we can move on to Azure Load Balancer
+    itself.
+  id: totrans-103
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在公共 IP 地址已经定义，我们可以继续配置 Azure 负载均衡器本身。
+- en: 'As there is rather a lot to the task, I will break it up a little as we go
+    along:'
+  id: totrans-104
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于任务内容较多，我会在执行过程中稍作拆解：
+- en: '[PRE23]'
+  id: totrans-105
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE23]'
+- en: 'The next block in the task defines the front of the load balancer. This is
+    where we attach the public IP address we just created:'
+  id: totrans-106
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 任务的下一个环节是定义负载均衡器的前端。这里是我们将刚才创建的公共 IP 地址附加到负载均衡器的位置：
+- en: '[PRE24]'
+  id: totrans-107
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE24]'
+- en: 'Next up, we define the backend pool. This is the pool where our virtual machine
+    will be placed to have traffic sent to it. If we had more than one virtual machine,
+    all of them would be addressed to the pool:'
+  id: totrans-108
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来，我们定义后端池。这是我们的虚拟机将被放置并接收流量的池。如果我们有多个虚拟机，它们都将被指派到这个池中：
+- en: '[PRE25]'
+  id: totrans-109
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE25]'
+- en: 'Now we have the health probe, which probes the HTTP port on the backend pool
+    to make sure that the virtual machines are ready to access traffic on port `80`
+    by seeing if the port is open:'
+  id: totrans-110
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们有了健康探针，它会探测后端池上的 HTTP 端口，以确保虚拟机准备好接收端口 `80` 上的流量，方法是检查该端口是否开放：
+- en: '[PRE26]'
+  id: totrans-111
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE26]'
+- en: 'For our WordPress workload, we want our HTTP port to be exposed. To do this,
+    we will create a load-balancing rule that allows you to create a one-to-many relationship
+    with one or more virtual machines in the backend pool. This rule exposes the HTTP
+    port on the load balancer and sends the traffic to the HTTP port on the backend
+    virtual machines. If we had more than one virtual machine, the traffic would be
+    evenly distributed across all hosts in the backend on the HTTP port:'
+  id: totrans-112
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于我们的 WordPress 工作负载，我们希望暴露 HTTP 端口。为此，我们将创建一个负载均衡规则，允许你在后端池中的一个或多个虚拟机之间建立一对多的关系。此规则会将
+    HTTP 端口暴露在负载均衡器上，并将流量发送到后端虚拟机的 HTTP 端口。如果我们有多个虚拟机，流量将均匀分布到后端所有主机的 HTTP 端口上：
+- en: '[PRE27]'
+  id: totrans-113
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE27]'
+- en: 'While a load balancing rule takes traffic from a single port on the frontend
+    and distributes it across multiple virtual machines in the backend pool, an inbound
+    **NAT** (which stands for **Network Address Translation**) rule distributes traffic
+    on a one-to-one basis, which makes it perfect for services such as SSH that are
+    not meant to be distributed across multiple hosts:'
+  id: totrans-114
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 虽然负载均衡规则将来自前端单一端口的流量分发到后端池中的多个虚拟机，但入站 **NAT**（**网络地址转换**）规则则是按一对一的方式分发流量，这使得它非常适合像
+    SSH 这样的服务，这些服务不适合在多个主机之间分配：
+- en: '[PRE28]'
+  id: totrans-115
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE28]'
+- en: If we were to have more than one machine, we would add more rules that take
+    different ports and map them to port `22` on the backend virtual machines. Typically,
+    I would use high ports such as `2220` > `2229` so I don’t clash with over services
+    – `2220` would send traffic to port `22` on the first machine and `2221` would
+    do the same for the second machine, and so on.
+  id: totrans-116
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果我们有多台机器，我们将添加更多的规则，这些规则将不同的端口映射到后端虚拟机的端口 `22`。通常，我会使用高端口号，例如 `2220` > `2229`，这样就不会与其他服务冲突——`2220`
+    将流量发送到第一台机器的端口 `22`，`2221` 会将流量发送到第二台机器，依此类推。
+- en: However, in this example, we just have a single host, so I am mapping port `22`
+    to port `22`.
+  id: totrans-117
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，在这个例子中，我们只有一台主机，因此我将端口 `22` 映射到端口 `22`。
+- en: 'Lastly, we will tag the resource and register the output:'
+  id: totrans-118
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后，我们将标记资源并注册输出：
+- en: '[PRE29]'
+  id: totrans-119
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE29]'
+- en: Now we have the load balancer, we need to create a network interface, which
+    will be placed in the backend pool and attached to our virtual machine.
+  id: totrans-120
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们有了负载均衡器，我们需要创建一个网络接口，该接口将被放置在后端池中，并附加到我们的虚拟机上。
+- en: For those of you who have already looked at the Ansible Azure collection, you
+    may have noticed a module called `azure.azcollection.azure_rm_networkinterface`,
+    which is used to manage network interfaces. Hence, you’d assume that the task
+    we will be looking at uses that. Well, you would be wrong.
+  id: totrans-121
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于那些已经查看过 Ansible Azure 集合的人，你们可能注意到有一个名为 `azure.azcollection.azure_rm_networkinterface`
+    的模块，用于管理网络接口。因此，你可能会假设我们正在研究的任务使用了该模块。嗯，你的猜测是错的。
+- en: 'While the pre-written module has pretty good feature parity with the API endpoint
+    it interacts with, it is missing one key piece of functionality we require for
+    our deployment: the ability to assign the network interface to a NAT rule.'
+  id: totrans-122
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 尽管预编写的模块与其交互的 API 端点功能相当完善，但它缺少我们部署所需的一个关键功能：将网络接口分配给 NAT 规则的能力。
+- en: However, all is not lost, and there is a workaround.
+  id: totrans-123
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，一切并非失去希望，仍然有解决方法。
+- en: There is an Azure module whose only purpose is to interact with the Azure Resource
+    Manager API directly, called `azure.collection.azure_rm_resource`, and by using
+    this module, we can make an API call directly to the `Microsoft.Network/networkInterfaces`
+    endpoint from within Ansible.
+  id: totrans-124
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有一个 Azure 模块，其唯一目的是直接与 Azure 资源管理器 API 进行交互，名为 `azure.collection.azure_rm_resource`，通过使用该模块，我们可以直接从
+    Ansible 中向 `Microsoft.Network/networkInterfaces` 端点发出 API 调用。
+- en: Having the ability to do this for any of the Azure Resource Manager APIs is
+    quite powerful as it opens new features as soon as Microsoft releases them, and
+    it means you don’t have to wait for the Ansible Azure collection developers to
+    write, test, and release the module.
+  id: totrans-125
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 能够对任何 Azure 资源管理器 API 执行此操作是非常强大的，因为它意味着一旦 Microsoft 发布新功能，我们就能立刻使用它，而且无需等待
+    Ansible Azure 集合开发者编写、测试并发布该模块。
+- en: 'It does come with one downside, though: using this method does add an additional
+    layer of complexity to your playbook.'
+  id: totrans-126
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，这种方法有一个缺点：使用这种方法会给你的 playbook 增加额外的复杂性。
+- en: 'The following URL is the link to the REST API documentation, which covers the
+    creation of a network interface: [https://learn.microsoft.com/en-us/rest/api/virtualnetwork/network-interfaces/create-or-update?view=rest-virtualnetwork-2023-05-01&tabs=HTTP](https://learn.microsoft.com/en-us/rest/api/virtualnetwork/network-interfaces/create-or-update?view=rest-virtualnetwork-2023-05-01&tabs=HTTP).'
+  id: totrans-127
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下 URL 是 REST API 文档的链接，其中涵盖了网络接口的创建：[https://learn.microsoft.com/en-us/rest/api/virtualnetwork/network-interfaces/create-or-update?view=rest-virtualnetwork-2023-05-01&tabs=HTTP](https://learn.microsoft.com/en-us/rest/api/virtualnetwork/network-interfaces/create-or-update?view=rest-virtualnetwork-2023-05-01&tabs=HTTP)。
+- en: As we will see from working through the task, the general gist of what we are
+    doing is constructing the URL of the API we would like to target and then constructing
+    the request body detailed in the REST documentation.
+  id: totrans-128
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如我们通过执行任务所看到的，我们正在做的事情的总体思路是构建我们希望访问的 API 的 URL，然后构建 REST 文档中详细说明的请求体。
+- en: 'To start with, let’s look at the part of the task that generates the URL:'
+  id: totrans-129
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 首先，让我们看看生成 URL 的任务部分：
+- en: '[PRE30]'
+  id: totrans-130
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE30]'
+- en: 'The preceding information constructs the URL given in the documentation, which
+    is the following:'
+  id: totrans-131
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 前述信息构建了文档中给出的 URL，具体如下：
+- en: '[PRE31]'
+  id: totrans-132
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE31]'
+- en: 'Let us look at how this is generated:'
+  id: totrans-133
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们看看这是如何生成的：
+- en: '`{subscriptionId}` is automatically generated by the module, and we do not
+    need to provide this information.'
+  id: totrans-134
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`{subscriptionId}` 是由模块自动生成的，我们无需提供此信息。'
+- en: '`{resourceGroupName}` is added by providing the `resource_group` key, and as
+    per the rest of the tasks, we are using the resource group name, which is the
+    output of our registering the variable in the resource group task.'
+  id: totrans-135
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`{resourceGroupName}` 是通过提供 `resource_group` 键添加的，和其他任务一样，我们使用的是资源组名称，这个名称是我们在资源组任务中注册变量时的输出。'
+- en: The providers are provided by us by filling in the `provider` and `resource_type`
+    keys. Don’t worry – the URL is not case-sensitive, and the module adds the `Microsoft.`
+    part for us.
+  id: totrans-136
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 由我们通过填写 `provider` 和 `resource_type` 键提供的提供者。别担心——URL 对大小写不敏感，模块会为我们自动添加 `Microsoft.`
+    部分。
+- en: '`{networkInterfaceName}` is the `resource_name` key.'
+  id: totrans-137
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`{networkInterfaceName}` 是 `resource_name` 键。'
+- en: Finally, the API version is provided by filling in the `api_version` key.
+  id: totrans-138
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 最后，API 版本通过填写 `api_version` 键来提供。
+- en: The last part of the “header” does not form part of the URL, but instead, it
+    instructs Ansible to perform a `GET` request and then compares the body of what
+    will be posted to what is returned by the `GET` request, and if there are any
+    problems, it will error before the body is posted.
+  id: totrans-139
+  prefs: []
+  type: TYPE_NORMAL
+  zh: “头部”的最后部分并不构成URL的一部分，而是指示Ansible执行一个`GET`请求，然后将将要发布的主体与`GET`请求返回的结果进行比较，如果有任何问题，它将在主体发布之前报错。
+- en: Now that we have the URL of the Azure Resource Manager API endpoint to which
+    we will send our request, we need to populate the body of the request.
+  id: totrans-140
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经有了Azure资源管理器API端点的URL，我们需要填充请求的主体。
+- en: 'For our case, this looks like the following code:'
+  id: totrans-141
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于我们的情况，代码如下所示：
+- en: '[PRE32]'
+  id: totrans-142
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE32]'
+- en: 'When the module runs, `properties` will be rendered as JSON and posted alongside
+    `location` and `tags` in the request’s body, leaving the final part of the task
+    to register the output:'
+  id: totrans-143
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当模块运行时，`properties`将作为JSON格式渲染，并与`location`和`tags`一起发布在请求的主体中，任务的最后部分是注册输出：
+- en: '[PRE33]'
+  id: totrans-144
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE33]'
+- en: We now have all the base Azure configuration and resources in place; we can
+    launch our virtual machine. As we will be using SSH to connect to the virtual
+    machine and bootstrap our WordPress installation, we need to ensure we have a
+    valid SSH key generated.
+  id: totrans-145
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经配置了所有基本的Azure设置和资源，我们可以启动虚拟机。由于我们将使用SSH连接到虚拟机并引导安装WordPress，我们需要确保生成了有效的SSH密钥。
+- en: As we will connect to a remote virtual machine, we want to ship a test key as
+    we have been doing on our locally deployed hosts. So, if there is not a key at
+    `~/.ssh/id_rsa` on your local machine, then set the `genterate_key` variable in
+    the `group_vars/common.yml` file to `true` (it is `false` by default), then Ansible
+    will generate the key for you.
+  id: totrans-146
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于我们将连接到远程虚拟机，因此我们希望像在本地部署的主机上那样传送测试密钥。如果你的本地机器上`~/.ssh/id_rsa`没有密钥，则在`group_vars/common.yml`文件中将`genterate_key`变量设置为`true`（默认为`false`），然后Ansible会为你生成密钥。
+- en: 'Do not worry if a key already exists at that location; Ansible will only create
+    a key if one does not exist:'
+  id: totrans-147
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果该位置已有密钥，不用担心；Ansible只有在密钥不存在时才会创建一个密钥。
+- en: '[PRE34]'
+  id: totrans-148
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE34]'
+- en: 'Next, we have the task that launches the virtual machine itself. It uses all
+    of the resources we have already deployed and configured so I will not go into
+    too much detail:'
+  id: totrans-149
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来，我们有一个启动虚拟机的任务。它使用我们已经部署和配置的所有资源，因此我将不再详细说明：
+- en: '[PRE35]'
+  id: totrans-150
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE35]'
+- en: As with most tasks we have run in this role, immediately after there is a debug
+    task.
+  id: totrans-151
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 和我们在此角色中运行的大多数任务一样，紧接着的将是一个调试任务。
+- en: You may think, *“That’s the end of the role, right?”* but we have two tasks
+    to cover.
+  id: totrans-152
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可能会想，*“这就是角色的结束，对吧？”* 但我们还有两个任务需要处理。
+- en: The first of these final two tasks takes information about the hosts, such as
+    the public IP address and SSH port, and then adds it to the host group defined
+    as the `hosts_group` variable.
+  id: totrans-153
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这两个最后任务中的第一个任务获取主机的信息，例如公共IP地址和SSH端口，然后将其添加到定义为`hosts_group`变量的主机组中。
+- en: 'This means that there is no hardcoding of IP addresses or connections in our
+    host’s inventory file. The task to register the host looks like the following:'
+  id: totrans-154
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这意味着在我们的主机清单文件中没有硬编码的IP地址或连接。注册主机的任务如下所示：
+- en: '[PRE36]'
+  id: totrans-155
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE36]'
+- en: So, what could this task be? We have the networking in place, our virtual machine
+    has been launched, and we have registered our host, so we must be ready to start
+    bootstrapping WordPress.
+  id: totrans-156
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 那么，这个任务可能是什么呢？我们已经配置了网络，虚拟机已经启动，并且我们已经注册了主机，因此我们应该准备好开始引导WordPress了。
+- en: That’s the problem; we might be ready, but the host we just launched might not
+    be as it can sometimes take a minute or two for the virtual machine to finish
+    booting up. If we were to immediately try and SSH into the host before it has
+    finished booting, then our playbook would error and halt running.
+  id: totrans-157
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这就是问题所在；我们可能已经准备好了，但我们刚刚启动的主机可能还没有准备好，因为虚拟机启动可能需要一两分钟。如果我们在虚拟机尚未完成启动时立即尝试SSH连接主机，playbook将出错并停止运行。
+- en: 'Luckily, an Ansible module was developed for use in this scenario, `ansible.builtin.wait_for`:'
+  id: totrans-158
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 幸运的是，Ansible为这种场景开发了一个模块，`ansible.builtin.wait_for`：
+- en: '[PRE37]'
+  id: totrans-159
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE37]'
+- en: This will wait for `10` seconds and then attempt to SSH to the host for up to
+    5 minutes (`300` seconds); when SSH is accessible, the Ansible playbook will then
+    progress to the next set of roles, which, in our case, bootstrap WordPress.
+  id: totrans-160
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这将等待`10`秒钟，然后尝试SSH连接主机，最多持续5分钟（`300`秒）；当SSH可访问时，Ansible playbook将继续执行下一个角色集，在我们的情况下是引导WordPress。
+- en: Bootstrapping WordPress
+  id: totrans-161
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 引导WordPress
+- en: It won’t be of any surprise to you that the bulk of the WordPress roles remain
+    intact from our previous chapters so we will not cover those parts there and will
+    instead review some of the small changes.
+  id: totrans-162
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你不会感到惊讶，WordPress角色的大部分内容保持不变，因此我们不会在此覆盖这些部分，而是回顾一些小的更改。
+- en: The site and host environment files
+  id: totrans-163
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 站点和主机环境文件
+- en: 'The `site.yml` is now split into two sections; the first runs locally and interacts
+    with the Azure Resource Manager API to launch and configure the Azure resources:'
+  id: totrans-164
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`site.yml`现在分为两个部分；第一个部分在本地运行，并与Azure资源管理器API交互，以启动和配置Azure资源：'
+- en: '[PRE38]'
+  id: totrans-165
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE38]'
+- en: 'The second section targets the `vmgroup` host group and looks more like what
+    we have been working with so far in the previous chapters:'
+  id: totrans-166
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 第二部分针对`vmgroup`主机组，类似于我们在前几章中使用过的内容：
+- en: '[PRE39]'
+  id: totrans-167
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE39]'
+- en: The `hosts` file looks like the `hosts` files we have been using throughout
+    the previous chapters; it is just missing the lines where we explicitly define
+    the target hosts and instead is just made up of the host groups’ definitions.
+  id: totrans-168
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`hosts`文件看起来和我们在前几章中使用的`hosts`文件一样；它只是缺少了我们显式定义目标主机的行，而是仅由主机组定义组成。'
+- en: You may have noticed that we are adding a new role, and the remaining ones are
+    mostly the same; the role is called `secrets`, so let’s see what it does.
+  id: totrans-169
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可能已经注意到我们正在添加一个新角色，其他的角色大部分保持不变；这个角色被命名为`secrets`，让我们来看看它的功能。
+- en: The secrets role
+  id: totrans-170
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: '`secrets`角色'
+- en: The sole purpose of this role is to generate secure passwords for WordPress
+    and the database. Its tasks are delegated to the local machine as it creates a
+    variables file at `group_vars/secrets.yml` and loads them into the playbook run.
+  id: totrans-171
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个角色的唯一目的是为WordPress和数据库生成安全密码。它的任务被委派给本地机器，因为它在`group_vars/secrets.yml`创建了一个变量文件，并将其加载到剧本运行中。
+- en: 'First, it checks if `group_vars/secrets.yml` already exists and if it does,
+    we don’t want to change the contents of the file:'
+  id: totrans-172
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 首先，它检查`group_vars/secrets.yml`是否已经存在，如果存在，我们不想更改文件的内容：
+- en: '[PRE40]'
+  id: totrans-173
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE40]'
+- en: 'If there is no file, then it and its contents are generated from a template
+    file:'
+  id: totrans-174
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果没有文件，则它及其内容将从模板文件生成：
+- en: '[PRE41]'
+  id: totrans-175
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE41]'
+- en: 'The template file at `roles/secrets/templates/secrets.yml.j2` looks like the
+    following:'
+  id: totrans-176
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 位于`roles/secrets/templates/secrets.yml.j2`的模板文件如下所示：
+- en: '[PRE42]'
+  id: totrans-177
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE42]'
+- en: As you can see, it uses the `community.general.random_string` module to generate
+    a random string with some sensible rules, which we will use as passwords.
+  id: totrans-178
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，它使用`community.general.random_string`模块根据一些合理的规则生成随机字符串，我们将把它用作密码。
+- en: Other changes
+  id: totrans-179
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 其他更改
+- en: 'Most of the changes to the roles are to the variables; for example, in `roles/wordpress/defaults/main.yml`
+    we have the following:'
+  id: totrans-180
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 角色的大多数更改都涉及到变量；例如，在`roles/wordpress/defaults/main.yml`中我们有如下内容：
+- en: '[PRE43]'
+  id: totrans-181
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE43]'
+- en: This uses the public URL we are configuring on the Azure Load Balancer public
+    IP address and the password variable from the `secrets` role that just ran.
+  id: totrans-182
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这使用了我们在Azure负载均衡器公共IP地址上配置的公共URL，以及刚刚运行的`secrets`角色中的密码变量。
+- en: Everything else in the roles remains as we left it in [*Chapter 5*](B21620_05.xhtml#_idTextAnchor253),
+    *Deploying WordPress*.
+  id: totrans-183
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 角色中的其他部分保持与我们在[*第5章*](B21620_05.xhtml#_idTextAnchor253)中相同，即*部署WordPress*。
+- en: Running the playbook
+  id: totrans-184
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 运行剧本
+- en: 'Running the playbook uses the same command we have been running throughout
+    the book:'
+  id: totrans-185
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 运行剧本使用我们在本书中一直运行的相同命令：
+- en: '[PRE44]'
+  id: totrans-186
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE44]'
+- en: 'The playbook will execute and by the end of it you should see something like
+    the output on the following screen:'
+  id: totrans-187
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 剧本将执行，完成后你应该能看到类似以下屏幕上的输出：
+- en: '![Figure 9.1 – Running the playbook in a terminal](img/B21620_09_01.jpg)'
+  id: totrans-188
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图9.1 – 在终端中运行剧本](img/B21620_09_01.jpg)'
+- en: Figure 9.1 – Running the playbook in a terminal
+  id: totrans-189
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图9.1 – 在终端中运行剧本
+- en: 'Visiting the Azure portal at [https://portal.azure.com/](https://portal.azure.com/)
+    and viewing the resource group that Ansible created should show you something
+    like the following:'
+  id: totrans-190
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 访问Azure门户网站[https://portal.azure.com/](https://portal.azure.com/)并查看Ansible创建的资源组，应该能看到类似以下内容：
+- en: '![Figure 9.2 – Viewing the resources in the Azure portal](img/B21620_09_02.jpg)'
+  id: totrans-191
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图9.2 – 在Azure门户中查看资源](img/B21620_09_02.jpg)'
+- en: Figure 9.2 – Viewing the resources in the Azure portal
+  id: totrans-192
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图9.2 – 在Azure门户中查看资源
+- en: From here, you should be able to enter the DNS name assigned on the public IP
+    address; for example, in my instance, it was `http://learnansible.westeurope.cloudapp.azure.com/`.
+    This may be different in your case and you should see your newly bootstrapped
+    WordPress site.
+  id: totrans-193
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这里，你应该能够输入分配给公共IP地址的DNS名称；例如，在我的例子中是`http://learnansible.westeurope.cloudapp.azure.com/`。你的情况可能不同，你应该能看到新引导的WordPress站点。
+- en: Just like when we launched Azure resources in [*Chapter 7*](B21620_07.xhtml#_idTextAnchor336),
+    *Ansible Windows Modules*, to terminate the resources, we need to remove the resource
+    group, which will remove all the resources contained there.
+  id: totrans-194
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 就像我们在[*第7章*](B21620_07.xhtml#_idTextAnchor336)中启动Azure资源一样，*Ansible Windows模块*，要终止资源，我们需要删除资源组，这将删除其中包含的所有资源。
+- en: 'To do this using Ansible, there is a small, self-contained playbook called
+    `destroy.yml`, which can be executed by running the following:'
+  id: totrans-195
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要使用Ansible实现这一点，有一个小型的、独立的playbook，名为`destroy.yml`，可以通过运行以下命令来执行：
+- en: '[PRE45]'
+  id: totrans-196
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE45]'
+- en: This will take a few minutes to run, but it will remove all resources deployed
+    in the *site.yml* playbook, including the ones in Azure and the `group_vars/secrets.yml`
+    file, leaving you with a nice clean slate for when you next run the main `site.yml`
+    playbook.
+  id: totrans-197
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这将需要几分钟才能完成，但它将删除在*site.yml* playbook中部署的所有资源，包括Azure中的资源以及`group_vars/secrets.yml`文件中的内容，为下次运行主`site.yml`
+    playbook时提供一个干净的起点。
+- en: Summary
+  id: totrans-198
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 摘要
+- en: In this chapter, we launched our first instances in a public cloud using the
+    Azure Ansible modules; as you have seen, the process was relatively straightforward,
+    and we managed to securely launch the network and compute resource in Microsoft
+    Azure, ready for us to then install WordPress on it without making any significant
+    changes to the roles we covered in [*Chapter 5*](B21620_05.xhtml#_idTextAnchor253),
+    *Deploying WordPress*.
+  id: totrans-199
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们使用Azure Ansible模块在公共云中启动了我们的第一个实例；正如你所看到的，这个过程相对简单，我们成功地在Microsoft Azure上安全地启动了网络和计算资源，为后续在其上安装WordPress做好准备，且无需对我们在[*第5章*](B21620_05.xhtml#_idTextAnchor253)中涉及的*部署WordPress*角色做出重大更改。
+- en: In the next chapter, we will expand on some of the techniques we have covered
+    in this chapter and return to networking, but unlike the previous chapter, where
+    we covered networking devices, we will be looking at networking in public clouds.
+  id: totrans-200
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一章中，我们将扩展本章中涉及的一些技术，并回到网络方面，但与上一章中我们介绍网络设备不同，这次我们将关注公共云中的网络。

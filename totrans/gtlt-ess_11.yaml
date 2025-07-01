@@ -1,0 +1,605 @@
+- en: Chapter 11. Mirroring
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 第11章 镜像
+- en: While most installations are happy to install Gitolite on a single server accessible
+    to all their developers, some of them have developers in several cities around
+    the world, and it is often useful to provide local mirrors in each city for fast
+    access. Gitolite's mirroring feature caters to these needs in a very flexible
+    manner.
+  id: totrans-1
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 虽然大多数安装都乐于在一个所有开发者都能访问的单一服务器上安装 Gitolite，但其中一些公司在世界各地有开发者，通常在每个城市提供本地镜像以便快速访问是非常有用的。Gitolite
+    的镜像功能以非常灵活的方式满足了这些需求。
+- en: Mirroring can be as simple or as complex as you want it. You can have one server
+    be the master server for all repositories, with one or more slave servers carrying
+    copies of them. You can have different servers be the master servers for different
+    repositories, and select only some of the remaining servers as slaves instead
+    of all of them. You can even keep some repositories out of the mirroring process
+    if you wish.
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 镜像可以是你想要的简单或复杂。你可以让一台服务器成为所有仓库的主服务器，并由一个或多个从服务器保存其副本。你也可以让不同的服务器成为不同仓库的主服务器，并选择其中一些服务器作为从服务器，而不是所有服务器。你甚至可以选择不将某些仓库纳入镜像过程。
+- en: Terminology and basic concepts
+  id: totrans-3
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 术语和基本概念
+- en: A mirrored repository has a writable copy on one server, often called the **master
+    server** for that repository, and read-only copies on one or more servers, similarly
+    called **slave servers** . The slave repositories are updated near instantaneously,
+    subject to network speed, when the master repository is updated.
+  id: totrans-4
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一个镜像仓库在一台服务器上有一个可写副本，通常称为该仓库的**主服务器**，并且在一台或多台服务器上有只读副本，类似地称为**从服务器**。当主仓库被更新时，从仓库会几乎即时更新，具体取决于网络速度。
+- en: Repository level mirroring
+  id: totrans-5
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 仓库级别镜像
+- en: The primary purpose of most mirroring is to make read access (over the network)
+    faster, by providing a copy on a nearby server for fetches and clones. One might,
+    therefore, expect a single server to be designated as the master and several others
+    as slave servers.
+  id: totrans-6
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 大多数镜像的主要目的是通过提供位于附近服务器上的副本来加速读取访问（通过网络），以便进行拉取和克隆。因此，可以预期将指定一台服务器为主服务器，其他几台作为从服务器。
+- en: However, Gitolite mirroring is defined at the *repository* level, not for the
+    entire server as a whole. For *each* repository, the administrator decides which
+    server holds the master (writable) copy, and which of the other servers, if any,
+    should make slave copies available to their local users. (This is why we speak
+    of master repository and slave repository, not master server and slave server.)
+  id: totrans-7
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，Gitolite 的镜像是在*仓库*级别定义的，而不是针对整个服务器。对于*每个*仓库，管理员决定哪个服务器持有主（可写）副本，其他服务器（如果有的话）是否应该为其本地用户提供从属副本。（这就是为什么我们说主仓库和从仓库，而不是主服务器和从服务器。）
+- en: This is a very important idea that brings several advantages over mirroring
+    the entire server as a whole.
+  id: totrans-8
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这是一个非常重要的概念，相比于镜像整个服务器，它带来了几个优势。
+- en: Firstly, repositories need not be made available on servers where there are
+    no local users of that repository. If there are very few (say one or two) users,
+    depending on how actively developed the repository is, it might still make sense,
+    from a network utilization point of view, to let those few users directly pull
+    from the master or one of the other slaves. This allows branch offices with less
+    resources to still be part of the Gitolite mirroring network if they have enough
+    projects their local users will be working on.
+  id: totrans-9
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 首先，不必在没有该仓库本地用户的服务器上提供仓库。如果用户非常少（例如一两个用户），根据仓库的开发活跃度，从网络利用率的角度来看，仍然可能有意义让这些少数用户直接从主仓库或其他从仓库拉取。这允许资源较少的分支机构仍然能成为
+    Gitolite 镜像网络的一部分，只要他们有足够的项目供本地用户工作。
+- en: Secondly, since you do not have to put *all* the master repositories on the
+    same server, you can choose where to place the master copy of any specific repository.
+    Usually, you'll want to place it on whichever server is closest (from a network
+    speed point of view) to the majority of the developers who will be working on
+    it.
+  id: totrans-10
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 其次，由于你不必将*所有*主仓库放在同一台服务器上，你可以选择将任何特定仓库的主副本放置在哪里。通常，你会选择将其放置在离大多数将要在其上工作的开发者最近的服务器上（从网络速度的角度来看）。
+- en: Finally, repositories can be purely local to a particular server, that is, they
+    need not be mirrored at all.
+  id: totrans-11
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后，仓库可以仅对特定服务器本地可用，也就是说，它们不需要被镜像。
+- en: Note
+  id: totrans-12
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: There can only be one master repository—you cannot have different users pushing
+    to different servers because that would lead to a merge issue, which cannot be
+    reliably automated. (However, Gitolite does have a workaround for convenience,
+    as we will see later.)
+  id: totrans-13
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 只能有一个主仓库——你不能让不同的用户推送到不同的服务器，因为那样会导致合并问题，无法可靠地自动化。（不过，Gitolite 确实有一个方便的解决方法，稍后我们会看到。）
+- en: The gitolite-admin repository
+  id: totrans-14
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: gitolite-admin 仓库
+- en: From the point of view of Gitolite's mirroring feature, the gitolite-admin repository
+    is just another repository. There is nothing special about it as far as mirroring
+    is concerned – like all other repositories, one of the servers will hold the master
+    (writable) copy. The only difference is that *all* the other servers must be mentioned
+    in the slave list; if a server is not mentioned, it cannot receive updates to
+    this repository.
+  id: totrans-15
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 从 Gitolite 镜像功能的角度来看，gitolite-admin 仓库只是另一个仓库。就镜像而言，它没有什么特别之处——与所有其他仓库一样，其中一台服务器将持有主（可写）副本。唯一的区别是，*所有*其他服务器必须被列在从属列表中；如果某个服务器未被提及，它将无法接收该仓库的更新。
+- en: Setting up mirroring
+  id: totrans-16
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 设置镜像
+- en: Setting up mirroring has quite a few manual steps, although each step in itself
+    is quite simple. The first step is to give each host a name, and make sure that
+    the hosts can all talk to one another by these names. The second step is to enable
+    mirroring on each server.
+  id: totrans-17
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 设置镜像有相当多的手动步骤，尽管每个步骤本身都非常简单。第一步是给每个主机一个名称，并确保这些主机可以通过这些名称相互通信。第二步是启用每个服务器的镜像功能。
+- en: We start by installing Gitolite as normal on all the servers. Then, we edit
+    each server's `$HOME/.gitolite.rc` file and uncomment the line defining the `HOSTNAME`,
+    choosing a simple hostname as the value.
+  id: totrans-18
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们首先在所有服务器上正常安装 Gitolite。然后，我们编辑每个服务器的 `$HOME/.gitolite.rc` 文件，并取消注释定义 `HOSTNAME`
+    的行，选择一个简单的主机名作为值。
+- en: Tip
+  id: totrans-19
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 提示
+- en: The hostname should be a simple word; it is of interest only to Gitolite and
+    does not have any relation to the server's hostname as known by the operating
+    system and DNS records.
+  id: totrans-20
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 主机名应该是一个简单的词；它仅对 Gitolite 有意义，与操作系统和 DNS 记录所知道的服务器主机名无关。
+- en: Gitolite mirroring works by allowing the servers to communicate with each other
+    using ssh keypairs named after these hostnames. This is the same mechanism that
+    users use, except that the public key file for a server is named `server-`, followed
+    by the hostname of that server. All the keys will need to be provided to all the
+    servers, added to their gitolite-admin repositories, and pushed. Finally, each
+    server's $HOME/.ssh/config will need a host alias to refer to all the other machines.
+  id: totrans-21
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Gitolite 镜像通过允许服务器使用名为这些主机名的 ssh 密钥对进行相互通信来实现。这与用户使用的机制相同，唯一不同的是，服务器的公钥文件命名为`server-`，后跟该服务器的主机名。所有密钥需要提供给所有服务器，添加到它们的
+    gitolite-admin 仓库中，并进行推送。最后，每个服务器的 $HOME/.ssh/config 需要一个主机别名，用于引用所有其他机器。
+- en: Example setup
+  id: totrans-22
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 示例设置
+- en: An example will make this clearer. Say you have three servers jupiter, ganymede,
+    and callisto. These servers are on IP addresses `10.1.1.1, 10.2.1.1` and `10.3.1.1`.
+  id: totrans-23
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一个例子会使这个更加清晰。假设你有三台服务器：jupiter、ganymede 和 callisto。这些服务器的 IP 地址分别是 `10.1.1.1`、`10.2.1.1`
+    和 `10.3.1.1`。
+- en: 'First, install Gitolite on all three servers. On Jupiter, edit `$HOME/.gitolite.rc`,
+    and uncomment the `HOSTNAME` line, changing it as follows (don''t miss the trailing
+    comma!):'
+  id: totrans-24
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 首先，在所有三个服务器上安装 Gitolite。在 Jupiter 上，编辑 `$HOME/.gitolite.rc` 文件，并取消注释 `HOSTNAME`
+    行，按如下方式更改（不要忘记末尾的逗号！）：
+- en: '[PRE0]'
+  id: totrans-25
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: Do the same on the other two servers.
+  id: totrans-26
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在其他两个服务器上执行相同操作。
+- en: Run `ssh-keygen` on each server to create a key pair for the server. Collect
+    all three `$HOME/.ssh/id_rsa.pub` files (one from each server), naming them `server-jupiter.pub`,
+    `server-callisto.pub`, and `server-ganymede.pub` respectively.
+  id: totrans-27
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在每个服务器上运行 `ssh-keygen` 来创建该服务器的密钥对。收集所有三个 `$HOME/.ssh/id_rsa.pub` 文件（每个服务器的一个），分别命名为
+    `server-jupiter.pub`、`server-callisto.pub` 和 `server-ganymede.pub`。
+- en: Add these public keys to *all* the servers, just as you would add normal users
+    (that is, *for each server*, clone the gitolite-admin repo from that server, add
+    all these keys to the `keydir`, then add, commit, and push).
+  id: totrans-28
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 将这些公钥添加到*所有*服务器，就像你添加普通用户一样（也就是说，*对于每个服务器*，从该服务器克隆 gitolite-admin 仓库，添加所有这些密钥到
+    `keydir`，然后添加、提交并推送）。
+- en: 'Next, add the following lines to all three servers'' `$HOME/.ssh/config` files
+    (assuming the hosting user on all three servers is `git`):'
+  id: totrans-29
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 接下来，将以下行添加到所有三个服务器的 `$HOME/.ssh/config` 文件中（假设三个服务器上的托管用户都是 `git`）：
+- en: '[PRE1]'
+  id: totrans-30
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: 'When you''re done with all this, you should be able to test your setup by running
+    ssh ganymede info from jupiter. You should get an output similar to the following:'
+  id: totrans-31
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 完成所有这些操作后，你应该能够通过从木星服务器运行 `ssh ganymede info` 来测试你的设置。你应该得到类似如下的输出：
+- en: '[PRE2]'
+  id: totrans-32
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: Similar commands from any server to any other should generate similar responses.
+    It is best to test all the possible combinations to avoid confusing errors later.
+  id: totrans-33
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 从任何服务器到其他服务器的类似命令应该生成类似的响应。最好测试所有可能的组合，以避免后续出现混淆的错误。
+- en: Bootstrapping the mirroring process
+  id: totrans-34
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 启动镜像过程
+- en: The previous step establishes communication and authentication between all servers.
+    Once that is done and checked, the next step is to bootstrap the mirroring process
+    by setting up mirror options for the gitolite-admin repository and pushing them.
+  id: totrans-35
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 上一步骤建立了所有服务器之间的通信和认证。一旦完成并检查无误，下一步是通过为 gitolite-admin 仓库设置镜像选项并推送它们，来启动镜像过程。
+- en: 'On each server, add the following lines to the `conf` file:'
+  id: totrans-36
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在每台服务器上，将以下行添加到 `conf` 文件中：
+- en: '[PRE3]'
+  id: totrans-37
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: Once you add, commit, and push this change to all the repositories, Gitolite
+    mirroring is set up and ready to go. From here on, you administer everything by
+    pushing to the gitolite-admin repository on its master server (in our case, `jupiter`).
+  id: totrans-38
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦你添加、提交并推送这些更改到所有仓库，Gitolite 镜像就已设置并准备好使用。从此之后，你可以通过推送到 `jupiter` 服务器上的 gitolite-admin
+    仓库来管理一切。
+- en: Mirroring other repositories
+  id: totrans-39
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 镜像其他仓库
+- en: 'By now you can guess what you need to do for each of the other repositories.
+    Just add option lines as in the previous section for each of them. For example,
+    a simple mirroring setup, where all the repositories are mirrored the same way,
+    can be as follows:'
+  id: totrans-40
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 到现在，你应该知道需要为其他每个仓库做什么。只需像上一节那样为每个仓库添加选项行。例如，以下是一个简单的镜像设置，所有仓库的镜像方式相同：
+- en: '[PRE4]'
+  id: totrans-41
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: If that's all you want, you're pretty much done with mirroring. Otherwise, add
+    the options as required, giving each repository the correct master server name
+    and the correct set of slave servers. Note that any repositories that don't have
+    these settings are considered local.
+  id: totrans-42
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果这就是你想要的，那么镜像过程就算完成了。否则，按需要添加选项，为每个仓库指定正确的主服务器名称和正确的一组从服务器。请注意，任何没有这些设置的仓库都被认为是本地仓库。
+- en: If you're allowing your users to create their own repositories (see [Chapter
+    8](ch08.html "Chapter 8. Allowing Users to Create Repos"), *Allowing Users to
+    Create Repos*), just add mirroring option lines to those repository definitions
+    too. The following restrictions apply to mirroring user-created repositories.
+  id: totrans-43
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果允许用户创建自己的仓库（参见[第8章](ch08.html "第8章。允许用户创建仓库")，*允许用户创建仓库*），只需将镜像选项行添加到这些仓库定义中。以下限制适用于镜像用户创建的仓库。
+- en: The creation of such a repository is propagated only when the first push happens
+    to the repository on the master server. A repository created as the result of
+    a clone or fetch will not immediately propagate to the slaves.
+  id: totrans-44
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 只有当第一次推送到主服务器上的仓库时，才会传播该仓库的创建。作为克隆或获取结果创建的仓库不会立即传播到从服务器。
+- en: Changes in permissions (using the `perms` command; see [Chapter 8](ch08.html
+    "Chapter 8. Allowing Users to Create Repos"), *Allowing Users to Create Repos*,
+    specifically the *Giving access to other users* section) also propagate only on
+    the next push.
+  id: totrans-45
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 权限的更改（使用 `perms` 命令；参见[第8章](ch08.html "第8章。允许用户创建仓库")，*允许用户创建仓库*，特别是*授予其他用户访问权限*部分）也仅在下次推送时传播。
+- en: Local repositories and hostname substitution
+  id: totrans-46
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 本地仓库和主机名替换
+- en: We mentioned earlier that some servers can have local repositories, say if the
+    `conf` file does not specify Gitolite mirror options for those repositories. However,
+    local repositories are really of interest only if each server can have its own
+    set of them. For example, say the folks on Ganymede wish to have a local repository
+    called ganymede-news that they intend to use internally. Adding that to the `conf`
+    file would create such a repository on Jupiter and Callisto as well; even if no
+    one used it, it's ugly, unnecessary, and cause for future confusion. We would
+    like to prevent this, but since the same gitolite-admin repository, with the same
+    `conf/gitolite.conf` file and other files, is pushed to all the slave servers,
+    it seems difficult to do so.
+  id: totrans-47
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们之前提到，某些服务器可以有本地仓库，比如如果`conf`文件没有为这些仓库指定Gitolite镜像选项的话。然而，只有每个服务器可以拥有自己的一组本地仓库才真正有意义。例如，假设盖尼米德的人想要一个名为ganymede-news的本地仓库，他们打算在内部使用。将其添加到`conf`文件将在木星和卡利斯托上创建这样一个仓库；即使没有人使用它，这也是不美观、不必要的，并且可能导致未来的混淆。我们想要避免这种情况，但由于相同的gitolite-admin仓库，使用相同的`conf/gitolite.conf`文件和其他文件被推送到所有从服务器，似乎很难做到。
+- en: The feature that makes this possible is `HOSTNAME` substitution. Specifically,
+    whenever Gitolite encounters the string `%HOSTNAME` (followed by a non-word character;
+    that is, a character other than alphabets, digits, and underscore) in the `conf`
+    file, it will replace it with the `HOSTNAME` of the server, as given in `$HOME/.gitolite.rc`,
+    before processing it.
+  id: totrans-48
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使此功能可行的特性是`HOSTNAME`替换。具体来说，每当Gitolite在`conf`文件中遇到字符串`%HOSTNAME`（后面跟着一个非字母数字字符；即，除了字母、数字和下划线以外的字符），它将在处理之前使用`$HOME/.gitolite.rc`中给出的服务器`HOSTNAME`替换它。
+- en: 'Using the `include` statement capability we saw in [Chapter 6](ch06.html "Chapter 6. Getting
+    Started with Access Control"), *Getting Started with Access Control*, you can
+    now provide server-specific Gitolite configuration, while still keeping everything
+    in one repository. Just add the following line to the main conf file (`conf/gitolite.conf`):'
+  id: totrans-49
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用我们在[第6章](ch06.html "第6章。访问控制入门")中看到的`include`语句能力，*访问控制入门*，你现在可以提供特定于服务器的Gitolite配置，同时仍然保持所有内容在一个仓库中。只需将以下行添加到主配置文件（`conf/gitolite.conf`）：
+- en: '[PRE5]'
+  id: totrans-50
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: Then, create `conf/jupiter.conf`, `conf/callisto.conf` and so on for each of
+    your servers. Within those files, specify repo statements and rules that are unique
+    to the respective server.
+  id: totrans-51
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后，为每个服务器创建`conf/jupiter.conf`、`conf/callisto.conf`等文件。在这些文件中，指定各自服务器特有的仓库语句和规则。
+- en: 'It is important to understand that when you use such an `include` statement
+    in your main `conf` file and push, each server will see that line differently.
+    For example, Jupiter will see it as the following line (and similarly for other
+    servers):'
+  id: totrans-52
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用`include`语句在主`conf`文件中是很重要的，每个服务器在推送时会看到这行代码不同。例如，对于木星服务器，会看到如下行（其他服务器类似）：
+- en: '[PRE6]'
+  id: totrans-53
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: This means that the other two files (`ganymede.conf` and `callisto.conf`), while
+    they are certainly physically present in the `conf` directory, are not actually
+    processed at all.
+  id: totrans-54
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这意味着另外两个文件（`ganymede.conf`和`callisto.conf`），虽然它们在`conf`目录中确实存在，但实际上根本没有被处理。
+- en: Redirecting pushes
+  id: totrans-55
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 重定向推送
+- en: We mentioned earlier that there can only be one master repository. However,
+    this makes things a little inconvenient from the developers' point of view. Say
+    you would like some of your developers to take advantage of a geographically close
+    slave server to pull updates from. This means they would have to use push to a
+    different server than the one they presumably cloned from and regularly pull/fetch
+    from. While Git does allow this (see man git-config and look for pushurl, for
+    one possible way), it is still something that requires each user to do something
+    on their machines. In addition, remember Gitolite allows different repositories
+    to have different master servers; this is more scope for confusion on the part
+    of the developer.
+  id: totrans-56
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们之前提到只能有一个主仓库。然而，从开发者的角度来看，这会使事情有些不便。假设你希望一些开发者利用地理位置接近的从服务器来获取更新。这意味着他们必须使用推送到与他们克隆的服务器不同的服务器，并定期拉取/获取。虽然Git允许这样做（查看man
+    git-config并查找pushurl，是一种可能的方法之一），但每个用户仍需要在其机器上执行某些操作。此外，请记住，Gitolite允许不同的仓库有不同的主服务器；这会增加开发者混淆的可能性。
+- en: Therefore, Gitolite has a feature that makes this restriction much less onerous.
+    If the administrator chooses, a developer can push to a slave server, and *the
+    push will transparently be forwarded to the master server for that repository*.
+    In fact, the user may not even know that this is happening unless the network
+    speed makes it obvious.
+  id: totrans-57
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 因此，Gitolite 提供了一个功能，使得这个限制变得不那么繁重。如果管理员选择，开发者可以推送到从服务器，并且 *推送将透明地被转发到该仓库的主服务器*。事实上，除非网络速度使其显而易见，用户甚至可能不知道这种事情发生了。
+- en: This makes things very convenient for administrators; there is no longer any
+    need to confuse developers with detailed information about where to clone and
+    where to push for each repository they need. In fact, you can set it up so that
+    all developers in a particular site use their local Gitolite server for all their
+    clones, without even having to even know that Gitolite mirroring is being used!
+  id: totrans-58
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这为管理员带来了极大的便利；不再需要让开发者混淆每个仓库需要克隆和推送的位置。实际上，你可以设置，使得某个特定站点的所有开发者都使用本地的 Gitolite
+    服务器来进行所有克隆，而无需知道 Gitolite 镜像功能正在被使用！
+- en: 'This feature is called **redirected push** , since that is exactly what happens
+    behind the scenes. Here''s how to use it. Let us say you want to allow redirected
+    pushes (to a `repository foo`) from `ganymede` (but not `callisto`), you add the
+    following lines to the `conf` file:'
+  id: totrans-59
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个功能被称为 **重定向推送**，因为这正是后台发生的事情。以下是如何使用它。假设你希望允许从 `ganymede`（而不是 `callisto`）进行重定向推送（推送到
+    `repository foo`），你需要在 `conf` 文件中添加以下几行：
+- en: '[PRE7]'
+  id: totrans-60
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE7]'
+- en: That's it. Just list all the slaves that you trust and add them, space-separated,
+    as a value to this option. If you trust all of them, just use the single word
+    all instead.
+  id: totrans-61
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 就这样。只需列出你信任的所有从服务器，并将它们以空格分隔的形式作为该选项的值。如果你信任所有从服务器，直接使用单词 all 即可。
+- en: Manual synchronization
+  id: totrans-62
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 手动同步
+- en: Sometimes you will find that a slave server has not been updated, perhaps due
+    to some transient network problem. One way to get it back in sync, after the network
+    problem has been resolved, of course, is to make some change to the repository
+    and make a push. However, this feels clumsy and inelegant.
+  id: totrans-63
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有时你会发现某个从服务器没有更新，可能是由于某些临时的网络问题。在网络问题解决后，要让其重新同步，一种方法当然是对仓库进行一些修改并推送。然而，这种方式显得笨拙且不优雅。
+- en: Note
+  id: totrans-64
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: At present, Gitolite does not have any way of reporting on push failures, although
+    it does log whatever messages Git itself sends back in the log files. This means
+    admins have to actively monitor the log files for failure, or wait for users to
+    report issues with slaves getting out of sync.
+  id: totrans-65
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 目前，Gitolite 并没有提供推送失败的报告功能，尽管它会记录 Git 本身返回的所有信息在日志文件中。这意味着管理员需要主动监控日志文件以检测失败，或者等待用户报告从服务器不同步的问题。
+- en: For the aesthetically sensitive, Gitolite has the mirror command. Just log on
+    to the server that contains the master repository, and run `gitolite mirror push
+    slavename reponame`. This will immediately bring the slave up to date.
+  id: totrans-66
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于美学上较为敏感的人，Gitolite 提供了镜像命令。只需登录到包含主仓库的服务器，然后运行 `gitolite mirror push slavename
+    reponame`。这将立即使从服务器与主服务器同步。
+- en: If you would like remote users to invoke such updates, simply enable the command
+    for remote use by uncommenting the corresponding line in `$HOME/.gitolite.rc`.
+  id: totrans-67
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你希望远程用户能够触发此类更新，只需通过取消注释 `$HOME/.gitolite.rc` 中相应的行来启用远程使用该命令。
+- en: Switching to a different master
+  id: totrans-68
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 切换到不同的主服务器
+- en: The biggest day-to-day benefit of mirroring is clearly that it can make read
+    access more network-efficient for projects where the development team is widely
+    distributed, albeit at the cost of an extra server at each slave location.
+  id: totrans-69
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 镜像的最大日常好处显然是，它可以让分布广泛的开发团队更加高效地进行网络读取，尽管这会在每个从服务器位置增加额外的服务器成本。
+- en: However, there's obviously one more advantage. If the main server for a repository
+    should fail, one of the mirrors can easily be removed from the list of slaves
+    and be made the master. As long as there are no network problems, the slave should
+    be in the same state as the master, so no commits are lost.
+  id: totrans-70
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，显然还有一个额外的优势。如果一个仓库的主服务器发生故障，可以轻松地将其中一个镜像从从服务器列表中移除，并将其设置为主服务器。只要没有网络问题，从服务器应该与主服务器保持相同的状态，因此不会丢失任何提交。
+- en: Tip
+  id: totrans-71
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 提示
+- en: Mirroring is not the same as backup. It is outside the scope of this book to
+    discuss the differences, but you should always have a reliable backup system in
+    place for all your servers and possible workstations as well.
+  id: totrans-72
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 镜像与备份不同。本书的范围不涉及这两者之间的区别，但你应该始终为所有服务器和可能的工作站设置一个可靠的备份系统。
+- en: This simple strategy breaks down when the server that died contains the gitolite-admin
+    repository itself. This is a bit of a catch-22 situation; you cannot push the
+    change (in mirror options for the gitolite-admin repository) to the current master
+    server since it is down. Yet, you cannot push to the slave server that you decided
+    to promote to "master" status, because it does not yet know that it is the new
+    master! (Needless to say, as a security feature, slave servers do not accept pushes
+    from just anywhere – they will only do so from the server that they have been
+    told is the master for the repository concerned.)
+  id: totrans-73
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当死掉的服务器包含了gitolite-admin仓库时，这个简单的策略就会崩溃。这有点像是进退两难的情况；你无法将更改（在gitolite-admin仓库的镜像选项中）推送到当前的主服务器，因为它已经宕机了。然而，你也无法将更改推送到你决定提升为“主”服务器的从服务器，因为它还不知道自己已经是新的主服务器了！（不言而喻，作为一种安全功能，从服务器不接受来自任何地方的推送——它们只会接受来自被告知是相关仓库主服务器的服务器的推送。）
+- en: 'The correct way to resolve this is as follows:'
+  id: totrans-74
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 解决这个问题的正确方法如下：
+- en: On each slave, edit `$HOME/.gitolite/gitolite.conf`. Change the master and slave
+    options for the gitolite-admin repository. If you used repo `@all` for these options,
+    they will change for everyone. However, it's best to change it only for the gitolite-admin
+    repository if at all possible.
+  id: totrans-75
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在每个从服务器上，编辑`$HOME/.gitolite/gitolite.conf`。更改gitolite-admin仓库的主服务器和从服务器选项。如果你为这些选项使用了`@all`仓库，它们将会影响到所有仓库。然而，最好只为gitolite-admin仓库修改这些选项，如果可能的话。
+- en: After saving the change to this file, run `gitolite setup`. This will override
+    the restriction and force the change on the local server. (This cannot be done
+    remotely, again for security reasons.)
+  id: totrans-76
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在保存对该文件的更改后，运行`gitolite setup`。这将覆盖限制并强制在本地服务器上应用更改。（出于安全原因，这不能远程执行。）
+- en: Now, on the administrator's workstation, clone the gitolite-admin repository
+    from the new master, change the mirroring options for the rest of the repositories
+    (if required), then push the change.
+  id: totrans-77
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在，在管理员的工作站上，从新的主服务器克隆gitolite-admin仓库，修改其他仓库的镜像选项（如果需要），然后推送更改。
+- en: Summary
+  id: totrans-78
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 总结
+- en: This concludes our exploration of Gitolite's mirroring feature. While it is
+    not something that everyone will need, for the larger sites this has some very
+    visible benefits.
+  id: totrans-79
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本文结束了我们对Gitolite镜像功能的探索。虽然这并不是每个人都需要的功能，但对于较大的站点来说，这具有一些非常明显的好处。
+- en: I hope you have enjoyed this exploration of Gitolite and its features. As you
+    use Gitolite more and more, you might also have the need to look at the official
+    documentation on [http://gitolite.com](http://gitolite.com). We hope that this
+    book has helped you understand the concepts and rationale behind Gitolite so that
+    you can understand the official documentation better and get your job done faster.
+  id: totrans-80
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 希望你喜欢本次对Gitolite及其功能的探索。随着你对Gitolite的使用越来越多，你可能还需要查看官方文档，网址为[http://gitolite.com](http://gitolite.com)。我们希望这本书能帮助你理解Gitolite背后的概念和原理，从而更好地理解官方文档，帮助你更快地完成工作。

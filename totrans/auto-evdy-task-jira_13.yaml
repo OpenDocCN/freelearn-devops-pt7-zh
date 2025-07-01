@@ -1,0 +1,1254 @@
+- en: '*Chapter 10*: Troubleshooting Tips and Techniques'
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '*第10章*：故障排除技巧和方法'
+- en: It is an inevitable fact that at some point, your automation rules will fail
+    with errors or slow down for no apparent reason. Even meticulously planned and
+    implemented rules will eventually be subject to an unforeseen error. In these
+    cases, understanding how to proactively monitor, troubleshoot, and debug your
+    rules will help you solve these issues quicker.
+  id: totrans-1
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 不可避免的是，某个时刻你的自动化规则将会因错误或无法解释的原因而失败或变慢。即使是精心规划和实施的规则，也终会遭遇无法预见的错误。在这些情况下，了解如何主动监控、故障排除和调试规则，将帮助你更快地解决这些问题。
+- en: In this chapter, we will introduce you to some tips and techniques to better
+    understand what is happening to your rules and how to debug them. We'll take a
+    look at the audit log and how you can use this to better understand what is going
+    on during your rule executions and how to leverage it for debugging purposes.
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们将向你介绍一些技巧和方法，以更好地理解你的规则发生了什么以及如何调试它们。我们将查看审计日志，并介绍如何利用它来更好地理解规则执行过程中发生的事情，以及如何利用它进行调试。
+- en: We will also learn about the service limits in place to prevent rogue rules
+    from negatively impacting the performance of your instance and how you can proactively
+    monitor your rules to avoid breaching these limits.
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们还将了解为防止不合规的规则对实例性能产生负面影响而设定的服务限制，以及如何主动监控你的规则，以避免违反这些限制。
+- en: Finally, you will learn how to use the performance insight metrics to gain an
+    overview of the performance of the automation rules in your system. This will
+    enable you to identify rules that could potentially cause performance issues,
+    thereby allowing you to maintain and improve the performance of your Jira instance.
+  id: totrans-4
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后，你将学习如何使用性能洞察指标来概览系统中自动化规则的性能。这将帮助你识别可能导致性能问题的规则，从而能够维持和改进你的 Jira 实例的性能。
+- en: 'In this chapter, we''ll cover the following topics:'
+  id: totrans-5
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们将覆盖以下主题：
+- en: Debugging automation rules
+  id: totrans-6
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 调试自动化规则
+- en: Understanding service limits
+  id: totrans-7
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 了解服务限制
+- en: Gaining insights on performance
+  id: totrans-8
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 获取性能洞察
+- en: Technical requirements
+  id: totrans-9
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 技术要求
+- en: 'The requirements for this chapter are as follows:'
+  id: totrans-10
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章的要求如下：
+- en: '**Jira cloud environment**: If you don''t already have access to Jira, you
+    can create a free Jira Cloud account at [https://www.atlassian.com/software/jira/free](https://www.atlassian.com/software/jira/free)
+    and ensure that you have both Jira Software and Jira Service Management selected.'
+  id: totrans-11
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**Jira Cloud 环境**：如果你尚未访问 Jira，你可以在[https://www.atlassian.com/software/jira/free](https://www.atlassian.com/software/jira/free)创建一个免费的
+    Jira Cloud 账户，并确保选择了 Jira Software 和 Jira Service Management。'
+- en: '**Jira Server environment**: If you are using Jira Server (available from [https://www.atlassian.com/software/jira/download](https://www.atlassian.com/software/jira/download)),
+    ensure that you have licenses for both Jira Software and Jira Service Desk. In
+    addition, you will also need to ensure that you install the *Automation for Jira*
+    app available from the Atlassian Marketplace.'
+  id: totrans-12
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**Jira Server 环境**：如果你使用的是 Jira Server（可从[https://www.atlassian.com/software/jira/download](https://www.atlassian.com/software/jira/download)获取），请确保你拥有
+    Jira Software 和 Jira Service Desk 的许可证。此外，你还需要确保安装来自 Atlassian Marketplace 的 *Automation
+    for Jira* 应用。'
+- en: In both instances, you will need to have at least **Project Administrator**
+    access to Service Management in order to be able to follow the examples in this
+    chapter. For the examples in this chapter, we have used the *IT Service Management
+    project template* to create the Service Desk project.
+  id: totrans-13
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这两种实例中，你需要至少拥有 **项目管理员** 权限才能跟随本章中的示例。为了演示本章中的示例，我们使用了 *IT 服务管理项目模板* 来创建服务台项目。
+- en: 'You can download the latest code samples for this chapter from this book''s
+    official GitHub repository at [https://github.com/PacktPublishing/Automate-Everyday-Tasks-in-Jira](https://github.com/PacktPublishing/Automate-Everyday-Tasks-in-Jira).
+    Please visit the following link to check the CiA videos: [https://bit.ly/2XSttjY](https://bit.ly/2XSttjY)'
+  id: totrans-14
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以从本书的官方 GitHub 仓库下载本章的最新代码示例，网址为[https://github.com/PacktPublishing/Automate-Everyday-Tasks-in-Jira](https://github.com/PacktPublishing/Automate-Everyday-Tasks-in-Jira)。请访问以下链接查看
+    CiA 视频：[https://bit.ly/2XSttjY](https://bit.ly/2XSttjY)
+- en: Debugging automation rules
+  id: totrans-15
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 调试自动化规则
+- en: There are many reasons why automation rules can, and will, fail. These could
+    be due to underlying configuration changes within Jira, or the rule author may
+    not have anticipated an edge case scenario when planning and implementing the
+    rule.
+  id: totrans-16
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 自动化规则失败的原因有很多。这些可能是由于 Jira 中的基础配置更改，或者规则的创建者在规划和实施规则时未预见到某些边缘情况。
+- en: When rules start failing, it is necessary to understand what caused the rule
+    to fail and to either fix the underlying cause or to adjust the automation rule
+    to take into consideration the changes that caused it to fail.
+  id: totrans-17
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当规则开始失败时，必须了解是什么导致规则失败，并修复潜在原因或调整自动化规则以考虑到导致失败的变化。
+- en: However, debugging is not only about finding and fixing deficiencies in your
+    automation rules or underlying Jira configurations. We can use the same techniques
+    during planning and developing to ensure that we deliver robust rules that are
+    likely to have a higher success rate.
+  id: totrans-18
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，调试不仅仅是找到并修复自动化规则或 Jira 配置中的不足之处。我们可以在规划和开发过程中使用相同的技术，确保我们交付的规则更为健壮，从而更可能成功。
+- en: In this section, we will look at how using the audit log for automation rules
+    can help to identify issues and how we can make use of it when debugging our automation
+    rules.
+  id: totrans-19
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本节中，我们将了解如何使用审计日志来帮助自动化规则识别问题，以及在调试自动化规则时如何利用它。
+- en: Firstly, let's take a look at the audit log and how it helps us to understand
+    what is happening with our rules.
+  id: totrans-20
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 首先，让我们看看审计日志及其如何帮助我们了解规则的执行情况。
+- en: Understanding the audit log
+  id: totrans-21
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 理解审计日志
+- en: Every automation rule has an associated audit log containing a list of chronologically
+    ordered items that affect that rule from the time it was created.
+  id: totrans-22
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 每个自动化规则都有一个相关的审计日志，包含从规则创建开始，按时间顺序排列的所有影响该规则的条目。
+- en: These items track not only the creation, modification, and deletion events for
+    the rule, but also every execution of the rule, including the issues affected
+    and the outcomes of every action within the rule.
+  id: totrans-23
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这些项不仅跟踪规则的创建、修改和删除事件，还记录规则的每次执行，包括受影响的事务和规则中每个动作的结果。
+- en: 'There are three ways to view the audit log:'
+  id: totrans-24
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有三种查看审计日志的方式：
+- en: '**Global audit log**: The global audit log allows a Jira administrator to see
+    all the audit logs for every project and rule in the system. You can find the
+    global audit log as a Jira administrator by clicking the **settings (cog)** icon
+    in the top menu bar and then selecting **System**. Select the **Automation rules**
+    tab in the left menu and then, in Jira Cloud, select the **Audit log** tab. In
+    *Jira Server* or *Jira Data Center*, click the ellipsis (**…**) button and select
+    **Show audit log**.'
+  id: totrans-25
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**全局审计日志**：全局审计日志允许 Jira 管理员查看系统中每个项目和规则的所有审计日志。作为 Jira 管理员，你可以通过点击顶部菜单栏的**设置（齿轮）**图标，然后选择**系统**，找到全局审计日志。在左侧菜单中选择**自动化规则**标签页，然后在
+    Jira Cloud 中选择**审计日志**标签页。在 *Jira Server* 或 *Jira Data Center* 中，点击省略号（**…**）按钮并选择**显示审计日志**。'
+- en: '**Project audit log**: The project audit log allows project administrators
+    to see all the audit logs for every rule in that project. To find the project
+    audit log, as a project administrator, navigate to **Project settings**. In *Jira
+    Cloud*, select the **Automation** tab in the left menu and then select the **Audit
+    log** tab. In *Jira Server* or *Jira Data Center*, select the **Project automation**
+    tab in the left menu and then click the ellipsis (**…**) button and select **Show
+    audit log**.'
+  id: totrans-26
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**项目审计日志**：项目审计日志允许项目管理员查看该项目中每个规则的所有审计日志。作为项目管理员，要找到项目审计日志，请导航至**项目设置**。在
+    *Jira Cloud* 中，选择左侧菜单中的**自动化**标签页，然后选择**审计日志**标签页。在 *Jira Server* 或 *Jira Data
+    Center* 中，选择左侧菜单中的**项目自动化**标签页，然后点击省略号（**…**）按钮并选择**显示审计日志**。'
+- en: '**Rule audit log**: The rule audit log allows you to see all the log items
+    for that particular rule only. To view the rule audit log, select a rule and then
+    click the **Audit log** item above the **rule-chain** view.'
+  id: totrans-27
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**规则审计日志**：规则审计日志让你仅查看该特定规则的所有日志项。要查看规则审计日志，选择一个规则，然后点击**审计日志**项，位于**规则链**视图上方。'
+- en: 'An example of the global audit log can be seen in the following screenshot,
+    showing the audit logs for rules across all projects:'
+  id: totrans-28
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下截图显示了全局审计日志的示例，展示了跨所有项目的规则审计日志：
+- en: '![Figure 10.1 – The global audit log view in Jira Cloud'
+  id: totrans-29
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '![图 10.1 – Jira Cloud 中的全局审计日志视图'
+- en: '](img/Figure_10.1_B16551.jpg)'
+  id: totrans-30
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '](img/Figure_10.1_B16551.jpg)'
+- en: Figure 10.1 – The global audit log view in Jira Cloud
+  id: totrans-31
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.1 – Jira Cloud 中的全局审计日志视图
+- en: Clicking on the name of a rule in the global audit log and project audit log
+    views will take you to the rule audit log view. In each of the rule views, clicking
+    on the **Show more** link in the **Operations** column will expand the audit log
+    details for that particular event.
+  id: totrans-32
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在全局审计日志和项目审计日志视图中，点击规则名称将带您进入该规则的审计日志视图。在每个规则视图中，点击**操作**列中的**显示更多**链接，将展开该事件的审计日志详细信息。
+- en: 'The following screenshot shows the project audit log view with some of the
+    individual audit items expanded to show the detailed audit log:'
+  id: totrans-33
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下截图展示了项目审计日志视图，其中一些单独的审计项已展开，显示了详细的审计日志：
+- en: '![Figure 10.2 – The audit log in detail'
+  id: totrans-34
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '![图 10.2 – 审计日志详细信息'
+- en: '](img/Figure_10.2_B16551.jpg)'
+  id: totrans-35
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '](img/Figure_10.2_B16551.jpg)'
+- en: Figure 10.2 – The audit log in detail
+  id: totrans-36
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.2 – 审计日志详细信息
+- en: 'Let''s take a look at each of the items in the audit log:'
+  id: totrans-37
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们看一下审计日志中的每一项：
+- en: Each audit log has a date and timestamp associated with it that shows precisely
+    when this event occurred, accurate to the second. Audit logs are listed in descending
+    date and time order, with the latest event at the top of the list. The number
+    in brackets next to the date and timestamp is the rule's identification number.
+  id: totrans-38
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 每个审计日志都有一个关联的日期和时间戳，准确到秒，显示该事件发生的具体时间。审计日志按日期和时间降序排列，最新的事件显示在列表的顶部。日期和时间戳旁边的括号中的数字是规则的标识号。
+- en: This is the name of the rule with which this audit log is associated. In the
+    global audit log and project audit log views, clicking the rule name will take
+    you to the rule audit log for the particular rule. You can also view the audit
+    log history for deleted rules in either the global or project audit log views.
+    Deleted rules are easily identifiable by not having a hyperlink to the rule definition.
+  id: totrans-39
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 这是与该审计日志相关联的规则名称。在全局审计日志和项目审计日志视图中，点击规则名称将带您进入该规则的审计日志。您还可以在全局或项目审计日志视图中查看已删除规则的审计日志历史。已删除的规则很容易识别，因为它们没有指向规则定义的超链接。
+- en: In this column, you can see whether the rule executed successfully. In addition,
+    it also shows configuration changes to the rule, which help when debugging rule
+    failures.
+  id: totrans-40
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在这一列中，您可以看到规则是否成功执行。此外，它还显示了规则的配置更改，这在调试规则失败时非常有帮助。
+- en: Every time a rule is executed, the time it took to run is recorded and shown
+    in this column.
+  id: totrans-41
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 每次规则执行时，运行所花费的时间都会被记录并显示在这一列中。
+- en: In the case of rule executions, **Associated items** shows which issues were
+    added to the rule execution and by which rule component. Clicking on the component
+    will take you directly to the component configuration responsible for this action.
+    For configuration events, this will show the user who performed the action.
+  id: totrans-42
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 对于规则执行，**相关项**显示哪些问题被添加到规则执行中，以及由哪个规则组件添加。点击该组件将直接带您到负责该操作的组件配置。对于配置事件，它将显示执行操作的用户。
+- en: All the actions performed by rule execution are listed here, grouped by action.
+    For each action configured in the rule, you will see a list of issues that were
+    successful. If an action was unsuccessful, an error message will be displayed
+    instead. Clicking on any of the actions will take you directly to the action configuration
+    screen.
+  id: totrans-43
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 规则执行所执行的所有操作都在这里列出，并按操作分组。对于规则中配置的每个操作，您将看到一个成功的任务列表。如果操作失败，则会显示错误信息。点击任何操作将直接带您到该操作的配置屏幕。
+- en: Expanding the **What do the different statuses mean** option will list all the
+    possible status codes and their meanings.
+  id: totrans-44
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 展开**不同状态代表的含义**选项将列出所有可能的状态代码及其含义。
+- en: Now that we've learned how to read the audit log, let's take a look at how we
+    can use it to debug our rules.
+  id: totrans-45
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经了解了如何读取审计日志，接下来我们来看一下如何利用它来调试规则。
+- en: Using the audit log for debugging
+  id: totrans-46
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 使用审计日志进行调试
+- en: The ability to see what is stored in a smart value or to examine the outcome
+    of a smart value function will give you some insight into what is happening in
+    your rule. This is particularly useful when you are designing a rule or when debugging
+    a rule that is not behaving as expected.
+  id: totrans-47
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 查看智能值中存储的内容或检查智能值函数的结果，可以让您了解规则中发生的情况。这在设计规则或调试行为不符合预期的规则时尤其有用。
+- en: For this purpose, an automation action component, *Log action*, is available
+    to use in your rules. The sole purpose of this component is to inject messages
+    into the audit log, which you can then inspect when debugging a rule.
+  id: totrans-48
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为此目的，可以在您的规则中使用一个自动化动作组件——*日志动作*。该组件的唯一目的是将消息注入到审计日志中，您可以在调试规则时查看这些消息。
+- en: Let's take a look at an example that utilizes the Log action component.
+  id: totrans-49
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们来看一个使用 Log 操作组件的示例。
+- en: Logging messages using Log action
+  id: totrans-50
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 使用 Log 操作记录消息
+- en: The Log action component allows you to inject messages into the audit log so
+    you can add debugging statements to help you understand what is happening when
+    a rule executes.
+  id: totrans-51
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Log 操作组件允许你将消息注入到审计日志中，这样你就可以添加调试语句，帮助你理解规则执行时发生了什么。
+- en: 'In this example, we will use the Log action component to add a timestamp to
+    the audit log before and after calling a **Create sub-tasks** action:'
+  id: totrans-52
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在此示例中，我们将使用 Log 操作组件，在调用**创建子任务**操作之前和之后，将时间戳添加到审计日志中：
+- en: In your Service Desk project, navigate to **Project settings**, click on the
+    **Automation** tab, and then click on **Create rule**.
+  id: totrans-53
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在你的 Service Desk 项目中，导航到**项目设置**，点击**自动化**标签页，然后点击**创建规则**。
+- en: Select the **Issue created** trigger and then click **Save**.
+  id: totrans-54
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 选择**问题创建**触发器，然后点击**保存**。
+- en: Then select `Request Type`
+  id: totrans-55
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 然后选择`Request Type`
+- en: '`equals`'
+  id: totrans-56
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`equals`'
+- en: '`Onboard new employees`'
+  id: totrans-57
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`Onboard new employees`'
+- en: Now select `{{now}} Start create sub-tasks`
+  id: totrans-58
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在选择`{{now}} 开始创建子任务`
+- en: Next, select `Provision new laptop by {{issue.duedate.longDate}}`
+  id: totrans-59
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 接下来，选择`Provision new laptop by {{issue.duedate.longDate}}`
+- en: '`Setup new desk phone by {{issue.duedate.longDate}}`'
+  id: totrans-60
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`Setup new desk phone by {{issue.duedate.longDate}}`'
+- en: Again, select `{{now}} End create sub-tasks`
+  id: totrans-61
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 再次选择`{{now}} 结束创建子任务`
+- en: Next, name your rule `Create onboarding sub-tasks with debug logging` and then
+    click **Turn it on** to save and enable the rule.
+  id: totrans-62
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 接下来，给你的规则命名为`Create onboarding sub-tasks with debug logging`，然后点击**启用**，以保存并启用规则。
+- en: 'The rule should look similar to the following screenshot:'
+  id: totrans-63
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 规则应类似于以下屏幕截图：
+- en: '![Figure 10.3 – Creating a rule with debug logging'
+  id: totrans-64
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '![图 10.3 – 使用调试日志创建规则'
+- en: '](img/Figure_10.3_B16551.jpg)'
+  id: totrans-65
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '](img/Figure_10.3_B16551.jpg)'
+- en: Figure 10.3 – Creating a rule with debug logging
+  id: totrans-66
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.3 – 使用调试日志创建规则
+- en: Now that we have our rule in place, use the **Raise a request** link from your
+    Service Desk project to create a new issue using the *Onboard new employees* request
+    type and then navigate back to the *Create onboarding sub-tasks with debug logging*
+    rule and click on the **Audit log** item.
+  id: totrans-67
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经设置好规则，使用**提出请求**链接，从你的 Service Desk 项目中创建一个新的问题，选择*Onboard new employees*请求类型，然后返回到*使用调试日志创建入职子任务*规则，点击**审计日志**项。
+- en: 'After expanding the audit log item, you should see something similar to the
+    following screenshot:'
+  id: totrans-68
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 展开审计日志项后，你应该能看到类似以下屏幕截图的内容：
+- en: '![Figure 10.4 – Audit log with debug log messages'
+  id: totrans-69
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '![图 10.4 – 带有调试日志消息的审计日志'
+- en: '](img/Figure_10.4_B16551.jpg)'
+  id: totrans-70
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '](img/Figure_10.4_B16551.jpg)'
+- en: Figure 10.4 – Audit log with debug log messages
+  id: totrans-71
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.4 – 带有调试日志消息的审计日志
+- en: 'You can see in the audit log the messages we inserted around the **Create sub-tasks**
+    action:'
+  id: totrans-72
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以在审计日志中看到我们在**创建子任务**操作前后插入的消息：
+- en: The first log action message just before the **Create sub-tasks** action is
+    called.
+  id: totrans-73
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 第一个日志操作消息会在调用**创建子任务**操作之前。
+- en: The second log action message just after the **Create sub-tasks** action is
+    called.
+  id: totrans-74
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 第二个日志操作消息会在**创建子任务**操作之后被调用。
+- en: From this, you can now determine how long the `Sub-task` issue type.
+  id: totrans-75
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 从中，你现在可以确定`Sub-task`问题类型的持续时间。
+- en: Logging messages using the debug smart value function
+  id: totrans-76
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 使用调试智能值功能记录消息
+- en: Using the Log action to insert messages into the audit log makes debugging your
+    rules a lot easier. However, having too many Log action components to log things
+    such as the output of smart value functions means you have to duplicate your smart
+    values in order to create debug logs.
+  id: totrans-77
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用 Log 操作将消息插入审计日志，使得调试你的规则变得更加容易。然而，如果你有太多 Log 操作组件来记录像智能值函数的输出这类信息，你就必须重复你的智能值，以便创建调试日志。
+- en: To get around this, you can use the debug smart value function. This involves
+    surrounding your smart value with the `{{#debug}}` function.
+  id: totrans-78
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了解决这个问题，你可以使用调试智能值功能。这涉及将你的智能值包裹在`{{#debug}}`函数中。
+- en: 'Let''s take a look at an example rule that uses the debug smart value function
+    to achieve this:'
+  id: totrans-79
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们来看一个示例规则，使用调试智能值功能来实现这个目标：
+- en: In your **Service Desk** project, navigate to **Project settings**, click on
+    the **Automation** tab, and then click on **Create rule**.
+  id: totrans-80
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在你的**Service Desk**项目中，导航到**项目设置**，点击**自动化**标签页，然后点击**创建规则**。
+- en: Select the `Waiting for customer`
+  id: totrans-81
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 选择`Waiting for customer`
+- en: 'Now, select **New action** followed by **Comment on issue**. Add the following
+    message to the **Comment** field and then click **Save**:'
+  id: totrans-82
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在，选择**新建操作**，然后选择**评论问题**。将以下消息添加到**评论**字段中，然后点击**保存**：
+- en: '[PRE0]'
+  id: totrans-83
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: 'Your rule should look similar to the following screenshot:'
+  id: totrans-84
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 你的规则应类似于以下屏幕截图：
+- en: '![Figure 10.5 – Using the debug smart value function'
+  id: totrans-85
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '![图10.5 – 使用调试智能值函数'
+- en: '](img/Figure_10.5_B16551.jpg)'
+  id: totrans-86
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '](img/Figure_10.5_B16551.jpg)'
+- en: Figure 10.5 – Using the debug smart value function
+  id: totrans-87
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 图10.5 – 使用调试智能值函数
+- en: Finally, name the rule `Comment on waiting for customer with debug logging`
+    and then click **Turn it on** to save and enable the rule.
+  id: totrans-88
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 最后，命名规则为`带调试日志的等待客户评论`，然后点击**启用**以保存并启用该规则。
+- en: Create an issue of the *Service Request* type, transition it to *Waiting for
+    customer*, and then navigate back to the *Comment on waiting for customer with
+    debug logging* rule and click on the **Audit log** item.
+  id: totrans-89
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 创建一个*服务请求*类型的问题，将其转换为*等待客户*状态，然后返回到*带调试日志的等待客户评论*规则，点击**审计日志**项。
+- en: 'After expanding the top audit log item, your audit log should look similar
+    to the following screenshot:'
+  id: totrans-90
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 展开顶层审计日志项后，您的审计日志应如下所示：
+- en: '![Figure 10.6 – Audit log using the debug smart value function'
+  id: totrans-91
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '![图10.6 – 使用调试智能值函数的审计日志'
+- en: '](img/Figure_10.6_B16551.jpg)'
+  id: totrans-92
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '](img/Figure_10.6_B16551.jpg)'
+- en: Figure 10.6 – Audit log using the debug smart value function
+  id: totrans-93
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图10.6 – 使用调试智能值函数的审计日志
+- en: Using the `{{#debug}}` smart value function has caused a **d****ebug message**
+    to be printed in the audit log, along with the information output by the **Comment
+    on issue** action without needing to add a separate **Log action** component to
+    the rule. You can see this in the item labeled **(1)** in *Figure 10.6*.
+  id: totrans-94
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用`{{#debug}}`智能值函数导致**调试消息**被打印到审计日志中，并附带**评论问题**操作输出的信息，而无需向规则中添加单独的**日志操作**组件。您可以在*图10.6*中标记为**(1)**的项中看到这一点。
+- en: We have learned in this section how to understand and use the audit log from
+    a global, project, and rule perspective, and what the various items in the log
+    can tell us.
+  id: totrans-95
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们在本节中学习了如何从全局、项目和规则角度理解和使用审计日志，以及日志中的各种项目能告诉我们什么。
+- en: We have also learned how to send messages to the audit log from our rules to
+    aid in debugging our rules.
+  id: totrans-96
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们还学习了如何从规则中发送消息到审计日志，以帮助调试规则。
+- en: In the next section, we will be looking at the service limits that are in place
+    to prevent rules from negatively impacting the performance of your Jira instance.
+  id: totrans-97
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一节中，我们将查看服务限制，这些限制是为了防止规则对Jira实例的性能产生负面影响。
+- en: Understanding service limits
+  id: totrans-98
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 理解服务限制
+- en: Service limits for automation rules are key to ensuring that automation rules
+    do not have a negative impact on the performance of your Jira instance.
+  id: totrans-99
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 自动化规则的服务限制是确保自动化规则不会对Jira实例的性能产生负面影响的关键。
+- en: In this section, we'll look at what service limits are in place and how they
+    affect your rules. We'll also look at how to work within these service limits
+    and how we can use automation rules to monitor some of these.
+  id: totrans-100
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本节中，我们将查看现有的服务限制以及它们如何影响您的规则。我们还将讨论如何在这些服务限制内工作，以及如何使用自动化规则来监控其中一些限制。
+- en: Let's start by looking at what service limits are available.
+  id: totrans-101
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们首先了解有哪些服务限制可用。
+- en: Getting to know service limits
+  id: totrans-102
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 了解服务限制
+- en: Service limits are applicable to both the Jira Cloud and Jira Server/Data Center
+    versions of the automation rules.
+  id: totrans-103
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 服务限制适用于Jira Cloud和Jira Server/Data Center版本的自动化规则。
+- en: 'The service limits that apply to all rules are listed along with a description
+    of how each limit could be breached:'
+  id: totrans-104
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 适用于所有规则的服务限制列出了每个限制可能被突破的描述：
+- en: 'Components per rule: 65'
+  id: totrans-105
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 每个规则的组件数：65
+- en: Any rule that contains more than 65 conditions, branches, and actions.
+  id: totrans-106
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 包含超过65个条件、分支和操作的规则。
+- en: 'New sub-tasks per action: 100'
+  id: totrans-107
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 每个操作的新子任务：100
+- en: A rule that attempts to create more than 100 sub-tasks.
+  id: totrans-108
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 尝试创建超过100个子任务的规则。
+- en: 'Issues searched: 1,000'
+  id: totrans-109
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 搜索到的问题：1,000
+- en: A JQL search that returns more than 1,000 items will cause this to be breached.
+  id: totrans-110
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 返回超过1,000个项目的JQL查询将导致此限制被突破。
+- en: 'Concurrent scheduled rule executions: 1'
+  id: totrans-111
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 并发调度规则执行：1
+- en: A rule scheduled to run every 5 minutes, but takes longer than 5 minutes to
+    complete, will cause this limit to be breached as the subsequent execution cannot
+    start while the first execution is still processing.
+  id: totrans-112
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 如果规则被调度为每5分钟运行一次，但执行时间超过5分钟，导致此限制被突破，因为在第一次执行仍在处理时，后续执行无法开始。
+- en: 'Items queued by rule: 5,000 for Jira Cloud, and 25,000 for Jira Server/Data
+    Center'
+  id: totrans-113
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 规则排队的项目：Jira Cloud为5,000，Jira Server/Data Center为25,000
+- en: Any single rule that causes more than the specified number of issues to be queued
+    will breach this limit.
+  id: totrans-114
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 任何单一规则，若导致排队的问题超过指定数量，将违反此限制。
+- en: 'Items queued globally: 50,000 for Jira Cloud, and 100,000 for Jira Server/Data
+    Center'
+  id: totrans-115
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 全局队列中的项：Jira Cloud为50,000，Jira Server/Data Center为100,000
+- en: The total number of issues queued at any one time cannot exceed the specified
+    limits.
+  id: totrans-116
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在任何时刻，队列中的问题总数不得超过指定的限制。
+- en: 'Daily processing time: 60 minutes per 12 hours'
+  id: totrans-117
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 每日处理时间：每12小时60分钟
+- en: Any single rule that executes every 5 minutes with a processing time of more
+    than 5 seconds per execution will breach this limit.
+  id: totrans-118
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 每个执行时间超过5秒且每5分钟执行一次的单个规则将违反此限制。
+- en: 'Hourly processing time: 100 minutes'
+  id: totrans-119
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 每小时处理时间：100分钟
+- en: This limit will only trigger if there are more than 2,000 rule executions per
+    hour on Jira Cloud or 5,000 rule executions per hour on Jira Server/Data Center.
+    This could happen if you perform a bulk operation that causes several rules to
+    fire at the same time.
+  id: totrans-120
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 如果Jira Cloud每小时的规则执行次数超过2,000次，或Jira Server/Data Center每小时的规则执行次数超过5,000次，将触发此限制。这种情况可能会发生在执行批量操作时，导致多个规则同时触发。
+- en: 'Loop detection: 10'
+  id: totrans-121
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 循环检测：10
+- en: A rule that triggers itself or other rules more than the specified number of
+    times in quick succession.
+  id: totrans-122
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 一个规则如果在短时间内触发自己或其他规则超过指定次数，将触发此限制。
+- en: Dealing with service limit breaches
+  id: totrans-123
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 处理服务限制违反
+- en: When rules breach their service limits, the automation engine will throttle
+    the affected rule. The audit log will contain more information and use the *throttled*
+    status to make it easier to identify.
+  id: totrans-124
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当规则违反其服务限制时，自动化引擎会限制受影响的规则。审计日志将包含更多信息，并使用*已限制*状态来帮助更容易地识别。
+- en: Rules that have been throttled for breaching their service limits will also
+    be disabled so as to prevent any further performance issues.
+  id: totrans-125
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 因违反服务限制而被限制的规则也将被禁用，以防止进一步的性能问题。
+- en: Important note
+  id: totrans-126
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 重要提示
+- en: When setting up your rule, you can choose to send the rule owner an email notification
+    when a rule first fails or every time a rule fails. You should be aware that when
+    a notification is sent, the rule will already have been throttled and disabled.
+  id: totrans-127
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在设置规则时，您可以选择在规则首次失败时或每次失败时向规则所有者发送电子邮件通知。请注意，当通知发送时，规则已经被限制并禁用。
+- en: In the case where regularly executing rules are in danger of exceeding their
+    processing time limits, there is a special trigger, the *Service limit breached*
+    trigger, which you can use to monitor your rules. Rather than waiting for the
+    rule to get throttled and disabled, you can set up an automation rule using this
+    trigger to notify you before the breach occurs.
+  id: totrans-128
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在常规执行的规则即将超出其处理时间限制的情况下，存在一个特殊触发器——*服务限制违反*触发器，您可以使用它来监控您的规则。您可以在规则被限制和禁用之前，利用此触发器设置自动化规则，以便提前通知您。
+- en: 'Let''s take a quick look at how you can set up an automation rule to watch
+    for and notify you when rules reach 80% of their processing time limit:'
+  id: totrans-129
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们快速了解如何设置自动化规则，监控规则何时达到处理时间限制的80%，并通知您：
+- en: In your Jira project, navigate to **Project settings**, click on the **Automation**
+    link in the **Project settings** menu, and then click **Create rule**.
+  id: totrans-130
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在您的Jira项目中，导航到**项目设置**，点击**项目设置**菜单中的**自动化**链接，然后点击**创建规则**。
+- en: Select the `Used more than 80% of the service limit`
+  id: totrans-131
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 选择`已使用超过80%的服务限制`
+- en: '`Once per hour`'
+  id: totrans-132
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`每小时一次`'
+- en: Next, select `administrators`
+  id: totrans-133
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 接下来，选择`管理员`
+- en: '`Rules are about to breach their service limits`'
+  id: totrans-134
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`规则即将违反其服务限制`'
+- en: '`There are rules about to breach their 80% processing time limit: {{breachedSummary}}.`'
+  id: totrans-135
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`即将违反其80%处理时间限制的规则：{{breachedSummary}}。`'
+- en: '`The following rules are about to breach:`'
+  id: totrans-136
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`以下规则即将违反：`'
+- en: '`{{breachedRules}}`'
+  id: totrans-137
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`{{breachedRules}}`'
+- en: 'The rule should look similar to the following screenshot:'
+  id: totrans-138
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 该规则应类似于以下截图：
+- en: '![Figure 10.7 – Rule to monitor processing time service limits'
+  id: totrans-139
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '![图10.7 – 监控处理时间服务限制的规则'
+- en: '](img/Figure_10.7_B16551.jpg)'
+  id: totrans-140
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '](img/Figure_10.7_B16551.jpg)'
+- en: Figure 10.7 – Rule to monitor processing time service limits
+  id: totrans-141
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 图10.7 – 监控处理时间服务限制的规则
+- en: Finally, name your rule `Service limit 80% notification` and click **Turn it
+    on** to save and enable the rule.
+  id: totrans-142
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 最后，将规则命名为`服务限制80%通知`，然后点击**开启**以保存并启用该规则。
+- en: Now, any time a rule reaches 80% of its processing time limit, an email notification
+    will be sent to the administrators allowing them to take action before the rule
+    gets throttled and disabled.
+  id: totrans-143
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，每当规则达到其处理时间限制的80%时，将向管理员发送电子邮件通知，提醒他们在规则被限制和禁用之前采取行动。
+- en: Working with queued item limits
+  id: totrans-144
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 处理队列项限制
+- en: Automation rules in Jira work by using a rule processing queue. As an example,
+    if you have 50 projects in your Jira instance and a single global automation rule
+    that uses the *Issue updated* trigger, each time a single issue in any project
+    gets updated, 50 rule executions are created and queued.
+  id: totrans-145
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Jira中的自动化规则通过使用规则处理队列来工作。例如，如果您的Jira实例中有50个项目，并且存在一个使用*问题更新*触发器的全局自动化规则，每次任何项目中的一个问题被更新时，都会创建并排队50次规则执行。
+- en: Adding a second global automation rule that uses the *Issue updated* trigger
+    will cause 100 rule executions to be created and queued; that is, one execution
+    per rule per project.
+  id: totrans-146
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 添加第二个使用*问题更新*触发器的全局自动化规则将导致创建并排队100次规则执行；也就是说，每个规则在每个项目中执行一次。
+- en: If, instead, each rule was only specific to a single project, only two rule
+    executions would be created and queued.
+  id: totrans-147
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果每个规则仅适用于单个项目，则只会创建并排队两个规则执行。
+- en: As you can imagine, it is quite easy to quickly create a performance bottleneck
+    if you have too many incorrectly scoped rules using non-specific triggers, and
+    this is only one example.
+  id: totrans-148
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如您可以想象的那样，如果规则作用域过于宽泛且触发条件不具体，过多的错误作用域规则会迅速导致性能瓶颈，这只是其中一个例子。
+- en: Using JQL searches in a scheduled trigger or in a related issues branch using
+    the *Branch rule / related issues* component can also lead to more issues than
+    the service limits allow being queued per rule.
+  id: totrans-149
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在计划触发器或使用*分支规则/相关问题*组件的相关问题分支中使用JQL查询，也可能导致每个规则队列中的问题数量超过服务限制。
+- en: Important note
+  id: totrans-150
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 重要说明
+- en: Rules that breach the queued items limit are disabled automatically by the rule
+    engine to prevent any further executions, and the details of the breach are recorded
+    in the audit log.
+  id: totrans-151
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 超过队列项目限制的规则会被规则引擎自动禁用，以防止进一步执行，且违规的详细信息会记录在审计日志中。
+- en: 'To prevent your rules from queueing too many items, you should consider the
+    following guidelines:'
+  id: totrans-152
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了防止规则队列中积压过多项目，您应该考虑以下指导原则：
+- en: Use the narrowest scope possible for your rules. If the rule only needs to operate
+    on a single project or a small group of projects, restrict the scope accordingly.
+  id: totrans-153
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 对于您的规则，请使用尽可能狭窄的作用域。如果规则仅需要在单个项目或少数项目上操作，请相应地限制作用域。
+- en: Use a trigger such as the *Field value changed* trigger, rather than the *Issue
+    created* or *Issue updated* trigger, when your rule is only interested in changes
+    to a specific field.
+  id: totrans-154
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 当您的规则只对某个特定字段的变化感兴趣时，使用像*字段值已更改*触发器，而不是*问题创建*或*问题更新*触发器。
+- en: Limit the number of issues returned by JQL queries by making the query as specific
+    as possible.
+  id: totrans-155
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 通过尽可能使查询更具体，限制JQL查询返回的结果数。
+- en: Use the *Branch rule / related issues* component sparingly.
+  id: totrans-156
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 节制使用*分支规则/相关问题*组件。
+- en: In this section, we have learned what the various service limits imposed by
+    the automation rule engine are and how we can use this knowledge to write more
+    efficient rules. In the following section, we'll learn how you can use performance
+    insights to gain an overview of the overall performance of your automation rules.
+  id: totrans-157
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本节中，我们学习了自动化规则引擎所施加的各种服务限制，以及如何利用这些知识编写更高效的规则。在接下来的章节中，我们将学习如何使用性能洞察来概览自动化规则的整体性能。
+- en: Gaining insights on performance
+  id: totrans-158
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 获取性能洞察
+- en: To ensure the overall success of your automation rules and that performance
+    is maintained at a satisfactory level requires that you keep an eye out for any
+    issues that could cause problems in the long run.
+  id: totrans-159
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为确保自动化规则的整体成功并保持性能在满意的水平，您需要留意可能长期引发问题的任何事项。
+- en: We have already seen how the audit log can give you insights into whether your
+    rules are running successfully or with errors, or are causing performance issues
+    and being throttled. In addition to this, having the ability to monitor and proactively
+    notify the administrators when rules threaten to breach their service limits helps
+    you to keep an eye on things.
+  id: totrans-160
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们已经看到审计日志可以为您提供关于规则是否成功运行、是否出现错误、是否导致性能问题并被限制的洞察。除此之外，能够监控并主动通知管理员当规则可能超出服务限制时，有助于您及时关注这些问题。
+- en: While this does help, it can be time consuming to go through and examine the
+    audit logs, especially when you have a large number of rules executing frequently.
+  id: totrans-161
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 虽然这确实有帮助，但检查审计日志可能会很耗时，特别是当您有大量规则频繁执行时。
+- en: In this section, we'll look at the performance insights feature of automation
+    rules, which will give you a bird's-eye view of the overall performance of your
+    rules.
+  id: totrans-162
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本节中，我们将介绍自动化规则的性能洞察功能，它将为你提供规则整体性能的鸟瞰图。
+- en: Performance insights are available to both project administrators and global
+    administrators. Project administrators are able to view the performance of all
+    the rules within their project, while for global administrators, the performance
+    insights give an overview of every automation rule in the system.
+  id: totrans-163
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 性能洞察对项目管理员和全局管理员均可用。项目管理员可以查看项目内所有规则的性能，而全局管理员则能查看系统中每个自动化规则的性能概况。
+- en: To access the performance insights as a project administrator, navigate to **Project
+    settings**, and then select the **Automation** link from the left menu (use the
+    **Project automation** link if you use *Jira Server* or *Jira Data Center*). Then,
+    click the ellipsis (**…**) button and select the **View performance insights**
+    menu item.
+  id: totrans-164
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 作为项目管理员访问性能洞察，首先进入**项目设置**，然后从左侧菜单中选择**自动化**链接（如果你使用的是*Jira Server*或*Jira Data
+    Center*，请使用**项目自动化**链接）。然后，点击省略号（**…**）按钮，选择**查看性能洞察**菜单项。
+- en: To access the global performance insights, click the settings (**cog**) icon
+    in the top menu bar and then select **System**. Click on **Automation rules**
+    in the left menu area and finally, click the ellipsis (**…**) button and select
+    the **View performance insights** menu item.
+  id: totrans-165
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要访问全局性能洞察，请点击顶部菜单栏中的设置（**齿轮**）图标，然后选择**系统**。接着，在左侧菜单中点击**自动化规则**，最后点击省略号（**…**）按钮，选择**查看性能洞察**菜单项。
+- en: 'The performance insights screen is shown in the following screenshot and is
+    similar for both project and global performance insights:'
+  id: totrans-166
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 性能洞察屏幕如下图所示，项目和全局性能洞察的界面类似：
+- en: '![Figure 10.8 – Viewing performance insights'
+  id: totrans-167
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '![图 10.8 – 查看性能洞察'
+- en: '](img/Figure_10.8_B16551.jpg)'
+  id: totrans-168
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '](img/Figure_10.8_B16551.jpg)'
+- en: Figure 10.8 – Viewing performance insights
+  id: totrans-169
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.8 – 查看性能洞察
+- en: 'Let''s take a quick look at the various aspects of the performance insights:'
+  id: totrans-170
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们快速浏览一下性能洞察的各个方面：
+- en: Use the time resolution options to select whether the graph shows the last hour,
+    day, week, or month's worth of rule executions. Click the circular arrow icon
+    to refresh the data on the screen.
+  id: totrans-171
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用时间分辨率选项来选择图表显示过去一小时、一天、一周或一个月的规则执行数据。点击圆形箭头图标刷新屏幕上的数据。
+- en: For each data point, the graph shows the total number of rule executions, the
+    number of successful rule executions, the number of executions with errors, and
+    the number of executions that were throttled. Hovering over the graph with your
+    mouse will show you the actual number for each of the data points.
+  id: totrans-172
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 对于每个数据点，图表显示了规则的总执行次数、成功执行的次数、出错执行的次数以及被限制的执行次数。将鼠标悬停在图表上时，你将看到每个数据点的实际数字。
+- en: The drop-down menu directly above the table allows you to select what data is
+    displayed in the rule status columns on the right-hand side of the table. The
+    available options are **Execution count**, **Average duration (s)**, and **Total
+    duration (s)**.
+  id: totrans-173
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 位于表格上方的下拉菜单允许你选择在表格右侧的规则状态栏中显示哪些数据。可选项包括**执行次数**、**平均持续时间（秒）**和**总持续时间（秒）**。
+- en: The table below the graph shows the top 20 rules that are displayed on the graph.
+    These are sorted by descending execution count by default.
+  id: totrans-174
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 图表下方的表格显示了图表中的前20个规则。这些规则默认按执行次数降序排列。
+- en: You can sort the table by **Execution count**, **Total duration**, or **Average
+    duration** in ascending or descending order by clicking on each of the appropriate
+    column headings.
+  id: totrans-175
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 你可以通过点击每个相应列标题，按**执行次数**、**总持续时间**或**平均持续时间**进行升序或降序排序。
+- en: Clicking on a rule name will take you to the audit log for that particular rule,
+    which will allow you to examine the log in more detail.
+  id: totrans-176
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 点击规则名称将带你到该规则的审计日志，你可以在这里更详细地查看日志内容。
+- en: As you can see, the performance insights let you quickly see how your rules
+    are performing and allow you to drill down into the problem rules.
+  id: totrans-177
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，性能洞察功能可以让你快速了解规则的表现，并能深入分析存在问题的规则。
+- en: Using the performance insights sorted by average duration will allow you to
+    see which rules are taking longer to run per execution. These rules could be prime
+    candidates for further examination to see whether they could benefit from performance
+    enhancements.
+  id: totrans-178
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用按平均持续时间排序的性能洞察，将帮助你看到哪些规则在每次执行时花费的时间更长。这些规则可能是进一步检查的重点，以了解它们是否可以通过性能增强来受益。
+- en: Rules with large numbers of executions and slow durations could be candidates
+    for eventually breaching the processing time limits and should be examined for
+    possible improvements. There is no definitive measure about what is considered
+    slow due to how the individual configuration of each Jira instance can vary. You
+    should therefore examine the durations in the context of your other rules, taking
+    into account the specific configurations of your Jira instance.
+  id: totrans-179
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 执行次数多且持续时间较长的规则可能是最终突破处理时间限制的候选者，应检查这些规则是否可以进行改进。由于每个Jira实例的配置可能有所不同，因此无法明确界定什么算作“慢”。因此，你应该结合其他规则的持续时间并考虑Jira实例的具体配置来进行分析。
+- en: Summary
+  id: totrans-180
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 总结
+- en: In this chapter, we have learned how to approach troubleshooting our automation
+    rules when things go wrong or when our rules start performing sub-optimally.
+  id: totrans-181
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们学习了如何在自动化规则出现问题或开始表现不佳时进行故障排除。
+- en: We have learned how the audit log works and the wealth of information it provides
+    in order to gain insights into what is happening when a rule is executed. In addition,
+    we also learned how to make use of the audit log to output messages, which will
+    help you to debug your rules.
+  id: totrans-182
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们学习了审计日志的工作原理，以及它提供的大量信息，这些信息帮助我们了解规则执行时发生了什么。此外，我们还学会了如何利用审计日志输出消息，这将帮助你调试规则。
+- en: We also learned about the various service limits and how to monitor these using
+    automation rules, giving us the ability to receive an early warning before rules
+    breach their processing limits.
+  id: totrans-183
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们还了解了各种服务限制以及如何使用自动化规则监控这些限制，这使我们能够在规则超出处理限制之前收到预警。
+- en: Finally, we looked at the performance insights available to project and global
+    administrators and learned how this gives an overview of the performance of the
+    rules in the system and how we can use this to stay on top of possible performance
+    issues.
+  id: totrans-184
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后，我们查看了项目和全局管理员可用的性能洞察，并了解了它是如何概述系统中规则的性能，以及我们如何利用这些信息，及时处理可能的性能问题。
+- en: By understanding how to use the audit log for debugging, you will be able to
+    write more robust rules and also be able to quickly determine when smart values
+    or functions are causing rules to fail and be able to identify the problem.
+  id: totrans-185
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通过了解如何使用审计日志进行调试，你将能够编写更健壮的规则，并且能够迅速确定智能值或函数导致规则失败的原因，并识别问题所在。
+- en: Knowing how the service limits work and how you can monitor them using both
+    automation rules and by inspecting the performance insights will enable you to
+    maintain the performance of your Jira instance.
+  id: totrans-186
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 了解服务限制的工作原理以及如何通过自动化规则和检查性能洞察来监控它们，将使你能够保持Jira实例的良好性能。
+- en: In the next chapter, we'll be looking at another well-known automation app in
+    the Atlassian ecosystem that allows us to perform more advanced automations using
+    Groovy scripting.
+  id: totrans-187
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一章，我们将讨论Atlassian生态系统中另一个著名的自动化应用，它允许我们使用Groovy脚本执行更高级的自动化操作。

@@ -1,0 +1,2346 @@
+- en: '12'
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '12'
+- en: Integrating Ansible with Your Tools
+  id: totrans-1
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 将 Ansible 与你的工具集成
+- en: As an organization grows its IT infrastructure, more and more tools are often
+    needed to solve the technical challenges. Instead of these tools working alone
+    in silos, it is desirable to implement integration between these tools to increase
+    efficiency and scalability. As an example, the **IT Service Management** (**ITSM**)
+    tool can send an alert to approvers, or the container platform can trigger a new
+    deployment of the application when a new version has been developed by the team.
+    There are an immeasurable number of opportunities in terms of integrating multiple
+    siloed tools in IT infrastructure.
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 随着组织 IT 基础设施的不断发展，通常需要越来越多的工具来解决技术难题。与其让这些工具独立工作在孤岛中，不如实现它们之间的集成，以提高效率和可扩展性。例如，**IT
+    服务管理** (**ITSM**) 工具可以向审批人发送警报，或者当团队开发出新版本时，容器平台可以触发应用程序的新部署。将多个孤立的 IT 基础设施工具进行集成，带来了无数的机会。
+- en: The same goes for automation as well; Ansible can be used as the key automation
+    tool for implementing integration between multiple infrastructure and application
+    support tools. In the previous chapters, you learned about the Ansible automation
+    and integration opportunities for the infrastructure (public and private cloud),
+    DevOps, networks, applications, and more. In this chapter, you will learn more
+    about the enterprise automation solution called **Ansible Automation Platform**
+    (**AAP**) and the integration methods between other tools in the IT infrastructure
+    environment.
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 自动化同样适用；Ansible 可以作为实施多个基础设施和应用支持工具之间集成的关键自动化工具。在前几章中，你学习了基础设施（公有云和私有云）、DevOps、网络、应用程序等领域的
+    Ansible 自动化和集成机会。在本章中，你将了解更多有关企业自动化解决方案 **Ansible Automation Platform** (**AAP**)
+    以及如何在 IT 基础设施环境中与其他工具进行集成的方法。
+- en: We will start by introducing Red Hat AAP and its components, features, and benefits.
+    Then, you will learn how to use AAP by creating various automation resources in
+    automation controller, such as projects, job templates, and credentials.
+  id: totrans-4
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将从介绍 Red Hat AAP 及其组件、功能和优势开始。然后，你将学习如何通过在自动化控制器中创建各种自动化资源（如项目、作业模板和凭证）来使用
+    AAP。
+- en: 'In this chapter, we will cover the following topics:'
+  id: totrans-5
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们将涵盖以下主题：
+- en: Introduction to Red Hat AAP
+  id: totrans-6
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Red Hat AAP 简介
+- en: Red Hat AAP components
+  id: totrans-7
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Red Hat AAP 组件
+- en: Database management using Red Hat AAP
+  id: totrans-8
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用 Red Hat AAP 进行数据库管理
+- en: Integrating Jenkins with AAP
+  id: totrans-9
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 将 Jenkins 与 AAP 集成
+- en: Integrating an automation controller with Slack and notification services
+  id: totrans-10
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 将自动化控制器与 Slack 和通知服务集成
+- en: Let’s start learning about AAP, the enterprise IT automation tool.
+  id: totrans-11
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们开始学习 AAP，这一企业 IT 自动化工具。
+- en: Technical requirements
+  id: totrans-12
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 技术要求
+- en: 'You will need the following technical requirements for this chapter:'
+  id: totrans-13
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章需要以下技术要求：
+- en: One or more Linux machines with Red Hat repositories configured. If you are
+    using other Linux operating systems instead of **Red Hat Enterprise Linux** (**RHEL**)
+    machines, then make sure you have the appropriate repositories configured to get
+    packages and updates.
+  id: totrans-14
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 一台或多台配置了 Red Hat 仓库的 Linux 机器。如果你使用的是其他 Linux 操作系统而非 **Red Hat Enterprise Linux**
+    (**RHEL**) 机器，请确保已配置相应的仓库，以便获取软件包和更新。
+- en: Access to Red Hat AAP.
+  id: totrans-15
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 访问 Red Hat AAP。
+- en: A GitHub account.
+  id: totrans-16
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 一个 GitHub 帐户。
+- en: A Jenkins server and basic knowledge about Jenkins pipelines.
+  id: totrans-17
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 一个 Jenkins 服务器和有关 Jenkins 流水线的基本知识。
+- en: A Slack application account and basic knowledge about Slack usage.
+  id: totrans-18
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 一个 Slack 应用帐户和有关 Slack 使用的基本知识。
+- en: A single 60-day self-supported subscription to Red Hat AAP is available for
+    testing AAP and its features. Please refer to [https://www.redhat.com/en/technologies/management/ansible/trial](https://www.redhat.com/en/technologies/management/ansible/trial)
+    to learn more about the AAP trial subscription.
+  id: totrans-19
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一个 60 天的自助试用订阅可以用于测试 AAP 及其功能。请参阅 [https://www.redhat.com/en/technologies/management/ansible/trial](https://www.redhat.com/en/technologies/management/ansible/trial)
+    了解有关 AAP 试用订阅的更多信息。
+- en: All the Ansible artifacts, commands, and snippets for this chapter can be found
+    in this book’s GitHub repository at [https://github.com/PacktPublishing/Ansible-for-Real-life-Automation/tree/main/Chapter-12](https://github.com/PacktPublishing/Ansible-for-Real-life-Automation/tree/main/Chapter-12).
+  id: totrans-20
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章的所有 Ansible 工件、命令和代码片段可以在本书的 GitHub 仓库中找到，地址为 [https://github.com/PacktPublishing/Ansible-for-Real-life-Automation/tree/main/Chapter-12](https://github.com/PacktPublishing/Ansible-for-Real-life-Automation/tree/main/Chapter-12)。
+- en: Introduction to Red Hat AAP
+  id: totrans-21
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Red Hat AAP 简介
+- en: 'So far, you have learned how to use Ansible, develop playbooks, create roles,
+    use content collections, and more for your use cases. Anyone can install and use
+    Ansible in their workstation or some random servers in an environment and use
+    them for their automation use cases. However, there won’t be any standardization,
+    traces, or accountability as each person works on their methods and practices.
+    This will result in the following challenges in the organization:'
+  id: totrans-22
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 到目前为止，您已经学习了如何使用 Ansible，开发剧本，创建角色，使用内容集合等来处理您的用例。任何人都可以在他们的工作站或环境中的任意服务器上安装并使用
+    Ansible，用于自动化用例。然而，由于每个人采用自己的方法和实践，这将导致没有标准化、痕迹或问责。因此，组织中会出现以下挑战：
+- en: Individuals work in silos, which will result in no collaboration in the workplace.
+  id: totrans-23
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 个人工作各自为营，导致工作场所没有协作。
+- en: Automation artifacts (playbooks, roles, and collections) are not shared between
+    individuals or teams.
+  id: totrans-24
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 自动化工件（剧本、角色和集合）未在个人或团队之间共享。
+- en: No logging or auditing options will be available since the automation is running
+    on an individual’s workstation or some random servers.
+  id: totrans-25
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 由于自动化在个人工作站或任意服务器上运行，因此没有可用的日志记录或审计选项。
+- en: Less control over who can execute the playbooks or automated jobs.
+  id: totrans-26
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 对谁可以执行剧本或自动化作业的控制较少。
+- en: Difficulty keeping secrets and credentials.
+  id: totrans-27
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 隐私和凭证管理困难。
+- en: Lack of job scheduling and monitoring features.
+  id: totrans-28
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 缺乏作业调度和监控功能。
+- en: Complexity in managing managed nodes information.
+  id: totrans-29
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 管理托管节点信息的复杂性。
+- en: When it comes to enterprise automation, the solution must be able to implement
+    governance, standardization, collaboration, accountability and auditing.
+  id: totrans-30
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在企业自动化中，解决方案必须能够实施治理、标准化、协作、问责和审计。
+- en: Red Hat AAP helps organizations cover most of the previously mentioned challenges
+    by implementing an enterprise automation solution that can scale the automation
+    and orchestrate the infrastructure and applications. AAP includes all the tools
+    and features required for enterprise automation, such as **Graphical User Interface**
+    (**GUI**) and **Text User Interface** (**TUI**)-based tools, analytics, dashboards,
+    auditing, and more.
+  id: totrans-31
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Red Hat AAP 通过实施企业自动化解决方案，帮助组织应对之前提到的大部分挑战，从而可以扩展自动化并协调基础设施和应用程序。AAP 包括所有企业自动化所需的工具和功能，如**图形用户界面**（**GUI**）和**文本用户界面**（**TUI**）基础工具、分析、仪表板、审计等。
+- en: Note that unlike Ansible (the `ansible-core` or `ansible` package), Red Hat
+    AAP is not free and is delivered as a subscription model ([https://www.ansible.com/products/pricing](https://www.ansible.com/products/pricing)),
+    like any other Red Hat product. For testing and **proof of concept** (**POC**)
+    purposes, request a 60-day trial subscription and refer to https://www.redhat.com/en/technologies/management/ansible/try-it
+    to learn more. Please refer to [https://access.redhat.com/documentation/en-us/red_hat_ansible_automation_platform/2.1/html/red_hat_ansible_automation_platform_installation_guide/index](https://access.redhat.com/documentation/en-us/red_hat_ansible_automation_platform/2.1/html/red_hat_ansible_automation_platform_installation_guide/index)
+    to learn how to install and configure Red Hat AAP.
+  id: totrans-32
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请注意，与 Ansible（`ansible-core` 或 `ansible` 包）不同，Red Hat AAP 不是免费的，并且以订阅模式提供（[https://www.ansible.com/products/pricing](https://www.ansible.com/products/pricing)），就像其他
+    Red Hat 产品一样。对于测试和**概念验证**（**POC**）目的，可以申请 60 天的试用订阅，并访问 https://www.redhat.com/en/technologies/management/ansible/try-it
+    了解更多信息。有关如何安装和配置 Red Hat AAP 的详细信息，请参阅 [https://access.redhat.com/documentation/en-us/red_hat_ansible_automation_platform/2.1/html/red_hat_ansible_automation_platform_installation_guide/index](https://access.redhat.com/documentation/en-us/red_hat_ansible_automation_platform/2.1/html/red_hat_ansible_automation_platform_installation_guide/index)。
+- en: It is also possible to get a no-cost RHEL individual developer subscription
+    for testing and development purposes. Refer to [https://developers.redhat.com/articles/faqs-no-cost-red-hat-enterprise-linux](https://developers.redhat.com/articles/faqs-no-cost-red-hat-enterprise-linux)
+    to learn more about this free RHEL subscription.
+  id: totrans-33
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 也可以获得免费的 RHEL 个人开发者订阅，用于测试和开发目的。请参阅[https://developers.redhat.com/articles/faqs-no-cost-red-hat-enterprise-linux](https://developers.redhat.com/articles/faqs-no-cost-red-hat-enterprise-linux)了解有关此免费
+    RHEL 订阅的更多信息。
+- en: Red Hat AAP Managed Service in Microsoft Azure
+  id: totrans-34
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 微软 Azure 中的 Red Hat AAP 托管服务
+- en: Red Hat offers AAP as a managed service on Microsoft Azure, by which the organization
+    can utilize the AAP solution just like any other Microsoft Azure cloud service.
+    This is fully supported by Red Hat and the billing will be handled inside the
+    same cloud service bill. Refer to [https://www.redhat.com/en/technologies/management/ansible/azure](https://www.redhat.com/en/technologies/management/ansible/azure)
+    to learn more about this managed service.
+  id: totrans-35
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Red Hat将AAP作为Microsoft Azure上的托管服务提供，组织可以像使用其他Microsoft Azure云服务一样使用AAP解决方案。这是由Red
+    Hat完全支持的，计费将包含在同一个云服务账单中。有关此托管服务的更多信息，请参阅[https://www.redhat.com/en/technologies/management/ansible/azure](https://www.redhat.com/en/technologies/management/ansible/azure)。
+- en: Now, let’s explore the various features of Red Hat AAP.
+  id: totrans-36
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，让我们探索Red Hat AAP的各种功能。
+- en: Features of Red Hat AAP
+  id: totrans-37
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: Red Hat AAP的功能
+- en: 'The following important features are included in Red Hat AAP:'
+  id: totrans-38
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是Red Hat AAP包含的重要功能：
+- en: '**WebUI**: The web-based GUI can help administrators and developers manage
+    the entire automation solution from a web browser. Most of the configurations
+    in AAP can be executed from the WebUI itself, as shown in the following screenshot:'
+  id: totrans-39
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**WebUI**：基于Web的GUI可以帮助管理员和开发人员通过Web浏览器管理整个自动化解决方案。AAP中的大多数配置都可以直接从WebUI执行，如下所示的截图所示：'
+- en: '![Figure 12.1 – The Red Hat AAP dashboard ](img/B18383_12_01.jpg)'
+  id: totrans-40
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图12.1 – Red Hat AAP仪表板](img/B18383_12_01.jpg)'
+- en: Figure 12.1 – The Red Hat AAP dashboard
+  id: totrans-41
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图12.1 – Red Hat AAP仪表板
+- en: '**Role-Based Access Control** (**RBAC**): Administrators can create teams and
+    roles in AAP and assign the roles with adequate permissions to the users or teams.
+    These permissions can be configured for every component in AAP, such as projects,
+    job templates, inventories or credentials.'
+  id: totrans-42
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**基于角色的访问控制**（**RBAC**）：管理员可以在AAP中创建团队和角色，并将适当的权限分配给用户或团队。这些权限可以针对AAP中的每个组件进行配置，例如项目、作业模板、清单或凭据。'
+- en: '**Logging and auditing**: AAP will store the activity logs, including job execution
+    history, and it is possible to access the old job details any time from the WebUI.
+    AAP also includes the option to integrate with logging aggregators such as Logstash,
+    Splunk, Loggly, Sumo Logic, and others so that we can keep your logs in a central
+    system.'
+  id: totrans-43
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**日志记录和审计**：AAP将存储活动日志，包括作业执行历史记录，并且可以随时通过WebUI访问旧的作业详情。AAP还包括与日志聚合工具（如Logstash、Splunk、Loggly、Sumo
+    Logic等）集成的选项，以便我们可以将日志保存在中央系统中。'
+- en: '**REST API** (**also known as the RESTful API**): The powerful and well-documented
+    REST API will help you integrate AAP with the existing tools and applications
+    in your environment.'
+  id: totrans-44
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**REST API**（**也称为RESTful API**）：强大且文档完善的REST API将帮助您将AAP与您环境中现有的工具和应用程序集成。'
+- en: Automation Controller API Guide
+  id: totrans-45
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 自动化控制器API指南
+- en: The automation controller REST API also helps you manage automation controller
+    operations such as job template creation, credential management or configuring
+    authentication. Refer to the API guide [https://docs.ansible.com/automation-controller/latest/html/controllerapi/index.xhtml](https://docs.ansible.com/automation-controller/latest/html/controllerapi/index.xhtml)
+    for more details.
+  id: totrans-46
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 自动化控制器的REST API还帮助您管理自动化控制器操作，如作业模板创建、凭据管理或配置身份验证。有关详细信息，请参阅API指南 [https://docs.ansible.com/automation-controller/latest/html/controllerapi/index.xhtml](https://docs.ansible.com/automation-controller/latest/html/controllerapi/index.xhtml)。
+- en: '**Job templates and workflows**: It is possible to predefine and configure
+    the job templates and workflow templates to quickly execute complex automation
+    jobs ([https://docs.ansible.com/automation-controller/latest/html/userguide/workflows.xhtml](https://docs.ansible.com/automation-controller/latest/html/userguide/workflows.xhtml)).'
+  id: totrans-47
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**作业模板和工作流**：可以预定义和配置作业模板和工作流模板，以便快速执行复杂的自动化作业（[https://docs.ansible.com/automation-controller/latest/html/userguide/workflows.xhtml](https://docs.ansible.com/automation-controller/latest/html/userguide/workflows.xhtml)）。'
+- en: '**Credential management**: With credentials, you store secrets and sensitive
+    information such as passwords, API keys, tokens, and so on. There are several
+    predefined credential types available in AAP and it is also possible to create
+    custom credential types if required ([https://docs.ansible.com/automation-controller/latest/html/userguide/credential_types.xhtml](https://docs.ansible.com/automation-controller/latest/html/userguide/credential_types.xhtml)):'
+  id: totrans-48
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**凭据管理**：使用凭据，您可以存储密码、API密钥、令牌等敏感信息。AAP提供了几种预定义的凭据类型，如果需要，还可以创建自定义凭据类型（[https://docs.ansible.com/automation-controller/latest/html/userguide/credential_types.xhtml](https://docs.ansible.com/automation-controller/latest/html/userguide/credential_types.xhtml)）：'
+- en: '![Figure 12.2 – Automation controller credentials ](img/B18383_12_02.jpg)'
+  id: totrans-49
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 12.2 – 自动化控制器凭证](img/B18383_12_02.jpg)'
+- en: Figure 12.2 – Automation controller credentials
+  id: totrans-50
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 12.2 – 自动化控制器凭证
+- en: '**Job scheduling**: Automation jobs can be scheduled and executed automatically
+    without user intervention, as shown in the following screenshot. This is useful
+    for many automation jobs that must be executed in a specific period and without
+    manual intervention. For example, we can schedule a weekly or monthly reboot job
+    (as we learned in [*Chapter 3*](B18383_03.xhtml#_idTextAnchor052), *Automating
+    Your Daily Jobs*) using an automation controller:'
+  id: totrans-51
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**作业调度**：自动化作业可以自动调度和执行，无需用户干预，如下截图所示。这对于许多需要在特定时间段执行且不需要手动干预的自动化作业非常有用。例如，我们可以使用自动化控制器调度每周或每月的重启作业（如我们在[*第3章*](B18383_03.xhtml#_idTextAnchor052)《自动化日常作业》中所学到的）：'
+- en: '![Figure 12.3 – Job scheduling in an automation controller ](img/B18383_12_03.jpg)'
+  id: totrans-52
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 12.3 – 自动化控制器中的作业调度](img/B18383_12_03.jpg)'
+- en: Figure 12.3 – Job scheduling in an automation controller
+  id: totrans-53
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 12.3 – 自动化控制器中的作业调度
+- en: '**Notifications**: AAP supports multiple types of notifications, such as email,
+    IRC, and webhook, and tool integration for Grafana, Slack, Mattermost, and others.'
+  id: totrans-54
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**通知**：AAP支持多种类型的通知，如电子邮件、IRC和Webhook，以及Grafana、Slack、Mattermost等工具的集成。'
+- en: '**Integration with Red Hat Insights**: By enabling this integration, it is
+    possible to analyze the automation status and data for the automation platforms
+    (AAP clusters) in your environments.'
+  id: totrans-55
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**与Red Hat Insights的集成**：启用此集成后，可以分析您环境中自动化平台（AAP集群）的自动化状态和数据。'
+- en: '**Integration with third-party authentication systems**: Instead of managing
+    the local user accounts in AAP, integrate with the existing authentication providers,
+    such as Active Directory, Google OAuth2, LDAP, RADIUS, SAMPLE, or TACACS.'
+  id: totrans-56
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**与第三方认证系统的集成**：无需在AAP中管理本地用户账户，而是与现有的认证提供商集成，例如Active Directory、Google OAuth2、LDAP、RADIUS、SAMPLE或TACACS。'
+- en: Red Hat AAP Features and Benefits
+  id: totrans-57
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Red Hat AAP 特性与优势
+- en: Please go to [https://www.redhat.com/en/technologies/management/ansible/features](https://www.redhat.com/en/technologies/management/ansible/features)
+    to learn more about the features of AAP and their benefits.
+  id: totrans-58
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请访问[https://www.redhat.com/en/technologies/management/ansible/features](https://www.redhat.com/en/technologies/management/ansible/features)了解有关AAP的更多功能及其优势。
+- en: In the next section, you will learn more about the components of Red Hat AAP.
+  id: totrans-59
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一节中，您将深入了解Red Hat AAP的组件。
+- en: Red Hat AAP components
+  id: totrans-60
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Red Hat AAP组件
+- en: 'Red Hat AAP is an automation suite that contains multiple components, as shown
+    in the following diagram:'
+  id: totrans-61
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Red Hat AAP是一个包含多个组件的自动化套件，如下图所示：
+- en: '![Figure 12.4 – High-level diagram of Red Hat AAP 2.1 components (source: https://www.ansible.com/blog/introducing-red-hat-ansible-automation-platform-2.1)
+    ](img/B18383_12_04.jpg)'
+  id: totrans-62
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 12.4 – Red Hat AAP 2.1组件的高级图示（来源：https://www.ansible.com/blog/introducing-red-hat-ansible-automation-platform-2.1）](img/B18383_12_04.jpg)'
+- en: 'Figure 12.4 – High-level diagram of Red Hat AAP 2.1 components (source: https://www.ansible.com/blog/introducing-red-hat-ansible-automation-platform-2.1)'
+  id: totrans-63
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 12.4 – Red Hat AAP 2.1组件的高级图示（来源：https://www.ansible.com/blog/introducing-red-hat-ansible-automation-platform-2.1）
+- en: In the following sections, you will learn about the different components of
+    AAP, such as the automation controller, execution environments, and automation
+    mesh.
+  id: totrans-64
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在接下来的章节中，您将了解AAP的不同组件，如自动化控制器、执行环境和自动化网格。
+- en: Ansible automation controller
+  id: totrans-65
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: Ansible自动化控制器
+- en: The **automation controller** was referred to as **Ansible Tower** previously.
+    It is the control plane and the core component of AAP. With the introduction of
+    the Ansible automation controller, the control plane components (WebUI and API)
+    become decoupled from the **execution environment** (**EE**), which also helps
+    the solution with additional execution nodes.
+  id: totrans-66
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**自动化控制器**之前被称为**Ansible Tower**。它是AAP的控制平面和核心组件。随着Ansible自动化控制器的引入，控制平面组件（WebUI和API）与**执行环境**（**EE**）解耦，这也帮助解决方案增加了额外的执行节点。'
+- en: 'With the automation controller, we can manage the AAP operations from the WebUI,
+    such as managing remote nodes (inventory), credentials, projects, job templates,
+    and other operations. The automation controller contains many components, as follows:'
+  id: totrans-67
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用自动化控制器，我们可以通过WebUI管理AAP操作，例如管理远程节点（库存）、凭证、项目、作业模板和其他操作。自动化控制器包含多个组件，如下所示：
+- en: A REST API for inventory, credential, and job management
+  id: totrans-68
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 用于库存、凭证和作业管理的REST API
+- en: A database for storing the resource details, including the automation job’s
+    history
+  id: totrans-69
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 用于存储资源详情的数据库，包括自动化任务的历史记录
+- en: Am automation mesh connector and receptor
+  id: totrans-70
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 自动化网格连接器和接收器
+- en: A message queue and caching
+  id: totrans-71
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 消息队列和缓存
+- en: A task scheduler
+  id: totrans-72
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 任务调度器
+- en: Based on the RBAC configuration, the user will have different permissions on
+    the automation controller interface.
+  id: totrans-73
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 根据 RBAC 配置，用户在自动化控制器界面上将拥有不同的权限。
+- en: What is the Red Hat Ansible Automation Platform Automation Controller?
+  id: totrans-74
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 什么是 Red Hat Ansible 自动化平台的自动化控制器？
+- en: To learn more about automation controller, check *What is the Red Hat Ansible
+    Automation Platform automation controller?* ([https://www.redhat.com/en/technologies/management/ansible/automation-controller](https://www.redhat.com/en/technologies/management/ansible/automation-controller)).
+  id: totrans-75
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要了解更多关于自动化控制器的信息，请查看 *什么是 Red Hat Ansible 自动化平台的自动化控制器？*（[https://www.redhat.com/en/technologies/management/ansible/automation-controller](https://www.redhat.com/en/technologies/management/ansible/automation-controller)）。
+- en: Ansible Tower and AAP Life Cycle
+  id: totrans-76
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible Tower 和 AAP 生命周期
+- en: Ansible automation controller 3.8 (Ansible Tower) has been part of AAP since
+    version 1.2\. Refer to the Ansible Tower life cycle ([https://access.redhat.com/support/policy/updates/ansible-tower](https://access.redhat.com/support/policy/updates/ansible-tower))
+    and AAP life cycle ([https://access.redhat.com/support/policy/updates/ansible-automation-platform](https://access.redhat.com/support/policy/updates/ansible-automation-platform))
+    to learn more about these versions.
+  id: totrans-77
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 自动化控制器 3.8（Ansible Tower）自版本 1.2 起已成为 AAP 的一部分。请参考 Ansible Tower 生命周期（[https://access.redhat.com/support/policy/updates/ansible-tower](https://access.redhat.com/support/policy/updates/ansible-tower)）和
+    AAP 生命周期（[https://access.redhat.com/support/policy/updates/ansible-automation-platform](https://access.redhat.com/support/policy/updates/ansible-automation-platform)）以了解更多关于这些版本的信息。
+- en: '`ansible-navigator`) is a TUI utility for interacting with automation execution
+    environments. It can be seen in the following screenshot. `ansible-navigator`
+    is also helpful for developing and testing automation content:'
+  id: totrans-78
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`ansible-navigator` 是一个 TUI 工具，用于与自动化执行环境交互。在以下截图中可以看到。`ansible-navigator`
+    对于开发和测试自动化内容也很有帮助：'
+- en: '![Figure 12.5 – The ansible-navigator TUI ](img/B18383_12_05.jpg)'
+  id: totrans-79
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 12.5 – ansible-navigator TUI ](img/B18383_12_05.jpg)'
+- en: Figure 12.5 – The ansible-navigator TUI
+  id: totrans-80
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 12.5 – ansible-navigator TUI
+- en: Instead of using `ansible-playbook` and other `ansible-*` commands, we can use
+    `ansible-navigator` to manage all command-line operations of Ansible, such as
+    executing playbooks, managing collections, executing environments, and so on.
+  id: totrans-81
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以使用 `ansible-navigator` 来管理 Ansible 的所有命令行操作，如执行 playbook、管理集合、执行环境等，而不需要使用
+    `ansible-playbook` 和其他 `ansible-*` 命令。
+- en: Refer to the Ansible navigator documentation ([https://ansible-navigator.readthedocs.io](https://ansible-navigator.readthedocs.io))
+    and Ansible navigator cheat sheet ([https://www.techbeatly.com/ansible-navigator-cheat-sheet](https://www.techbeatly.com/ansible-navigator-cheat-sheet))
+    to learn more.
+  id: totrans-82
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请参考 Ansible navigator 文档（[https://ansible-navigator.readthedocs.io](https://ansible-navigator.readthedocs.io)）和
+    Ansible navigator 快捷操作表（[https://www.techbeatly.com/ansible-navigator-cheat-sheet](https://www.techbeatly.com/ansible-navigator-cheat-sheet)）以了解更多信息。
+- en: Automation execution environments
+  id: totrans-83
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 自动化执行环境
+- en: 'The automaton execution environment provides a standard and portable mechanism
+    for executing Ansible playbooks. Execution environments are consistent by design
+    and deliver container images that contain the following components:'
+  id: totrans-84
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 自动化执行环境提供了一种标准和可移植的机制，用于执行 Ansible playbook。执行环境在设计上是一致的，并提供包含以下组件的容器镜像：
+- en: Ansible
+  id: totrans-85
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Ansible
+- en: Ansible Runner
+  id: totrans-86
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Ansible Runner
+- en: Required Ansible collections
+  id: totrans-87
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 所需的 Ansible 集合
+- en: Other dependencies for the playbook’s execution (for example, Python libraries,
+    system packages)
+  id: totrans-88
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: playbook 执行所需的其他依赖项（例如，Python 库、系统包）
+- en: 'Previously, Python virtual environments (for example, `/var/lib/awx/venv/ansible`)
+    were used to achieve this functionality. This was not easy to manage and maintain
+    in terms of consistency as you needed to manage the Python virtual environments
+    on all nodes in the AAP or Ansible Tower cluster. By containerizing the executables
+    and dependencies, it is possible to distribute the same image to multiple cluster
+    nodes consistently:'
+  id: totrans-89
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 之前，使用 Python 虚拟环境（例如，`/var/lib/awx/venv/ansible`）来实现此功能。在一致性方面，管理和维护这项功能并不容易，因为需要在
+    AAP 或 Ansible Tower 集群的所有节点上管理 Python 虚拟环境。通过容器化可执行文件和依赖项，可以将相同的镜像一致地分发到多个集群节点：
+- en: '![Figure 12.6 – Components inside the automation execution environment ](img/B18383_12_06.jpg)'
+  id: totrans-90
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 12.6 – 自动化执行环境内部组件 ](img/B18383_12_06.jpg)'
+- en: Figure 12.6 – Components inside the automation execution environment
+  id: totrans-91
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 12.6 – 自动化执行环境中的组件
+- en: '`ansible-builder`) is a command-line utility that can be used to build and
+    manage container images for the automation execution environment. Refer to the
+    automation execution environment documentation ([https://docs.ansible.com/automation-controller/latest/html/userguide/execution_environments.xhtml](https://docs.ansible.com/automation-controller/latest/html/userguide/execution_environments.xhtml))
+    to learn more about building and distributing automation execution environments.'
+  id: totrans-92
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`ansible-builder` 是一个命令行工具，可以用来构建和管理自动化执行环境的容器镜像。有关构建和分发自动化执行环境的更多信息，请参考自动化执行环境文档（[https://docs.ansible.com/automation-controller/latest/html/userguide/execution_environments.xhtml](https://docs.ansible.com/automation-controller/latest/html/userguide/execution_environments.xhtml)）。'
+- en: The automation mesh
+  id: totrans-93
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 自动化网格
+- en: 'The automation mesh is a service mesh concept for Ansible automation and was
+    introduced in AAP 2.1\. The automation mesh replaces the isolated node concept
+    in older versions of AAP (version 1.2 and below) and provides the flexibility
+    to scale the automation landscape. The automation mesh replaces the need for jump
+    servers (or bastion hosts), and it is possible to place the execution nodes near
+    the managed nodes, as shown in the following diagram:'
+  id: totrans-94
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 自动化网格是 Ansible 自动化的服务网格概念，并在 AAP 2.1 中引入。自动化网格替代了 AAP 旧版本（1.2 及以下）中的孤立节点概念，并提供了扩展自动化生态系统的灵活性。自动化网格消除了跳板服务器（或堡垒主机）的需求，并且可以将执行节点放置在靠近被管理节点的位置，如下图所示：
+- en: '![Figure 12.7 – AAP and the automation mesh (source: https://www.ansible.com/blog/whats-new-in-ansible-automation-platform-2.1-automation-mesh)  ](img/B18383_12_07.jpg)'
+  id: totrans-95
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 12.7 – AAP 与自动化网格（来源：[https://www.ansible.com/blog/whats-new-in-ansible-automation-platform-2.1-automation-mesh](https://www.ansible.com/blog/whats-new-in-ansible-automation-platform-2.1-automation-mesh)）](img/B18383_12_07.jpg)'
+- en: 'Figure 12.7 – AAP and the automation mesh (source: https://www.ansible.com/blog/whats-new-in-ansible-automation-platform-2.1-automation-mesh)'
+  id: totrans-96
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 12.7 – AAP 与自动化网格（来源： [https://www.ansible.com/blog/whats-new-in-ansible-automation-platform-2.1-automation-mesh](https://www.ansible.com/blog/whats-new-in-ansible-automation-platform-2.1-automation-mesh)）
+- en: Refer to the documentation ([https://www.ansible.com/products/automation-mesh](https://www.ansible.com/products/automation-mesh))
+    to learn more about the automation mesh.
+  id: totrans-97
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有关自动化网格的更多信息，请参考文档（[https://www.ansible.com/products/automation-mesh](https://www.ansible.com/products/automation-mesh)）。
+- en: Automation Hub
+  id: totrans-98
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 自动化中心
+- en: 'Ansible Automation Hub is the official location for downloading the supported
+    and certified Ansible collections. The hosted Automation Hub is available at [https://console.redhat.com/ansible/automation-hub](https://console.redhat.com/ansible/automation-hub),
+    as shown in the following screenshot:'
+  id: totrans-99
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 自动化中心是下载受支持和认证的 Ansible 集合的官方位置。托管的自动化中心可通过 [https://console.redhat.com/ansible/automation-hub](https://console.redhat.com/ansible/automation-hub)
+    访问，如下图所示：
+- en: '![Figure 12.8 – Ansible Automation Hub ](img/B18383_12_08.jpg)'
+  id: totrans-100
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 12.8 – Ansible 自动化中心](img/B18383_12_08.jpg)'
+- en: Figure 12.8 – Ansible Automation Hub
+  id: totrans-101
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 12.8 – Ansible 自动化中心
+- en: 'To manage your content collection and other supported collections, it is possible
+    to use a **Private Automation Hub** (**PAH**). This concept was introduced in
+    AAP 1.2\. Content from other sources (such as Red Hat Ansible Automation Hub or
+    Ansible Galaxy) can be synced to private automation hubs, as shown in the following
+    diagram:'
+  id: totrans-102
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了管理您的内容集合和其他受支持的集合，可以使用 **私有自动化中心**（**PAH**）。这一概念是在 AAP 1.2 中引入的。来自其他来源（例如
+    Red Hat Ansible 自动化中心或 Ansible Galaxy）的内容可以同步到私有自动化中心，如下图所示：
+- en: '![Figure 12.9 – Private Automation Hub with AAP ](img/B18383_12_09.jpg)'
+  id: totrans-103
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 12.9 – 带 AAP 的私有自动化中心](img/B18383_12_09.jpg)'
+- en: Figure 12.9 – Private Automation Hub with AAP
+  id: totrans-104
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 12.9 – 带 AAP 的私有自动化中心
+- en: Refer to the documentation ([https://docs.ansible.com/ansible/latest/reference_appendices/automationhub.xhtml](https://docs.ansible.com/ansible/latest/reference_appendices/automationhub.xhtml))
+    and product page ([https://www.ansible.com/products/automation-hub](https://www.ansible.com/products/automation-hub))
+    to learn more about Automation Hub.
+  id: totrans-105
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有关自动化中心的更多信息，请参考文档（[https://docs.ansible.com/ansible/latest/reference_appendices/automationhub.xhtml](https://docs.ansible.com/ansible/latest/reference_appendices/automationhub.xhtml)）和产品页面（[https://www.ansible.com/products/automation-hub](https://www.ansible.com/products/automation-hub)）。
+- en: Ansible AWX and the Ansible Automation Controller
+  id: totrans-106
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible AWX 和 Ansible 自动化控制器
+- en: Ansible AWX is an open source community project sponsored by Red Hat. It is
+    an upstream project for the automation controller component in Red Hat AAP. (Red
+    Hat Ansible Tower 3.2 is the first version based on the Ansible AWX project.)
+    Ansible AWX is a fast-moving project ([https://github.com/ansible/awx](https://github.com/ansible/awx))
+    that is primarily supported by the community via IRC ([https://web.libera.chat/#ansible-awx](https://web.libera.chat/#ansible-awx))
+    and the AWX mailing list ([https://groups.google.com/forum/#!forum/awx-project](https://groups.google.com/forum/#!forum/awx-project)).
+    Refer to the project page ([https://www.ansible.com/community/awx-project](https://www.ansible.com/community/awx-project))
+    and frequently asked questions ([https://www.ansible.com/products/awx-project/faq](https://www.ansible.com/products/awx-project/faq))
+    to learn more about Ansible AWX.
+  id: totrans-107
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible AWX是由Red Hat赞助的开源社区项目。它是Red Hat AAP中自动化控制器组件的上游项目。（Red Hat Ansible Tower
+    3.2是基于Ansible AWX项目的第一个版本。）Ansible AWX是一个快速发展的项目（[https://github.com/ansible/awx](https://github.com/ansible/awx)），主要通过IRC（[https://web.libera.chat/#ansible-awx](https://web.libera.chat/#ansible-awx)）和AWX邮件列表（[https://groups.google.com/forum/#!forum/awx-project](https://groups.google.com/forum/#!forum/awx-project)）由社区支持。请参阅项目页面（[https://www.ansible.com/community/awx-project](https://www.ansible.com/community/awx-project)）和常见问题（[https://www.ansible.com/products/awx-project/faq](https://www.ansible.com/products/awx-project/faq)）以了解更多关于Ansible
+    AWX的信息。
+- en: In the next section, you will learn how to start using Red Hat AAP for automation
+    use cases.
+  id: totrans-108
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在接下来的章节中，您将学习如何开始使用Red Hat AAP来实现自动化用例。
+- en: Database management using Red Hat AAP
+  id: totrans-109
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用Red Hat AAP进行数据库管理
+- en: In [*Chapter 8*](B18383_08.xhtml#_idTextAnchor144), *Helping the Database Team
+    with Automation*, you learned how to use Ansible to automate database creation
+    and user management operations. This section will reuse the same Ansible artifacts
+    but in a different repository and execute the job from Red Hat AAP.
+  id: totrans-110
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在[*第8章*](B18383_08.xhtml#_idTextAnchor144)中，*帮助数据库团队实现自动化*，您学习了如何使用Ansible来自动化数据库创建和用户管理操作。本节将重复使用相同的Ansible工件，但在不同的仓库中，并从Red
+    Hat AAP执行该作业。
+- en: 'The following are the prerequisites for this section:'
+  id: totrans-111
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是本节的前提条件：
+- en: Access to the Red Hat Ansible automation controller WebUI
+  id: totrans-112
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 访问Red Hat Ansible自动化控制器WebUI
+- en: Access to the GitHub repository that contains the necessary Ansible artifacts
+    ([https://github.com/ginigangadharan/ansible-database-demo](https://github.com/ginigangadharan/ansible-database-demo))
+  id: totrans-113
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 访问包含必要Ansible工件的GitHub仓库（[https://github.com/ginigangadharan/ansible-database-demo](https://github.com/ginigangadharan/ansible-database-demo)）
+- en: Access to the target nodes (database node)
+  id: totrans-114
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 访问目标节点（数据库节点）
+- en: Job templates are the core resources in the automation controller, but a job
+    template requires few other resources as dependencies.
+  id: totrans-115
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 作业模板是自动化控制器中的核心资源，但作业模板需要一些其他资源作为依赖项。
+- en: '![Figure 12.10 – Components and dependencies in Ansible Automation Platform
+    ](img/B18383_12_10.jpg)'
+  id: totrans-116
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图12.10 – Ansible自动化平台中的组件和依赖关系](img/B18383_12_10.jpg)'
+- en: Figure 12.10 – Components and dependencies in Ansible Automation Platform
+  id: totrans-117
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图12.10 – Ansible自动化平台中的组件和依赖关系
+- en: 'You will learn the basic operations in the Ansible automation controller and
+    create various resources, as follows:'
+  id: totrans-118
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 您将学习在Ansible自动化控制器中进行基本操作，并创建各种资源，如下所示：
+- en: Organizations
+  id: totrans-119
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 组织
+- en: Projects
+  id: totrans-120
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 项目
+- en: Inventory, managed nodes, and groups
+  id: totrans-121
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 清单、管理节点和组
+- en: Credentials
+  id: totrans-122
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 凭证
+- en: A job template with survey forms and extra variables
+  id: totrans-123
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 带有调查表单和额外变量的作业模板
+- en: In the following section, we will learn how to access the Ansible automation
+    controller and create the resources inside.
+  id: totrans-124
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在接下来的章节中，我们将学习如何访问Ansible自动化控制器并创建其中的资源。
+- en: Accessing the Ansible automation controller
+  id: totrans-125
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 访问Ansible自动化控制器
+- en: 'Access the automation controller IP address or hostname from a supported web
+    browser and log in with your username and password, as shown in the following
+    screenshot:'
+  id: totrans-126
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 从支持的网页浏览器访问自动化控制器的IP地址或主机名，并使用用户名和密码登录，如下图所示：
+- en: '![Figure 12.11 – Ansible automation controller WebUI login page ](img/B18383_12_11.jpg)'
+  id: totrans-127
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图12.11 – Ansible自动化控制器WebUI登录页面](img/B18383_12_11.jpg)'
+- en: Figure 12.11 – Ansible automation controller WebUI login page
+  id: totrans-128
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图12.11 – Ansible自动化控制器WebUI登录页面
+- en: 'Based on the RBAC configurations and permissions, you will find allowed menus
+    and configuration items on the dashboard:'
+  id: totrans-129
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 根据RBAC配置和权限，您将在仪表盘上找到允许的菜单和配置项：
+- en: '![Figure 12.12 – Ansible automation controller dashboard ](img/B18383_12_12.jpg)'
+  id: totrans-130
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图12.12 – Ansible自动化控制器仪表盘](img/B18383_12_12.jpg)'
+- en: Figure 12.12 – Ansible automation controller dashboard
+  id: totrans-131
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图12.12 – Ansible自动化控制器仪表盘
+- en: 'To manage different projects, users, and other resources, create a new *organization*;
+    see the example shown in the following screenshot. An organization is a logical
+    collection of projects, inventories, teams and users (this is an optional step;
+    use the **Default** organization that already exists in the automation controller):'
+  id: totrans-132
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要管理不同的项目、用户和其他资源，请创建一个新的*组织*；请参见以下截图中显示的示例。组织是项目、库存、团队和用户的逻辑集合（这是一个可选步骤；可以使用自动化控制器中已经存在的**默认**组织）：
+- en: '![Figure 12.13 – Creating a new organization ](img/B18383_12_13.jpg)'
+  id: totrans-133
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 12.13 – 创建新组织](img/B18383_12_13.jpg)'
+- en: Figure 12.13 – Creating a new organization
+  id: totrans-134
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 12.13 – 创建新组织
+- en: Once you have created a new organization, create a new project.
+  id: totrans-135
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦创建了新组织，就创建一个新项目。
+- en: Creating a project in automation controller
+  id: totrans-136
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 在自动化控制器中创建项目
+- en: 'Click on the **Projects** menu and then click **Add** to create a new project,
+    as shown in the following screenshot. For **Source Control URL**, use [https://github.com/ginigangadharan/ansible-database-demo](https://github.com/ginigangadharan/ansible-database-demo):'
+  id: totrans-137
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 点击**项目**菜单，然后点击**添加**以创建一个新的项目，如下图所示。对于**源代码控制 URL**，使用 [https://github.com/ginigangadharan/ansible-database-demo](https://github.com/ginigangadharan/ansible-database-demo)：
+- en: '![Figure 12.14 – Creating a new project in the automation controller ](img/B18383_12_14.jpg)'
+  id: totrans-138
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 12.14 – 在自动化控制器中创建新项目](img/B18383_12_14.jpg)'
+- en: Figure 12.14 – Creating a new project in the automation controller
+  id: totrans-139
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 12.14 – 在自动化控制器中创建新项目
+- en: Since the GitHub repository is public, we do not require a credential to access
+    it. For private GitHub repositories, you need to provide one; you will learn how
+    to create credentials in the next section when we add the inventory and managed
+    nodes.
+  id: totrans-140
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于 GitHub 仓库是公开的，我们不需要凭证来访问它。对于私有 GitHub 仓库，您需要提供凭证；您将在下一节学习如何创建凭证，当我们添加库存和管理节点时。
+- en: 'Verify the project’s sync status, as shown in the following screenshot:'
+  id: totrans-141
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 验证项目的同步状态，如下图所示：
+- en: '![Figure 12.15 – Project details and job status ](img/B18383_12_15.jpg)'
+  id: totrans-142
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 12.15 – 项目详情和任务状态](img/B18383_12_15.jpg)'
+- en: Figure 12.15 – Project details and job status
+  id: totrans-143
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 12.15 – 项目详情和任务状态
+- en: 'As you can see, the automation controller has finished syncing the content
+    from the GitHub repository to a local directory (`Playbook Directory: _15__database_management`).'
+  id: totrans-144
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '如您所见，自动化控制器已完成从 GitHub 仓库同步内容到本地目录（`Playbook Directory: _15__database_management`）。'
+- en: If you come across any issues while syncing content, check your internet connection
+    or connection to the Git server (for private repositories) and ensure the necessary
+    access is in place.
+  id: totrans-145
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果在同步内容时遇到任何问题，请检查您的互联网连接或与 Git 服务器（对于私有仓库）的连接，并确保必要的访问权限已经到位。
+- en: Creating the inventory and managed nodes
+  id: totrans-146
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 创建库存和管理节点
+- en: 'In the previous chapters, you created Ansible inventories using static files
+    (and dynamic inventory plugins), as shown in the following screenshot:'
+  id: totrans-147
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在前面的章节中，您使用静态文件（和动态库存插件）创建了 Ansible 库存，如下图所示：
+- en: '![Figure 12.16 – Creating an Ansible inventory using a static file  ](img/B18383_12_16.jpg)'
+  id: totrans-148
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 12.16 – 使用静态文件创建 Ansible 库存](img/B18383_12_16.jpg)'
+- en: Figure 12.16 – Creating an Ansible inventory using a static file
+  id: totrans-149
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 12.16 – 使用静态文件创建 Ansible 库存
+- en: 'Now, let’s create a new inventory, managed nodes, and host groups in the automation
+    controller using the WebUI:'
+  id: totrans-150
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，让我们在自动化控制器中使用 WebUI 创建一个新的库存、管理节点和主机组：
+- en: 'Open the **Inventories** tab on the left-hand side and **Add** a new inventory,
+    as shown in the following screenshot:'
+  id: totrans-151
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 打开左侧的**库存**选项卡，并**添加**一个新库存，如下图所示：
+- en: '![Figure 12.17 – Creating an Ansible inventory in the automation controller
+    ](img/B18383_12_17.jpg)'
+  id: totrans-152
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 12.17 – 在自动化控制器中创建 Ansible 库存](img/B18383_12_17.jpg)'
+- en: Figure 12.17 – Creating an Ansible inventory in the automation controller
+  id: totrans-153
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 12.17 – 在自动化控制器中创建 Ansible 库存
+- en: 'A new inventory will be created and its status will be displayed:'
+  id: totrans-154
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 将创建一个新的库存，并显示其状态：
+- en: '![Figure 12.18 – The Ansible inventory on the automation controller ](img/B18383_12_18.jpg)'
+  id: totrans-155
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 12.18 – 自动化控制器中的 Ansible 库存](img/B18383_12_18.jpg)'
+- en: Figure 12.18 – The Ansible inventory on the automation controller
+  id: totrans-156
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 12.18 – 自动化控制器中的 Ansible 库存
+- en: 'Now, select the **Groups** tab at the top and click **Add** to create a new
+    host group:'
+  id: totrans-157
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在，选择顶部的**组**选项卡，然后点击**添加**以创建一个新的主机组：
+- en: '![Figure 12.19 – Creating a new host group ](img/B18383_12_19.jpg)'
+  id: totrans-158
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 12.19 – 创建新的主机组](img/B18383_12_19.jpg)'
+- en: Figure 12.19 – Creating a new host group
+  id: totrans-159
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 12.19 – 创建新主机组
+- en: 'New host group details will be displayed, as shown in the following screenshot:'
+  id: totrans-160
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 新主机组的详细信息将显示，如下图所示：
+- en: '![Figure 12.20 – New host group details ](img/B18383_12_20.jpg)'
+  id: totrans-161
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 12.20 – 新主机组详情](img/B18383_12_20.jpg)'
+- en: Figure 12.20 – New host group details
+  id: totrans-162
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 12.20 – 新主机组详情
+- en: 'Click on the **Hosts** tab at the top. Then, click **Add** and select **Add
+    new host**, as shown in the following screenshot:'
+  id: totrans-163
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击顶部的**主机**选项卡，然后点击**添加**并选择**添加新主机**，如下一截图所示：
+- en: '![Figure 12.21 – Adding new hosts to the host group ](img/B18383_12_21.jpg)'
+  id: totrans-164
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 12.21 – 将新主机添加到主机组](img/B18383_12_21.jpg)'
+- en: Figure 12.21 – Adding new hosts to the host group
+  id: totrans-165
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 12.21 – 将新主机添加到主机组
+- en: If you have already added the hosts directly, then add the host to this host
+    group by selecting **Add existing host**.
+  id: totrans-166
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果您已经直接添加了主机，则通过选择**添加现有主机**将主机添加到此主机组中。
+- en: 'Create a new host with a hostname and `ansible_host` information, as shown
+    here:'
+  id: totrans-167
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建一个新的主机，并提供主机名和`ansible_host`信息，如下所示：
+- en: '![Figure 12.22 – Creating a new host ](img/B18383_12_22.jpg)'
+  id: totrans-168
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 12.22 – 创建新主机](img/B18383_12_22.jpg)'
+- en: Figure 12.22 – Creating a new host
+  id: totrans-169
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 12.22 – 创建新主机
+- en: More variables can be added for host groups as hosts under the **Variables**
+    section, as shown in *Figures 12.22* and *12.20*.
+  id: totrans-170
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 可以为主机组在**变量**部分添加更多变量，作为主机，如*图12.22*和*图12.20*所示。
+- en: Importing Your Inventory into the Automation Controller
+  id: totrans-171
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 将您的库存导入自动化控制器
+- en: Instead of adding managed nodes one by one, it is also possible to import your
+    inventory from the project source, public cloud, or other inventory management
+    systems. Refer to the documentation at [https://docs.ansible.com/automation-controller/latest/html/administration/scm-inv-source.xhtml](https://docs.ansible.com/automation-controller/latest/html/administration/scm-inv-source.xhtml)
+    to learn more.
+  id: totrans-172
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 除了逐一添加管理节点外，您还可以从项目源、公共云或其他库存管理系统导入库存。请参阅文档[https://docs.ansible.com/automation-controller/latest/html/administration/scm-inv-source.xhtml](https://docs.ansible.com/automation-controller/latest/html/administration/scm-inv-source.xhtml)了解更多信息。
+- en: Creating credentials in the automation controller
+  id: totrans-173
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 在自动化控制器中创建凭证
+- en: In the previous chapters, we used SSH keys to access the managed nodes. The
+    SSH private key was stored in the Ansible control node (`/home/ansible/.ssh/id_rsa`),
+    but in this case, we must pass the private key using a credential.
+  id: totrans-174
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在前几章中，我们使用SSH密钥访问管理节点。SSH私钥存储在Ansible控制节点（`/home/ansible/.ssh/id_rsa`）中，但在这种情况下，我们必须通过凭证传递私钥。
+- en: 'Open the `devops`) and the SSH private key (you can also use `password` as
+    the credential):'
+  id: totrans-175
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 打开`devops`和SSH私钥（您也可以使用`password`作为凭证）：
+- en: '![Figure 12.23 – Adding the Machine credential ](img/B18383_12_23.jpg)'
+  id: totrans-176
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 12.23 – 添加机器凭证](img/B18383_12_23.jpg)'
+- en: Figure 12.23 – Adding the Machine credential
+  id: totrans-177
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 12.23 – 添加机器凭证
+- en: 'Since we have enabled `NOPASSWD` (refer to [*Chapter 1*](B18383_01.xhtml#_idTextAnchor014),
+    *Ansible Automation – Introduction*, the *Configuring your managed nodes* section)
+    for the `sudo` access, we do not need to enter any data in the **Privilege Escalation**
+    fields:'
+  id: totrans-178
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于我们已为`sudo`访问启用了`NOPASSWD`（参见[*第1章*](B18383_01.xhtml#_idTextAnchor014)，*Ansible自动化
+    – 介绍*，*配置您的管理节点*部分），因此我们不需要在**权限提升**字段中输入任何数据：
+- en: '![Figure 12.24 – Machine credential privilege escalation fields ](img/B18383_12_24.jpg)'
+  id: totrans-179
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 12.24 – 机器凭证权限提升字段](img/B18383_12_24.jpg)'
+- en: Figure 12.24 – Machine credential privilege escalation fields
+  id: totrans-180
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 12.24 – 机器凭证权限提升字段
+- en: 'Save the credential and verify its details. The passwords and SSH private key
+    content will be encrypted and will not be visible to anyone. You can only reset
+    the SSH private key content or password in the credential, as shown in the following
+    screenshot:'
+  id: totrans-181
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 保存凭证并验证其详细信息。密码和SSH私钥内容将被加密，且任何人都无法查看。您只能重置凭证中的SSH私钥内容或密码，如下图所示：
+- en: '![Figure 12.25 – Encrypted SS private key content ](img/B18383_12_25.jpg)'
+  id: totrans-182
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 12.25 – 加密的SSH私钥内容](img/B18383_12_25.jpg)'
+- en: Figure 12.25 – Encrypted SS private key content
+  id: totrans-183
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 12.25 – 加密的SSH私钥内容
+- en: With that, you have created a project, an inventory with a managed node (`dbnode1`),
+    and a credential to access the node. Now, you must create a job template using
+    the `Chapter-08/postgres-manage-database.yaml` playbook, as explained in the next
+    section.
+  id: totrans-184
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通过这些设置，您已经创建了一个项目，一个包含管理节点（`dbnode1`）的库存，并且已经创建了访问该节点的凭证。现在，您必须使用`Chapter-08/postgres-manage-database.yaml`剧本创建一个作业模板，如下一节所述。
+- en: Ansible Automation Controller – Credentials
+  id: totrans-185
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible自动化控制器 – 凭证
+- en: Learn more about the credentials in the automation controller at [https://docs.ansible.com/automation-controller/latest/html/userguide/credentials.xhtml](https://docs.ansible.com/automation-controller/latest/html/userguide/credentials.xhtml).
+    Please go to [https://docs.ansible.com/automation-controller/latest/html/userguide/credential_types.xhtml](https://docs.ansible.com/automation-controller/latest/html/userguide/credential_types.xhtml)
+    to learn more about custom credentials.
+  id: totrans-186
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 了解更多关于自动化控制器凭据的信息，请访问[https://docs.ansible.com/automation-controller/latest/html/userguide/credentials.xhtml](https://docs.ansible.com/automation-controller/latest/html/userguide/credentials.xhtml)。要了解更多关于自定义凭据的信息，请访问[https://docs.ansible.com/automation-controller/latest/html/userguide/credential_types.xhtml](https://docs.ansible.com/automation-controller/latest/html/userguide/credential_types.xhtml)。
+- en: Creating a new job template
+  id: totrans-187
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 创建新的作业模板
+- en: 'A job template in the automation controller is a preconfigured definition with
+    a set of parameters and a playbook for executing an Ansible automation job. To
+    execute the same jobs several times, use a job template and pass the parameter
+    as needed. Follow these steps:'
+  id: totrans-188
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 自动化控制器中的作业模板是一个预配置的定义，包含一组参数和用于执行 Ansible 自动化作业的剧本。要多次执行相同的作业，使用作业模板并根据需要传递参数。请按以下步骤操作：
+- en: 'Open the **Templates** tab on the left-hand side of the dashboard. Then, click
+    on **Add** and select **Add job template**, as shown here:'
+  id: totrans-189
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 打开仪表板左侧的**模板**标签。然后，点击**添加**并选择**添加作业模板**，如图所示：
+- en: '![Figure 12.26 – Creating a job template ](img/B18383_12_26.jpg)'
+  id: totrans-190
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 12.26 – 创建作业模板](img/B18383_12_26.jpg)'
+- en: Figure 12.26 – Creating a job template
+  id: totrans-191
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 12.26 – 创建作业模板
+- en: 'Enter the details of the job template:'
+  id: totrans-192
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 输入作业模板的详细信息：
+- en: '![Figure 12.27 – Job template details  ](img/B18383_12_27.jpg)'
+  id: totrans-193
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 12.27 – 作业模板详情](img/B18383_12_27.jpg)'
+- en: Figure 12.27 – Job template details
+  id: totrans-194
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 12.27 – 作业模板详情
+- en: Job Templates in the Automation Controller
+  id: totrans-195
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 自动化控制器中的作业模板
+- en: Refer to the documentation at [https://docs.ansible.com/automation-controller/latest/html/userguide/job_templates.xhtml](https://docs.ansible.com/automation-controller/latest/html/userguide/job_templates.xhtml)
+    to learn more about how to customize job templates with additional options.
+  id: totrans-196
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请参考文档[https://docs.ansible.com/automation-controller/latest/html/userguide/job_templates.xhtml](https://docs.ansible.com/automation-controller/latest/html/userguide/job_templates.xhtml)，了解如何通过附加选项自定义作业模板。
+- en: 'We have used variables inside the playbook (*Figure 12.28*) to demonstrate
+    the operations without complexity. In the actual environment, the variables can
+    be fetched from additional variable files, group variables, host variables, or
+    extra variables. Now, we must pass the variables and values to the job template
+    instead of using the hardcoded variables in the Ansible playbook:'
+  id: totrans-197
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们在剧本中使用了变量（*图 12.28*）来展示操作，避免了复杂性。在实际环境中，这些变量可以从额外的变量文件、组变量、主机变量或额外变量中获取。现在，我们必须将变量和值传递给作业模板，而不是在
+    Ansible 剧本中使用硬编码的变量：
+- en: '![Figure 12.28 – Hardcoded variables in the Ansible playbook ](img/B18383_12_28.jpg)'
+  id: totrans-198
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 12.28 – Ansible 剧本中的硬编码变量](img/B18383_12_28.jpg)'
+- en: Figure 12.28 – Hardcoded variables in the Ansible playbook
+  id: totrans-199
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 12.28 – Ansible 剧本中的硬编码变量
+- en: It is possible to override these values by passing the parameters to the playbook
+    using the `extra_vars` automatically.
+  id: totrans-200
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 可以通过自动传递参数给剧本的`extra_vars`来覆盖这些值。
+- en: 'Click on the **Survey** tab of **Job template**, as follows:'
+  id: totrans-201
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击**作业模板**的**调查**标签，如下所示：
+- en: '![Figure 12.29 – Job template survey ](img/B18383_12_29.jpg)'
+  id: totrans-202
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 12.29 – 作业模板调查](img/B18383_12_29.jpg)'
+- en: Figure 12.29 – Job template survey
+  id: totrans-203
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 12.29 – 作业模板调查
+- en: 'Create a new survey question by clicking the **Add** button and filling in
+    the details:'
+  id: totrans-204
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 通过点击**添加**按钮并填写详细信息来创建新的调查问题：
+- en: '![Figure 12.30 – Job template survey form for collecting the NODES information
+    ](img/B18383_12_30.jpg)'
+  id: totrans-205
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 12.30 – 用于收集 NODES 信息的作业模板调查表单](img/B18383_12_30.jpg)'
+- en: Figure 12.30 – Job template survey form for collecting the NODES information
+  id: totrans-206
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 12.30 – 用于收集 NODES 信息的作业模板调查表单
+- en: 'In the preceding screenshot, we can see the following details:'
+  id: totrans-207
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在前面的截图中，我们可以看到以下详细信息：
+- en: 'The answer variable’s name is `NODES`, which we will pass to the playbook for
+    `hosts` (`hosts: "{{ NODES }}"`).'
+  id: totrans-208
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '答案变量的名称是`NODES`，我们将其传递给剧本的`hosts`（`hosts: "{{ NODES }}"`）。'
+- en: A multiple-choice menu will be displayed with options.
+  id: totrans-209
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 将显示一个多选菜单，供选择选项。
+- en: 'Proceed to create survey questions for other variables as needed. Also, remember
+    to enable the survey, as highlighted in the following screenshot:'
+  id: totrans-210
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 根据需要继续为其他变量创建调查问题。同时，记得启用调查，如下截图所示：
+- en: '![Figure 12.31 – Ansible survey variables for the job template ](img/B18383_12_31.jpg)'
+  id: totrans-211
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 12.31 – Ansible 作业模板的调查变量](img/B18383_12_31.jpg)'
+- en: Figure 12.31 – Ansible survey variables for the job template
+  id: totrans-212
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 12.31 – Ansible 作业模板的调查变量
+- en: Remember to use the `password` type for the variables that carry sensitive information
+    such as passwords or secrets.
+  id: totrans-213
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 记得对于包含敏感信息（如密码或机密信息）的变量使用`password`类型。
+- en: Surveys in the Automation Controller
+  id: totrans-214
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 自动化控制器中的调查表单
+- en: A survey can be used to set extra variables for the playbook with user-friendly
+    forms and validations. Refer to the documentation at https://docs.ansible.com/automation-controller/latest/html/userguide/job_templates.xhtml#surveys
+    to learn more about survey forms.
+  id: totrans-215
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 调查表单可以用来通过用户友好的表单和验证设置作业的额外变量。请参阅文档[https://docs.ansible.com/automation-controller/latest/html/userguide/job_templates.xhtml#surveys](https://docs.ansible.com/automation-controller/latest/html/userguide/job_templates.xhtml#surveys)，了解更多关于调查表单的信息。
+- en: 'We assume that the following variables will not change every time and do not
+    need to be inside the survey form:'
+  id: totrans-216
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们假设以下变量在每次执行时不会更改，因此不需要放入调查表单中：
+- en: '[PRE0]'
+  id: totrans-217
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: 'Instead, add them as extra variables and save the job template:'
+  id: totrans-218
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 相反，将它们作为额外变量添加，并保存作业模板：
+- en: '![Figure 12.32 – Extra variables in the Ansible job template ](img/B18383_12_32.jpg)'
+  id: totrans-219
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 12.32 – Ansible 作业模板中的额外变量](img/B18383_12_32.jpg)'
+- en: Figure 12.32 – Extra variables in the Ansible job template
+  id: totrans-220
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 12.32 – Ansible 作业模板中的额外变量
+- en: Also pass variables such as `ansible_become_user` in the host variable or group
+    variable section, but this will impact all the jobs on that node, which is not
+    the desired configuration in this case.
+  id: totrans-221
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 还可以将像`ansible_become_user`这样的变量传递到主机变量或组变量部分，但这会影响该节点上的所有作业，这在此情况下不是所需的配置。
+- en: In the next section, you will learn how to execute the automation job that we
+    configured previously.
+  id: totrans-222
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一节中，你将学习如何执行我们之前配置的自动化作业。
+- en: Executing an automation job from the automation controller
+  id: totrans-223
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 从自动化控制器执行自动化作业
+- en: In the previous sections, you configured many resources in the automation controller,
+    such as the organization, projects, inventory, managed nodes, credentials, job
+    templates, and more. Now, let’s test the job template by launching the automation
+    job.
+  id: totrans-224
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在前面的章节中，你已经在自动化控制器中配置了许多资源，例如组织、项目、库存、受管节点、凭证、作业模板等。现在，让我们通过启动自动化作业来测试作业模板。
+- en: Ansible Collection and Execution Environment
+  id: totrans-225
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 集合和执行环境
+- en: Use the collection from the execution environment or the project repository
+    (`COLLECTIONS_PATHS = ./collections`). Not all Ansible collections (or latest
+    versions) will be available in the execution environment, and it is possible to
+    create a custom execution environment with the required collections and libraries.
+    Refer to the documentation at [https://docs.ansible.com/automation-controller/latest/html/userguide/execution_environments.xhtml](https://docs.ansible.com/automation-controller/latest/html/userguide/execution_environments.xhtml)
+    to learn more about creating an execution environment. In this demonstration,
+    we will be using the `community.postgresql` Ansible collection, which is already
+    available in the project repository (refer to [*Chapter 8*](B18383_08.xhtml#_idTextAnchor144),
+    *Helping the Database Team with Automation*).
+  id: totrans-226
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用来自执行环境或项目库的集合（`COLLECTIONS_PATHS = ./collections`）。并非所有的 Ansible 集合（或最新版本）都会在执行环境中可用，并且可以创建一个自定义的执行环境，包含所需的集合和库。请参阅[https://docs.ansible.com/automation-controller/latest/html/userguide/execution_environments.xhtml](https://docs.ansible.com/automation-controller/latest/html/userguide/execution_environments.xhtml)中的文档，了解更多关于创建执行环境的信息。在这个演示中，我们将使用`community.postgresql`
+    Ansible 集合，该集合已在项目库中可用（请参见[*第 8 章*](B18383_08.xhtml#_idTextAnchor144)，*帮助数据库团队实现自动化*）。
+- en: 'Open the **Templates** tab from the automation controller dashboard and find
+    the PostgreSQL job template that we created in the previous section. Click on
+    the **Launch Template** button (the small rocket icon) and wait for the survey
+    template to pop up:'
+  id: totrans-227
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 从自动化控制器仪表盘中打开**模板**标签，找到我们在前一章节中创建的 PostgreSQL 作业模板。点击**启动模板**按钮（小火箭图标），等待调查表单弹出：
+- en: '![Figure 12.33 – Launching the job template from the automation controller
+    ](img/B18383_12_33.jpg)'
+  id: totrans-228
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 12.33 – 从自动化控制器启动作业模板](img/B18383_12_33.jpg)'
+- en: Figure 12.33 – Launching the job template from the automation controller
+  id: totrans-229
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 12.33 – 从自动化控制器启动作业模板
+- en: 'Enter the details in the survey’s form and click **Next**:'
+  id: totrans-230
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在调查表单中输入详细信息，然后点击**下一步**：
+- en: '![Figure 12.34 – Entering the details in the survey form ](img/B18383_12_34.jpg)'
+  id: totrans-231
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 12.34 – 在调查表单中输入详细信息](img/B18383_12_34.jpg)'
+- en: Figure 12.34 – Entering the details in the survey form
+  id: totrans-232
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 12.34 – 在调查表中输入详细信息
+- en: 'The details will be displayed on the preview screen. Notice that the survey
+    variables are passing as extra variables. Click on the **Launch** button and wait
+    for the job screen to load:'
+  id: totrans-233
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 详细信息将在预览屏幕上显示。请注意，调查变量作为额外变量传递。点击**启动**按钮，等待作业屏幕加载：
+- en: '![Figure 12.35 – Details of the job in preview ](img/B18383_12_35.jpg)'
+  id: totrans-234
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 12.35 – 作业预览详情](img/B18383_12_35.jpg)'
+- en: Figure 12.35 – Details of the job in preview
+  id: totrans-235
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 12.35 – 作业预览详情
+- en: 'The job will be executed on the target nodes. Every detail about the job will
+    be displayed on the **Output** tab, including the playbook execution output, as
+    shown in the following screenshot:'
+  id: totrans-236
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 该作业将在目标节点上执行。关于该作业的每个细节将显示在**输出**选项卡上，包括 playbook 执行的输出，如下图所示：
+- en: '![Figure 12.36 – Job execution output on the automation controller ](img/B18383_12_36.jpg)'
+  id: totrans-237
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 12.36 – 自动化控制器上的作业执行输出](img/B18383_12_36.jpg)'
+- en: Figure 12.36 – Job execution output on the automation controller
+  id: totrans-238
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 12.36 – 自动化控制器上的作业执行输出
+- en: Verify the database and user creation on the database nodes (`dbnode1`) as needed.
+  id: totrans-239
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 根据需要在数据库节点（`dbnode1`）上验证数据库和用户的创建。
+- en: The same job template can be used to execute the operations on different database
+    nodes or databases as the variables are dynamic and do not need to be modified
+    in the playbook.
+  id: totrans-240
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 相同的作业模板可以用于在不同的数据库节点或数据库上执行操作，因为变量是动态的，不需要在 playbook 中修改。
+- en: In this section, you learned how to create basic resources and launch the automation
+    job in the automation controller. In the next section, you will learn how to integrate
+    other applications, such as the Jenkins CI/CD server, with the automation controller
+    and trigger automated executions.
+  id: totrans-241
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本节中，您学习了如何创建基本资源并在自动化控制器中启动自动化作业。在下一节中，您将学习如何将其他应用程序（如 Jenkins CI/CD 服务器）与自动化控制器集成并触发自动化执行。
+- en: Integrating Jenkins with AAP
+  id: totrans-242
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 与 AAP 集成 Jenkins
+- en: 'Jenkins (https://www.jenkins.io) is a well-known open source tool (written
+    in the Java programming language) that can be used to implement **continuous integration/continuous
+    delivery** (**CI/CD**) and deployment solutions. Automating the build and deployment
+    is the key to effective DevOps practices. As shown in the following diagram, developers
+    and testers can offload such tasks to CI/CD tools such as Jenkins:'
+  id: totrans-243
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Jenkins（[https://www.jenkins.io](https://www.jenkins.io)）是一个广为人知的开源工具（用 Java
+    编程语言编写），可用于实现**持续集成/持续交付**（**CI/CD**）和部署解决方案。自动化构建和部署是有效 DevOps 实践的关键。如以下图所示，开发人员和测试人员可以将这些任务委托给
+    CI/CD 工具，如 Jenkins：
+- en: '![Figure 12.37 – CI/CD workflow using Jenkins ](img/B18383_12_37.jpg)'
+  id: totrans-244
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 12.37 – 使用 Jenkins 的 CI/CD 工作流](img/B18383_12_37.jpg)'
+- en: Figure 12.37 – CI/CD workflow using Jenkins
+  id: totrans-245
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 12.37 – 使用 Jenkins 的 CI/CD 工作流
+- en: 'Jenkins can execute many tasks natively or use plugins but for complex tasks,
+    Jenkins can utilize the appropriate tools. For example, instead of calling complex
+    scripts or commands inside the Jenkins pipeline, a specific job can be offloaded
+    to the Ansible automation controller, as shown in the following diagram:'
+  id: totrans-246
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Jenkins 可以原生执行许多任务或使用插件，但对于复杂任务，Jenkins 可以利用适当的工具。例如，可以将特定作业卸载到 Ansible 自动化控制器，而不是在
+    Jenkins 管道中调用复杂的脚本或命令，如下图所示：
+- en: '![Figure 12.38 – Jenkins integration with AAP for database operations ](img/B18383_12_38.jpg)'
+  id: totrans-247
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 12.38 – Jenkins 与 AAP 集成进行数据库操作](img/B18383_12_38.jpg)'
+- en: Figure 12.38 – Jenkins integration with AAP for database operations
+  id: totrans-248
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 12.38 – Jenkins 与 AAP 集成进行数据库操作
+- en: The automation controller will execute the job based on the parameters passed
+    and return the result to Jenkins as feedback (success/fail and other messages).
+  id: totrans-249
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 自动化控制器将根据传递的参数执行作业，并将结果作为反馈（成功/失败及其他消息）返回给 Jenkins。
+- en: GitOps and CI/CD Courses
+  id: totrans-250
+  prefs: []
+  type: TYPE_NORMAL
+  zh: GitOps 和 CI/CD 课程
+- en: Refer to [https://www.techbeatly.com/gitops-cicd/](https://www.techbeatly.com/gitops-cicd/)
+    to find free GitOps and CI/CD courses and certifications, including those for
+    Jenkins.
+  id: totrans-251
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请参考 [https://www.techbeatly.com/gitops-cicd/](https://www.techbeatly.com/gitops-cicd/)
+    查找免费的 GitOps 和 CI/CD 课程及认证，包括 Jenkins 课程。
+- en: In the following demonstration, you will reuse the database creation job template
+    as part of deploying the ToDo application.
+  id: totrans-252
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在以下演示中，您将重新使用数据库创建作业模板，作为部署 ToDo 应用程序的一部分。
+- en: 'The following are the prerequisites:'
+  id: totrans-253
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是先决条件：
+- en: The Jenkins server must have been installed with the Ansible Tower plugin ([https://plugins.jenkins.io/ansible-tower](https://plugins.jenkins.io/ansible-tower)).
+  id: totrans-254
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Jenkins 服务器必须安装了 Ansible Tower 插件（[https://plugins.jenkins.io/ansible-tower](https://plugins.jenkins.io/ansible-tower)）。
+- en: Knowledge of Jenkins operations and configurations.
+  id: totrans-255
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 了解 Jenkins 的操作和配置。
+- en: The `PostgreSQL - Create Database and User Access` job template must have been
+    configured on the automation controller.
+  id: totrans-256
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`PostgreSQL - 创建数据库和用户访问` 作业模板必须已在自动化控制器上配置。'
+- en: Application repository ([https://github.com/ginigangadharan/nodejs-todo-demo-app](https://github.com/ginigangadharan/nodejs-todo-demo-app)).
+  id: totrans-257
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 应用程序代码库（[https://github.com/ginigangadharan/nodejs-todo-demo-app](https://github.com/ginigangadharan/nodejs-todo-demo-app)）。
+- en: Ansible Tower plugin for Jenkins
+  id: totrans-258
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: Jenkins 的 Ansible Tower 插件
+- en: 'The Ansible Tower plugin in Jenkins helps you execute automation jobs on Ansible
+    Tower (or the automation controller) by passing the appropriate parameters:'
+  id: totrans-259
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Jenkins 中的 Ansible Tower 插件帮助你通过传递适当的参数，在 Ansible Tower（或自动化控制器）上执行自动化作业：
+- en: '![Figure 12.39 – Ansible Tower plugin for Jenkins ](img/B18383_12_39.jpg)'
+  id: totrans-260
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 12.39 – Jenkins 的 Ansible Tower 插件](img/B18383_12_39.jpg)'
+- en: Figure 12.39 – Ansible Tower plugin for Jenkins
+  id: totrans-261
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 12.39 – Jenkins 的 Ansible Tower 插件
+- en: 'Install the plugin if you haven’t done so yet and create an Ansible Tower (automation
+    controller) connection (add the appropriate credentials needed) under **Manage
+    Jenkins** | **Configure System**:'
+  id: totrans-262
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果尚未安装插件，请安装该插件并在 **管理 Jenkins** | **配置系统** 下创建 Ansible Tower（自动化控制器）连接（添加所需的凭据）：
+- en: '![Figure 12.40 – Automation controller configuration for the Ansible Tower
+    plugin in Jenkins ](img/B18383_12_40.jpg)'
+  id: totrans-263
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 12.40 – Jenkins 中 Ansible Tower 插件的自动化控制器配置](img/B18383_12_40.jpg)'
+- en: Figure 12.40 – Automation controller configuration for the Ansible Tower plugin
+    in Jenkins
+  id: totrans-264
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 12.40 – Jenkins 中 Ansible Tower 插件的自动化控制器配置
+- en: Verify the connection from Jenkins to the Ansible automation controller by tapping
+    the **Test Connection** button, as shown in the preceding screenshot.
+  id: totrans-265
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通过点击 **测试连接** 按钮验证 Jenkins 与 Ansible 自动化控制器之间的连接，如前面的截图所示。
+- en: In the next section, you will learn how to create and configure multibranch
+    pipelines in Jenkins.
+  id: totrans-266
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在接下来的部分中，你将学习如何在 Jenkins 中创建和配置多分支流水线。
+- en: Multibranch pipelines in Jenkins
+  id: totrans-267
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: Jenkins 中的多分支流水线
+- en: 'Create a multibranch pipeline in Jenkins using the ToDo app repository ([https://github.com/ginigangadharan/nodejs-todo-demo-app](https://github.com/ginigangadharan/nodejs-todo-demo-app)),
+    as shown in the following screenshot:'
+  id: totrans-268
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用 ToDo 应用代码库（[https://github.com/ginigangadharan/nodejs-todo-demo-app](https://github.com/ginigangadharan/nodejs-todo-demo-app)）在
+    Jenkins 中创建多分支流水线，如下图所示：
+- en: '![Figure 12.41 – A multibranch pipeline in Jenkins ](img/B18383_12_41.jpg)'
+  id: totrans-269
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 12.41 – Jenkins 中的多分支流水线](img/B18383_12_41.jpg)'
+- en: Figure 12.41 – A multibranch pipeline in Jenkins
+  id: totrans-270
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 12.41 – Jenkins 中的多分支流水线
+- en: 'Also, configure the automated pipeline trigger by scanning the source repository
+    every minute. By enabling this, Jenkins will scan the repository for changes every
+    minute and trigger the build process automatically:'
+  id: totrans-271
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 此外，通过每分钟扫描源代码库来配置自动化流水线触发器。启用此功能后，Jenkins 会每分钟扫描一次代码库中的更改，并自动触发构建过程：
+- en: '![Figure 12.42 – Scanning multibranch pipeline triggers ](img/B18383_12_42.jpg)'
+  id: totrans-272
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 12.42 – 扫描多分支流水线触发器](img/B18383_12_42.jpg)'
+- en: Figure 12.42 – Scanning multibranch pipeline triggers
+  id: totrans-273
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 12.42 – 扫描多分支流水线触发器
+- en: Creating a Jenkinsfile
+  id: totrans-274
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 创建 Jenkinsfile
+- en: 'A `Jenkinsfile` is a `Jenkinsfile`. The following screenshot shows the available
+    `Jenkinsfile` in the `todo` application source repository:'
+  id: totrans-275
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`Jenkinsfile` 就是一个 `Jenkinsfile`。以下截图显示了 `todo` 应用程序源代码库中可用的 `Jenkinsfile`：'
+- en: '![Figure 12.43 – A Jenkinsfile with environment variables ](img/B18383_12_43.jpg)'
+  id: totrans-276
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 12.43 – 带有环境变量的 Jenkinsfile](img/B18383_12_43.jpg)'
+- en: Figure 12.43 – A Jenkinsfile with environment variables
+  id: totrans-277
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 12.43 – 带有环境变量的 Jenkinsfile
+- en: In a production environment, sensitive variables need to be considered when
+    storing vault services or credentials.
+  id: totrans-278
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在生产环境中，存储保险库服务或凭据时，需要考虑敏感变量。
+- en: 'The following screenshot shows calling the database creation job in the automation
+    controller:'
+  id: totrans-279
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下截图显示了在自动化控制器中调用数据库创建作业：
+- en: '![Figure 12.44 – Database creation stage in the Jenkinsfile ](img/B18383_12_44.jpg)'
+  id: totrans-280
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 12.44 – Jenkinsfile 中的数据库创建阶段](img/B18383_12_44.jpg)'
+- en: Figure 12.44 – Database creation stage in the Jenkinsfile
+  id: totrans-281
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 12.44 – Jenkinsfile 中的数据库创建阶段
+- en: '`ansible_controller_job()` is written at the bottom of the `Jenkinsfile`, as
+    shown here:'
+  id: totrans-282
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`ansible_controller_job()` 写在 `Jenkinsfile` 的底部，如下所示：'
+- en: '![Figure 12.45 – ansible_controller_job in the Jenkinsfile ](img/B18383_12_45.jpg)'
+  id: totrans-283
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 12.45 – Jenkinsfile 中的 ansible_controller_job](img/B18383_12_45.jpg)'
+- en: Figure 12.45 – ansible_controller_job in the Jenkinsfile
+  id: totrans-284
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 12.45 – Jenkinsfile 中的 ansible_controller_job
+- en: Notice the `extraVars` parameter we are passing since those variables are mandatory
+    and need to pass via extra variables or a survey form (which is not applicable
+    in this case).
+  id: totrans-285
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 注意我们传递的`extraVars`参数，因为这些变量是强制性的，需要通过额外的变量或调查表单传递（在本例中不适用）。
+- en: In the next section, you will explore the automated build trigger and automated
+    database provisioning that can be done via the Ansible automation controller.
+  id: totrans-286
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一部分中，您将探索通过Ansible自动化控制器可以执行的自动化构建触发和自动化数据库配置。
+- en: Triggering a build in the Jenkins pipeline
+  id: totrans-287
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 在Jenkins管道中触发构建
+- en: 'A new build will be triggered automatically whenever there is a change (new
+    commit) in the repository or whenever the build is initiated manually. The following
+    screenshot shows the build history in the job; notice that the **Creating Database**
+    stage is highlighted:'
+  id: totrans-288
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 每当仓库中有变更（新的提交）或手动启动构建时，都会自动触发新的构建。以下截图显示了作业中的构建历史；请注意，**创建数据库**阶段已被高亮显示：
+- en: '![Figure 12.46 – Build jobs in the Jenkins pipeline ](img/B18383_12_46.jpg)'
+  id: totrans-289
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 12.46 – Jenkins管道中的构建作业](img/B18383_12_46.jpg)'
+- en: Figure 12.46 – Build jobs in the Jenkins pipeline
+  id: totrans-290
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 12.46 – Jenkins管道中的构建作业
+- en: 'Check the build console logs and find the Ansible automation controller job
+    execution with detailed output, as shown in the following screenshot:'
+  id: totrans-291
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 检查构建控制台日志，找到Ansible自动化控制器作业执行的详细输出，如以下截图所示：
+- en: '![Figure 12.47 – The Jenkins build console with Ansible job execution details
+    ](img/B18383_12_47.jpg)'
+  id: totrans-292
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 12.47 – Jenkins构建控制台与Ansible作业执行详情](img/B18383_12_47.jpg)'
+- en: Figure 12.47 – The Jenkins build console with Ansible job execution details
+  id: totrans-293
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 12.47 – Jenkins构建控制台与Ansible作业执行详情
+- en: With that, you have learned how to call automation controller jobs from a Jenkins
+    pipeline and automate complex build steps.
+  id: totrans-294
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 到此为止，您已经学会了如何从Jenkins管道中调用自动化控制器作业，并自动化复杂的构建步骤。
+- en: Further enhancements to the Jenkins pipeline
+  id: totrans-295
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: Jenkins管道的进一步增强
+- en: 'Explore the integration between Jenkins and the Ansible automation controller
+    by adding more Ansible jobs to the pipeline, as follows:'
+  id: totrans-296
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通过向管道中添加更多Ansible作业，探索Jenkins与Ansible自动化控制器之间的集成，具体如下：
+- en: Create a job template in the automation controller for building container images
+    and push them to the container registry. (Refer to the Ansible artifacts from
+    [*Chapter 10*](B18383_10.xhtml#_idTextAnchor178), *Managing Containers Using Ansible*.)
+  id: totrans-297
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在自动化控制器中创建一个作业模板，用于构建容器镜像并将其推送到容器注册表。（参考[*第10章*](B18383_10.xhtml#_idTextAnchor178)《*使用Ansible管理容器*》中的Ansible工件。）
+- en: Add a build step in the `Jenkinsfile` and call the automation controller job
+    to build the container image for the application.
+  id: totrans-298
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在`Jenkinsfile`中添加一个构建步骤，调用自动化控制器作业，构建应用程序的容器镜像。
+- en: Create another job template in the automation controller for deploying applications
+    in a Kubernetes cluster by using the container image that was created in the previous
+    stage. (Refer to the Ansible artifacts from [*Chapter 11*](B18383_11.xhtml#_idTextAnchor194),
+    *Managing Kubernetes Using Ansible*.)
+  id: totrans-299
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在自动化控制器中创建另一个作业模板，通过使用在前一个阶段创建的容器镜像，在Kubernetes集群中部署应用程序。（参考[*第11章*](B18383_11.xhtml#_idTextAnchor194)《*使用Ansible管理Kubernetes*》中的Ansible工件。）
+- en: Add a deployment step to the `Jenkinsfile` and call the automation controller
+    job to deploy the updated application with the latest container image.
+  id: totrans-300
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在`Jenkinsfile`中添加一个部署步骤，调用自动化控制器作业，以使用最新的容器镜像部署更新的应用程序。
+- en: In the next section, you will learn how to enable notifications in the automation
+    controller and integrate it with the Slack messaging service.
+  id: totrans-301
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一部分中，您将学习如何在自动化控制器中启用通知并将其与Slack消息服务集成。
+- en: Integrating an automation controller with Slack and notification services
+  id: totrans-302
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 将自动化控制器与Slack及通知服务集成
+- en: 'In [*Chapter 3*](B18383_03.xhtml#_idTextAnchor052), *Automating Your Daily
+    Jobs*, you learned how to use the `mail` module to send custom emails using Ansible.
+    In the Ansible automation controller, it is possible to configure **Notifications**
+    to send emails and messages based on job start, success, or fail status. The following
+    notification types are supported in the automation controller:'
+  id: totrans-303
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在[*第3章*](B18383_03.xhtml#_idTextAnchor052)《*自动化您的日常工作*》中，您学习了如何使用`mail`模块通过Ansible发送自定义电子邮件。在Ansible自动化控制器中，可以配置**通知**，根据作业的开始、成功或失败状态发送电子邮件和消息。自动化控制器支持以下通知类型：
+- en: Email
+  id: totrans-304
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Email
+- en: IRC
+  id: totrans-305
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: IRC
+- en: Webhook
+  id: totrans-306
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Webhook
+- en: Grafana
+  id: totrans-307
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Grafana
+- en: Slack
+  id: totrans-308
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Slack
+- en: Mattermost
+  id: totrans-309
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Mattermost
+- en: PagerDuty
+  id: totrans-310
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: PagerDuty
+- en: Rocket.Chat
+  id: totrans-311
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Rocket.Chat
+- en: Twilio
+  id: totrans-312
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Twilio
+- en: Multiple notifications can be created and required notifications can be enabled
+    for the job template.
+  id: totrans-313
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 可以创建多个通知，并可以为作业模板启用所需的通知。
+- en: Creating email notifications in the automation controller
+  id: totrans-314
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 在自动化控制器中创建电子邮件通知
+- en: 'To create an email notification, open the **Notifications** tab from the dashboard
+    and click **Add**. Select the type as **Email** and fill in the details, as shown
+    in the following screenshot:'
+  id: totrans-315
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要创建电子邮件通知，请从仪表盘打开**通知**标签并点击**添加**。选择类型为**电子邮件**并填写详细信息，如以下截图所示：
+- en: If the email server is open (no authentication required), then leave the **Username**
+    and **Password** fields empty.
+  id: totrans-316
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 如果电子邮件服务器是开放的（无需身份验证），则将**用户名**和**密码**字段留空。
+- en: Enable TLS or SSL if the email server supports it.
+  id: totrans-317
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 如果邮件服务器支持，启用 TLS 或 SSL。
+- en: Enter an approved sender email (email whitelisting).
+  id: totrans-318
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 输入一个已批准的发件人电子邮件（电子邮件白名单）。
+- en: 'Save the form and create the notification:'
+  id: totrans-319
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 保存表单并创建通知：
+- en: '![Figure 12.48 – Creating an email notification in the automation controller
+    ](img/B18383_12_48.jpg)'
+  id: totrans-320
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 12.48 – 在自动化控制器中创建电子邮件通知](img/B18383_12_48.jpg)'
+- en: Figure 12.48 – Creating an email notification in the automation controller
+  id: totrans-321
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 12.48 – 在自动化控制器中创建电子邮件通知
+- en: 'Once you have created the notification, open the job template that you want
+    to enable this notification for and select the **Notifications** tab. Toggle the
+    switches for **Start**, **Success**, and **Failure** as needed:'
+  id: totrans-322
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 创建通知后，打开您想为其启用此通知的作业模板并选择**通知**标签。根据需要切换**开始**、**成功**和**失败**的开关：
+- en: '![Figure 12.49 – Enabling notifications in the job template ](img/B18383_12_49.jpg)'
+  id: totrans-323
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 12.49 – 在作业模板中启用通知](img/B18383_12_49.jpg)'
+- en: Figure 12.49 – Enabling notifications in the job template
+  id: totrans-324
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 12.49 – 在作业模板中启用通知
+- en: In the preceding example, the notification will only be triggered if the job
+    is successful.
+  id: totrans-325
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在上述示例中，只有在作业成功时，通知才会被触发。
+- en: 'Execute the job template and verify that you can receive the email on job success.
+    A sample email is shown in the following screenshot:'
+  id: totrans-326
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 执行作业模板并验证是否可以在作业成功时收到电子邮件。以下截图显示了一个示例电子邮件：
+- en: '![Figure 12.50 – Sample email notification from the automation controller ](img/B18383_12_50.jpg)'
+  id: totrans-327
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 12.50 – 来自自动化控制器的电子邮件通知示例](img/B18383_12_50.jpg)'
+- en: Figure 12.50 – Sample email notification from the automation controller
+  id: totrans-328
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 12.50 – 来自自动化控制器的电子邮件通知示例
+- en: 'Customize the notification message and its content by editing the notification
+    entry, as shown here:'
+  id: totrans-329
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通过编辑通知条目自定义通知消息及其内容，如下所示：
+- en: '![Figure 12.51 – Customizing the email notification in the automation controller
+    ](img/B18383_12_51.jpg)'
+  id: totrans-330
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 12.51 – 在自动化控制器中自定义电子邮件通知](img/B18383_12_51.jpg)'
+- en: Figure 12.51 – Customizing the email notification in the automation controller
+  id: totrans-331
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 12.51 – 在自动化控制器中自定义电子邮件通知
+- en: In the next section, you will learn how to integrate automation control with
+    Slack to enable notifications in the Slack channel.
+  id: totrans-332
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一部分，您将学习如何将自动化控制与 Slack 集成，以便在 Slack 渠道中启用通知。
+- en: Sending Slack notifications from the automation controller
+  id: totrans-333
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 从自动化控制器发送 Slack 通知
+- en: Slack is a workplace messaging platform ([https://app.slack.com](https://app.slack.com))
+    in which users can send instant messages and create calls, video conferences,
+    and more. Slack conversations are organized as Slack channels and multiple channels
+    can be created in a workplace.
+  id: totrans-334
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Slack 是一个工作场所消息平台（[https://app.slack.com](https://app.slack.com)），用户可以发送即时消息并创建通话、视频会议等。Slack
+    对话以 Slack 渠道的形式组织，并且可以在工作场所创建多个频道。
+- en: 'Slack is well known for its flexibility in integrating with your IT and application
+    infrastructure. This is because it supports integration with about 2,400 applications
+    ([https://slack.com/apps](https://slack.com/apps)):'
+  id: totrans-335
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Slack 因其与 IT 和应用程序基础设施的集成灵活性而闻名。这是因为它支持与约 2,400 个应用程序的集成（[https://slack.com/apps](https://slack.com/apps)）：
+- en: '![Figure 12.52 – Slack integration (source: https://slack.com/integrations)
+    ](img/B18383_12_52.jpg)'
+  id: totrans-336
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 12.52 – Slack 集成（来源：https://slack.com/integrations）](img/B18383_12_52.jpg)'
+- en: 'Figure 12.52 – Slack integration (source: https://slack.com/integrations)'
+  id: totrans-337
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 12.52 – Slack 集成（来源：https://slack.com/integrations）
+- en: 'In the following demonstration, you will learn how to create a Slack authentication
+    token to send notifications from the automation controller. Follow these steps:'
+  id: totrans-338
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在以下演示中，您将学习如何创建 Slack 认证令牌，以便从自动化控制器发送通知。请按照以下步骤操作：
+- en: Sign up/log into Slack and access your existing workplace. (If you do not have
+    a workplace to use, then create a new workplace by following the documentation
+    at [https://slack.com/help/articles/206845317-Create-a-Slack-workspace](https://slack.com/help/articles/206845317-Create-a-Slack-workspace).)
+  id: totrans-339
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 注册/登录 Slack，并访问你现有的工作区。（如果你没有工作区，可以按照[https://slack.com/help/articles/206845317-Create-a-Slack-workspace](https://slack.com/help/articles/206845317-Create-a-Slack-workspace)的文档创建一个新的工作区。）
+- en: Use an existing channel in your workplace (or create a new channel for testing
+    purposes by following the documentation at [https://slack.com/help/articles/201402297-Create-a-channel](https://slack.com/help/articles/201402297-Create-a-channel)).
+    For this demonstration, we have created a new channel called `#database-operations`.
+  id: totrans-340
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用工作区中的现有频道（或者按照[https://slack.com/help/articles/201402297-Create-a-channel](https://slack.com/help/articles/201402297-Create-a-channel)的文档创建一个新的频道用于测试）。在本示例中，我们创建了一个名为`#database-operations`的新频道。
+- en: 'Open [https://api.slack.com](https://api.slack.com) in a web browser, click
+    on the **Tutorials** menu (top right) and select **Publish interactive notifications**,
+    as shown in the following screenshot:'
+  id: totrans-341
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在浏览器中打开[https://api.slack.com](https://api.slack.com)，点击右上角的**教程**菜单，并选择**发布互动通知**，如下图所示：
+- en: '![Figure 12.53 – Publish interactive notifications tutorial ](img/B18383_12_53.jpg)'
+  id: totrans-342
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 12.53 – 发布互动通知教程](img/B18383_12_53.jpg)'
+- en: Figure 12.53 – Publish interactive notifications tutorial
+  id: totrans-343
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 12.53 – 发布互动通知教程
+- en: The tutorial will open at [https://api.slack.com/tutorials/tracks/actionable-notifications](https://api.slack.com/tutorials/tracks/actionable-notifications).
+    Select **Create App** from the **Create a pre-configured app** section.
+  id: totrans-344
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 本教程将在[https://api.slack.com/tutorials/tracks/actionable-notifications](https://api.slack.com/tutorials/tracks/actionable-notifications)打开。从**创建预配置的应用**部分选择**创建应用**。
+- en: Slack will ask you to choose your workplace. Here, configure the app’s details,
+    such as its name, redirect URL, and other items.
+  id: totrans-345
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: Slack 会要求你选择你的工作区。在这里，配置应用的详细信息，如名称、重定向 URL 和其他项目。
+- en: Complete the instructions in the tutorial to create the app.
+  id: totrans-346
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 完成教程中的指示来创建应用。
+- en: 'Once the app has been created, open the app configuration and copy the OAuth
+    token, as shown in the following screenshot:'
+  id: totrans-347
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 一旦应用创建完成，打开应用配置并复制 OAuth 令牌，如下图所示：
+- en: '![Figure 12.54 – Copying the Slack app OAuth token ](img/B18383_12_54.jpg)'
+  id: totrans-348
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 12.54 – 复制 Slack 应用 OAuth 令牌](img/B18383_12_54.jpg)'
+- en: Figure 12.54 – Copying the Slack app OAuth token
+  id: totrans-349
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 12.54 – 复制 Slack 应用 OAuth 令牌
+- en: 'Log into the Ansible automation controller and create a new notification with
+    its `#database-operations`). Customize the message as well if required:'
+  id: totrans-350
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 登录 Ansible 自动化控制器，并使用其`#database-operations`创建一个新的通知。如有需要，还可以自定义消息：
+- en: '![Figure 12.55 – Creating a Slack notification in the automation controller
+    ](img/B18383_12_55.jpg)'
+  id: totrans-351
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 12.55 – 在自动化控制器中创建 Slack 通知](img/B18383_12_55.jpg)'
+- en: Figure 12.55 – Creating a Slack notification in the automation controller
+  id: totrans-352
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 12.55 – 在自动化控制器中创建 Slack 通知
+- en: 'Open the notification settings for the job template and enable the newly created
+    Slack notification, as shown in the following screenshot:'
+  id: totrans-353
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 打开作业模板的通知设置，并启用新创建的 Slack 通知，如下图所示：
+- en: '![Figure 12.56 – Enabling the Slack notification for the job template ](img/B18383_12_56.jpg)'
+  id: totrans-354
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 12.56 – 启用作业模板的 Slack 通知](img/B18383_12_56.jpg)'
+- en: Figure 12.56 – Enabling the Slack notification for the job template
+  id: totrans-355
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 12.56 – 启用作业模板的 Slack 通知
+- en: 'Execute the job again and verify the Slack channel to see the message:'
+  id: totrans-356
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 再次执行该作业，并验证 Slack 频道中的消息：
+- en: '![Figure 12.57 – Job notification in Slack from the automation controller ](img/B18383_12_57.jpg)'
+  id: totrans-357
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 12.57 – 来自自动化控制器的作业通知](img/B18383_12_57.jpg)'
+- en: Figure 12.57 – Job notification in Slack from the automation controller
+  id: totrans-358
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 12.57 – 来自自动化控制器的作业通知
+- en: Explore the **Notifications** option with other applications to implement effective
+    notifications for your team and workplace.
+  id: totrans-359
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 探索与其他应用程序的**通知**选项，以为你的团队和工作区实现有效的通知。
+- en: Slack Tutorials
+  id: totrans-360
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Slack 教程
+- en: Refer to [https://api.slack.com/tutorials](https://api.slack.com/tutorials)
+    to learn more about Slack and its available tutorials.
+  id: totrans-361
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 访问[https://api.slack.com/tutorials](https://api.slack.com/tutorials)以了解更多关于
+    Slack 及其可用教程的信息。
+- en: With that, you have learned how to integrate Ansible with Slack to enable notifications.
+    Implement the same for other notification and messaging services such as Mattermost,
+    Rocket.Chat, and others.
+  id: totrans-362
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 到此，你已经学会了如何将 Ansible 与 Slack 集成，以启用通知。你可以对其他通知和消息服务（如 Mattermost、Rocket.Chat
+    等）执行相同操作。
+- en: Summary
+  id: totrans-363
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 摘要
+- en: In this chapter, you learned about the enterprise automation solution called
+    Red Hat AAP. First, you learned about the benefits of using AAP and its features.
+    You also learned about the different components of AAP, such as its execution
+    environment, automation controller, automation mesh, and Automation Hub.
+  id: totrans-364
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，你了解了名为 Red Hat AAP 的企业自动化解决方案。首先，你了解了使用 AAP 的好处及其特点。你还学习了 AAP 的不同组件，如执行环境、自动化控制器、自动化网络和自动化中心。
+- en: After that, you learned more about the automation controller by creating different
+    resources such as organizations, projects, inventories, managed nodes and groups,
+    credential job templates with survey forms and extra variables, and more. You
+    also learned how to integrate the Jenkins CI/CD tool with Red Hat AAP to trigger
+    the jobs automatically as part of the build and deployment pipeline.
+  id: totrans-365
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来，你通过创建不同的资源（如组织、项目、清单、受管节点和组、凭证作业模板及调查表和额外变量等）进一步了解了自动化控制器。你还学习了如何将 Jenkins
+    CI/CD 工具与 Red Hat AAP 集成，以便作为构建和部署管道的一部分，自动触发作业。
+- en: Finally, you explored the notification options in the automation controller
+    and tested them with different types of notifications such as email and Slack.
+    All this knowledge will help you implement and manage automation using AAP and
+    integrate AAP with different tools in your environment.
+  id: totrans-366
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后，你探索了自动化控制器中的通知选项，并通过电子邮件和 Slack 等不同类型的通知进行了测试。所有这些知识将帮助你使用 AAP 实现和管理自动化，并将
+    AAP 与环境中的不同工具集成。
+- en: In the next chapter, you will learn how to use Ansible Vault to manage secrets
+    and sensitive information for Ansible artifacts.
+  id: totrans-367
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一章中，你将学习如何使用 Ansible Vault 管理 Ansible 工件的机密和敏感信息。
+- en: Further reading
+  id: totrans-368
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 进一步阅读
+- en: 'To learn more about the topics that were covered in this chapter, take a look
+    at the following resources:'
+  id: totrans-369
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要了解本章涵盖的更多主题，请查看以下资源：
+- en: '*Why choose Red Hat for automation?*: [https://www.redhat.com/en/topics/automation/why-choose-red-hat-for-automation](https://www.redhat.com/en/topics/automation/why-choose-red-hat-for-automation)'
+  id: totrans-370
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*为什么选择 Red Hat 进行自动化？*: [https://www.redhat.com/en/topics/automation/why-choose-red-hat-for-automation](https://www.redhat.com/en/topics/automation/why-choose-red-hat-for-automation)'
+- en: '*Deploying Ansible Automation Platform 2.1*: [https://access.redhat.com/documentation/en-us/reference_architectures/2021/html-single/deploying_ansible_automation_platform_2.1/index](https://access.redhat.com/documentation/en-us/reference_architectures/2021/html-single/deploying_ansible_automation_platform_2.1/index)'
+  id: totrans-371
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*部署 Ansible 自动化平台 2.1*: [https://access.redhat.com/documentation/en-us/reference_architectures/2021/html-single/deploying_ansible_automation_platform_2.1/index](https://access.redhat.com/documentation/en-us/reference_architectures/2021/html-single/deploying_ansible_automation_platform_2.1/index)'
+- en: '*Red Hat Ansible Automation Platform datasheet*: [https://www.redhat.com/en/resources/ansible-automation-platform-datasheet](https://www.redhat.com/en/resources/ansible-automation-platform-datasheet%0D)'
+  id: totrans-372
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*Red Hat Ansible 自动化平台数据表*: [https://www.redhat.com/en/resources/ansible-automation-platform-datasheet](https://www.redhat.com/en/resources/ansible-automation-platform-datasheet%0D)'
+- en: '*Control your content with private Automation Hub – Ansible blog*: [https://www.ansible.com/blog/control-your-content-with-private-automation-hub](https://www.ansible.com/blog/control-your-content-with-private-automation-hub%0D)'
+  id: totrans-373
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*通过私人自动化中心控制你的内容 – Ansible 博客*: [https://www.ansible.com/blog/control-your-content-with-private-automation-hub](https://www.ansible.com/blog/control-your-content-with-private-automation-hub%0D)'
+- en: '*What is a Red Hat AAP automation execution environment?*: [https://www.redhat.com/en/technologies/management/ansible/automation-execution-environments](https://www.redhat.com/en/technologies/management/ansible/automation-execution-environments)'
+  id: totrans-374
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*什么是 Red Hat AAP 自动化执行环境？*: [https://www.redhat.com/en/technologies/management/ansible/automation-execution-environments](https://www.redhat.com/en/technologies/management/ansible/automation-execution-environments)'

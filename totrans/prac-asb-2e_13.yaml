@@ -1,0 +1,1177 @@
+- en: '13'
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '13'
+- en: Getting Started with Ansible Automation Controller
+  id: totrans-1
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 开始使用Ansible Automation Controller
+- en: Ansible is very powerful, but it does require the user to use the CLI. In some
+    situations, this is not the best option, such as in cases where you need to trigger
+    an Ansible job from another job (where APIs would be better) or in cases where
+    the person that should trigger a job should only be able to trigger that specific
+    job. For these cases, AWX and Ansible Automation Controller are the best options
+    to use.
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible非常强大，但它要求用户使用CLI。在某些情况下，这不是最佳选择，比如需要从另一个任务触发Ansible任务时（在这种情况下，使用API会更好），或者在需要触发任务的人员只能触发特定任务时。在这些情况下，AWX和Ansible
+    Automation Controller是最佳选择。
+- en: The only differences between AWX and Ansible Automation Controller are that
+    AWX is the upstream and open source version, while Ansible Automation Controller
+    is the Red Hat and downstream component that is officially supported as part of
+    the Ansible Automation Platform but for a price, and also the delivery method.
+    AWX is available as a Kubernetes Operator that can run on any Kubernetes cluster,
+    while Ansible Automation Controller is either installable via the Kubernetes Operator
+    on a Red Hat OpenShift installation or on an RHEL 8.2+ machine, at the time of
+    writing. In this chapter, we will use AWX and talk about AWX, but everything we
+    will discuss also applies to Ansible Automation Controller.
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: AWX和Ansible Automation Controller之间的唯一区别在于，AWX是上游的开源版本，而Ansible Automation Controller是Red
+    Hat的下游组件，是作为Ansible自动化平台的一部分官方支持的，但需要付费，且交付方式不同。AWX可以作为Kubernetes Operator运行在任何Kubernetes集群上，而Ansible
+    Automation Controller目前只能通过Kubernetes Operator在Red Hat OpenShift安装中或在RHEL 8.2+的机器上安装。在本章中，我们将使用AWX并讨论AWX，但我们讨论的内容也同样适用于Ansible
+    Automation Controller。
+- en: 'The following topics will be covered in this chapter:'
+  id: totrans-4
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章将涵盖以下主题：
+- en: Installing AWX
+  id: totrans-5
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 安装AWX
+- en: 'Running your first playbook from AWX:'
+  id: totrans-6
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 从AWX运行你的第一个Playbook：
+- en: Creating an AWX project
+  id: totrans-7
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 创建一个AWX项目
+- en: Creating an inventory
+  id: totrans-8
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 创建一个清单
+- en: Creating a job template
+  id: totrans-9
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 创建一个任务模板
+- en: Running a job
+  id: totrans-10
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 运行一个任务
+- en: 'Controlling access to AWX:'
+  id: totrans-11
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 控制AWX的访问权限：
+- en: Creating a user
+  id: totrans-12
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 创建一个用户
+- en: Creating a team
+  id: totrans-13
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 创建一个团队
+- en: Creating an organization
+  id: totrans-14
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 创建一个组织
+- en: Assigning permissions in AWX
+  id: totrans-15
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在AWX中分配权限
+- en: Technical requirements
+  id: totrans-16
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 技术要求
+- en: Although there are a couple of ways to install AWX, we are going to use the
+    suggested AWX installation, which is the operator-based one. For this reason,
+    you will need to have a Kubernetes cluster available.
+  id: totrans-17
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 尽管有几种方法可以安装AWX，但我们将使用推荐的AWX安装方法，即基于Operator的安装。因此，你需要有一个Kubernetes集群可用。
+- en: The easiest way to have one on your machine is to use minikube.
+  id: totrans-18
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在你的机器上创建它最简单的方法是使用minikube。
+- en: 'On Linux machines, it is enough to download it from GitHub ([https://github.com/kubernetes/minikube](https://github.com/kubernetes/minikube))
+    and run it with the following command:'
+  id: totrans-19
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在Linux机器上，只需要从GitHub下载它（[https://github.com/kubernetes/minikube](https://github.com/kubernetes/minikube)），并使用以下命令运行：
+- en: '[PRE0]'
+  id: totrans-20
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: 'In the next section, we will use the `kubectl` command. To have it available
+    using minikube, you will need to execute the following:'
+  id: totrans-21
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一部分中，我们将使用`kubectl`命令。要在minikube中使用它，你需要执行以下命令：
+- en: '[PRE1]'
+  id: totrans-22
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: On other operating systems, the process might be different, and I suggest checking
+    minikube’s official documentation ([https://minikube.sigs.k8s.io/docs/start/](https://minikube.sigs.k8s.io/docs/start/))
+    to see which installation method better suits your platform and needs.
+  id: totrans-23
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在其他操作系统上，过程可能会有所不同，我建议查阅minikube的官方文档（[https://minikube.sigs.k8s.io/docs/start/](https://minikube.sigs.k8s.io/docs/start/)），以了解哪种安装方法更适合你的平台和需求。
+- en: Although we will give specific examples of hostnames in this chapter, you are
+    free to substitute them with your own hostname and/or IP address; details of how
+    to do this will be provided at the appropriate places.
+  id: totrans-24
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 尽管我们将在本章中给出特定的主机名示例，但你可以自由地将其替换为你自己的主机名和/或IP地址；如何进行替换的详细信息将在适当的位置提供。
+- en: Installing AWX
+  id: totrans-25
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 安装AWX
+- en: Before we discuss AWX, it is best if you have it installed on your machine so
+    that you can follow the explanations and immediately start to use AWX.
+  id: totrans-26
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在我们讨论AWX之前，最好先将它安装在你的机器上，这样你就可以跟着讲解并立即开始使用AWX。
+- en: The easiest way to install AWX Operator is using Kustomize.
+  id: totrans-27
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 安装AWX Operator最简单的方法是使用Kustomize。
+- en: 'We will need to create a file called `kustomization.yaml` with the following
+    content:'
+  id: totrans-28
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们需要创建一个名为`kustomization.yaml`的文件，并包含以下内容：
+- en: '[PRE2]'
+  id: totrans-29
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: Note that version 2.3.0 is the most current at the time of writing. To find
+    out which is the latest available version, go to [https://github.com/ansible/awx-operator/releases](https://github.com/ansible/awx-operator/releases).
+  id: totrans-30
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请注意，版本 2.3.0 是写作时最新的版本。要查看最新的可用版本，请访问 [https://github.com/ansible/awx-operator/releases](https://github.com/ansible/awx-operator/releases)。
+- en: 'Now that we have the kustomization file ready, we can apply it with the following
+    command:'
+  id: totrans-31
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经准备好 kustomization 文件，可以使用以下命令应用它：
+- en: '[PRE3]'
+  id: totrans-32
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: 'Once the previous command has finished, we shall be able to see the AWX Operator
+    controller manager pod running:'
+  id: totrans-33
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当前一个命令完成后，我们将能够看到 AWX Operator 控制器管理器 pod 正在运行：
+- en: '[PRE4]'
+  id: totrans-34
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: 'We can now create the `awx.yaml` file with the following content:'
+  id: totrans-35
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们可以创建一个 `awx.yaml` 文件，内容如下：
+- en: '[PRE5]'
+  id: totrans-36
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: 'We can now edit the `kustomization.yaml` file to add the reference to the `awx.yaml`
+    file. By doing so, we will obtain the following result:'
+  id: totrans-37
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们可以编辑 `kustomization.yaml` 文件，添加对 `awx.yaml` 文件的引用。这样，我们将得到以下结果：
+- en: '[PRE6]'
+  id: totrans-38
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: 'We can now apply the new configuration file:'
+  id: totrans-39
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们可以应用新的配置文件：
+- en: '[PRE7]'
+  id: totrans-40
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE7]'
+- en: 'Now, run the following commands to see that everything worked properly:'
+  id: totrans-41
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，运行以下命令以确认一切工作正常：
+- en: '[PRE8]'
+  id: totrans-42
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE8]'
+- en: Be aware that you may need to wait a few minutes before AWX is completely deployed
+    and all the pods are running.
+  id: totrans-43
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请注意，您可能需要等待几分钟，直到 AWX 完全部署并且所有 pod 都在运行。
+- en: 'Once AWX has been fully deployed, it is possible to open a browser and connect
+    to the AWX service. To obtain the URL, you can execute the following command:'
+  id: totrans-44
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦 AWX 完全部署完成，您可以打开浏览器并连接到 AWX 服务。要获取 URL，您可以执行以下命令：
+- en: '[PRE9]'
+  id: totrans-45
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE9]'
+- en: 'The default administration username is `admin`. To find the password, you will
+    need to execute the following command:'
+  id: totrans-46
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 默认的管理员用户名是 `admin`。要找出密码，您需要执行以下命令：
+- en: '[PRE10]'
+  id: totrans-47
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE10]'
+- en: Now that you have learned the necessary steps to install AWX, let’s take a look
+    at how to create a project in AWX.
+  id: totrans-48
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在您已经学习了安装 AWX 的必要步骤，接下来让我们来看看如何在 AWX 中创建一个项目。
+- en: Running your first playbook from AWX
+  id: totrans-49
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 从 AWX 运行您的第一个 playbook
+- en: As in Ansible, in AWX, the goal is running an Ansible playbook. Each playbook
+    that is run is called a **job**. Since AWX gives you more flexibility and automation
+    than Ansible, it requires a little bit more configuration before you can run your
+    first job, so let’s dive into it, starting with creating an AWX project.
+  id: totrans-50
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 与 Ansible 类似，在 AWX 中，目标是运行 Ansible playbook。每个运行的 playbook 被称为 **job**。由于 AWX
+    提供比 Ansible 更大的灵活性和自动化，因此在运行第一个 job 之前需要进行更多配置，接下来让我们从创建 AWX 项目开始。
+- en: Creating an AWX project
+  id: totrans-51
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 创建 AWX 项目
+- en: 'AWX uses the term **project** to identify a repository of Ansible playbooks.
+    AWX projects support the placement of playbooks in all major **Source Control
+    Management** (**SCM**) systems, such as Git and SVN, but also support playbooks
+    on the filesystem or playbooks provided by Red Hat Insights. To create a project,
+    follow these steps:'
+  id: totrans-52
+  prefs: []
+  type: TYPE_NORMAL
+  zh: AWX 使用术语 **项目** 来标识 Ansible playbook 的存储库。AWX 项目支持将 playbook 存储在所有主要的 **源代码管理**（**SCM**）系统中，如
+    Git 和 SVN，同时也支持存储在文件系统中的 playbook，或由 Red Hat Insights 提供的 playbook。要创建项目，请按照以下步骤操作：
+- en: 'First of all, you need to go to **Projects** from the left-hand side menu bar,
+    then click the **Add** button in the top-left section of the screen. This will
+    open a window, similar to the following:'
+  id: totrans-53
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 首先，您需要从左侧菜单栏中选择 **Projects**，然后点击屏幕左上方的 **Add** 按钮。这将打开一个窗口，类似于以下内容：
+- en: '![Figure 13.1 – The Create New Project window](img/B20846_13_001.jpg)'
+  id: totrans-54
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 13.1 – 创建新项目窗口](img/B20846_13_001.jpg)'
+- en: Figure 13.1 – The Create New Project window
+  id: totrans-55
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 13.1 – 创建新项目窗口
+- en: 'By filling in the name (`Sample Project`) and selecting **Git** for **Source
+    Control Type**, the window will grow with new parameters:'
+  id: totrans-56
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 通过填写名称（`Sample Project`）并选择 **Git** 作为 **Source Control Type**，窗口会随着新参数的添加而变大：
+- en: '![Figure 13.2 – The Create New Project window – Git details](img/B20846_13_002.jpg)'
+  id: totrans-57
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 13.2 – 创建新项目窗口 – Git 详细信息](img/B20846_13_002.jpg)'
+- en: Figure 13.2 – The Create New Project window – Git details
+  id: totrans-58
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 13.2 – 创建新项目窗口 – Git 详细信息
+- en: You can now add the SCM URL ([https://github.com/ansible/ansible-tower-samples](https://github.com/ansible/ansible-tower-samples))
+    and click the **Save** button, which should now be clickable.
+  id: totrans-59
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在，您可以添加 SCM URL（[https://github.com/ansible/ansible-tower-samples](https://github.com/ansible/ansible-tower-samples)），并点击
+    **保存** 按钮，按钮现在应该可以点击了。
+- en: As we mentioned at the beginning of this section, projects are used to store
+    and use Playbooks in AWX. As you can imagine, there are many interesting additional
+    configurations for AWX projects – the most interesting one, in my view, is `Update
+    Revision` `on Launch`.
+  id: totrans-60
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如我们在本节开始时提到的，项目用于在 AWX 中存储和使用 Playbooks。如你所想，AWX 项目有许多有趣的附加配置——在我看来，最有趣的一项是`启动时更新修订版`。
+- en: If flagged, this option instructs Ansible to always update the playbook’s repository
+    before running any playbook from that project. This ensures that it always executes
+    the latest version of the playbook. This is an important feature to enable as,
+    if you don’t have it checked, there is the possibility (and sooner or later, this
+    will happen in your environment) that someone notices that there is a problem
+    in a playbook and fixes it, and then they run the playbook, feeling sure that
+    they are running the latest version. They then forget to run the synchronization
+    task before running the playbook, effectively running the older version of the
+    playbook. This could lead to major problems if the previous version was fairly
+    buggy.
+  id: totrans-61
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果勾选此选项，它会指示 Ansible 在运行任何 Playbook 之前始终更新该项目的 Playbook 仓库。这确保它始终执行最新版本的 Playbook。启用此功能很重要，因为如果没有勾选此选项，就有可能（迟早在你的环境中会发生）有人注意到
+    Playbook 中有问题并进行修复，然后他们运行 Playbook 时，确信自己正在运行最新版本。但他们忘记在运行 Playbook 前同步任务，从而实际上运行的是旧版本的
+    Playbook。如果先前版本有较多问题，这可能会导致严重的后果。
+- en: The downside of using this option is that every time you execute a playbook,
+    two playbooks are effectively run, adding time to your task execution. I think
+    this is a very small downside and one that does not offset the benefits of using
+    this option.
+  id: totrans-62
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用此选项的缺点是每次执行 Playbook 时，实际上会运行两个 Playbook，增加了任务执行的时间。我认为这是一个非常小的缺点，不足以抵消使用此选项的好处。
+- en: With that, you have learned the necessary steps to create a project in AWX (and
+    Ansible Automation Controller). Now, let’s learn how to create an inventory.
+  id: totrans-63
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 至此，你已学习了在 AWX（和 Ansible Automation Controller）中创建项目所需的步骤。现在，让我们来学习如何创建一个库存。
+- en: Creating an inventory
+  id: totrans-64
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 创建库存
+- en: As with Ansible Core, to make AWX aware of the machines present in your environment,
+    we can use inventories. Inventories, in the AWX world, are not that different
+    from their equivalents in Ansible Core.
+  id: totrans-65
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 与 Ansible Core 一样，为了让 AWX 识别环境中存在的机器，我们可以使用库存。在 AWX 中，库存与 Ansible Core 中的库存并没有太大区别。
+- en: 'Let’s learn how to create our first inventory in AWX by following these steps:'
+  id: totrans-66
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们通过以下步骤学习如何在 AWX 中创建第一个库存：
+- en: Click on the **Inventory** option in the left-hand side menu bar. You will be
+    redirected to the **Inventory** window, where you can create your first inventory
+    by clicking the **Add** button in the top-left section of the screen. This is
+    different from when we created a new project as this button does not immediately
+    open the creation form; first, it will ask you whether you want to create an inventory
+    or a smart inventory.
+  id: totrans-67
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击左侧菜单栏中的**库存**选项。你将被重定向到**库存**窗口，在此你可以通过点击屏幕左上方的**添加**按钮来创建第一个库存。这与我们创建新项目时不同，因为该按钮不会立即打开创建表单；首先，它会询问你是否想创建一个普通库存还是智能库存。
+- en: 'After choosing the **Inventory** option, a box similar to the following will
+    appear:'
+  id: totrans-68
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 选择**库存**选项后，将出现一个类似于以下的框：
+- en: '![Figure 13.3 – The Create new inventory window](img/B20846_13_003.jpg)'
+  id: totrans-69
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 13.3 – 创建新库存窗口](img/B20846_13_003.jpg)'
+- en: Figure 13.3 – The Create new inventory window
+  id: totrans-70
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 13.3 – 创建新库存窗口
+- en: In this window, you need to set a name and then save it. After you have clicked
+    **Save**, the **Permissions**, **Groups**, **Hosts**, **Sources**, and **Completed
+    Jobs** tabs will become clickable so that you can continue with the configuration.
+  id: totrans-71
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在此窗口中，你需要设置一个名称，然后保存它。点击**保存**后，**权限**、**组**、**主机**、**来源**和**已完成的作业**标签将变为可点击状态，以便你继续配置。
+- en: Since an empty inventory is not useful in any way, we are going to add `localhost`
+    to it.
+  id: totrans-72
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于空库存没有任何实际用途，我们将向其中添加`localhost`。
+- en: 'To do this, select the **Hosts** tab, then click on the button with a white
+    plus sign on a green background at the top left of the screen. This will open
+    a window, as follows:'
+  id: totrans-73
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 要执行此操作，请选择**主机**标签，然后点击屏幕左上方带有绿色背景和白色加号按钮的按钮。这将打开一个窗口，如下所示：
+- en: '![Figure 13.4 – The Create new host window](img/B20846_13_004.jpg)'
+  id: totrans-74
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 13.4 – 创建新主机窗口](img/B20846_13_004.jpg)'
+- en: Figure 13.4 – The Create new host window
+  id: totrans-75
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 13.4 – 创建新主机窗口
+- en: 'We then need to add the hostname (`localhost`) and instruct Ansible to use
+    the local connection by adding the following code to the **Variables** box:'
+  id: totrans-76
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 接下来，我们需要添加主机名（`localhost`），并通过在**变量**框中添加以下代码，指示 Ansible 使用本地连接：
+- en: '[PRE11]'
+  id: totrans-77
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE11]'
+- en: We can now click **Save**, saving our inventory.
+  id: totrans-78
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在，我们可以点击**保存**，保存我们的库存。
+- en: In AWX, an inventory is something very similar to an Ansible Core inventory,
+    but with additional features, such as built-in dynamic inventory support, which
+    means you don’t need to edit configuration files or install additional Python
+    modules. To enable this, simply go to the **Sources** tab within an inventory
+    to choose to auto-populate the inventory with information from a source of truth,
+    such as a public cloud provider inventory (**Amazon Web Services** (**AWS**),
+    Azure, and **Google Cloud Platform** (**GCP**) are all supported), a private cloud
+    inventory (such as VMware or OpenStack), or other systems, such as Red Hat Satellite
+    or a custom script.
+  id: totrans-79
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 AWX 中，库存非常类似于 Ansible Core 的库存，但具有额外的功能，如内置的动态库存支持，这意味着你不需要编辑配置文件或安装额外的 Python
+    模块。要启用此功能，只需在库存的**源**标签页中选择从一个可信来源自动填充库存信息，例如公共云提供商的库存（**Amazon Web Services**（**AWS**）、Azure
+    和 **Google Cloud Platform**（**GCP**）都支持），私有云库存（如 VMware 或 OpenStack），或其他系统，如 Red
+    Hat Satellite 或自定义脚本。
+- en: 'A special note about the inventory sources is that the **Sourced from a Project**
+    option provides a form such as the following if chosen:'
+  id: totrans-80
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 关于库存源有一个特别的说明，**来源于项目**选项如果被选择，则会提供如下所示的表单：
+- en: '![Figure 13.5 – The Create new source window](img/B20846_13_005.jpg)'
+  id: totrans-81
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 13.5 – 创建新源窗口](img/B20846_13_005.jpg)'
+- en: Figure 13.5 – The Create new source window
+  id: totrans-82
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 13.5 – 创建新源窗口
+- en: This is a very interesting feature, in my opinion, since it allows the user
+    to check a dynamic inventory script of their design into a Git repository (either
+    in its own repository or one where you also put in playbooks) and AWX pulls that
+    information from the repository.
+  id: totrans-83
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在我看来，这是一个非常有趣的功能，因为它允许用户将他们设计的动态库存脚本检入 Git 仓库（可以是独立的仓库，也可以是放有剧本的仓库），然后 AWX 从仓库中提取信息。
+- en: As for projects, when you add a source to your inventory, you might choose to
+    select the **Update on launch** option, which behaves in the same way as the **Update
+    on launch** option behaves for projects. For the same reasons that were discussed
+    in the *Creating an AWX project* section, I strongly suggest that you use this
+    option as well.
+  id: totrans-84
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于项目，当你向库存中添加一个源时，你可能会选择勾选**启动时更新**选项，它的行为与项目的**启动时更新**选项相同。基于在*创建 AWX 项目*章节中讨论的相同原因，我强烈建议你也使用这个选项。
+- en: At the very beginning of the inventory creation process, we had the option to
+    add an inventory or a smart inventory. What is a smart inventory? **Smart inventories**
+    are inventories that are populated by AWX, starting from the hosts present in
+    other inventories, and are filtered using the specific smart host filter that
+    the user selected during creation. This can be incredibly useful for dynamically
+    creating inventories with a specific type of host in them based on a filter and
+    saves the need for manually creating lots of different groups – or worse, having
+    to add the same host multiple times.
+  id: totrans-85
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在创建库存的最初阶段，我们可以选择添加一个库存或智能库存。什么是智能库存？**智能库存**是由 AWX 填充的库存，基于其他库存中存在的主机，并使用用户在创建过程中选择的特定智能主机过滤器进行筛选。这对于根据过滤器动态创建特定类型的主机的库存非常有用，并且可以避免手动创建许多不同的组——更糟的是，避免了重复添加相同主机的麻烦。
+- en: With that, you have learned the necessary steps to create an inventory in AWX.
+    Now, let’s learn how to create a job template.
+  id: totrans-86
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通过这些步骤，你已经学会了在 AWX 中创建库存所需的步骤。现在，让我们来学习如何创建一个作业模板。
+- en: Creating a job template
+  id: totrans-87
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 创建作业模板
+- en: Now that we have the playbooks in our projects and the hosts in our inventories,
+    we can start creating a **job template**.
+  id: totrans-88
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经在项目中添加了剧本，并且在库存中添加了主机，我们可以开始创建一个**作业模板**。
+- en: 'A job template in AWX is a collection of the configurations that are needed
+    to perform a job. This is very similar to the `ansible-playbook` command-line
+    options. The reason why we need to create a job template is so that playbook runs
+    can be launched with little or no user input, meaning they can be delegated to
+    teams who might not know all the details of how a playbook works, or can even
+    be run on a scheduled basis without anyone present. Let’s take a look:'
+  id: totrans-89
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在AWX中，工作模板是执行某个工作的配置集合。这与`ansible-playbook`命令行选项非常相似。我们需要创建工作模板的原因是，可以通过几乎不需要用户输入的方式启动剧本运行，意味着可以将任务委托给那些可能不了解剧本细节的团队，或者即使没有人参与，也可以定期运行。我们来看一下：
+- en: First of all, you need to click the **Templates** option from the left-hand
+    side menu bar.
+  id: totrans-90
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 首先，你需要从左侧菜单栏点击**模板（Templates）**选项。
+- en: 'You can now create a new template by clicking the **Add** button at the top
+    left of the screen. It will ask you whether you want to create a job template
+    or a workflow template – you need to choose **Job template**. The following window
+    will appear:'
+  id: totrans-91
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在，你可以通过点击屏幕左上角的**添加（Add）**按钮来创建一个新模板。系统会询问你是否想创建工作模板或工作流模板——你需要选择**工作模板（Job
+    Template）**。接下来会出现以下窗口：
+- en: '![Figure 13.6 – The Create New Job Template window](img/B20846_13_006.jpg)'
+  id: totrans-92
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图13.6 – 创建新工作模板窗口](img/B20846_13_006.jpg)'
+- en: Figure 13.6 – The Create New Job Template window
+  id: totrans-93
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图13.6 – 创建新工作模板窗口
+- en: As you can see, there are quite a few fields in this view. The only information
+    needed to proceed is the name (we are going to use `Hello World`), the inventory
+    (we are going to choose `Sample Inventory`, which we created in the *Creating
+    an inventory* section), the project (we are going to choose the `Sample Project`
+    project we created in the *Creating an AWX project* section), and the playbook
+    (we are going to choose `hello_world.yml`, which is the only playbook available).
+  id: totrans-94
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，这个视图中有相当多的字段。继续操作所需的唯一信息是名称（我们将使用`Hello World`）、库存（我们将选择在*创建库存*部分中创建的`示例库存`）、项目（我们将选择在*创建AWX项目*部分中创建的`示例项目`），以及剧本（我们将选择`hello_world.yml`，这是唯一可用的剧本）。
+- en: Then, we can click `localhost`, we don’t need to create or specify any credentials.
+    However, if you were running a job template against one or more remote hosts,
+    you would need to create a machine credential and associate it with your job template.
+    A machine credential is, for example, an SSH username and password or an SSH username
+    and a private key – these are stored securely in the backend database of AWX,
+    meaning you can delegate playbook-related tasks to other teams without actually
+    giving them passwords or SSH keys.
+  id: totrans-95
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后，我们可以点击`localhost`，不需要创建或指定任何凭证。但是，如果你要在一个或多个远程主机上运行工作模板，你需要创建一个机器凭证并将其与工作模板关联。机器凭证比如说是一个SSH用户名和密码，或者是SSH用户名和私钥——这些凭证会被安全地存储在AWX的后端数据库中，这意味着你可以将剧本相关的任务委托给其他团队，而不必实际提供密码或SSH密钥。
+- en: The first thing we had to choose was whether we were creating a job template
+    or a workflow template. We chose **Job Template** since we want to be able to
+    create simple jobs out of this template. It’s also possible to create more complex
+    jobs, which are the composition of multiple job templates, with flow control features
+    between one job and the next. This allows for more complex situations and scenarios
+    where you might want to have multiple jobs (such as creating an instance, customizing
+    a company, setting up Oracle Database, setting up a MySQL database, and so on),
+    but you also want to have a one-click deployment that would, for instance, set
+    up the machine, apply all the company customization, and install the MySQL database.
+  id: totrans-96
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们首先需要选择的是是创建工作模板（Job Template）还是工作流模板（Workflow Template）。我们选择了**工作模板（Job Template）**，因为我们希望能够从这个模板创建简单的工作。也可以创建更复杂的工作，这些工作是多个工作模板的组合，并在每个工作之间加入流控制特性。这使得处理更复杂的情况和场景成为可能，例如你可能希望创建多个工作（如创建实例、定制公司、设置Oracle数据库、设置MySQL数据库等），但同时也希望能够实现一键部署，比如说设置机器、应用所有公司定制以及安装MySQL数据库。
+- en: You might also have another deployment that uses the same components except
+    the last one, and in its place, it uses the Oracle Database to create an Oracle
+    Database machine. This allows you to have extreme flexibility and reuse a lot
+    of components, creating multiple, nearly identical playbooks.
+  id: totrans-97
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你也可以有另一个部署，使用相同的组件，除了最后一个组件，取而代之的是使用Oracle数据库来创建Oracle数据库机器。这使得你可以获得极大的灵活性，并重复使用很多组件，创建多个几乎相同的剧本（playbook）。
+- en: It’s interesting to note that many fields in the `limit` field, which operates
+    in the same way as `--limit` when used with the `ansible-playbook` command) or
+    can also be used as a sanity check, as it prompts the user with the value (and
+    gives them a chance to modify it) before the playbook is run. However, it could
+    potentially block scheduled job runs, so exercise caution when enabling this feature.
+  id: totrans-98
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有趣的是，`limit` 字段中的许多字段（它的作用与 `ansible-playbook` 命令中的 `--limit` 相同）也可以用作合理性检查，它会在
+    playbook 运行之前提示用户输入值（并允许用户修改）。然而，它可能会阻止计划中的作业运行，因此在启用此功能时需要小心。
+- en: Now that you have learned the necessary steps to create a job template in AWX,
+    let’s learn how to create a job.
+  id: totrans-99
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在你已经了解了在 AWX 中创建作业模板的必要步骤，接下来让我们学习如何创建作业。
+- en: Running a job
+  id: totrans-100
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 运行作业
+- en: 'A job, as its name suggests, is an instance of a job template. This means that
+    to perform any action on our machine, we have to create a job template instance
+    – or, more simply, a job – by following these steps:'
+  id: totrans-101
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 作业，顾名思义，是作业模板的一个实例。这意味着，要在我们的机器上执行任何操作，我们必须通过以下步骤创建一个作业模板实例——或者更简单地说，一个作业：
+- en: Now that we have set the job template, we can run the job itself. To do so,
+    we need to go to **Templates** from the left-hand side of the page.
+  id: totrans-102
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在我们已经设置好了作业模板，可以运行该作业了。为此，我们需要从页面左侧进入**模板**。
+- en: 'Find the job template you want to run (in our case, this is going to be `Hello
+    World`) and click on the little rocket on the right-hand side of the page that
+    corresponds to the correct job template, as shown in the following screenshot:'
+  id: totrans-103
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 找到你想要运行的作业模板（在我们的例子中是`Hello World`），然后点击页面右侧对应正确作业模板的小火箭，如下图所示：
+- en: '![Figure 13.7 – Templates list window](img/B20846_13_007.jpg)'
+  id: totrans-104
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 13.7 – 模板列表窗口](img/B20846_13_007.jpg)'
+- en: Figure 13.7 – Templates list window
+  id: totrans-105
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 13.7 – 模板列表窗口
+- en: 'When a job is running, AWX allows us to follow the job’s execution in the job’s
+    output, as shown in the following screenshot:'
+  id: totrans-106
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当作业正在运行时，AWX 允许我们通过作业的输出跟踪作业的执行过程，如下图所示：
+- en: '![Figure 13.8 – Job output window](img/B20846_13_008.jpg)'
+  id: totrans-107
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 13.8 – 作业输出窗口](img/B20846_13_008.jpg)'
+- en: Figure 13.8 – Job output window
+  id: totrans-108
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 13.8 – 作业输出窗口
+- en: 'By clicking the **Details** tab, we can see additional details about the job:'
+  id: totrans-109
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 通过点击**详细信息**选项卡，我们可以查看作业的更多详细信息：
+- en: '![Figure 13.9 – The Details window](img/B20846_13_009.jpg)'
+  id: totrans-110
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 13.9 – 详细信息窗口](img/B20846_13_009.jpg)'
+- en: Figure 13.9 – The Details window
+  id: totrans-111
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 13.9 – 详细信息窗口
+- en: One of the great things about AWX and Ansible Automation Controller is that
+    they archive this job’s execution output in the backend database, meaning that,
+    at any point in the future, you can come back and query a job run to see what
+    changed and what happened. This is incredibly powerful and useful for occasions
+    such as auditing and policy enforcement.
+  id: totrans-112
+  prefs: []
+  type: TYPE_NORMAL
+  zh: AWX 和 Ansible 自动化控制器的一个很棒的特点是，它们会在后台数据库中存档该作业的执行输出，这意味着，在未来的任何时刻，你都可以回头查询某个作业的运行情况，看看有哪些变化和发生了什么。这对审计和政策执行等场合非常有用，功能强大且实用。
+- en: Now that you have learned the necessary steps to create a job in AWX, let’s
+    learn how to create a user.
+  id: totrans-113
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在你已经了解了在 AWX 中创建作业所需的步骤，接下来让我们学习如何创建一个用户。
+- en: Controlling access to AWX
+  id: totrans-114
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 控制 AWX 的访问权限
+- en: In my opinion, one of the biggest advantages of AWX compared to Ansible is the
+    fact that AWX allows multiple users to connect and control/perform actions. This
+    allows a company to have a single AWX installation for different teams, a whole
+    organization, or even multiple organizations.
+  id: totrans-115
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在我看来，AWX 相对于 Ansible 的最大优势之一是 AWX 允许多个用户连接并控制/执行操作。这使得公司可以为不同的团队、整个组织甚至多个组织提供单一的
+    AWX 安装。
+- en: A **role-based access control** (**RBAC**) system is in place to manage the
+    users’ permissions.
+  id: totrans-116
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 已经建立了**基于角色的访问控制**（**RBAC**）系统来管理用户的权限。
+- en: Both AWX and Ansible Automation Controller can link to central directories,
+    such as **Lightweight Directory Access Protocol** (**LDAP**) and Azure Active
+    Directory – however, we can also create user accounts locally on the AWX server
+    itself. Let’s start by creating our first user account locally!
+  id: totrans-117
+  prefs: []
+  type: TYPE_NORMAL
+  zh: AWX 和 Ansible 自动化控制器都可以连接到中央目录，例如**轻量级目录访问协议**（**LDAP**）和 Azure Active Directory——但我们也可以在
+    AWX 服务器本地创建用户帐户。让我们从在本地创建第一个用户帐户开始！
+- en: Creating a user
+  id: totrans-118
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 创建用户
+- en: 'One of the big advantages of AWX is the ability to manage multiple users. This
+    allows us to create a user in AWX for each person that is using the AWX system
+    so that we can ensure they are only granted the permissions that they need. Also,
+    by using individual accounts, we can ensure that we can see who carried out what
+    action by using the audit logs. To create a user, follow these steps:'
+  id: totrans-119
+  prefs: []
+  type: TYPE_NORMAL
+  zh: AWX的一个大优势是能够管理多个用户。这使得我们可以为每个使用AWX系统的人创建一个AWX用户账户，从而确保他们只获得所需的权限。此外，通过使用个人账户，我们可以通过审计日志查看谁执行了哪些操作。要创建用户，请按照以下步骤操作：
+- en: Go to the left-hand side menu bar and select the **Users** option.
+  id: totrans-120
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 转到左侧菜单栏并选择**用户**选项。
+- en: 'You will see the list of users and also create a new one by clicking on the
+    button with a white plus sign on a green background at the top-left side of the
+    screen. A form similar to the following will appear:'
+  id: totrans-121
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 您将看到用户列表，并且可以通过点击屏幕左上角绿色背景上带有白色加号的按钮创建新用户。随后将显示类似以下的表单：
+- en: '![Figure 13.10 – The Create New User window](img/B20846_13_010.jpg)'
+  id: totrans-122
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 13.10 – 创建新用户窗口](img/B20846_13_010.jpg)'
+- en: Figure 13.10 – The Create New User window
+  id: totrans-123
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 13.10 – 创建新用户窗口
+- en: By adding an email address, username, and password (with confirmation), you
+    can create a new user.
+  id: totrans-124
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通过添加电子邮件地址、用户名和密码（并确认密码），您可以创建一个新用户。
+- en: 'Users can be of three types:'
+  id: totrans-125
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 用户可以分为三种类型：
+- en: '**A normal user**: Users of this type do not have any inherited permissions
+    and they need to be awarded specific permissions to be able to do anything'
+  id: totrans-126
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**普通用户**：此类型的用户没有任何继承权限，必须授予特定权限才能执行任何操作。'
+- en: '**A system auditor**: Users of this type have full read-only privileges on
+    the whole AWX installation'
+  id: totrans-127
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**系统审计员**：此类型的用户对整个AWX安装具有完全的只读权限。'
+- en: '**A system administrator**: Users of this type have full privileges on the
+    whole AWX installation'
+  id: totrans-128
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**系统管理员**：此类型的用户对整个AWX安装具有完全权限。'
+- en: Now that you have learned the necessary steps to create a user in AWX, let’s
+    have a brief look at teams.
+  id: totrans-129
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在您已经了解了在AWX中创建用户的必要步骤，让我们简单看一下团队的概念。
+- en: Creating a team
+  id: totrans-130
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 创建团队
+- en: Although having individual user accounts is an incredibly powerful tool, especially
+    for enterprise use cases, it would be extremely inconvenient and cumbersome to
+    have to set permissions for each object (such as a job template or an inventory)
+    on an individual basis. Every time someone joins a team, their user account has
+    to be manually configured with the correct permissions against every object and,
+    similarly, be removed if they leave.
+  id: totrans-131
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 尽管拥有个人用户账户是一个非常强大的工具，特别适用于企业级使用场景，但如果每个对象（如作业模板或库存）都必须单独设置权限，将会非常不方便且繁琐。每当某人加入团队时，他们的用户账户必须手动配置正确的权限，并且如果他们离开，也需要移除这些权限。
+- en: AWX and Ansible Automation Controller have the same concept of user grouping
+    that you would find in most other RBAC systems. The only slight difference is
+    that in the user interface, they are referred to as **teams**, rather than groups.
+    However, you can create teams simply and easily and then add and remove users
+    as you need to. Doing this through the user interface is very straightforward
+    and you will find the process similar to the way that most RBAC systems handle
+    user groups, so we won’t go into any more specific details here.
+  id: totrans-132
+  prefs: []
+  type: TYPE_NORMAL
+  zh: AWX和Ansible自动化控制器有着与大多数其他RBAC系统相同的用户分组概念。唯一的细微区别在于，在用户界面中，它们被称为**团队**，而不是组。但是，您可以轻松创建团队，然后根据需要添加或删除用户。通过用户界面进行操作非常直观，您会发现这个过程与大多数RBAC系统处理用户组的方式类似，因此我们在这里不再展开具体细节。
+- en: 'When you go to **Teams** and click the **Add** button, you will see an interface
+    similar to the following, prompting you to provide some very basic information:'
+  id: totrans-133
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当您进入**团队**页面并点击**添加**按钮时，您将看到类似以下的界面，提示您提供一些非常基本的信息：
+- en: '![Figure 13.11 – The Create New Team window](img/B20846_13_011.jpg)'
+  id: totrans-134
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 13.11 – 创建新团队窗口](img/B20846_13_011.jpg)'
+- en: Figure 13.11 – The Create New Team window
+  id: totrans-135
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 13.11 – 创建新团队窗口
+- en: Once you have your teams set up, I recommend that you assign your permissions
+    to teams, rather than through individual users, as this will make managing AWX
+    object permissions much easier as your organization grows. Speaking of organizations,
+    let’s take a look at the concept of organizations in AWX.
+  id: totrans-136
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦您的团队设置好，我建议您将权限分配给团队，而不是单独分配给用户，因为随着您的组织发展，这样可以更轻松地管理AWX对象权限。说到组织，让我们来看看AWX中的组织概念。
+- en: Creating an organization
+  id: totrans-137
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 创建组织
+- en: 'Sometimes, you will have multiple independent groups of people that you need
+    to manage independent machines. For those kinds of scenarios, the use of organizations
+    can help you. An organization is a tenant of AWX, with its own unique user accounts,
+    teams, projects, inventories, and job templates – it’s almost like having a separate
+    instance of AWX! To create an organization, you need to follow these steps:'
+  id: totrans-138
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有时，你需要管理多个独立的人员组，每个组需要管理独立的机器。在这种情况下，使用组织可以帮助你。一个组织是 AWX 的租户，它有自己独特的用户账户、团队、项目、清单和作业模板——几乎就像是拥有一个独立的
+    AWX 实例！要创建一个组织，你需要按照以下步骤操作：
+- en: To create a new organization, you need to go to the left-hand side of the screen
+    and select the **Organizations** option.
+  id: totrans-139
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 要创建一个新组织，你需要前往屏幕左侧，选择**组织**选项。
+- en: You can then see the existing organizations and proceed to create a new one
+    by clicking on the button with a white plus sign on a green background in the
+    top-left section of the screen.
+  id: totrans-140
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 然后你可以看到现有的组织，并通过点击屏幕左上方绿色背景上带有白色加号的按钮来创建一个新组织。
+- en: 'A window similar to the following will appear:'
+  id: totrans-141
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一个类似于以下的窗口将会出现：
+- en: '![Figure 13.12 – The Create New Organization window](img/B20846_13_012.jpg)'
+  id: totrans-142
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 13.12 – 创建新组织窗口](img/B20846_13_012.jpg)'
+- en: Figure 13.12 – The Create New Organization window
+  id: totrans-143
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 13.12 – 创建新组织窗口
+- en: Since the only mandatory field is **Name**, you can just fill this in and click
+    **Save**.
+  id: totrans-144
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于唯一的必填字段是**名称**，你只需填写该字段并点击**保存**。
+- en: Once you’ve created the organization, you can assign any kind of resource to
+    an organization, such as projects, templates, inventories, users, and so on. Organizations
+    are a simple concept to grasp but also powerful in terms of segregating roles
+    and responsibilities in AWX. Finally, before we complete this section, let’s take
+    a look at assigning permissions in AWX.
+  id: totrans-145
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦你创建了组织，你就可以将任何资源分配给该组织，例如项目、模板、清单、用户等。组织是一个容易理解的概念，但在 AWX 中，它对于角色和职责的分隔却非常强大。最后，在我们完成这一节之前，让我们看看在
+    AWX 中分配权限的方法。
+- en: Assigning permissions in AWX
+  id: totrans-146
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 在 AWX 中分配权限
+- en: Through our journey of configuring our first project, inventory, and job template
+    in AWX, you will have noticed that most of the screens we have navigated to have
+    a button on them called **Access**. As we navigate the user interface with the
+    administrator account, we get to see all the options – but of course, you would
+    not want to give every single user administrator permission.
+  id: totrans-147
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在我们配置第一个项目、清单和 AWX 作业模板的过程中，你会注意到大多数屏幕上都有一个名为**访问**的按钮。当我们使用管理员账户浏览用户界面时，我们可以看到所有选项——但当然，你不希望给每个用户都赋予管理员权限。
+- en: Individual users (or the teams that they belong to) can be granted permission
+    on a per-object basis. So, for example, you could have a team of database administrators
+    who only have access to see and execute playbooks on an inventory of database
+    servers, using job templates that are specific to their role. Linux system administrators
+    could then have access to the inventories, projects, and job templates that are
+    specific to their role. AWX hides objects that users don’t have privileges to
+    access, which means the database administrators never see the Linux system administrator
+    objects, and vice versa.
+  id: totrans-148
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 单个用户（或他们所属的团队）可以基于每个对象授予权限。例如，你可以拥有一个数据库管理员团队，他们只访问数据库服务器清单中的内容，并使用专门针对他们角色的作业模板。Linux
+    系统管理员则可以访问与他们角色相关的清单、项目和作业模板。AWX 会隐藏用户没有权限访问的对象，这意味着数据库管理员永远看不到 Linux 系统管理员的对象，反之亦然。
+- en: 'There are several different privilege levels that you can award to users (or
+    teams), including the following:'
+  id: totrans-149
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以授予用户（或团队）多种不同的权限级别，包括以下几种：
+- en: '**Admin**: Users that have this permission can change all aspects of the resource'
+  id: totrans-150
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**管理员**：拥有此权限的用户可以更改资源的所有方面'
+- en: '**Execute** (only for job templates): Users that have this permission can run
+    the job template'
+  id: totrans-151
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**执行**（仅适用于作业模板）：拥有此权限的用户可以运行作业模板'
+- en: '**Use**: Users that have this permission can use the resource in a job template'
+  id: totrans-152
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**使用**：拥有此权限的用户可以在作业模板中使用该资源'
+- en: '**Update**: Users that have this permission can update the resource'
+  id: totrans-153
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**更新**：拥有此权限的用户可以更新资源'
+- en: '**Read**: Users that have this permission can view the settings of the resource'
+  id: totrans-154
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**查看**：拥有此权限的用户可以查看资源的设置'
+- en: That concludes our brief look at RBAC in AWX and our look at this powerful tool.
+    AWX is a great addition to the power of Ansible in an enterprise setting and helps
+    ensure that your users can run Ansible playbooks in a manner that is well-managed,
+    secure, and auditable. We have only scratched the surface in this chapter, but
+    hopefully, this chapter has given you a flavor of how AWX can help your team’s
+    or enterprise’s automation journey.
+  id: totrans-155
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这就是我们简要介绍 AWX 中 RBAC 的内容，以及这款强大工具的概览。AWX 是 Ansible 在企业环境中功能的极佳补充，帮助确保你的用户能够以良好管理、安全且可审计的方式运行
+    Ansible playbook。我们在本章中只是触及了表面，但希望本章能够让你初步了解 AWX 如何帮助你团队或企业的自动化旅程。
+- en: Summary
+  id: totrans-156
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 总结
+- en: AWX and Ansible Automation Controller are powerful, complementary tools that
+    powerfully support the use of Ansible in an enterprise or team-based environment.
+    They can help secure credentials that you would otherwise have to distribute widely,
+    audit the history of playbook runs, and enforce the version control of playbooks.
+    The web-based user interface of these tools creates a low barrier for entry for
+    end users, meaning playbook runs can easily be delegated to teams who otherwise
+    have little knowledge of Ansible (so long as suitable escalation paths are put
+    in place should problems arise). In short, when implementing Ansible in a corporate
+    setting, its usage should not be considered complete without the addition of Ansible
+    Automation Controller or AWX.
+  id: totrans-157
+  prefs: []
+  type: TYPE_NORMAL
+  zh: AWX 和 Ansible 自动化控制器是强大的互补工具，有力支持在企业或团队环境中使用 Ansible。它们可以帮助保护本应广泛分发的凭据、审计 playbook
+    执行历史，并强制执行 playbook 的版本控制。这些工具的基于 Web 的用户界面降低了最终用户的使用门槛，意味着 playbook 执行可以轻松委派给那些对
+    Ansible 知识有限的团队（前提是若问题出现，已设置适当的升级路径）。简而言之，在企业环境中实现 Ansible 时，没有 Ansible 自动化控制器或
+    AWX 的补充，不能算作完整的实现。
+- en: In this chapter, you learned how to install AWX on your Linux host, as well
+    as the necessary steps to run your very first playbook from AWX. You also learned
+    about RBAC in AWX and how this can support large, multi-user environments in a
+    corporate setting.
+  id: totrans-158
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，你学习了如何在 Linux 主机上安装 AWX，以及运行第一个 AWX playbook 所需的步骤。你还了解了 AWX 中的 RBAC 以及它如何支持在企业环境中处理大型的多用户环境。
+- en: In the next chapter, we will deep dive into the concept of execution environments,
+    which allow you to streamline your automation and keep it functioning even when
+    you’re updating Ansible, AWX, or Ansible Automation Controller.
+  id: totrans-159
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一章中，我们将深入探讨执行环境的概念，它能帮助你简化自动化，并在更新 Ansible、AWX 或 Ansible 自动化控制器时保持系统运行。
+- en: Questions
+  id: totrans-160
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 问题
+- en: 'Answer the following questions to test your knowledge of this chapter:'
+  id: totrans-161
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请回答以下问题以测试你对本章内容的掌握：
+- en: Which objects can you create in Ansible Automation Controller?
+  id: totrans-162
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 你可以在 Ansible 自动化控制器中创建哪些对象？
+- en: Users
+  id: totrans-163
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 用户
+- en: Jobs
+  id: totrans-164
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 工作
+- en: Job templates
+  id: totrans-165
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 作业模板
+- en: Modules
+  id: totrans-166
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 模块
+- en: Projects
+  id: totrans-167
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 项目
+- en: 'True or false? AWX is the upstream version of Red Hat Ansible Automation Controller:'
+  id: totrans-168
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 对还是错？AWX 是 Red Hat Ansible 自动化控制器的上游版本：
+- en: 'True'
+  id: totrans-169
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 正确
+- en: 'False'
+  id: totrans-170
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 错误

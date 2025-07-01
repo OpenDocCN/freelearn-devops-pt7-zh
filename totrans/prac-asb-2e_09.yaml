@@ -1,0 +1,2159 @@
+- en: '9'
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '9'
+- en: Advanced Ansible Topics
+  id: totrans-1
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Ansible 高级话题
+- en: Up to this point, we have worked hard to give you a solid foundation in Ansible
+    so that, whatever your desired automation task, you can implement it with ease
+    and confidence. However, when you really start to ramp up your automation, how
+    do you ensure that you can handle any condition that arises in a graceful manner?
+    For example, how can you ensure that when you have to initiate long-running actions,
+    you can run them asynchronously and come back to them to check on the results
+    reliably later? Or, if you are updating a large group of servers, how can you
+    ensure that the play fails early if a handful of servers suffer failures? The
+    last thing you want to do is to roll out a broken update (let’s face it, problems
+    do occur with everyone’s code from time to time) across 100 servers—far better
+    to detect that a small percentage have failed and abort the entire play on this
+    basis than attempt to continue and break an entire load-balanced cluster.
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 到目前为止，我们已经努力为你打下坚实的 Ansible 基础，无论你需要执行什么自动化任务，都能够轻松自如地实现。然而，当你真正开始大规模自动化时，如何确保在出现任何情况时能够优雅地处理它呢？例如，当你必须启动长期运行的操作时，如何确保可以异步运行这些操作，并且稍后能够可靠地检查结果？或者，如果你正在更新大量服务器，如何确保在少数服务器出现故障时，play
+    可以及早失败？你最不希望做的事情是将一个有问题的更新（说实话，所有人的代码都有可能会出现问题）推出到 100 台服务器上——如果能够发现少量服务器失败并且基于此中止整个
+    play，比起继续执行并破坏整个负载均衡集群，要好得多。
+- en: In this chapter, we will look at how to solve these particular issues, as well
+    as many more, using some of the more advanced features of Ansible to control playbook
+    flow and error handling. We will explore, through practical examples, how to perform
+    rolling updates with Ansible, how to work with proxies and jump hosts (which is
+    vital for secure environments and often for core network configuration), and how
+    to secure sensitive Ansible data at rest using the native Ansible Vault technology.
+    By the end of this chapter, you will have a full picture of how to run Ansible
+    not only in a small environment but also in a large, secure, mission-critical
+    environment.
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章将探讨如何使用 Ansible 的一些高级功能来控制 playbook 流程和错误处理，解决这些特定问题以及更多问题。我们将通过实际示例，探索如何使用
+    Ansible 执行滚动更新，如何与代理和跳板主机配合工作（这对安全环境和核心网络配置至关重要），以及如何使用 Ansible Vault 技术来保护静态的敏感数据。通过本章的学习，你将全面了解如何在不仅仅是小型环境中，而是在大型、安全、任务关键型环境中运行
+    Ansible。
+- en: 'In this chapter, we will cover the following topics:'
+  id: totrans-4
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章将涵盖以下内容：
+- en: Asynchronous versus synchronous actions
+  id: totrans-5
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 异步与同步操作
+- en: Controlling play execution for rolling updates
+  id: totrans-6
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 控制滚动更新的 play 执行
+- en: Configuring the maximum failure percentage
+  id: totrans-7
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 配置最大故障百分比
+- en: Setting task execution delegation
+  id: totrans-8
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 设置任务执行委派
+- en: Using the `run_once` option
+  id: totrans-9
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用 `run_once` 选项
+- en: Running playbooks locally
+  id: totrans-10
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 本地运行 playbook
+- en: Working with proxies and jump hosts
+  id: totrans-11
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 与代理和跳板主机协作
+- en: Configuring playbook prompts
+  id: totrans-12
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 配置 playbook 提示
+- en: Placing tags in the plays and tasks
+  id: totrans-13
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在 plays 和 tasks 中放置标签
+- en: Securing data with Ansible Vault
+  id: totrans-14
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用 Ansible Vault 保护数据
+- en: Technical requirements
+  id: totrans-15
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 技术要求
+- en: This chapter assumes that you have set up your control host with Ansible, as
+    detailed in [*Chapter 1*](B20846_01.xhtml#_idTextAnchor015), *Getting Started
+    with Ansible*, and are using the most recent version available. The examples in
+    this chapter are tested with Ansible 2.15\. This chapter also assumes that you
+    have at least one additional host to test against and, ideally, this should be
+    Linux-based. Although we will give specific examples of hostnames in this chapter,
+    you are free to substitute them with your own hostname and/or IP addresses; details
+    of how to do this are provided at the appropriate places.
+  id: totrans-16
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章假设你已经按照 [*第 1 章*](B20846_01.xhtml#_idTextAnchor015)《Ansible 入门》的详细步骤，成功设置了控制主机，并且正在使用最新的版本。本章中的示例已经在
+    Ansible 2.15 上经过测试。本章还假设你至少有一台额外的主机用于测试，理想情况下，该主机应为基于 Linux 的。尽管我们将在本章中提供主机名的具体示例，你也可以自由替换为你自己的主机名和/或
+    IP 地址；如何做到这一点的详细信息会在适当的地方给出。
+- en: The code bundle for this chapter is available at [https://github.com/PacktPublishing/Practical-Ansible-Second-Edition/tree/main/Chapter%209](https://github.com/PacktPublishing/Practical-Ansible-Second-Edition/tree/main/Chapter%209).
+  id: totrans-17
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章的代码包可以通过 [https://github.com/PacktPublishing/Practical-Ansible-Second-Edition/tree/main/Chapter%209](https://github.com/PacktPublishing/Practical-Ansible-Second-Edition/tree/main/Chapter%209)
+    获取。
+- en: Asynchronous versus synchronous actions
+  id: totrans-18
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 异步与同步操作
+- en: As we have seen in this book so far, Ansible plays are executed in sequence,
+    with each task running to completion before the next task is started. Although
+    this is often advantageous for flow control and logical sequencing, there are
+    times when you may not want this. In particular, it might be the case that a particular
+    task runs for longer than the configured SSH connection timeout, and as Ansible
+    uses SSH to perform its automation tasks on most platforms, this would be an issue.
+  id: totrans-19
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如我们在本书中所看到的那样，Ansible的play是按顺序执行的，每个任务在开始下一个任务之前都会运行完成。尽管这种顺序执行对于流程控制和逻辑顺序通常是有利的，但有时你可能并不希望这样。特别是，某些任务可能会运行超过配置的SSH连接超时时间，由于Ansible在大多数平台上使用SSH来执行自动化任务，这可能会成为一个问题。
+- en: Fortunately, Ansible tasks can be run asynchronously—that is to say, tasks can
+    be run in the background on the target host and polled on a regular basis. This
+    is in contrast to synchronous tasks, where the connection to the target host is
+    kept open until the task completes (which runs the risk of a timeout occurring).
+  id: totrans-20
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 幸运的是，Ansible任务可以异步执行——也就是说，任务可以在目标主机的后台运行，并定期进行轮询。这与同步任务不同，后者在任务完成之前会保持与目标主机的连接（这会有超时的风险）。
+- en: 'As ever, let’s explore this through a practical example. Suppose we have two
+    servers in a simple INI-formatted inventory:'
+  id: totrans-21
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一如既往，让我们通过一个实际示例来探讨这个问题。假设我们有两台服务器，位于一个简单的INI格式的清单中：
+- en: '[PRE0]'
+  id: totrans-22
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: 'Now, in order to simulate a long-running task, we’ll run the `sleep` command
+    using the `shell` module. However, rather than have it run with the SSH connection
+    blocked for the duration of the `sleep` command, we’ll add two special parameters
+    to the task, as shown:'
+  id: totrans-23
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，为了模拟一个长时间运行的任务，我们将使用`shell`模块运行`sleep`命令。然而，为了避免在`sleep`命令执行期间SSH连接被阻塞，我们将向任务中添加两个特殊参数，如下所示：
+- en: '[PRE1]'
+  id: totrans-24
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: The two new parameters are `async` and `poll`. The `async` parameter tells Ansible
+    that this task should be run asynchronously (so that the SSH connection will not
+    be blocked) for a maximum of `30` seconds. If the task runs for longer than this
+    configured time, Ansible considers the task to have failed and the play is failed,
+    accordingly. When `poll` is set to a positive integer, Ansible checks the status
+    of the asynchronous task at the specified interval—in this example, every `5`
+    seconds. If `poll` is set to `0`, then the task is run in the background and never
+    checked—it is up to you to write a task to manually check its status later on.
+  id: totrans-25
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这两个新参数是`async`和`poll`。`async`参数告诉Ansible，这个任务应该异步执行（以便SSH连接不会被阻塞），最大执行时间为`30`秒。如果任务执行时间超过这个配置的时间，Ansible会认为任务失败，相应地整个play也会失败。当`poll`被设置为正整数时，Ansible会在指定的间隔检查异步任务的状态——在这个例子中是每`5`秒检查一次。如果`poll`被设置为`0`，那么任务会在后台运行，并且不会被检查——你需要编写一个任务来稍后手动检查它的状态。
+- en: Note
+  id: totrans-26
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 注意
+- en: If you don’t specify the `poll` value, it will be set to the default value defined
+    by the `DEFAULT_POLL_INTERVAL` configuration parameter of Ansible (which is `10`
+    seconds).
+  id: totrans-27
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你没有指定`poll`值，它将会被设置为Ansible的`DEFAULT_POLL_INTERVAL`配置参数定义的默认值（即`10`秒）。
+- en: 'When you run this playbook, you will find that it runs just like any other
+    playbook; from the terminal output, you won’t be able to see any difference. But
+    behind the scenes, Ansible checks the task every `5` seconds until it succeeds
+    or reaches the `async` timeout value of `30` seconds:'
+  id: totrans-28
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当你运行这个playbook时，你会发现它和其他playbook的运行方式一样；从终端输出来看，你无法察觉任何不同。但在幕后，Ansible每`5`秒检查一次任务的状态，直到任务成功或达到`async`超时值`30`秒：
+- en: '[PRE2]'
+  id: totrans-29
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: 'If you want to check on the task later (that is, if `poll` is set to `0`),
+    you could add a second task to your playbook so that it looks as follows:'
+  id: totrans-30
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你想稍后检查任务的状态（也就是说，如果`poll`被设置为`0`），你可以在playbook中添加第二个任务，使其看起来如下：
+- en: '[PRE3]'
+  id: totrans-31
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: 'In this playbook, the initial asynchronous task is defined as before, except
+    we have now set `poll` to `0`. We have also chosen to register the result of this
+    task to a variable called `long_task`—this is so that we can query the job ID
+    for the task when we check it later on. The next (new) task in the play uses the
+    `async_status` module to check on the job ID we registered from the first task
+    and loops until the job either finishes or reaches `30` retries—whichever comes
+    first. When using these in a playbook, you almost certainly wouldn’t add the two
+    tasks back to back like this—usually, you would perform additional tasks in between
+    them—but to keep this example simple, we will run the two tasks sequentially.
+    Running this playbook should yield an output similar to the following:'
+  id: totrans-32
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这个剧本中，初始的异步任务定义与之前一样，只是我们现在将`poll`设置为`0`。我们还选择将这个任务的结果注册到一个名为`long_task`的变量中——这样，在稍后检查任务时，我们可以查询任务的作业
+    ID。接下来的（新的）任务使用`async_status`模块来检查我们从第一个任务注册的作业 ID，并循环直到任务完成或达到`30`次重试——以先到者为准。在剧本中使用这些时，你几乎肯定不会像这样将两个任务紧挨着添加在一起——通常，你会在它们之间执行其他任务——但为了简化这个例子，我们将按顺序运行这两个任务。运行这个剧本应该会产生类似如下的输出：
+- en: '[PRE4]'
+  id: totrans-33
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: In the preceding code block, we can see that the long-running task is left running
+    and the next task polls its status until the conditions we set are met. In this
+    case, we can see that the task finished successfully and the overall play result
+    was successful. Asynchronous actions are especially useful for large downloads,
+    package updates, and other tasks that might take a long time to run. You may find
+    them useful in your playbook development, especially in more complex infrastructures.
+  id: totrans-34
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在前面的代码块中，我们可以看到长时间运行的任务仍在运行，而下一个任务轮询其状态，直到我们设置的条件满足。在这种情况下，我们可以看到任务成功完成，整个剧本执行结果也成功。异步操作对于大型下载、软件包更新和其他可能需要较长时间运行的任务尤其有用。你可能会在剧本开发中发现它们的价值，特别是在更复杂的基础设施中。
+- en: With this under our belt, let’s take a look at another advanced technique that
+    might be useful in large infrastructures—performing rolling updates with Ansible.
+  id: totrans-35
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在掌握了这些基础后，让我们来看看另一个在大型基础设施中可能有用的高级技巧——使用 Ansible 执行滚动更新。
+- en: Controlling play execution for rolling updates
+  id: totrans-36
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 控制滚动更新的执行
+- en: By default, Ansible parallelizes tasks on multiple hosts at the same time to
+    speed up automation tasks in large inventories. The setting for this is defined
+    by the `forks` parameter in the Ansible configuration file, which defaults to
+    `5` (so, by default, Ansible attempts to run its automation job on five hosts
+    at the same time).
+  id: totrans-37
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 默认情况下，Ansible 会在多个主机上并行化任务，以加速大型清单中的自动化任务。这个设置由 Ansible 配置文件中的`forks`参数定义，默认为`5`（因此，默认情况下，Ansible
+    尝试在五台主机上同时运行自动化作业）。
+- en: In a load-balanced environment, this is not ideal, especially if you want to
+    avoid downtime. Suppose we have five frontend servers in an inventory (or perhaps
+    even fewer). If we allow Ansible to update all of these at the same time, the
+    end users may experience a loss of service. So, it is important to consider updating
+    all of the servers at different times. Let’s reuse our inventory from the previous
+    section with just two servers in it. Obviously, if these were in a load-balanced
+    environment, it would be vital that we only update one of these at a time; if
+    both were taken out of service simultaneously, then end users would definitely
+    lose access to the service until the Ansible play completes successfully.
+  id: totrans-38
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在负载均衡环境中，这并不理想，特别是如果你想避免停机时间。假设我们在清单中有五台前端服务器（或者可能更少）。如果我们允许 Ansible 同时更新所有这些服务器，最终用户可能会经历服务中断。因此，考虑在不同时间更新所有服务器是很重要的。让我们复用前面部分的清单，其中只有两台服务器。显然，如果这些服务器在负载均衡环境中运行，那么我们只更新其中一台是至关重要的；如果两台服务器同时下线，最终用户肯定会失去对服务的访问，直到
+    Ansible 剧本成功完成。
+- en: 'The answer to this is to use the `serial` keyword in the play definition to
+    determine how many hosts are operated on at once. Let’s demonstrate this through
+    a practical example:'
+  id: totrans-39
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 解决这个问题的方法是在剧本定义中使用`serial`关键字来确定一次操作多少主机。让我们通过一个实际的例子来演示这一点：
+- en: 'Create the following simple playbook to run two commands on the two hosts in
+    our inventory. The content of the command is not important at this stage, but
+    if you run the `date` command using the `command` module, you will be able to
+    see the time that each task is run, as well as if you specify `-v` to increase
+    the verbosity when you run the play:'
+  id: totrans-40
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建以下简单的 playbook，在我们的清单中的两个主机上运行两个命令。命令的内容在此阶段不重要，但如果你使用`command`模块运行`date`命令，你将能看到每个任务运行时的时间，以及如果你指定`-v`来提高运行时的详细程度，你将能够看到更多信息：
+- en: '[PRE5]'
+  id: totrans-41
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: 'Now, if you run this play, you will see that it performs all the operations
+    on each host simultaneously, as we have fewer hosts than the default number of
+    forks—`5`. This behavior is normal for Ansible, but not really what we want as
+    our users will experience a service outage:'
+  id: totrans-42
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在，如果你运行这个任务，你会看到它在每个主机上同时执行所有操作，因为我们比默认的 forks 数量（`5`）要少。这种行为是 Ansible 的正常行为，但这并不是我们想要的，因为用户将会经历服务中断：
+- en: '[PRE6]'
+  id: totrans-43
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: '---'
+  id: totrans-44
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '---'
+- en: '- name: Simple serial demonstration play'
+  id: totrans-45
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '- name: 简单的串行演示任务'
+- en: 'hosts: frontends'
+  id: totrans-46
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'hosts: frontends'
+- en: 'serial: 1'
+  id: totrans-47
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'serial: 1'
+- en: 'gather_facts: false'
+  id: totrans-48
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'gather_facts: false'
+- en: '[PRE7]'
+  id: totrans-49
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE7]'
+- en: 'Notice the presence of the `serial: 1` line. This tells Ansible to complete
+    the play on `1` host at a time before moving on to the next. If we run the play
+    again, we can see this in action:'
+  id: totrans-50
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: '注意到`serial: 1`这一行的存在。这告诉 Ansible 每次只在`1`个主机上完成任务，然后再继续下一个。如果我们再次运行这个任务，可以看到它的实际效果：'
+- en: '[PRE8]'
+  id: totrans-51
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE8]'
+- en: 'Much better! If you imagine that this playbook actually disables these hosts
+    on a load balancer, performs an upgrade, and then re-enables the hosts on the
+    load balancer, this is exactly how you would want the operation to proceed. Doing
+    so without the `serial: 1` directive would result in all the hosts being removed
+    from the load balancer at once, causing a loss of service.'
+  id: totrans-52
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '好得多！如果你想象这个 playbook 实际上是在负载均衡器上禁用这些主机，执行升级，然后再在负载均衡器上重新启用这些主机，这正是你希望操作进行的方式。如果没有`serial:
+    1`指令，所有主机会一次性从负载均衡器中移除，导致服务中断。'
+- en: 'It is useful to note that the `serial` directive can also take a percentage
+    instead of an integer. When you specify a percentage, you are telling Ansible
+    to run the play on that percentage of hosts at one time. So, if you have four
+    hosts in your inventory and specify `serial: 25%`, Ansible will only run the play
+    on one host at a time. If you have eight hosts in your inventory, it will run
+    the play on two hosts at a time. I’m sure you get the idea!'
+  id: totrans-53
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '值得注意的是，`serial`指令也可以使用百分比而非整数。当你指定百分比时，你是在告诉 Ansible 每次在该百分比的主机上运行任务。所以，如果你的清单中有四个主机并指定`serial:
+    25%`，Ansible 将每次只在一个主机上运行任务。如果你的清单中有八个主机，它将每次在两个主机上运行任务。我相信你已经明白了！'
+- en: 'You can even build on this by passing a list to the `serial` directive. Consider
+    the following code:'
+  id: totrans-54
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你甚至可以通过传递一个列表来扩展这个功能，给`serial`指令提供更多选项。考虑以下代码：
+- en: '[PRE9]'
+  id: totrans-55
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE9]'
+- en: This tells Ansible to run the play on `1` host, initially, then on the next
+    `3`, and then on batches of `5` at a time until the inventory is completed for
+    deploying a new change to particular servers. You can also specify a list of percentages
+    in place of the integer numbers of hosts. In doing this, you will build up a robust
+    playbook that can perform rolling updates without causing a loss of service to
+    end users. With this complete, let’s further build on this knowledge by looking
+    at controlling the maximum failure percentage that Ansible can tolerate before
+    it aborts a play, which will again be useful in highly available or load-balanced
+    environments such as this.
+  id: totrans-56
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这告诉 Ansible 初始时只在`1`个主机上运行任务，然后在接下来的`3`个主机上运行，之后每次在`5`个主机上同时运行，直到整个清单完成，以便在特定服务器上部署新的更改。你也可以使用百分比代替主机的整数数量来指定。通过这种方式，你将构建一个强健的
+    playbook，能够执行滚动更新，而不会对最终用户造成服务中断。完成这一切后，我们可以继续深入了解如何控制 Ansible 在中止任务之前能容忍的最大失败百分比，这在像这样的高可用或负载均衡环境中非常有用。
+- en: Configuring the maximum failure percentage
+  id: totrans-57
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 配置最大失败百分比
+- en: In its default mode of operation, Ansible continues to execute a play on a batch
+    of servers (the batch size is determined by the `serial` directive we discussed
+    in the preceding section) as long as there are hosts in the inventory and a failure
+    isn’t recorded. Obviously, in a highly available or load-balanced environment
+    (such as the one we discussed previously), this is not ideal. If there is a bug
+    in your play, or perhaps a problem with the code being rolled out, the last thing
+    that you want is for Ansible to faithfully roll it out to all servers in the cluster,
+    causing a service outage because all the nodes suffered a failed upgrade. It would
+    be far better, in this kind of environment, to fail early on and leave at least
+    some hosts in the cluster untouched until someone can intervene and resolve the
+    issue.
+  id: totrans-58
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在默认的操作模式下，只要清单中还有主机，并且没有记录到失败，Ansible 将继续在一批服务器上执行 play（批次大小由我们在前面部分讨论的 `serial`
+    指令决定）。显然，在一个高可用或负载均衡的环境中（比如我们之前讨论的那种情况），这种方式并不理想。如果你的 play 中有 bug，或者代码部署有问题，你最不希望看到的就是
+    Ansible 忠实地将它推送到集群中的所有服务器，导致服务中断，因为所有节点都遭遇了升级失败。在这种环境下，最好是尽早失败，至少让集群中的一些主机保持原状，直到有人介入并解决问题。
+- en: 'For our practical example, let’s consider an expanded inventory with 10 hosts
+    in it. We’ll define this as follows:'
+  id: totrans-59
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于我们的实际示例，假设有一个包含 10 个主机的扩展清单。我们将按如下方式定义它：
+- en: '[PRE10]'
+  id: totrans-60
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE10]'
+- en: 'Now, let’s create a simple playbook to run on these hosts. We will set our
+    batch size to `5` and `max_fail_percentage` to `50%` in the play definition:'
+  id: totrans-61
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，让我们创建一个简单的 playbook 在这些主机上运行。我们将在 play 定义中将批次大小设置为 `5`，并将 `max_fail_percentage`
+    设置为 `50%`：
+- en: 'Create the following play definition to demonstrate the use of the `max_fail_percentage`
+    directive:'
+  id: totrans-62
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建以下 play 定义来演示如何使用 `max_fail_percentage` 指令：
+- en: '[PRE11]'
+  id: totrans-63
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE11]'
+- en: 'We have defined 10 hosts in our inventory, so it will process them in batches
+    of 5 (as specified by `serial: 5`). The play will be aborted, and processing will
+    stop if more than 50% of the hosts in one batch fail.'
+  id: totrans-64
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '我们在清单中定义了 10 个主机，因此它将按每批 5 个主机进行处理（如 `serial: 5` 所指定）。如果某批次中超过 50% 的主机失败，play
+    将被中止，处理将停止。'
+- en: Note
+  id: totrans-65
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 注意
+- en: The percentage of failed hosts must exceed the value of `max_fail_percentage`;
+    if it is equal, the play continues.
+  id: totrans-66
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 只有失败主机的百分比超过 `max_fail_percentage` 的值时，play 才会中止；如果失败百分比相等，play 将继续执行。
+- en: 'Next, we will define two simple tasks. The first task has a special clause
+    under it that we use to deliberately simulate a failure—this line starts with
+    `failed_when` and we use it to tell the task that if it runs this task on the
+    first three hosts in the batch, then it should deliberately fail this task, regardless
+    of the result; otherwise, it should allow the task to run as normal:'
+  id: totrans-67
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 接下来，我们将定义两个简单的任务。第一个任务下有一个特殊的条件，我们用它故意模拟一个失败——这行以 `failed_when` 开头，我们用它告诉任务，如果在批次中的前三台主机上运行该任务，则无论结果如何，都应该故意使任务失败；否则，任务将按正常方式运行：
+- en: '[PRE12]'
+  id: totrans-68
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE12]'
+- en: 'Finally, we will add a second task that will always succeed. This is run if
+    the play is allowed to continue, but not if it is aborted:'
+  id: totrans-69
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 最后，我们将添加第二个任务，该任务将始终成功。它将在 play 允许继续时运行，但如果 play 被中止，则不会运行：
+- en: '[PRE13]'
+  id: totrans-70
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE13]'
+- en: So, we have deliberately constructed a playbook that will run on a 10-host inventory
+    in batches of 5 hosts at a time, but the play is aborted if more than 50% of the
+    hosts in any given batch experience a failure. We have also deliberately set up
+    a failure condition that causes 3 of the hosts in the first batch of 5 (60%) to
+    fail.
+  id: totrans-71
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 因此，我们故意构建了一个 playbook，它将在包含 10 台主机的清单上每次处理 5 台主机，但如果某个批次中超过 50% 的主机出现失败，play
+    将被中止。我们还故意设置了一个失败条件，导致第一批 5 台主机中的 3 台（即 60%）失败。
+- en: 'Run the playbook and observe what happens:'
+  id: totrans-72
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 运行 playbook 并观察发生了什么：
+- en: '[PRE14]'
+  id: totrans-73
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE14]'
+- en: Notice the results of this playbook. We deliberately failed three of the first
+    batch of five, exceeding the threshold for `max_fail_percentage` that we set.
+    This immediately causes the play to abort and the second task is not performed
+    on the first batch of five. You will also notice that the second batch of 5, out
+    of the 10 hosts, is never processed, so our play was truly aborted. This is exactly
+    the behavior you would want to see to prevent a failed update from rolling out
+    across a cluster. Through the careful use of batches and `max_fail_percentage`,
+    you can safely run automated tasks across an entire cluster without the fear of
+    breaking the entire cluster in the event of an issue. In the next section, we
+    will take a look at another feature of Ansible that can be incredibly useful when
+    it comes to working with clusters—task delegation.
+  id: totrans-74
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 注意这个剧本的结果。我们故意让前五个任务中的三个失败，超过了我们设置的`max_fail_percentage`阈值。这立即导致剧本中止，第二个任务不会在前五个主机上执行。你还会注意到，第二批10个主机中的5个，根本没有被处理，因此我们的剧本确实被中止了。这正是你希望看到的行为，以防止失败的更新在集群中全面扩展。通过巧妙使用批次和`max_fail_percentage`，你可以安全地在整个集群中运行自动化任务，而不必担心在出现问题时会导致整个集群崩溃。在下一节中，我们将看看Ansible的另一个非常有用的功能——任务委托。
+- en: Setting task execution delegation
+  id: totrans-75
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 设置任务执行委托
+- en: In every play we have run so far, we have assumed that all the tasks are executed
+    on each host in the inventory in turn. However, what if you need to run one or
+    two tasks on a different host? For example, we have talked about the concept of
+    automating upgrades on clusters. Logically, however, we would want to automate
+    the entire process, including the removal of each host in turn from the load balancer
+    and their return after the task is completed.
+  id: totrans-76
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在我们目前为止运行的每个剧本中，我们假设所有任务依次在清单中的每个主机上执行。然而，如果你需要在不同的主机上运行一到两个任务该怎么办？例如，我们讨论过在集群上自动化升级的概念。但从逻辑上讲，我们希望自动化整个过程，包括按顺序将每个主机从负载均衡器中移除，并在任务完成后将其重新加入。
+- en: 'Although we still want to run our play across our entire inventory, we certainly
+    don’t want to run the load balancer commands from those hosts. Let’s once again
+    explain this in more detail with a practical example. We’ll reuse the two simple
+    host inventories that we used earlier in this chapter:'
+  id: totrans-77
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 虽然我们仍然希望在整个清单上运行我们的剧本，但我们当然不希望从这些主机上运行负载均衡器命令。让我们通过一个实际的例子，再次详细解释这个问题。我们将重用本章早些时候使用的两个简单的主机清单：
+- en: '[PRE15]'
+  id: totrans-78
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE15]'
+- en: 'Now, to work on this, let’s create two simple shell scripts in the same directory
+    as our playbook. These are only examples, as setting up a load balancer is beyond
+    the scope of this book. However, imagine that you have a shell script (or other
+    executables) that you can call that can add and remove hosts to and from a load
+    balancer:'
+  id: totrans-79
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，为了完成这个任务，让我们在与剧本相同的目录中创建两个简单的Shell脚本。这些只是示例，因为设置负载均衡器超出了本书的范围。然而，假设你有一个可以调用的Shell脚本（或其他可执行文件），它可以将主机添加到负载均衡器中，也可以从负载均衡器中移除主机：
+- en: 'For our example, create a script called `remove_from_loadbalancer.sh`, which
+    will contain the following:'
+  id: totrans-80
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 对于我们的示例，创建一个名为`remove_from_loadbalancer.sh`的脚本，内容如下：
+- en: '[PRE16]'
+  id: totrans-81
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE16]'
+- en: '#!/bin/sh'
+  id: totrans-82
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '#!/bin/sh'
+- en: echo Adding $1 to load balancer...
+  id: totrans-83
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: echo 将 $1 添加到负载均衡器...
+- en: '[PRE17]'
+  id: totrans-84
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE17]'
+- en: Obviously, in a real-world example, there would be much more code in these scripts!
+  id: totrans-85
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 显然，在实际的例子中，这些脚本中会有更多的代码！
+- en: 'Now, create a playbook that will perform the logic we outlined here. We will
+    first create a quite simple play definition (you are free to experiment with the
+    `serial` and `max_fail_percentage` directives as you wish) and an initial task:'
+  id: totrans-86
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在，创建一个剧本，执行我们在这里概述的逻辑。我们将首先创建一个非常简单的剧本定义（你可以自由实验`serial`和`max_fail_percentage`指令），并定义一个初始任务：
+- en: '[PRE18]'
+  id: totrans-87
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE18]'
+- en: Notice the task structure—most of it will be familiar to you. We are using the
+    `command` module to call the script we created earlier, passing the hostname from
+    the inventory being removed from the load balancer to the script. We use the `chdir`
+    argument with the `playbook_dir` magic variable to tell Ansible that the script
+    is to be run from the same directory as the playbook.
+  id: totrans-88
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 注意任务结构——大部分你应该已经熟悉了。我们正在使用`command`模块调用之前创建的脚本，并将从负载均衡器中移除的主机名传递给脚本。我们使用`chdir`参数和`playbook_dir`魔法变量告诉Ansible，脚本将在与剧本相同的目录中运行。
+- en: The special part of this task is the `delegate_to` directive, which tells Ansible
+    that even though we’re iterating through an inventory that does not contain `localhost`,
+    we should run this action on `localhost` (we are not copying the script to our
+    remote hosts, so it will not run if we attempt to run it from there).
+  id: totrans-89
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个任务的特殊之处在于`delegate_to`指令，它告诉Ansible，尽管我们正在遍历一个不包含`localhost`的清单，我们仍然应该在`localhost`上执行此操作（我们并没有将脚本复制到远程主机，因此如果从远程主机尝试运行，它不会执行）。
+- en: 'After this, we add a task where the upgrade work is carried out. This task
+    has no `delegate_to` directive, so it is run on the remote host from the inventory
+    (as desired):'
+  id: totrans-90
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在这之后，我们添加一个任务，进行升级操作。这个任务没有`delegate_to`指令，因此它会在远程清单主机上运行（如所需）：
+- en: '[PRE19]'
+  id: totrans-91
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE19]'
+- en: 'Finally, we add the host back to the load balancer using the second script
+    we created earlier. This task is almost identical to the first:'
+  id: totrans-92
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 最后，我们使用之前创建的第二个脚本将主机重新添加到负载均衡器中。这个任务几乎与第一个任务完全相同：
+- en: '[PRE20]'
+  id: totrans-93
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE20]'
+- en: 'See this playbook in action:'
+  id: totrans-94
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 参见此剧本的实际运行：
+- en: '[PRE21]'
+  id: totrans-95
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE21]'
+- en: Notice how even though Ansible is working through the inventory (which doesn’t
+    feature `localhost`), the load balancer-related scripts are actually run from
+    `localhost`, while the upgrade task is performed directly on the remote host.
+    This, of course, isn’t the only thing you can do with task delegation, but it’s
+    a common example of a way that it can help you.
+  id: totrans-96
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请注意，尽管Ansible正在遍历清单（其中不包含`localhost`），但与负载均衡器相关的脚本实际上是在`localhost`上运行的，而升级任务则直接在远程主机上执行。当然，这并不是任务委派的唯一用途，但它是一个常见的例子，说明它如何帮助你。
+- en: 'In truth, you can delegate any task to `localhost`, or even another non-inventory
+    host. You could, for example, run an `rsync` command delegated to `localhost`
+    to copy files to remote hosts using a similar task definition to the previous
+    one. Also, note that you can choose to use a form of shorthand notation in your
+    playbooks (and roles) for `delegate_to`, called `local_action`. This allows you
+    to specify a task on a single line that would ordinarily be run with `delegate_to:
+    localhost` added below it. Wrapping this all up into a second example, our playbook
+    will look as follows:'
+  id: totrans-97
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '事实上，你可以将任何任务委派给`localhost`，或者甚至是其他非清单主机。例如，你可以运行一个委派给`localhost`的`rsync`命令，使用类似之前的任务定义将文件复制到远程主机。另请注意，你可以选择在剧本（和角色）中使用一种简写符号来表示`delegate_to`，称为`local_action`。这样，你就可以在一行中指定一个任务，通常情况下会在下面添加`delegate_to:
+    localhost`。将这一切汇总成第二个示例，我们的剧本将如下所示：'
+- en: '[PRE22]'
+  id: totrans-98
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE22]'
+- en: 'The preceding shorthand notation is equivalent to the following:'
+  id: totrans-99
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 前述简写符号等价于以下内容：
+- en: '[PRE23]'
+  id: totrans-100
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE23]'
+- en: 'If we run this playbook, we can see that `local_action` simply runs a module
+    on the machine running Ansible (which is often `localhost`, but not necessarily
+    always), enabling us to efficiently copy whole directory trees across to remote
+    servers in the inventory:'
+  id: totrans-101
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果我们运行这个剧本，我们可以看到`local_action`实际上是在运行Ansible的机器上执行一个模块（通常是`localhost`，但不一定总是），使我们能够高效地将整个目录树复制到清单中的远程服务器上：
+- en: '[PRE24]'
+  id: totrans-102
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE24]'
+- en: This concludes our look at task delegation; although, as stated, these are just
+    two common examples. I’m sure you can think up some more advanced use cases for
+    this capability. Let’s continue looking at controlling the flow of Ansible code
+    by proceeding, in the next section, to look at the special `run_once` option.
+  id: totrans-103
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这就结束了我们对任务委派的讲解；尽管如前所述，这只是两个常见的示例。我相信你可以想出一些更高级的使用场景。让我们继续探讨控制Ansible代码流的内容，接下来我们将进入看`run_once`选项的特殊用法。
+- en: Using the run_once option
+  id: totrans-104
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用`run_once`选项
+- en: When working with clusters, you will sometimes encounter a task that should
+    only be executed once for the entire cluster. For example, you might want to upgrade
+    the schema of a clustered database or issue a command to reconfigure a Pacemaker
+    cluster, which would typically be issued on one node and then automatically propagated
+    to all other nodes by the cluster management software. You could, of course, address
+    this with a special inventory with only one host in it, or even by writing a special
+    play that references one host from the inventory, but this is inefficient and
+    starts to make your code fragmented.
+  id: totrans-105
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在处理集群时，你有时会遇到一个任务，只需对整个集群执行一次。例如，你可能想要升级集群数据库的模式，或者发出命令重新配置Pacemaker集群，这通常会在一个节点上执行，然后由集群管理软件自动传播到所有其他节点。你当然可以通过一个只包含一个主机的特殊清单来解决这个问题，或者通过编写一个特殊的剧本来引用清单中的一个主机，但这样效率低下，且开始使代码变得零散。
+- en: 'Instead, you can write your code as you normally would but make use of the
+    special `run_once` directive for any tasks you want to run only once on your inventory.
+    For example, let’s reuse the 10-host inventory that we defined earlier in this
+    chapter. Now, let’s proceed to demonstrate this option, as follows:'
+  id: totrans-106
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 另外，您可以像平常一样编写代码，但对于希望在清单中只执行一次的任务，使用特殊的`run_once`指令。例如，让我们重新使用本章前面定义的10台主机清单。现在，让我们继续演示此选项，如下所示：
+- en: 'Create the simple playbook as in the following code block. We are using a `debug`
+    statement to display some output, but in real life, you would insert your script
+    or command that performs your one-off cluster function here (for example, upgrading
+    a database schema):'
+  id: totrans-107
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建一个简单的剧本，如以下代码块所示。我们使用`debug`语句来显示一些输出，但在实际应用中，您会在此插入执行一次性集群操作的脚本或命令（例如，升级数据库架构）：
+- en: '[PRE25]'
+  id: totrans-108
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE25]'
+- en: 'Now, run this playbook and see what happens:'
+  id: totrans-109
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在，运行此剧本并查看会发生什么：
+- en: '[PRE26]'
+  id: totrans-110
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE26]'
+- en: Notice that, just as desired, although the playbook was run on all 10 hosts
+    (and, indeed, gathered facts from all 10 hosts), Ansible only ran the upgrade
+    task on one host.
+  id: totrans-111
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请注意，正如所期望的，尽管剧本在所有10个主机上运行（并且确实收集了所有10个主机的事实数据），但Ansible只在一台主机上执行了升级任务。
+- en: 'It is important to note that the `run_once` option applies per batch of servers,
+    so if we add `serial: 5` to our play definition (running our play in 2 batches
+    of 5 on our inventory of 10 servers), the schema upgrade task runs twice! It runs
+    once as requested, but once per batch of servers, not once for the entire inventory.
+    Be careful of this nuance when working with this directive in a clustered environment.'
+  id: totrans-112
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: '需要注意的是，`run_once`选项是针对每批服务器的，因此如果我们在任务定义中添加`serial: 5`（在10个服务器的清单中分成2批，每批5台服务器执行），则架构升级任务会执行两次！它按要求执行了一次，但每批服务器执行一次，而不是对整个清单执行一次。处理该指令时，在集群环境中要小心这一细微差别。'
+- en: 'Add `serial: 5` to your play definition and rerun the playbook. The output
+    should appear as follows:'
+  id: totrans-113
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '在您的任务定义中添加`serial: 5`并重新运行剧本。输出应如下所示：'
+- en: '[PRE27]'
+  id: totrans-114
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE27]'
+- en: '[local]'
+  id: totrans-115
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '[local]'
+- en: localhost
+  id: totrans-116
+  prefs: []
+  type: TYPE_NORMAL
+  zh: localhost
+- en: '[PRE28]'
+  id: totrans-117
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE28]'
+- en: $ ansible -i localhosts -m ping all --ask-pass
+  id: totrans-118
+  prefs: []
+  type: TYPE_NORMAL
+  zh: $ ansible -i localhosts -m ping all --ask-pass
+- en: The authenticity of host 'localhost (::1)' can't be established.
+  id: totrans-119
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 无法确认主机 'localhost (::1)' 的真实性。
+- en: ECDSA key fingerprint is SHA256:DUwVxH+45432pSr9qsN8Av4l0KJJ+r5jTo123n3XGvZs.
+  id: totrans-120
+  prefs: []
+  type: TYPE_NORMAL
+  zh: ECDSA 密钥指纹为 SHA256:DUwVxH+45432pSr9qsN8Av4l0KJJ+r5jTo123n3XGvZs。
+- en: ECDSA key fingerprint is MD5:78:d1:dc:23:cc:28:51:42:eb:fb:58:49:ab:92:b6:96.
+  id: totrans-121
+  prefs: []
+  type: TYPE_NORMAL
+  zh: ECDSA 密钥指纹为 MD5:78:d1:dc:23:cc:28:51:42:eb:fb:58:49:ab:92:b6:96。
+- en: Are you sure you want to continue connecting (yes/no)? yes
+  id: totrans-122
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 您确定要继续连接吗（是/否）？ 是
+- en: 'SSH password:'
+  id: totrans-123
+  prefs: []
+  type: TYPE_NORMAL
+  zh: SSH 密码：
+- en: localhost | SUCCESS => {
+  id: totrans-124
+  prefs: []
+  type: TYPE_NORMAL
+  zh: localhost | SUCCESS => {
+- en: '"ansible_facts": {'
+  id: totrans-125
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '"ansible_facts": {'
+- en: '"discovered_interpreter_python": "/usr/bin/python"'
+  id: totrans-126
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '"discovered_interpreter_python": "/usr/bin/python"'
+- en: '},'
+  id: totrans-127
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '},'
+- en: '"changed": false,'
+  id: totrans-128
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '"changed": false,'
+- en: '"ping": "pong"'
+  id: totrans-129
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '"ping": "pong"'
+- en: '}'
+  id: totrans-130
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '}'
+- en: '[PRE29]'
+  id: totrans-131
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE29]'
+- en: '[local]'
+  id: totrans-132
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '[local]'
+- en: localhost ansible_connection=local
+  id: totrans-133
+  prefs: []
+  type: TYPE_NORMAL
+  zh: localhost ansible_connection=local
+- en: '[PRE30]'
+  id: totrans-134
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE30]'
+- en: '[local]'
+  id: totrans-135
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '[local]'
+- en: frt01.example.com ansible_connection=local
+  id: totrans-136
+  prefs: []
+  type: TYPE_NORMAL
+  zh: frt01.example.com ansible_connection=local
+- en: '[PRE31]'
+  id: totrans-137
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE31]'
+- en: ls -l /tmp/foo
+  id: totrans-138
+  prefs: []
+  type: TYPE_NORMAL
+  zh: ls -l /tmp/foo
+- en: 'ls: cannot access /tmp/foo: No such file or directory'
+  id: totrans-139
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'ls: 无法访问 /tmp/foo: 没有那个文件或目录'
+- en: '[PRE32]'
+  id: totrans-140
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE32]'
+- en: $ ansible -i localhosts2 -m file -a "path=/tmp/foo state=touch" all
+  id: totrans-141
+  prefs: []
+  type: TYPE_NORMAL
+  zh: $ ansible -i localhosts2 -m file -a "path=/tmp/foo state=touch" all
+- en: frt01.example.com | CHANGED => {
+  id: totrans-142
+  prefs: []
+  type: TYPE_NORMAL
+  zh: frt01.example.com | CHANGED => {
+- en: '"ansible_facts": {'
+  id: totrans-143
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '"ansible_facts": {'
+- en: '"discovered_interpreter_python": "/usr/bin/python"'
+  id: totrans-144
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '"discovered_interpreter_python": "/usr/bin/python"'
+- en: '},'
+  id: totrans-145
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '},'
+- en: '"changed": true,'
+  id: totrans-146
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '"changed": true,'
+- en: '"dest": "/tmp/foo",'
+  id: totrans-147
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '"dest": "/tmp/foo",'
+- en: '"gid": 0,'
+  id: totrans-148
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '"gid": 0,'
+- en: '"group": "root",'
+  id: totrans-149
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '"group": "root",'
+- en: '"mode": "0644",'
+  id: totrans-150
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '"mode": "0644",'
+- en: '"owner": "root",'
+  id: totrans-151
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '"owner": "root",'
+- en: '"size": 0,'
+  id: totrans-152
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '"size": 0,'
+- en: '"state": "file",'
+  id: totrans-153
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '"state": "file",'
+- en: '"uid": 0'
+  id: totrans-154
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '"uid": 0'
+- en: '}'
+  id: totrans-155
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '}'
+- en: '[PRE33]'
+  id: totrans-156
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE33]'
+- en: $ ls -l /tmp/foo
+  id: totrans-157
+  prefs: []
+  type: TYPE_NORMAL
+  zh: $ ls -l /tmp/foo
+- en: -rw-r--r-- 1 root root 0 Apr 24 16:28 /tmp/foo
+  id: totrans-158
+  prefs: []
+  type: TYPE_NORMAL
+  zh: -rw-r--r-- 1 root root 0 Apr 24 16:28 /tmp/foo
+- en: '[PRE34]'
+  id: totrans-159
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE34]'
+- en: '[switches]'
+  id: totrans-160
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '[switches]'
+- en: cmls01.example.com
+  id: totrans-161
+  prefs: []
+  type: TYPE_NORMAL
+  zh: cmls01.example.com
+- en: cmls02.example.com
+  id: totrans-162
+  prefs: []
+  type: TYPE_NORMAL
+  zh: cmls02.example.com
+- en: '[PRE35]'
+  id: totrans-163
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE35]'
+- en: '[switches:vars]'
+  id: totrans-164
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '[switches:vars]'
+- en: ansible_ssh_common_args='-o ProxyCommand="ssh -W %h:%p -q bastion.example.com"'
+  id: totrans-165
+  prefs: []
+  type: TYPE_NORMAL
+  zh: ansible_ssh_common_args='-o ProxyCommand="ssh -W %h:%p -q bastion.example.com"'
+- en: '[PRE36]'
+  id: totrans-166
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE36]'
+- en: $ ansible -i switches -m ping all
+  id: totrans-167
+  prefs: []
+  type: TYPE_NORMAL
+  zh: $ ansible -i switches -m ping all
+- en: cmls02.example.com | SUCCESS => {
+  id: totrans-168
+  prefs: []
+  type: TYPE_NORMAL
+  zh: cmls02.example.com | SUCCESS => {
+- en: '"ansible_facts": {'
+  id: totrans-169
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '"ansible_facts": {'
+- en: '"discovered_interpreter_python": "/usr/bin/python"'
+  id: totrans-170
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '"discovered_interpreter_python": "/usr/bin/python"'
+- en: '},'
+  id: totrans-171
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '},'
+- en: '"changed": false,'
+  id: totrans-172
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '"changed": false,'
+- en: cmls01.example.com | SUCCESS => {
+  id: totrans-173
+  prefs: []
+  type: TYPE_NORMAL
+  zh: cmls01.example.com | SUCCESS => {
+- en: '"ansible_facts": {'
+  id: totrans-174
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '"ansible_facts": {'
+- en: '"discovered_interpreter_python": "/usr/bin/python"'
+  id: totrans-175
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '"discovered_interpreter_python": "/usr/bin/python"'
+- en: '},'
+  id: totrans-176
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '},'
+- en: '"changed": false,'
+  id: totrans-177
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '"changed": false,'
+- en: '"ping": "pong"'
+  id: totrans-178
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '"ping": "pong"'
+- en: '}'
+  id: totrans-179
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '}'
+- en: '[PRE37]'
+  id: totrans-180
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE37]'
+- en: '---'
+  id: totrans-181
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '---'
+- en: '- name: A simple play to demonstrate prompting in a playbook'
+  id: totrans-182
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '- name: 一个简单的示例，演示如何在剧本中提示输入'
+- en: 'hosts: frontends'
+  id: totrans-183
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 主机：frontends
+- en: '[PRE38]'
+  id: totrans-184
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE38]'
+- en: 'vars_prompt:'
+  id: totrans-185
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'vars_prompt:'
+- en: '- name: loginid'
+  id: totrans-186
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '- name: loginid'
+- en: 'prompt: "Enter your username"'
+  id: totrans-187
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 提示：请输入您的用户名
+- en: 'private: no'
+  id: totrans-188
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'private: no'
+- en: '- name: password'
+  id: totrans-189
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '- name: password'
+- en: 'prompt: "Enter your password"'
+  id: totrans-190
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 提示：请输入您的密码
+- en: 'private: yes'
+  id: totrans-191
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'private: yes'
+- en: '[PRE39]'
+  id: totrans-192
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE39]'
+- en: 'tasks:'
+  id: totrans-193
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 任务：
+- en: '- name: Proceed with login'
+  id: totrans-194
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '- name: 继续登录'
+- en: 'debug:'
+  id: totrans-195
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'debug:'
+- en: 'msg: "Logging in as {{ loginid }}..."'
+  id: totrans-196
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'msg: "正在以 {{ loginid }} 身份登录..."'
+- en: '[PRE40]'
+  id: totrans-197
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE40]'
+- en: $ ansible-playbook -i hosts prompt.yml
+  id: totrans-198
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: $ ansible-playbook -i hosts prompt.yml
+- en: 'Enter your username: james'
+  id: totrans-199
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 请输入您的用户名：james
+- en: 'Enter your password:'
+  id: totrans-200
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 请输入您的密码：
+- en: PLAY [A simple play to demonstrate prompting in a playbook] ********************
+  id: totrans-201
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: PLAY [一个简单的示例，演示如何在 playbook 中进行提示] ********************
+- en: TASK [Gathering Facts] *********************************************************
+  id: totrans-202
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 任务 [收集信息] *********************************************************
+- en: 'ok: [frt01.example.com]'
+  id: totrans-203
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'ok: [frt01.example.com]'
+- en: 'ok: [frt02.example.com]'
+  id: totrans-204
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'ok: [frt02.example.com]'
+- en: TASK [Proceed with login] ******************************************************
+  id: totrans-205
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 任务 [继续登录] ******************************************************
+- en: 'ok: [frt01.example.com] => {'
+  id: totrans-206
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'ok: [frt01.example.com] => {'
+- en: '"msg": "Logging in as james..."'
+  id: totrans-207
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '"msg": "正在以 james 身份登录..."'
+- en: '}'
+  id: totrans-208
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '}'
+- en: 'ok: [frt02.example.com] => {'
+  id: totrans-209
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'ok: [frt02.example.com] => {'
+- en: '"msg": "Logging in as james..."'
+  id: totrans-210
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '"msg": "正在以 james 身份登录..."'
+- en: '}'
+  id: totrans-211
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '}'
+- en: PLAY RECAP *********************************************************************
+  id: totrans-212
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: PLAY RECAP *********************************************************************
+- en: 'frt01.example.com : ok=2 changed=0 unreachable=0 failed=0 skipped=0 rescued=0
+    ignored=0'
+  id: totrans-213
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'frt01.example.com : ok=2 changed=0 unreachable=0 failed=0 skipped=0 rescued=0
+    ignored=0'
+- en: 'frt02.example.com : ok=2 changed=0 unreachable=0 failed=0 skipped=0 rescued=0
+    ignored=0'
+  id: totrans-214
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'frt02.example.com : ok=2 changed=0 unreachable=0 failed=0 skipped=0 rescued=0
+    ignored=0'
+- en: '[PRE41]'
+  id: totrans-215
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE41]'
+- en: '---'
+  id: totrans-216
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '---'
+- en: '- name: Simple play to demonstrate use of tags'
+  id: totrans-217
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '- name: 简单示例，演示如何使用标签'
+- en: 'hosts: frontends'
+  id: totrans-218
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'hosts: frontends'
+- en: 'tasks:'
+  id: totrans-219
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 任务：
+- en: '- name: Install nginx'
+  id: totrans-220
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '- name: 安装 nginx'
+- en: 'yum:'
+  id: totrans-221
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'yum:'
+- en: 'name: nginx'
+  id: totrans-222
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'name: nginx'
+- en: 'state: present'
+  id: totrans-223
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'state: present'
+- en: 'tags:'
+  id: totrans-224
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'tags:'
+- en: '- install'
+  id: totrans-225
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '- install'
+- en: '- name: Install nginx configuration from template'
+  id: totrans-226
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '- name: 从模板安装 nginx 配置'
+- en: 'template:'
+  id: totrans-227
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 模板：
+- en: 'src: templates/nginx.conf.j2'
+  id: totrans-228
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'src: templates/nginx.conf.j2'
+- en: 'dest: /etc/nginx.conf'
+  id: totrans-229
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'dest: /etc/nginx.conf'
+- en: 'tags:'
+  id: totrans-230
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'tags:'
+- en: '- customize'
+  id: totrans-231
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '- customize'
+- en: '[PRE42]'
+  id: totrans-232
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE42]'
+- en: $ ansible-playbook -i hosts tags.yml --tags install
+  id: totrans-233
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: $ ansible-playbook -i hosts tags.yml --tags install
+- en: PLAY [Simple play to demonstrate use of tags] **********************************
+  id: totrans-234
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: PLAY [简单示例，演示如何使用标签] **********************************
+- en: TASK [Gathering Facts] *********************************************************
+  id: totrans-235
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 任务 [收集信息] *********************************************************
+- en: 'ok: [frt02.example.com]'
+  id: totrans-236
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'ok: [frt02.example.com]'
+- en: 'ok: [frt01.example.com]'
+  id: totrans-237
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'ok: [frt01.example.com]'
+- en: TASK [Install nginx] ***********************************************************
+  id: totrans-238
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 任务 [安装 nginx] ***********************************************************
+- en: 'changed: [frt02.example.com]'
+  id: totrans-239
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'changed: [frt02.example.com]'
+- en: 'changed: [frt01.example.com]'
+  id: totrans-240
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'changed: [frt01.example.com]'
+- en: PLAY RECAP *********************************************************************
+  id: totrans-241
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: PLAY RECAP *********************************************************************
+- en: 'frt01.example.com : ok=2 changed=1 unreachable=0 failed=0 skipped=0 rescued=0
+    ignored=0'
+  id: totrans-242
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'frt01.example.com : ok=2 changed=1 unreachable=0 failed=0 skipped=0 rescued=0
+    ignored=0'
+- en: 'frt02.example.com : ok=2 changed=1 unreachable=0 failed=0 skipped=0 rescued=0
+    ignored=0'
+  id: totrans-243
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'frt02.example.com : ok=2 changed=1 unreachable=0 failed=0 skipped=0 rescued=0
+    ignored=0'
+- en: '[PRE43]'
+  id: totrans-244
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE43]'
+- en: $ ansible-playbook -i hosts tags.yml --skip-tags customize
+  id: totrans-245
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: $ ansible-playbook -i hosts tags.yml --skip-tags customize
+- en: PLAY [Simple play to demonstrate use of tags] **********************************
+  id: totrans-246
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: PLAY [简单示例，演示如何使用标签] **********************************
+- en: TASK [Gathering Facts] *********************************************************
+  id: totrans-247
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 任务 [收集信息] *********************************************************
+- en: 'ok: [frt02.example.com]'
+  id: totrans-248
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'ok: [frt02.example.com]'
+- en: 'ok: [frt01.example.com]'
+  id: totrans-249
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'ok: [frt01.example.com]'
+- en: TASK [Install nginx] ***********************************************************
+  id: totrans-250
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 任务 [安装 nginx] ***********************************************************
+- en: 'ok: [frt02.example.com]'
+  id: totrans-251
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'ok: [frt02.example.com]'
+- en: 'ok: [frt01.example.com]'
+  id: totrans-252
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'ok: [frt01.example.com]'
+- en: PLAY RECAP *********************************************************************
+  id: totrans-253
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: PLAY RECAP *********************************************************************
+- en: 'frt01.example.com : ok=2 changed=0 unreachable=0 failed=0 skipped=0 rescued=0
+    ignored=0'
+  id: totrans-254
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'frt01.example.com : ok=2 changed=0 unreachable=0 failed=0 skipped=0 rescued=0
+    ignored=0'
+- en: 'frt02.example.com : ok=2 changed=0 unreachable=0 failed=0 skipped=0 rescued=0
+    ignored=0'
+  id: totrans-255
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'frt02.example.com : ok=2 changed=0 unreachable=0 failed=0 skipped=0 rescued=0
+    ignored=0'
+- en: '[PRE44]'
+  id: totrans-256
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE44]'
+- en: $ ansible-playbook -i hosts tags.yml --skip-tags customize --list-tasks
+  id: totrans-257
+  prefs: []
+  type: TYPE_NORMAL
+  zh: $ ansible-playbook -i hosts tags.yml --skip-tags customize --list-tasks
+- en: 'playbook: tags.yml'
+  id: totrans-258
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'playbook: tags.yml'
+- en: 'play #1 (frontends): Simple play to demonstrate use of tags TAGS: []'
+  id: totrans-259
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'play #1 (前端服务器)：简单示例，演示如何使用标签 TAGS: []'
+- en: 'tasks:'
+  id: totrans-260
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 任务：
+- en: 'Install nginx TAGS: [install]'
+  id: totrans-261
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '安装 nginx TAGS: [install]'
+- en: $ ansible-playbook -i hosts tags.yml --tags install,customize --list-tasks
+  id: totrans-262
+  prefs: []
+  type: TYPE_NORMAL
+  zh: $ ansible-playbook -i hosts tags.yml --tags install,customize --list-tasks
+- en: 'playbook: tags.yml'
+  id: totrans-263
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'playbook: tags.yml'
+- en: 'play #1 (frontends): Simple play to demonstrate use of tags TAGS: []'
+  id: totrans-264
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'play #1 (前端服务器)：简单示例，演示如何使用标签 TAGS: []'
+- en: 'tasks:'
+  id: totrans-265
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 任务：
+- en: 'Install nginx TAGS: [install]'
+  id: totrans-266
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '安装 nginx TAGS: [install]'
+- en: 'Install nginx configuration from template TAGS: [customize]'
+  id: totrans-267
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '从模板安装 nginx 配置 TAGS: [customize]'
+- en: $ ansible-playbook -i hosts tags.yml --list-tasks
+  id: totrans-268
+  prefs: []
+  type: TYPE_NORMAL
+  zh: $ ansible-playbook -i hosts tags.yml --list-tasks
+- en: 'playbook: tags.yml'
+  id: totrans-269
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'playbook: tags.yml'
+- en: 'play #1 (frontends): Simple play to demonstrate use of tags TAGS: []'
+  id: totrans-270
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'play #1 (frontends): 用于演示标签使用的简单剧本 TAGS: []'
+- en: 'tasks:'
+  id: totrans-271
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'tasks:'
+- en: 'Install nginx TAGS: [install]'
+  id: totrans-272
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '安装 nginx TAGS: [install]'
+- en: 'Install nginx configuration from template TAGS: [customize]'
+  id: totrans-273
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '安装来自模板的 nginx 配置 TAGS: [customize]'
+- en: '[PRE45]'
+  id: totrans-274
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE45]'
+- en: $ ansible-vault create secret.yml
+  id: totrans-275
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: $ ansible-vault create secret.yml
+- en: 'New Vault password:'
+  id: totrans-276
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 新Vault密码：
+- en: 'Confirm New Vault password:'
+  id: totrans-277
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 确认新Vault密码：
+- en: '[PRE46]'
+  id: totrans-278
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE46]'
+- en: '---'
+  id: totrans-279
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '---'
+- en: 'secretdata: "Ansible is cool!"'
+  id: totrans-280
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'secretdata: "Ansible 很酷！"'
+- en: '[PRE47]'
+  id: totrans-281
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE47]'
+- en: $ cat secret.yml
+  id: totrans-282
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: $ cat secret.yml
+- en: $ANSIBLE_VAULT;1.1;AES256
+  id: totrans-283
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: $ANSIBLE_VAULT;1.1;AES256
+- en: '63333734623764633865633237333166333634353334373862346334643631303163653931306138'
+  id: totrans-284
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '63333734623764633865633237333166333634353334373862346334643631303163653931306138'
+- en: 6334356465396463643936323163323132373836336461370a343236386266313331653964326334
+  id: totrans-285
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 6334356465396463643936323163323132373836336461370a343236386266313331653964326334
+- en: '62363737663165336539633262366636383364343663396335643635623463626336643732613830'
+  id: totrans-286
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '62363737663165336539633262366636383364343663396335643635623463626336643732613830'
+- en: 6139363035373736370a646661396464386364653935636366633663623261633538626230616630
+  id: totrans-287
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 6139363035373736370a646661396464386364653935636366633663623261633538626230616630
+- en: '35346465346430636463323838613037386636333334356265623964633763333532366561323266'
+  id: totrans-288
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '35346465346430636463323838613037386636333334356265623964633763333532366561323266'
+- en: 'variables file (although, obviously, you must tell Ansible your vault password).
+    Create a simple playbook as follows:'
+  id: totrans-289
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 变量文件（虽然，显然你必须告诉Ansible你的Vault密码）。创建一个简单的剧本如下：
+- en: '[PRE48]'
+  id: totrans-290
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE48]'
+- en: '[PRE49]'
+  id: totrans-291
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE49]'
+- en: $ ansible-playbook -i hosts vaultplaybook.yml
+  id: totrans-292
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: $ ansible-playbook -i hosts vaultplaybook.yml
+- en: 'variables file that is encrypted with ansible-vault, but we must manually tell
+    it about the password for it to proceed. There are several ways of specifying
+    passwords for vaults (more on this in a minute), but for simplicity, try running
+    the following command and enter your vault password when prompted:'
+  id: totrans-293
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 使用ansible-vault加密的变量文件，但我们必须手动提供密码才能继续。有多种方式可以指定Vault的密码（稍后会详细介绍），但为了简便，请尝试运行以下命令，并在提示时输入你的Vault密码：
+- en: '[PRE50]'
+  id: totrans-294
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE50]'
+- en: '[PRE51]'
+  id: totrans-295
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE51]'
+- en: $ ansible-vault encrypt_string 'Ansible is cool!' --name secretdata
+  id: totrans-296
+  prefs: []
+  type: TYPE_NORMAL
+  zh: $ ansible-vault encrypt_string 'Ansible is cool!' --name secretdata
+- en: 'New Vault password:'
+  id: totrans-297
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 新Vault密码：
+- en: 'Confirm New Vault password:'
+  id: totrans-298
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 确认新Vault密码：
+- en: 'secretdata: !vault |'
+  id: totrans-299
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'secretdata: !vault |'
+- en: $ANSIBLE_VAULT;1.1;AES256
+  id: totrans-300
+  prefs: []
+  type: TYPE_NORMAL
+  zh: $ANSIBLE_VAULT;1.1;AES256
+- en: '34393431303339353735656236656130336664666337363732376262343837663738393465623930'
+  id: totrans-301
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '34393431303339353735656236656130336664666337363732376262343837663738393465623930'
+- en: 3366623061306364643966666565316235313136633264310a623736643362663035373861343435
+  id: totrans-302
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 3366623061306364643966666565316235313136633264310a623736643362663035373861343435
+- en: '62346264313638656363323835323833633264636561366339326332356430383734653030306637'
+  id: totrans-303
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '62346264313638656363323835323833633264636561366339326332356430383734653030306637'
+- en: 3736336533656230380a316364313831666463643534633530393337346164356634613065396434
+  id: totrans-304
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 3736336533656230380a316364313831666463643534633530393337346164356634613065396434
+- en: '33316338336266636666353334643865363830346566666331303763643564323065'
+  id: totrans-305
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '33316338336266636666353334643865363830346566666331303763643564323065'
+- en: Encryption successful
+  id: totrans-306
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 加密成功
+- en: '[PRE52]'
+  id: totrans-307
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE52]'
+- en: '---'
+  id: totrans-308
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '---'
+- en: '- name: A play that makes use of an Ansible Vault'
+  id: totrans-309
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '- name: 使用Ansible Vault的剧本'
+- en: 'hosts: frontends'
+  id: totrans-310
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'hosts: frontends'
+- en: 'vars:'
+  id: totrans-311
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'vars:'
+- en: 'secretdata: !vault |'
+  id: totrans-312
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'secretdata: !vault |'
+- en: $ANSIBLE_VAULT;1.1;AES256
+  id: totrans-313
+  prefs: []
+  type: TYPE_NORMAL
+  zh: $ANSIBLE_VAULT;1.1;AES256
+- en: 34393431303339353735656236656130336664666337363732376262343837 663738393465623930
+  id: totrans-314
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 34393431303339353735656236656130336664666337363732376262343837 663738393465623930
+- en: 3366623061306364643966666565316235313136633264310a623736643362 663035373861343435
+  id: totrans-315
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 3366623061306364643966666565316235313136633264310a623736643362 663035373861343435
+- en: 62346264313638656363323835323833633264636561366339326332356430 383734653030306637
+  id: totrans-316
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 62346264313638656363323835323833633264636561366339326332356430 383734653030306637
+- en: 3736336533656230380a316364313831666463643534633530393337346164 356634613065396434
+  id: totrans-317
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 3736336533656230380a316364313831666463643534633530393337346164 356634613065396434
+- en: 33316338336266636666353334643865363830346566666331303763643564 323065
+  id: totrans-318
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 33316338336266636666353334643865363830346566666331303763643564 323065
+- en: 'tasks:'
+  id: totrans-319
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'tasks:'
+- en: '- name: Tell me a secret'
+  id: totrans-320
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '- name: 告诉我一个秘密'
+- en: 'debug:'
+  id: totrans-321
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'debug:'
+- en: 'msg: "Your secret data is: {{ secretdata }}"'
+  id: totrans-322
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'msg: "你的机密数据是：{{ secretdata }}"'
+- en: '[PRE53]'
+  id: totrans-323
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE53]'
+- en: $ ansible-playbook -i hosts inlinevaultplaybook.yml --ask-vault-pass
+  id: totrans-324
+  prefs: []
+  type: TYPE_NORMAL
+  zh: $ ansible-playbook -i hosts inlinevaultplaybook.yml --ask-vault-pass
+- en: 'Vault password:'
+  id: totrans-325
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Vault密码：
+- en: PLAY [A play that makes use of an Ansible Vault] *******************************
+  id: totrans-326
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 剧本 [A play that makes use of an Ansible Vault] *******************************
+- en: TASK [Gathering Facts] *********************************************************
+  id: totrans-327
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 任务 [Gathering Facts] *********************************************************
+- en: 'ok: [frt02.example.com]'
+  id: totrans-328
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'ok: [frt02.example.com]'
+- en: 'ok: [frt01.example.com]'
+  id: totrans-329
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'ok: [frt01.example.com]'
+- en: TASK [Tell me a secret] ********************************************************
+  id: totrans-330
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 任务 [告诉我一个秘密] *******************************************************
+- en: 'ok: [frt01.example.com] => {'
+  id: totrans-331
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'ok: [frt01.example.com] => {'
+- en: '"msg": "Your secret data is: Ansible is cool!"'
+  id: totrans-332
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '"msg": "你的机密数据是：Ansible 很酷！"'
+- en: '}'
+  id: totrans-333
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '}'
+- en: 'ok: [frt02.example.com] => {'
+  id: totrans-334
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'ok: [frt02.example.com] => {'
+- en: '"msg": "Your secret data is: Ansible is cool!"'
+  id: totrans-335
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '"msg": "你的机密数据是：Ansible 很酷！"'
+- en: '}'
+  id: totrans-336
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '}'
+- en: PLAY RECAP *********************************************************************
+  id: totrans-337
+  prefs: []
+  type: TYPE_NORMAL
+  zh: PLAY RECAP *********************************************************************
+- en: 'frt01.example.com : ok=2 changed=0 unreachable=0 failed=0 skipped=0 rescued=0
+    ignored=0'
+  id: totrans-338
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'frt01.example.com : ok=2 changed=0 unreachable=0 failed=0 skipped=0 rescued=0
+    ignored=0'
+- en: 'frt02.example.com : ok=2 changed=0 unreachable=0 failed=0 skipped=0 rescued=0
+    ignored=0'
+  id: totrans-339
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'frt02.example.com : ok=2 changed=0 unreachable=0 failed=0 skipped=0 rescued=0
+    ignored=0'
+- en: '[PRE54]'
+  id: totrans-340
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE54]'
+- en: Part 3:Using Ansible in an Enterprise
+  id: totrans-341
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 第3部分：在企业中使用Ansible
+- en: In this section, we will take a practical look at how to get the most out of
+    Ansible in an enterprise environment. We will start by looking at how to automate
+    your network devices with Ansible, before moving on to the use of Ansible to manage
+    both cloud and container environments. We will then look at some of the more advanced
+    testing and troubleshooting strategies that will assist you in your use of Ansible
+    in an enterprise, before looking at the Ansible Automation Controller/ **Ansible
+    Web eXecutable** (**AWX**) product, which provides rich **Role-Based Access Control**
+    (**RBAC**) and auditing capabilities in enterprise settings in a variety of execution
+    environments. Finally, we will deep dive into execution environments.
+  id: totrans-342
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本节中，我们将实用地探讨如何在企业环境中充分发挥Ansible的作用。我们将从如何使用Ansible自动化网络设备开始，然后继续探讨如何使用Ansible管理云环境和容器环境。接着，我们将研究一些更高级的测试和故障排除策略，帮助你在企业中使用Ansible时解决问题，之后将重点介绍Ansible自动化控制器/
+    **Ansible Web eXecutable**（**AWX**）产品，它提供丰富的**基于角色的访问控制**（**RBAC**）和审计功能，支持多种执行环境中的企业设置。最后，我们将深入探讨执行环境。
+- en: 'This section contains the following chapters:'
+  id: totrans-343
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本节包含以下章节：
+- en: '[*Chapter 10*](B20846_10.xhtml#_idTextAnchor423), *Network Automation with
+    Ansible*'
+  id: totrans-344
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '[*第10章*](B20846_10.xhtml#_idTextAnchor423)，*使用Ansible进行网络自动化*'
+- en: '[*Chapter 11*](B20846_11.xhtml#_idTextAnchor456), *Container and Cloud Management*'
+  id: totrans-345
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '[*第11章*](B20846_11.xhtml#_idTextAnchor456)，*容器和云管理*'
+- en: '[*Chapter 12*](B20846_12.xhtml#_idTextAnchor523), *Troubleshooting and Testing
+    Strategies*'
+  id: totrans-346
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '[*第12章*](B20846_12.xhtml#_idTextAnchor523)，*故障排除和测试策略*'
+- en: '[*Chapter 13*](B20846_13.xhtml#_idTextAnchor562), *Getting Started with Ansible
+    Automation Controller*'
+  id: totrans-347
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '[*第13章*](B20846_13.xhtml#_idTextAnchor562)，*Ansible自动化控制器入门*'
+- en: '[*Chapter 14*](B20846_14.xhtml#_idTextAnchor592), *Execution Environments*'
+  id: totrans-348
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '[*第14章*](B20846_14.xhtml#_idTextAnchor592)，*执行环境*'

@@ -1,0 +1,1466 @@
+- en: '10'
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '10'
+- en: Building Out a Cloud Network
+  id: totrans-1
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 构建云网络
+- en: Now that we have launched servers in Microsoft Azure, we will start looking
+    at launching services within **Amazon Web** **Services** (**AWS**).
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经在 Microsoft Azure 启动了服务器，我们将开始在 **Amazon Web** **Services**（**AWS**）内启动服务。
+- en: Before we launch virtual machine instances, we must create a network to host
+    them. This is called a **virtual private cloud** (**VPC**) and there are a few
+    different elements we will need to bring together in a playbook to create one,
+    which we will then be able to use for our instances.
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在启动虚拟机实例之前，我们必须创建一个网络来托管它们。这被称为**虚拟私有云**（**VPC**），我们需要在 playbook 中将几个不同的元素整合起来，以创建一个
+    VPC，然后我们可以将其用于我们的实例。
+- en: 'In this chapter, we will do the following:'
+  id: totrans-4
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们将执行以下操作：
+- en: Receive an introduction to AWS
+  id: totrans-5
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 介绍 AWS
+- en: Cover what it is we are trying to achieve and why
+  id: totrans-6
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 介绍我们想要实现的目标及其原因
+- en: Create a VPC, subnets, and routes (networking and routing)
+  id: totrans-7
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 创建 VPC、子网和路由（网络和路由）
+- en: Create security groups (firewall)
+  id: totrans-8
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 创建安全组（防火墙）
+- en: We will look at more advanced Ansible techniques as we launch and manage more
+    dynamic resources with complex dependencies.
+  id: totrans-9
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当我们启动和管理更多具有复杂依赖关系的动态资源时，我们将研究更高级的 Ansible 技巧。
+- en: 'The chapter covers the following topics:'
+  id: totrans-10
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章涵盖以下主题：
+- en: An introduction to AWS
+  id: totrans-11
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: AWS 简介
+- en: Amazon VPC overview
+  id: totrans-12
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Amazon VPC 概述
+- en: Creating an access key and secret
+  id: totrans-13
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 创建访问密钥和密钥对
+- en: Getting Ansible ready for targeting AWS
+  id: totrans-14
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 为目标 AWS 准备 Ansible
+- en: The AWS playbook
+  id: totrans-15
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: AWS playbook
+- en: Running the playbook
+  id: totrans-16
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 运行 playbook
+- en: Technical requirements
+  id: totrans-17
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 技术要求
+- en: This chapter will use AWS; you will need administrator access to create the
+    roles needed to allow Ansible to interact with your account. As with other chapters,
+    you can find the complete playbooks in the `Chapter10` folder in the accompanying
+    GitHub repository at [https://github.com/PacktPublishing/Learn-Ansible-Second-Edition/tree/main/Chapter10](https://github.com/PacktPublishing/Learn-Ansible-Second-Edition/tree/main/Chapter10).
+  id: totrans-18
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章将使用 AWS；您需要管理员访问权限来创建角色，以允许 Ansible 与您的账户交互。与其他章节一样，您可以在附带的 GitHub 仓库的 `Chapter10`
+    文件夹中找到完整的 playbooks，网址为 [https://github.com/PacktPublishing/Learn-Ansible-Second-Edition/tree/main/Chapter10](https://github.com/PacktPublishing/Learn-Ansible-Second-Edition/tree/main/Chapter10)。
+- en: An introduction to AWS
+  id: totrans-19
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: AWS 简介
+- en: 'AWS has been around since 2002; it started by offering a few services that
+    were not linked in any way. It progressed in this form until early 2006 when it
+    was relaunched. The relaunched AWS brought together three services:'
+  id: totrans-20
+  prefs: []
+  type: TYPE_NORMAL
+  zh: AWS 自 2002 年以来就存在；它最初提供了一些不相关的服务。直到 2006 年初，它才重新推出。重新推出的 AWS 将三项服务整合在一起：
+- en: '**Amazon Elastic Compute Cloud** (**Amazon EC2**): This is the AWS compute
+    service'
+  id: totrans-21
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**Amazon 弹性计算云**（**Amazon EC2**）：这是 AWS 的计算服务'
+- en: '**Amazon Simple Storage Service** (**Amazon S3**): Amazon’s scalable object
+    storage service'
+  id: totrans-22
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**Amazon 简单存储服务**（**Amazon S3**）：亚马逊的可扩展对象存储服务'
+- en: '**Amazon Simple Queue Service** (**Amazon SQS**): This service provides a message
+    queue, primarily for web applications'
+  id: totrans-23
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**Amazon 简单队列服务**（**Amazon SQS**）：此服务提供消息队列，主要用于 Web 应用程序'
+- en: 'Since 2006, it has grown from three unique services to over 160, covering over
+    15 primary areas such as the following:'
+  id: totrans-24
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 自 2006 年以来，AWS 从三个独立的服务发展到了超过 160 个，涵盖了 15 个主要领域，具体包括：
+- en: Compute
+  id: totrans-25
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 计算
+- en: Storage
+  id: totrans-26
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 存储
+- en: Database
+  id: totrans-27
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 数据库
+- en: Networking and content delivery
+  id: totrans-28
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 网络和内容交付
+- en: Machine learning analytics security, identity, and compliance
+  id: totrans-29
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 机器学习分析安全、身份和合规性
+- en: Internet of things
+  id: totrans-30
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 物联网
+- en: At its earnings call in October 2023, it was revealed that AWS had USD 23.06
+    billion in revenue in the third quarter of 2023, good for a service that initially
+    offered to share idle compute time.
+  id: totrans-31
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 2023 年 10 月的财报电话会议中，透露 AWS 在 2023 年第三季度的收入为 230.6 亿美元，这是一个最初提供共享空闲计算时间的服务所取得的成就。
+- en: At the time of writing, AWS spans 32 geographic regions, which host a total
+    of 102 availability zones ([https://aws.amazon.com/about-aws/global-infrastructure/](https://aws.amazon.com/about-aws/global-infrastructure/)).
+  id: totrans-32
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在撰写本文时，AWS 覆盖了 32 个地理区域，托管了 102 个可用区 ([https://aws.amazon.com/about-aws/global-infrastructure/](https://aws.amazon.com/about-aws/global-infrastructure/))。
+- en: 'So, what makes AWS so successful? Not only its coverage but its approach to
+    putting out its services. Andy Jassy, AWS CEO, has been quoted as saying:'
+  id: totrans-33
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 那么，是什么让 AWS 如此成功呢？不仅仅是它的覆盖面，还有它推出服务的方式。AWS CEO Andy Jassy 曾被引用说：
+- en: “*Our mission is to enable any developer or any company to be able to build
+    all their technology applications on top of our infrastructure technology platform*.”
+  id: totrans-34
+  prefs: []
+  type: TYPE_NORMAL
+  zh: “*我们的使命是让任何开发者或任何公司能够在我们的基础设施技术平台上构建所有他们的技术应用*。”
+- en: As an individual, you have access to the same APIs, services, regions, tools,
+    and pricing models as large multi-national companies and Amazon themselves, as
+    they consume their services. This gives you the freedom to start small and scale
+    massively. For example, Amazon EC2 instances start from around USD 4.50 per month
+    for a t2.nano (1 vCPU and 0.5G) all the way up to over USD 19,000 per month for
+    an x1e.32xlarge (128 vCPU, 3,904 GB RAM, and two 1920 GB SSD storage); as you
+    can see, there are instance types for every workload imaginable.
+  id: totrans-35
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 作为个人用户，你可以使用与大型跨国公司以及 Amazon 自身一样的 API、服务、区域、工具和定价模型，就像它们消费自己的服务一样。这让你可以自由从小规模开始并实现大规模扩展。例如，Amazon
+    EC2 实例的费用从每月约 4.50 美元的 t2.nano（1 vCPU 和 0.5GB）起，一直到每月超过 19,000 美元的 x1e.32xlarge（128
+    vCPU，3,904 GB RAM 和两块 1920 GB SSD 存储）；正如你所见，几乎所有工作负载都有适合的实例类型。
+- en: Both instances and most services are billed under pay-as-you-go, from per-second
+    billing for EC2 instances to pay per GB per month for the storage you are using.
+  id: totrans-36
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 实例和大多数服务按使用量计费，从 EC2 实例按秒计费，到存储按 GB 每月计费。
+- en: Amazon VPC overview
+  id: totrans-37
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Amazon VPC 概述
+- en: In this chapter, we are going to be concentrating on launching an **Amazon Virtual
+    Private Cloud** (**Amazon VPC**); this is the networking layer that will host
+    the computing and other Amazon services that we will be launching in [*Chapter
+    11*](B21620_11.xhtml#_idTextAnchor501), *Highly Available* *Cloud Deployments*.
+  id: totrans-38
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们将专注于启动 **Amazon Virtual Private Cloud**（**Amazon VPC**）；这是将托管我们将在 [*第11章*](B21620_11.xhtml#_idTextAnchor501)
+    中启动的计算和其他 Amazon 服务的网络层，*高度可用*的*云部署*。
+- en: 'We are going to be launching our VPC into the **EU-West #1 (Ireland)** region;
+    we will be spanning all three availability zones for our **EC2** instances and
+    also the **Application Elastic Load Balancer**. We will, again, be using the three
+    availability zones for our **Amazon Relational Database Service** (**RDS**) instance
+    and also two zones for the **Amazon Elastic File System** (**Amazon** **EFS**)
+    volumes.'
+  id: totrans-39
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '我们将把 VPC 部署到 **EU-West #1（爱尔兰）** 区域；我们将跨越所有三个可用区来部署我们的 **EC2** 实例以及 **应用负载均衡器**。我们同样会使用这三个可用区来部署我们的
+    **Amazon Relational Database Service**（**RDS**）实例，还会在两个可用区部署 **Amazon Elastic
+    File System**（**Amazon EFS**）卷。'
+- en: 'This all means our Ansible playbook needs to create/configure the following:'
+  id: totrans-40
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这意味着我们的 Ansible playbook 需要创建/配置以下内容：
+- en: One Amazon VPC
+  id: totrans-41
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 一个 Amazon VPC
+- en: Three subnets for EC2 instances
+  id: totrans-42
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 三个 EC2 实例的子网
+- en: Three subnets for Amazon RDS instances
+  id: totrans-43
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 三个 Amazon RDS 实例的子网
+- en: Three subnets for Amazon EFS volumes
+  id: totrans-44
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 三个 Amazon EFS 卷的子网
+- en: Three subnets for the Application Load Balancer
+  id: totrans-45
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 三个应用负载均衡器的子网
+- en: One internet gateway
+  id: totrans-46
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 一个互联网网关
+- en: 'We will also need to configure the following:'
+  id: totrans-47
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们还需要配置以下内容：
+- en: One route to allow access through the internet gateway
+  id: totrans-48
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 一条路由，允许通过互联网网关访问
+- en: One security group that allows everyone to access port `80` (HTTP) and `443`
+    (HTTPS) on the Application Load Balancer
+  id: totrans-49
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 一个安全组，允许所有人访问应用负载均衡器的 `80` 端口（HTTP）和 `443` 端口（HTTPS）
+- en: One security group that allows trusted source access to port `22` (SSH) on the
+    EC2 instances
+  id: totrans-50
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 一个安全组，允许可信源通过 `22` 端口（SSH）访问 EC2 实例
+- en: One security group that allows access to port `80` (HTTP) from the Application
+    Load Balancer to the EC2 instances
+  id: totrans-51
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 一个安全组，允许从应用负载均衡器访问 EC2 实例的 `80` 端口（HTTP）
+- en: One security group that allows access to port `3306` (MySQL) on the Amazon RDS
+    instances from the EC2 instances
+  id: totrans-52
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 一个安全组，允许从 EC2 实例访问 Amazon RDS 实例的 `3306` 端口（MySQL）
+- en: One security group that allows access to port `2049` (NFS) on the Amazon EFS
+    volumes from the EC2 instances
+  id: totrans-53
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 一个安全组，允许从 EC2 实例访问 Amazon EFS 卷的 `2049` 端口（NFS）
+- en: This will give us our primary network, allowing restrictive access to everything
+    but the Application Load Balancer, which we want to be publicly available.
+  id: totrans-54
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这将为我们提供主要的网络，允许对除应用负载均衡器外的所有内容进行限制性访问，而应用负载均衡器是我们希望公开可用的。
+- en: Before creating an Ansible playbook that deploys the network, we need to get
+    an AWS API access key and secret.
+  id: totrans-55
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在创建一个部署网络的 Ansible playbook 之前，我们需要获取一个 AWS API 访问密钥和秘密密钥。
+- en: Creating an access key and secret
+  id: totrans-56
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 创建访问密钥和秘密密钥
+- en: It is more than possible to create an access key and secret key for your AWS
+    user to give Ansible full access to your AWS account.
+  id: totrans-57
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为你的 AWS 用户创建访问密钥和秘密密钥，以便为 Ansible 提供对你的 AWS 账户的完全访问权限是完全可能的。
+- en: 'Because of this, we are going to look at creating a user for Ansible, which
+    only has permission to access the parts of AWS we know that Ansible will need
+    to interact with for the tasks we are covering in this chapter. We will be giving
+    Ansible full access to the following services:'
+  id: totrans-58
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 因此，我们将创建一个 Ansible 用户，它仅有权限访问 AWS 中我们知道 Ansible 在本章中将需要交互的部分。我们将给予 Ansible 对以下服务的完全访问权限：
+- en: Amazon VPC
+  id: totrans-59
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 亚马逊 VPC
+- en: Amazon EC2
+  id: totrans-60
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 亚马逊 EC2
+- en: Amazon RDS
+  id: totrans-61
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 亚马逊 RDS
+- en: Amazon EFS
+  id: totrans-62
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 亚马逊 EFS
+- en: 'To do this, follow these steps:'
+  id: totrans-63
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为此，按照以下步骤操作：
+- en: Log in to the AWS console, which can be found at [https://console.aws.amazon.com/](https://console.aws.amazon.com/).
+  id: totrans-64
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 登录到 AWS 控制台，可以在[https://console.aws.amazon.com/](https://console.aws.amazon.com/)找到。
+- en: Once logged in, click on `IAM` into the search box and then click on the **IAM
+    “Manage access to AWS** **resources”** result.
+  id: totrans-65
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 登录后，在搜索框中点击`IAM`，然后点击**IAM “管理 AWS 资源访问”**结果。
+- en: On the **IAM** page, click **User Groups** in the left-hand side menu; we will
+    create a group with the permissions assigned to it, and then we will create a
+    user and add it to our group.
+  id: totrans-66
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在**IAM**页面，点击左侧菜单中的**用户组**；我们将创建一个分配权限的组，然后创建一个用户并将其添加到我们的组中。
+- en: Once on the `Ansible`.
+  id: totrans-67
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 一旦进入`Ansible`。
+- en: Now, in the **Attach permissions policies – Optional** section, select **AmazonEC2FullAccess**,
+    **AmazonVPCFullAccess**, **AmazonRDSFullAccess**, and **AmazonElasticFileSystemFullAccess**;
+    once all four have been selected, click on the **Create Group** button at the
+    bottom of the page.
+  id: totrans-68
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在，在**附加权限策略 - 可选**部分，选择**AmazonEC2FullAccess**、**AmazonVPCFullAccess**、**AmazonRDSFullAccess**和**AmazonElasticFileSystemFullAccess**；选择所有四个后，点击页面底部的**创建组**按钮。
+- en: Now that we have our Ansible group, click **Users** in the left-hand side menu.
+  id: totrans-69
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在我们已经有了 Ansible 组，点击左侧菜单中的**用户**。
+- en: Once on the `LearnAnsible` in here
+  id: totrans-70
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 一旦进入这里的`LearnAnsible`
+- en: Leave the **Provide user access to the AWS Management Console – optional** option
+    unchecked, as we will create a programmatic user
+  id: totrans-71
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 保留**提供用户访问 AWS 管理控制台 - 可选**选项未勾选，因为我们将创建一个编程用户。
+- en: Click on the `Ansible` group we created earlier ticked, and then click **Next**,
+    which will take you to the **Review and** **Create** page.
+  id: totrans-72
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击我们之前创建的`Ansible`组，然后点击**下一步**，这将带你到**审核和** **创建**页面。
+- en: Once you have reviewed the details, you need to click the `LearnAnsible` user.
+  id: totrans-73
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 审核详细信息后，你需要点击`LearnAnsible`用户。
+- en: The final step is to get an access key for our user. To get this, click on the
+    `LearnAnsible` user and select the **Security credentials** tab; from there, scroll
+    down to **Access Keys** and click the **Create access** **key** button.
+  id: totrans-74
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 最后一步是为我们的用户获取访问密钥。为此，点击`LearnAnsible`用户，选择**安全凭证**标签；然后向下滚动到**访问密钥**，点击**创建访问**
+    **密钥**按钮。
+- en: In the list of `For use with Learn Ansible` for the description tag value and
+    then click **Create** **access key**.
+  id: totrans-75
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在`For use with Learn Ansible`列表中选择描述标签的值，然后点击**创建** **访问密钥**。
+- en: The **Retrieve access keys** page is the only time you get access to the Secret
+    access key, so I recommend downloading the CSV file. Once downloaded, click on
+    **Done**.
+  id: totrans-76
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: '**获取访问密钥**页面是唯一可以访问秘密访问密钥的地方，因此我建议下载 CSV 文件。下载后，点击**完成**。'
+- en: Important note
+  id: totrans-77
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 重要提示
+- en: The CSV file you have just downloaded contains credentials allowing whoever
+    has them to launch resources in your AWS account; please do not share them and
+    keep them safe, as they could be misused, resulting in a huge and unexpected AWS
+    bill should they fall into the wrong hands.
+  id: totrans-78
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你刚下载的 CSV 文件包含凭证，允许拥有它们的人在你的 AWS 账户中启动资源；请勿分享它们并确保其安全，以免被滥用，如果落入错误之手，可能导致巨额且意外的
+    AWS 账单。
+- en: Now that we have an access key ID and secret access key for a user with the
+    permissions, we need to launch our VPC using Ansible; we can start getting Ansible
+    ready and reviewing the playbook.
+  id: totrans-79
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们有了一个拥有权限的用户的访问密钥 ID 和秘密访问密钥，我们需要使用 Ansible 启动我们的 VPC；我们可以开始准备 Ansible 并审查剧本。
+- en: Getting Ansible ready for targeting AWS
+  id: totrans-80
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 为目标 AWS 准备 Ansible
+- en: We first need to discuss how to pass our access key ID and secret access key
+    to Ansible safely and securely. As I will share the final playbooks in a public
+    repository on GitHub, I want to keep my AWS keys private from the world as that
+    could get expensive! Typically, if it were a private repository, I would use Ansible
+    Vault or some other secret management to encrypt the keys and include them with
+    other potentially sensitive data, such as deployment keys.
+  id: totrans-81
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们首先需要讨论如何安全地将访问密钥ID和秘密访问密钥传递给Ansible。由于我将把最终的播放书分享在GitHub的公共仓库中，所以我希望将我的AWS密钥从公开世界中保持私密，因为泄露了可能会导致费用增加！通常，如果是私人仓库，我会使用Ansible
+    Vault或其他一些秘密管理工具来加密密钥，并将它们与其他可能敏感的数据（例如部署密钥）一起包含。
+- en: In this case, I don’t want to include any encrypted information in the repository,
+    as it would mean that people would need to unencrypt it, edit the values, and
+    then re-encrypt it. Luckily, the AWS modules allow you to set two environment
+    variables on your Ansible controller; those variables will then be read as part
+    of the playbook execution.
+  id: totrans-82
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这种情况下，我不想在仓库中包含任何加密信息，因为这意味着人们需要解密它，编辑值，然后重新加密。幸运的是，AWS模块允许你在Ansible控制器上设置两个环境变量；这些变量将在播放书执行过程中被读取。
+- en: 'To set the variables, run the following commands to make sure that you replace
+    the content with your access key and secret after `=` (the information listed
+    as follows is just placeholder values):'
+  id: totrans-83
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要设置这些变量，请运行以下命令，确保在`=`后替换内容为你的访问密钥和秘密密钥（以下列出的信息仅为占位符值）：
+- en: '[PRE0]'
+  id: totrans-84
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: 'Once set, you can view the contents by running the following:'
+  id: totrans-85
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 设置后，你可以通过运行以下命令查看内容：
+- en: '[PRE1]'
+  id: totrans-86
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: Now that we can securely pass our credentials to Ansible, we can install the
+    Python modules needed by the AWS Ansible modules to interact with the AWS API.
+  id: totrans-87
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们可以安全地将凭证传递给Ansible，我们可以安装AWS Ansible模块所需的Python模块，以便与AWS API进行交互。
+- en: Important note
+  id: totrans-88
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 重要提示
+- en: You must set the environment variables for each terminal session, as they will
+    be lost each time you close your terminal.
+  id: totrans-89
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你必须为每个终端会话设置环境变量，因为每次关闭终端时这些变量都会丢失。
+- en: 'To install the Python modules, run the following command:'
+  id: totrans-90
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要安装Python模块，请运行以下命令：
+- en: '[PRE2]'
+  id: totrans-91
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: Now that we have the basics configured, we can review our playbook.
+  id: totrans-92
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经配置了基本设置，可以审查我们的播放书。
+- en: The AWS playbook
+  id: totrans-93
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: AWS播放书
+- en: As mentioned at the start of the chapter, we are going to be using some more
+    advanced techniques when it comes to deploying resources in AWS where possible;
+    I have tried to allow the resources to be deployed as dynamically as possible,
+    a lot of which comes down to how we define our variables, which is where we are
+    going to start our playbook review.
+  id: totrans-94
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如本章开头所提到的，我们将在可能的情况下使用一些更高级的技术来部署AWS中的资源；我尽量让资源的部署尽可能动态化，这在很大程度上取决于我们如何定义变量，而这正是我们将开始审查播放书的地方。
+- en: The playbook variables
+  id: totrans-95
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 播放书变量
+- en: 'Most of the variables we define can be found in `group_vars/common.yml`, and
+    as you can see from the following, they start by looking a lot like the variables
+    we described in [*Chapter 9*](B21620_09.xhtml#_idTextAnchor411), *Moving to* *the
+    Cloud*:'
+  id: totrans-96
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们定义的大部分变量可以在`group_vars/common.yml`中找到，正如你从以下内容所见，它们看起来很像我们在[*第9章*](B21620_09.xhtml#_idTextAnchor411)中描述的变量，*迁移到云端*：
+- en: '[PRE3]'
+  id: totrans-97
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: As you can see, we have the same `debug_output` feature flag and selection of
+    variables used to describe our app and the AWS region in which it will be launched.
+  id: totrans-98
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，我们有相同的`debug_output`特性标志和一组变量，用于描述我们的应用程序及其将要启动的AWS区域。
+- en: 'Next up, we have the resource names:'
+  id: totrans-99
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来，我们来看一下资源名称：
+- en: '[PRE4]'
+  id: totrans-100
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: 'Nothing too out of the ordinary so far, but here we will find our first difference
+    in approach:'
+  id: totrans-101
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 到目前为止没有什么特别的地方，但这里我们会看到我们方法上的第一次区别：
+- en: '[PRE5]'
+  id: totrans-102
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: At first glance, that doesn’t look too dissimilar to what we did for Microsoft
+    Azure.
+  id: totrans-103
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 乍一看，这与我们在Microsoft Azure中所做的似乎没有太大区别。
+- en: 'However, you might have noticed that there are no IP address CIDR ranges listed
+    for the subnets, just some details about the subnets, including a dictionary of
+    roles:'
+  id: totrans-104
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，你可能已经注意到子网没有列出IP地址CIDR范围，只列出了一些关于子网的详细信息，包括角色字典：
+- en: '[PRE6]'
+  id: totrans-105
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: We will look at why the subnet’s CIDR ranges are missing when we get to the
+    tasks that create the subnet.
+  id: totrans-106
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当我们开始创建子网的任务时，我们会看到为什么子网的CIDR范围缺失。
+- en: 'Next, we have the variables for creating the security groups; in total, we
+    will be configuring four security groups, so in the interest of space, I will
+    only be showing one of the small groups here:'
+  id: totrans-107
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来，我们有创建安全组的变量；总的来说，我们将配置四个安全组，因此为了节省空间，这里仅展示其中一个小组：
+- en: '[PRE7]'
+  id: totrans-108
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE7]'
+- en: 'See the GitHub repo for the full configuration for the four security groups;
+    there is only one thing at this point to highlight, and that is this: where we
+    reference `{{ ec2_group_id | default('''') }}`, we are setting a default value
+    of nothing (which is the `''''` part). We will discuss why we are doing this when
+    we cover the security role.'
+  id: totrans-109
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请参阅 GitHub 仓库以获取四个安全组的完整配置；目前要特别强调的只有一件事，那就是：在引用 `{{ ec2_group_id | default('')
+    }}` 时，我们将默认值设置为无（即 `''` 部分）。我们将在讨论安全角色时解释为什么要这样做。
+- en: The final set of variables is the dictionary (`playbook_dict`) and a variable,
+    which sets the value of `region` using `app.region`; again, see the GitHub if
+    you want to see all the contents.
+  id: totrans-110
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后一组变量是字典（`playbook_dict`）和一个变量，它使用 `app.region` 设置 `region` 的值；如果你想查看所有内容，请参见
+    GitHub。
+- en: The VPC role
+  id: totrans-111
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: VPC 角色
+- en: 'Before we get to the exciting tasks, we need to create the VPC. The task in
+    `roles/vpc/tasks/main.yml` looks like the following:'
+  id: totrans-112
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在我们进入令人兴奋的任务之前，我们需要创建 VPC。`roles/vpc/tasks/main.yml` 中的任务如下所示：
+- en: '[PRE8]'
+  id: totrans-113
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE8]'
+- en: 'The task is pretty much as you would expect, apart from the tags being set
+    a little more in line than those we defined in [*Chapter 9*](B21620_09.xhtml#_idTextAnchor411),
+    *Moving to the Cloud*. There is also a debug statement that prints the results
+    of creating the VPC if you set `debug_output` to `true`:'
+  id: totrans-114
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 任务基本上和你预期的一样，只是标签设置稍微更符合我们在 [*第 9 章*](B21620_09.xhtml#_idTextAnchor411)，《*迁移到云端*》中定义的标签。还有一个调试语句，如果将
+    `debug_output` 设置为 `true`，它会打印创建 VPC 的结果：
+- en: '[PRE9]'
+  id: totrans-115
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE9]'
+- en: From now on, it is safe to assume that all registered output will be followed
+    by an `ansible.builtin.debug` task. Now that we have our VPC launched, we can
+    start putting things inside it, beginning with the subnets, where things get more
+    interesting.
+  id: totrans-116
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 从现在开始，可以安全地假设所有注册的输出将由 `ansible.builtin.debug` 任务跟随。现在我们的 VPC 已经启动，我们可以开始将内容放入其中，从子网开始，这里将更有趣。
+- en: The subnets role
+  id: totrans-117
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 子网角色
+- en: As mentioned in the AWS overview, there are 32 geographic regions and, at the
+    time of writing, 102 Availability Zones. AWS differs from Microsoft Azure in that
+    you need a subnet per Availability Zone rather than a single subnet spanning all
+    the availability zones.
+  id: totrans-118
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如 AWS 概述中所述，AWS 共有 32 个地理区域，并且在写本文时有 102 个可用区。与 Microsoft Azure 不同，AWS 需要每个可用区都有一个子网，而不是一个跨越所有可用区的子网。
+- en: The `eu-west-1` region, which is the region we will target, is made up of three
+    availability zones, and we have subnets for four different roles, meaning that
+    we need 12 subnets in total, but our playbook could easily be targeting a region
+    that only has two availability zones, or in some cases, even more.
+  id: totrans-119
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`eu-west-1` 区域是我们将要针对的区域，由三个可用区组成，并且我们为四种不同角色设置了子网，这意味着我们总共需要 12 个子网，但我们的 playbook
+    很可能会针对一个仅有两个可用区的区域，或者在某些情况下，可能有更多的可用区。'
+- en: 'So, our first task is to get information on the availability zones in our target
+    region:'
+  id: totrans-120
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 因此，我们的第一个任务是获取目标区域中可用区的信息：
+- en: '[PRE10]'
+  id: totrans-121
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE10]'
+- en: 'Now that we know some information on the region, we can use that information
+    and create our subnets:'
+  id: totrans-122
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们知道了一些区域信息，我们可以利用这些信息来创建子网：
+- en: '[PRE11]'
+  id: totrans-123
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE11]'
+- en: This task is quite different from the ones we have been using so far in the
+    book, so let’s take a deeper dive into what is happening.
+  id: totrans-124
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个任务与我们之前在本书中使用的任务非常不同，所以让我们更深入地了解一下发生了什么。
+- en: Here, we are using a loop to automate the creation of multiple subnets. Each
+    iteration of the loop processes one subnet from the `vpc.subnets` list, which,
+    as we have already seen, contains the configuration details for each subnet.
+  id: totrans-125
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这里，我们使用循环来自动创建多个子网。每次循环处理 `vpc.subnets` 列表中的一个子网，正如我们之前所看到的，列表包含每个子网的配置详细信息。
+- en: As the loop runs, it assigns the current subnet’s details to the `subnet_item`
+    variable and its index in the list to `subnet_index`. These variables are then
+    utilized to customize the creation process for each subnet.
+  id: totrans-126
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当循环运行时，它将当前子网的详细信息分配给 `subnet_item` 变量，并将该子网在列表中的索引分配给 `subnet_index`。然后，这些变量被用来定制每个子网的创建过程。
+- en: The task includes and executes the steps defined in `create_subnet.yml` (which
+    we will cover next) for each subnet, using the specific details of that subnet
+    (such as its name and role).
+  id: totrans-127
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 该任务包括并执行在 `create_subnet.yml`（我们接下来将讨论）中为每个子网定义的步骤，使用该子网的具体详细信息（如名称和角色）。
+- en: 'You may have noticed that we still haven’t passed in any CIDR ranges for the
+    subnets; this is all handled within the `create_subnet.yml` task, which we loop
+    over for each of our four subnet types; this is also where a second loop happens:'
+  id: totrans-128
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可能已经注意到，我们仍然没有传入任何子网的CIDR范围；这些都在`create_subnet.yml`任务中处理，我们为每个子网类型循环遍历；这也是发生第二个循环的地方：
+- en: '[PRE12]'
+  id: totrans-129
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE12]'
+- en: Please stick with me, as this is where it gets a little confusing; for each
+    of the four loops we are enacting from our main loop, we are taking the information
+    on the availability zones and then looping over them, creating a subnet per availability
+    zone for the role we are currently looping over.
+  id: totrans-130
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请跟着我，因为这里可能有点混乱；对于我们从主循环中执行的四个循环中的每一个，我们都将获取可用区的信息，然后对它们进行循环，为我们当前正在循环的角色创建一个子网。
+- en: So, what about the CIDR range for the subnet?
+  id: totrans-131
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 那么，子网的CIDR范围是什么呢？
+- en: 'You may have noticed something where you would expect to see the CIDR range;
+    we have this expression:'
+  id: totrans-132
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可能已经注意到，在你期望看到CIDR范围的地方，我们有这个表达式：
+- en: '[PRE13]'
+  id: totrans-133
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE13]'
+- en: 'We have the following components in the expression:'
+  id: totrans-134
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们在表达式中有以下组件：
+- en: '`vpc_output.vpc.cidr_block`: This is the CIDR block of the VPC, within which
+    the subnets will be created. For our example, it’s `10.0.0.0/22`.'
+  id: totrans-135
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`vpc_output.vpc.cidr_block`：这是VPC的CIDR块，在此CIDR块内将创建子网。对于我们的示例，它是`10.0.0.0/22`。'
+- en: '`vpc.subnet_size`: This specifies the size of each subnet. We are using `/27`,
+    representing a subnet with 32 IP addresses.'
+  id: totrans-136
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`vpc.subnet_size`：这指定了每个子网的大小。我们使用`/27`，表示一个包含32个IP地址的子网。'
+- en: '`az_zones_from_main.availability_zones|length`: This is the total number of
+    availability zones available. The region we are targeting has `3` availability
+    zones.'
+  id: totrans-137
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`az_zones_from_main.availability_zones|length`：这是可用的可用区的总数。我们目标的区域有`3`个可用区。'
+- en: '`az_loop_index`: This is the current index in the loop over the availability
+    zones.'
+  id: totrans-138
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`az_loop_index`：这是在可用区上循环时的当前索引。'
+- en: '`subnet_index`: This is the index of the current subnet being processed.'
+  id: totrans-139
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`subnet_index`：这是当前处理的子网的索引。'
+- en: 'This means that for our expression, we will get the following results. The
+    first subnet, which is labeled `az1`) will have the following:'
+  id: totrans-140
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这意味着，对于我们的表达式，我们将得到以下结果。第一个子网，标记为`az1`，将具有以下内容：
+- en: '`az_loop_index = 0`'
+  id: totrans-141
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`az_loop_index = 0`'
+- en: '`subnet_index = 0`'
+  id: totrans-142
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`subnet_index = 0`'
+- en: 'So, the formula would be `0+(0*3)=0`, meaning that we would get the following:'
+  id: totrans-143
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 所以，公式将是`0+(0*3)=0`，这意味着我们将得到以下内容：
+- en: '[PRE14]'
+  id: totrans-144
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE14]'
+- en: With `vpc_output.vpc.cidr_block` being `10.0.0.0/22`, we could get the first
+    `/27`, which would be `10.0.0.0/27`.
+  id: totrans-145
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 假设`vpc_output.vpc.cidr_block`是`10.0.0.0/22`，我们可以得到第一个`/27`，它将是`10.0.0.0/27`。
+- en: 'For the second availability zone (`az2`), the loop would be the following:'
+  id: totrans-146
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于第二个可用区（`az2`），循环将如下所示：
+- en: '`az_loop_index = 1`'
+  id: totrans-147
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`az_loop_index = 1`'
+- en: '`subnet_index = 0`'
+  id: totrans-148
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`subnet_index = 0`'
+- en: '`1+(0*3)=1` means we would get `10.0.0.32/27` since the next subnet block starts
+    immediately after the previous one at the next 32 IP address interval.'
+  id: totrans-149
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`1+(0*3)=1`意味着我们将得到`10.0.0.32/27`，因为下一个子网块从前一个子网的下一个32个IP地址间隔开始。'
+- en: The third Availability Zone (`az3`) would be `2+(0*3)=2`, and the CIDR block
+    would be `10.0.0.64/27`.
+  id: totrans-150
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 第三个可用区（`az3`）将是`2+(0*3)=2`，CIDR块将是`10.0.0.64/27`。
+- en: 'The next subnet role, which is the RDS role, would give the following for `az1`:'
+  id: totrans-151
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 下一个子网角色，即RDS角色，将为`az1`提供以下内容：
+- en: '`az_loop_index = 0`'
+  id: totrans-152
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`az_loop_index = 0`'
+- en: '`subnet_index = 1`'
+  id: totrans-153
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`subnet_index = 1`'
+- en: The formula would be `0+(1*3)=3`, giving us a CIDR block `10.0.0.96/27`.
+  id: totrans-154
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 公式将是`0+(1*3)=3`，给我们一个CIDR块`10.0.0.96/27`。
+- en: This pattern would follow the sequence, where the next subnet for RDS `az2`
+    would be at `10.0.0.128/27`, and for `az3`, it would be at `10.0.0.160/27`, and
+    so on.
+  id: totrans-155
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个模式将跟随序列，RDS的下一个子网`az2`将位于`10.0.0.128/27`，而`az3`将位于`10.0.0.160/27`，以此类推。
+- en: This expression ensures that each subnet created within the VPC is assigned
+    a unique and non-overlapping CIDR block, segmented adequately according to the
+    defined subnet size, and distributed across different availability zones.
+  id: totrans-156
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 该表达式确保在VPC中创建的每个子网都被分配一个唯一且不重叠的CIDR块，按定义的子网大小适当地分段，并分布在不同的可用区中。
+- en: Taking this approach not only simplifies the management of subnet creation but
+    also ensures efficiency when it comes to writing the role, as it means that we
+    don’t have to hardcode tasks to consider changes between regions or the number
+    of subnets we are defining in our variables.
+  id: totrans-157
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 采用这种方法不仅简化了子网创建的管理，而且在编写角色时也确保了效率，因为这意味着我们不必硬编码任务来考虑区域之间的变化或我们在变量中定义的子网数量。
+- en: 'The remaining tasks in the role build a list of the subnet IDs for each of
+    the roles we have defined. An example of one of these tasks is as follows:'
+  id: totrans-158
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 该角色中的其余任务构建了一个包含我们已定义的每个角色子网 ID 的列表。以下是其中一个任务的示例：
+- en: '[PRE15]'
+  id: totrans-159
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE15]'
+- en: This gets information on the three subnets assigned the `subnet_role_compute`
+    role. A few more of these data-gathering tasks can be found in the repo; these
+    cover the `subnet_role_database`, `subnet_role_storage`, and `subnet_role_public`
+    roles.
+  id: totrans-160
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这将获取被分配了`subnet_role_compute`角色的三个子网的信息。在仓库中可以找到更多这样的数据收集任务；这些任务涵盖了`subnet_role_database`、`subnet_role_storage`和`subnet_role_public`角色。
+- en: Finally, the final task in the role prints the subnet IDs that we have gathered
+    using the previous set of tasks; this looks slightly different to the debug statements
+    we have been using in the playbook so far, as we are using the `msg` function
+    rather than the `var` one when calling the `ansible.builtin.debug` module.
+  id: totrans-161
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后，角色中的最后一个任务打印我们使用前一组任务收集到的子网 ID；这与我们到目前为止在剧本中使用的调试语句略有不同，因为我们调用`ansible.builtin.debug`模块时，使用的是`msg`函数，而不是`var`函数。
+- en: The gateway role
+  id: totrans-162
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 网关角色
+- en: The gateway role is relatively simple compared to the previous one. In comparison,
+    it deploys an internet gateway. Then, it creates a route to send all traffic destined
+    for the internet (represented by using `0.0.0.0/0`, the CIDR notation for all
+    network traffic) to our newly launched internet gateway.
+  id: totrans-163
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 与之前的角色相比，网关角色相对简单。相比之下，它部署了一个互联网网关。然后，它创建了一条路由，将所有目标为互联网的流量（使用`0.0.0.0/0`表示，CIDR
+    表示所有网络流量）发送到我们新启动的互联网网关。
+- en: 'The task that creates the internet gateway looks like the following:'
+  id: totrans-164
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 创建互联网网关的任务如下所示：
+- en: '[PRE16]'
+  id: totrans-165
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE16]'
+- en: 'As per the rest of the tasks, a debug task follows this, and then the task
+    that creates the route table, which is then associated with our newly created
+    internet gateway and also the computing and public subnets that we defined and
+    gathered the information for in the subnet’s role:'
+  id: totrans-166
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 根据其余任务，接着是一个调试任务，然后是创建路由表的任务，接着将路由表与我们新创建的互联网网关以及我们在子网角色中定义并收集的计算和公网子网相关联：
+- en: '[PRE17]'
+  id: totrans-167
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE17]'
+- en: 'We then do a debug task that completes this role, and we then move on to the
+    final role of the playbook: the security group’s role.'
+  id: totrans-168
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接着，我们执行一个调试任务来完成这个角色，然后我们进入剧本的最后一个角色：安全组的角色。
+- en: The security group’s role
+  id: totrans-169
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 安全组的角色
+- en: While this role, in my opinion, is not as complicated as the subnet’s role,
+    we have built a little more logic into the task than some of the more straightforward
+    tasks in the book that we have run so far.
+  id: totrans-170
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 虽然我认为这个角色没有子网角色那么复杂，但我们在任务中加入了比一些更简单的任务更多的逻辑，这些任务是我们到目前为止在书中运行的。
+- en: 'If you recall, earlier in the chapter, when we covered the variables being
+    used by the playbook, we gave the following example of the security groups being
+    deployed:'
+  id: totrans-171
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你还记得，在本章早些时候，当我们介绍剧本使用的变量时，我们给出了以下安全组部署的示例：
+- en: '[PRE18]'
+  id: totrans-172
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE18]'
+- en: The preceding rule, as per `rule_desc`, opens up port `3306` for any devices
+    that have the EC2 security group attached to them, which, as we will see in [*Chapter
+    11*](B21620_11.xhtml#_idTextAnchor501), *Highly Available Cloud Deployments*,
+    will be the EC2 instances that will be running our workload.
+  id: totrans-173
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 上述规则根据`rule_desc`，为所有附加了 EC2 安全组的设备打开端口`3306`，正如我们将在[*第11章*](B21620_11.xhtml#_idTextAnchor501)《高可用云部署》中看到的那样，这些设备将是运行我们工作负载的
+    EC2 实例，*高可用云部署*。
+- en: You may think to yourself, *“Now that makes sense.”* However, this is a little
+    bit of a flaw in the logic we must work around. `ec2_group_id` is referencing
+    a group ID, which, at the time we first run our playbook, doesn’t exist. So, how
+    can we create the groups and populate them with rules that reference groups that
+    don’t yet exist?
+  id: totrans-174
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可能会想，*“现在明白了。”* 然而，这是我们必须绕过的逻辑中的一个小缺陷。`ec2_group_id`引用了一个组 ID，而在我们第一次运行剧本时，这个组
+    ID 并不存在。那么，我们如何创建组并用引用尚不存在的组的规则填充它们呢？
+- en: As we have already seen, looping over the resources defined in our variables
+    is more efficient. It reduces the hard-coded logic at the role level, making the
+    role more re-useable between projects and playbooks.
+  id: totrans-175
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如我们已经看到的那样，循环遍历我们在变量中定义的资源更为高效。它减少了角色级别的硬编码逻辑，使得该角色在项目和剧本之间更具可重用性。
+- en: 'Before we look at the logic of creating the groups, we need to gather one bit
+    of information: the public IP address of the resource running Ansible. To do this,
+    we call the following task:'
+  id: totrans-176
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在我们查看创建组的逻辑之前，我们需要收集一项信息：运行 Ansible 的资源的公网 IP 地址。为此，我们调用以下任务：
+- en: '[PRE19]'
+  id: totrans-177
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE19]'
+- en: 'Then we set a fact called `your_public_ip`, which we can reference in our rules
+    where needed:'
+  id: totrans-178
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后我们设置一个名为`your_public_ip`的事实变量，在需要的地方可以在规则中引用它：
+- en: '[PRE20]'
+  id: totrans-179
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE20]'
+- en: Now that we have that snippet of information, we can return to the question
+    of how we can reference the IDs of resources that have yet to be launched.
+  id: totrans-180
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经有了那段信息，我们可以回到问题，讨论如何引用尚未启动的资源的ID。
+- en: To create the security groups, we will be using the `amazon.aws.ec2_security_group`
+    module. The module has a flag called `purge_rules`, set to `true` by default;
+    in this default state, when our playbook finds and needs to update an existing
+    security group, it will drop all the rules in the group and then add just the
+    ones defined in the playbook to maintain a consistent state.
+  id: totrans-181
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了创建安全组，我们将使用`amazon.aws.ec2_security_group`模块。该模块有一个名为`purge_rules`的标志，默认设置为`true`；在默认状态下，当我们的剧本找到并需要更新现有安全组时，它会删除组中的所有规则，然后仅添加剧本中定义的规则，以保持一致的状态。
+- en: 'While it is a valid use case, in our example, disabling this functionality
+    by setting `purge_rules` to `false` will allow us to create some unpopulated security
+    groups:'
+  id: totrans-182
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 尽管这是一个有效的用例，但在我们的示例中，通过将`purge_rules`设置为`false`，我们可以创建一些未填充的安全组：
+- en: '[PRE21]'
+  id: totrans-183
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE21]'
+- en: This will loop through and create the base, unpopulated security groups if they
+    don’t exist, and if they do already exist, no changes will be made to them.
+  id: totrans-184
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这将遍历并创建基础的、未填充的安全组，如果它们不存在。如果它们已经存在，则不会对其进行任何更改。
+- en: 'So, now that we have our groups created, or if they already exist, we have
+    the information we need to dynamically define some facts based on the output of
+    the previous tasks:'
+  id: totrans-185
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 因此，既然我们已经创建了安全组，或者它们已经存在，我们就有了根据前面任务的输出动态定义某些事实所需的信息：
+- en: '[PRE22]'
+  id: totrans-186
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE22]'
+- en: This task uses the `ansible.builtin.set_fact` module, allowing the creation
+    or update of new variables during runtime. This task aims to extract the unique
+    ID of each security group created in the first task and assign it to a specific
+    variable name.
+  id: totrans-187
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 该任务使用`ansible.builtin.set_fact`模块，允许在运行时创建或更新新变量。该任务旨在提取第一个任务中创建的每个安全组的唯一ID，并将其分配给特定的变量名。
+- en: 'There are two expressions we use to do this. The first is the following:'
+  id: totrans-188
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们使用了两个表达式来完成此操作。第一个如下：
+- en: '[PRE23]'
+  id: totrans-189
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE23]'
+- en: 'This is used to create the dynamic set of variables based on the loop created
+    by the second expression. A breakdown of this first expression follows:'
+  id: totrans-190
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这是用来根据第二个表达式创建的循环动态生成变量集的。以下是第一个表达式的细节：
+- en: '`base_security_groups_output.results`: This refers to the list of results from
+    the previous task that created the security groups. Each result in this list contains
+    data about one of the security groups.'
+  id: totrans-191
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`base_security_groups_output.results`：这指的是前一个任务创建安全组时的结果列表。该列表中的每个结果包含有关某个安全组的数据。'
+- en: '`selectattr(''item.name'', ''equalto'', item.name)`: The `selectattr` filter
+    is used to search through the list of results. It looks for results where the
+    name attribute of the item (each security group) is equal to the current `item.name`
+    in the loop. In other words, it filters the results to find the specific security
+    group we’re currently interested in.'
+  id: totrans-192
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`selectattr(''item.name'', ''equalto'', item.name)`：`selectattr`过滤器用于在结果列表中进行搜索。它查找`item.name`属性等于当前循环中`item.name`的结果。换句话说，它过滤结果以找到我们当前感兴趣的特定安全组。'
+- en: '`map(attribute=''group_id'')`: The `map` filter is then used to transform the
+    filtered list of results. It extracts only the `group_id` attribute from each
+    result, which is the ID of the security group.'
+  id: totrans-193
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`map(attribute=''group_id'')`：`map`过滤器用于转换过滤后的结果列表。它仅提取每个结果中的`group_id`属性，这是安全组的ID。'
+- en: '`first`: Since the previous step can still return a list (albeit with a single
+    element), the `first` filter takes only the first element from this list, which
+    should be the unique ID of the security group.'
+  id: totrans-194
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`first`：由于前一步仍可能返回一个列表（尽管只有一个元素），`first`过滤器仅获取该列表中的第一个元素，这应该是安全组的唯一ID。'
+- en: The result of this expression is the ID of the security group that matches the
+    current item in the loop, and it’s assigned to a variable named according to `item.id_var_name`.
+  id: totrans-195
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 该表达式的结果是与循环中的当前项匹配的安全组ID，并将其分配给一个根据`item.id_var_name`命名的变量。
+- en: 'The second expression, which is in the `when` condition, runs as part of the
+    loop:'
+  id: totrans-196
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 第二个表达式位于`when`条件中，作为循环的一部分运行：
+- en: '[PRE24]'
+  id: totrans-197
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE24]'
+- en: 'This expression determines whether the task should be executed for a particular
+    item in the loop. It follows a similar logic to the first expression:'
+  id: totrans-198
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 该表达式确定是否应该对循环中的特定项执行任务。它遵循与第一个表达式类似的逻辑：
+- en: It starts with the same filtering process to find the security group that matches
+    the current `item.name`.
+  id: totrans-199
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 它从相同的过滤过程开始，查找与当前 `item.name` 匹配的安全组。
+- en: After extracting the `group_id`, it ensures the output is treated as a list
+    using the `list` filter.
+  id: totrans-200
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在提取 `group_id` 后，它通过 `list` 过滤器确保输出被视为列表。
+- en: '`length > 0`: This part checks whether the length of the list (the number of
+    items in it) is greater than `0`. This means at least one security group with
+    the specified name must exist. If the list is empty, no matching security group
+    is found, and the task will be skipped for the current item.'
+  id: totrans-201
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`length > 0`：此部分检查列表的长度（项目数）是否大于 `0`。这意味着必须至少存在一个具有指定名称的安全组。如果列表为空，则没有找到匹配的安全组，任务将被跳过。'
+- en: 'In theory, we should have now populated the variables that contain the security
+    group IDs, meaning that we can now add the rules:'
+  id: totrans-202
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 理论上，我们现在应该已经填充了包含安全组 ID 的变量，这意味着我们现在可以添加规则：
+- en: '[PRE25]'
+  id: totrans-203
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE25]'
+- en: This will loop over the already created groups and populate the rules for each
+    one, using the group IDs from the variables we dynamically defined in the previous
+    task.
+  id: totrans-204
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这将遍历已创建的安全组，并为每个安全组填充规则，使用我们在上一任务中动态定义的变量中的组 ID。
+- en: Running the playbook
+  id: totrans-205
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 运行 playbook
+- en: 'As mentioned earlier, we worked our way through the playbook code; before you
+    run the playbook, you must set the `AWS_ACCESS_KEY` and `AWS_SECRET_KEY` environment
+    variables on your terminal session by running the following, making sure to update
+    any values to those that you made a note of when you created the Ansible user
+    in the AWS console:'
+  id: totrans-206
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如前所述，我们已经通过 playbook 代码逐步处理了，在运行 playbook 之前，必须通过运行以下命令在您的终端会话中设置 `AWS_ACCESS_KEY`
+    和 `AWS_SECRET_KEY` 环境变量，确保更新为您在 AWS 控制台中创建 Ansible 用户时记下的值：
+- en: '[PRE26]'
+  id: totrans-207
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE26]'
+- en: 'With the environment variables set, you can run the playbook running the now
+    very familiar following code:'
+  id: totrans-208
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 设置环境变量后，您可以运行如下非常熟悉的 playbook 代码：
+- en: '[PRE27]'
+  id: totrans-209
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE27]'
+- en: 'Once completed, you should see something like the following terminal output:'
+  id: totrans-210
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 完成后，您应该看到类似以下的终端输出：
+- en: '![Figure 10.1 – Running the playbook in a terminal](img/B21620_10_01.jpg)'
+  id: totrans-211
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 10.1 – 在终端中运行 playbook](img/B21620_10_01.jpg)'
+- en: Figure 10.1 – Running the playbook in a terminal
+  id: totrans-212
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.1 – 在终端中运行 playbook
+- en: 'Going to the VPC and viewing the resource map in [http://console.aws.amazon.com/](http://console.aws.amazon.com/)
+    should display something like the following resource map:'
+  id: totrans-213
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 访问 VPC 并在 [http://console.aws.amazon.com/](http://console.aws.amazon.com/) 上查看资源图，应该会显示类似以下的资源图：
+- en: '![Figure 10.2 – Viewing the resource map](img/B21620_10_02.jpg)'
+  id: totrans-214
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 10.2 – 查看资源图](img/B21620_10_02.jpg)'
+- en: Figure 10.2 – Viewing the resource map
+  id: totrans-215
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.2 – 查看资源图
+- en: 'By going to **Security Groups**, you should also see the groups that we created
+    listed:'
+  id: totrans-216
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通过访问 **安全组**，您还应该看到我们创建的安全组列表：
+- en: '![Figure 10.3 – Reviewing the security groups](img/B21620_10_03.jpg)'
+  id: totrans-217
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 10.3 – 审查安全组](img/B21620_10_03.jpg)'
+- en: Figure 10.3 – Reviewing the security groups
+  id: totrans-218
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.3 – 审查安全组
+- en: 'I have included a second playbook in the repo, which destroys all of the resources
+    created by running the `site.yml` playbook called `destroy.yml`. You can run it
+    using the following command:'
+  id: totrans-219
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我在仓库中添加了第二个 playbook，它销毁了运行 `site.yml` playbook 时创建的所有资源，名为 `destroy.yml`。您可以使用以下命令运行它：
+- en: '[PRE28]'
+  id: totrans-220
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE28]'
+- en: I am not going to cover the contents of the playbook here, but if you review
+    the code, you will notice that, in essence, it runs the same tasks in the role
+    we have covered in this chapter in reverse order, setting the state to `absent`
+    rather than `present`.
+  id: totrans-221
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我在这里不会详细讲解 playbook 的内容，但如果您查看代码，会发现它本质上是按相反的顺序运行本章中我们讨论过的角色中的相同任务，将状态设置为 `absent`
+    而不是 `present`。
+- en: Summary
+  id: totrans-222
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 总结
+- en: In this chapter, we have taken our next step in using Ansible to launch resources
+    in a public cloud. We have laid the groundwork for automating quite a complex
+    environment by creating a VPC, setting up the subnets we need for our application,
+    provisioning an internet gateway, and setting our instances to route their outgoing
+    traffic through it.
+  id: totrans-223
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们迈出了使用 Ansible 启动公共云资源的下一步。我们通过创建 VPC、设置应用程序所需的子网、配置互联网网关并设置实例通过它路由外出流量，为自动化一个复杂环境奠定了基础。
+- en: We have configured four security groups, with three containing dynamic content,
+    to secure the services launching into our VPC.
+  id: totrans-224
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们配置了四个安全组，其中三个包含动态内容，用于保护启动到我们 VPC 中的服务。
+- en: In the next chapter, we will build on the foundations laid in this chapter and
+    launch a more complex set of services alongside the VPC.
+  id: totrans-225
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一章，我们将以本章所奠定的基础为基础，并启动一组与VPC配套的更复杂的服务。
+- en: Further reading
+  id: totrans-226
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 进一步阅读
+- en: '**Details of the AWS Q3 2023 earnings** **call**: [https://www.cnbc.com/2023/10/26/aws-q3-earnings-report-2023.html](https://www.cnbc.com/2023/10/26/aws-q3-earnings-report-2023.html)'
+  id: totrans-227
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**AWS 2023年第三季度财报** **电话会议**： [https://www.cnbc.com/2023/10/26/aws-q3-earnings-report-2023.html](https://www.cnbc.com/2023/10/26/aws-q3-earnings-report-2023.html)'

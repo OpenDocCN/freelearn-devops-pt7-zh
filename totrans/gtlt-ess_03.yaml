@@ -1,0 +1,418 @@
+- en: Chapter 3. Your Users and Gitolite
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 第 3 章：您的用户与 Gitolite
+- en: Now that we have a working installation of Gitolite, it's time to talk about
+    how users interact with a Gitolite-managed system, and what they need to know
+    to start using it. This will allow you to get some of your advanced users to start
+    using the system while you continue to learn about Gitolite as we progress. As
+    an administrator, you will be making a lot of decisions in terms of things such
+    as naming conventions for repositories as well as branches, how tight or relaxed
+    the access rules will be, and many more aspects that you will learn going forward.
+    These advanced users could help by giving you feedback or acting as sounding boards
+    for these decisions.
+  id: totrans-1
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 既然我们已经成功安装了 Gitolite，接下来就该讨论用户如何与 Gitolite 管理的系统互动，以及他们需要了解什么才能开始使用它。这将使您能够让一些高级用户开始使用该系统，同时在我们继续深入学习
+    Gitolite 的过程中，您仍然能够继续了解更多内容。作为管理员，您将需要做出很多决策，诸如仓库和分支的命名规范、访问规则的严格程度等，以及许多您在后续学习中会了解到的其他方面。这些高级用户可以通过反馈或作为决策的参考帮助您。
+- en: Accessing Git repositories
+  id: totrans-2
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 访问 Git 仓库
+- en: Before discussing how to access a Gitolite-managed repository, we will first
+    need some background on how Git repositories are normally accessed, that is, when
+    you aren't using Gitolite.
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在讨论如何访问 Gitolite 管理的仓库之前，我们首先需要了解 Git 仓库通常是如何访问的，即当您不使用 Gitolite 时。
+- en: Git servers, SSH, and HTTP
+  id: totrans-4
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: Git 服务器、SSH 和 HTTP
+- en: We start by reviewing how a user views a normal Git server. Git repositories
+    use URLs as locators, so when a user clones, fetches from, or pushes to a remote
+    repository, it is done using a suitable URL. Git URLs are not very different from
+    any other URL, and the man page for git-clone has a section on them, so you can
+    see all the syntax variations that you can use.
+  id: totrans-5
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们首先回顾一下用户如何访问普通 Git 服务器。Git 仓库使用 URL 作为定位符，因此当用户克隆、拉取或推送到远程仓库时，都是通过合适的 URL
+    完成的。Git URL 与其他 URL 并没有太大区别，而 git-clone 的 man 页面中有一节专门介绍它们，您可以看到所有可以使用的语法变体。
+- en: 'However, for authenticated remote access, there are really only two protocols
+    that are of interest: SSH and HTTP. Of these, ssh-based access is a lot more common,
+    because it is quick and easy to set up; even on a freshly installed Unix, there''s
+    usually no extra configuration required to get it working.'
+  id: totrans-6
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，对于需要认证的远程访问，实际上只有两个协议是值得关注的：SSH 和 HTTP。在这两者中，基于 SSH 的访问更为常见，因为它设置快捷且简单；即使是在刚安装好的
+    Unix 系统上，通常也不需要额外的配置就能让它工作。
+- en: As the main page mentioned previously says an ssh URL has the general form `ssh://[user@]host.xz[:port]/path/to/repo.git`.
+    When you type an URL, such as `ssh://git@server.example.com/repo` to access a
+    remote git repository, you will usually be asked for a password, unless an ssh
+    key pair has already been set up for access to the remote host. Once access has
+    been granted, the ssh daemon runs the appropriate Git command on the remote side
+    to talk to the Git client on the local side.
+  id: totrans-7
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如之前主页所述，SSH URL 的一般形式为 `ssh://[user@]host.xz[:port]/path/to/repo.git`。当您输入一个
+    URL，如 `ssh://git@server.example.com/repo` 以访问远程 Git 仓库时，通常会要求您输入密码，除非已经为访问远程主机配置了
+    SSH 密钥对。一旦授权访问，SSH 守护进程会在远程端运行相应的 Git 命令，与本地端的 Git 客户端进行通信。
+- en: Accessing Gitolite repositories
+  id: totrans-8
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 访问 Gitolite 仓库
+- en: With the background from the previous section, we're ready to see how things
+    change when a user goes through Gitolite to access a Git repository.
+  id: totrans-9
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在上一节的背景知识基础上，我们准备好了解当用户通过 Gitolite 访问 Git 仓库时，情况会发生哪些变化。
+- en: Note
+  id: totrans-10
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: This section will contain the basic material that most administrators would
+    need to provide to their users, or to explain to them how to access a Gitolite
+    server. However, depending on your users' familiarity with ssh and related topics,
+    you may have to expand this material with supplementary information, examples,
+    or instructions specific to your site.
+  id: totrans-11
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本节将包含大多数管理员需要提供给用户的基本材料，或者向他们解释如何访问 Gitolite 服务器。然而，根据用户对 SSH 和相关主题的熟悉程度，您可能需要通过补充信息、示例或特定站点的说明来扩展这些内容。
+- en: SSH key pairs
+  id: totrans-12
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: SSH 密钥对
+- en: The most significant change is that password access is no longer possible; users
+    *must* use a key pair and send the public key to the administrator so that they
+    can be added to Gitolite. If this does not happen, Gitolite has no way to recognize
+    the user.
+  id: totrans-13
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最显著的变化是不再支持密码访问；用户*必须*使用密钥对并将公钥发送给管理员，以便将其添加到 Gitolite 中。如果未执行此操作，Gitolite 无法识别该用户。
+- en: If they don't already have an ssh key pair, they should generate one on their
+    own workstations.
+  id: totrans-14
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果他们还没有ssh密钥对，应该在自己的工作站上生成一个。
+- en: Your users will need to use the `ssh-keygen` command to create the key pair.
+    This creates two files, which are `id_rsa` containing the private key and `id_rsa.pub`
+    containing the public key, if they chose the default options. On a Windows system,
+    the command will respond with the full paths of where the files were created,
+    while on a Unix system they will be in `$HOME/.ssh`.
+  id: totrans-15
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你的用户需要使用`ssh-keygen`命令来创建密钥对。如果他们选择了默认选项，这将生成两个文件，分别是包含私钥的`id_rsa`和包含公钥的`id_rsa.pub`。在Windows系统中，命令会返回文件创建的完整路径，而在Unix系统中，文件会存储在`$HOME/.ssh`中。
+- en: Note
+  id: totrans-16
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: Ideally, users should set a passphrase on the private key for security and then
+    use `ssh-agent` for convenience; however, both of these topics are out of the
+    scope of this book. Any ssh-related text or website should have sufficient details,
+    as will the documentation that comes with the OpenSSH package.
+  id: totrans-17
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 理想情况下，用户应为私钥设置密码短语以增强安全性，并使用`ssh-agent`以方便使用；然而，这些内容超出了本书的范围。任何与ssh相关的文本或网站应提供足够的详细信息，OpenSSH软件包附带的文档也会有所帮助。
+- en: They will then send the public key (the file whose name ends in `.pub`) to you,
+    so that you may add them as a user.
+  id: totrans-18
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后，他们会将公钥（文件名以`.pub`结尾）发送给你，以便你可以将他们添加为用户。
+- en: Repository naming
+  id: totrans-19
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 仓库命名
+- en: The second change is that the name of each repository will be whatever you,
+    as the administrator, have created in the `conf/gitolite.conf` file that we briefly
+    saw in the last section of the previous chapter. Gitolite actually creates all
+    its repositories inside `$HOME/repositories` in the hosting user account, but
+    only you (the administrator) need to know this. As far as the user is concerned,
+    to access a repository that is listed in the conf file as `repo foo`, the URL
+    to use is simply `git@server:foo` (or the longer form `ssh://git@server/foo`).
+  id: totrans-20
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 第二个变化是，每个仓库的名称将是你作为管理员在`conf/gitolite.conf`文件中创建的名称，我们在前一章的最后部分简要地看到过。实际上，Gitolite会在托管用户账户中的`$HOME/repositories`下创建所有的仓库，但只有你（管理员）需要知道这一点。就用户而言，要访问在配置文件中列出的`repo
+    foo`仓库，使用的URL就是`git@server:foo`（或者更长形式的`ssh://git@server/foo`）。
+- en: Also, note that the `.git` at the end of the repository name is optional for
+    Git commands (namely `clone`, `fetch`, `push`, `ls-remote`, and `archive`). Git
+    itself works fine with or without it, so Gitolite does the same in order to be
+    consistent. However, in interactions with Gitolite, such as when running Gitolite
+    commands that refer to repositories, you must use the bare name (without the trailing
+    `.git`), which is the name that Gitolite prints in its error messages or informational
+    output.
+  id: totrans-21
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 此外，请注意，仓库名称后面的`.git`对于Git命令（即`clone`、`fetch`、`push`、`ls-remote`和`archive`）来说是可选的。Git本身无论有无`.git`都能正常工作，因此为了保持一致，Gitolite也做了相同的处理。然而，在与Gitolite交互时，比如运行涉及仓库的Gitolite命令时，你必须使用裸名称（即没有`.git`结尾的名称），这是Gitolite在错误信息或输出信息中显示的名称。
+- en: Getting information from Gitolite
+  id: totrans-22
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 从Gitolite获取信息
+- en: 'Once your users have access to Gitolite, they would probably like to see which
+    repositories they can access. The simplest way to do this is to run the `info`
+    command, which is available to all remote users:'
+  id: totrans-23
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦你的用户访问了Gitolite，他们可能会希望查看自己可以访问哪些仓库。最简单的方法是运行`info`命令，这是所有远程用户都可以使用的：
+- en: '[PRE0]'
+  id: totrans-24
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: This tells you what your Gitolite username is (in this case, `adam`), which
+    repos you have access to, and whether you are allowed to read and write, or only
+    read but not write to the repo. Apart from that, this command also tells you which
+    version of Gitolite and which version of Git is running on the server, which could
+    be useful.
+  id: totrans-25
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这会告诉你你的Gitolite用户名是什么（在此案例中是`adam`），你可以访问哪些仓库，以及你是否被允许读取和写入，或者只能读取但不能写入仓库。除此之外，该命令还会告诉你服务器上运行的Gitolite和Git的版本，这可能会有帮助。
+- en: Gitolite commands
+  id: totrans-26
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Gitolite命令
+- en: The `info` command is not the only command available to your users, of course;
+    there are a few more. As you may have guessed from the preceding part, the general
+    format for running Gitolite commands is simply `ssh git@server command-name command-arguments`,
+    where the arguments are of course optional.
+  id: totrans-27
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`info`命令当然不是唯一可以提供给用户的命令；还有其他一些命令。如你从前面的部分所猜测的，运行Gitolite命令的通用格式就是`ssh git@server
+    command-name command-arguments`，其中参数当然是可选的。'
+- en: 'Conveniently, Gitolite also has a command to list all the available commands:'
+  id: totrans-28
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 方便的是，Gitolite 还提供了一个命令来列出所有可用的命令：
+- en: '[PRE1]'
+  id: totrans-29
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: As you can see, this gives the remote user the list of commands that they are
+    allowed to run. (Some of these commands can only be explained in later chapters).
+  id: totrans-30
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，这为远程用户提供了他们可以运行的命令列表。（其中一些命令只能在后续章节中解释）
+- en: Further, if you run this from the Gitolite hosting user command line, as `gitolite
+    help`, you will get a listing of *all* the available commands, and not just the
+    ones that are enabled for remote access.
+  id: totrans-31
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 此外，如果你在 Gitolite 托管用户的命令行下运行 `gitolite help`，你将获得*所有*可用命令的列表，而不仅仅是启用了远程访问的命令。
+- en: Getting help for commands
+  id: totrans-32
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 获取命令的帮助
+- en: 'Getting help for a command is easy. Every Gitolite command responds with a
+    help message when called with `-h` as the only argument. For example, the help
+    message for the info command is given as follows:'
+  id: totrans-33
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 获取命令的帮助很简单。每个 Gitolite 命令在调用时如果只带有 `-h` 参数，都会返回一条帮助信息。例如，info 命令的帮助信息如下：
+- en: '[PRE2]'
+  id: totrans-34
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: As before, some of these options pertain to features of Gitolite we have not
+    yet encountered, and will become clearer when that material is presented.
+  id: totrans-35
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如前所述，某些选项涉及到 Gitolite 中我们尚未遇到的功能，等到相关内容讲解时，这些选项会变得更加清晰。
+- en: Troubleshooting SSH issues
+  id: totrans-36
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 排查 SSH 问题
+- en: When you start adding your first few users to a system, you may run into some
+    ssh-related issues. This section will discuss the possible issues in brief, and
+    explain how to recognize and fix them.
+  id: totrans-37
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当你开始为系统添加第一个用户时，可能会遇到一些与 SSH 相关的问题。本节将简要讨论这些问题，并解释如何识别和解决它们。
+- en: Authorization, not authentication
+  id: totrans-38
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 授权，而非身份验证
+- en: First, we need a couple of basic definitions. Authentication is the process
+    of verifying that you are who you claim to be. Authorization is the process of
+    determining what you want to do and deciding whether you're allowed to do it or
+    not. Authorization happens after authentication (the system can only decide what
+    you are allowed to do *after* establishing who you are!).
+  id: totrans-39
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 首先，我们需要一些基本定义。身份验证是验证你是否是你所声称的人。授权是确定你想做什么并决定是否允许你执行该操作的过程。授权发生在身份验证之后（系统只能在确认你身份之后，才能决定你是否被允许做某事！）。
+- en: Gitolite is only concerned with authorization; it does not do authentication.
+    It leaves authentication up to an ssh server or a web server.
+  id: totrans-40
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Gitolite 只关注授权；它不进行身份验证。身份验证交由 SSH 服务器或 Web 服务器来处理。
+- en: Tip
+  id: totrans-41
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 提示
+- en: The HTTP mode is out of scope for this book; please consult Gitolite's online
+    documentation to use that mode.
+  id: totrans-42
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本书不涉及 HTTP 模式；请参考 Gitolite 的在线文档来使用该模式。
+- en: Once the ssh server has authenticated the user, it uses the `command` option
+    in the ssh authorized keys file (`$HOME/.ssh/authorized_keys`) to invoke Gitolite
+    and pass it the username. Gitolite then decides whether this user is allowed to
+    access this repository or not.
+  id: totrans-43
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦 SSH 服务器验证了用户身份，它会使用 SSH 授权密钥文件（`$HOME/.ssh/authorized_keys`）中的 `command`
+    选项来调用 Gitolite 并传递用户名。Gitolite 随后决定该用户是否被允许访问该仓库。
+- en: Duplicate public keys
+  id: totrans-44
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 重复的公钥
+- en: If the user's public key was already part of the authorized keys file before
+    setting up Gitolite (perhaps to allow him to get a login shell and run Unix commands),
+    the key will appear twice in the authorized keys file—once as is, and once with
+    the `command` option and other options that Gitolite adds to each public key in
+    the `keydir` directory.
+  id: totrans-45
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果用户的公钥在设置 Gitolite 之前已经是授权密钥文件的一部分（可能是为了允许他获得登录 shell 并运行 Unix 命令），那么该密钥将在授权密钥文件中出现两次——一次是原始的，另一次是带有
+    `command` 选项以及 Gitolite 在 `keydir` 目录中为每个公钥添加的其他选项。
+- en: However, if a key appears twice in the authorized keys file, the ssh server
+    will only look at the first occurrence. At the same time, Gitolite tries very
+    hard to make sure that a key that already had normal access to the server continues
+    to have it, so it will place the Gitolite line, which is more restrictive than
+    the default access, *after* the normal line. This means that users who have shell
+    access to the Gitolite hosting user will not be able to use Gitolite, since the
+    key will not invoke Gitolite. They will need to create and use a different ssh
+    key pair for Gitolite (that is, repository) access. They would then have to manage
+    these two key pairs on their client, perhaps using `$HOME/.ssh/config` to help.
+    Further explanation of the ssh `config` file and how it helps you choose which
+    key to use, is out of scope for this book. However, almost any decent book on
+    ssh, as well as the main pages for ssh on your system, should have this information.
+  id: totrans-46
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，如果授权密钥文件中出现相同的密钥两次，ssh 服务器只会查看第一次出现的密钥。同时，Gitolite 会尽力确保已经拥有正常访问权限的密钥继续保持这种权限，因此它会将
+    Gitolite 行放在比默认访问权限更严格的行之后。意味着有 shell 访问权限的 Gitolite 主机用户将无法使用 Gitolite，因为该密钥不会触发
+    Gitolite。他们需要为 Gitolite（即仓库）访问创建并使用不同的 ssh 密钥对。接着，他们需要在客户端管理这两个密钥对，可能会使用 `$HOME/.ssh/config`
+    来帮助管理。进一步解释 ssh `config` 文件以及如何帮助你选择使用哪个密钥超出了本书的范围。然而，几乎任何一本关于 ssh 的书籍，以及你系统上
+    ssh 的主页面，都应该提供这些信息。
+- en: Diagnosing public key problems
+  id: totrans-47
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 诊断公钥问题
+- en: 'The best way to diagnose public key problems, such as in the previous section,
+    is to run the `sshkeys-lint` program that comes with Gitolite. Here is an example
+    where two problems with public keys were intentionally created. The first is that
+    we reused a key that already had shell access, adding it to Gitolite as `u2.pub`.
+    The second is that we copied the file `u5.pub` as `u6.pub`. The output of the
+    sshkeys-lint command after these changes is given as follows:'
+  id: totrans-48
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 诊断公钥问题的最佳方法，如上一节所述，是运行 Gitolite 随附的 `sshkeys-lint` 程序。以下是一个例子，故意创建了两个公钥问题。第一个问题是我们重复使用了已经有
+    shell 访问权限的密钥，将其作为 `u2.pub` 添加到 Gitolite 中。第二个问题是我们将文件 `u5.pub` 复制为 `u6.pub`。在这些更改之后，运行
+    sshkeys-lint 命令的输出如下：
+- en: '[PRE3]'
+  id: totrans-49
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: As you can see, the command lists potential problems, first in the authorized
+    keys file (`$HOME/.ssh/authorized_keys`), and then among the public keys that
+    Gitolite owns.
+  id: totrans-50
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，该命令列出了潜在问题，首先是在授权密钥文件（`$HOME/.ssh/authorized_keys`）中，然后是在 Gitolite 拥有的公钥中。
+- en: SSH best practice
+  id: totrans-51
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: SSH 最佳实践
+- en: 'We''ve now seen how to troubleshoot ssh issues. However, it''s better to avoid
+    such problems in the first place, and a good rule of thumb for avoiding them is
+    this: don''t give any user shell access to the server. Even you, as the administrator,
+    should log on to some other user ID, run `su - git`, and then provide a password
+    when you need to do anything on the Gitolite hosting user''s command-line shell.
+    Let all the keys in the authorized keys file be Gitolite-managed keys unless you
+    are really familiar with ssh. That should eliminate most of the common issues
+    with ssh keys.'
+  id: totrans-52
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们现在已经了解了如何排查 ssh 问题。然而，最好从一开始就避免这些问题，一个避免问题的好规则是：不要给任何用户提供服务器的 shell 访问权限。即使是你作为管理员，也应该登录到其他用户
+    ID，运行 `su - git`，然后在需要在 Gitolite 主机用户的命令行上执行操作时提供密码。除非你非常熟悉 ssh，否则应该让授权密钥文件中的所有密钥都由
+    Gitolite 管理。这样可以消除大多数常见的 ssh 密钥问题。
+- en: Summary
+  id: totrans-53
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 总结
+- en: In this chapter, we saw how to add users to your new Gitolite installation,
+    and how to find and fix problems with ssh keys. In the next chapter, we will talk
+    about creating new repositories.
+  id: totrans-54
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们学习了如何将用户添加到新的 Gitolite 安装中，以及如何查找和修复 ssh 密钥问题。在下一章中，我们将讨论如何创建新的仓库。

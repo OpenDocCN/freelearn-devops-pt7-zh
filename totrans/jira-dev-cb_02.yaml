@@ -1,0 +1,3562 @@
+- en: Chapter 2. Understanding Plugin Framework
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 第 2 章：理解插件框架
+- en: 'In this chapter, we will see more details on the JIRA Architecture and the
+    plugin framework. We will also see the following recipes:'
+  id: totrans-1
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们将详细了解 JIRA 架构和插件框架。我们还将看到以下几个部分：
+- en: Converting plugins from v1 to v2
+  id: totrans-2
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 将插件从 v1 转换为 v2
+- en: Adding resources into plugins
+  id: totrans-3
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 将资源添加到插件中
+- en: Adding web resources to the plugin
+  id: totrans-4
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 将 Web 资源添加到插件中
+- en: Building JIRA from source
+  id: totrans-5
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 从源代码构建 JIRA
+- en: Adding new webwork actions to JIRA
+  id: totrans-6
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 将新的 Webwork 动作添加到 JIRA
+- en: Extending a webwork action in JIRA
+  id: totrans-7
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在 JIRA 中扩展 Webwork 动作
+- en: Introduction
+  id: totrans-8
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 介绍
+- en: As we saw in the previous chapter, the JIRA plugin development process is probably
+    an easier task than we expected it to be. With the help of Atlassian Plugin SDK,
+    developers can spend more time worrying about the plugin logic than on the troublesome
+    deployment activities. And yes, after all, it is the plugin logic that is going
+    to make an impact!
+  id: totrans-9
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如我们在前一章中看到的，JIRA 插件开发的过程可能比我们预期的要简单。借助 Atlassian Plugin SDK，开发人员可以将更多的时间用于关注插件逻辑，而不是繁琐的部署活动。毕竟，最终会影响到的是插件的逻辑！
+- en: This chapter details how the various components fit into JIRA's architecture
+    and how JIRA exposes the various pluggable points. We will also see an overview
+    of the JIRA's system plugins to find out how JIRA uses the plugin architecture
+    to its own benefit, followed by some useful recipes!
+  id: totrans-10
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章详细介绍了 JIRA 各个组件如何融入 JIRA 架构，以及 JIRA 如何暴露各种可插拔的点。我们还将概述 JIRA 的系统插件，看看 JIRA
+    如何利用插件架构来为自己带来好处，接着介绍一些有用的技术。
+- en: JIRA Architecture
+  id: totrans-11
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: JIRA 架构
+- en: We will quickly see how the various components within JIRA fit in to form the
+    JIRA we know. It is best described in a diagram and Atlassian has a neat one along
+    with a detailed explanation at [http://confluence.atlassian.com/display/JIRA/JIRA+Architectural+Overview](http://confluence.atlassian.com/display/JIRA/JIRA+Architectural+Overview).
+    We will re-draw the diagram a little bit to explain it in a brief but useful way.
+  id: totrans-12
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将快速了解 JIRA 内部的各个组件是如何配合起来形成我们所知道的 JIRA 的。最好通过一个图表来描述，Atlassian 提供了一个简洁的图表，并附有详细的解释，可以在
+    [http://confluence.atlassian.com/display/JIRA/JIRA+Architectural+Overview](http://confluence.atlassian.com/display/JIRA/JIRA+Architectural+Overview)
+    查看。我们将稍微重新绘制该图，以简洁但有用的方式进行说明。
+- en: Third-party components
+  id: totrans-13
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 第三方组件
+- en: Before we dig deeper into the JIRA Architecture, it is probably useful to understand
+    a few key components and familiarize yourself with them. JIRA's major third-party
+    dependencies are outlined next.
+  id: totrans-14
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在深入了解 JIRA 架构之前，理解一些关键组件并熟悉它们可能是有用的。接下来，我们将概述 JIRA 的主要第三方依赖项。
+- en: Note
+  id: totrans-15
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: It is not mandatory to know all about these frameworks, but it will be very
+    helpful during plugin development if you have an understanding of these.
+  id: totrans-16
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 并非必须了解这些框架的所有细节，但如果你在插件开发过程中理解这些框架，将会非常有帮助。
+- en: Webwork
+  id: totrans-17
+  prefs:
+  - PREF_H4
+  type: TYPE_NORMAL
+  zh: Webwork
+- en: '**Webwork** is nothing but a Java web application development framework. The
+    following is a quick overview of Webworks as you find it in the OpenSymphony documentation:'
+  id: totrans-18
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**Webwork** 仅仅是一个 Java Web 应用程序开发框架。以下是 Webwork 在 OpenSymphony 文档中的简要概述：'
+- en: '*"It is built specifically with developer productivity and code simplicity
+    in mind, providing robust support for building reusable UI templates, such as
+    form controls, UI themes, internationalization, dynamic form parameter mapping
+    to JavaBeans, robust client- and server-side validation, and much more."*'
+  id: totrans-19
+  prefs:
+  - PREF_BQ
+  type: TYPE_NORMAL
+  zh: '*"它专门为开发者的生产力和代码简洁性而构建，提供了对构建可重用 UI 模板（例如表单控件、UI 主题、国际化、动态表单参数映射到 JavaBeans、强大的客户端和服务器端验证等）的强大支持。"*'
+- en: 'Read more about Webwork1 at the archived link: [http://web.archive.org/web/20080328114803/http://www.opensymphony.com/webwork_old/src/docs/manual/](http://web.archive.org/web/20080328114803/http://www.opensymphony.com/webwork_old/src/docs/manual/).'
+  id: totrans-20
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '通过以下归档链接阅读更多关于 Webwork1 的信息: [http://web.archive.org/web/20080328114803/http://www.opensymphony.com/webwork_old/src/docs/manual/](http://web.archive.org/web/20080328114803/http://www.opensymphony.com/webwork_old/src/docs/manual/)。'
+- en: Note that JIRA uses Webwork1 and not 2\. In this book, all instances of webwork
+    refer to the webwork1 version. JIRA itself refers to the technology as webwork,
+    but you will notice that the files, plugin modules, and so on, use webwork1 in
+    it just to emphasize the version.
+  id: totrans-21
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请注意，JIRA 使用的是 Webwork1 而不是 2。书中提到的所有 webwork 都是指 Webwork1 版本。JIRA 本身将该技术称为 webwork，但你会注意到文件、插件模块等地方，都会特别提到
+    webwork1，以强调其版本。
+- en: Seraph
+  id: totrans-22
+  prefs:
+  - PREF_H4
+  type: TYPE_NORMAL
+  zh: Seraph
+- en: '**Seraph** is Atlassian''s opensource web authentication framework. It provides
+    a simple, extensible authentication system that JIRA uses for all authentication
+    purposes.'
+  id: totrans-23
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**Seraph** 是 Atlassian 的开源网页认证框架。它提供了一个简单、可扩展的认证系统，JIRA 使用该系统进行所有认证工作。'
+- en: Read more about Seraph at [http://docs.atlassian.com/atlassian-seraph/latest/](http://docs.atlassian.com/atlassian-seraph/latest/).
+  id: totrans-24
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 了解更多关于 Seraph 的信息，请访问[http://docs.atlassian.com/atlassian-seraph/latest/](http://docs.atlassian.com/atlassian-seraph/latest/)。
+- en: OSUser
+  id: totrans-25
+  prefs:
+  - PREF_H4
+  type: TYPE_NORMAL
+  zh: OSUser
+- en: '**OSUser** is OpenSymphony''s user and group management framework. It is designed
+    to provide a simple-to-use API for user-management. JIRA uses OSUserframework
+    in versions prior to JIRA 4.3.'
+  id: totrans-26
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**OSUser** 是 OpenSymphony 的用户和组管理框架。它旨在为用户管理提供一个简单易用的 API。JIRA 在 4.3 版本之前使用了
+    OSUser 框架。'
+- en: Read more about it at [http://www.opensymphony.com/osuser/](http://www.opensymphony.com/osuser/).
+  id: totrans-27
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 了解更多信息，请访问[http://www.opensymphony.com/osuser/](http://www.opensymphony.com/osuser/)。
+- en: JIRA 4.3+ uses Crowd as its new User API for which the details can be found
+    at [http://docs.atlassian.com/atlassian-crowd/current/com/atlassian/crowd/embedded/api/CrowdService.html](http://docs.atlassian.com/atlassian-crowd/current/com/atlassian/crowd/embedded/api/CrowdService.html).
+  id: totrans-28
+  prefs: []
+  type: TYPE_NORMAL
+  zh: JIRA 4.3+ 使用 Crowd 作为新的用户 API，详情请参阅[http://docs.atlassian.com/atlassian-crowd/current/com/atlassian/crowd/embedded/api/CrowdService.html](http://docs.atlassian.com/atlassian-crowd/current/com/atlassian/crowd/embedded/api/CrowdService.html)。
+- en: PropertySet
+  id: totrans-29
+  prefs:
+  - PREF_H4
+  type: TYPE_NORMAL
+  zh: PropertySet
+- en: '**PropertySet** is again another open source framework from OpenSymphony that
+    helps you to store a set of properties against any ''entity'' with a unique ID.
+    The properties will be key/value pairs and can only be associated with a single
+    entity at a time.'
+  id: totrans-30
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**PropertySet** 是 OpenSymphony 的另一个开源框架，帮助您存储与任何具有唯一 ID 的“实体”相关的一组属性。这些属性将是键/值对，并且每次只能与一个实体关联。'
+- en: Read about all that and more at [http://www.opensymphony.com/propertyset/](http://www.opensymphony.com/propertyset/).
+  id: totrans-31
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 了解更多内容，请访问[http://www.opensymphony.com/propertyset/](http://www.opensymphony.com/propertyset/)。
+- en: OSWorkflow
+  id: totrans-32
+  prefs:
+  - PREF_H4
+  type: TYPE_NORMAL
+  zh: OSWorkflow
+- en: OSWorkflow is yet another open source framework from the OpenSymphony group.
+    It is an extremely flexible workflow implementation that is capable of driving
+    complex conditions, validators, post functions, and so on, along with many other
+    features.
+  id: totrans-33
+  prefs: []
+  type: TYPE_NORMAL
+  zh: OSWorkflow 是 OpenSymphony 团队的另一个开源框架。它是一个极为灵活的工作流实现，能够处理复杂的条件、验证器、后置功能等，以及许多其他功能。
+- en: Read more about OSWorkflow at [http://www.opensymphony.com/osworkflow/](http://www.opensymphony.com/osworkflow/).
+  id: totrans-34
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 了解更多关于 OSWorkflow 的信息，请访问[http://www.opensymphony.com/osworkflow/](http://www.opensymphony.com/osworkflow/)。
+- en: OfBiz Entity Engine
+  id: totrans-35
+  prefs:
+  - PREF_H4
+  type: TYPE_NORMAL
+  zh: OfBiz 实体引擎
+- en: OfBiz stands for **Open For Business** and the **OfBiz Entity Engine** is a
+    set of tools and patterns used to model and manage entity-specific data.
+  id: totrans-36
+  prefs: []
+  type: TYPE_NORMAL
+  zh: OfBiz 代表 **Open For Business**，而 **OfBiz 实体引擎** 是一组用于建模和管理实体特定数据的工具和模式。
+- en: As per the definition from the standard Entity-Relation modeling concepts of
+    Relational Database Management Systems, *an Entity is a piece of data defined
+    by a set of fields and a set of relations to other entities.*
+  id: totrans-37
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 根据关系数据库管理系统的标准实体关系建模概念，*实体是由一组字段和一组与其他实体的关系定义的数据。*
+- en: Read more about the Entity Modeling and concepts at [http://ofbiz.apache.org/docs/entity.html](http://ofbiz.apache.org/docs/entity.html).
+  id: totrans-38
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 了解更多关于实体建模和概念的信息，请访问[http://ofbiz.apache.org/docs/entity.html](http://ofbiz.apache.org/docs/entity.html)。
+- en: Apache Lucene
+  id: totrans-39
+  prefs:
+  - PREF_H4
+  type: TYPE_NORMAL
+  zh: Apache Lucene
+- en: 'The following is a simple definition of **Apache Lucene** that you can find
+    in its documentation:'
+  id: totrans-40
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是您可以在其文档中找到的 **Apache Lucene** 简单定义：
+- en: '"Apache Lucene(TM) is a high-performance, full-featured text search engine
+    library written entirely in Java. It is a technology suitable for nearly any application
+    that requires full-text search, especially cross-platform."'
+  id: totrans-41
+  prefs:
+  - PREF_BQ
+  type: TYPE_NORMAL
+  zh: '"Apache Lucene(TM) 是一个高性能、功能齐全的文本搜索引擎库，完全使用 Java 编写。它是一项适用于几乎所有需要全文搜索的应用程序的技术，尤其是跨平台应用。"'
+- en: More about Lucene and its potential can be found at [http://lucene.apache.org/java/docs/index.html](http://lucene.apache.org/java/docs/index.html).
+  id: totrans-42
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 更多关于 Lucene 及其潜力的信息可以在[http://lucene.apache.org/java/docs/index.html](http://lucene.apache.org/java/docs/index.html)找到。
+- en: Atlassian Gadget JavaScript Framework
+  id: totrans-43
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: Atlassian Gadget JavaScript 框架
+- en: JIRA4 introduces a powerful gadget framework. Atlassian has gone **OpenSocial**
+    with gadgets and in order to help developers in creating gadgets, Atlassian has
+    introduced **Gadgets Javascript Framework** that encapsulates a lot of common
+    requirements and functionalities used between gadgets.
+  id: totrans-44
+  prefs: []
+  type: TYPE_NORMAL
+  zh: JIRA4 引入了强大的 Gadget 框架。Atlassian 在 Gadget 上实现了 **OpenSocial**，为了帮助开发者创建 Gadget，Atlassian
+    推出了 **Gadgets JavaScript 框架**，该框架封装了许多在 Gadget 之间常用的需求和功能。
+- en: More about gadget development can be read at [http://confluence.atlassian.com/display/GADGETDEV/Using+the+Atlassian+Gadgets+JavaScript+Framework](http://confluence.atlassian.com/display/GADGETDEV/Using+the+Atlassian+Gadgets+JavaScript+Framework).
+  id: totrans-45
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 关于小工具开发的更多信息可以参考 [http://confluence.atlassian.com/display/GADGETDEV/Using+the+Atlassian+Gadgets+JavaScript+Framework](http://confluence.atlassian.com/display/GADGETDEV/Using+the+Atlassian+Gadgets+JavaScript+Framework)。
+- en: Quartz
+  id: totrans-46
+  prefs:
+  - PREF_H4
+  type: TYPE_NORMAL
+  zh: Quartz
+- en: '**Quartz** is an open source job scheduling service. It can be used to create
+    jobs that can be scheduled within any JAVA EE and SE applications. The tasks are
+    defined as standard Java components and scheduler includes many enterprise-class
+    features, such as JTA transactions and clustering.'
+  id: totrans-47
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**Quartz** 是一个开源的作业调度服务。它可以用来创建可以在任何 JAVA EE 和 SE 应用程序中调度的作业。这些任务被定义为标准的 Java
+    组件，调度器包含许多企业级功能，如 JTA 事务和集群。'
+- en: Read more at [http://www.quartz-scheduler.org/](http://www.quartz-scheduler.org/).
+  id: totrans-48
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 阅读更多内容，请访问 [http://www.quartz-scheduler.org/](http://www.quartz-scheduler.org/)。
+- en: Architecture explained…
+  id: totrans-49
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 架构解析…
+- en: 'It is best to learn the intricacies of system architecture with the help of
+    a diagram. For the benefit of a brief but meaningful explanation on the JIRA Architecture,
+    let us have a quick look (or a long stare, whichever you are comfortable!) at
+    the following diagram:'
+  id: totrans-50
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最好通过图表来学习系统架构的复杂性。为了简要而有意义地解释 JIRA 架构，让我们快速浏览一下（或者长时间注视，看你喜欢哪种！）以下图表：
+- en: '![Architecture explained…](img/1803_02_01.jpg)'
+  id: totrans-51
+  prefs: []
+  type: TYPE_IMG
+  zh: '![架构解析…](img/1803_02_01.jpg)'
+- en: JIRA is a web application built using the MVC Architecture. It is fully written
+    in JAVA and is deployed as a WAR file into a JAVA Servlet Container such as Tomcat.
+  id: totrans-52
+  prefs: []
+  type: TYPE_NORMAL
+  zh: JIRA 是一个使用 MVC 架构构建的 Web 应用程序。它完全用 JAVA 编写，并作为 WAR 文件部署到 Java Servlet 容器中，如
+    Tomcat。
+- en: The majority of the JIRA core functionality revolves around the **JIRA Utility
+    and Manager Classes** which thus becomes the heart of JIRA. But it also interacts
+    with a lot of third-party components, which we saw earlier, to deliver powerful
+    functionalities like Workflows, Permissions, User Management, Searching, and so
+    on.
+  id: totrans-53
+  prefs: []
+  type: TYPE_NORMAL
+  zh: JIRA 核心功能的主要部分围绕着 **JIRA 工具类和管理类**，这些类成为 JIRA 的核心。但它也与许多第三方组件进行交互，如我们之前看到的，提供强大的功能，如工作流、权限、用户管理、搜索等。
+- en: As with any other web application, let us start with the incoming requests.
+    Users interact with JIRA using web browsers. But there are other ways to interact
+    with JIRA like using the **Jelly scripts** or by making remote calls using **REST**
+    **/SOAP** **/XML-RPC**.
+  id: totrans-54
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 与其他 Web 应用程序一样，我们从传入的请求开始。用户通过 Web 浏览器与 JIRA 交互。但也有其他方式与 JIRA 交互，比如使用 **Jelly
+    脚本** 或通过 **REST**、**SOAP**、**XML-RPC** 进行远程调用。
+- en: Authentication and user management
+  id: totrans-55
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 认证和用户管理
+- en: The user authentication, whichever way the request comes, is done in JIRA using
+    Seraph, Atlassian's open source web authentication framework. Seraph is implemented
+    as a servlet filter and it intercepts each and every incoming request and associates
+    them with a specific user. It supports various authentication mechanisms like
+    HTTP Basic Authentication, form-based authentication, and so on, and even looking
+    up already stored credentials in a user session when implemented with SSO (Single
+    sign on).
+  id: totrans-56
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 无论请求通过何种方式发出，用户认证都在 JIRA 中通过 Seraph 完成，Seraph 是 Atlassian 提供的开源 Web 认证框架。Seraph
+    作为一个 Servlet 过滤器实现，它会拦截每一个传入请求，并将其与特定用户关联。它支持各种认证机制，如 HTTP 基本认证、基于表单的认证等，甚至在实施单点登录（SSO）时查找已经存储在用户会话中的凭证。
+- en: However, Seraph doesn't do any user management itself. It delegates this to
+    the OSUser framework. One additional thing that Seraph does in JIRA is to intercept
+    URLs starting with `/admin/` and allow users only if they have the 'Global Admin'
+    permission.
+  id: totrans-57
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，Seraph 并不直接进行任何用户管理。它将此任务委托给 OSUser 框架。在 JIRA 中，Seraph 还做了一件额外的事情，即拦截以 `/admin/`
+    开头的 URL，并且只有具备“全局管理员”权限的用户才能访问。
+- en: 'Coming back to authentication and other user management functions, it is OSUser
+    that does the work for JIRA in versions prior to 4.3\. It does the following activities:'
+  id: totrans-58
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 回到认证和其他用户管理功能，OSUser 在 JIRA 4.3 版本之前执行这些任务。它执行以下活动：
+- en: User management—Creates/Updates/Deletes users and stores the details in JIRA
+    database. Stores user preferences.
+  id: totrans-59
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 用户管理——创建/更新/删除用户并将详细信息存储在 JIRA 数据库中。存储用户偏好设置。
+- en: Group management—Creates/Updates/Deletes groups and stores the details in JIRA
+    database. Manages group memberships.
+  id: totrans-60
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 群组管理——创建/更新/删除群组并将详细信息存储在 JIRA 数据库中。管理群组成员。
+- en: Authentication—Password matching.
+  id: totrans-61
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 认证——密码匹配。
+- en: From JIRA 4.3, user management in JIRA is done using Crowd. **Crowd** is a single
+    sign-on and identity management system from Atlassian which is now embedded in
+    JIRA 4.3+. Plugin developers can now use **CrowdService** to manage users and
+    groups, for which more information can be found at [http://docs.atlassian.com/atlassian-crowd/current/com/atlassian/crowd/embedded/api/CrowdService.html](http://docs.atlassian.com/atlassian-crowd/current/com/atlassian/crowd/embedded/api/CrowdService.html).
+  id: totrans-62
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 从 JIRA 4.3 开始，JIRA 中的用户管理通过 Crowd 完成。**Crowd** 是 Atlassian 提供的单点登录和身份管理系统，现在已集成在
+    JIRA 4.3 及以上版本中。插件开发者现在可以使用 **CrowdService** 来管理用户和组，更多信息请参考 [http://docs.atlassian.com/atlassian-crowd/current/com/atlassian/crowd/embedded/api/CrowdService.html](http://docs.atlassian.com/atlassian-crowd/current/com/atlassian/crowd/embedded/api/CrowdService.html)。
+- en: Property management
+  id: totrans-63
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 属性管理
+- en: 'JIRA lets you add key/value pairs as properties on any available ''entity''
+    like User, Group, Project, Issue, and so on. It uses OpenSymphony''s PropertySet
+    to do this. Three major cases where PropertySet is used internally in JIRA are
+    as follows:'
+  id: totrans-64
+  prefs: []
+  type: TYPE_NORMAL
+  zh: JIRA 允许您将键/值对作为属性添加到任何可用的“实体”上，如用户、组、项目、问题等。它使用 OpenSymphony 的 PropertySet 来实现这一点。JIRA
+    内部使用 PropertySet 的三个主要场景如下：
+- en: To store user preferences by the OSUser framework like e-mail, full name, and
+    so on
+  id: totrans-65
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 存储 OSUser 框架中的用户首选项，如电子邮件、全名等
+- en: To store application properties
+  id: totrans-66
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 存储应用程序属性
+- en: To store chosen preferences of Portlets/Gadgets on user dashboards
+  id: totrans-67
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 存储用户仪表板上 Portlets/Gadgets 的首选项
+- en: We can also use the PropertySet in our plugins to store custom data as key/value
+    pairs.
+  id: totrans-68
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们还可以在插件中使用 PropertySet 来存储自定义数据作为键/值对。
+- en: In earlier versions of JIRA, PropertySet was the only technology used to store
+    plugin information and other data-related to plugins. But JIRA now supports a
+    new technology called **ActiveObjects** which can be used to store plugin data.
+    It is explained in detail in the coming chapters.
+  id: totrans-69
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 JIRA 的早期版本中，PropertySet 是唯一用于存储插件信息和其他与插件相关数据的技术。但现在 JIRA 支持一种名为 **ActiveObjects**
+    的新技术，可以用来存储插件数据。相关内容将在后续章节中详细解释。
+- en: Presentation
+  id: totrans-70
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 展示层
+- en: The presentation layer in JIRA is built using **JSPs** and **Velocity** templates.
+    The web requests, coming on to JIRA, are processed by OpenSymphony's Webwork1
+    framework. The requests are handled by webwork actions which internally use the
+    JIRA Service layer. The service classes expose the core Utility and Manager classes
+    that perform the tasks behind the scenes!
+  id: totrans-71
+  prefs: []
+  type: TYPE_NORMAL
+  zh: JIRA 的展示层是使用 **JSP** 和 **Velocity** 模板构建的。进入 JIRA 的 Web 请求由 OpenSymphony 的 Webwork1
+    框架处理。这些请求由 Webwork 动作处理，内部使用 JIRA 服务层。服务类暴露出核心的实用工具类和管理类，执行背后的任务！
+- en: Database
+  id: totrans-72
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 数据库
+- en: JIRA talks to its database using the **Ofbiz Entity Engine** module. Its database
+    schema is defined in the `entitmodel.xml` residing at `WEB-INF/classes/entitydefs`.
+    The DB connectivity configuration goes in to `entityengine.xml` under `WEB-INF/classes`.
+  id: totrans-73
+  prefs: []
+  type: TYPE_NORMAL
+  zh: JIRA 通过 **Ofbiz Entity Engine** 模块与其数据库进行通信。其数据库模式定义在 `entitmodel.xml` 文件中，该文件位于
+    `WEB-INF/classes/entitydefs` 目录下。数据库连接配置位于 `WEB-INF/classes` 目录下的 `entityengine.xml`
+    文件中。
+- en: JIRA supports a wide variety of database products for which more details can
+    be found at [http://confluence.atlassian.com/display/JIRA/Connecting+JIRA+to+a+Database](http://confluence.atlassian.com/display/JIRA/Connecting+JIRA+to+a+Database).
+  id: totrans-74
+  prefs: []
+  type: TYPE_NORMAL
+  zh: JIRA 支持多种数据库产品，更多详细信息请参见 [http://confluence.atlassian.com/display/JIRA/Connecting+JIRA+to+a+Database](http://confluence.atlassian.com/display/JIRA/Connecting+JIRA+to+a+Database)。
+- en: Workflows
+  id: totrans-75
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 工作流
+- en: Workflows are one of the most important features in JIRA. It provides us with
+    a highly configurable workflow engine, which uses OpenSymphony's OSWorkflow behind
+    the scenes. It lets us customize the workflows by adding new steps and transitions
+    and for each transition we can add conditions, validators, or post functions.
+    We can even write plugins to add more of these, in addition to the ones that ship
+    with JIRA. We will see all that in detail in the coming chapters.
+  id: totrans-76
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 工作流是 JIRA 中最重要的功能之一。它提供了一个高度可配置的工作流引擎，背后使用了 OpenSymphony 的 OSWorkflow。它让我们通过添加新步骤和转换来定制工作流，并且对于每个转换，我们可以添加条件、验证器或后置功能。我们甚至可以编写插件，除了
+    JIRA 默认提供的功能外，添加更多功能。接下来的章节将详细讲解这些内容。
+- en: Searching
+  id: totrans-77
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 搜索
+- en: JIRA uses Apache Lucene to perform indexing in JIRA. Whenever an issue is changed
+    in JIRA, it performs a partial re-indexing to update the related indexes. JIRA
+    also lets us do a full re-index at any time manually from the Administration screen.
+  id: totrans-78
+  prefs: []
+  type: TYPE_NORMAL
+  zh: JIRA 使用 Apache Lucene 来执行索引操作。每当 JIRA 中的某个问题发生变化时，它会执行部分重新索引，以更新相关索引。JIRA 还允许我们在管理界面手动执行完整的重新索引。
+- en: Searching in JIRA is done using these indexes which are stored in the local
+    drive. We can even store search queries as filters whose results gets updated
+    as the indexes changes.
+  id: totrans-79
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 JIRA 中的搜索是通过这些索引进行的，索引存储在本地硬盘上。我们甚至可以将搜索查询存储为过滤器，其结果会随着索引的变化而更新。
+- en: Scheduled jobs
+  id: totrans-80
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 定时任务
+- en: JIRA uses the Quartz API to schedule jobs within JIRA. The jobs, including the
+    subscriptions to the filters and the custom ones we add, are stored in the JIRA
+    database, and are executed by the Quartz job scheduling service.
+  id: totrans-81
+  prefs: []
+  type: TYPE_NORMAL
+  zh: JIRA 使用 Quartz API 在 JIRA 内部安排任务。这些任务，包括对过滤器的订阅和我们添加的自定义任务，都存储在 JIRA 数据库中，由
+    Quartz 作业调度服务执行。
+- en: JIRA's built-in scheduled job details can be found at `scheduler-config.xml`.
+  id: totrans-82
+  prefs: []
+  type: TYPE_NORMAL
+  zh: JIRA 内建的定时任务详情可以在 `scheduler-config.xml` 中找到。
+- en: 'It is possible to schedule new events in JIRA using the SAL services implementation.
+    As Atlassian puts it:'
+  id: totrans-83
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用 SAL 服务实现可以在 JIRA 中安排新的事件。如同 Atlassian 所说：
+- en: '"The Shared Access Layer, or SAL inshort, provides a consistent, cohesive API
+    to common plugin tasks, regardless of the Atlassian application into which your
+    plugin is deployed."'
+  id: totrans-84
+  prefs:
+  - PREF_BQ
+  type: TYPE_NORMAL
+  zh: '"共享访问层（Shared Access Layer，简称 SAL）为常见插件任务提供一致的、凝聚的 API，无论你的插件部署到哪个 Atlassian
+    应用程序中。"'
+- en: More information on scheduling events in JIRA using SAL can be found at [https://developer.atlassian.com/display/DOCS/Plugin+Tutorial+-+Scheduling+Events+via+SAL](https://developer.atlassian.com/display/DOCS/Plugin+Tutorial+-+Scheduling+Events+via+SAL).
+  id: totrans-85
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 关于使用 SAL 在 JIRA 中安排事件的更多信息，可以在 [https://developer.atlassian.com/display/DOCS/Plugin+Tutorial+-+Scheduling+Events+via+SAL](https://developer.atlassian.com/display/DOCS/Plugin+Tutorial+-+Scheduling+Events+via+SAL)
+    找到。
+- en: Plugins
+  id: totrans-86
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 插件
+- en: Last, but not the least, plugins fit into the JIRA Architecture to provide extra
+    functionalities or to alter some of the existing ones. The plugins mostly use
+    the same JIRA core utility classes and manager classes as webwork actions do,
+    but in some cases also add/contribute to the list.
+  id: totrans-87
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后但同样重要的是，插件适配到 JIRA 架构中，以提供额外的功能或修改一些现有的功能。这些插件大多数使用与 WebWork 操作相同的 JIRA 核心工具类和管理类，但在某些情况下也会添加或贡献到列表中。
+- en: There are different pluggable points in JIRA which we will see in detail in
+    this chapter.
+  id: totrans-88
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 JIRA 中有多个插件点，我们将在本章中详细介绍。
+- en: This, I hope, gives you a brief introduction to the JIRA architecture and the
+    major components used in it. We will see most of these in detail in the coming
+    chapters and how to customize them by writing plugins. Off you go!
+  id: totrans-89
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我希望这能为你提供一个简要的 JIRA 架构和其中使用的主要组件的介绍。我们将在接下来的章节中详细了解这些内容，并学习如何通过编写插件来定制它们。祝你好运！
+- en: Types of plugin modules
+  id: totrans-90
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 插件模块类型
+- en: Let us briefly see the different types of plugin modules supported in JIRA 4.x.
+    All these modules are various extension points, using which we can not only add
+    new functionalities in to JIRA, but also extend some of the existing functionalities.
+  id: totrans-91
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们简要了解一下 JIRA 4.x 中支持的不同类型的插件模块。所有这些模块都是各种扩展点，通过这些扩展点，我们不仅可以为 JIRA 添加新功能，还可以扩展一些现有的功能。
+- en: Let us group them based on functionality instead of seeing them all together!
+  id: totrans-92
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们按功能对它们进行分组，而不是一起查看它们！
+- en: Reporting
+  id: totrans-93
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 报告
+- en: '| Module type | Description |'
+  id: totrans-94
+  prefs: []
+  type: TYPE_TB
+  zh: '| 模块类型 | 描述 |'
+- en: '| --- | --- |'
+  id: totrans-95
+  prefs: []
+  type: TYPE_TB
+  zh: '| --- | --- |'
+- en: '| Portlet | Adds new portlets to the user''s dashboard. It is deprecated in
+    JIRA 4.x, but is still supported. Usage of Gadgets is recommended. |'
+  id: totrans-96
+  prefs: []
+  type: TYPE_TB
+  zh: '| Portlet | 向用户的仪表盘添加新的 portlet。该功能在 JIRA 4.x 中已弃用，但仍受支持。推荐使用 Gadget。 |'
+- en: '| Gadget | Adds new Gadgets into the user''s dashboard. These gadgets can also
+    be accessed from other applications. |'
+  id: totrans-97
+  prefs: []
+  type: TYPE_TB
+  zh: '| Gadget | 向用户的仪表盘添加新的 Gadget。这些 Gadget 也可以从其他应用程序访问。 |'
+- en: '| Report | Adds new reports into JIRA. |'
+  id: totrans-98
+  prefs: []
+  type: TYPE_TB
+  zh: '| Report | 向 JIRA 添加新的报告。 |'
+- en: Workflows
+  id: totrans-99
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 工作流
+- en: '| Module type | Description |'
+  id: totrans-100
+  prefs: []
+  type: TYPE_TB
+  zh: '| 模块类型 | 描述 |'
+- en: '| --- | --- |'
+  id: totrans-101
+  prefs: []
+  type: TYPE_TB
+  zh: '| --- | --- |'
+- en: '| workflow-condition | Adds new workflow conditions to the JIRA workflow. It
+    can then be used to limit the workflow actions to users, based on pre-defined
+    conditions. |'
+  id: totrans-102
+  prefs: []
+  type: TYPE_TB
+  zh: '| workflow-condition | 向 JIRA 工作流添加新的工作流条件。它可以用于根据预定义条件限制用户执行工作流动作。 |'
+- en: '| workflow-validator | Adds new workflow validations to the JIRA workflow.
+    Validations can be used to prevent certain workflow actions when the criteria
+    are not met. |'
+  id: totrans-103
+  prefs: []
+  type: TYPE_TB
+  zh: '| workflow-validator | 向 JIRA 工作流添加新的工作流验证。验证可以用于在不满足条件时防止某些工作流动作。 |'
+- en: '| workflow-function | Adds new workflow post functions to the JIRA workflow.
+    These can be used to perform custom actions after a workflow action is executed
+    |'
+  id: totrans-104
+  prefs: []
+  type: TYPE_TB
+  zh: '| workflow-function | 向 JIRA 工作流添加新的工作流后置功能。这些功能可用于在工作流动作执行后执行自定义操作 |'
+- en: Custom fields
+  id: totrans-105
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 自定义字段
+- en: '| Module type | Description |'
+  id: totrans-106
+  prefs: []
+  type: TYPE_TB
+  zh: '| 模块类型 | 描述 |'
+- en: '| --- | --- |'
+  id: totrans-107
+  prefs: []
+  type: TYPE_TB
+  zh: '| --- | --- |'
+- en: '| customfield-type | Adds new custom field types to JIRA. We can customize
+    the look-and-feel of the fields in addition to custom logic. See also `customfield-searcher`.
+    |'
+  id: totrans-108
+  prefs: []
+  type: TYPE_TB
+  zh: '| customfield-type | 向JIRA添加新的自定义字段类型。我们可以自定义字段的外观和行为，以及自定义逻辑。另见`customfield-searcher`。
+    |'
+- en: Searching
+  id: totrans-109
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 搜索
+- en: '| Module Type | Description |'
+  id: totrans-110
+  prefs: []
+  type: TYPE_TB
+  zh: '| Module Type | 描述 |'
+- en: '| --- | --- |'
+  id: totrans-111
+  prefs: []
+  type: TYPE_TB
+  zh: '| --- | --- |'
+- en: '| customfield-searcher | Adds new field searchers on to JIRA. The searcher
+    needs to be mapped with the relevant custom fields. |'
+  id: totrans-112
+  prefs: []
+  type: TYPE_TB
+  zh: '| customfield-searcher | 为JIRA添加新的字段搜索器。搜索器需要与相关的自定义字段映射。 |'
+- en: '| jqlfunction | Adds new JQL Functions to be used with JIRA''s advanced searching.
+    |'
+  id: totrans-113
+  prefs: []
+  type: TYPE_TB
+  zh: '| jqlfunction | 添加新的JQL函数，供JIRA的高级搜索使用。 |'
+- en: '| search-request-view | Adds a new view in the Issue Navigator. They can be
+    used to show the search results in different ways. |'
+  id: totrans-114
+  prefs: []
+  type: TYPE_TB
+  zh: '| search-request-view | 在问题导航器中添加新的视图。它们可以用来以不同的方式显示搜索结果。 |'
+- en: Links and tabs
+  id: totrans-115
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 链接和选项卡
+- en: '| Module Type | Description |'
+  id: totrans-116
+  prefs: []
+  type: TYPE_TB
+  zh: '| Module Type | 描述 |'
+- en: '| --- | --- |'
+  id: totrans-117
+  prefs: []
+  type: TYPE_TB
+  zh: '| --- | --- |'
+- en: '| issue-operation | Adds new Issue Operations in the **View** issue screen.
+    This module is unavailable from JIRA 4.1.x. Web Items (see *web-item* module)
+    are used from 4.1.x instead of issue-operation module. |'
+  id: totrans-118
+  prefs: []
+  type: TYPE_TB
+  zh: '| issue-operation | 在**查看**问题屏幕中添加新的问题操作。此模块在JIRA 4.1.x及以后版本中不可用。从4.1.x版本开始，使用Web
+    Items（参见*web-item*模块），而不是issue-operation模块。 |'
+- en: '| web-section | Adds new sections in application menus. Each section can contain
+    one or more links under it. |'
+  id: totrans-119
+  prefs: []
+  type: TYPE_TB
+  zh: '| web-section | 在应用菜单中添加新的部分。每个部分下可以包含一个或多个链接。 |'
+- en: '| web-item | Adds new links that will appear at a defined section. The section
+    here can be the new ones we added or the existing JIRA web sections. |'
+  id: totrans-120
+  prefs: []
+  type: TYPE_TB
+  zh: '| web-item | 添加新的链接，显示在定义的部分中。这里的部分可以是我们添加的新部分或现有的JIRA网页部分。 |'
+- en: '| project-tabpanel | Adds new tabs to the Browse **Project** screen. We can
+    define what has to appear in the tab. |'
+  id: totrans-121
+  prefs: []
+  type: TYPE_TB
+  zh: '| project-tabpanel | 为浏览**项目**屏幕添加新选项卡。我们可以定义在选项卡中显示的内容。 |'
+- en: '| component-tabpanel | Adds new tabs to the Browse **Component** screen. As
+    above, we can define what to appear in the tab. |'
+  id: totrans-122
+  prefs: []
+  type: TYPE_TB
+  zh: '| component-tabpanel | 为浏览**组件**屏幕添加新选项卡。如上所述，我们可以定义在选项卡中显示的内容。 |'
+- en: '| version-tabpanel | Adds new tabs to the Browse **Version** screen. Same as
+    above. |'
+  id: totrans-123
+  prefs: []
+  type: TYPE_TB
+  zh: '| version-tabpanel | 为浏览**版本**屏幕添加新选项卡。同上。 |'
+- en: '| issue-tabpanel | Adds new tabs to the **View Issue** screen. Similar to other
+    tabs, here also we can define what appears in the tab. |'
+  id: totrans-124
+  prefs: []
+  type: TYPE_TB
+  zh: '| issue-tabpanel | 为**查看问题**屏幕添加新选项卡。与其他选项卡类似，我们也可以定义在选项卡中显示的内容。 |'
+- en: '| web-panel | It is newly introduced in JIRA 4.4\. Defines panels or sections
+    that can be inserted into an HTML page. |'
+  id: totrans-125
+  prefs: []
+  type: TYPE_TB
+  zh: '| web-panel | JIRA 4.4中新增的功能。定义可以插入HTML页面的面板或部分。 |'
+- en: Remote invocation
+  id: totrans-126
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 远程调用
+- en: '| Module type | Description |'
+  id: totrans-127
+  prefs: []
+  type: TYPE_TB
+  zh: '| Module type | 描述 |'
+- en: '| --- | --- |'
+  id: totrans-128
+  prefs: []
+  type: TYPE_TB
+  zh: '| --- | --- |'
+- en: '| rest | Creates new REST APIs for JIRA to expose more services and data entities.
+    |'
+  id: totrans-129
+  prefs: []
+  type: TYPE_TB
+  zh: '| rest | 为JIRA创建新的REST API，暴露更多服务和数据实体。 |'
+- en: '| rpc-soap | Publishes new SOAP end-points for JIRA. It is deployed as a new
+    SOAP service and exposes a new WSDL with the operations we have published in the
+    plugin. |'
+  id: totrans-130
+  prefs: []
+  type: TYPE_TB
+  zh: '| rpc-soap | 为JIRA发布新的SOAP端点。它作为新的SOAP服务部署，并暴露一个新的WSDL，包含我们在插件中发布的操作。 |'
+- en: '| rpc-xmlrpc | Same as above. Exposes XML-RPC endpoints, instead of SOAP, within
+    JIRA. |'
+  id: totrans-131
+  prefs: []
+  type: TYPE_TB
+  zh: '| rpc-xmlrpc | 同上。暴露XML-RPC端点，而不是SOAP，供JIRA使用。 |'
+- en: Actions and components
+  id: totrans-132
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 动作和组件
+- en: '| Module type | Description |'
+  id: totrans-133
+  prefs: []
+  type: TYPE_TB
+  zh: '| Module type | 描述 |'
+- en: '| --- | --- |'
+  id: totrans-134
+  prefs: []
+  type: TYPE_TB
+  zh: '| --- | --- |'
+- en: '| webwork | Adds new webwork actions along with views into JIRA which can add
+    new functionality or override existing ones. |'
+  id: totrans-135
+  prefs: []
+  type: TYPE_TB
+  zh: '| webwork | 向JIRA添加新的webwork操作和视图，这些操作可以添加新功能或覆盖现有功能。 |'
+- en: '| component | Adds components to JIRA''s component system. These are then available
+    for use in other plugins and can be injected into them. |'
+  id: totrans-136
+  prefs: []
+  type: TYPE_TB
+  zh: '| component | 向JIRA的组件系统添加组件。这些组件可以在其他插件中使用，并可注入其中。 |'
+- en: '| component-import | Imports components shared by other plugins. |'
+  id: totrans-137
+  prefs: []
+  type: TYPE_TB
+  zh: '| component-import | 导入其他插件共享的组件。 |'
+- en: Other plugin modules
+  id: totrans-138
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 其他插件模块
+- en: '| Module type | Description |'
+  id: totrans-139
+  prefs: []
+  type: TYPE_TB
+  zh: '| Module type | 描述 |'
+- en: '| --- | --- |'
+  id: totrans-140
+  prefs: []
+  type: TYPE_TB
+  zh: '| --- | --- |'
+- en: '| resource | Adds downloadable resources into the plugins. A resource is a
+    non-JAVA file such as JavaScript, CSS, image files, and so on. |'
+  id: totrans-141
+  prefs: []
+  type: TYPE_TB
+  zh: '| resource | 将可下载的资源添加到插件中。资源是非JAVA文件，如JavaScript、CSS、图像文件等。 |'
+- en: '| web-resource | Similar to the above, adds downloadable resources into the
+    plugins. But these are added to the top of the page with the cache-related headers
+    set to never expire. We can also specify the resources to be used only in specific
+    contexts. Multiple resource modules will appear under a web-resource module. |'
+  id: totrans-142
+  prefs: []
+  type: TYPE_TB
+  zh: '| web-resource | 与上述类似，将可下载的资源添加到插件中。但这些资源会被添加到页面顶部，并设置缓存相关的头信息为永不过期。我们还可以指定这些资源仅在特定上下文中使用。多个资源模块会出现在web-resource模块下。
+    |'
+- en: '| servlet | Deploys a JAVA servlet onto JIRA. |'
+  id: totrans-143
+  prefs: []
+  type: TYPE_TB
+  zh: '| servlet | 将一个JAVA servlet部署到JIRA上。 |'
+- en: '| servlet-context-listener | Deploys a JAVA Servlet Context Listener. |'
+  id: totrans-144
+  prefs: []
+  type: TYPE_TB
+  zh: '| servlet-context-listener | 部署一个JAVA Servlet上下文监听器。 |'
+- en: '| servlet-context-param | Sets parameters in the Servlet context shared by
+    the plugin''s servlets, filters, and listeners. |'
+  id: totrans-145
+  prefs: []
+  type: TYPE_TB
+  zh: '| servlet-context-param | 设置插件的servlet、过滤器和监听器共享的Servlet上下文中的参数。 |'
+- en: '| servlet-filter | Deploys a JAVA servlet filter onto JIRA. The order and position
+    in the application''s filter chain can be specified. |'
+  id: totrans-146
+  prefs: []
+  type: TYPE_TB
+  zh: '| servlet-filter | 将JAVA servlet过滤器部署到JIRA上。可以指定该过滤器在应用程序过滤器链中的顺序和位置。 |'
+- en: '| user-format | Adds custom behaviors for user details. Used to enhance the
+    user profile. |'
+  id: totrans-147
+  prefs: []
+  type: TYPE_TB
+  zh: '| user-format | 为用户详细信息添加自定义行为。用于增强用户资料。 |'
+- en: '| keyboard-shortcut | Available only from 4.1.x. Defines new keyboard shortcuts
+    for JIRA. You can also override the existing shortcuts from JIRA 4.2.x! |'
+  id: totrans-148
+  prefs: []
+  type: TYPE_TB
+  zh: '| keyboard-shortcut | 仅适用于4.1.x及以上版本。定义JIRA的新键盘快捷键。您还可以覆盖JIRA 4.2.x中的现有快捷键！
+    |'
+- en: '| module-type | Dynamically adds new plugin module types to the plugin framework.
+    The new module can be used by other plugins. |'
+  id: totrans-149
+  prefs: []
+  type: TYPE_TB
+  zh: '| module-type | 动态地向插件框架添加新的插件模块类型。其他插件可以使用新模块。 |'
+- en: What goes into atlassian-plugin.xml?
+  id: totrans-150
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: '`atlassian-plugin.xml`中包含什么内容？'
+- en: Let's look deeper into the plugin descriptor named `atlassian-plugin.xml`.
+  id: totrans-151
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们更深入地了解名为`atlassian-plugin.xml`的插件描述符。 |
+- en: 'Following is how the plugin descriptor will look like when the skeleton plugin
+    is created:'
+  id: totrans-152
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是创建骨架插件时插件描述符的样子： |
+- en: '[PRE0]'
+  id: totrans-153
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: 'We need to add more details into it depending on the type of plugin we are
+    going to develop. The plugin descriptor can be divided into three parts:'
+  id: totrans-154
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们需要根据要开发的插件类型添加更多的细节。插件描述符可以分为三部分： |
+- en: '**Atlassian-plugin** element: This forms the root of the descriptor. The following
+    attributes populates the `atlassian-plugin` element:'
+  id: totrans-155
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: '**Atlassian-plugin**元素：这是描述符的根元素。以下属性会填充`atlassian-plugin`元素： |'
+- en: '**key**: This is probably the most important part. It should be a unique key
+    across the JIRA instance and will be used to refer the different modules in the
+    plugin, just like we use the packages in a Java application. If you see `${project.groupId}.${project.artifactId}`
+    as the plugin key, it picks up the values from your `pom.xml` file. When the plugin
+    is built, the key will be `YOUR_GROUP_ID.YOUR_ARTIFACT_ID`.'
+  id: totrans-156
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**key**：这可能是最重要的部分。它应该是JIRA实例中唯一的键，用来引用插件中的不同模块，就像我们在Java应用程序中使用包一样。如果插件键显示为`${project.groupId}.${project.artifactId}`，它会从`pom.xml`文件中获取值。当插件构建时，插件键将是`YOUR_GROUP_ID.YOUR_ARTIFACT_ID`。
+    |'
+- en: '**name**: Give an appropriate name for your plugin. This will appear in the
+    plugin menu under administration.'
+  id: totrans-157
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**name**：为您的插件起一个合适的名称。该名称将出现在管理菜单下的插件列表中。 |'
+- en: '**plugins-version**: This is different from the version attribute. `plugins-version`
+    defines whether the plugin is version 1 or 2\. `plugins-version="2"` defines the
+    plugin as a version 2 plugin. Remove the entire attribute to make it a version
+    1 plugin.'
+  id: totrans-158
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**plugins-version**：这与版本属性不同。`plugins-version`定义插件的版本是1还是2。`plugins-version="2"`定义该插件为版本2插件。要将其设置为版本1插件，请删除整个属性。
+    |'
+- en: '**state**: This is an optional element to define the plugin as disabled, by
+    default. Add `state="disabled"` under the `atlassian-plugin` element.'
+  id: totrans-159
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**state**：这是一个可选元素，用于将插件定义为禁用状态，默认情况下为禁用。添加`state="disabled"`到`atlassian-plugin`元素下。
+    |'
+- en: '**Plugin-info** element : This section contains information about a plugin.
+    It not only provides information that is displayed to administrators but also,
+    optionally, provides bundle instructions to the OSGI network:'
+  id: totrans-160
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: '**Plugin-info**元素：该部分包含插件的信息。它不仅提供显示给管理员的信息，还可选择性地为OSGI网络提供捆绑指令： |'
+- en: '**description**: A simple description about your plugin.'
+  id: totrans-161
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**description**：关于您的插件的简短描述。 |'
+- en: '**version**: The actual version of you plugin which will be displayed under
+    the plugin menu along with the Name and Description.'
+  id: totrans-162
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**version**：插件的实际版本，将与名称和描述一起显示在插件菜单中。 |'
+- en: '**application-version**: Here you can define the minimum and maximum version
+    of the JIRA application that is supported by your plugin. `<application-version
+    min="4.0.2" max="4.1"/>` will be supported from 4.0.2 to 4.1.But remember, this
+    is only for information''s sake. The plugin might still work fine in JIRA 4.2!'
+  id: totrans-163
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**application-version**：在这里，你可以定义插件所支持的JIRA应用程序的最小和最大版本。`<application-version
+    min="4.0.2" max="4.1"/>`将支持从4.0.2到4.1的版本。但请记住，这仅供参考，插件可能在JIRA 4.2中仍然正常工作！'
+- en: '**vendor**: Here you can provide details about the plugin vendor. It supports
+    two attributes: **name** and **url**, which can be populated with the organization''s
+    Name and URL respectively.Similar to plugin key, you can populate this from the
+    `pom.xml`file,as you would have noticed in the skeleton descriptor.'
+  id: totrans-164
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**vendor**：在这里，你可以提供有关插件供应商的详细信息。它支持两个属性：**name**和**url**，可以分别填入组织的名称和URL。类似于插件键，你可以从`pom.xml`文件中填充这些属性，就像你在骨架描述符中看到的一样。'
+- en: '**param**: This element can be used to define name/value attributes for the
+    plugin. You can pass as many attributes as you want. For example, `<paramname="configure.url">/secure/JTricksConfigAction.jspa</param>`
+    defines the configuration URL for our demo plugin.'
+  id: totrans-165
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**param**：此元素可用于定义插件的名称/值属性。你可以传递任意数量的属性。例如，`<paramname="configure.url">/secure/JTricksConfigAction.jspa</param>`定义了我们演示插件的配置URL。'
+- en: '**bundle-instructions**: Here we define the OSGI bundle instructions which
+    will be used by the Maven Bundle plugin while generating the OSGI bundle.More
+    about this can be read under aQutebndtool: [http://www.aqute.biz/Code/Bnd](http://www.aqute.biz/Code/Bnd).
+    Following are the two elements in a snapshot:'
+  id: totrans-166
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**bundle-instructions**：在这里，我们定义了OSGI捆绑包指令，这些指令将在生成OSGI捆绑包时由Maven Bundle插件使用。更多内容可以在aQutebndtool下阅读：[http://www.aqute.biz/Code/Bnd](http://www.aqute.biz/Code/Bnd)。以下是快照中的两个元素：'
+- en: '**Export-Package**: This element defines the package in this plugin that can
+    be exposed to other plugins. All other packages will remain private.'
+  id: totrans-167
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**Export-Package**：此元素定义了此插件中可以暴露给其他插件的包。所有其他包将保持私有。'
+- en: '**Import-Package**: This element defines the packages that are outside this
+    plugin but that are exported in other plugins.'
+  id: totrans-168
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**Import-Package**：此元素定义了此插件之外但在其他插件中导出的包。'
+- en: '**Plugin Modules**: This is the section where the actual plugin modules, which
+    we saw a bit earlier and will see in detail later in this book, will appear.'
+  id: totrans-169
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: '**Plugin Modules**：这是实际插件模块所在的部分，前面我们稍微提到过，稍后在本书中会详细讨论。'
+- en: Hopefully, you now have your plugin descriptor ready with all the necessary
+    attributes!
+  id: totrans-170
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 希望你现在已经准备好插件描述符，包含了所有必要的属性！
+- en: Working with the Plugins1 and Plugins2 versions
+  id: totrans-171
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 使用Plugins1和Plugins2版本
+- en: Let us also quickly see how to deal with the Plugins1 and Plugins2 versions.
+  id: totrans-172
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们快速了解如何处理Plugins1和Plugins2版本。
+- en: Before we go on to the details, it is essential to understand the importance
+    of both the versions. Post 4.x, JIRA used to support only Plugins1 version. So
+    why do we need Plugins2 version?
+  id: totrans-173
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在我们深入细节之前，理解两个版本的重要性至关重要。在4.x版本之后，JIRA只支持Plugins1版本。那么，为什么我们还需要Plugins2版本呢？
+- en: The key motive behind version 2 plugins is to keep the plugins as a bundle isolated
+    from the other plugins and the JIRA core classes. It makes use of the OSGI platform
+    ([http://www.osgi.org](http://www.osgi.org)) to achieve this. While it keeps the
+    plugins isolated, it also gives you a way to define dependencies between plugins
+    leaving it to the plugin developer's convenience. It even lets you import or export
+    selected packages within the plugin giving increased flexibility.
+  id: totrans-174
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 版本2插件的主要目的是将插件作为捆绑包与其他插件和JIRA核心类隔离开来。它利用OSGI平台（[http://www.osgi.org](http://www.osgi.org)）来实现这一点。虽然它使插件保持隔离，但它也为你定义插件间的依赖关系提供了便利，且方便插件开发者使用。它甚至允许你在插件中导入或导出选定的包，从而提供了更大的灵活性。
+- en: The fact that the version2 plugins are deployed as OSGI bundles also means that
+    the plugins are dynamic in nature. They may be installed, started, updated, stopped,
+    and uninstalled at any time during the running of the framework.
+  id: totrans-175
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 版本2插件作为OSGI捆绑包部署的事实也意味着插件具有动态特性。在框架运行期间，插件可以随时安装、启动、更新、停止和卸载。
+- en: It is the developer's choice to go for the Plugins1 version or the Plugins2
+    version, depending on the nature of the plugin.
+  id: totrans-176
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 开发者可以根据插件的性质选择使用Plugins1版本或Plugins2版本。
+- en: Let us see the key differences at various stages of plugin development for both
+    the versions.
+  id: totrans-177
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们来看看插件开发过程中两个版本在不同阶段的关键区别。
+- en: Development
+  id: totrans-178
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: Development
+- en: '|  | Plugins1 | Plugins2 |'
+  id: totrans-179
+  prefs: []
+  type: TYPE_TB
+  zh: '|  | Plugins1 | Plugins2 |'
+- en: '| --- | --- | --- |'
+  id: totrans-180
+  prefs: []
+  type: TYPE_TB
+  zh: '| --- | --- | --- |'
+- en: '| **Version** | No `plugins-version` element in `atlassian-plugin.xml`. | Include
+    the `plugins-version` element in the `atlassian-plugin.xml` as follows:`<atlassian-plugin
+    key="${project.groupId}.${project.artifactId}" name="${project.artifactId}" plugins-version="2">`
+    |'
+  id: totrans-181
+  prefs: []
+  type: TYPE_TB
+  zh: '| **版本** | `atlassian-plugin.xml` 中没有 `plugins-version` 元素。 | 在 `atlassian-plugin.xml`
+    中包含 `plugins-version` 元素，格式如下：`<atlassian-plugin key="${project.groupId}.${project.artifactId}"
+    name="${project.artifactId}" plugins-version="2">` |'
+- en: '| **External Dependencies** | Include the dependent libraries with the **provided**
+    scope in your `pom.xml`file if the jars are added into `WEB-INF/lib` or **compile**
+    scope if the jars should be embedded into the plugin. | Dependent libraries must
+    be included in the plugin as the plugin cannot make use of resources under `WEB-INF/lib`.
+    This can be done in two ways.'
+  id: totrans-182
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '| **外部依赖** | 如果 JAR 文件被添加到 `WEB-INF/lib`，则在 `pom.xml` 文件中以 **provided** 作用域包含依赖库；如果
+    JAR 文件应嵌入到插件中，则以 **compile** 作用域包含依赖库。 | 依赖库必须包含在插件中，因为插件不能使用位于 `WEB-INF/lib`
+    下的资源。可以通过两种方式完成此操作。'
+- en: Provide the scope in the `pom.xml` file as compile. In this case, the jars will
+    be picked up by the Plugin SDK and added into the `META-INF/lib` folder of the
+    plugin.
+  id: totrans-183
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在 `pom.xml` 文件中提供作用域为 compile。在这种情况下，JAR 文件将被插件 SDK 拾取并添加到插件的 `META-INF/lib`
+    文件夹中。
+- en: Manually add the dependent jar files into the `META-INF/lib` directory inside
+    the plugin.
+  id: totrans-184
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 手动将依赖的 JAR 文件添加到插件内部的 `META-INF/lib` 目录中。
+- en: You can also make your plugin dependent on other bundles. See *Managing Complex
+    Dependencies* in this table. |
+  id: totrans-185
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你也可以让插件依赖其他捆绑包。请参见本表中的 *管理复杂依赖关系*。
+- en: '| **Dependency Injection** | Done by Pico Container in JIRA. All registered
+    components can be injected directly. | Done by the plugin framework. Not all JIRA''s
+    core components are available for injection in the constructor.Use the `component-import`
+    module to access some of the dependencies that are not directly accessible within
+    the plugin framework. Use it also to import public components declared in other
+    plugins. |'
+  id: totrans-186
+  prefs: []
+  type: TYPE_TB
+  zh: '| **依赖注入** | 由 JIRA 中的 Pico 容器完成。所有注册的组件都可以直接注入。 | 由插件框架完成。并非所有 JIRA 核心组件都可以在构造函数中进行注入。使用
+    `component-import` 模块来访问插件框架中不可直接访问的一些依赖项。也可以用它来导入其他插件中声明的公共组件。 |'
+- en: '| **Declaring new Components** | Use the component module to register new components.
+    Once done, it is available to all the plugins. | Use the component module to register
+    components. To make it available to other plugins, set the public attribute to
+    ''true''. It is ''false'' by default, making it available only to the plugin in
+    which it is declared. |'
+  id: totrans-187
+  prefs: []
+  type: TYPE_TB
+  zh: '| **声明新组件** | 使用组件模块注册新组件。完成后，它对所有插件都可用。 | 使用组件模块注册组件。要使其对其他插件可用，将 public 属性设置为
+    ''true''。默认情况下是 ''false''，使其仅对声明它的插件可用。 |'
+- en: '| **Managing Complex dependencies** | All the classes in version1 plugins are
+    available to all other plugins and JIRA core classes. | Version2 plugins allows
+    us to optionally import/export selected packages using **bundle-instructions**
+    in the plugin descriptor or alternatively by the Import-Packge/Export-Packge options
+    while building the bundle.The **Bundle Dependency System** hence allows you to
+    define complex dependencies between plugins, eliminating the class path contradictions
+    and upgradation of plugins. |'
+  id: totrans-188
+  prefs: []
+  type: TYPE_TB
+  zh: '| **管理复杂依赖关系** | 版本 1 的插件中的所有类对所有其他插件和 JIRA 核心类可用。 | 版本 2 插件允许我们通过在插件描述文件中使用
+    **bundle-instructions**，或者在构建捆绑包时使用 Import-Package/Export-Packge 选项，选择性地导入/导出选定的包。因此，**捆绑包依赖系统**允许你定义插件之间的复杂依赖关系，消除类路径冲突并升级插件。
+    |'
+- en: Installation
+  id: totrans-189
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 安装
+- en: '| Plugins1 | Plugins2 |'
+  id: totrans-190
+  prefs: []
+  type: TYPE_TB
+  zh: '| 插件1 | 插件2 |'
+- en: '| --- | --- |'
+  id: totrans-191
+  prefs: []
+  type: TYPE_TB
+  zh: '| --- | --- |'
+- en: '| Plugin must be on the application classpath.Hence deploy it under the `WEB-INF/lib`
+    folder. | Plugin must *not* be on the application classpath. It is loaded using
+    the plugin framework.Hence the plugin is deployed under `${jira-home}/plugins/installed-plugins/`.`Jira-home`
+    is declared in the `jira-application.properties` file under `WEB-INF/classes`.
+    |'
+  id: totrans-192
+  prefs: []
+  type: TYPE_TB
+  zh: '| 插件必须位于应用程序类路径上。因此，将其部署在 `WEB-INF/lib` 文件夹下。 | 插件*不能*位于应用程序类路径上。它通过插件框架加载。因此，插件被部署在
+    `${jira-home}/plugins/installed-plugins/` 下。`Jira-home` 在 `WEB-INF/classes` 下的
+    `jira-application.properties` 文件中声明。 |'
+- en: Right, we now know how the two plugin versions work. Maybe it is time to see
+    the plugins that JIRA comes with!
+  id: totrans-193
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 好的，我们现在知道了两个插件版本的工作原理。也许是时候看看 JIRA 自带的插件了！
+- en: JIRA System plugins
+  id: totrans-194
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: JIRA 系统插件
+- en: In this section, we will see a brief overview of the JIRA System plugins.
+  id: totrans-195
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本节中，我们将简要概述 JIRA 系统插件。
+- en: A lot of JIRA's functionality is written in the form of plugins. It not only
+    showcases what we can achieve using plugins, but also helps us, as developers,
+    to understand how the various pieces fit together.
+  id: totrans-196
+  prefs: []
+  type: TYPE_NORMAL
+  zh: JIRA的许多功能是以插件的形式编写的。它不仅展示了我们通过插件可以实现的功能，还帮助我们作为开发人员理解各个组件是如何结合在一起的。
+- en: If it is the `atlassian-plugin.xml` file that describes the plugin functionalities,
+    JIRA maintains the information in `*.xml` files placed under `WEB-INF/classes`.
+    You will also find the related classes in the exploded folders under `WEB-INF/classes`.
+  id: totrans-197
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果是`atlassian-plugin.xml`文件描述插件功能，JIRA会在`WEB-INF/classes`下的`*.xml`文件中维护相关信息。你还可以在`WEB-INF/classes`下的爆炸文件夹中找到相关的类。
+- en: 'Let us have a quick look at the various system plugin XMLs that can be found
+    in `WEB-INF/classes` and the functionality they support:'
+  id: totrans-198
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们快速了解在`WEB-INF/classes`中可以找到的各种系统插件XML及其支持的功能：
+- en: '| System plugin XML | Functionality |'
+  id: totrans-199
+  prefs: []
+  type: TYPE_TB
+  zh: '| 系统插件XML | 功能 |'
+- en: '| --- | --- |'
+  id: totrans-200
+  prefs: []
+  type: TYPE_TB
+  zh: '| --- | --- |'
+- en: '| `system-contentlinkresolvers-plugin.xml` | **System Content Link Resolvers**—Resolves
+    parsed content links into Link objects.'
+  id: totrans-201
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '| `system-contentlinkresolvers-plugin.xml` | **系统内容链接解析器**—将解析后的内容链接转换为链接对象。'
+- en: Attachment Link Resolver
+  id: totrans-202
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 附件链接解析器
+- en: Anchor Link Resolver
+  id: totrans-203
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 锚点链接解析器
+- en: JIRA Issue Link Resolver
+  id: totrans-204
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: JIRA问题链接解析器
+- en: User Profile Link Resolver
+  id: totrans-205
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 用户档案链接解析器
+- en: '|'
+  id: totrans-206
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '|'
+- en: '| `system-customfieldtypes-plugin.xml` | **JIRA System custom fields**—All
+    the out-of-the-box custom fields in JIRA and the searcher associations.Examples:'
+  id: totrans-207
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '| `system-customfieldtypes-plugin.xml` | **JIRA系统自定义字段**—JIRA中所有开箱即用的自定义字段及其搜索器关联。示例：'
+- en: Text Field
+  id: totrans-208
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 文本字段
+- en: Text Area
+  id: totrans-209
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 文本区域
+- en: '...............'
+  id: totrans-210
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '...............'
+- en: User Picker
+  id: totrans-211
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 用户选择器
+- en: Select
+  id: totrans-212
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 选择
+- en: '|'
+  id: totrans-213
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '|'
+- en: '| `system-footer-plugin.xml` | This plugin renders the content of the footer
+    in JIRA. |'
+  id: totrans-214
+  prefs: []
+  type: TYPE_TB
+  zh: '| `system-footer-plugin.xml` | 此插件渲染JIRA中的页脚内容。 |'
+- en: '| `system-issueoperations-plugin.xml` | **System Issue Operations**—Renders
+    the issue operations using web-items grouped using web-sections.Examples:'
+  id: totrans-215
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '| `system-issueoperations-plugin.xml` | **系统问题操作**—使用web-items和web-sections对问题操作进行分组并渲染。示例：'
+- en: Edit issue
+  id: totrans-216
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 编辑问题
+- en: Assign Issue
+  id: totrans-217
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 分配问题
+- en: '..................'
+  id: totrans-218
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '..................'
+- en: Log Work
+  id: totrans-219
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 日志工作
+- en: '|'
+  id: totrans-220
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '|'
+- en: '| `system-issuetabpanels-plugin.xml` | **System Issue Tab Panels**—Renders
+    the various tabs on the **View Issue** page:'
+  id: totrans-221
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '| `system-issuetabpanels-plugin.xml` | **系统问题标签面板**—渲染**查看问题**页面上的各种标签：'
+- en: All Tab Panel
+  id: totrans-222
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 所有标签面板
+- en: Comment Tab Panel
+  id: totrans-223
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 评论标签面板
+- en: Work Log Tab Panel
+  id: totrans-224
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 工作日志标签面板
+- en: Change history Tab Panel
+  id: totrans-225
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 更改历史标签面板
+- en: CVS Tab Panel
+  id: totrans-226
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: CVS标签面板
+- en: '|'
+  id: totrans-227
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '|'
+- en: '| `system-issueviews-plugin.xml` | Renders the **single issue view** and the
+    various **search request views**.'
+  id: totrans-228
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '| `system-issueviews-plugin.xml` | 渲染**单个问题视图**和各种**搜索请求视图**。'
+- en: 'Single Issue Views : XML, Word, Printable'
+  id: totrans-229
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 单个问题视图：XML、Word、可打印
+- en: 'Search Views : XML, RSS, RSS (Comments), Printable, Word, Full Content, Excel
+    (All fields), Excel (Current fields), Charts'
+  id: totrans-230
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 搜索视图：XML、RSS、RSS（评论）、可打印、Word、完整内容、Excel（所有字段）、Excel（当前字段）、图表
+- en: '|'
+  id: totrans-231
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '|'
+- en: '| `system-jql-function-plugin.xml` | Built-in **JQL Functions**. |'
+  id: totrans-232
+  prefs: []
+  type: TYPE_TB
+  zh: '| `system-jql-function-plugin.xml` | 内置**JQL函数**。 |'
+- en: '| `system-keyboard-shortcuts-plugin.xml` | Built-in **Keyboard Shortcuts**.
+    |'
+  id: totrans-233
+  prefs: []
+  type: TYPE_TB
+  zh: '| `system-keyboard-shortcuts-plugin.xml` | 内置**键盘快捷键**。 |'
+- en: '| `system-macros-plugin.xml` | JIRA''s base **System Macros**. |'
+  id: totrans-234
+  prefs: []
+  type: TYPE_TB
+  zh: '| `system-macros-plugin.xml` | JIRA的基础**系统宏**。 |'
+- en: '| `system-portlets-plugin.xml` | Built-in **portlets**. |'
+  id: totrans-235
+  prefs: []
+  type: TYPE_TB
+  zh: '| `system-portlets-plugin.xml` | 内置**端口小部件**。 |'
+- en: '| `system-project-plugin.xml` | **System Project Panels**—Renders the Browse
+    Project, Browse Version, and Browse Component panels. |'
+  id: totrans-236
+  prefs: []
+  type: TYPE_TB
+  zh: '| `system-project-plugin.xml` | **系统项目面板**—渲染浏览项目、浏览版本和浏览组件面板。 |'
+- en: '| `system-projectroleactors-plugin.xml` | **System Project Role Actors**—built-in
+    project role actors (User Role Actor and Group Role Actor) and the associated
+    webwork actions. |'
+  id: totrans-237
+  prefs: []
+  type: TYPE_TB
+  zh: '| `system-projectroleactors-plugin.xml` | **系统项目角色演员**—内置的项目角色演员（用户角色演员和组角色演员）及其相关的webwork动作。
+    |'
+- en: '| `system-renderercomponentfactories-plugin.xml` | **Renderer Component Factories
+    Plugin**—instantiates Renderer Components using the plugin system.Macro Renderer,
+    Link Renderer, URL Renderer, and so on. |'
+  id: totrans-238
+  prefs: []
+  type: TYPE_TB
+  zh: '| `system-renderercomponentfactories-plugin.xml` | **渲染器组件工厂插件**—使用插件系统实例化渲染器组件，如宏渲染器、链接渲染器、URL渲染器等。
+    |'
+- en: '| `system-renderers-plugin.xml` | Built-in **System Renderers**:'
+  id: totrans-239
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '| `system-renderers-plugin.xml` | 内置**系统渲染器**：'
+- en: Wiki Style Renderer
+  id: totrans-240
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Wiki样式渲染器
+- en: Default Text Renderer
+  id: totrans-241
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 默认文本渲染器
+- en: '|'
+  id: totrans-242
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '|'
+- en: '| `system-reports-plugin.xml` | Built-in **System Reports**. |'
+  id: totrans-243
+  prefs: []
+  type: TYPE_TB
+  zh: '| `system-reports-plugin.xml` | 内置**系统报告**。 |'
+- en: '| `system-top-navigation-plugin.xml` | Renders the content of the **top navigation
+    bar** in JIRA.Has a collection of web-items and web-sections. |'
+  id: totrans-244
+  prefs: []
+  type: TYPE_TB
+  zh: '| `system-top-navigation-plugin.xml` | 渲染JIRA中的**顶部导航栏**内容。包含一组web-items和web-sections。
+    |'
+- en: '| `system-user-format-plugin.xml` | Renders a user in JIRA differently at different
+    places. |'
+  id: totrans-245
+  prefs: []
+  type: TYPE_TB
+  zh: '| `system-user-format-plugin.xml` | 在JIRA的不同地方以不同的方式渲染用户。 |'
+- en: '| `system-user-profile-panels.xml` | Renders the panels on the **User Profile**
+    page. |'
+  id: totrans-246
+  prefs: []
+  type: TYPE_TB
+  zh: '| `system-user-profile-panels.xml` | 渲染**用户档案**页面上的面板。 |'
+- en: '| `system-webresources-plugin.xml` | **System Web Resources**—Includes static
+    resources like JavaScript files, style sheets, and so on. |'
+  id: totrans-247
+  prefs: []
+  type: TYPE_TB
+  zh: '| `system-webresources-plugin.xml` | **系统Web资源**—包括静态资源，如JavaScript文件、样式表等。
+    |'
+- en: '| `system-webwork1-plugin.xml` | **System webwork Plugin****—**Can be used
+    to add custom webwork actions, which can also be done using plugins. |'
+  id: totrans-248
+  prefs: []
+  type: TYPE_TB
+  zh: '| `system-webwork1-plugin.xml` | **系统webwork插件**—可以用于添加自定义的webwork动作，这也可以通过插件来完成。
+    |'
+- en: '| `system-workflow-plugin.xml` | System workflow **conditions**, **functions**,
+    and **validators.** |'
+  id: totrans-249
+  prefs: []
+  type: TYPE_TB
+  zh: '| `system-workflow-plugin.xml` | 系统工作流**条件**、**功能**和**验证器**。 |'
+- en: In addition to use these files as a starting point for JIRA plugin development,
+    we might sometimes end up modifying these files to override the way JIRA works.
+  id: totrans-250
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 除了将这些文件作为JIRA插件开发的起点外，我们有时还会修改这些文件，以覆盖JIRA的默认工作方式。
+- en: Care must be taken to upgrade the changes during the time of a JIRA upgrade.
+  id: totrans-251
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在JIRA升级过程中，必须注意进行变更升级。
+- en: So that was a pretty lengthy introduction to the JIRA Architecture! Let us quickly
+    move on to the recipes in this chapter. Time to code!!
+  id: totrans-252
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这就是对JIRA架构的相当长的介绍！让我们快速进入本章的内容吧。是时候编码了！！
+- en: Converting plugins from v1 to v2
+  id: totrans-253
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 将插件从v1转换为v2
+- en: If you are moving to JIRA 4.x from JIRA 3.13.x or earlier versions, one of the
+    important differences is the introduction of v2 plugins. While designing the upgrade
+    to JIRA 4.x, it makes perfect sense to sometimes migrate the plugins from v1 to
+    v2, although it is not a mandatory step. In this recipe, we will see how to convert
+    a version1 plugin to a version2 plugin.
+  id: totrans-254
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你从JIRA 3.13.x或更早版本迁移到JIRA 4.x，一个重要的区别是引入了v2插件。在设计JIRA 4.x的升级时，有时将插件从v1迁移到v2是完全合理的，尽管这不是一个强制步骤。在这个教程中，我们将看到如何将v1插件转换为v2插件。
+- en: Getting ready
+  id: totrans-255
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 准备工作
+- en: 'There are a couple of questions we need to ask before the plugin is converted:'
+  id: totrans-256
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在转换插件之前，我们需要问几个问题：
+- en: '**Are all the packages used by the plugin available to OSGi plugins****?**
+    This is very important because JIRA doesn''t expose all the packages to OSGi plugins.'
+  id: totrans-257
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**插件使用的所有包是否都可以用于OSGi插件？** 这是非常重要的，因为JIRA并没有将所有包暴露给OSGi插件。'
+- en: The list of packages exported and made available to the plugins2 version can
+    be found in the `com.atlassian.jira.plugin.DefaultPackageScannerConfiguration`
+    class.
+  id: totrans-258
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 可用的包列表可以在`com.atlassian.jira.plugin.DefaultPackageScannerConfiguration`类中找到，这些包已经导出并可用于plugins2版本。
+- en: '**Are all the components used by the plugin available to OSGi plugins?** Similar
+    to the previous question, we need to make sure the components are also exposed
+    to the OSGi plugins.'
+  id: totrans-259
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**插件使用的所有组件是否都可以用于OSGi插件？** 类似于前一个问题，我们需要确保这些组件也暴露给OSGi插件。'
+- en: Unfortunately, there is no definite list provided by Atlassian for JIRA. To
+    check if the components are available, use dependency injection. The plugin will
+    fail in the start-up if the component is not available.
+  id: totrans-260
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 不幸的是，Atlassian并没有为JIRA提供一个明确的组件列表。为了检查组件是否可用，可以使用依赖注入。如果组件不可用，插件将在启动时失败。
+- en: How to do it...
+  id: totrans-261
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: The actual conversion process of v1 plugins to v2 is easier than you think if
+    the packages and the components that you have used in the plugin are available
+    to the OSGi plugins. Here are the steps for conversion.
+  id: totrans-262
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果插件中使用的包和组件可供OSGi插件使用，那么将v1插件转换为v2的实际过程比你想象的要简单。以下是转换的步骤。
+- en: 'Add the `plugins-version="2"` attribute in `atlassian-plugin.xml`. This is
+    probably the only mandatory step in the conversion process. You will be amazed
+    to see that many of the plugins will work as it is! Once added, the plugin descriptor
+    looks like the following:'
+  id: totrans-263
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在`atlassian-plugin.xml`中添加`plugins-version="2"`属性。这可能是转换过程中的唯一强制步骤。你会惊讶地发现，许多插件会直接工作！一旦添加，插件描述符看起来如下：
+- en: '[PRE1]'
+  id: totrans-264
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: Modify the source code, if required. This includes migration to the new API
+    if you are moving to a new JIRA version with API changes, working out the changes
+    if some of the packages/components not exported to OSGi are used in the v1 plugin,
+    and so on.
+  id: totrans-265
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如果需要，修改源代码。这包括迁移到新的API，如果你正在迁移到一个带有API更改的新JIRA版本，处理那些在v1插件中使用的、没有导出到OSGi的包/组件的更改等等。
+- en: Customize the package imports and exports by defining them in the bundle manifest.
+    You can do this by using the Bundle Instructions we saw while explaining the `atlassian-plugin.xml`
+    earlier in this chapter or simply by adding the appropriate entries into the manifest
+    file in your jar.
+  id: totrans-266
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 通过在包清单中定义，来自定义包的导入和导出。你可以通过使用我们在本章前面讲解`atlassian-plugin.xml`时看到的包指令来完成，或者简单地将适当的条目添加到你的JAR文件中的清单文件里。
+- en: This is an optional step which you need to do only if you want to import packages
+    from another plugin/bundle or you want to export some of your packages to make
+    it available to other plugins.
+  id: totrans-267
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 这是一个可选步骤，仅在你需要从另一个插件/包导入包，或者需要导出一些包以供其他插件使用时，才需要执行此操作。
+- en: Expose your custom plugin components to other plugins using the `component`
+    module. You must set the public attribute to true in the component registered
+    in your `atlassian-plugin.xml` file. That is, `public="true"`
+  id: totrans-268
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用`component`模块将你的自定义插件组件暴露给其他插件。你必须在`atlassian-plugin.xml`文件中注册的组件中设置`public`属性为`true`。也就是说，`public="true"`
+- en: You must import the components specifically if you want to use the components
+    declared publicly in other plugins. Use the `component-import` module to do this.
+  id: totrans-269
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 如果你想使用其他插件中公开声明的组件，你必须明确导入这些组件。可以使用`component-import`模块来实现这一点。
+- en: '[PRE2]'
+  id: totrans-270
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: You can also optionally add advanced spring configurations by adding **Spring
+    Dynamic Modules** (**SpringDM**) configuration files (of the format `*.xml`) under
+    the `META-INF/spring/` directory. These files will then be loaded by the Spring
+    DM Loader. The details are outside the scope of this book.
+  id: totrans-271
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 你还可以通过在`META-INF/spring/`目录下添加**Spring动态模块**（**SpringDM**）配置文件（格式为`*.xml`），可选择性地添加高级Spring配置。这些文件将由Spring
+    DM加载器加载。具体细节超出了本书的范围。
+- en: How it works...
+  id: totrans-272
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 它是如何工作的...
+- en: 'The v2 plugin JAR file created with the Atlassian descriptor containing the
+    required modules, goes through the following journey:'
+  id: totrans-273
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用Atlassian描述符创建的v2插件JAR文件，包含所需的模块，经过以下过程：
+- en: The plugin is loaded at JIRA start-up and JIRA identifies the new jar.
+  id: totrans-274
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 插件会在JIRA启动时加载，JIRA会识别新的JAR文件。
+- en: '`DirectoryLoader` checks whether the new plugin is version2 or version1.'
+  id: totrans-275
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: '`DirectoryLoader`检查新插件是版本2还是版本1。'
+- en: If version2, it checks for the OSGI manifest entries which you can enter in
+    the `MANIFEST.MF` file. If found, the plugin is installed as an OSGI bundle and
+    started.
+  id: totrans-276
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如果是版本2，它会检查`MANIFEST.MF`文件中的OSGI清单条目。如果找到了，它会将插件安装为OSGI包并启动。
+- en: If the OSGI manifest entries are not present, JIRA uses the BND tool ([http://www.aqute.biz/Code/Bnd](http://www.aqute.biz/Code/Bnd))
+    to generate the manifest entries and insert them into the `MANIFEST.MF` file.
+  id: totrans-277
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如果没有OSGI清单条目，JIRA会使用BND工具（[http://www.aqute.biz/Code/Bnd](http://www.aqute.biz/Code/Bnd)）来生成清单条目，并将它们插入到`MANIFEST.MF`文件中。
+- en: It then checks for the presence of an explicit `atlassian-plugin-spring.xml`.
+    If the file is present, the plugin is then deployed as an OSGI bundle,as in step
+    2.
+  id: totrans-278
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 然后它会检查是否存在显式的`atlassian-plugin-spring.xml`文件。如果该文件存在，插件将作为OSGI包部署，如步骤2所示。
+- en: If `atlassian-plugin-spring.xml` file is absent, it then scans the `atlassian-plugin.xml`
+    file and converts the registered components and others into OSGI references or
+    OSGI services and creates an `atlassian-plugin-spring.xml` file.
+  id: totrans-279
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如果`atlassian-plugin-spring.xml`文件不存在，它会扫描`atlassian-plugin.xml`文件，并将注册的组件和其他内容转换为OSGI引用或OSGI服务，然后创建一个`atlassian-plugin-spring.xml`文件。
+- en: Once the `atlassian-plugin-spring.xml` file is created, the plugin is deployed
+    as an OSGI bundle and installed into the PluginManager.
+  id: totrans-280
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 一旦`atlassian-plugin-spring.xml`文件创建完成，插件就作为OSGI包部署并安装到PluginManager中。
+- en: JIRA thus gives us the flexibility to define our own custom OSGI manifest entries
+    and references or let JIRA do the dirty work by defining them appropriately in
+    the plugin descriptor.
+  id: totrans-281
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 因此，JIRA使我们能够灵活地定义自定义的OSGI清单条目和引用，或者让JIRA通过在插件描述符中适当地定义它们来完成繁琐的工作。
+- en: See also
+  id: totrans-282
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 另见
+- en: '*Deploying your plugin* in [Chapter 1](ch01.html "Chapter 1. Plugin Development
+    Process"), *Plugin Development Process*'
+  id: totrans-283
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在[第1章](ch01.html "第1章. 插件开发流程")中*部署插件*，*插件开发流程*
+- en: '*Creating a skeleton plugin* in [Chapter 1](ch01.html "Chapter 1. Plugin Development
+    Process")'
+  id: totrans-284
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在[第1章](ch01.html "第1章. 插件开发流程")中*创建一个骨架插件*
+- en: Adding resources into plugins
+  id: totrans-285
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 将资源添加到插件中
+- en: It is often required to add static resources like JavaScript files, CSS files,
+    and so on in our plugins. To enable JIRA to serve these additional static files,
+    they should be defined as downloadable resources.
+  id: totrans-286
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在我们的插件中，通常需要添加静态资源，如JavaScript文件、CSS文件等。为了让JIRA能够提供这些附加的静态文件，它们应该定义为可下载的资源。
+- en: Getting ready
+  id: totrans-287
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 准备工作
+- en: A resource can be of different types. It is normally defined as a non-Java file
+    that the plugin requires to operate.
+  id: totrans-288
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 资源可以有不同类型。通常定义为插件运行所需的非Java文件。
+- en: 'Examples of resources that you will come across during JIRA plugin development
+    include, but are not restricted to, the following:'
+  id: totrans-289
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在JIRA插件开发过程中，你将遇到的资源示例包括但不限于以下内容：
+- en: Velocity (`*.vm`) files required to render a view
+  id: totrans-290
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 渲染视图所需的Velocity (`*.vm`) 文件
+- en: JavaScript files
+  id: totrans-291
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: JavaScript文件
+- en: CSS files
+  id: totrans-292
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: CSS文件
+- en: Property files for localization
+  id: totrans-293
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 本地化的属性文件
+- en: How to do it...
+  id: totrans-294
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: To include a resource, add the resource module to the `atlassian-plugin.xml`
+    file. The resource module can be added as part of the entire plugin or can be
+    included within another module, restricting it just for that module.
+  id: totrans-295
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要包含资源，请将资源模块添加到`atlassian-plugin.xml`文件中。资源模块可以作为整个插件的一部分添加，或者可以包含在另一个模块中，仅限该模块使用。
+- en: 'The following are the attributes and elements available for the resource module
+    and their uses:'
+  id: totrans-296
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是资源模块可用的属性和元素及其用途：
+- en: '| Name | Description |'
+  id: totrans-297
+  prefs: []
+  type: TYPE_TB
+  zh: '| 名称 | 描述 |'
+- en: '| --- | --- |'
+  id: totrans-298
+  prefs: []
+  type: TYPE_TB
+  zh: '| --- | --- |'
+- en: '| `name` | Name of the resource. This is used by the plugin or module to locate
+    a resource. You can even define a directory as a resource by adding a trailing
+    `/`. |'
+  id: totrans-299
+  prefs: []
+  type: TYPE_TB
+  zh: '| `name` | 资源的名称。插件或模块使用该名称定位资源。你甚至可以通过添加末尾的`/`将目录定义为资源。 |'
+- en: '| `namePattern` | Pattern to use when loading a directory resource. |'
+  id: totrans-300
+  prefs: []
+  type: TYPE_TB
+  zh: '| `namePattern` | 加载目录资源时使用的模式。 |'
+- en: '| `type` | Type of the resource.Examples:'
+  id: totrans-301
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '| `type` | 资源的类型。例如：'
+- en: '`download` for resources like CSS, JavaScript, Images, and so on'
+  id: totrans-302
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`download`用于像CSS、JavaScript、图像等资源'
+- en: '`velocity` for velocity files'
+  id: totrans-303
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`velocity`用于velocity文件'
+- en: '|'
+  id: totrans-304
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '|'
+- en: '| `location` | Location of the resource within the plugin jar. The full path
+    to the file without a leading slash is required. When using, `namePattern` or
+    pointing to directory resource, a trailing `/` is required. |'
+  id: totrans-305
+  prefs: []
+  type: TYPE_TB
+  zh: '| `location` | 资源在插件JAR中的位置。需要提供文件的完整路径，但不包含前导斜杠。使用时，`namePattern`或者指向目录资源时，末尾需要加斜杠`/`。
+    |'
+- en: '| `property` `(key/value)` | Used to add properties as key/value pairs to the
+    resource. Added as a child tag to resources.Example: `<property key="content-type"
+    value="text/css"/>` |'
+  id: totrans-306
+  prefs: []
+  type: TYPE_TB
+  zh: '| `property` `(key/value)` | 用于将属性作为键/值对添加到资源中。作为子标签添加到resources中。例如：`<property
+    key="content-type" value="text/css"/>` |'
+- en: '| `param` `(name/value` `)` | Used to add name/value pairs. Added as a child
+    tag to resources.Example: `<param name="content-type" value="image/gif"/>` |'
+  id: totrans-307
+  prefs: []
+  type: TYPE_TB
+  zh: '| `param` `(name/value)` | 用于添加名称/值对。作为子标签添加到resources中。例如：`<param name="content-type"
+    value="image/gif"/>` |'
+- en: All you have to do is to add the resource tag to the `atlassian-plugin.xml`
+    file, either at the plugin level or at a module level. The resource will then
+    be available for use.
+  id: totrans-308
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你只需将资源标签添加到`atlassian-plugin.xml`文件中，无论是在插件级别还是模块级别。然后，资源就可以使用了。
+- en: 'The resource definition for an image will look as follows:'
+  id: totrans-309
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图片的资源定义如下所示：
+- en: '[PRE3]'
+  id: totrans-310
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: 'A CSS file might looks as follows:'
+  id: totrans-311
+  prefs: []
+  type: TYPE_NORMAL
+  zh: CSS文件可能如下所示：
+- en: '[PRE4]'
+  id: totrans-312
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: Once the resource is defined in the plugin descriptor, you can use it anywhere
+    in the plugin. Following is how you refer to the resource.
+  id: totrans-313
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦资源在插件描述文件中定义，你就可以在插件中的任何地方使用它。以下是如何引用该资源。
+- en: 'Let us consider that you have a directory referenced as follows:'
+  id: totrans-314
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 假设你有一个目录，如下所示：
+- en: '[PRE5]'
+  id: totrans-315
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: 'A file `demoimage.gif` can be a reference in your velocity template as follows:'
+  id: totrans-316
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 文件`demoimage.gif`可以在你的velocity模板中如下引用：
+- en: '[PRE6]'
+  id: totrans-317
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: 'A sample piece of code used in your plugin module looks as follows:'
+  id: totrans-318
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 插件模块中使用的示例代码如下所示：
+- en: '[PRE7]'
+  id: totrans-319
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE7]'
+- en: Where `com.jtricks.demo` is the plugin key and `demomodule` is the module key.
+  id: totrans-320
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 其中`com.jtricks.demo`是插件密钥，`demomodule`是模块密钥。
+- en: Adding web resources into plugins
+  id: totrans-321
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 将Web资源添加到插件中
+- en: The web resources plugin module, like the resource module we just saw, allows
+    defining downloadable resources. The difference is that the web resources are
+    added at the top of the page in the header with the cache-related headers set
+    to never expire.
+  id: totrans-322
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Web资源插件模块，像我们刚刚看到的资源模块一样，允许定义可下载的资源。不同之处在于，Web资源被添加到页面顶部的头部，并且缓存相关的头部被设置为永不过期。
+- en: An additional advantage of using web resources module is that we can specify
+    the resources to be included in specific contexts within the application.
+  id: totrans-323
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用Web资源模块的另一个优点是，可以指定在应用程序中的特定上下文中包含哪些资源。
+- en: How to do it...
+  id: totrans-324
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: 'The root element for the web resource plugin module is **web-resource**. It
+    supports the following attributes:'
+  id: totrans-325
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Web资源插件模块的根元素是**web-resource**。它支持以下属性：
+- en: '| Name | Description |'
+  id: totrans-326
+  prefs: []
+  type: TYPE_TB
+  zh: '| 名称 | 描述 |'
+- en: '| --- | --- |'
+  id: totrans-327
+  prefs: []
+  type: TYPE_TB
+  zh: '| --- | --- |'
+- en: '| `Key` | The only mandatory attribute. This should be unique within the plugin.
+    |'
+  id: totrans-328
+  prefs: []
+  type: TYPE_TB
+  zh: '| `Key` | 唯一的必需属性，应该在插件内唯一。 |'
+- en: '| `Disabled` | Indicates whether the plugin module should be disabled by default
+    or not. |'
+  id: totrans-329
+  prefs: []
+  type: TYPE_TB
+  zh: '| `Disabled` | 指示插件模块是否默认禁用。 |'
+- en: '| `i18n-name-key` | The localization key for the human-readable name of the
+    plugin module. |'
+  id: totrans-330
+  prefs: []
+  type: TYPE_TB
+  zh: '| `i18n-name-key` | 插件模块的人类可读名称的本地化键。 |'
+- en: '| `Name` | Human-readable name of the web resource. |'
+  id: totrans-331
+  prefs: []
+  type: TYPE_TB
+  zh: '| `Name` | web资源的可读名称。 |'
+- en: The following are the key elements supported.
+  id: totrans-332
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是支持的关键元素。
+- en: '| Name | Description |'
+  id: totrans-333
+  prefs: []
+  type: TYPE_TB
+  zh: '| Name | 描述 |'
+- en: '| --- | --- |'
+  id: totrans-334
+  prefs: []
+  type: TYPE_TB
+  zh: '| --- | --- |'
+- en: '| `description` | Description of the module. |'
+  id: totrans-335
+  prefs: []
+  type: TYPE_TB
+  zh: '| `description` | 模块的描述。 |'
+- en: '| `resource` | All the resources to be added as web resources. See *Adding
+    resources into plugins*. |'
+  id: totrans-336
+  prefs: []
+  type: TYPE_TB
+  zh: '| `resource` | 要添加为web资源的所有资源。见*将资源添加到插件中*。 |'
+- en: '| `dependency` | Used to define dependency on the other web-resource modules.
+    The dependency should be defined as `pluginKey:web-resourceModuleKey`.Example:
+    `<dependency>com.jtricks.demoplugin:demoResource</dependency>` |'
+  id: totrans-337
+  prefs: []
+  type: TYPE_TB
+  zh: '| `dependency` | 用于定义对其他web-resource模块的依赖。依赖项应定义为`pluginKey:web-resourceModuleKey`。示例：`<dependency>com.jtricks.demoplugin:demoResource</dependency>`
+    |'
+- en: '| `context` | Define the context where the web resource is available. |'
+  id: totrans-338
+  prefs: []
+  type: TYPE_TB
+  zh: '| `context` | 定义web资源可用的上下文。 |'
+- en: We can define the web-resource module by populating the attributes and elements
+    appropriately.
+  id: totrans-339
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以通过适当填充属性和元素来定义web-resource模块。
+- en: 'An example would look as follows:'
+  id: totrans-340
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一个示例看起来如下：
+- en: '[PRE8]'
+  id: totrans-341
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE8]'
+- en: How it works...
+  id: totrans-342
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 它是如何工作的...
+- en: When a webresource is defined, it is available for you in the plugin just like
+    your downloadable plugin resources. As mentioned earlier, the resources are added
+    to the top of the page in the header section.
+  id: totrans-343
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当定义一个web资源时，它就像你可下载的插件资源一样可用。正如前面提到的，资源会被添加到页面顶部的头部部分。
+- en: 'In your action class or servlet, you can access these resources with the help
+    of **WebResourceManager****.** Inject the manager class into your constructor
+    and you can then use it to define the resource as follows:'
+  id: totrans-344
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在你的操作类或servlet中，你可以通过**WebResourceManager**来访问这些资源。将管理类注入到构造函数中，然后你可以用它来定义资源，如下所示：
+- en: '[PRE9]'
+  id: totrans-345
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE9]'
+- en: The argument should be `pluginKey:web-resourceModuleKey`.
+  id: totrans-346
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 参数应为`pluginKey:web-resourceModuleKey`。
+- en: By default, all the resources under the web-resource module are served in batch
+    mode, that is, in a single request. This reduces the number of HTTP requests from
+    the web browser.
+  id: totrans-347
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 默认情况下，web-resource模块下的所有资源都以批处理模式提供，即通过单个请求。这可以减少来自网页浏览器的HTTP请求次数。
+- en: There's more...
+  id: totrans-348
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 还有更多...
+- en: Before we wind up this recipe, it is probably a good idea to identify the available
+    contexts for web resources and also to see how we can turn off the batch mode
+    while loading resources.
+  id: totrans-349
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在我们结束这段教程之前，最好先识别web资源的可用上下文，并看看如何在加载资源时关闭批处理模式。
+- en: Web resource contexts
+  id: totrans-350
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: web资源上下文
+- en: 'Following are the available web resource contexts:'
+  id: totrans-351
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是可用的web资源上下文：
+- en: '`atl.general`: Everywhere except administration screens'
+  id: totrans-352
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`atl.general`：除管理屏幕外的所有地方'
+- en: '`atl.admin`: Administration screens'
+  id: totrans-353
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`atl.admin`：管理屏幕'
+- en: '`atl.userprofile`:User profile screens'
+  id: totrans-354
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`atl.userprofile`：用户个人资料屏幕'
+- en: 'You can have multiple contexts added like this:'
+  id: totrans-355
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以像这样添加多个上下文：
+- en: '[PRE10]'
+  id: totrans-356
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE10]'
+- en: Turning off batchmode
+  id: totrans-357
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 关闭批处理模式
+- en: As mentioned earlier, the resources are loaded in one batch to reduce the number
+    of HTTP requests from the browser. But if you want to switch off the batch mode
+    for some reason, it can be achieved in two ways.
+  id: totrans-358
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如前所述，资源会以批处理方式加载，以减少浏览器的HTTP请求次数。但如果你因某些原因想关闭批处理模式，可以通过两种方式实现。
+- en: You can switch of batch mode `system-wide` by adding a property `plugin.webresource.batching.off=true`
+    into `jira-application.properties`.
+  id: totrans-359
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 你可以通过将属性`plugin.webresource.batching.off=true`添加到`jira-application.properties`中，来全局关闭批处理模式。
+- en: 'It can be turned off by individual resources by adding a `param` element as
+    follows:'
+  id: totrans-360
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 它可以通过为单个资源添加`param`元素来关闭，如下所示：
+- en: '[PRE11]'
+  id: totrans-361
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE11]'
+- en: See also
+  id: totrans-362
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 另见
+- en: '*Adding resources into plugins*'
+  id: totrans-363
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*将资源添加到插件中*'
+- en: Building JIRA from source
+  id: totrans-364
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 从源代码构建JIRA
+- en: One of the best things about JIRA, if you have a valid license, is that you
+    get to see the source code. To see it, modify it, break it... err modify it because
+    you have the license to do it!
+  id: totrans-365
+  prefs: []
+  type: TYPE_NORMAL
+  zh: JIRA的一个最棒的特点是，如果你拥有有效的许可证，你可以查看源代码。想看就看，想修改就修改，想破坏...呃，修改它，因为你有许可证这么做！
+- en: Getting ready
+  id: totrans-366
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 准备就绪
+- en: Following are some of the pre-requisites prior to building JIRA from the source.
+  id: totrans-367
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是从源代码构建JIRA之前的一些前提条件。
+- en: A valid JIRA license to get access to the source code.
+  id: totrans-368
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 获取有效的JIRA许可证以访问源代码。
+- en: An environment with JDK 1.5 or higher for JIRA 4.2 and lower versions. JDK 1.6
+    or higher for JIRA 4.3+.
+  id: totrans-369
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 对于 JIRA 4.2 及以下版本，需要 JDK 1.5 或更高版本。JIRA 4.3 及以上版本需要 JDK 1.6 或更高版本。
+- en: You will need both Maven1 and Maven2 if you are building versions prior to JIRA
+    4.3\. Download Maven version 1.0.x and 2.1.x from [http://maven.apache.org](http://maven.apache.org).
+    JIRA 4.3+ needs only Maven 2.1.0.
+  id: totrans-370
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 如果你正在构建 JIRA 4.3 之前的版本，你需要同时使用 Maven1 和 Maven2。可以从 [http://maven.apache.org](http://maven.apache.org)
+    下载 Maven 1.0.x 和 2.1.x。JIRA 4.3 及以上版本只需要 Maven 2.1.0。
+- en: Note
+  id: totrans-371
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: You need both Maven1 and Maven2 for versions prior to JIRA 4.3 because Maven1
+    is required to build the JIRA source and Maven2 is required to build plugins for
+    JIRA. JIRA has bundled plugins thatneed to be built along with JIRA and so Maven2
+    is also a must.
+  id: totrans-372
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于 JIRA 4.3 之前的版本，你需要同时使用 Maven1 和 Maven2，因为 Maven1 用于构建 JIRA 源码，而 Maven2 用于构建
+    JIRA 的插件。JIRA 有捆绑的插件，这些插件需要与 JIRA 一起构建，因此 Maven2 也是必须的。
+- en: Maven 2.1.0+ is required for the plugin development process.
+  id: totrans-373
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 插件开发过程需要 Maven 2.1.0 及以上版本。
+- en: How to do it...
+  id: totrans-374
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: 'Let us see the steps to build JIRA WAR from the source for versions prior to
+    JIRA 4.3:'
+  id: totrans-375
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们看看从源码构建 JIRA WAR 的步骤，适用于 JIRA 4.3 之前的版本：
+- en: Configure **Maven 1.0.x**.
+  id: totrans-376
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 配置 **Maven 1.0.x**。
+- en: Extract the Maven 1.0.x version downloaded earlier to a directory, which we
+    will now refer to as `MAVEN_INSTALL_DIR`.
+  id: totrans-377
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 将之前下载的 Maven 1.0.x 版本解压到一个目录，我们将其称为 `MAVEN_INSTALL_DIR`。
+- en: Download an Atlassian patched version of Ant jar from `http://confluence.atlassian.com/download/attachments/185729661/ant-optional-1.5.3-1.jar?version=1&modificationDate=1`[276644963420](http://276644963420)
+    and copy it to `MAVEN_INSTALL_DIR/maven-1.0/lib`.
+  id: totrans-378
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 从 `http://confluence.atlassian.com/download/attachments/185729661/ant-optional-1.5.3-1.jar?version=1&modificationDate=1`[276644963420](http://276644963420)
+    下载一个 Atlassian 修补过的 Ant jar 版本，并将其复制到 `MAVEN_INSTALL_DIR/maven-1.0/lib`。
+- en: Set the `MAVEN_HOME` environment variable, which will be `MAVEN_INSTALL_DIR/maven-1.0`.
+  id: totrans-379
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 设置 `MAVEN_HOME` 环境变量，它将是 `MAVEN_INSTALL_DIR/maven-1.0`。
+- en: Add Maven's bin directory to the path variable.
+  id: totrans-380
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 将 Maven 的 bin 目录添加到路径变量中。
+- en: Configure **Maven 2.1.x**. If you have already setup your development environment
+    using Atlassian Plugin SDK, you can skip this test as it comes along with a bundled
+    Maven 2.x.
+  id: totrans-381
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 配置 **Maven 2.1.x**。如果你已经使用 Atlassian Plugin SDK 设置了开发环境，可以跳过此测试，因为它自带了一个捆绑的
+    Maven 2.x。
+- en: Install Maven 2.1.x, as per the instructions at [http://maven.apache.org/download.html](http://maven.apache.org/download.html)
+    .
+  id: totrans-382
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 根据 [http://maven.apache.org/download.html](http://maven.apache.org/download.html)
+    中的说明安装 Maven 2.1.x。
+- en: Configure the `settings.xml` by following the example `settings.xml` provided
+    by Atlassian at [http://confluence.atlassian.com/display/DEVNET/Example+settings.xml](http://confluence.atlassian.com/display/DEVNET/Example+settings.xml).
+  id: totrans-383
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 按照 Atlassian 在 [http://confluence.atlassian.com/display/DEVNET/Example+settings.xml](http://confluence.atlassian.com/display/DEVNET/Example+settings.xml)
+    提供的示例 `settings.xml` 配置 `settings.xml`。
+- en: Download the JIRA source ZIP file from [http://www.atlassian.com/software/jira/JIRASourceDownloads.jspa](http://www.atlassian.com/software/jira/JIRASourceDownloads.jspa).
+  id: totrans-384
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 从 [http://www.atlassian.com/software/jira/JIRASourceDownloads.jspa](http://www.atlassian.com/software/jira/JIRASourceDownloads.jspa)
+    下载 JIRA 源码的 ZIP 文件。
+- en: Extract the JIRA source to a directory which we call `JIRA_DIR`.
+  id: totrans-385
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 将 JIRA 源码解压到一个目录，我们称之为 `JIRA_DIR`。
+- en: Go to the `jira` subdirectory, that is, `JIRA_DIR/jira`.
+  id: totrans-386
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 进入 `jira` 子目录，也就是 `JIRA_DIR/jira`。
+- en: 'Run the following command to create an open WAR:'
+  id: totrans-387
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 运行以下命令来创建一个开放的 WAR：
+- en: '[PRE12]'
+  id: totrans-388
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE12]'
+- en: 'If you want to create a closed WAR, execute the following:'
+  id: totrans-389
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 如果你想创建一个封闭的 WAR，执行以下操作：
+- en: '[PRE13]'
+  id: totrans-390
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE13]'
+- en: See [http://maven.apache.org/maven-1.x/plugins/war/goals.html](http://maven.apache.org/maven-1.x/plugins/war/goals.html)
+    for more Maven WAR goals.
+  id: totrans-391
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 请参见 [http://maven.apache.org/maven-1.x/plugins/war/goals.html](http://maven.apache.org/maven-1.x/plugins/war/goals.html)
+    了解更多 Maven WAR 目标。
+- en: Confirm that the WAR is created properly.
+  id: totrans-392
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 确认 WAR 是否正确创建。
+- en: The following are the steps to create the WAR on JIRA 4.3 and higher versions.
+  id: totrans-393
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是在 JIRA 4.3 及更高版本中创建 WAR 的步骤。
+- en: Configure Maven 2.1.0.
+  id: totrans-394
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 配置 Maven 2.1.0。
+- en: 'Download and install the required third-party libraries, as these libraries
+    are not available in the public Maven repositories:'
+  id: totrans-395
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 下载并安装所需的第三方库，因为这些库在公共 Maven 仓库中不可用：
+- en: 'Download the correct version of the jar files, as mentioned below:'
+  id: totrans-396
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 下载以下提到的正确版本的 jar 文件：
+- en: '| `activation` | `javax.activation:activation` | 1.0.2 |'
+  id: totrans-397
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  type: TYPE_TB
+  zh: '| `activation` | `javax.activation:activation` | 1.0.2 |'
+- en: '| `jms` | `javax.jms:jms` | 1.1 |'
+  id: totrans-398
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  type: TYPE_TB
+  zh: '| `jms` | `javax.jms:jms` | 1.1 |'
+- en: '| `jmxri` | `com.sun.jmx:jmxri` | 1.2.1 |'
+  id: totrans-399
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  type: TYPE_TB
+  zh: '| `jmxri` | `com.sun.jmx:jmxri` | 1.2.1 |'
+- en: '| `jmxtools` | `com.sun.jdmk:jmxtools` | 1.2.1 |'
+  id: totrans-400
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  type: TYPE_TB
+  zh: '| `jmxtools` | `com.sun.jdmk:jmxtools` | 1.2.1 |'
+- en: '| `jndi` | `jndi:jndi` | 1.2.1 |'
+  id: totrans-401
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  type: TYPE_TB
+  zh: '| `jndi` | `jndi:jndi` | 1.2.1 |'
+- en: '| `jta` | `Jta:jta` | 1.0.1B |'
+  id: totrans-402
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  type: TYPE_TB
+  zh: '| `jta` | `Jta:jta` | 1.0.1B |'
+- en: '| `mail` | `javax.mail:mail` | 1.3.2 |'
+  id: totrans-403
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  type: TYPE_TB
+  zh: '| `mail` | `javax.mail:mail` | 1.3.2 |'
+- en: 'Install them to the local Maven repository using the Maven install command:'
+  id: totrans-404
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用Maven安装命令将它们安装到本地Maven仓库：
+- en: '[PRE14]'
+  id: totrans-405
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE14]'
+- en: Extract the JIRA source archive to a local directory, which we call `JIRA_DIR`.
+  id: totrans-406
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 将JIRA源代码归档解压到本地目录，我们称之为`JIRA_DIR`。
+- en: Navigate to the extracted sub directory with the name `atlassian-jira-X.Y-source`
+    where X.Y is the version.
+  id: totrans-407
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 转到提取的子目录，目录名为`atlassian-jira-X.Y-source`，其中X.Y为版本号。
+- en: Run `build.bat` if on Windows, or `build.sh` if on Linux or Mac.
+  id: totrans-408
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如果你在Windows上，运行`build.bat`；如果在Linux或Mac上，运行`build.sh`。
+- en: Confirm that the WAR file is created properly under `JIRA_DEV/jira-project/jira-distribution/jira-webapp-dist/target
+    subdirectory`.
+  id: totrans-409
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 确保WAR文件已正确创建，并位于`JIRA_DEV/jira-project/jira-distribution/jira-webapp-dist/target`子目录下。
+- en: How it works...
+  id: totrans-410
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 它是如何工作的……
+- en: As you have seen, the process is pretty straightforward and the actual build
+    is done by Maven, the magician.
+  id: totrans-411
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如你所看到的，整个过程非常简单，实际的构建是由Maven这个魔术师完成的。
+- en: JIRA ships with the `project.xml` or `pom.xml` if in 4.3+, called the Project
+    Object Model, which is used by Maven to build the WAR file.
+  id: totrans-412
+  prefs: []
+  type: TYPE_NORMAL
+  zh: JIRA随附`project.xml`或`pom.xml`文件（如果版本为4.3或更高），称为项目对象模型，用于Maven构建WAR文件。
+- en: You will be able to find the JIRA dependencies inside the `project.xml` / `pom.xml`.
+    Maven will first build the dependencies and then build the JIRA WAR file using
+    them.
+  id: totrans-413
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以在`project.xml` / `pom.xml`中找到JIRA的依赖项。Maven将首先构建这些依赖项，然后使用它们来构建JIRA的WAR文件。
+- en: The only key thing here is to setup Maven correctly. There are a couple of issues
+    normally observed while building JIRA WAR, both related to Maven. Maybe it is
+    worth touching upon them before we move ahead.
+  id: totrans-414
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这里唯一需要注意的关键点是正确配置Maven。构建JIRA WAR时通常会遇到几个与Maven相关的问题。或许在继续之前，我们可以简要提一下这些问题。
+- en: 'Error while downloading dependencies due to the*java.net.ConnectException:
+    Connection timed out: connect* exception.'
+  id: totrans-415
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '下载依赖项时出现错误，异常信息为*java.net.ConnectException: 连接超时：连接*。'
+- en: If you encounter this, make sure that the Maven proxy settings are configured
+    properly. If already configured and still you are getting the error, try disabling
+    your antivirus!
+  id: totrans-416
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 如果遇到此问题，请确保Maven代理设置已正确配置。如果已经配置且仍然出现错误，尝试禁用你的防病毒软件！
+- en: '*Failed to resolve artifact* error. Building JIRA 4.0 fails to download javax
+    jms jar. In such cases, download the jar manually and install them into the local
+    repository using `mvn install`.'
+  id: totrans-417
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*未能解析工件*错误。构建JIRA 4.0时无法下载javax jms jar。在这种情况下，手动下载jar文件并使用`mvn install`将其安装到本地仓库。'
+- en: '[PRE15]'
+  id: totrans-418
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE15]'
+- en: In 4.3+, refer to step 2 in the recipe where the relevant `mvn install` commands
+    are given.
+  id: totrans-419
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在4.3+版本中，参照配方中的步骤2，其中给出了相关的`mvn install`命令。
+- en: Once the WAR file is created, deploy it into a supported application server,
+    and enjoy the power of JIRA!
+  id: totrans-420
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦WAR文件创建完成，将其部署到支持的应用服务器中，享受JIRA的强大功能！
+- en: Tip
+  id: totrans-421
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 提示
+- en: '**Downloading the example code for this book**'
+  id: totrans-422
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**下载本书的示例代码**'
+- en: You can download the example code files for all Packt books you have purchased
+    from your account at [http://www.PacktPub.com](http://www.PacktPub.com). If you
+    purchased this book elsewhere, you can visit [http://www.PacktPub.com/support](http://www.PacktPub.com/support)
+    and register to have the files e-mailed directly to you.
+  id: totrans-423
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以从[http://www.PacktPub.com](http://www.PacktPub.com)的账户中下载所有你购买的Packt书籍的示例代码文件。如果你在其他地方购买了这本书，可以访问[http://www.PacktPub.com/support](http://www.PacktPub.com/support)并注册以直接将文件通过电子邮件发送给你。
+- en: There's more...
+  id: totrans-424
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 还有更多……
+- en: Along with the JIRA source, we have access to the source code of some of the
+    JIRA dependencies from Atlassian. You might want to build them separately if you
+    ever want to modify their behavior.
+  id: totrans-425
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 除了JIRA源代码外，我们还可以访问Atlassian的一些JIRA依赖项的源代码。如果你希望修改它们的行为，可能需要单独构建这些依赖项。
+- en: Building JIRA dependencies
+  id: totrans-426
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 构建JIRA依赖项
+- en: Similar to JIRA, the dependent projects also use Maven. But it uses Maven1 in
+    some cases and Maven2 in some others.
+  id: totrans-427
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 类似于JIRA，依赖项目也使用Maven。但在某些情况下使用Maven1，而在其他情况下使用Maven2。
+- en: You can determine whether the dependency uses Maven1 or Maven2 by checking its
+    Project Object Model by looking in the root directory. If the file is named `project.xml`,
+    it uses Maven1 and if the file is named `pom.xml`, it uses Maven2.Simple, right?
+  id: totrans-428
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以通过检查其项目对象模型（POM），查看根目录中的文件来确定依赖项使用的是Maven1还是Maven2。如果文件名为`project.xml`，则使用Maven1；如果文件名为`pom.xml`，则使用Maven2。很简单，对吧？
+- en: Use the following command to generate the jar file for a dependency if it uses
+    Maven1.
+  id: totrans-429
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果依赖项使用Maven1，请使用以下命令生成jar文件。
+- en: '[PRE16]'
+  id: totrans-430
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE16]'
+- en: 'For dependencies with Maven2, use:'
+  id: totrans-431
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于使用Maven2的依赖项，使用：
+- en: '[PRE17]'
+  id: totrans-432
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE17]'
+- en: See also
+  id: totrans-433
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 另见
+- en: '*Setting up the development environment* in [Chapter 1](ch01.html "Chapter 1. Plugin
+    Development Process")'
+  id: totrans-434
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在[第1章](ch01.html "第1章 插件开发流程")中，*设置开发环境*
+- en: Adding new webwork actions to JIRA
+  id: totrans-435
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 向JIRA添加新webwork操作
+- en: Most of the time plugin developers will find themselves writing new actions
+    in JIRA to introduce new functionality. Usually these actions are invoked from
+    new web-item links configured at different places in the UI. It could also be
+    from customized JSPs or other parts of the JIRA framework.
+  id: totrans-436
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 大多数时候，插件开发人员会发现自己在JIRA中编写新的操作，以引入新功能。通常，这些操作是从UI中不同位置配置的新web-item链接调用的，也可以通过自定义JSP或JIRA框架的其他部分来调用。
+- en: New actions can be added to JIRA with the help of the webwork plugin module.
+  id: totrans-437
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 可以通过webwork插件模块向JIRA添加新操作。
+- en: Getting ready
+  id: totrans-438
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 准备开始
+- en: 'Before we start, it probably makes sense to have a look at the webwork plugin
+    module. Following are the key attributes supported:'
+  id: totrans-439
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在我们开始之前，查看一下webwork插件模块是有意义的。以下是支持的关键属性：
+- en: '| Name | Description |'
+  id: totrans-440
+  prefs: []
+  type: TYPE_TB
+  zh: '| 名称 | 描述 |'
+- en: '| --- | --- |'
+  id: totrans-441
+  prefs: []
+  type: TYPE_TB
+  zh: '| --- | --- |'
+- en: '| `Key` | A unique key within the plugin. It will be used as the identifier
+    for the plugin. |'
+  id: totrans-442
+  prefs: []
+  type: TYPE_TB
+  zh: '| `Key` | 插件中的唯一键。它将用作插件的标识符。 |'
+- en: '| `Class` | This will be `java.lang.Object` as the real logic will reside in
+    the action, Class. |'
+  id: totrans-443
+  prefs: []
+  type: TYPE_TB
+  zh: '| `Class` | 这将是`java.lang.Object`，因为实际的逻辑将存在于操作类中。 |'
+- en: '| `i18n-name-key` | The localization key for the human-readable name of the
+    plugin module. |'
+  id: totrans-444
+  prefs: []
+  type: TYPE_TB
+  zh: '| `i18n-name-key` | 插件模块的人类可读名称的本地化键。 |'
+- en: '| `Name` | Human-readable name of the webwork action. |'
+  id: totrans-445
+  prefs: []
+  type: TYPE_TB
+  zh: '| 名称 | webwork操作的可读名称。 |'
+- en: 'The following are the key elements supported:'
+  id: totrans-446
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是支持的关键元素：
+- en: '| Name | Description |'
+  id: totrans-447
+  prefs: []
+  type: TYPE_TB
+  zh: '| 名称 | 描述 |'
+- en: '| --- | --- |'
+  id: totrans-448
+  prefs: []
+  type: TYPE_TB
+  zh: '| --- | --- |'
+- en: '| `description` | Description of the webwork module. |'
+  id: totrans-449
+  prefs: []
+  type: TYPE_TB
+  zh: '| `description` | webwork模块的描述。 |'
+- en: '| `actions` | This is where we specify the webwork1 actions.A webwork module
+    must contain atleast one action element. It can have any number of actions. |'
+  id: totrans-450
+  prefs: []
+  type: TYPE_TB
+  zh: '| `actions` | 在这里我们指定webwork1操作。一个webwork模块必须至少包含一个操作元素。它可以包含多个操作。 |'
+- en: 'For each webwork1 action, we should have the following attributes populated:'
+  id: totrans-451
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于每个webwork1操作，我们应填写以下属性：
+- en: '| Name | Description |'
+  id: totrans-452
+  prefs: []
+  type: TYPE_TB
+  zh: '| 名称 | 描述 |'
+- en: '| --- | --- |'
+  id: totrans-453
+  prefs: []
+  type: TYPE_TB
+  zh: '| --- | --- |'
+- en: '| `name` | Fully qualified name of the action class. The class must extend
+    `com.atlassian.jira.action.JiraActionSupport`. |'
+  id: totrans-454
+  prefs: []
+  type: TYPE_TB
+  zh: '| `name` | 操作类的完全限定名称。该类必须继承`com.atlassian.jira.action.JiraActionSupport`。
+    |'
+- en: '| `alias` | An alias name for the action class. JIRA will use this name to
+    invoke the action. |'
+  id: totrans-455
+  prefs: []
+  type: TYPE_TB
+  zh: '| `alias` | 操作类的别名。JIRA将使用此名称来调用操作。 |'
+- en: 'The following element is supported for the webwork1 action:'
+  id: totrans-456
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下元素支持webwork1操作：
+- en: '| Name | Description |'
+  id: totrans-457
+  prefs: []
+  type: TYPE_TB
+  zh: '| 名称 | 描述 |'
+- en: '| --- | --- |'
+  id: totrans-458
+  prefs: []
+  type: TYPE_TB
+  zh: '| --- | --- |'
+- en: '| `view` | Delegates the user to the appropriate view, based on the output
+    of the action. This element has an attribute: name that maps to the return value
+    of the action class. |'
+  id: totrans-459
+  prefs: []
+  type: TYPE_TB
+  zh: '| `view` | 根据操作的输出，将用户委派到适当的视图。此元素有一个属性：name，它映射到操作类的返回值。 |'
+- en: Now that you have seen the attributes and elements supported, we can have a
+    look at a sample webwork module before proceeding to create one!
+  id: totrans-460
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在你已经看到支持的属性和元素，我们可以在继续创建之前，先看看一个示例webwork模块！
+- en: '[PRE18]'
+  id: totrans-461
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE18]'
+- en: How to do it...
+  id: totrans-462
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: Let us now aim at creating a sample webwork action. For the example, we can
+    create an action that takes a user input, prints it out in the console, and displays
+    it on the output page after modifying the input.
+  id: totrans-463
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，让我们创建一个示例webwork操作。作为示例，我们可以创建一个操作，接受用户输入，在控制台中打印，并在修改输入后显示在输出页面上。
+- en: 'Following are the steps to perform:'
+  id: totrans-464
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是执行的步骤：
+- en: Add the new webwork action module into your `atlassian-plugin.xml`. Let us say,
+    we add the same aforementioned snippet.
+  id: totrans-465
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 将新的webwork操作模块添加到你的`atlassian-plugin.xml`中。假设我们添加了上述相同的代码片段。
+- en: Create the action class `DemoAction` under the package `com.jtricks`. The class
+    must extend `com.atlassian.jira.action.JiraActionSupport`.
+  id: totrans-466
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在`com.jtricks`包下创建操作类`DemoAction`。该类必须继承`com.atlassian.jira.action.JiraActionSupport`。
+- en: Identify the parameters that you need to receive from the user. Create private
+    variables for them with the name exactly similar to that of the related HTML tag.
+  id: totrans-467
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 确定你需要从用户接收的参数。为它们创建私有变量，名称应与相关HTML标签完全相同。
+- en: 'In our example, we need to take a user input. Let us say, it is the name of
+    the user. The HTML code in the input view (in our case,`/templates/input.vm`)
+    will be as follows:'
+  id: totrans-468
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在我们的示例中，我们需要获取用户输入。假设它是用户的名字。输入视图中的HTML代码（在我们的例子中是`/templates/input.vm`）如下：
+- en: '[PRE19]'
+  id: totrans-469
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE19]'
+- en: So, we need to create a String variable of the name `userName` in our action
+    class.
+  id: totrans-470
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 因此，我们需要在我们的动作类中创建一个名为`userName`的字符串变量。
+- en: Create setter methods for the variables that are used to get values from the
+    input view.
+  id: totrans-471
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 为用于从输入视图获取值的变量创建setter方法。
+- en: In our example, we retrieve the `userName` from the input view and process it
+    in the action class. So we need to create a setter method for that which will
+    look like this.
+  id: totrans-472
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在我们的示例中，我们从输入视图中获取`userName`并在动作类中处理它。因此，我们需要为此创建一个setter方法，方法如下：
+- en: '[PRE20]'
+  id: totrans-473
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE20]'
+- en: Identify the parameter that needs to be printed in the output page. In our case,
+    we will print `modifiedName` in the output page.
+  id: totrans-474
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 确定需要在输出页面中打印的参数。在我们的示例中，我们将打印`modifiedName`到输出页面。
+- en: 'Create getter methods for the parameters to be printed. Velocity or JSPs will
+    invoke the getter methods to retrieve the value from the `Action` class. For our
+    example, we have a getter method for `modifiedName`, which looks as follows:'
+  id: totrans-475
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 为要打印的参数创建getter方法。Velocity或JSP会调用getter方法从`Action`类中获取值。在我们的示例中，我们为`modifiedName`创建了一个getter方法，方法如下：
+- en: '[PRE21]'
+  id: totrans-476
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE21]'
+- en: Override the methods of interest. This is where the actual logic will fit it.
+    It is entirely up to the plugin developer to determine which methods to be overridden.
+    It totally depends on the logic of the plugin.
+  id: totrans-477
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 重写感兴趣的方法。这是实际逻辑的所在。插件开发人员可以完全根据插件的逻辑决定要覆盖哪些方法。
+- en: 'The three main methods of interest are the following. But you can completely
+    omit these methods and write your own commands and related methods:'
+  id: totrans-478
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 需要关注的三个主要方法如下。但你可以完全省略这些方法并编写自己的命令和相关方法：
+- en: '`doValidation`: This is the method where the input validation happens. Plugin
+    developers can override this method and add our own bits of custom validations.'
+  id: totrans-479
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`doValidation`：这是执行输入验证的方法。插件开发人员可以覆盖此方法并添加我们自己的自定义验证。'
+- en: '`doExecute`: This is where the action execution happens. When the input form
+    is submitted, the `doExecute` method is called if there are no validation errors.
+    All the business logic is done here and the appropriate ''view'' name is returned,
+    based on the execution result.'
+  id: totrans-480
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`doExecute`：这是执行动作的地方。当输入表单提交时，如果没有验证错误，将调用`doExecute`方法。所有的业务逻辑都在这里处理，基于执行结果返回相应的''视图''名称。'
+- en: 'In our example, we use this method to modify the input String:'
+  id: totrans-481
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在我们的示例中，我们使用此方法修改输入的字符串：
+- en: '[PRE22]'
+  id: totrans-482
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE22]'
+- en: '`doDefault`: This method is invoked when the ''default'' command is used. In
+    our example, `DemoAction!default.jspa` will invoke the `doDefault` method.'
+  id: totrans-483
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`doDefault`：当使用''default''命令时会调用此方法。在我们的示例中，`DemoAction!default.jspa`将调用`doDefault`方法。'
+- en: 'In our example, we use this method to redirect the user to the input page:'
+  id: totrans-484
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在我们的示例中，我们使用此方法将用户重定向到输入页面：
+- en: '[PRE23]'
+  id: totrans-485
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE23]'
+- en: 'Create the Velocity template for the input view. The ''input'' view, in our
+    example, uses the template: /`templates/input.vm`. Add the HTML code of the input
+    text within a form whose action invokes `DemoAction`:'
+  id: totrans-486
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 为输入视图创建Velocity模板。在我们的示例中，'input'视图使用模板：/`templates/input.vm`。将输入文本的HTML代码添加到一个表单中，该表单的操作调用`DemoAction`：
+- en: '[PRE24]'
+  id: totrans-487
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE24]'
+- en: 'Create the success view to print the `modifiedName` in `/templates/joy.vm`:
+    `The output: $modifiedName`.'
+  id: totrans-488
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在`/templates/joy.vm`中创建成功视图，打印`modifiedName`：`输出结果：$modifiedName`。
+- en: 'Create the error view in `/templates/error.vm`: `Oh No, Error!`'
+  id: totrans-489
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在`/templates/error.vm`中创建错误视图：`哦不，出错了！`
+- en: Package the plugin and deploy it.
+  id: totrans-490
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 打包插件并部署它。
+- en: Point your browser to `${jira_base_url}/secure/DemoAction!default.jspa`. Enter
+    some name and submit the form to see it in action!
+  id: totrans-491
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在浏览器中输入`${jira_base_url}/secure/DemoAction!default.jspa`。输入一个名称并提交表单，以查看它的实际效果！
+- en: Note
+  id: totrans-492
+  prefs:
+  - PREF_IND
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: The example given here is just for the sake of understanding how the webwork
+    action works.
+  id: totrans-493
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 这里给出的示例仅仅是为了帮助理解webwork动作是如何工作的。
+- en: How it works...
+  id: totrans-494
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 它是如何工作的...
+- en: It is probably worth utilizing this section to see how the flow works in our
+    example. Let us see it happening as a step-by-step process.
+  id: totrans-495
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 值得利用此部分来查看在我们的示例中流程是如何工作的。让我们按步骤看看它是如何发生的。
+- en: When `${jira_base_url}/secure/DemoAction!default.jspa` is invoked, the plugin
+    framework looks for the action `DemoAction` registered in the `atlassian-plugin.xml`
+    file and identifies the command and view associated with it.
+  id: totrans-496
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 当`${jira_base_url}/secure/DemoAction!default.jspa`被调用时，插件框架会查找在`atlassian-plugin.xml`文件中注册的`DemoAction`动作，并识别与其相关的命令和视图。
+- en: Here the `default` command is invoked and so the `doDefault` method in the action
+    class is executed.
+  id: totrans-497
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在这里，`default`命令被调用，因此`doDefault`方法在动作类中执行。
+- en: '`doDefault` method returns the view name as `input`.'
+  id: totrans-498
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: '`doDefault`方法返回视图名称为`input`。'
+- en: The input view is resolved as `input.vm`, which presents the form to the user.
+  id: totrans-499
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 输入视图解析为 `input.vm`，它向用户呈现表单。
+- en: On the form, webwork populates the `userName` value in the action class using
+    the setter method.
+  id: totrans-500
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在表单中，webwork 使用 setter 方法在 action 类中填充 `userName` 的值。
+- en: In the execution flow, first the `doValidation` method is invoked. If no error
+    is there, which is the case in our example, it invokes the `doExecute` method.
+  id: totrans-501
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在执行流程中，首先会调用 `doValidation` 方法。如果没有错误，正如我们示例中的情况，它将调用 `doExecute` 方法。
+- en: If there is any error in `doValidation`, the execution stops and the input view
+    is shown. You can print the error messages appropriately on the input view, if
+    there are any. See webwork1 documentation for details.
+  id: totrans-502
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 如果在 `doValidation` 中发生任何错误，执行将停止并显示输入视图。如果有错误消息，可以在输入视图中适当打印它们。详情请见 webwork1
+    文档。
+- en: The input String, `userName`, is then modified and assigned to `modifiedName`
+    in the action class (the `doExecute` method) and `success` is returned.
+  id: totrans-503
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 输入字符串 `userName` 随后在 action 类（即 `doExecute` 方法）中被修改，并赋值给 `modifiedName`，然后返回
+    `success`。
+- en: The success view is resolved as `joy.vm` where the `modifiedName` is printed.
+    `$modifiedName` will invoke the `getModifiedName()` method to print the modified
+    name.
+  id: totrans-504
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 成功视图解析为 `joy.vm`，其中会打印 `modifiedName`。`$modifiedName` 将调用 `getModifiedName()`
+    方法来打印修改后的名称。
+- en: If error is returned, the view is resolved as error.vm and the appropriate error
+    message is shown!
+  id: totrans-505
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 如果返回错误，视图会解析为 error.vm，并显示适当的错误信息！
+- en: Like this, we can write complex actions in JIRA that can be used to customize
+    a lot of aspects of JIRA.
+  id: totrans-506
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 就像这样，我们可以在 JIRA 中编写复杂的动作，用于自定义 JIRA 的许多方面。
+- en: There's more...
+  id: totrans-507
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 还有更多……
+- en: It is also possible to add custom commands to the webwork actions, in addition
+    to the `doExecute` and `doDefault` methods. This enables the developer to invoke
+    the action using user-friendly commands, say `ExampleAction!hello.jspa`.
+  id: totrans-508
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 除了 `doExecute` 和 `doDefault` 方法外，还可以向 webwork 动作中添加自定义命令。这使得开发者可以通过用户友好的命令调用该动作，例如
+    `ExampleAction!hello.jspa`。
+- en: Adding new commands to the action
+  id: totrans-509
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 向动作添加新命令
+- en: The following is a short example of how to add custom commands in the webwork
+    action module.
+  id: totrans-510
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是如何在 webwork 动作模块中添加自定义命令的简短示例。
+- en: 'The `atlassian-plugin.xml` file should be modified to include the new command
+    under the action:'
+  id: totrans-511
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`atlassian-plugin.xml` 文件应被修改，以在 action 下包含新命令：'
+- en: '[PRE25]'
+  id: totrans-512
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE25]'
+- en: In this case, we need to create a method `doHello()` in the action class.
+  id: totrans-513
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这种情况下，我们需要在 action 类中创建一个方法 `doHello()`。
+- en: You can invoke the method by calling `DemoAction!hello.jspa`, in which case
+    the method will be executed and the returning "success" message will take the
+    user `to /templates/joy.vm`.
+  id: totrans-514
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以通过调用 `DemoAction!hello.jspa` 来调用该方法，这时方法将被执行，并且返回的“success”消息将把用户带到 `to /templates/joy.vm`。
+- en: You can have separate views for the command which can be invoked by calling
+    the associated alias name, `DemoHello.jspa`. In this case, returning "success"
+    will take the user to `/templates/hello.vm`.
+  id: totrans-515
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以为命令创建单独的视图，并通过调用关联的别名 `DemoHello.jspa` 来调用命令。在这种情况下，返回的“success”将把用户带到 `/templates/hello.vm`。
+- en: See also
+  id: totrans-516
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 另见
+- en: '*Deploying your plugin* in [Chapter 1](ch01.html "Chapter 1. Plugin Development
+    Process")'
+  id: totrans-517
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在 [第 1 章](ch01.html "第 1 章. 插件开发过程") 中*部署你的插件*。
+- en: Extending a webwork action in JIRA
+  id: totrans-518
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 扩展 JIRA 中的 webwork 动作
+- en: There are so many user stories for this one! How do you override some of the
+    JIRA built-in actions? How do you do some additional stuff in the JIRA built-in
+    action? (Like doing some crazy things immediately after creation before the page
+    returns to the user, or doing some innovative validations on some of those actions)
+  id: totrans-519
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个问题有很多用户故事！如何覆盖一些 JIRA 内置的动作？如何在 JIRA 内置的动作中做一些额外的操作？（比如在页面返回给用户之前，立刻做一些疯狂的事情，或者对其中某些动作进行创新性的验证）
+- en: Extending the existing JIRA action is an answer to all these questions. Let
+    us see in detail how to do that.
+  id: totrans-520
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 扩展现有的 JIRA 动作是解决所有这些问题的答案。让我们详细看看如何实现。
+- en: How to do it...
+  id: totrans-521
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何实现……
+- en: Extending a JIRA action is done with the help of the webwork plugin module.
+    Most of it is very similar to writing new webwork actions.
+  id: totrans-522
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 扩展 JIRA 动作是借助 webwork 插件模块完成的。大部分步骤与编写新的 webwork 动作非常相似。
+- en: Let us take the case of the **create issue** action. What should we do if we
+    need to extend the create action? Say, to do some additional validation and to
+    do some extra things after the actual creation is done?
+  id: totrans-523
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们以 **创建问题** 动作为例。如果我们需要扩展创建动作，该怎么做呢？比如，执行一些额外的验证并在实际创建完成后做一些额外的操作？
+- en: 'The following are the steps, in a nutshell:'
+  id: totrans-524
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是简要的步骤：
+- en: Identify the action to be overridden by looking up the `actions.xml` under `WEB-INF/classes`
+    in your JIRA installation directory.
+  id: totrans-525
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 通过查找 JIRA 安装目录中的 `WEB-INF/classes` 下的 `actions.xml` 来识别需要被覆盖的操作。
+- en: 'In our case, `CreateIssueDetails` is the action class that does the creation
+    of the issue:'
+  id: totrans-526
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在我们的例子中，`CreateIssueDetails` 是负责创建 issue 的操作类：
+- en: '[PRE26]'
+  id: totrans-527
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE26]'
+- en: This snippet defines the action class and the related views thatare using JSP
+    files.
+  id: totrans-528
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 这段代码定义了操作类和使用 JSP 文件的相关视图。
+- en: Determine whether we need to override the action or just modify the JSP files.
+    In our example, let us do some extra validation.
+  id: totrans-529
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 确定我们是否需要覆盖该操作，或者仅修改 JSP 文件。在我们的示例中，让我们进行一些额外的验证。
+- en: 'Add the webwork plugin module in the `atlassian-plugin.xml`:'
+  id: totrans-530
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在 `atlassian-plugin.xml` 中添加 webwork 插件模块：
+- en: '[PRE27]'
+  id: totrans-531
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE27]'
+- en: Note the change in action class name. We can also change the JSP files if that
+    is needed. But most importantly, the `alias` name should be exactly the same as
+    the action alias name in `actions.xml`. In this case, the `alias` name is `CreateIssueDetails`
+  id: totrans-532
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 注意操作类名称的变化。如果需要，我们也可以修改 JSP 文件。但最重要的是，`alias` 名称应该与 `actions.xml` 中操作的 alias
+    名称完全相同。在这种情况下，`alias` 名称是 `CreateIssueDetails`。
+- en: Create the action class `com.jtricks.MyCreateIssueDetails`
+  id: totrans-533
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建操作类 `com.jtricks.MyCreateIssueDetails`
+- en: 'We can do the full action class implementation in `MyCreateIssueDetails`. But
+    in most cases, you might just need to override some methods of the existing action
+    class, as in our example. If so, just extend the original action class like this:'
+  id: totrans-534
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 我们可以在 `MyCreateIssueDetails` 中完成完整的操作类实现。但在大多数情况下，你可能只需要覆盖现有操作类的一些方法，就像我们的例子一样。如果是这样，只需像这样扩展原始的操作类：
+- en: '[PRE28]'
+  id: totrans-535
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE28]'
+- en: Add the appropriate constructor to carry out dependency injection and to call
+    the super class constructor. Eclipse, or the IDE you use, will usually prompt
+    this. If you need any other manager classes to add your extra logic, inject them
+    as well in the constructor.
+  id: totrans-536
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 添加适当的构造函数以执行依赖注入并调用父类构造函数。Eclipse 或你使用的 IDE 通常会提示这一点。如果你需要任何其他管理类来添加额外的逻辑，也要在构造函数中注入它们。
+- en: Override the methods you want. In our example, we need to do extra validation.
+    Let us see how to add a validation to check if the current user is the assignee
+    or not!
+  id: totrans-537
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 覆盖你想要的方法。在我们的示例中，我们需要进行额外的验证。让我们看看如何添加一个验证，检查当前用户是否是负责人！
+- en: '[PRE29]'
+  id: totrans-538
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE29]'
+- en: Here we check if the current user is the assignee or not, and add an error message
+    if not.
+  id: totrans-539
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在这里，我们检查当前用户是否是负责人，如果不是，则添加一个错误信息。
+- en: Package the plugin and deploy it.
+  id: totrans-540
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 打包插件并部署它。
+- en: Create an issue with and without the assignee as yourself and see how JIRA behaves!
+  id: totrans-541
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建一个有和没有指定自己为负责人（assignee）的 issue，看看 JIRA 如何表现！
+- en: How it works...
+  id: totrans-542
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 它是如何工作的……
+- en: The key aspect of extending an existing action is to use the same `alias` name
+    in your webwork plugin module. JIRA registers all the actions in `actions.xml`
+    and overwrites them with the actions in plugins, if the same alias name is found.
+  id: totrans-543
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 扩展现有操作的关键是使用相同的 `alias` 名称，在你的 webwork 插件模块中。JIRA 会在 `actions.xml` 中注册所有操作，并且如果找到相同的
+    alias 名称，会用插件中的操作覆盖它们。
+- en: In this case, JIRA registers the class `com.jtricks.MyCreateIssueDetails` for
+    the `CreateIssueDetails` action instead of the original `issue.CreateIssueDetails`
+    class.
+  id: totrans-544
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这种情况下，JIRA 为 `CreateIssueDetails` 操作注册了类 `com.jtricks.MyCreateIssueDetails`，而不是原始的
+    `issue.CreateIssueDetails` 类。
+- en: See also
+  id: totrans-545
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 另请参见
+- en: '*Adding new webwork actions to JIRA*'
+  id: totrans-546
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*将新的 webwork 操作添加到 JIRA 中*'
+- en: '*Deploying your plugin* in [Chapter 1](ch01.html "Chapter 1. Plugin Development
+    Process")'
+  id: totrans-547
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*在[第1章](ch01.html "第1章。插件开发过程")中部署你的插件*'

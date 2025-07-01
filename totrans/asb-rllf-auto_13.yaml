@@ -1,0 +1,1525 @@
+- en: '13'
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '13'
+- en: Using Ansible for Secret Management
+  id: totrans-1
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用 Ansible 进行秘密管理
+- en: When we automate tasks, we need to implement them with little to no user interaction.
+    However, we also know that there will be stages where Ansible needs inputs such
+    as usernames, passwords, API keys, and secrets. Most of these details can be kept
+    in a variable file and passed to playbooks without a user prompt or interaction
+    but it is not a best practice to keep this kind of sensitive information in a
+    plain text format as variables. There are external key vault services you can
+    use but most of them require additional setup and configurations, which you need
+    to integrate with Ansible.
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在我们自动化任务时，我们需要尽量减少用户交互。然而，我们也知道，在某些阶段，Ansible 需要输入信息，如用户名、密码、API 密钥和密钥。大多数这些细节可以保存在变量文件中，并且可以传递给
+    playbook，而无需用户提示或交互，但将这类敏感信息作为变量保存在明文格式中并不是最佳实践。虽然有一些外部密钥保管服务可以使用，但大多数都需要额外的设置和配置，而且你还需要将它们与
+    Ansible 集成。
+- en: Ansible Vault is an inbuilt feature of Ansible, using which we can safeguard
+    the sensitive parts of our Ansible artifacts by encrypting our own vault passwords.
+    Ansible Vault is installed together with Ansible and you can use it for Ansible
+    ad hoc commands, playbooks, or within Red Hat Ansible Automation Platform.
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible Vault 是 Ansible 内置的功能，使用它我们可以通过加密自己的 Vault 密码来保护 Ansible 工件中的敏感部分。Ansible
+    Vault 和 Ansible 一起安装，你可以在 Ansible 临时命令、playbook 或 Red Hat Ansible Automation Platform
+    中使用它。
+- en: 'In this chapter, you will learn about the following main topics:'
+  id: totrans-4
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，你将学习以下主要内容：
+- en: Handling sensitive data in Ansible
+  id: totrans-5
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在 Ansible 中处理敏感数据
+- en: Managing secrets using Ansible Vault
+  id: totrans-6
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用 Ansible Vault 管理秘密
+- en: Using secrets in an Ansible playbook
+  id: totrans-7
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在 Ansible playbook 中使用秘密
+- en: Using Vault credentials in automation controller
+  id: totrans-8
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在自动化控制器中使用 Vault 凭证
+- en: We will start with basic Vault operations and learn how to use sensitive data
+    in playbooks with the help of Vault.
+  id: totrans-9
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将从基本的 Vault 操作开始，学习如何借助 Vault 在 playbook 中使用敏感数据。
+- en: Technical requirements
+  id: totrans-10
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 技术要求
+- en: 'The following are the technical requirements to proceed with this chapter:'
+  id: totrans-11
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是继续本章所需的技术要求：
+- en: One RHEL8/Fedora machine for an Ansible control node
+  id: totrans-12
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 一台 RHEL8/Fedora 机器作为 Ansible 控制节点
+- en: One or more Linux machines with Red Hat repositories configured. If you are
+    using other Linux operating systems instead of **Red Hat Enterprise Linux** (**RHEL**)
+    machines, then make sure you have the appropriate repositories configured to get
+    packages and updates.
+  id: totrans-13
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 一台或多台配置了 Red Hat 仓库的 Linux 机器。如果你使用的是 **Red Hat Enterprise Linux**（**RHEL**）以外的其他
+    Linux 操作系统，请确保已配置适当的仓库，以便获取软件包和更新。
+- en: All the Ansible code, Ansible playbooks, commands, and snippets for this chapter
+    can be found in the GitHub repository at [https://github.com/PacktPublishing/Ansible-for-Real-life-Automation/tree/main/Chapter-13](https://github.com/PacktPublishing/Ansible-for-Real-life-Automation/tree/main/Chapter-13).
+  id: totrans-14
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章的所有 Ansible 代码、playbook、命令和代码片段都可以在 GitHub 仓库中找到：[https://github.com/PacktPublishing/Ansible-for-Real-life-Automation/tree/main/Chapter-13](https://github.com/PacktPublishing/Ansible-for-Real-life-Automation/tree/main/Chapter-13)。
+- en: Handling sensitive data in Ansible
+  id: totrans-15
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 在 Ansible 中处理敏感数据
+- en: 'It is a known practice not to keep sensitive data in plain text format. The
+    same rule applies to Ansible as well, as you will be dealing with different types
+    of sensitive data in Ansible. The sensitive data could be anything, such as the
+    following:'
+  id: totrans-16
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 业界普遍认为，敏感数据不应以明文格式存储。这个规则同样适用于 Ansible，因为在使用 Ansible 时，你会处理不同类型的敏感数据。敏感数据可以是任何内容，如下所示：
+- en: System passwords
+  id: totrans-17
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 系统密码
+- en: API keys
+  id: totrans-18
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: API 密钥
+- en: Port details of applications
+  id: totrans-19
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 应用程序的端口信息
+- en: Database passwords
+  id: totrans-20
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 数据库密码
+- en: SSL certificates or keys
+  id: totrans-21
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: SSL 证书或密钥
+- en: Cloud credentials
+  id: totrans-22
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 云凭证
+- en: We have already learned that Ansible uses plain text format for playbooks, variables,
+    and all other configurations. Hence, storing sensitive data in normal variable
+    files is not desirable and we need to store such information using a more secure
+    method.
+  id: totrans-23
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们已经了解到，Ansible 使用明文格式存储 playbook、变量和其他配置。因此，将敏感数据存储在普通的变量文件中并不理想，我们需要使用更安全的方式来存储这类信息。
+- en: Before we jump into the details of Ansible Vault, let us learn about some of
+    the alternative secret management methods in the following sections.
+  id: totrans-24
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在深入了解 Ansible Vault 之前，让我们先了解以下章节中一些替代的秘密管理方法。
+- en: Integrating with Vault services
+  id: totrans-25
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 与 Vault 服务集成
+- en: 'One of the most common methods for storing sensitive information is using key
+    vault software and services where we can access keys and secrets over GUIs, APIs,
+    or CLIs. We need to add tasks in Ansible to contact the Vault store, authenticate,
+    and retrieve secrets as needed. A sample integration is demonstrated in *Figure
+    13.1*:'
+  id: totrans-26
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 存储敏感信息的最常见方法之一是使用密钥 Vault 软件和服务，在这些服务中，我们可以通过 GUI、API 或 CLI 访问密钥和机密。我们需要在 Ansible
+    中添加任务，以联系 Vault 存储、进行身份验证，并根据需要检索机密。*图 13.1* 演示了一个集成示例：
+- en: '![Figure 13.1 – Ansible integration with an external vault  ](img/B18383_13_01.jpg)'
+  id: totrans-27
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 13.1 – Ansible 与外部 Vault 的集成](img/B18383_13_01.jpg)'
+- en: Figure 13.1 – Ansible integration with an external vault
+  id: totrans-28
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 13.1 – Ansible 与外部 Vault 的集成
+- en: 'There are managed and self-hosted external secret management solutions available
+    to use, such as HashiCorp Vault ([https://www.vaultproject.io](https://www.vaultproject.io)),
+    AWS Secrets Manager ([https://aws.amazon.com/secrets-manager/](https://aws.amazon.com/secrets-manager/)),
+    or Azure Key Vault ([https://azure.microsoft.com/en-us/services/key-vault/](https://azure.microsoft.com/en-us/services/key-vault/)).
+    For retrieving keys or secrets, we can use the API calls, Ansible modules, or
+    Ansible `lookup` plugins available, as shown in the following figure:'
+  id: totrans-29
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有可用的托管和自托管的外部机密管理解决方案，如 HashiCorp Vault ([https://www.vaultproject.io](https://www.vaultproject.io))、AWS
+    Secrets Manager ([https://aws.amazon.com/secrets-manager/](https://aws.amazon.com/secrets-manager/))
+    或 Azure Key Vault ([https://azure.microsoft.com/en-us/services/key-vault/](https://azure.microsoft.com/en-us/services/key-vault/))。为了检索密钥或机密，我们可以使用
+    API 调用、Ansible 模块或 Ansible `lookup` 插件，如下图所示：
+- en: '![Figure 13.2 – Using lookup plugins to retrieve vault keys ](img/B18383_13_02.jpg)'
+  id: totrans-30
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 13.2 – 使用 lookup 插件检索 Vault 密钥](img/B18383_13_02.jpg)'
+- en: Figure 13.2 – Using lookup plugins to retrieve vault keys
+  id: totrans-31
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 13.2 – 使用 lookup 插件检索 Vault 密钥
+- en: The external key vault services are good and useful but we also need to handle
+    the overhead in terms of management and pricing. Refer to the *Further reading*
+    section for more documentation and references on external key vault services.
+  id: totrans-32
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 外部密钥 Vault 服务很好用且有用，但我们也需要处理管理和定价方面的开销。有关外部密钥 Vault 服务的更多文档和参考资料，请参考 *进一步阅读*
+    部分。
+- en: Interactive input using prompts
+  id: totrans-33
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 使用提示进行交互式输入
+- en: 'One of the alternative methods of handling sensitive data in Ansible is collecting
+    the data dynamically during playbook execution. Sensitive and non-sensitive inputs
+    can be accepted using `vars_prompt`, as follows:'
+  id: totrans-34
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 Ansible 中处理敏感数据的替代方法之一是，在 playbook 执行过程中动态收集数据。可以使用 `vars_prompt` 接受敏感和非敏感输入，如下所示：
+- en: '![Figure 13.3 – An Ansible playbook accepting passwords using prompts in Ansible
+    ](img/B18383_13_03.jpg)'
+  id: totrans-35
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 13.3 – Ansible playbook 使用提示接受密码](img/B18383_13_03.jpg)'
+- en: Figure 13.3 – An Ansible playbook accepting passwords using prompts in Ansible
+  id: totrans-36
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 13.3 – Ansible playbook 使用提示接受密码
+- en: 'When you execute the playbook, Ansible will ask for the input and, based on
+    the `private` value, the input will either be visible or hidden on the prompt,
+    as shown in *Figure 13.4*:'
+  id: totrans-37
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当你执行 playbook 时，Ansible 会要求输入，并且根据 `private` 值，输入将在提示中显示或隐藏，如*图 13.4*所示：
+- en: '![Figure 13.4 – Accepting the user input using vars_prompt ](img/B18383_13_04.jpg)'
+  id: totrans-38
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 13.4 – 使用 vars_prompt 接受用户输入](img/B18383_13_04.jpg)'
+- en: Figure 13.4 – Accepting the user input using vars_prompt
+  id: totrans-39
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 13.4 – 使用 vars_prompt 接受用户输入
+- en: However, as you can see in the preceding figure, this method is interactive
+    and someone needs to input the details during the playbook execution. This means
+    you will not be able to use these playbooks in a fully automated workflow where
+    user interaction is not possible. Equally, `vars_prompt` will not work with the
+    Ansible automation controller, as the controller does not interactively allow
+    `vars_prompt` questions.
+  id: totrans-40
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，正如你在前面的图中看到的那样，这种方法是交互式的，执行 playbook 时需要有人输入详细信息。这意味着你将无法在完全自动化的工作流中使用这些
+    playbook，因为在这种工作流中无法进行用户交互。同样，`vars_prompt` 不适用于 Ansible 自动化控制器，因为控制器不允许交互式地提出
+    `vars_prompt` 问题。
+- en: Encrypting data using Ansible Vault
+  id: totrans-41
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 使用 Ansible Vault 加密数据
+- en: As I mentioned at the beginning of this chapter, Ansible Vault is an inbuilt
+    feature of Ansible, using which we can keep the sensitive parts of our Ansible
+    artifacts secure by encrypting the data. We can use our own passwords as vault
+    passwords for encrypting the content. It is possible to use Ansible Vault for
+    Ansible ad hoc commands, playbooks, or within the Ansible Automation Platform.
+  id: totrans-42
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如本章开头所述，Ansible Vault 是 Ansible 的内建功能，通过它我们可以加密数据，确保 Ansible 工件的敏感部分安全。我们可以使用自己的密码作为
+    Vault 密码来加密内容。可以在 Ansible 临时命令、Playbook 或 Ansible 自动化平台中使用 Ansible Vault。
+- en: It is a best practice to separate sensitive artifacts from non-sensitive artifacts
+    and keep them in separate files. The first step of the process is to separate
+    the sensitive data from regular variable files and store them in separate variable
+    files, as shown in *Figure 13.5*.
+  id: totrans-43
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最佳实践是将敏感工件与非敏感工件分开，并保存在不同的文件中。过程的第一步是将敏感数据与常规变量文件分开，并将其存储在单独的变量文件中，如*图 13.5*所示。
+- en: '![Figure 13.5 – Ansible artifacts with encrypted variables ](img/B18383_13_05.jpg)'
+  id: totrans-44
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 13.5 – 带有加密变量的 Ansible 工件](img/B18383_13_05.jpg)'
+- en: Figure 13.5 – Ansible artifacts with encrypted variables
+  id: totrans-45
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 13.5 – 带有加密变量的 Ansible 工件
+- en: With this practice, you will have the ability to store sensitive data in an
+    encrypted format and the flexibility to modify normal variables at any time. When
+    Ansible wants to read the content of these encrypted files, Ansible will use the
+    vault password, which we can enter using the prompt (`--ask-vault-password`) or
+    using special Vault password files. For the Ansible Automation Platform, the Vault
+    password can be stored as a credential and assigned to the Job Template.
+  id: totrans-46
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通过这种做法，你将能够以加密格式存储敏感数据，并且可以灵活地随时修改常规变量。当 Ansible 需要读取这些加密文件的内容时，Ansible 将使用
+    Vault 密码，我们可以通过提示（`--ask-vault-password`）输入或使用特殊的 Vault 密码文件来输入。对于 Ansible 自动化平台，Vault
+    密码可以作为凭据存储并分配给作业模板。
+- en: In the following sections, we will learn how to use Ansible Vault to encrypt
+    variable files and access the encrypted data inside an Ansible playbook.
+  id: totrans-47
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在接下来的章节中，我们将学习如何使用 Ansible Vault 来加密变量文件，并在 Ansible Playbook 中访问加密的数据。
+- en: Managing secrets using Ansible Vault
+  id: totrans-48
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用 Ansible Vault 管理机密
+- en: Ansible Vault is very flexible, as we can encrypt, view, decrypt, or change
+    the Vault password (as in, rekey it) at any time as needed. The Vault password
+    must be stored safely, as you will not be able to retrieve the encrypted Vault
+    content without the Vault password.
+  id: totrans-49
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible Vault 非常灵活，我们可以根据需要随时加密、查看、解密或更改 Vault 密码（即重新设置密码）。Vault 密码必须安全存储，因为没有
+    Vault 密码你将无法恢复加密的 Vault 内容。
+- en: Creating Vault files
+  id: totrans-50
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 创建 Vault 文件
+- en: 'In the following exercise, we will learn how to create an encrypted file using
+    Ansible Vault:'
+  id: totrans-51
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在以下练习中，我们将学习如何使用 Ansible Vault 创建加密文件：
+- en: 'To create a Vault file from scratch, use the `ansible-vault create` command,
+    as shown in *Figure 13.6*:'
+  id: totrans-52
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 要从头开始创建 Vault 文件，请使用 `ansible-vault create` 命令，如*图 13.6*所示：
+- en: '![Figure 13.6 – Creating a Vault file ](img/B18383_13_06.jpg)'
+  id: totrans-53
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 13.6 – 创建 Vault 文件](img/B18383_13_06.jpg)'
+- en: Figure 13.6 – Creating a Vault file
+  id: totrans-54
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 13.6 – 创建 Vault 文件
+- en: 'After we enter the Vault password, a new file will open in the default text
+    editor, such as `vim` or `nano` (we can change the default editor by updating
+    the `$EDITOR` environment variable). Enter the variables and values as needed,
+    just as with a normal variable file:'
+  id: totrans-55
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在输入 Vault 密码后，默认文本编辑器（例如 `vim` 或 `nano`）将打开一个新文件（我们可以通过更新 `$EDITOR` 环境变量来更改默认编辑器）。根据需要输入变量和值，和普通变量文件一样：
+- en: '[PRE0]'
+  id: totrans-56
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: 'Refer to *Figure 13.7* for further details:'
+  id: totrans-57
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请参阅*图 13.7*以获取更多详情：
+- en: '![Figure 13.7 – Adding content to the Vault file ](img/B18383_13_07.jpg)'
+  id: totrans-58
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 13.7 – 向 Vault 文件添加内容](img/B18383_13_07.jpg)'
+- en: Figure 13.7 – Adding content to the Vault file
+  id: totrans-59
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 13.7 – 向 Vault 文件添加内容
+- en: Save the file as per text editor actions (for example, `:wq`) and exit the editor.
+  id: totrans-60
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 按照文本编辑器的操作保存文件（例如，`：wq`）并退出编辑器。
+- en: We can view the Vault file but the content will be encrypted (see *Figure 13.8*)
+    and you will not be able to retrieve the data without the Vault password.
+  id: totrans-61
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以查看 Vault 文件，但内容将被加密（参见*图 13.8*），没有 Vault 密码，你将无法恢复数据。
+- en: '![Figure 13.8 – Encrypted content inside the Vault file ](img/B18383_13_08.jpg)'
+  id: totrans-62
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 13.8 – Vault 文件中的加密内容](img/B18383_13_08.jpg)'
+- en: Figure 13.8 – Encrypted content inside the Vault file
+  id: totrans-63
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 13.8 – Vault 文件中的加密内容
+- en: We have learned how to create an encrypted file using Ansible Vault in the preceding
+    exercise. In the following section, we will learn how to encrypt existing files
+    and content using Ansible Vault.
+  id: totrans-64
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在前面的练习中，我们已经学习了如何使用 Ansible Vault 创建加密文件。在接下来的部分中，我们将学习如何使用 Ansible Vault 加密现有文件和内容。
+- en: Encrypting existing files
+  id: totrans-65
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 加密现有文件
+- en: 'If you have a variable file or file with sensitive content and you want to
+    encrypt it using Ansible Vault, then you can do it using the `encrypt` command,
+    as explained in the following exercise:'
+  id: totrans-66
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你有一个变量文件或包含敏感内容的文件，并且想要使用 Ansible Vault 对其进行加密，那么可以使用 `encrypt` 命令，具体步骤见以下练习：
+- en: 'Verify the current content of the files as follows:'
+  id: totrans-67
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 验证文件的当前内容如下所示：
+- en: '![Figure 13.9 – Database details in a plain text format ](img/B18383_13_09.jpg)'
+  id: totrans-68
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 13.9 – 以纯文本格式显示的数据库详情](img/B18383_13_09.jpg)'
+- en: Figure 13.9 – Database details in a plain text format
+  id: totrans-69
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 13.9 – 以纯文本格式显示的数据库详情
+- en: 'Encrypt the content using the `ansible-vault encrypt` command:'
+  id: totrans-70
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用 `ansible-vault encrypt` 命令加密内容：
+- en: '![Figure 13.10 – Encrypting an existing file using Ansible Vault ](img/B18383_13_10.jpg)'
+  id: totrans-71
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 13.10 – 使用 Ansible Vault 加密现有文件](img/B18383_13_10.jpg)'
+- en: Figure 13.10 – Encrypting an existing file using Ansible Vault
+  id: totrans-72
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 13.10 – 使用 Ansible Vault 加密现有文件
+- en: 'Now, verify the encryption of the file as follows:'
+  id: totrans-73
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在，验证文件的加密情况如下所示：
+- en: '![Figure 13.11 – The plain text file after being encrypted ](img/B18383_13_11.jpg)'
+  id: totrans-74
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 13.11 – 加密后的纯文本文件](img/B18383_13_11.jpg)'
+- en: Figure 13.11 – The plain text file after being encrypted
+  id: totrans-75
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 13.11 – 加密后的纯文本文件
+- en: Now that we know how to encrypt the files, we will learn how to use Vault ID
+    to handle multiple Vault passwords in the next section.
+  id: totrans-76
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们知道如何加密文件，接下来我们将学习如何使用 Vault ID 处理多个 Vault 密码。
+- en: Adding Vault ID to an encryption
+  id: totrans-77
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 向加密中添加 Vault ID
+- en: 'When we have many Vault files and multiple Vault passwords, we can use the
+    **Vault ID** to identify the Vault content. A Vault ID is an identifier for one
+    or more vaulted secrets and contents. Let’s follow an example:'
+  id: totrans-78
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当我们有许多 Vault 文件和多个 Vault 密码时，可以使用 **Vault ID** 来识别 Vault 内容。Vault ID 是一个标识符，用于标识一个或多个加密的密钥和内容。让我们跟随一个示例：
+- en: Create and encrypt the secret file with the `--vault-id` option as follows.
+    The Vault ID will be visible in the prompt, as shown in *Figure 13.12*.
+  id: totrans-79
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用 `--vault-id` 选项创建并加密秘密文件，如下所示。Vault ID 会在提示符中显示，如 *图 13.12* 所示。
+- en: '![Figure 13.12 – Create a Vault file with a Vault ID ](img/B18383_13_12.jpg)'
+  id: totrans-80
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 13.12 – 使用 Vault ID 创建 Vault 文件](img/B18383_13_12.jpg)'
+- en: Figure 13.12 – Create a Vault file with a Vault ID
+  id: totrans-81
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 13.12 – 使用 Vault ID 创建 Vault 文件
+- en: 'The same Vault ID can be checked from the content of the Vault file as follows:'
+  id: totrans-82
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 相同的 Vault ID 可以通过以下方式从 Vault 文件的内容中查看：
+- en: '![Figure 13.13 – A Vault file with a Vault ID ](img/B18383_13_13.jpg)'
+  id: totrans-83
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 13.13 – 带有 Vault ID 的 Vault 文件](img/B18383_13_13.jpg)'
+- en: Figure 13.13 – A Vault file with a Vault ID
+  id: totrans-84
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 13.13 – 带有 Vault ID 的 Vault 文件
+- en: 'The password for the Vault ID can be taken from the prompt (as we did in the
+    preceding example) or from a configured path in `ansible.cfg` as follows:'
+  id: totrans-85
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: Vault ID 的密码可以通过提示符获取（如前面的示例所示），也可以从 `ansible.cfg` 中配置的路径获取，如下所示：
+- en: '![Figure 13.14 – The Vault ID configured in ansible.cfg ](img/B18383_13_14.jpg)'
+  id: totrans-86
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 13.14 – 在 ansible.cfg 中配置的 Vault ID](img/B18383_13_14.jpg)'
+- en: Figure 13.14 – The Vault ID configured in ansible.cfg
+  id: totrans-87
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 13.14 – 在 ansible.cfg 中配置的 Vault ID
+- en: Using a Vault ID will help you to manage multiple Vault files in a large environment
+    and identify the Vaulted files and secrets.
+  id: totrans-88
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用 Vault ID 可以帮助你在大型环境中管理多个 Vault 文件，并识别被加密的文件和密钥。
+- en: Viewing the content of a Vault file
+  id: totrans-89
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 查看 Vault 文件的内容
+- en: 'Once the content is encrypted, it is possible to display the Vault content
+    using the `ansible-vault view` command, as shown in *Figure 13.15*. Ansible will
+    prompt the existing Vault password and you will see the content in plain text:'
+  id: totrans-90
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦内容被加密，就可以使用 `ansible-vault view` 命令显示 Vault 内容，如 *图 13.15* 所示。Ansible 将提示输入现有的
+    Vault 密码，你将看到纯文本格式的内容：
+- en: '![Figure 13.15 – Displaying the Vault content ](img/B18383_13_15.jpg)'
+  id: totrans-91
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 13.15 – 显示 Vault 内容](img/B18383_13_15.jpg)'
+- en: Figure 13.15 – Displaying the Vault content
+  id: totrans-92
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 13.15 – 显示 Vault 内容
+- en: Please note that the Vault file content is still in an encrypted state and you
+    will therefore not be able to access it without the Vault password.
+  id: totrans-93
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请注意，Vault 文件内容仍然处于加密状态，因此没有 Vault 密码，你将无法访问它。
+- en: Editing a Vault file
+  id: totrans-94
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 编辑 Vault 文件
+- en: 'To edit the encrypted Vault file, use the `ansible-vault edit` command as follows:'
+  id: totrans-95
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要编辑加密后的 Vault 文件，请使用 `ansible-vault edit` 命令，如下所示：
+- en: '![Figure 13.16 – Editing an encrypted file using Ansible Vault ](img/B18383_13_16.jpg)'
+  id: totrans-96
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 13.16 – 使用 Ansible Vault 编辑加密文件](img/B18383_13_16.jpg)'
+- en: Figure 13.16 – Editing an encrypted file using Ansible Vault
+  id: totrans-97
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 13.16 – 使用 Ansible Vault 编辑加密文件
+- en: 'The Vault file will open in the text editor in plain text format. Once editing
+    is completed, save the file (for example, `:wq`) and exit the editor, as shown
+    in *Figure 13.17*:'
+  id: totrans-98
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Vault 文件将在文本编辑器中以纯文本格式打开。编辑完成后，保存文件（例如，`：wq`）并退出编辑器，如*图 13.17*所示：
+- en: '![Figure 13.17 – Editing a Vault file in the text editor ](img/B18383_13_17.jpg)'
+  id: totrans-99
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 13.17 – 在文本编辑器中编辑 Vault 文件](img/B18383_13_17.jpg)'
+- en: Figure 13.17 – Editing a Vault file in the text editor
+  id: totrans-100
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 13.17 – 在文本编辑器中编辑 Vault 文件
+- en: Once editing is complete, the Vault files will be saved in an encrypted format
+    without any additional actions required.
+  id: totrans-101
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 编辑完成后，Vault 文件将以加密格式保存，无需额外操作。
+- en: Decrypting a Vault file
+  id: totrans-102
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 解密 Vault 文件
+- en: 'There are situations where we need to decrypt the file back to plain text temporarily
+    or permanently. In such cases, `ansible-vault decrypt` will help to decrypt the
+    Vault file back to plain text format as follows:'
+  id: totrans-103
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有些情况下，我们需要将文件解密为纯文本，可能是暂时的也可能是永久的。在这种情况下，`ansible-vault decrypt` 命令可以帮助将 Vault
+    文件解密为纯文本格式，如下所示：
+- en: '![Figure 13.18 – Decrypting a Vault file ](img/B18383_13_18.jpg)'
+  id: totrans-104
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 13.18 – 解密 Vault 文件](img/B18383_13_18.jpg)'
+- en: Figure 13.18 – Decrypting a Vault file
+  id: totrans-105
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 13.18 – 解密 Vault 文件
+- en: 'Verify the file content after decryption, as shown in *Figure 13.19*:'
+  id: totrans-106
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 解密后验证文件内容，如*图 13.19*所示：
+- en: '![Figure 13.19 – The Vault file after decryption ](img/B18383_13_19.jpg)'
+  id: totrans-107
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 13.19 – 解密后的 Vault 文件](img/B18383_13_19.jpg)'
+- en: Figure 13.19 – The Vault file after decryption
+  id: totrans-108
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 13.19 – 解密后的 Vault 文件
+- en: When you encrypt the file again, you can use the same or a different Vault password;
+    it does not matter.
+  id: totrans-109
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当你再次加密文件时，可以使用相同的或不同的 Vault 密码，这没有关系。
+- en: Vault password rotation by rekeying
+  id: totrans-110
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: Vault 密码轮换通过重新设置密码进行
+- en: 'It is a common practice to rotate passwords, keys, and SSL certificates to
+    ensure that the credentials are not compromised and also to follow the organization’s
+    password policies. The `ansible-vault rekey` command will help to change or rotate
+    the Vault password for secret content. Ansible Vault will ask for the existing
+    Vault password and, if successful, a prompt for a new Vault password will be displayed,
+    as shown in *Figure 13.20*:'
+  id: totrans-111
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 定期更换密码、密钥和 SSL 证书是一种常见做法，以确保凭证不被泄露，并遵循组织的密码政策。`ansible-vault rekey` 命令可帮助更改或轮换
+    Vault 密码，保护敏感内容。Ansible Vault 会要求输入现有的 Vault 密码，如果成功，将显示提示以设置新 Vault 密码，如*图 13.20*所示：
+- en: '![Figure 13.20 – Rotating the Vault password ](img/B18383_13_20.jpg)'
+  id: totrans-112
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 13.20 – 更换 Vault 密码](img/B18383_13_20.jpg)'
+- en: Figure 13.20 – Rotating the Vault password
+  id: totrans-113
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 13.20 – 更换 Vault 密码
+- en: Remember to update the new Vault password wherever applicable, such as in local
+    Vault password files or Ansible automation controller vault credentials, for example.
+  id: totrans-114
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 记得在适用的地方更新新的 Vault 密码，例如在本地 Vault 密码文件或 Ansible 自动化控制器的 Vault 凭证中。
+- en: Encrypting specific variables
+  id: totrans-115
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 加密特定变量
+- en: 'If you do not wish to encrypt an entire variable file, then encrypt a specific
+    variable using the `ansible-vault encrypt_string` command as follows:'
+  id: totrans-116
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你不想加密整个变量文件，那么使用 `ansible-vault encrypt_string` 命令加密特定的变量，如下所示：
+- en: '![Figure 13.21 – Encrypting a string using Ansible Vault ](img/B18383_13_21.jpg)'
+  id: totrans-117
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 13.21 – 使用 Ansible Vault 加密字符串](img/B18383_13_21.jpg)'
+- en: Figure 13.21 – Encrypting a string using Ansible Vault
+  id: totrans-118
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 13.21 – 使用 Ansible Vault 加密字符串
+- en: 'The input can be taken from inline, as shown in the preceding example (*Figure
+    13.21*), or from standard input, as shown in *Figure 13.22*:'
+  id: totrans-119
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 输入可以来自内联，如前面的示例中所示（*图 13.21*），也可以来自标准输入，如*图 13.22*所示：
+- en: '![Figure 13.22 – Ansible Vault encrypting the string using the input value
+    ](img/B18383_13_22.jpg)'
+  id: totrans-120
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 13.22 – Ansible Vault 使用输入值加密字符串](img/B18383_13_22.jpg)'
+- en: Figure 13.22 – Ansible Vault encrypting the string using the input value
+  id: totrans-121
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 13.22 – Ansible Vault 使用输入值加密字符串
+- en: 'Use this encrypted string as a variable in Ansible playbooks or variable files
+    as follows:'
+  id: totrans-122
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用这个加密字符串作为 Ansible playbook 或变量文件中的变量，如下所示：
+- en: '![Figure 13.23 – Encrypted string inside the playbook ](img/B18383_13_23.jpg)'
+  id: totrans-123
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 13.23 – Playbook 中的加密字符串](img/B18383_13_23.jpg)'
+- en: Figure 13.23 – Encrypted string inside the playbook
+  id: totrans-124
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 13.23 – Playbook 中的加密字符串
+- en: Encrypting content with Ansible Vault
+  id: totrans-125
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用 Ansible Vault 加密内容
+- en: You have more options with Ansible Vault, such as editing, encrypting, decrypting,
+    and rekeying, for example. Refer to the documentation for more details at [https://docs.ansible.com/ansible/latest/user_guide/vault.xhtml](https://docs.ansible.com/ansible/latest/user_guide/vault.xhtml).
+  id: totrans-126
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用 Ansible Vault，你还有更多选择，比如编辑、加密、解密和重新生成密钥等。例如，请参考文档以了解更多详情：[https://docs.ansible.com/ansible/latest/user_guide/vault.xhtml](https://docs.ansible.com/ansible/latest/user_guide/vault.xhtml)。
+- en: In the following section, we will learn how to use encrypted Vault files in
+    Ansible playbooks and retrieve the secret information.
+  id: totrans-127
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在接下来的部分中，我们将学习如何在 Ansible 剧本中使用加密的 Vault 文件并检索密钥信息。
+- en: Using secrets in Ansible playbooks
+  id: totrans-128
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 在 Ansible 剧本中使用机密信息
+- en: You have learned the basic usage of secrets in an Ansible playbook in [*Chapter
+    3*](B18383_03.xhtml#_idTextAnchor052)’s *Automating notifications* section. In
+    this section, we will learn more about their usage and different methods of passing
+    the Vault password.
+  id: totrans-129
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你已经在[*第 3 章*](B18383_03.xhtml#_idTextAnchor052)的*自动化通知*部分学习了在 Ansible 剧本中使用机密的基本方法。在本节中，我们将进一步学习其用法和不同的传递
+    Vault 密码的方法。
+- en: 'In the following exercise, we will develop Ansible content to create users
+    in Linux, with their passwords retrieved from an Ansible Vault file:'
+  id: totrans-130
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在以下练习中，我们将开发 Ansible 内容，用于在 Linux 中创建用户，并从 Ansible Vault 文件中检索他们的密码：
+- en: 'Create a `Chapter-13/vars/users.yaml` Ansible Vault file as follows and enter
+    the Vault password:'
+  id: totrans-131
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建一个`Chapter-13/vars/users.yaml` Ansible Vault 文件，并输入 Vault 密码，如下所示：
+- en: '[PRE1]'
+  id: totrans-132
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: Remember the password, as we need this information when executing the playbook.
+  id: totrans-133
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请记住密码，因为执行剧本时我们需要这些信息。
+- en: 'Add content to the variable files as follows:'
+  id: totrans-134
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 将内容添加到变量文件中，如下所示：
+- en: '![Figure 13.24 – User details inside an Ansible Vault file ](img/B18383_13_24.jpg)'
+  id: totrans-135
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 13.24 – Ansible Vault 文件中的用户详情](img/B18383_13_24.jpg)'
+- en: Figure 13.24 – User details inside an Ansible Vault file
+  id: totrans-136
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 13.24 – Ansible Vault 文件中的用户详情
+- en: Save the file and exit the editor. The `userlist` variable contains details
+    of multiple users and their passwords.
+  id: totrans-137
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 保存文件并退出编辑器。`userlist`变量包含多个用户及其密码的详细信息。
+- en: 'Verify the file content, as shown in *Figure 13.25*:'
+  id: totrans-138
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 验证文件内容，如*图 13.25*所示：
+- en: '![Figure 13.25 – A user’s encrypted details  ](img/B18383_13_25.jpg)'
+  id: totrans-139
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 13.25 – 用户的加密信息](img/B18383_13_25.jpg)'
+- en: Figure 13.25 – A user’s encrypted details
+  id: totrans-140
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 13.25 – 用户的加密信息
+- en: 'Create a `Chapter-13/manage-user.yaml` playbook with the following content:'
+  id: totrans-141
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建一个`Chapter-13/manage-user.yaml`剧本，内容如下：
+- en: '![Figure 13.26 – A playbook to add users into ](img/B18383_13_26.jpg)'
+  id: totrans-142
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 13.26 – 一个用于添加用户的剧本](img/B18383_13_26.jpg)'
+- en: Figure 13.26 – A playbook to add users into
+  id: totrans-143
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 13.26 – 一个用于添加用户的剧本
+- en: See the `vars_files` section because we have already included the encrypted
+    variable file in the playbook.
+  id: totrans-144
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 查看`vars_files`部分，因为我们已经在剧本中包含了加密的变量文件。
+- en: '![Figure 13.27 – Creating groups and users ](img/B18383_13_27.jpg)'
+  id: totrans-145
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 13.27 – 创建组和用户](img/B18383_13_27.jpg)'
+- en: Figure 13.27 – Creating groups and users
+  id: totrans-146
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 13.27 – 创建组和用户
+- en: Generating encrypted passwords in Ansible
+  id: totrans-147
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 Ansible 中生成加密密码
+- en: The `password_hash(‘sha256’)` filter has been used to encrypt the password and
+    avoid sending a plain text password. Refer to [https://docs.ansible.com/ansible/latest/reference_appendices/faq.xhtml#how-do-i-generate-encrypted-passwords-for-the-user-module](https://docs.ansible.com/ansible/latest/reference_appendices/faq.xhtml#how-do-i-generate-encrypted-passwords-for-the-user-module)
+    to learn more about password encryption in Ansible.
+  id: totrans-148
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`password_hash(‘sha256’)`过滤器已被用来加密密码，以避免发送明文密码。请参考[https://docs.ansible.com/ansible/latest/reference_appendices/faq.xhtml#how-do-i-generate-encrypted-passwords-for-the-user-module](https://docs.ansible.com/ansible/latest/reference_appendices/faq.xhtml#how-do-i-generate-encrypted-passwords-for-the-user-module)
+    了解更多关于 Ansible 中密码加密的内容。'
+- en: 'Now, execute the playbook using the `ansible-playbook` command as follows:'
+  id: totrans-149
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在，使用以下命令执行剧本：`ansible-playbook`。
+- en: '![Figure 13.28 – An Ansible error due to there being no Vault secret ](img/B18383_13_28.jpg)'
+  id: totrans-150
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 13.28 – 由于没有 Vault 密钥，Ansible 错误](img/B18383_13_28.jpg)'
+- en: Figure 13.28 – An Ansible error due to there being no Vault secret
+  id: totrans-151
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 13.28 – 由于没有 Vault 密钥，Ansible 错误
+- en: Since we have included Ansible Vault files inside the playbook, Ansible expects
+    the Vault secret to be available and will fail if no appropriate secret is.
+  id: totrans-152
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于我们在剧本中包含了 Ansible Vault 文件，Ansible 期望 Vault 密钥可用，如果没有合适的密钥，它将失败。
+- en: 'Execute the playbook by adding an `--ask-vault-password` argument:'
+  id: totrans-153
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 通过添加`--ask-vault-password`参数执行剧本：
+- en: '![Figure 13.29 – Executing the playbook with the Vault secret prompt ](img/B18383_13_29.jpg)'
+  id: totrans-154
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 13.29 – 使用 Vault 密码提示执行剧本](img/B18383_13_29.jpg)'
+- en: Figure 13.29 – Executing the playbook with the Vault secret prompt
+  id: totrans-155
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图13.29 – 执行带有Vault密码提示的剧本
+- en: 'Verify the user creation success on `node1` using an ad hoc command as follows:'
+  id: totrans-156
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用以下临时命令验证`node1`上用户创建成功：
+- en: '*Figure 13.30* shows a sample output for the command:'
+  id: totrans-157
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '*图13.30*展示了命令的示例输出：'
+- en: '![Figure 13.30 – An Ansible ad hoc command to check that a user has been created
+    successfully ](img/B18383_13_30.jpg)'
+  id: totrans-158
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图13.30 – 用于检查用户是否成功创建的Ansible临时命令](img/B18383_13_30.jpg)'
+- en: Figure 13.30 – An Ansible ad hoc command to check that a user has been created
+    successfully
+  id: totrans-159
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图13.30 – 用于检查用户是否成功创建的Ansible临时命令
+- en: In the preceding example, you have encrypted a variable file using Ansible Vault
+    and retrieved the information inside the Ansible playbook by prompting the Vault
+    secret. However, for automated operations, we need to skip this prompt. The Vault
+    secret should be able to pass in the command line itself. In such scenarios, use
+    the `--vault-password-file` argument and pass the Vault secret inside a file.
+  id: totrans-160
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在前面的示例中，您使用Ansible Vault加密了一个变量文件，并通过提示Vault密码从Ansible剧本中检索信息。但是，对于自动化操作，我们需要跳过此提示。Vault密码应该能够在命令行中直接传递。在这种情况下，使用`--vault-password-file`参数，并将Vault密码放入一个文件中。
+- en: 'Create a file for storing your Vault secret. The Vault secret should be a plain
+    text file but saved in a safe location, for example, a hidden file in your home
+    directory, as shown in *Figure 13.31*:'
+  id: totrans-161
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建一个文件来存储您的Vault密码。Vault密码应该是一个纯文本文件，但保存在安全位置，例如您主目录中的一个隐藏文件，如*图13.31*所示：
+- en: '![Figure 13.31 – A Vault secret in a hidden file in your home directory ](img/B18383_13_31.jpg)'
+  id: totrans-162
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图13.31 – 您主目录中的隐藏文件中的Vault密码](img/B18383_13_31.jpg)'
+- en: Figure 13.31 – A Vault secret in a hidden file in your home directory
+  id: totrans-163
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图13.31 – 您主目录中的隐藏文件中的Vault密码
+- en: 'Execute the same playbook but pass the Vault secret file using the `--vault-password-file`
+    argument. This time Ansible will not ask for a password, as shown in *Figure 13.32*:'
+  id: totrans-164
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 执行相同的剧本，但使用`--vault-password-file`参数传递Vault密码文件。这时，Ansible将不会询问密码，如*图13.32*所示：
+- en: '![Figure 13.32 – The Ansible Vault secret from the password file ](img/B18383_13_32.jpg)'
+  id: totrans-165
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图13.32 – 来自密码文件的Ansible Vault密码](img/B18383_13_32.jpg)'
+- en: Figure 13.32 – The Ansible Vault secret from the password file
+  id: totrans-166
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图13.32 – 来自密码文件的Ansible Vault密码
+- en: The Vault file can contain any type of data, whether a single variable, a string,
+    a complex dictionary variable, or any other text content.
+  id: totrans-167
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Vault文件可以包含任何类型的数据，无论是单一变量、字符串、复杂的字典变量，还是任何其他文本内容。
+- en: Ansible Vault will help us to encrypt the sensitive data in Ansible artifacts,
+    but we need to safeguard such data from being captured within logs and we will
+    learn about how to do so in the following section.
+  id: totrans-168
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible Vault将帮助我们加密Ansible工件中的敏感数据，但我们需要防止这些数据在日志中被捕获，我们将在下一节学习如何做到这一点。
+- en: Hiding secrets from logs using no_log
+  id: totrans-169
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 使用no_log从日志中隐藏秘密
+- en: 'You have learned how to keep sensitive content using Ansible Vault but we have
+    a problem here, as Ansible will include the sensitive data content in plain text
+    format when it carries out logging. Sometimes, it will not be visible in the default
+    verbose mode but will be displayed in a higher-level verbose mode, such as `-vvv`
+    or `-vvvv`. Refer to *Figure 13.33* for the details:'
+  id: totrans-170
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 您已经学会了如何使用Ansible Vault保护敏感内容，但我们在这里遇到了一个问题，因为Ansible在执行日志记录时会以纯文本格式包含敏感数据内容。有时，默认的详细模式中看不到这些内容，但在更高级的详细模式下（如`-vvv`或`-vvvv`）会显示出来。有关详细信息，请参见*图13.33*：
+- en: '![Figure 13.33 – An Ansible playbook output displaying sensitive data ](img/B18383_13_33.jpg)'
+  id: totrans-171
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图13.33 – 显示敏感数据的Ansible剧本输出](img/B18383_13_33.jpg)'
+- en: Figure 13.33 – An Ansible playbook output displaying sensitive data
+  id: totrans-172
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图13.33 – 显示敏感数据的Ansible剧本输出
+- en: 'In such cases, use `no_log: True`, as shown in *Figure 13.34*, and any output
+    in that task will be censored for safety reasons:'
+  id: totrans-173
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '在这种情况下，使用`no_log: True`，如*图13.34*所示，该任务中的任何输出都会因安全原因被屏蔽：'
+- en: '![Figure 13.34 – Disabling the logging of tasks using no_log ](img/B18383_13_34.jpg)'
+  id: totrans-174
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图13.34 – 使用no_log禁用任务的日志记录](img/B18383_13_34.jpg)'
+- en: Figure 13.34 – Disabling the logging of tasks using no_log
+  id: totrans-175
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图13.34 – 使用no_log禁用任务的日志记录
+- en: 'If you execute the playbook now, you will notice the change as follows:'
+  id: totrans-176
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果现在执行剧本，您会注意到如下更改：
+- en: '![Figure 13.35 – The Ansible output with no_log applied to sensitive data ](img/B18383_13_35.jpg)'
+  id: totrans-177
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图13.35 – 应用no_log到敏感数据的Ansible输出](img/B18383_13_35.jpg)'
+- en: Figure 13.35 – The Ansible output with no_log applied to sensitive data
+  id: totrans-178
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图13.35 – 应用no_log到敏感数据的Ansible输出
+- en: 'Even if you enable the high verbose mode, `-vvv`, Ansible will hide the information,
+    as shown in *Figure 13.36*:'
+  id: totrans-179
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 即使启用了高详细模式`-vvv`，Ansible仍会隐藏信息，如*图 13.36*所示：
+- en: '![Figure 13.36 – A high verbose Ansible log with no_log applied ](img/B18383_13_36.jpg)'
+  id: totrans-180
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 13.36 – 高详细Ansible日志，应用了no_log](img/B18383_13_36.jpg)'
+- en: Figure 13.36 – A high verbose Ansible log with no_log applied
+  id: totrans-181
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 13.36 – 应用no_log的高详细Ansible日志
+- en: This is one of the best practices to safeguard the sensitive data being captured
+    in system logs and job histories.
+  id: totrans-182
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这是保护系统日志和作业历史中捕获的敏感数据的最佳实践之一。
+- en: In the following section, we will learn how to keep the sensitive data inside
+    other variable locations, such as `group_vars` and `host_vars`.
+  id: totrans-183
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在接下来的部分，我们将学习如何将敏感数据保存在其他变量位置，如`group_vars`和`host_vars`。
+- en: Ansible Vault for group_vars and host_vars
+  id: totrans-184
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: Ansible Vault用于`group_vars`和`host_vars`
+- en: As we discussed earlier in the chapter, it is a best practice to separate variables
+    and sensitive information wherever appropriate.
+  id: totrans-185
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如我们在本章之前讨论的那样，最佳实践是根据需要将变量和敏感信息分开。
+- en: 'For the following exercise, we will reuse the PostgreSQL Ansible artifacts
+    that we developed in [*Chapter 8*](B18383_08.xhtml#_idTextAnchor144), *Helping
+    Database Team with Automation*. PostgreSQL is installed and configured on `node2`.
+    We will create an additional database user account for accessing the `db_sales`
+    database (refer back to the content of *Chapter 8* for more details.) Let’s do
+    the following:'
+  id: totrans-186
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在以下练习中，我们将重用在[*第8章*](B18383_08.xhtml#_idTextAnchor144)中开发的PostgreSQL Ansible工件，*帮助数据库团队进行自动化*。PostgreSQL已安装并配置在`node2`上。我们将为访问`db_sales`数据库创建一个额外的数据库用户帐户（请参考*第8章*的内容了解更多详情）。我们将执行以下操作：
+- en: 'Update the inventory (`Chapter-13/hosts`) by adding `node2` as part of the
+    `postgres` host group:'
+  id: totrans-187
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 更新库存文件（`Chapter-13/hosts`），通过将`node2`添加为`postgres`主机组的一部分：
+- en: '[PRE2]'
+  id: totrans-188
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: 'Create `group_vars` and another subdirectory as follows:'
+  id: totrans-189
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建`group_vars`和另一个子目录，如下所示：
+- en: '![Figure 13.37 – Creating the group_vars directory and Vault file ](img/B18383_13_37.jpg)'
+  id: totrans-190
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 13.37 – 创建`group_vars`目录和Vault文件](img/B18383_13_37.jpg)'
+- en: Figure 13.37 – Creating the group_vars directory and Vault file
+  id: totrans-191
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 13.37 – 创建`group_vars`目录和Vault文件
+- en: 'Add a database username and password for the new user:'
+  id: totrans-192
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 为新用户添加数据库用户名和密码：
+- en: '[PRE3]'
+  id: totrans-193
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: 'Save and verify the Vault file, as shown in *Figure 13.38*:'
+  id: totrans-194
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 保存并验证Vault文件，如*图 13.38*所示：
+- en: '![Figure 13.38 – The database user information in the Vault file ](img/B18383_13_38.jpg)'
+  id: totrans-195
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 13.38 – Vault文件中的数据库用户信息](img/B18383_13_38.jpg)'
+- en: Figure 13.38 – The database user information in the Vault file
+  id: totrans-196
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 13.38 – Vault文件中的数据库用户信息
+- en: 'Create another Vault file for storing the PostgreSQL admin password:'
+  id: totrans-197
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建另一个Vault文件用于存储PostgreSQL管理员密码：
+- en: '[PRE4]'
+  id: totrans-198
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: 'Add `postgres_password` inside and save the file:'
+  id: totrans-199
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在其中添加`postgres_password`并保存文件：
+- en: '[PRE5]'
+  id: totrans-200
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: 'Create a `Chapter-13/postgres-create-dbuser.yaml` playbook as follows:'
+  id: totrans-201
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建一个`Chapter-13/postgres-create-dbuser.yaml`剧本，如下所示：
+- en: '![Figure 13.39 – An Ansible playbook for managing PostgreSQL user information
+    ](img/B18383_13_39.jpg)'
+  id: totrans-202
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 13.39 – 用于管理PostgreSQL用户信息的Ansible剧本](img/B18383_13_39.jpg)'
+- en: Figure 13.39 – An Ansible playbook for managing PostgreSQL user information
+  id: totrans-203
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 13.39 – 用于管理PostgreSQL用户信息的Ansible剧本
+- en: 'Add a task to create the PostgreSQL database user as follows:'
+  id: totrans-204
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 添加一个任务以创建PostgreSQL数据库用户，如下所示：
+- en: '![Figure 13.40 – The task to create a PostgreSQL user ](img/B18383_13_40.jpg)'
+  id: totrans-205
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 13.40 – 创建PostgreSQL用户的任务](img/B18383_13_40.jpg)'
+- en: Figure 13.40 – The task to create a PostgreSQL user
+  id: totrans-206
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 13.40 – 创建PostgreSQL用户的任务
+- en: All the sensitive variables are inside the `group_vars` Vault files now, for
+    example, `postgres_password`, `postgres_password`, and `postgres_app_user_password`.
+  id: totrans-207
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 所有敏感变量现在都在`group_vars` Vault文件中，例如`postgres_password`、`postgres_password`和`postgres_app_user_password`。
+- en: 'Execute the playbook on the `postgres` host group (which we created in the
+    first step), and the playbook will read the variables and create the new user
+    safely, as shown in *Figure 13.41*:'
+  id: totrans-208
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在`postgres`主机组（我们在第一步中创建的）上执行剧本，剧本将读取变量并安全地创建新用户，如*图 13.41*所示：
+- en: '![Figure 13.41 – The creation of the PostgreSQL database user  ](img/B18383_13_41.jpg)'
+  id: totrans-209
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 13.41 – 创建PostgreSQL数据库用户](img/B18383_13_41.jpg)'
+- en: Figure 13.41 – The creation of the PostgreSQL database user
+  id: totrans-210
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 13.41 – 创建PostgreSQL数据库用户
+- en: As a best practice, keep all the sensitive details inside Vault files at appropriate
+    locations and they will remain safe, even if you keep your Ansible content in
+    Git repositories.
+  id: totrans-211
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最佳实践是将所有敏感信息保存在Vault文件中，并将其放在适当的位置，这样即使你的Ansible内容保存在Git仓库中，它们也会保持安全。
+- en: In the following section, we will learn how to use the Vault files and credentials
+    in the Ansible Automation Platform.
+  id: totrans-212
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在接下来的部分中，我们将学习如何在 Ansible 自动化平台中使用 Vault 文件和凭证。
+- en: Using Vault credentials in the Ansible Automation Platform
+  id: totrans-213
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 在 Ansible 自动化平台中使用 Vault 凭证
+- en: When you run your playbooks from the Web UI of the automation controller, then
+    you have similar options to provide the Vault secret from the WebUI. We can either
+    keep the Vault secret inside a Vault credential or we can select the `--ask-vault-password`
+    in the Ansible command-line execution) and will prompt for the Vault secret when
+    you execute the Job Template from the automation controller’s WebUI.
+  id: totrans-214
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当你从自动化控制器的 Web UI 运行你的 playbook 时，你将有类似的选项来提供 Vault 密码。我们可以将 Vault 密码保存在 Vault
+    凭证中，或者在 Ansible 命令行执行中选择 `--ask-vault-password`，并在从自动化控制器的 WebUI 执行作业模板时提示输入 Vault
+    密码。
+- en: The Ansible automation controller
+  id: totrans-215
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 自动化控制器
+- en: The Ansible automation controller is the control plane for the **Ansible Automation
+    Platform** (**AAP**). When you migrate to AAP 2, the automation controller will
+    be upgraded to include Ansible Tower. Refer to *Chapter 12*, *Integrating Ansible
+    with Your Tools*, for more details.
+  id: totrans-216
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 自动化控制器是 **Ansible 自动化平台**（**AAP**）的控制平面。当你迁移到 AAP 2 时，自动化控制器将升级为包含 Ansible
+    Tower。有关更多详细信息，请参阅 *第 12 章*，*将 Ansible 与您的工具集成*。
+- en: In the following section, we will learn how to create Vault credentials in the
+    Ansible automation controller GUI and attach them to the Job Template to retrieve
+    encrypted content.
+  id: totrans-217
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在接下来的部分中，我们将学习如何在 Ansible 自动化控制器 GUI 中创建 Vault 凭证，并将其附加到作业模板中以检索加密内容。
+- en: Creating Vault credentials
+  id: totrans-218
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 创建 Vault 凭证
+- en: 'To store the Vault secret, create a new credential by following these steps:'
+  id: totrans-219
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要存储 Vault 密码，请按照以下步骤创建一个新凭证：
+- en: 'Open the **Create New Credential** blade and set **Credential Type** to **Vault**,
+    as shown in *Figure 13.42*. Enter the Vault secret (password) and add a Vault
+    ID if required:'
+  id: totrans-220
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 打开 **创建新凭证** 面板，并将 **凭证类型** 设置为 **Vault**，如 *图 13.42* 所示。输入 Vault 密码（秘密），并在需要时添加
+    Vault ID：
+- en: '![Figure 13.42 – Creating a new Vault credential in the automation controller
+    ](img/B18383_13_42.jpg)'
+  id: totrans-221
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 13.42 – 在自动化控制器中创建新的 Vault 凭证](img/B18383_13_42.jpg)'
+- en: Figure 13.42 – Creating a new Vault credential in the automation controller
+  id: totrans-222
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 13.42 – 在自动化控制器中创建新的 Vault 凭证
+- en: Once created, update your Job Template and add the new Vault credentials inside.
+    Navigate **Job Template** | **Edit** and click on the *Search* button near **Credentials**.
+  id: totrans-223
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建后，更新你的作业模板，并将新的 Vault 凭证添加到其中。导航到 **作业模板** | **编辑**，然后点击 **凭证** 旁边的 *搜索* 按钮。
+- en: Within the pop-up screen, set **Selected Category** to **Vault** and you will
+    see the Vault credentials, as shown in *Figure 13.43*. Select the required Vault
+    credentials and click the **Select** button.
+  id: totrans-224
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在弹出屏幕中，将 **选择的类别** 设置为 **Vault**，然后你将看到 Vault 凭证，如 *图 13.43* 所示。选择所需的 Vault
+    凭证并点击 **选择** 按钮。
+- en: '![Figure 13.43 – Selecting the Vault credential for the Job Template ](img/B18383_13_43.jpg)'
+  id: totrans-225
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 13.43 – 为作业模板选择 Vault 凭证](img/B18383_13_43.jpg)'
+- en: Figure 13.43 – Selecting the Vault credential for the Job Template
+  id: totrans-226
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 13.43 – 为作业模板选择 Vault 凭证
+- en: 'Verify the credentials, as shown in *Figure 13.44*:'
+  id: totrans-227
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 验证凭证，如 *图 13.44* 所示：
+- en: '![Figure 13.44 – The credentials added in the Job Template ](img/B18383_13_44.jpg)'
+  id: totrans-228
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 13.44 – 在作业模板中添加的凭证](img/B18383_13_44.jpg)'
+- en: Figure 13.44 – The credentials added in the Job Template
+  id: totrans-229
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 13.44 – 在作业模板中添加的凭证
+- en: If you have multiple Vault files with different Vault secrets, then add multiple
+    Vault credentials as needed and add Vault IDs.
+  id: totrans-230
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你有多个 Vault 文件和不同的 Vault 密码，则根据需要添加多个 Vault 凭证并添加 Vault ID。
+- en: Summary
+  id: totrans-231
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 摘要
+- en: In this chapter, we learned the importance of keeping sensitive data secure
+    within Ansible automation artifacts and the different methods available to do
+    so, such as external Vault services, `vars_prompt`, and Ansible Vault. After this,
+    we learned different operations within Ansible Vault, such as creating, modifying,
+    viewing, decrypting, and rekeying Vault files and variables.
+  id: totrans-232
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们学习了在 Ansible 自动化工件中保持敏感数据安全的重要性以及可用的不同方法，例如外部 Vault 服务、`vars_prompt`
+    和 Ansible Vault。之后，我们学习了在 Ansible Vault 中的不同操作，如创建、修改、查看、解密和重新设置 Vault 文件和变量。
+- en: We also developed Ansible artifacts using Vault files for storing user information
+    and database user credentials. We also discussed the Vault credentials in the
+    automation controller GUI and how to use them with Job Templates.
+  id: totrans-233
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们还使用Vault文件开发了Ansible工件，用于存储用户信息和数据库用户凭证。我们还讨论了在自动化控制器GUI中的Vault凭证，以及如何在作业模板中使用它们。
+- en: In the next chapter, we will learn about different methodologies and approaches
+    for developing Ansible automation artifacts and factors to consider throughout
+    Ansible automation.
+  id: totrans-234
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一章中，我们将学习不同的方法和途径，用于开发Ansible自动化工件，并探讨在整个Ansible自动化过程中需要考虑的因素。
+- en: Further reading
+  id: totrans-235
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 深入阅读
+- en: 'To learn more about the topics covered in this chapter, please visit the following
+    links:'
+  id: totrans-236
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 若要了解更多本章涉及的主题，请访问以下链接：
+- en: '*Tutorial: Use Azure Key Vault to store VM secrets with Ansible* – [https://docs.microsoft.com/en-us/azure/developer/ansible/key-vault-configure-secrets?tabs=ansible](https://docs.microsoft.com/en-us/azure/developer/ansible/key-vault-configure-secrets?tabs=ansible)'
+  id: totrans-237
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*教程：使用Azure Key Vault存储VM机密信息与Ansible* – [https://docs.microsoft.com/en-us/azure/developer/ansible/key-vault-configure-secrets?tabs=ansible](https://docs.microsoft.com/en-us/azure/developer/ansible/key-vault-configure-secrets?tabs=ansible)'
+- en: '*How to send emails using Ansible and Gmail* – [https://www.techbeatly.com/ansible-gmail](https://www.techbeatly.com/ansible-gmail)'
+  id: totrans-238
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*如何使用Ansible和Gmail发送电子邮件* – [https://www.techbeatly.com/ansible-gmail](https://www.techbeatly.com/ansible-gmail)'
+- en: '*Logging Ansible output* – [https://docs.ansible.com/ansible/latest/reference_appendices/logging.xhtml](https://docs.ansible.com/ansible/latest/reference_appendices/logging.xhtml)'
+  id: totrans-239
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*记录Ansible输出* – [https://docs.ansible.com/ansible/latest/reference_appendices/logging.xhtml](https://docs.ansible.com/ansible/latest/reference_appendices/logging.xhtml)'
+- en: '*Keep vaulted variables safely visible* – [https://docs.ansible.com/ansible/latest/user_guide/playbooks_best_practices.xhtml#keep-vaulted-variables-safely-visible](https://docs.ansible.com/ansible/latest/user_guide/playbooks_best_practices.xhtml#keep-vaulted-variables-safely-visible)'
+  id: totrans-240
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*安全地可见化Vault变量* – [https://docs.ansible.com/ansible/latest/user_guide/playbooks_best_practices.xhtml#keep-vaulted-variables-safely-visible](https://docs.ansible.com/ansible/latest/user_guide/playbooks_best_practices.xhtml#keep-vaulted-variables-safely-visible)'
+- en: '*Encrypting passwords in Ansible* – [https://docs.ansible.com/ansible/latest/reference_appendices/faq.xhtml#how-do-i-generate-encrypted-passwords-for-the-user-module](https://docs.ansible.com/ansible/latest/reference_appendices/faq.xhtml#how-do-i-generate-encrypted-passwords-for-the-user-module)'
+  id: totrans-241
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*在Ansible中加密密码* – [https://docs.ansible.com/ansible/latest/reference_appendices/faq.xhtml#how-do-i-generate-encrypted-passwords-for-the-user-module](https://docs.ansible.com/ansible/latest/reference_appendices/faq.xhtml#how-do-i-generate-encrypted-passwords-for-the-user-module)'
+- en: '*Vault IDs in Red Hat Ansible and Red Hat Ansible Tower* –[https://developers.redhat.com/blog/2020/01/30/vault-ids-in-red-hat-ansible-and-red-hat-ansible-tower](https://developers.redhat.com/blog/2020/01/30/vault-ids-in-red-hat-ansible-and-red-hat-ansible-tower)'
+  id: totrans-242
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*Red Hat Ansible和Red Hat Ansible Tower中的Vault ID* –[https://developers.redhat.com/blog/2020/01/30/vault-ids-in-red-hat-ansible-and-red-hat-ansible-tower](https://developers.redhat.com/blog/2020/01/30/vault-ids-in-red-hat-ansible-and-red-hat-ansible-tower)'
+- en: 'Part 3: Managing Your Automation Development Flow with Best Practices'
+  id: totrans-243
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 第三部分：使用最佳实践管理您的自动化开发流程
+- en: This part will describe the importance of continual assessment, monitoring,
+    and security operations. You will learn about different monitoring technologies
+    you can use to detect and protect your environment, as well as how to gain insights
+    from them.
+  id: totrans-244
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本部分将描述持续评估、监控和安全操作的重要性。您将了解可以用于检测和保护环境的不同监控技术，以及如何从中获取洞察。
+- en: 'This part of the book comprises the following chapters:'
+  id: totrans-245
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本书的这一部分包括以下章节：
+- en: '[*Chapter 14*](B18383_14.xhtml#_idTextAnchor265)*, Keeping Automation Simple
+    and Efficient*'
+  id: totrans-246
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '[*第14章*](B18383_14.xhtml#_idTextAnchor265)*，保持自动化简单高效*'
+- en: '[*Chapter 15*](B18383_15.xhtml#_idTextAnchor275)*, Automating Non-Standard
+    Platforms and Operations*'
+  id: totrans-247
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '[*第15章*](B18383_15.xhtml#_idTextAnchor275)*，自动化非标准平台和操作*'
+- en: '[*Chapter 16*](B18383_16.xhtml#_idTextAnchor294)*, Ansible Automation Best
+    Practices for Production*'
+  id: totrans-248
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '[*第16章*](B18383_16.xhtml#_idTextAnchor294)*，Ansible生产环境自动化最佳实践*'

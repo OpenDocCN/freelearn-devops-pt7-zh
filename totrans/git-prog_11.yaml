@@ -1,0 +1,536 @@
+- en: '11'
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '11'
+- en: 'Finding a Broken Commit: Bisect and Blame'
+  id: totrans-1
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 查找坏的提交：Bisect和Blame
+- en: Sooner or later, you are likely to find that you have a bug in your program
+    that was introduced sometime in the past. You can go searching through all your
+    prior commits, but that is time consuming and inefficient. Git provides a command,
+    bisect, to take care of all the hard work for you.
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 迟早你会发现你的程序中有一个错误，它是在过去某个时间点引入的。你可以通过所有以前的提交来查找，但那样既费时又低效。Git 提供了一个命令，bisect，可以为你完成所有繁琐的工作。
+- en: 'Here''s how it works: bisect asks you for a known "bad" commit. Most often
+    this is the last commit. It then asks for a known "good" commit – that is, a commit
+    that is known to work. You do not have to try out a variety of commits to find
+    this; just far back enough that you can be sure it was working back then.'
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 它是如何工作的：bisect 会要求你提供一个已知的“坏的”提交。通常这是最后一个提交。然后它会要求提供一个已知的“好的”提交——也就是说，一个已知可以正常工作的提交。你不需要尝试不同的提交来找到这个提交；只需要回溯到足够远的提交，确保它当时是正常的。
+- en: If you are cautious, you may want to check out the good commit and run it just
+    to make sure.
+  id: totrans-4
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你小心的话，可能希望检出一个好的提交并运行它来确保没有问题。
+- en: Bisect will then do a series of binary searches looking to find the first bad
+    commit. If you have good unit tests, bisect can do this on its own; otherwise
+    you must test each commit it finds and report whether it is good or bad.
+  id: totrans-5
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Bisect 会进行一系列的二分查找，试图找到第一个坏的提交。如果你有好的单元测试，bisect 可以自己完成这个过程；否则你必须测试每个它找到的提交并报告它是好的还是坏的。
+- en: You begin by entering `git bisect start`. This enters the bisect state, not
+    unlike the way we might enter the rebase state.
+  id: totrans-6
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你开始时输入`git bisect start`。这会进入 bisect 状态，类似于我们进入 rebase 状态的方式。
+- en: Your second command is to tell bisect that the current commit is broken (not
+    working, or in bisect's terminology, *bad*). You indicate this by entering `git
+    bisect bad`.
+  id: totrans-7
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你的第二个命令是告诉 bisect 当前的提交是坏的（不工作，或者用 bisect 的术语来说是*坏的*）。你可以通过输入`git bisect bad`来表示这一点。
+- en: 'You now need to tell bisect a good checkout. You can do this in one of two
+    ways: either give it the ID of a good commit, or tell it how many commits to go
+    back from the current, for example `git checkout HEAD~12`, indicating that we
+    know that things were working twelve commits ago.'
+  id: totrans-8
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你现在需要告诉 bisect 一个好的检出。你可以通过两种方式做到这一点：要么提供一个好的提交的 ID，要么告诉它从当前提交回溯多少次，例如`git checkout
+    HEAD~12`，表示我们知道十二个提交前一切正常。
+- en: Git will divide the remaining commits roughly in half, and check out a commit.
+    Let's say that this is the commit made six commits prior to the current one. You
+    then test that commit and tell bisect if it is good or bad.
+  id: totrans-9
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git 会将剩余的提交大致分为两半，并检出一个提交。假设这是当前提交之前六个提交的那个。你接着测试该提交并告诉 bisect 它是好是坏。
+- en: If you say it is good, that means that every commit before it is good. If you
+    say it is bad, that means that every commit after it is bad. Let's assume commit
+    6 is good. Bisect will now consider its range to be 6 to 12 and might check out
+    commit 9\.
+  id: totrans-10
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你说它是好的，那么意味着它之前的所有提交都是好的。如果你说它是坏的，那么意味着之后的所有提交都是坏的。假设提交 6 是好的。Bisect 现在会将其范围视为
+    6 到 12，并可能会检出提交 9。
+- en: 'You test commit 9 and find that it is bad. That means that every commit after
+    9 is bad. Bisect now has a range of 6 to 9 and checks out 7\. If 7 is good then
+    the bad commit is either 8 or 9\. We test 8 and get the answer: if it is good
+    then 9 is the first bad commit, otherwise it is 8.'
+  id: totrans-11
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你测试了提交 9，发现它是坏的。这意味着 9 之后的每个提交都是坏的。Bisect 现在的范围是从 6 到 9，并检出 7。如果 7 是好的，那么坏的提交就是
+    8 或 9。我们测试 8 得到答案：如果它是好的，那么 9 是第一个坏的提交，否则就是 8。
+- en: 'All of this is much easier to see with an example. Let''s create a new repository
+    called `BisectTest`:'
+  id: totrans-12
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 所有这一切通过一个示例更容易理解。让我们创建一个名为`BisectTest`的新仓库：
+- en: '![](img/B17441_11.png)![](img/B17441_11_01.png)'
+  id: totrans-13
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17441_11.png)![](img/B17441_11_01.png)'
+- en: 'Figure 11.1: The repo to demonstrate bisect'
+  id: totrans-14
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 11.1：演示 bisect 的仓库
+- en: Now, clone that repository to your local disk as we've done before. To demonstrate
+    how this works, we're going to create 12 commits, with one in the middle that
+    has an error that will propagate until someone notices that the program is broken
+    after checking in commit 12\. "Oh no," we can hear that programmer cry, "this
+    could have been broken for a long time, with no one noticing. I need to use bisect
+    to find out which commit was bad and fix it."
+  id: totrans-15
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，像之前一样将该仓库克隆到本地磁盘。为了演示这个过程，我们将创建 12 次提交，其中有一个中间的提交存在错误，直到有人注意到程序在检查提交 12 后坏掉了。“哦不，”我们能听到那个程序员喊道，“这个问题可能已经存在很久了，但没人发现。我需要用
+    bisect 来找出哪个提交是坏的，并修复它。”
+- en: 'Let''s use our tried-and-true `Calculator` class to create 12 commits. The
+    first will just create the project:'
+  id: totrans-16
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们用我们久经考验的 `Calculator` 类创建 12 个提交。第一个只会创建项目：
+- en: '![](img/B17441_11_02.png)'
+  id: totrans-17
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17441_11_02.png)'
+- en: 'Figure 11.2: The beginning of our program'
+  id: totrans-18
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '图 11.2: 我们程序的开始'
+- en: 'We''ll save and commit that as our first commit:'
+  id: totrans-19
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将保存并提交作为第一个提交：
+- en: '![](img/B17441_11_03.png)'
+  id: totrans-20
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17441_11_03.png)'
+- en: 'Figure 11.3: Save and commit'
+  id: totrans-21
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '图 11.3: 保存并提交'
+- en: 'Next we''ll create the `Calculator` class and commit that:'
+  id: totrans-22
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来，我们将创建 `Calculator` 类并提交：
+- en: '[PRE0]'
+  id: totrans-23
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: 'That makes three commits: the initial commit created when you cloned it, the
+    commit after creating the program, and this commit after creating the `Calculator`
+    class:'
+  id: totrans-24
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这样就有了三个提交：克隆时创建的初始提交，创建程序后的提交，以及创建 `Calculator` 类后的提交：
+- en: '![](img/B17441_11_04.png)'
+  id: totrans-25
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17441_11_04.png)'
+- en: 'Figure 11.4: The three commits'
+  id: totrans-26
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '图 11.4: 三个提交'
+- en: Now we'll add the four functions (add, subtract, multiply, and integer division)
+    and commit after each one. After doing so, we have seven commits.
+  id: totrans-27
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们将添加四个函数（加法、减法、乘法和整数除法），每完成一个就提交。完成后，我们有了七个提交。
+- en: Let's add the modulus operator, real division, and square root, committing after
+    each one.
+  id: totrans-28
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们添加取模运算符、实数除法和平方根，每完成一个就提交一次。
+- en: That gives us ten commits. Next, we'll go back to the program and use the calculator
+    to print out the value of 23/4 using integer division, which gives us the value
+    5\. Let's check that in.
+  id: totrans-29
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这给我们提供了十个提交。接下来，我们回到程序中，使用计算器打印出 23/4 的整数除法结果，得到值 5。让我们检查一下。
+- en: 'Next, we''ll use the modulus operator on the same division:'
+  id: totrans-30
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来，我们将在相同的除法运算中使用取模运算符：
+- en: '[PRE1]'
+  id: totrans-31
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: 'Finally, we''ll divide using doubles:'
+  id: totrans-32
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后，我们将使用双精度除法：
+- en: '[PRE2]'
+  id: totrans-33
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: 'Okay, we''re ready to show off our results at the next code review. We run
+    the program and we get:'
+  id: totrans-34
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 好的，我们准备在下次代码审查时展示我们的结果。我们运行程序，得到了：
+- en: '[PRE3]'
+  id: totrans-35
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: That result can't be right. Now, in this case, the problem is obvious; our modulus
+    operator is off. But in the real world, the answer will be far less obvious, let
+    alone where it was introduced.
+  id: totrans-36
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个结果不可能是对的。在这种情况下，问题很明显；我们的取模运算符出了问题。但是在实际情况下，问题的答案要模糊得多，更别提它是在哪里引入的。
+- en: 'Let''s use bisect to find the commit where we went wrong. We start up bisect,
+    and then we tell it that the current commit is bad:'
+  id: totrans-37
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们使用 bisect 来找出出现问题的提交。我们启动 bisect，然后告诉它当前的提交是坏的：
+- en: '![](img/B17441_11_05.png)'
+  id: totrans-38
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17441_11_05.png)'
+- en: 'Figure 11.5: Starting bisect'
+  id: totrans-39
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '图 11.5: 开始 bisect'
+- en: 'Now we need to tell it a good commit. Let''s look at the log:'
+  id: totrans-40
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们需要告诉它一个好的提交。让我们查看日志：
+- en: '![](img/B17441_11_06.png)'
+  id: totrans-41
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17441_11_06.png)'
+- en: 'Figure 11.6: Looking for the good commit'
+  id: totrans-42
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '图 11.6: 寻找好的提交'
+- en: 'We know that the second commit was good because all we did was create the project.
+    Let''s tell that to bisect:'
+  id: totrans-43
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们知道第二个提交是好的，因为我们所做的就是创建项目。让我们告诉 bisect 这一点：
+- en: '![](img/B17441_11_07.png)'
+  id: totrans-44
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17441_11_07.png)'
+- en: 'Figure 11.7: A known good commit'
+  id: totrans-45
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '图 11.7: 一个已知的好提交'
+- en: 'You may get a lot of warnings about having a detached head (ouch). You can
+    safely ignore those warnings. For form''s sake, we''ll test the currently checked-out
+    commit and of course, it is fine. So we tell bisect that the current checkout
+    is good:'
+  id: totrans-46
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可能会收到很多关于分离头指针的警告（真疼）。你可以安全地忽略这些警告。为了形式上的完整，我们将测试当前检出的提交，当然，它是没问题的。所以我们告诉 bisect
+    当前的检出是好的：
+- en: '![](img/B17441_11_08.png)'
+  id: totrans-47
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17441_11_08.png)'
+- en: 'Figure 11.8: Telling Bisect this commit is good'
+  id: totrans-48
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '图 11.8: 告诉 Bisect 这个提交是好的'
+- en: It comes back with some interesting information. It tells you that if the original
+    commit was bad, and this one is good, then it has five revisions left to test,
+    which will take roughly three steps. It also tells you that it checked out the
+    commit whose message is "Add the divide function." Let's inspect the (now) current
+    program and see if it is right. (Normally, here, you'd run the program to see
+    if you get the expected result. Even better, you might run your suite of unit
+    tests to see if it passes.)
+  id: totrans-49
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 它返回了一些有趣的信息。它告诉你，如果原始提交是坏的，而这个提交是好的，那么剩下的五个修订需要测试，大约需要三步。它还告诉你，它已经检出了信息为“添加除法函数”的提交。现在让我们检查一下（当前的）程序，看看它是否正确。（通常，在这里，你会运行程序看看是否得到预期的结果。更好的是，你可能会运行单元测试套件，看看是否通过。）
+- en: 'Looking in Visual Studio we see that the working directory looks like this:'
+  id: totrans-50
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 Visual Studio 中查看，我们看到工作目录看起来是这样的：
+- en: '[PRE4]'
+  id: totrans-51
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: 'Looks good. Note that some functions are missing, and that is because bisect
+    checked out an earlier commit. We can tell bisect that this commit is good:'
+  id: totrans-52
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 看起来不错。注意，某些函数缺失，这是因为 bisect 检出了一个较早的提交。我们可以告诉 bisect 这个提交是好的：
+- en: '![](img/B17441_11_09.png)'
+  id: totrans-53
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17441_11_09.png)'
+- en: 'Figure 11.9: Another good commit'
+  id: totrans-54
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '图 11.9: 另一个好的提交'
+- en: 'It comes back and says that we''ve really narrowed things down. There are only
+    two revisions left to test. Look at the original log:'
+  id: totrans-55
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 它返回并告诉我们，我们确实已经缩小了范围。现在只剩下两个修复项需要测试。看看原始日志：
+- en: '![](img/B17441_11_10.png)'
+  id: totrans-56
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17441_11_10.png)'
+- en: 'Figure 11.10: The repo to demonstrate bisect'
+  id: totrans-57
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图11.10：演示二分查找的代码库
+- en: We told it that the latest is bad and the second is good. We then were offered
+    the commit whose message is "Add the divide function." That is, bisect cut our
+    list of commits roughly in half and checked out a commit for us to test. We told
+    bisect that the commit it had us try was good. So, Bisect thinks, "Hmm. Divide
+    is good, and real division is bad, so let's cut it in half (giving us "Add square
+    root") and see if that is good or bad. Either way, we only have one more test
+    to get the final answer."
+  id: totrans-58
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们告诉它最新的提交有问题，第二个是好的。然后它为我们提供了“添加除法函数”这一提交信息。也就是说，二分查找大致将我们的提交列表分成了两半，并检查了一个提交让我们进行测试。我们告诉二分查找它让我们测试的提交是好的。所以，二分查找认为：“嗯，除法是好的，真正的除法有问题，那就再把它一分为二（给我们‘添加平方根’），看看是好是坏。无论如何，我们只剩下一个测试，得到最终答案。”
+- en: 'When we try the code, it is bad; it does not work in the expected way. So,
+    let''s tell Bisect that square root is bad. In response, it checks out "Add real
+    division." Look again at the log. Either this one is bad or the one below it is
+    bad. We''ve already told it that "Add the divide function" is good, and we''ve
+    already told it that the square root commit is bad:'
+  id: totrans-59
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当我们尝试这段代码时，它不对，无法按预期工作。所以，我们告诉二分查找平方根是坏的。作为回应，它检查了“添加真实除法”提交。再次查看日志。这个提交有问题，还是下面那个有问题。我们已经告诉它“添加除法函数”是好的，并且已经告诉它平方根提交是坏的：
+- en: '![](img/B17441_11_11.png)'
+  id: totrans-60
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17441_11_11.png)'
+- en: 'Figure 11.11: Honing in on the problem'
+  id: totrans-61
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图11.11：锁定问题所在
+- en: It has checked out "Add the divide function" so let's test that.
+  id: totrans-62
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 它已经检查了“添加除法函数”，我们来测试一下。
+- en: 'That one is bad, so we''ll tell bisect that:'
+  id: totrans-63
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 那个提交有问题，所以我们告诉二分查找：
+- en: '![](img/B17441_11_12.png)'
+  id: totrans-64
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17441_11_12.png)'
+- en: 'Figure 11.12: We have found the problem'
+  id: totrans-65
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图11.12：我们找到了问题
+- en: 'It comes back and tells us that "Add modulus operator" must be the culprit
+    and that there is nothing more to test. We''ve got it. Let''s look – sure enough,
+    the modulus operator is using the divide operator instead:'
+  id: totrans-66
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 它返回并告诉我们“添加模运算符”一定是罪魁祸首，而且没有更多的测试项了。我们找到了。我们来看一下——果然，模运算符使用了除法运算符：
+- en: '[PRE5]'
+  id: totrans-67
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: Even though we had to use a simple and fake example, you can see how bisect
+    narrows down the commits to find the first one that went bad. Now that we know
+    what is wrong, we can fix it.
+  id: totrans-68
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 尽管我们使用了一个简单的假例子，但你可以看到二分查找如何缩小提交范围，找到第一个出现问题的提交。现在我们知道哪里出错了，可以进行修复。
+- en: Blame
+  id: totrans-69
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Blame
+- en: This unfortunately-named command can be a great help in tracking down who made
+    changes to your code, line by line. From there you can talk with the programmer
+    and discover their intention, or provide an opportunity for correction.
+  id: totrans-70
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个命令名字虽然不幸，但在逐行追踪谁更改了你的代码时非常有帮助。从这里，你可以与程序员讨论并了解他们的意图，或者提供修改的机会。
+- en: To open Blame in Visual Studio, right-click on a file and choose **Git** and
+    then **Blame**. The file will open with a section on the left that will list who
+    made the edit to that line of code.
+  id: totrans-71
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要在Visual Studio中打开Blame，右键点击文件并选择**Git**，然后选择**Blame**。文件会打开，左侧会列出谁修改了该行代码。
+- en: Challenge
+  id: totrans-72
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 挑战
+- en: Create a program with twenty commits. Put an error in one of the early commits
+    that won't break the working program (so that it can be hidden). Use bisect to
+    find the error.
+  id: totrans-73
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 创建一个有二十个提交的程序。在其中一个较早的提交中放置一个不会破坏正常程序的错误（以便它可以被隐藏）。使用二分查找找到错误。
+- en: 'The first step is to create a program with 20 commits. I decided to create
+    a program that holds information about a book:'
+  id: totrans-74
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 第一步是创建一个包含20个提交的程序。我决定创建一个包含书籍信息的程序：
+- en: '[PRE6]'
+  id: totrans-75
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: 'We also have a program that interacts with our book class and displays the
+    results:'
+  id: totrans-76
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们还有一个与书籍类互动并显示结果的程序：
+- en: '[PRE7]'
+  id: totrans-77
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE7]'
+- en: 'Let''s run the program and examine the output:'
+  id: totrans-78
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们运行程序并检查输出：
+- en: '[PRE8]'
+  id: totrans-79
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE8]'
+- en: 'That is clearly not what we intended. Both the discount and the discontinued
+    prices are 0, where they should be a fraction of 15\. Oh! We forgot to call the
+    method to compute the prices. When we do, and we display them all, we get this:'
+  id: totrans-80
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这显然不是我们想要的。折扣价和停产价都是0，实际上它们应该是15的一小部分。哦！我们忘记调用计算价格的方法了。当我们这样做并显示所有价格时，得到的是：
+- en: '[PRE9]'
+  id: totrans-81
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE9]'
+- en: 'Better, but still not right. Why is `Discontinued` coming out to zero? To find
+    this, we''ll use bisect. To start we''ll enter:'
+  id: totrans-82
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 更好，但还是不对。为什么`Discontinued`的结果是零？为了找出原因，我们将使用二分查找。首先我们输入：
+- en: '[PRE10]'
+  id: totrans-83
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE10]'
+- en: 'Next, we need to tell Bisect that the current (most recent) commit is bad by
+    entering:'
+  id: totrans-84
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来，我们需要告诉 Bisect 当前（最新的）提交是坏的，方法是输入：
+- en: '[PRE11]'
+  id: totrans-85
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE11]'
+- en: 'Looking at the log, I see that the first commit has the ID `7259bb3`. So we''ll
+    enter:'
+  id: totrans-86
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 查看日志后，我看到第一个提交的 ID 是 `7259bb3`。所以我们将输入：
+- en: '[PRE12]'
+  id: totrans-87
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE12]'
+- en: It checks out a version for me to test, and tells me that there are 11 revisions
+    to test after this (assuming this is bad) and that it will take roughly 4 steps.
+    We continue bisecting until we find the first instance of the broken code, as
+    we saw above.
+  id: totrans-88
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 它为我检查一个版本进行测试，并告诉我在此之后还有 11 个版本需要测试（假设这是坏的），并且大约需要 4 个步骤。我们继续二分查找，直到找到第一个出错的代码实例，正如我们上面所看到的。

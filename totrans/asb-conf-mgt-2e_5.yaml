@@ -1,0 +1,1124 @@
+- en: Chapter 5. Custom Modules
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 第五章 自定义模块
+- en: Until now we have been working solely with the tools provided to us by Ansible.
+    This does afford us a lot of power, and make many things possible. However if
+    you have something particularly complex or if you find yourself using the script
+    module a lot, you will probably want to learn how to extend Ansible.
+  id: totrans-1
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 直到现在，我们一直在使用 Ansible 提供的工具。虽然这赋予了我们很大的能力，并使许多事情成为可能，但如果你遇到特别复杂的情况，或者经常使用脚本模块，那么你很可能希望学习如何扩展
+    Ansible。
+- en: 'In this chapter, you will learn the following topics:'
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，你将学习以下主题：
+- en: How to write modules in Bash scripting or Python
+  id: totrans-3
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 如何在 Bash 脚本或 Python 中编写模块
+- en: Using the custom modules that you have developed
+  id: totrans-4
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用你开发的自定义模块
+- en: Writing a script to use an external data source as an inventory
+  id: totrans-5
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 编写一个脚本，将外部数据源作为库存
+- en: Often when you approach something complex in Ansible, you write a script module.
+    The issue with script modules is that you can't process their output, or trigger
+    handlers based on their output easily. So, although the script module works in
+    some cases, using a module can be better.
+  id: totrans-6
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当你在 Ansible 中处理复杂的任务时，通常会编写一个脚本模块。脚本模块的问题在于，你不能轻松地处理它们的输出或根据输出触发处理程序。因此，尽管脚本模块在某些情况下有效，但使用模块可能会更好。
+- en: 'Use a module instead of writing a script when:'
+  id: totrans-7
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当出现以下情况时，请使用模块而不是编写脚本：
+- en: You don't want to run the script every single time
+  id: totrans-8
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 你不想每次都运行脚本
+- en: You need to process the output
+  id: totrans-9
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 你需要处理输出
+- en: Your script needs to make facts
+  id: totrans-10
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 你的脚本需要生成事实
+- en: You need to send complex variables as arguments
+  id: totrans-11
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 你需要将复杂的变量作为参数传递
+- en: If you want to start writing modules, you should check out the Ansible repository.
+    If you want your module to work with a particular version, you should also switch
+    to that version to ensure compatibility. The following commands will set you up
+    to develop modules for Ansible 1.3.0.
+  id: totrans-12
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你想开始编写模块，应该查看 Ansible 的代码库。如果你希望你的模块与某个特定版本兼容，也应该切换到该版本以确保兼容性。以下命令将帮助你为 Ansible
+    1.3.0 开发模块。
+- en: '[PRE0]'
+  id: totrans-13
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: Checking out the Ansible code gives you access to a handy script that we will
+    use later to test our modules. We will also make this script executable in anticipation
+    of its use later in the chapter.
+  id: totrans-14
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 查看 Ansible 代码库可以让你获得一个方便的脚本，我们将在后面用它来测试我们的模块。我们还将使这个脚本可执行，以便在本章后续部分使用。
+- en: Writing a module in Bash
+  id: totrans-15
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用 Bash 编写模块
+- en: Ansible allows you to write modules in any language that you prefer. Although
+    most modules in Ansible work with JSON, you are allowed to use shortcuts if you
+    don't have any JSON parsing facilities available. Ansible will hand you arguments
+    in their original key value forms, if they were provided in that format. If complex
+    arguments are provided, you will receive JSON-encoded data. You could parse this
+    using something like jsawk ([https://github.com/micha/jsawk](https://github.com/micha/jsawk))
+    or jq ([http://stedolan.github.io/jq/](http://stedolan.github.io/jq/)), but only
+    if they are installed on your remote machine.
+  id: totrans-16
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 允许你使用任何你喜欢的语言编写模块。虽然 Ansible 中的大多数模块使用 JSON，但如果你没有 JSON 解析工具，你可以使用快捷方式。Ansible
+    会以原始键值对的形式传递参数给你，如果它们是以这种格式提供的。如果提供了复杂的参数，你将收到 JSON 编码的数据。你可以使用 jsawk ([https://github.com/micha/jsawk](https://github.com/micha/jsawk))
+    或 jq ([http://stedolan.github.io/jq/](http://stedolan.github.io/jq/)) 等工具解析这些数据，但前提是它们已经安装在你的远程机器上。
+- en: 'Ansible already has a module that lets you change the hostname of a system,
+    but it only works with systemd-based systems. So let''s write one that works with
+    the standard `hostname` command. We will start just printing the current hostname
+    and then expand the script from there. Here is what that simple module looks like:'
+  id: totrans-17
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 已经有一个模块，可以让你更改系统的主机名，但它只适用于基于 systemd 的系统。所以我们来编写一个适用于标准`hostname`命令的模块。我们将从打印当前主机名开始，然后再逐步扩展脚本。下面是这个简单模块的样子：
+- en: '[PRE1]'
+  id: totrans-18
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: If you have written Bash scripts before, this should seem extremely basic. Essentially,
+    what we are doing is grabbing the hostname and printing it out in a key value
+    form. Now that we have written the first cut of the module, we should test it
+    out.
+  id: totrans-19
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你之前写过 Bash 脚本，这应该显得非常基础。基本上，我们做的就是获取主机名并以键值对的形式打印出来。现在我们已经编写了模块的初步版本，接下来我们应该进行测试。
+- en: 'To test the Ansible modules, we use the script that we ran the `chmod` command
+    on earlier. This command simply runs your module, records the output, and returns
+    it to you. It also shows how Ansible interpreted the output of the module. The
+    command that we will use looks like the following:'
+  id: totrans-20
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了测试Ansible模块，我们使用之前运行过`chmod`命令的脚本。该命令简单地运行你的模块，记录输出并返回给你。它还展示了Ansible如何解释模块的输出。我们将使用的命令如下所示：
+- en: '[PRE2]'
+  id: totrans-21
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: 'The output of the previous command should look like this:'
+  id: totrans-22
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 上一个命令的输出应如下所示：
+- en: '[PRE3]'
+  id: totrans-23
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: Ignore the notice at the top; it does not apply to modules built with bash.
+    You can see the raw output that our script sent, which looks exactly the way we
+    expected. The test script also gives you the parsed output. In our example, we
+    are using the short output format and we can see here that Ansible is correctly
+    interpreting it into the JSON that it normally accepts from modules.
+  id: totrans-24
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 忽略顶部的通知；它与使用bash构建的模块无关。你可以看到我们脚本发送的原始输出，完全符合我们的预期。测试脚本还会显示解析后的输出。在我们的例子中，我们使用的是简短的输出格式，我们可以看到Ansible正确地将其解释为模块通常接受的JSON格式。
+- en: 'Let''s expand out the module to allow setting the `hostname`. We should write
+    it so that it doesn''t make any changes unless required, and lets Ansible know
+    whether changes were made or not. This is actually pretty simple for the small
+    command that we are writing. The new script should look something like this:'
+  id: totrans-25
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们扩展模块以允许设置`hostname`。我们应该编写它，以便仅在需要时才进行更改，并让Ansible知道是否进行了更改。对于我们编写的小命令来说，这实际上是相当简单的。新的脚本应该类似于以下内容：
+- en: '[PRE4]'
+  id: totrans-26
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: 'The previous script works as follows:'
+  id: totrans-27
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 上一个脚本的工作原理如下：
+- en: We set Bash's exit on error mode, so that we don't have to deal with errors
+    from the `hostname` method. Bash will automatically exit on failure with its exit
+    code. This will signal Ansible that something went wrong.
+  id: totrans-28
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 我们设置了Bash的错误退出模式，这样我们就不必处理`hostname`方法的错误。Bash将在失败时自动退出并返回退出代码。这将通知Ansible出现了问题。
+- en: We source the argument file. This file is passed from Ansible as the first argument
+    to the script. It contains the arguments that were sent to our module. Because
+    we are sourcing the file, this can be used to run arbitrary commands; however,
+    Ansible can already do this, so it's not that much of a security issue.
+  id: totrans-29
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 我们加载参数文件。这个文件作为第一个参数从Ansible传递给脚本。它包含发送给我们模块的参数。因为我们加载了这个文件，它可以用来运行任意命令；然而，Ansible已经可以做到这一点，所以这并不会造成太大的安全问题。
+- en: We collect the old hostname and default `CHANGED` to `False`. This allows us
+    to see whether our module needs to perform any changes.
+  id: totrans-30
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 我们收集旧的主机名并将默认值`CHANGED`设为`False`。这使我们能够查看模块是否需要执行任何更改。
+- en: We check whether we were sent a new hostname to set, and whether that hostname
+    is different from the one that is currently set.
+  id: totrans-31
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 我们检查是否收到新的主机名，并确认该主机名是否与当前设置的不同。
+- en: If both these tests are true, we try to change the hostname, and set `CHANGED`
+    to `True`.
+  id: totrans-32
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如果这两个测试都为真，我们尝试更改主机名，并将`CHANGED`设置为`True`。
+- en: Finally, we output the results and exit. This includes the current hostname
+    and whether we made changes or not.
+  id: totrans-33
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 最后，我们输出结果并退出。结果包括当前的主机名以及是否进行了更改。
+- en: 'Changing the hostname on a Unix machine requires root privileges. So while
+    testing this script, you need to make sure to run it as the root user. Let''s
+    test this script using `sudo` to see whether it works. This is the command you
+    will use:'
+  id: totrans-34
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在Unix机器上更改主机名需要root权限。因此，在测试此脚本时，你需要确保以root用户身份运行它。我们使用`sudo`来测试此脚本，看看它是否有效。你将使用以下命令：
+- en: '[PRE5]'
+  id: totrans-35
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: 'If `test.example.com` is not the current hostname of the machine, you should
+    get the following output:'
+  id: totrans-36
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果`test.example.com`不是当前机器的主机名，你应该看到以下输出：
+- en: '[PRE6]'
+  id: totrans-37
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: 'As you can see, our output is being parsed correctly, and the module claims
+    that changes have been made to the system. You can check this yourself with the
+    `hostname` command. Now, run the module for the second time with the same hostname.
+    You should see an output that looks like this:'
+  id: totrans-38
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，我们的输出被正确解析，模块声称已经对系统进行了更改。你可以通过`hostname`命令自己验证这一点。现在，再次使用相同的主机名运行该模块。你应该会看到如下输出：
+- en: '[PRE7]'
+  id: totrans-39
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE7]'
+- en: Again, we see that the output was parsed correctly. This time, however, the
+    module claims to not have made any changes, which is what we expect. You can also
+    check this with the `hostname` command.
+  id: totrans-40
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 再次，我们看到输出被正确解析了。然而，这一次，模块声称没有进行任何更改，这正是我们预期的结果。你也可以通过`hostname`命令来验证这一点。
+- en: Using a custom module
+  id: totrans-41
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用自定义模块
+- en: Now that we have written our very first module for Ansible, we should give it
+    a go in a playbook. Ansible looks at several places for its modules—first it looks
+    at the place specified in the `library` key in its `config` file (`/etc/ansible/ansible.cfg`),
+    next it will look at the location specified using the `--module-path` argument
+    in the command line, then it will look in the same directory as the playbook for
+    a `library` directory containing modules, and finally it will look in the `library`
+    directory for any roles that may be set.
+  id: totrans-42
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经为Ansible编写了第一个模块，我们应该在playbook中试一试。Ansible会在多个位置查找模块——首先，它会查看`config`文件中`library`键指定的地方（`/etc/ansible/ansible.cfg`），然后它会查看命令行中使用`--module-path`参数指定的位置，接着它会查看与playbook同目录下的`library`目录，最后它会在`library`目录中查找任何可能设置的角色。
+- en: 'Let''s create a playbook that uses our new module and place it in a `library`
+    directory in the same place so that we can see it in action. Here is a playbook
+    that uses the `hostname` module:'
+  id: totrans-43
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们创建一个使用新模块的playbook，并将其放置在相同位置的`library`目录中，以便我们可以看到它的实际效果。以下是一个使用`hostname`模块的playbook：
+- en: '[PRE8]'
+  id: totrans-44
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE8]'
+- en: 'Then create a directory named `library` in the same directory as the playbook
+    file. Place the `hostname` module inside the library. Your directory layout should
+    look like this:'
+  id: totrans-45
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后在与playbook文件相同的目录下创建一个名为`library`的目录。将`hostname`模块放在library目录中。你的目录结构应该如下所示：
+- en: '![Using a custom module](img/image00106.jpeg)'
+  id: totrans-46
+  prefs: []
+  type: TYPE_IMG
+  zh: '![使用自定义模块](img/image00106.jpeg)'
+- en: 'Now when you run the playbook, it will find the `hostname` module in the `library`
+    directory and execute it. You should see an output like this:'
+  id: totrans-47
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，当你运行playbook时，它会在`library`目录中找到`hostname`模块并执行它。你应该能看到类似这样的输出：
+- en: '[PRE9]'
+  id: totrans-48
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE9]'
+- en: Running it again should change the result from `changed` to `ok`. Congratulations!
+    You have now created and executed your very first module. This module is very
+    simple right now, but you can extend it to know about the `hostname` file, or
+    other methods to configure the hostname at boot time.
+  id: totrans-49
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 再次运行时，结果应该从`changed`变为`ok`。恭喜！你现在已经创建并执行了你的第一个模块。这个模块现在非常简单，但你可以扩展它，支持`hostname`文件，或其他方法来在启动时配置主机名。
+- en: Writing modules in Python
+  id: totrans-50
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 用Python编写模块
+- en: 'All of the modules that are distributed with Ansible are written in Python.
+    Because Ansible is also written in Python, these modules can directly integrate
+    with Ansible. Here are a few reasons why you should write modules in Python:'
+  id: totrans-51
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 所有随Ansible分发的模块都是用Python编写的。因为Ansible本身也是用Python编写的，所以这些模块可以直接与Ansible集成。以下是你应该用Python编写模块的一些理由：
+- en: Modules written in Python can use boilerplate, which reduces the amount of code
+    required
+  id: totrans-52
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 用Python编写的模块可以使用模板代码，这样可以减少所需代码量。
+- en: Python modules can provide documentation to be used by Ansible
+  id: totrans-53
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Python模块可以提供文档供Ansible使用。
+- en: Arguments to your module are handled automatically
+  id: totrans-54
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 模块的参数会自动处理。
+- en: Output is automatically converted to JSON for you
+  id: totrans-55
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 输出会自动转换为JSON格式。
+- en: Ansible upstream only accepts plugins using Python with the boilerplate code
+    included
+  id: totrans-56
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Ansible上游只接受使用Python并包含模板代码的插件。
+- en: You can still build Python modules without this integration by parsing the arguments
+    and outputting JSON yourself. However, with all the things you get for free, it
+    would be hard to make a case for it.
+  id: totrans-57
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你仍然可以在没有此集成的情况下构建Python模块，通过解析参数并自行输出JSON。然而，考虑到你可以免费获得的所有功能，要为这种做法辩护是很困难的。
+- en: Let's build a Python module that lets us change the currently running init level
+    of the system. There is a Python module named `pyutmp` that will let us parse
+    the `utmp` file. Unfortunately, since Ansible modules have to be contained in
+    a single file, we can't use it unless we know it will be installed on the remote
+    systems, so we will resort to using the `runlevel` command and parsing its output.
+    Setting the run level can be done with the `init` command.
+  id: totrans-58
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们构建一个Python模块，允许我们更改系统当前运行的初始化级别。我们有一个名为`pyutmp`的Python模块，它可以让我们解析`utmp`文件。不幸的是，由于Ansible模块必须包含在一个单独的文件中，除非我们知道它会被安装到远程系统上，否则我们无法使用它。因此，我们将使用`runlevel`命令并解析其输出。设置运行级别可以通过`init`命令来完成。
+- en: 'The first step is to figure out what arguments and features the module supports.
+    For the sake of simplicity, let''s have our module only accept one argument. We''ll
+    use the argument `runlevel` to get the run level the user wants to change to.
+    To do this, we will instantiate the `AnsibleModule` class with our data as follows:'
+  id: totrans-59
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 第一步是弄清楚该模块支持哪些参数和功能。为了简化起见，我们的模块只接受一个参数。我们将使用`runlevel`参数来获取用户想要切换的运行级别。为此，我们将按如下方式实例化`AnsibleModule`类并传入数据：
+- en: '[PRE10]'
+  id: totrans-60
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE10]'
+- en: Now we need to implement the actual guts of the module. The module object that
+    we created previously provides us with a few shortcuts. There are three shortcuts
+    that we will be using in the next step. As there are way too many methods to document
+    here, you can see the whole `AnsibleModule` class and all the available helper
+    functions in `lib/ansible/module_common.py`.
+  id: totrans-61
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，我们需要实现模块的实际内容。我们之前创建的模块对象为我们提供了一些快捷方式。接下来的步骤中我们将使用三种快捷方式。由于有太多方法无法在此文档中一一说明，你可以查看整个`AnsibleModule`类以及在`lib/ansible/module_common.py`中所有可用的帮助函数。
+- en: '`run_command`: This method is used to launch external commands and retrieve
+    the return code, the output from `stdout`, and also the output from `stderr`.'
+  id: totrans-62
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`run_command`：此方法用于启动外部命令并获取返回代码、`stdout`的输出以及`stderr`的输出。'
+- en: '`exit_json`: This method is used to return data to Ansible when the module
+    has completed successfully.'
+  id: totrans-63
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`exit_json`：此方法用于在模块成功完成时将数据返回给Ansible。'
+- en: '`fail_json`: This method is used to signal a failure to Ansible, with an error
+    message and return code.'
+  id: totrans-64
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`fail_json`：此方法用于向Ansible报告失败，带有错误信息和返回代码。'
+- en: 'The following code actually manages the init level of the system comments to
+    explain what it does:'
+  id: totrans-65
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下代码实际上管理了系统的初始化级别，并附有注释来解释它的作用：
+- en: '[PRE11]'
+  id: totrans-66
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE11]'
+- en: 'There is one final thing to add to the boilerplate to let Ansible know that
+    it needs to dynamically add the integration code into our module. This is the
+    magic that lets us use the `AnsibleModule` class and enables our tight integration
+    with Ansible. The boilerplate code needs to be placed right at the bottom of the
+    file, with no code afterwards. The code to do this looks like this:'
+  id: totrans-67
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后需要在模板中添加一行代码，告诉Ansible需要动态地将集成代码添加到我们的模块中。这就是让我们能够使用`AnsibleModule`类并实现与Ansible紧密集成的魔法。模板代码需要放在文件的最底部，后面不能有任何代码。实现此功能的代码如下所示：
+- en: '[PRE12]'
+  id: totrans-68
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE12]'
+- en: 'You can test this module the same way you tested the Bash module with the `test-module`
+    script. However, you need to be careful, because if you run it with `sudo`, you
+    might reboot your machine or alter the init level to something you don''t want.
+    This module is probably better tested by using Ansible itself on a remote test
+    machine. We follow the same process as described in the *Writing a module in Bash*
+    section earlier in this chapter. We create a playbook that uses the module, and
+    then place the module in a library directory that has been made in the same directory
+    as the playbook. Here is the playbook we need to use:'
+  id: totrans-69
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以使用`test-module`脚本以与测试Bash模块相同的方式测试这个模块。然而，你需要小心，因为如果你使用`sudo`运行它，可能会重启你的机器或者将初始化级别更改为你不希望的状态。这个模块可能通过在远程测试机器上使用Ansible本身来进行更好的测试。我们按照本章前面*编写Bash模块*部分中描述的相同过程进行操作。我们创建一个使用该模块的playbook，然后将该模块放置在与playbook相同目录下的库目录中。以下是我们需要使用的playbook：
+- en: '[PRE13]'
+  id: totrans-70
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE13]'
+- en: Now you should be able to try and run this on a remote machine. The first time
+    you run it, if the machine is not already in run level 5, you should see it change
+    the run level. Then you should be able to run it for a second time to see that
+    nothing has changed. You might also want to check to make sure the module fails
+    correctly when not run as root.
+  id: totrans-71
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在你应该能够尝试在远程机器上运行它。第一次运行时，如果机器的运行级别尚未是5级，你应该看到它更改运行级别。然后你可以再次运行它，看到没有任何变化。你可能还想检查一下，确保模块在未以root身份运行时会正确失败。
+- en: External inventories
+  id: totrans-72
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 外部库存
+- en: In [Chapter 1](part0014.xhtml "Chapter 1. Getting Started with Ansible"), *Getting
+    Started with Ansible*, we saw how Ansible needs an inventory file, so that it
+    knows where its hosts are and how to access them. Ansible also allows you to specify
+    a script that allows you to fetch the inventory from another source. External
+    inventory scripts can be written in any language that you like as long as they
+    output valid JSON.
+  id: totrans-73
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在[第1章](part0014.xhtml "第1章. 入门Ansible")，*Ansible入门*中，我们看到Ansible需要一个库存文件，这样它就能知道主机的位置以及如何访问它们。Ansible还允许你指定一个脚本，通过它从其他来源获取库存。外部库存脚本可以使用任何你喜欢的语言编写，只要它输出有效的JSON。
+- en: An external inventory script has to accept two different calls from Ansible.
+    If called with `–list`, it must return a list of all the available groups and
+    hosts. Additionally, it may be called with `--host`. In this case, the second
+    argument will be a hostname and the script is expected to return a list of variables
+    for that host. All the outputs are expected in JSON, so you should use a language
+    that supports it naturally.
+  id: totrans-74
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 外部清单脚本必须接受Ansible的两个不同调用。如果使用`–list`调用，它必须返回所有可用组和主机的列表。此外，它也可以使用`--host`调用。在这种情况下，第二个参数将是主机名，脚本应该返回该主机的变量列表。所有输出都应以JSON格式返回，因此你应该使用自然支持它的语言。
+- en: 'Let''s write a module that takes a CSV file listing all your machines and presents
+    this to Ansible as an inventory. This will be handy if you have a **Configuration
+    Management Database** (**CMDB**) that allows you to export your machine list as
+    CSV, or for someone who keeps records of their machines in a spreadsheet. Additionally,
+    it doesn''t require any dependencies outside Python, as a CSV processing module
+    is already included with Python. This really just parses the CSV file into the
+    right data structures and prints them out as JSON data structures. The following
+    is an example CSV file we wish to process; you may wish to customize it for the
+    machines in your environment:'
+  id: totrans-75
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们编写一个模块，接受一个包含所有机器的CSV文件，并将其作为清单呈现给Ansible。如果你有一个**配置管理数据库**（**CMDB**），允许你将机器列表导出为CSV，或者如果有人将其机器记录保存在电子表格中，这将非常有用。此外，它不需要Python以外的任何依赖，因为Python已经包含了一个CSV处理模块。这实际上只是将CSV文件解析成正确的数据结构，并以JSON数据结构的形式输出。以下是我们希望处理的CSV文件示例；你可能希望根据你环境中的机器自定义它：
+- en: '[PRE14]'
+  id: totrans-76
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE14]'
+- en: 'This file needs to be converted into two different JSON outputs. When `--list`
+    is called, we need to output the whole thing in a form that looks like this:'
+  id: totrans-77
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 该文件需要转换为两种不同的JSON输出。当调用`--list`时，我们需要以如下格式输出整个内容：
+- en: '[PRE15]'
+  id: totrans-78
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE15]'
+- en: 'And when it is called with the arguments `--host example`, it should return
+    this:'
+  id: totrans-79
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当使用参数`--host example`调用时，它应返回以下内容：
+- en: '[PRE16]'
+  id: totrans-80
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE16]'
+- en: 'Here is the script that opens a file named `machines.csv` and produces the
+    dictionary of the groups if `--list` is given: Additionally, when `--host` and
+    a hostname are given, it parses that host''s variables and returns them as a dictionary.
+    The script is well-commented, so you can see what it is doing. You can run the
+    script manually with the `--list` and `--host` arguments to confirm that it behaves
+    correctly.'
+  id: totrans-81
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这是一个脚本，它打开一个名为`machines.csv`的文件，并在给定`--list`时生成组的字典：此外，当给定`--host`和主机名时，它解析该主机的变量并将其作为字典返回。脚本有详细注释，你可以看到它的工作过程。你可以手动运行脚本，使用`--list`和`--host`参数来确认其行为是否正确。
+- en: '[PRE17]'
+  id: totrans-82
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE17]'
+- en: You can now use this inventory script to provide the inventory when using Ansible.
+    A quick way to test that everything is working correctly is to use the `ping`
+    module to test the connection to all the machines. This command will not test
+    whether the hosts are in the right groups; if you want to do that, you can use
+    the same `ping` module command but instead of running it across all, you can simply
+    use the group you would like to test**.** If your inventory file is executable,
+    then Ansible will run it and use the output. You can also use a directory and
+    Ansible will include all files inside, running them if they are executable.
+  id: totrans-83
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，你可以使用这个清单脚本在使用Ansible时提供清单。测试一切是否正常工作的一个快速方法是使用`ping`模块来测试与所有机器的连接。此命令不会测试主机是否在正确的组中；如果你想做这个，你可以使用相同的`ping`模块命令，但不仅仅是对所有主机运行它，你可以简单地使用你想要测试的组**。**如果你的清单文件是可执行的，Ansible将运行它并使用输出。你还可以使用目录，Ansible会包括其中的所有文件，如果它们是可执行的，将运行它们。
+- en: '[PRE18]'
+  id: totrans-84
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE18]'
+- en: 'Similar to when you used the `ping` module in [Chapter 1](part0014.xhtml "Chapter 1. Getting
+    Started with Ansible"), *Getting Started with Ansible*, you should see an output
+    that looks like the following:'
+  id: totrans-85
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 类似于你在[第1章](part0014.xhtml "第1章. Ansible入门")中使用`ping`模块时，*Ansible入门*，你应该看到如下输出：
+- en: '[PRE19]'
+  id: totrans-86
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE19]'
+- en: This indicates that you can connect and use Ansible on all the hosts from your
+    inventory. You can use the same `-i` argument with `ansible-playbook` to run your
+    playbooks with the same inventory.
+  id: totrans-87
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这表明你可以连接并在所有来自你清单的主机上使用Ansible。你可以使用相同的`-i`参数与`ansible-playbook`一起运行你的剧本，并使用相同的清单。
+- en: Extending Ansible
+  id: totrans-88
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 扩展Ansible
+- en: 'Apart from writing modules and external inventory script, you can also extend
+    the core functionality of Ansible itself. This allows you to include even more
+    functionality into Ansible using Python. By writing plugins for Ansible, you can
+    do the following:'
+  id: totrans-89
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 除了编写模块和外部清单脚本外，你还可以扩展 Ansible 本身的核心功能。这允许你通过 Python 向 Ansible 添加更多功能。通过为 Ansible
+    编写插件，你可以做到以下几点：
+- en: Add new methods for controlling other machines with connection plugins
+  id: totrans-90
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 为了通过连接插件控制其他机器，可以添加新的方法
+- en: Use data from external sources outside Ansible in loops or lookups with lookup
+    plugins
+  id: totrans-91
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用查找插件在循环或查找中使用来自 Ansible 外部的数据
+- en: Add new filters for use with variables or in templates with filter plugins
+  id: totrans-92
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用过滤插件为变量或模板添加新的过滤器
+- en: Include callbacks that run when certain actions happen inside Ansible with callback
+    plugins
+  id: totrans-93
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用回调插件包含在 Ansible 内部某些操作发生时运行的回调
+- en: To add extra plugins to your Ansible projects, we create a Python file in the
+    plugin directories specified in your `ansible.cfg` file. Alternatively, we can
+    add new directories containing our plugins to the list of directories already
+    present.
+  id: totrans-94
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要将额外的插件添加到你的 Ansible 项目中，我们需要在 `ansible.cfg` 文件中指定的插件目录下创建一个 Python 文件。或者，我们可以将包含插件的新目录添加到现有目录列表中。
+- en: Note
+  id: totrans-95
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: Do not remove any of the existing directories, as you will be removing plugins
+    that provide core Ansible features such as the ones we have mentioned earlier
+    in this book.
+  id: totrans-96
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请不要删除任何现有的目录，因为删除这些目录会移除提供核心 Ansible 功能的插件，正如我们在本书前面提到的那些插件。
+- en: When writing plugins to Ansible, you should focus on making them flexible and
+    reusable where possible. This way you end up removing some complexity from your
+    playbooks and templates into a few complex Python files. Focusing on re-usability
+    of your plugins also means it is possible to submit them back to the Ansible project
+    using a GitHub pull request. If you submit your plugins back to Ansible, then
+    everybody will be able to take advantage of your plugin, and you would have played
+    a part in the development of Ansible itself. More information on contributing
+    to Ansible can be found in the `CONTRIBUTORS.md` file in the Ansible source code.
+  id: totrans-97
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在为 Ansible 编写插件时，你应该尽量使插件灵活且可重用。这样，你可以将一些复杂性从剧本和模板中移到少数几个复杂的 Python 文件中。专注于插件的重用性还意味着你有可能将插件提交回
+    Ansible 项目，通过 GitHub pull 请求的方式。如果你将插件提交回 Ansible，那么每个人都能利用你的插件，而你也为 Ansible 的发展做出了贡献。关于如何为
+    Ansible 做贡献的更多信息，可以在 Ansible 源代码中的 `CONTRIBUTORS.md` 文件中找到。
+- en: Connection plugins
+  id: totrans-98
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 连接插件
+- en: Connection plugins are responsible for relaying files to and from the remote
+    machine, and executing modules. You will no doubt have already used the SSH, local
+    and possibly the winrm plugins with the playbooks used earlier in the book.
+  id: totrans-99
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 连接插件负责将文件传输到远程机器并执行模块。你无疑已经在本书前面的剧本中使用过 SSH、本地插件，可能还使用过 winrm 插件。
+- en: 'Apart from the normal `__init__()` method, connection plugins must implement
+    the following methods:'
+  id: totrans-100
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 除了常规的 `__init__()` 方法外，连接插件还必须实现以下方法：
+- en: '| Method | Purpose |'
+  id: totrans-101
+  prefs: []
+  type: TYPE_TB
+  zh: '| 方法 | 目的 |'
+- en: '| --- | --- |'
+  id: totrans-102
+  prefs: []
+  type: TYPE_TB
+  zh: '| --- | --- |'
+- en: '| `connect()` | This opens the connection to the host we are managing |'
+  id: totrans-103
+  prefs: []
+  type: TYPE_TB
+  zh: '| `connect()` | 这个方法打开与我们正在管理的主机的连接 |'
+- en: '| `exec_command()` | This executes a command on the managed host |'
+  id: totrans-104
+  prefs: []
+  type: TYPE_TB
+  zh: '| `exec_command()` | 这个方法在被管理的主机上执行一个命令 |'
+- en: '| `put_file()` | This copies a file to the managed host |'
+  id: totrans-105
+  prefs: []
+  type: TYPE_TB
+  zh: '| `put_file()` | 这个方法将文件复制到被管理的主机上 |'
+- en: '| `fetch_file()` | This downloads a file from the managed host |'
+  id: totrans-106
+  prefs: []
+  type: TYPE_TB
+  zh: '| `fetch_file()` | 这个方法从被管理的主机下载一个文件 |'
+- en: '| `close()` | This closes the connection to the host we are managing |'
+  id: totrans-107
+  prefs: []
+  type: TYPE_TB
+  zh: '| `close()` | 这个方法关闭与我们正在管理的主机的连接 |'
+- en: Lookup plugins
+  id: totrans-108
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 查找插件
+- en: 'Lookup plugins are used in two ways: to include data from outside as a `lookup()`,
+    or in the `with_` style to loop over items. You can even combine the two to loop
+    over external data as is done in the `with_fileglob` lookup plugin. Several lookup
+    plugins have been demonstrated earlier in the book, particularly in *Looping*
+    section of [Chapter 3](part0028.xhtml "Chapter 3. Advanced Playbooks"), *Advanced
+    Playbook*.'
+  id: totrans-109
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 查找插件有两种使用方式：通过 `lookup()` 包含来自外部的数据，或者以 `with_` 风格遍历项目。你甚至可以将两者结合使用，像在 `with_fileglob`
+    查找插件中那样遍历外部数据。本书前面特别是在 [第 3 章](part0028.xhtml "第 3 章。高级剧本")的 *循环* 部分展示了几个查找插件。
+- en: 'Lookup plugins are simple to write, and apart from the normal `__init__()`
+    method, they only need you to implement a `run()` method. This method uses the
+    `listify_lookup_plugin_terms()` method from the Ansible `utils` package to gather
+    the arguments list passed to it, and returns the result. As an example, we will
+    now demonstrate a lookup plugin to read data from a JSON encoded file:'
+  id: totrans-110
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 查找插件很容易编写，除了常规的`__init__()`方法外，它们只需要你实现一个`run()`方法。这个方法使用Ansible `utils`包中的`listify_lookup_plugin_terms()`方法来收集传入的参数列表，并返回结果。作为示例，我们现在演示一个查找插件，从JSON编码文件中读取数据：
+- en: '[PRE20]'
+  id: totrans-111
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE20]'
+- en: This can be used either as a lookup plugin to fetch complex data or, if the
+    file contains a JSON list, as a loop using `with_jsonfile`. Save the preceding
+    example as `jsonfile.py` in one of your lookup plugin directories. You can see
+    that we have declared a new class named `LookupModule`; this is what Ansible tries
+    to find within your Python file, so you must use this name. We then create a constructor
+    (named `__init__`) so that Ansible can create our class. Finally, we make a small
+    method that simply opens a JSON file, parses it and returns the result to Ansible.
+  id: totrans-112
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这可以用作查找插件来提取复杂数据，或者如果文件包含JSON列表，则可以使用`with_jsonfile`作为循环。将上述示例保存为`jsonfile.py`，并放在你其中一个查找插件目录中。你可以看到我们声明了一个新的类`LookupModule`；这是Ansible在Python文件中要查找的类名，因此你必须使用这个名称。然后，我们创建一个构造函数（命名为`__init__`），以便Ansible可以创建我们的类。最后，我们编写一个小方法，它只会打开一个JSON文件，解析它，并将结果返回给Ansible。
+- en: We should note that this example is really simplified and only looks in the
+    current working directory for the file. It could be extended later to look in
+    a roles file directory or elsewhere in order to better conform to conventions
+    set by other Ansible modules.
+  id: totrans-113
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们应该注意到，这个示例其实是简化过的，它只会在当前工作目录中查找文件。以后可以扩展为在角色文件目录或其他地方查找，以便更好地符合其他Ansible模块设定的惯例。
+- en: 'You can then use this lookup plugin in a playbook like this:'
+  id: totrans-114
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后，你可以在剧本中像这样使用这个查找插件：
+- en: '[PRE21]'
+  id: totrans-115
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE21]'
+- en: Filter plugins
+  id: totrans-116
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 过滤器插件
+- en: Filter plugins are extensions to the Jinja2 template engine that Ansible uses
+    to process variables and generate files from templates. These extensions can be
+    used in playbooks to perform data processing on variables, or they can be used
+    inside templates to process data before it is included in the file. They simplify
+    the processing of data by moving the complexity to a Python file and away from
+    the templates or Ansible configuration.
+  id: totrans-117
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 过滤器插件是Ansible用来处理变量并从模板生成文件的Jinja2模板引擎的扩展。这些扩展可以在剧本中使用，对变量进行数据处理，或者它们可以在模板内使用，处理数据后再包含到文件中。它们通过将复杂的处理逻辑移到Python文件中，从而简化了数据处理，避免了在模板或Ansible配置中增加复杂度。
+- en: Filter plugins are a little different from other plugins. To implement one,
+    you first write a simple function that simply takes the input you need and returns
+    the result. Second, you create a class named `FilterModule`, and implement a `filters`
+    method on it, which returns a Python dictionary, where the keys are the filter
+    names and the values the functions to call.
+  id: totrans-118
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 过滤器插件与其他插件有些不同。要实现一个过滤器插件，首先你需要写一个简单的函数，它只需要接收所需的输入并返回结果。接着，你创建一个名为`FilterModule`的类，并在其中实现一个`filters`方法，该方法返回一个Python字典，其中键是过滤器名称，值是要调用的函数。
+- en: 'Here is a sample implementation of a plugin that can be used to calculate the
+    minimum number of servers required in any group to avoid a split-brain situation:
+    This number in most systems is one greater than 50% of the nodes available.'
+  id: totrans-119
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这是一个插件的示例实现，可以用来计算在任何组中避免脑裂情况所需的最小服务器数：在大多数系统中，这个数字是节点总数的50%以上，再加1。
+- en: '[PRE22]'
+  id: totrans-120
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE22]'
+- en: Simply put, this module counts how many items were in the list passed to it,
+    divides it by two, and then adds one. It is all done as integer math, so remainders
+    are ignored and everything is done as whole numbers, which suits our purpose.
+  id: totrans-121
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 简单来说，这个模块统计传入列表中有多少个项目，将其除以二，然后加一。所有操作都以整数数学计算，因此余数会被忽略，所有的操作都以整数进行，这符合我们的目的。
+- en: 'This filter can then be used in a playbook or a template. For example, if we
+    wanted to configure an Elasticsearch cluster to have a quorum and avoid split-brain
+    issues, we will use the following line of code:'
+  id: totrans-122
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个过滤器可以在剧本或模板中使用。例如，如果我们想配置一个Elasticsearch集群以确保有法定人数并避免脑裂问题，我们将使用以下代码行：
+- en: '[PRE23]'
+  id: totrans-123
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE23]'
+- en: This will get the list of hosts this play is being run on (from the `play_hosts`
+    variable), and then calculate how many of those are required to obtain a quorum.
+  id: totrans-124
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这将获取当前正在运行的主机列表（来自`play_hosts`变量），然后计算其中需要多少个才能获得法定人数。
+- en: Callback plugins
+  id: totrans-125
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 回调插件
+- en: 'Callback plugins are used to provide information about actions that are happening
+    in Ansible to external systems. They are automatically activated if they are found
+    in the directories specified under the `callback_plugins` directory into Ansible
+    configuration. They are often useful when playbooks are being run as automated
+    tasks as they can give feedback via other channels than the standard output. Callback
+    plugins have a wide variety of uses, as follows:'
+  id: totrans-126
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 回调插件用于向外部系统提供有关Ansible中正在发生的操作的信息。如果在Ansible配置中指定的`callback_plugins`目录下找到回调插件，它们会自动激活。它们在自动化任务中运行剧本时尤其有用，因为它们可以通过标准输出之外的其他渠道提供反馈。回调插件有广泛的用途，具体如下：
+- en: Sending an e-mail at the end of a playbook with the statistics of what changed
+  id: totrans-127
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在剧本结束时，发送包含更改统计信息的电子邮件
+- en: Recording a running log of changes being made to `syslog`
+  id: totrans-128
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 记录`syslog`中正在进行的更改的运行日志
+- en: Notifying a chat channel when a playbook task fails
+  id: totrans-129
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在剧本任务失败时通知聊天频道
+- en: Updating a CMDB as changes are made to ensure an accurate view of the configuration
+    of every system.
+  id: totrans-130
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在系统配置发生变化时，更新CMDB以确保每个系统的配置视图准确。
+- en: Alerting an admin when a play has exited early because all hosts have failed.
+  id: totrans-131
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 当所有主机都失败导致剧本提前退出时，通知管理员
+- en: 'The callback plugins are the most complicated plugins to write because they
+    have the ability to hook into most of Ansible''s features. Just because there
+    are many options though does not mean you need to implement them all. You only
+    need to implement the ones your callback will use. Here is a list of the methods
+    you can implement, along with their description:'
+  id: totrans-132
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 回调插件是最复杂的插件之一，因为它们可以钩入Ansible的大多数功能。然而，选项虽然很多，但并不意味着你需要实现所有的功能。你只需实现回调插件将使用的那些方法。以下是你可以实现的方法列表及其描述：
+- en: '`def on_any(self, *args, **kwargs)`: This is called before any of the other
+    callbacks are called. Because the arguments differ from callback to callback,
+    it expands its arguments into `args` and `kwargs`. This method is good for logging.
+    Using it for anything else can become quite complicated.'
+  id: totrans-133
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`def on_any(self, *args, **kwargs)`：在其他回调方法调用之前会调用此方法。由于不同回调方法的参数不同，它将参数展开为`args`和`kwargs`。此方法适用于日志记录，若用于其他用途会变得比较复杂。'
+- en: '`runner_on_failed(self, host, res, ignore_errors=False)`: This is run after
+    a task fails. The `host` argument contains the host on which the task was running,
+    `res` contains the task data from the playbook and anything that was returned,
+    and `ignore_errors` contains a boolean value specifying whether the playbook indicated
+    errors should be ignored.'
+  id: totrans-134
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`runner_on_failed(self, host, res, ignore_errors=False)`：任务失败后运行。`host`参数包含任务运行的主机，`res`包含来自剧本的任务数据以及返回的任何数据，`ignore_errors`包含一个布尔值，指定是否忽略剧本中指示的错误。'
+- en: '`runner_on_ok(self, host, res)`: This runs after a task succeeds or when a
+    poll for an async job succeeds. The argument `host` contains the host on which
+    the task was running and `res` contains the task data from the playbook and any
+    data that was returned.'
+  id: totrans-135
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`runner_on_ok(self, host, res)`：在任务成功完成或异步任务轮询成功时运行。参数`host`包含任务运行的主机，`res`包含来自剧本的任务数据以及返回的任何数据。'
+- en: '`runner_on_skipped(self, host, item=None)`: This runs after a task is skipped.
+    The argument `host` contains the host on which the task would have run if it were
+    not skipped and the `item` argument contains the loop item, which is currently
+    being iterated over.'
+  id: totrans-136
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`runner_on_skipped(self, host, item=None)`：在任务被跳过后运行。参数`host`包含如果任务没有被跳过的话将运行的主机，`item`参数包含当前正在迭代的循环项。'
+- en: '`runner_on_unreachable(self, host, res)`:This runs when a host is found to
+    be unreachable. The `host` argument contains the unreachable host and `res` contains
+    the error message from the connection plugin.'
+  id: totrans-137
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`runner_on_unreachable(self, host, res)`：当某个主机不可达时运行。`host`参数包含不可达的主机，`res`包含连接插件返回的错误信息。'
+- en: '`runner_on_no_hosts(self)`: This callback runs when a task is started without
+    any hosts. It does not have any variables.'
+  id: totrans-138
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`runner_on_no_hosts(self)`：当任务在没有任何主机的情况下启动时，这个回调会被调用。它没有任何变量。'
+- en: '`runner_on_async_poll(self, host, res, jid, clock)`: This runs whenever an
+    async job is polled for status. The variable `host` contains the host that is
+    being polled, `res` contains details of the polling, `jid` contains the job ID,
+    and `clock` contains the amount of time remaining before the job fails.'
+  id: totrans-139
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`runner_on_async_poll(self, host, res, jid, clock)`：每当异步任务轮询状态时，这个方法会被调用。变量`host`包含正在被轮询的主机，`res`包含轮询的详细信息，`jid`包含任务ID，`clock`包含任务失败之前剩余的时间。'
+- en: '`runner_on_async_ok(self, host, res, jid)`: This runs when polling has completed
+    without an error. The argument `host` contains the host that was being polled,
+    `res` holds the results from the task, and `jid` contains the job ID.'
+  id: totrans-140
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`runner_on_async_ok(self, host, res, jid)`：当轮询完成且没有错误时，会运行此回调。`host` 参数包含正在轮询的主机，`res`
+    存储任务的结果，`jid` 包含作业 ID。'
+- en: '`runner_on_async_failed(self, host, res, jid)`: This runs when polling has
+    completed with an error. The argument `host` contains the host that was being
+    polled, `res` holds the results from the task, and `jid` contains the job ID.'
+  id: totrans-141
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`runner_on_async_failed(self, host, res, jid)`：当轮询完成并出现错误时，会运行此回调。`host` 参数包含正在轮询的主机，`res`
+    存储任务的结果，`jid` 包含作业 ID。'
+- en: '`playbook_on_start(self)`: This callback is executed when a playbook is started
+    with `ansible-playbook`. It does not use any variables.'
+  id: totrans-142
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`playbook_on_start(self)`：此回调在通过 `ansible-playbook` 启动 playbook 时执行。它不使用任何变量。'
+- en: '`playbook_on_notify(self, host, handler)`: This callback is run whenever a
+    handler is notified. Because this is run when the notify happens and not when
+    the handler runs, it may run multiple times for each handler. It has two variables:
+    `host` stores the hostname on which the task notified and `handler` stores the
+    name of the handler that was notified.'
+  id: totrans-143
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`playbook_on_notify(self, host, handler)`：每当一个 handler 被通知时，此回调函数会被触发。由于它在通知发生时运行，而不是在
+    handler 执行时运行，因此每个 handler 可能会多次触发。它有两个变量：`host` 存储通知任务的主机名，`handler` 存储被通知的 handler
+    名称。'
+- en: '`playbook_on_no_hosts_matched(self)`: This callback runs if a play starts that
+    does not match any host. It does not have any variables.'
+  id: totrans-144
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`playbook_on_no_hosts_matched(self)`：如果一个 play 开始时没有匹配任何主机，则会运行此回调。它没有任何变量。'
+- en: '`playbook_on_no_hosts_remaining(self)`: This callback runs when all the hosts
+    in a play have errors and the play is unable to continue.'
+  id: totrans-145
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`playbook_on_no_hosts_remaining(self)`：当 play 中所有主机都有错误，且 play 无法继续时，会运行此回调。'
+- en: '`playbook_on_task_start(self, name, is_conditional)`: This callback runs right
+    before each task, even if the task is going to be skipped. The `name` variable
+    is set to the name of the task, and `is_conditional` is set to the outcome of
+    the when clause—`True` if the task will run, and `False` if not.'
+  id: totrans-146
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`playbook_on_task_start(self, name, is_conditional)`：每个任务开始前都会运行此回调，即使该任务将被跳过。`name`
+    变量设置为任务的名称，`is_conditional` 设置为 when 条件的结果——如果任务将执行，`True`；如果不会执行，`False`。'
+- en: '`playbook_on_setup(self)`: This callback is executed right before the setup
+    module executes across the hosts. It runs once no matter how many hosts are included.
+    It does not include any variables.'
+  id: totrans-147
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`playbook_on_setup(self)`：此回调会在 setup 模块在所有主机上执行之前运行。无论包含多少主机，它只会运行一次。它不包含任何变量。'
+- en: '`playbook_on_play_start(self, name)`: This callback runs at the beginning of
+    each play. The `name` variable contains the name of the play that is starting.'
+  id: totrans-148
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`playbook_on_play_start(self, name)`：每个 play 开始时都会运行此回调。`name` 变量包含即将开始的 play
+    的名称。'
+- en: '`playbook_on_stats(self, stats)`: This callback runs at the end of a playbook
+    right before the stats are to be printed. The `stats` variable contains the details
+    of the playbook.'
+  id: totrans-149
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`playbook_on_stats(self, stats)`：此回调会在 playbook 结束时、即将打印统计信息之前运行。`stats` 变量包含
+    playbook 的详细信息。'
+- en: Summary
+  id: totrans-150
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 总结
+- en: Having read this chapter, you should now be able to build modules using either
+    Bash or any other languages that you know. You should be able to install modules
+    that you have either obtained from the Internet, or written yourself. We also
+    covered how to write modules more efficiently using the boilerplate code in Python,
+    and we wrote an inventory script that allows you to pull your inventory from an
+    external source. Finally we covered adding new features to Ansible itself by writing
+    connection, lookup, filter, and callback plugins.
+  id: totrans-151
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 阅读完本章后，你应该能够使用 Bash 或任何你熟悉的语言构建模块。你应该能够安装从互联网获取或自己编写的模块。我们还介绍了如何通过使用 Python
+    中的模板代码更高效地编写模块，并编写了一个库存脚本，允许你从外部来源提取库存。最后，我们介绍了如何通过编写连接、查找、过滤和回调插件来向 Ansible 本身添加新功能。
+- en: We have tried to cover most of the things you will need when getting to know
+    Ansible, but we can't possibly cover everything. If you would like to continue
+    learning about Ansible, you can visit the official Ansible documentation at [http://docs.ansible.com/](http://docs.ansible.com/).
+  id: totrans-152
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们已经尽力涵盖了你了解 Ansible 时所需的大部分内容，但我们不可能涵盖所有内容。如果你想继续学习 Ansible，可以访问官方 Ansible
+    文档：[http://docs.ansible.com/](http://docs.ansible.com/)。
+- en: 'The Ansible project is currently working on a rewrite, which will eventually
+    be released as version 2.0\. This book should stay compatible with this version
+    and others going forward, but there will be new features that are not covered
+    here. In version 2.0 of Ansible, you can expect the following features, which
+    may change in the future (as it has not yet been released):'
+  id: totrans-153
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 项目目前正在进行重写，最终将作为 2.0 版本发布。本书应与该版本及未来的其他版本保持兼容，但将会有一些新功能未在此涵盖。在 Ansible
+    2.0 版本中，您可以期待以下功能，这些功能可能会在未来发生变化（因为该版本尚未发布）：
+- en: The ability to recover from failures within a playbook
+  id: totrans-154
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在剧本中的故障恢复能力
+- en: Allowing you to run lots of tasks in parallel
+  id: totrans-155
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 允许您并行运行大量任务
+- en: Compatibility with Python 3
+  id: totrans-156
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 兼容 Python 3
+- en: Easier debugging as errors will contain line numbers
+  id: totrans-157
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 更容易的调试，因为错误信息将包含行号

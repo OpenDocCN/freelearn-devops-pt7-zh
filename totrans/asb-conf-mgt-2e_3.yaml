@@ -1,0 +1,1239 @@
+- en: Chapter 3. Advanced Playbooks
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 第三章 高级剧本
+- en: 'The playbooks that we have looked at so far are simple and just run a number
+    of modules in order. Ansible allows much more control over the execution of your
+    playbook. Using the following techniques, you should be able to perform even the
+    most complex deployments:'
+  id: totrans-1
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 到目前为止，我们所查看的剧本都很简单，只是按顺序运行了一些模块。Ansible 允许对剧本的执行进行更多控制。通过以下技巧，你应该能够执行即使是最复杂的部署：
+- en: Running operations in parallel
+  id: totrans-2
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 并行执行操作
+- en: Looping
+  id: totrans-3
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 循环
+- en: Conditional execution
+  id: totrans-4
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 条件执行
+- en: Task delegation
+  id: totrans-5
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 任务委派
+- en: Extra variables
+  id: totrans-6
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 额外变量
+- en: Finding files with variables
+  id: totrans-7
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 查找带变量的文件
+- en: Environment variables
+  id: totrans-8
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 环境变量
+- en: External data lookups
+  id: totrans-9
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 外部数据查找
+- en: Storing data
+  id: totrans-10
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 存储数据
+- en: Processing data
+  id: totrans-11
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 处理数据
+- en: Debugging playbooks
+  id: totrans-12
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 调试剧本
+- en: Running operations in parallel
+  id: totrans-13
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 并行执行操作
+- en: By default, Ansible will only fork up to five times, so it will only run an
+    operation on five different machines at once. If you have a large number of machines,
+    or you have lowered this maximum fork value, then you may want to launch things
+    asynchronously. Ansible's method for performing this is to launch the task and
+    then poll for it to complete. This allows Ansible to start the job across all
+    the required machines while still using the maximum forks.
+  id: totrans-14
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 默认情况下，Ansible 只会进行最多五次分叉，因此它一次只会在五台不同的机器上运行操作。如果你有大量的机器，或者你已经降低了这个最大分叉值，那么你可能希望异步启动任务。Ansible
+    执行此操作的方法是启动任务，然后轮询等待它完成。这允许 Ansible 在所有需要的机器上启动作业，同时仍然使用最大分叉数。
+- en: To run an operation in parallel, use the `async` and `poll` keywords. The `async`
+    keyword triggers Ansible to run the job in parallel, and its value will be the
+    maximum time that Ansible will wait for the command to complete. The value of
+    `poll` indicates to Ansible how often to poll to check if the command has been
+    completed.
+  id: totrans-15
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要并行执行操作，请使用 `async` 和 `poll` 关键字。`async` 关键字触发 Ansible 并行执行任务，其值将是 Ansible 等待命令完成的最大时间。`poll`
+    的值告诉 Ansible 每隔多长时间轮询一次，以检查命令是否完成。
+- en: 'If you wanted to run `updatedb` across an entire cluster of machines, it might
+    look like the following code:'
+  id: totrans-16
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你想在整个集群上运行 `updatedb`，它可能看起来像以下代码：
+- en: '[PRE0]'
+  id: totrans-17
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: You will notice that when you run the previous example on more than five machines,
+    the `yum` module acts differently to the `command` module. The `yum` module will
+    run on the first five machines, then the next five, and so on. The `command` module,
+    however, will run across all the machines and indicate the status once complete.
+  id: totrans-18
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你会注意到，当你在超过五台机器上运行前面的示例时，`yum` 模块与 `command` 模块的行为不同。`yum` 模块会在前五台机器上运行，然后是接下来的五台，依此类推。然而，`command`
+    模块会在所有机器上并行运行，并在完成后显示状态。
+- en: If your command starts a daemon that eventually listens on a port, you can start
+    it without polling so that Ansible does not check for it to complete. You can
+    then carry on with other actions and check for completion later using the `wait_for`
+    module. To configure Ansible to not wait for the job to complete, set the value
+    of `poll` to `0`.
+  id: totrans-19
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你的命令启动了一个守护进程，最终会在某个端口监听，你可以在不进行轮询的情况下启动它，这样 Ansible 就不会检查它是否完成。然后，你可以继续进行其他操作，并稍后使用
+    `wait_for` 模块检查是否完成。要配置 Ansible 不等待任务完成，将 `poll` 的值设置为 `0`。
+- en: Finally, if your task takes an extremely long time to run, you can tell Ansible
+    to wait for the job as long as it takes. To do this, set the value of `async`
+    to `0`.
+  id: totrans-20
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后，如果你的任务需要极长的时间来执行，你可以告诉 Ansible 等待任务完成，无论它需要多长时间。为此，将 `async` 的值设置为 `0`。
+- en: 'You will want to use Ansible''s polling in the following situations:'
+  id: totrans-21
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在以下情况中，你需要使用 Ansible 的轮询功能：
+- en: You have a long-running task that may hit the timeout
+  id: totrans-22
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 你有一个长期运行的任务，可能会触发超时
+- en: You need to run an operation across a large number of machines
+  id: totrans-23
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 你需要在大量机器上执行操作
+- en: You have an operation for which you don't need to wait to complete
+  id: totrans-24
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 你有一个操作，不需要等待其完成
+- en: 'There are also a few situations where you should not use `async` or `poll`:'
+  id: totrans-25
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 也有一些情况，你不应使用 `async` 或 `poll`：
+- en: If your job acquires locks that prevent other things from running
+  id: totrans-26
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 如果你的任务获取了锁，阻止其他操作的运行
+- en: Your job only takes a short time to run
+  id: totrans-27
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 你的任务只需要很短的时间来执行
+- en: Looping
+  id: totrans-28
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 循环
+- en: Ansible allows you to repeat a module several times with different inputs, for
+    example, if you had several files that should have similar permissions set. This
+    can save you a lot of repetition and allows you to iterate over facts and variables.
+  id: totrans-29
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 允许你使用不同的输入多次重复运行一个模块，例如，如果你有多个文件需要设置相似的权限。这可以节省你大量的重复工作，并允许你对事实和变量进行迭代。
+- en: To do this, you can use the `with_items` key on an action and set the value
+    to the list of items that you are going to iterate over. This will create a variable
+    for the module named `item`, which will be set to each item in turn as your module
+    is iterated over. Some modules such as `yum` will optimize this so that instead
+    of doing a separate transaction for each package, they will operate on all of
+    them at once.
+  id: totrans-30
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要做到这一点，您可以在操作上使用`with_items`关键字，并将值设置为您将要迭代的项目列表。这将为模块创建一个名为`item`的变量，该变量将逐个设置为您的模块正在迭代的每个项目。某些模块，例如`yum`，将优化此过程，以便不是为每个软件包执行单独的事务，而是一次性操作它们。
+- en: 'Using `with_items`, the code looks like this:'
+  id: totrans-31
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用`with_items`，代码看起来像这样：
+- en: '[PRE1]'
+  id: totrans-32
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: In addition to looping over fixed items, or a variable, Ansible also provides
+    us a tool called **lookup plugins**. These plugins allow you to tell Ansible to
+    fetch the data from somewhere externally. For example, you might want to find
+    all the files that match a particular pattern, and then upload them.
+  id: totrans-33
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 除了循环固定项目或变量外，Ansible还为我们提供了一个称为**查找插件**的工具。这些插件允许您告诉Ansible从外部某处获取数据。例如，您可能希望找到所有与特定模式匹配的文件，然后上传它们。
+- en: 'In this example, we upload all the public keys in a directory and then assemble
+    them into an `authorized_keys` file for the root user, as shown in the following
+    example:'
+  id: totrans-34
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在此示例中，我们上传目录中的所有公钥，然后将它们组合成`authorized_keys`文件，如下例所示：
+- en: '[PRE2]'
+  id: totrans-35
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: 'Repeating modules can be used in the following situations:'
+  id: totrans-36
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 可以在以下情况下使用重复模块：
+- en: Repeating a module many times with similar settings
+  id: totrans-37
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 多次重复一个模块，并使用类似的设置
+- en: Iterating over all the values of a list
+  id: totrans-38
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 迭代列表的所有值
+- en: Creating many files for later use with the `assemble` module to combine into
+    one large file
+  id: totrans-39
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 创建许多文件，稍后使用`assemble`模块将它们合并成一个大文件
+- en: Copying a directory of files when combined with the `with_fileglob` lookup plugin
+  id: totrans-40
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 当与`with_fileglob`查找插件结合使用时，可以复制文件目录
+- en: Conditional execution
+  id: totrans-41
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 条件执行
+- en: Some modules, such as the `copy` module, provide mechanisms to configure it
+    to skip the execution of the module. You can also configure your own skip conditions
+    that will only execute the module if they resolve to `true`. This can be handy
+    if your servers use different packaging systems or have different filesystem layouts.
+    It can also be used with the `set_fact` module to allow you to compute many different
+    things.
+  id: totrans-42
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一些模块，例如`copy`模块，提供配置机制以跳过模块的执行。您还可以配置自己的跳过条件，只有当它们解析为`true`时才执行模块。如果您的服务器使用不同的打包系统或具有不同的文件系统布局，这将非常方便。它还可与`set_fact`模块一起使用，允许您计算许多不同的内容。
+- en: To skip a module, you can use the `when` key; this lets you provide a condition.
+    If the condition you set resolves to false, then the module will be skipped. The
+    value that you assign to `when` is a Python expression. You can use any of the
+    variables or facts available to you at this point.
+  id: totrans-43
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要跳过一个模块，您可以使用`when`关键字；这允许您提供一个条件。如果您设置的条件解析为假，则会跳过该模块。您分配给`when`的值是一个Python表达式。您可以在此时使用任何可用的变量或事实。
+- en: Note
+  id: totrans-44
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: If you want to process some of the items in the list depending on a condition,
+    then simply use the `when` clause. The `when` clause is processed separately for
+    each item in the list; the item being processed is available as a variable using
+    `{{ item }}`.
+  id: totrans-45
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果您想根据条件处理列表中的某些项，则简单地使用`when`子句。`when`子句会分别处理列表中的每个项；正在处理的项可以通过`{{ item }}`作为变量使用。
+- en: The following code is an example showing how to choose between `apt` and `yum`
+    for both Debian and Red Hat systems.
+  id: totrans-46
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下代码是一个示例，显示如何在Debian和Red Hat系统中选择`apt`和`yum`之间的选择。
+- en: '[PRE3]'
+  id: totrans-47
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: There is also a third clause to print a message and fail if the OS is not recognized.
+  id: totrans-48
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 还有第三个子句，如果未识别操作系统，则打印消息并失败。
+- en: Note
+  id: totrans-49
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: 'This feature can be used to pause at a particular point and will wait for the
+    user intervention to continue. Normally, when Ansible encounters an error, it
+    will simply stop what it is doing without running any handlers. With this feature,
+    you can add the `pause` module with a condition on it that triggers in unexpected
+    situations. This way the `pause` module will be ignored in a normal situation;
+    however, in unexpected circumstances, it will allow the user to intervene and
+    continue when it is safe to do so. The task would look like this:'
+  id: totrans-50
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个功能可以在特定点暂停，并等待用户干预后继续。通常，当 Ansible 遇到错误时，它会停止当前操作而不运行任何处理程序。使用此功能，你可以添加带有条件的`pause`模块，该条件在意外情况下触发。这样，在正常情况下`pause`模块会被忽略；但在意外情况下，它将允许用户干预并在安全时继续。任务会像这样：
+- en: '[PRE4]'
+  id: totrans-51
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: 'There are numerous uses of skipping actions; here are a few of them:'
+  id: totrans-52
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 跳过某些操作有很多用法，以下是其中的一些：
+- en: Working around differences in operating systems
+  id: totrans-53
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 解决操作系统之间的差异
+- en: Prompting a user and only then performing actions that they request
+  id: totrans-54
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 提示用户并仅在他们请求时执行相应操作
+- en: Improving performance by avoiding a module that you know won't change anything
+    but may take a while to do so
+  id: totrans-55
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 通过避免使用你知道不会改变任何内容但可能需要较长时间的模块来提高性能
+- en: Refusing to alter systems that have a particular file present
+  id: totrans-56
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 拒绝修改具有特定文件存在的系统
+- en: Checking if custom scripts have already been run
+  id: totrans-57
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 检查自定义脚本是否已经执行
+- en: Task delegation
+  id: totrans-58
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 任务委派
+- en: Ansible, by default, runs its tasks all at once on the configured machine. This
+    is great when you have a whole bunch of separate machines to configure, or if
+    each of your machines is responsible for communicating its status to the other
+    remote machines. However, if you need to perform an action on a different host
+    than the one Ansible is operating on, you can use a delegation.
+  id: totrans-59
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 默认情况下，Ansible 会在配置的机器上同时运行所有任务。这对于需要配置大量独立机器，或者每台机器都负责与其他远程机器通信其状态的情况非常有效。然而，如果你需要在与
+    Ansible 当前操作的主机不同的主机上执行操作，你可以使用委派功能。
+- en: Ansible can be configured to run a task on a different host other than the one
+    that is being configured using the `delegate_to` key. The module will still run
+    once for every machine, but instead of running on the target machine, it will
+    run on the delegated host. The facts available will be the ones applicable to
+    the current host. Here, we show a playbook that will use the `get_url` option
+    to download the configuration from a bunch of web servers.
+  id: totrans-60
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 可以配置为在与当前配置的主机不同的主机上运行任务，使用`delegate_to`键。该模块仍然会针对每台机器运行一次，但它将不再在目标机器上运行，而是在委派的主机上运行。可用的事实将是适用于当前主机的事实。这里，我们展示一个使用`get_url`选项的
+    playbook，从一堆 Web 服务器下载配置。
+- en: '[PRE5]'
+  id: totrans-61
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: 'If you are delegating to the `localhost`, you can use a shortcut when defining
+    the action that automatically uses the local machine. If you define the key of
+    the action line as `local_action`, then the delegation to `localhost` is implied.
+    If we were to have used this in the previous example, it would be slightly shorter
+    and will look like this:'
+  id: totrans-62
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你要委派到`localhost`，在定义操作时可以使用快捷方式，自动使用本地机器。如果你将操作行的键定义为`local_action`，则意味着将委派到`localhost`。如果我们在前面的示例中使用这个，它会稍微简短一些，看起来会是这样：
+- en: '[PRE6]'
+  id: totrans-63
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: 'Delegation is not limited to the local machine. You can delegate to any host
+    that is in the inventory. Some other reasons why you might want to delegate are:'
+  id: totrans-64
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 委派不仅限于本地机器。你可以委派给清单中的任何主机。你可能希望进行委派的其他原因包括：
+- en: Removing a host from a load balancer before deployment
+  id: totrans-65
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在部署前将主机从负载均衡器中移除
+- en: Changing DNS to direct traffic away from a server you are about to change
+  id: totrans-66
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 更改 DNS 以将流量引导到你即将更改的服务器之外
+- en: Creating an iSCSI volume on a storage device
+  id: totrans-67
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在存储设备上创建 iSCSI 卷
+- en: Using an external server to check whether access outside the network works
+  id: totrans-68
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用外部服务器检查是否能正常访问网络外部
+- en: Extra variables
+  id: totrans-69
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 附加变量
+- en: You may have seen in our template example in the previous chapter that we used
+    a variable named `group_names`. This is one of the magic variables that are provided
+    by Ansible itself. At the time of writing, there are seven such variables, which
+    are described in the upcoming sections.
+  id: totrans-70
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可能已经在上一章的模板示例中看到了我们使用了一个名为`group_names`的变量。这是 Ansible 本身提供的魔法变量之一。在写这篇文章时，共有七个这样的变量，接下来的章节将描述这些变量。
+- en: The hostvars variable
+  id: totrans-71
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 主机变量
+- en: The `hostvars` variable allows you to retrieve variables of all the hosts that
+    the current play has dealt with. If the `setup` module hasn't yet been run on
+    that managed host in the current play, only its variables will be available. You
+    can access it like you would access other complex variables, such as `${hostvars.hostname.fact}`,
+    so to get the Linux distribution running on a server named `ns1`, it would be
+    `${hostvars.ns1.ansible_distribution}`. The following example sets a variable
+    called zone master to the server named `ns1`. It then calls the `template` module,
+    which would use this to set the masters for each zone.
+  id: totrans-72
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`hostvars` 变量允许你检索当前 play 所处理的所有主机的变量。如果当前 play 尚未在该托管主机上运行 `setup` 模块，则只会提供该主机的变量。你可以像访问其他复杂变量一样访问它，例如
+    `${hostvars.hostname.fact}`，因此，要获取名为 `ns1` 的服务器上运行的 Linux 发行版，可以使用 `${hostvars.ns1.ansible_distribution}`。以下示例将名为
+    `ns1` 的服务器设置为名为 zone master 的变量。然后它调用 `template` 模块，利用此信息为每个区域设置主机。'
+- en: '[PRE7]'
+  id: totrans-73
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE7]'
+- en: Note
+  id: totrans-74
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: Using `hostvars`, you can further abstract templates from your environment.
+    If you nest your variable calls, then instead of placing an IP address in the
+    variable section of the play, you can add the hostname. To find the address of
+    a machine named in the `the_machine` variable you would use, `{{ hostvars.[the_machine].default_ipv4.address
+    }}`.
+  id: totrans-75
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用 `hostvars`，你可以进一步抽象环境中的模板。如果你嵌套变量调用，那么你就可以在 play 的变量部分中添加主机名，而不是直接放入 IP 地址。要找到名为
+    `the_machine` 的机器的地址，你可以使用 `{{ hostvars.[the_machine].default_ipv4.address }}`。
+- en: The groups variable
+  id: totrans-76
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: '`groups` 变量'
+- en: The `groups` variable contains a list of all hosts in the inventory grouped
+    by the inventory group. This lets you get access to all the hosts that you have
+    configured. This is potentially a very powerful tool. It allows you to iterate
+    across a whole group and for every host apply an action to the current machine.
+  id: totrans-77
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`groups` 变量包含按清单组分组的所有主机的列表。它让你访问你配置的所有主机。这是一个非常强大的工具，它允许你遍历整个组，并为每个主机应用一个动作。'
+- en: '[PRE8]'
+  id: totrans-78
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE8]'
+- en: Note
+  id: totrans-79
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: The `groups` variable does not contain the actual hosts in the group; it contains
+    strings representing their names in the inventory. This means you have to use
+    nested variable expansion to get to the `hostvars` variable, if needed.
+  id: totrans-80
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`groups` 变量不包含组中的实际主机；它包含表示主机名的字符串，这些字符串来自清单。这意味着，如果需要，你必须使用嵌套变量扩展来访问 `hostvars`
+    变量。'
+- en: 'You can even use this variable to create the `known_hosts` files for all of
+    your machines containing the `host` keys of all the other machines. This would
+    allow you to then SSH from one machine to another without confirming the identity
+    of the remote host. It would also handle removing machines when they leave service
+    or updating them when they are replaced. The following is a template for a `known_hosts`
+    file that does this:'
+  id: totrans-81
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你甚至可以使用这个变量为所有机器创建 `known_hosts` 文件，其中包含所有其他机器的 `host` 密钥。这将允许你在一台机器与另一台机器之间进行
+    SSH 连接，而无需确认远程主机的身份。它还会在机器退出服务时自动删除它们，或在机器被替换时进行更新。以下是一个模板，用于创建一个 `known_hosts`
+    文件：
+- en: '[PRE9]'
+  id: totrans-82
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE9]'
+- en: 'The playbook that uses this template would look like this:'
+  id: totrans-83
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用此模板的 playbook 将如下所示：
+- en: '[PRE10]'
+  id: totrans-84
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE10]'
+- en: The group_names variable
+  id: totrans-85
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: '`group_names` 变量'
+- en: The `group_names` variable contains a list of strings with the names of all
+    the groups the current host is in. This is not only useful for debugging, but
+    also for conditionals detecting group membership. This was used in the last chapter
+    to set up a nameserver.
+  id: totrans-86
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`group_names` 变量包含一个字符串列表，列出了当前主机所属的所有组。这不仅对于调试有用，还可以用于检测组成员身份的条件。在上一章中，我们使用这个变量设置了一个名称服务器。'
+- en: 'This variable is mostly useful for skipping a task or in a template as a condition.
+    For instance, if you had two configurations for the SSH daemon, one secure and
+    one less secure, but you only wanted the secure configuration on the machines
+    in the secure group, you would do it like this:'
+  id: totrans-87
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个变量主要用于跳过某个任务或在模板中作为条件。例如，如果你有两种 SSH 守护进程配置，一种是安全的，另一种是较不安全的，但你只希望在安全组中的机器上使用安全配置，你可以这样做：
+- en: '[PRE11]'
+  id: totrans-88
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE11]'
+- en: Note
+  id: totrans-89
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: In the previous example, we used the `set_fact` module to set the fact for each
+    case, and then used the `copy` module. We could have used the `copy` module in
+    place of the `set_facts` modules and used one fewer task. The reason this was
+    done is that the `set_fact` module runs locally and the `copy` module runs remotely.
+    When you use the `set_facts` module first and only call the `copy` module once,
+    the copies are made on all the machines in parallel. If you used two `copy` modules
+    with conditions, then each would execute on the relevant machines separately.
+    Since `copy` is the longer task of the two, it benefits the most from running
+    in parallel.
+  id: totrans-90
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在之前的示例中，我们使用了 `set_fact` 模块来为每个情况设置事实值，然后使用了 `copy` 模块。我们本可以用 `copy` 模块代替 `set_fact`
+    模块，从而减少一个任务。这么做的原因是 `set_fact` 模块在本地运行，而 `copy` 模块在远程运行。当你首先使用 `set_fact` 模块并仅调用一次
+    `copy` 模块时，所有机器上的复制任务会并行执行。如果你使用两个带有条件的 `copy` 模块，那么每个模块会分别在相关机器上执行。由于 `copy`
+    是这两者中更长的任务，最适合并行执行。
+- en: The inventory_hostname variable
+  id: totrans-91
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: '`inventory_hostname` 变量'
+- en: The `inventory_hostname` variable stores the hostname of the server as recorded
+    in the inventory. You should use this if you have chosen not to run the `setup`
+    module on the current host, or if for various reasons, the value detected by the
+    `setup` module is not correct. This is useful when you are doing the initial setup
+    of the machine and changing the hostname.
+  id: totrans-92
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`inventory_hostname` 变量存储了作为清单中记录的服务器主机名。如果你选择不在当前主机上运行 `setup` 模块，或者由于各种原因
+    `setup` 模块检测到的值不正确，那么应该使用此变量。这在你进行机器初始设置并更改主机名时非常有用。'
+- en: The inventory_hostname_short variable
+  id: totrans-93
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: '`inventory_hostname_short` 变量'
+- en: The `inventory_hostname_short` variable is the same as the previous variable;
+    however, it only includes the characters up to the first dot. So for `host.example.com`,
+    it would return `host`.
+  id: totrans-94
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`inventory_hostname_short` 变量与之前的变量相同；然而，它仅包括第一个点之前的字符。因此，对于 `host.example.com`，它将返回
+    `host`。'
+- en: The inventory_dir variable
+  id: totrans-95
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: '`inventory_dir` 变量'
+- en: The `inventory_dir` variable is the path name of the directory containing the
+    inventory file.
+  id: totrans-96
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`inventory_dir` 变量是包含清单文件的目录的路径名。'
+- en: The inventory_file variable
+  id: totrans-97
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: '`inventory_file` 变量'
+- en: The `inventory_file` variable is the same as the previous one, except that it
+    also includes the filename.
+  id: totrans-98
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`inventory_file` 变量与之前的变量相同，唯一的不同是它还包含了文件名。'
+- en: Finding files with variables
+  id: totrans-99
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用变量查找文件
+- en: 'All modules can take variables as part of their arguments by dereferencing
+    them with `{{` and `}}`. You can use this to load a particular file based on a
+    variable. For example, you might want to select a different `config` file for
+    NRPE (a Nagios check daemon) based on the architecture in use. Here is how that
+    would look:'
+  id: totrans-100
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 所有模块都可以通过解引用 `{{` 和 `}}` 来将变量作为其参数的一部分。你可以利用这一点根据变量加载特定文件。例如，你可能想根据正在使用的架构选择不同的
+    `config` 文件来配置 NRPE（一个 Nagios 检查守护进程）。以下是这样的实现方式：
+- en: '[PRE12]'
+  id: totrans-101
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE12]'
+- en: 'In the `copy` and the `template` modules, you can also configure Ansible to
+    look for a set of files, and it finds them using the first one. This lets you
+    configure a file to look for; if that file is not found, a second will be used,
+    and so on until the end of the list is reached. If the file is not found, then
+    the module will fail. The feature is triggered using the `first_available_file`
+    key, and referencing `{{ item }}` in the action. The following code is an example
+    of this feature:'
+  id: totrans-102
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 `copy` 和 `template` 模块中，你还可以配置 Ansible 查找一组文件，并通过第一个文件来找到它们。这允许你配置文件查找路径；如果未找到该文件，将使用第二个文件，以此类推，直到找到文件或到达列表末尾。如果文件未找到，则模块将失败。此功能通过
+    `first_available_file` 键触发，并在操作中引用 `{{ item }}`。以下代码是该功能的示例：
+- en: '[PRE13]'
+  id: totrans-103
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE13]'
+- en: Note
+  id: totrans-104
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: 'Remember that you can run the setup module from the Ansible command-line tool.
+    This comes in handy when you are making heavy use of variables in your playbooks
+    or templates. To check what facts will be available for a particular play, simply
+    copy the value of the host pattern and run the following command:'
+  id: totrans-105
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请记住，你可以从 Ansible 命令行工具运行 `setup` 模块。当你在 playbook 或模板中大量使用变量时，这非常有用。要检查某个 play
+    将可用的事实，只需复制主机模式的值并运行以下命令：
+- en: '[PRE14]'
+  id: totrans-106
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE14]'
+- en: On a CentOS x86_64 machine, this configuration will first look for the `RedHat-x86_64.cfg`
+    file upon navigating through `files/apache/`. If that file does not exist, it
+    will look for the `default-x86_64.cfg` file upon navigating through `file/apache/`,
+    and finally if nothing exists, it'll try and use `default.cfg`.
+  id: totrans-107
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在CentOS x86_64机器上，此配置会在浏览`files/apache/`时首先查找`RedHat-x86_64.cfg`文件。如果该文件不存在，则会在浏览`file/apache/`时查找`default-x86_64.cfg`文件，最后如果什么都没有找到，它会尝试使用`default.cfg`。
+- en: Environment variables
+  id: totrans-108
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 环境变量
+- en: Often, Unix commands take advantage of certain environment variables. Prevalent
+    examples of this are C makefiles, installers, and the AWS command-line tools.
+    Fortunately, Ansible makes this really easy. If you want to upload a file on the
+    remote machine to Amazon S3, you can set the Amazon access key as follows. You
+    will also see that we install EPEL so that we can install pip, and pip is used
+    to install the AWS tools.
+  id: totrans-109
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通常，Unix命令会利用某些环境变量。常见的例子有C Makefile、安装程序和AWS命令行工具。幸运的是，Ansible使这变得非常简单。如果你想将文件从远程机器上传到Amazon
+    S3，你可以按如下方式设置Amazon访问密钥。你还会看到我们安装了EPEL，以便能够安装pip，pip用于安装AWS工具。
+- en: '[PRE15]'
+  id: totrans-110
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE15]'
+- en: Note
+  id: totrans-111
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注释
+- en: Internally, Ansible sets the environment variable into the Python code; this
+    means any module that already uses environment variables can take advantage of
+    the ones set here. If you write your own modules, you should consider if certain
+    arguments would be better used as environment variables instead of arguments.
+  id: totrans-112
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在内部，Ansible将环境变量设置到Python代码中；这意味着任何已经使用环境变量的模块都可以利用这里设置的变量。如果你编写自己的模块，你应该考虑某些参数是否应该作为环境变量而不是参数使用。
+- en: 'Some Ansible modules, such as `get_url`, `yum`, and `apt`, will also use environment
+    variables to set their proxy server. Some of the other situations where you might
+    want to set environment variables are as follows:'
+  id: totrans-113
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一些Ansible模块，如`get_url`、`yum`和`apt`，也将使用环境变量来设置它们的代理服务器。以下是一些你可能想要设置环境变量的其他情况：
+- en: Running application installers
+  id: totrans-114
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 运行应用程序安装程序
+- en: Adding extra items to the path when using the `shell` module
+  id: totrans-115
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在使用`shell`模块时向路径中添加额外的项
+- en: Loading libraries from a place not included in the system library search path
+  id: totrans-116
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 从系统库搜索路径中未包含的位置加载库
+- en: Using an `LD_PRELOAD` hack while running a module
+  id: totrans-117
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在运行模块时使用`LD_PRELOAD`黑客技术
+- en: External data lookups
+  id: totrans-118
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 外部数据查找
+- en: Ansible introduced the lookup plugins in version 0.9\. These plugins allow Ansible
+    to fetch data from outside sources. Ansible provides several plugins, but you
+    can also write your own. This really opens the doors and allows you to be flexible
+    in your configuration.
+  id: totrans-119
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible在版本0.9中引入了查找插件。这些插件允许Ansible从外部源获取数据。Ansible提供了多个插件，但你也可以编写自己的插件。这为配置的灵活性打开了大门。
+- en: 'Lookup plugins are written in Python and run on the controlling machine. They
+    are executed in two different ways: direct calls and `with_*` keys. Direct calls
+    are useful when you want to use them like you would use variables. Using the `with_*`
+    keys is useful when you want to use them as loops. In an earlier section, we covered
+    `with_fileglob`, which is an example of this.'
+  id: totrans-120
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 查找插件是用Python编写的，并且在控制机器上运行。它们有两种执行方式：直接调用和`with_*`键。直接调用在你想像使用变量一样使用它们时很有用。使用`with_*`键在你想将它们作为循环使用时很有用。在前面的部分中，我们讨论了`with_fileglob`，它就是这种情况的一个例子。
+- en: In the next example, we use a lookup plugin directly to get the `http_proxy`
+    value from `environment` and send it through to the configured machine. This makes
+    sure that the machines we are configuring will use the same proxy server to download
+    the file.
+  id: totrans-121
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一个示例中，我们直接使用查找插件从`environment`中获取`http_proxy`值，并将其传递到配置的机器。这确保了我们正在配置的机器将使用相同的代理服务器来下载文件。
+- en: '[PRE16]'
+  id: totrans-122
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE16]'
+- en: Note
+  id: totrans-123
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注释
+- en: You can also use lookup plugins in the variable section. This doesn't immediately
+    lookup the result and put it in the variable as you might assume; instead, it
+    stores it as a macro and looks it up every time you use it. This is good to know
+    if you are using something, the value of which might change over time.
+  id: totrans-124
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你也可以在变量部分使用查找插件。这不会立即查找结果并将其放入变量中，就像你可能想的那样；相反，它会将结果作为宏存储，并在每次使用时查找它。如果你正在使用某些值可能随时间变化的内容，这一点很有用。
+- en: Using lookup plugins in the `with_*` form will allow you to iterate over things
+    you wouldn't normally be able to. You can use any plugin like this, but ones that
+    return a list are most useful. In the following code, we show how to dynamically
+    register a `webapp` farm.
+  id: totrans-125
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用 `with_*` 形式的 lookup 插件将允许你遍历一些通常无法遍历的内容。你可以像这样使用任何插件，但返回列表的插件最为有用。以下代码演示了如何动态地注册一个
+    `webapp` farm。
+- en: '[PRE17]'
+  id: totrans-126
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE17]'
+- en: If you were using this example, you would append a task to create each as a
+    virtual machine and then a new play to configure each of them.
+  id: totrans-127
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你使用这个例子，你可以添加一个任务来创建每个虚拟机，然后创建一个新的 play 来配置它们。
+- en: 'Situations where lookup plugins are useful are as follows:'
+  id: totrans-128
+  prefs: []
+  type: TYPE_NORMAL
+  zh: lookup 插件有用的场景如下：
+- en: Copying a whole directory of Apache config to a `conf.d` style directory
+  id: totrans-129
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 将整个 Apache 配置目录复制到 `conf.d` 风格的目录中
+- en: Using environment variables to adjust what the playbooks does
+  id: totrans-130
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用环境变量来调整 playbook 的行为
+- en: Getting configuration from DNS TXT records
+  id: totrans-131
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 从 DNS TXT 记录中获取配置
+- en: Fetching the output of a command into a variable
+  id: totrans-132
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 将命令输出提取到变量中
+- en: Storing results
+  id: totrans-133
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 存储结果
+- en: Almost every module outputs something, even the `debug` module. Most of the
+    time, the only variable used is the one named `changed`. The `changed` variable
+    helps Ansible decide whether to run handlers or not and which color to print the
+    output in. However, if you wish to, you can store the returned values and use
+    them later in the playbook. In this example, we look at the mode in the `/tmp`
+    directory and create a new directory named `/tmp/subtmp` with the same mode as
+    shown here.
+  id: totrans-134
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 几乎每个模块都会输出一些内容，甚至 `debug` 模块也是如此。大多数情况下，唯一使用的变量是名为 `changed` 的变量。`changed` 变量帮助
+    Ansible 决定是否运行处理程序，以及以什么颜色打印输出。然而，如果你愿意，你可以存储返回的值并在 playbook 中稍后使用它们。在这个示例中，我们查看
+    `/tmp` 目录的模式，并创建一个新的目录 `/tmp/subtmp`，其模式与之相同，如下所示。
+- en: '[PRE18]'
+  id: totrans-135
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE18]'
+- en: Some modules, such as the `file` module in the previous example, can be configured
+    to simply give information. By combining this with the register feature, you can
+    create playbooks that can examine the environment and calculate how to proceed.
+  id: totrans-136
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一些模块，如前面例子中的 `file` 模块，可以配置为仅提供信息。通过将其与 register 功能结合，你可以创建能够检查环境并计算如何继续的 playbook。
+- en: Note
+  id: totrans-137
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: Combining the register feature and the `set_fact` module allows you to perform
+    data processing on data you receive back from the modules. This allows you to
+    compute values and perform data processing on these values. This makes your playbooks
+    even smarter and more flexible than ever.
+  id: totrans-138
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 将 register 功能与 `set_fact` 模块结合使用，可以对从模块返回的数据进行处理。这让你能够计算值并对这些值进行数据处理，使得你的 playbook
+    比以往更加智能和灵活。
+- en: 'Register allows you to make your own facts about hosts from modules already
+    available to you. This can be useful in many different circumstances:'
+  id: totrans-139
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Register 允许你基于已有的模块为主机创建自定义的事实。这在许多不同情况下都非常有用：
+- en: Getting a list of files in a remote directory and downloading them all with
+    fetch
+  id: totrans-140
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 获取远程目录中的文件列表，并使用 fetch 下载所有文件
+- en: Running a task when a previous task changes, before the handlers run
+  id: totrans-141
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 当前一个任务发生变化时，在处理程序运行之前执行任务
+- en: Getting the contents of the remote host SSH key and building a `known_hosts`
+    file
+  id: totrans-142
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 获取远程主机的 SSH 密钥内容，并构建一个 `known_hosts` 文件
+- en: Processing data
+  id: totrans-143
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 处理数据
+- en: 'Ansible uses Jinja2 filters to allow you to transform data in ways that aren''t
+    possible with basic templates. We use filters when the data available to us in
+    our playbooks is not in the format we want, or require further complex processing
+    before it can be used with modules or templates. Filters can be used anywhere
+    we would normally use a variable, such as in templates, as arguments to modules,
+    and in conditionals. Filters are used by providing the variable name, a pipe character,
+    and then the filter name. We can use multiple filter names separated with pipe
+    characters to use multiple pipes, which are then applied left to right. Here is
+    an example where we ensure that all users are created with lowercase usernames:'
+  id: totrans-144
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 使用 Jinja2 过滤器来允许你以基本模板无法实现的方式转换数据。当 playbook 中可用的数据格式不符合需求，或者需要在与模块或模板配合使用之前进行复杂的处理时，我们会使用过滤器。过滤器可以在我们通常使用变量的地方使用，例如在模板中、作为模块的参数或在条件语句中。使用过滤器时，只需提供变量名称、一个管道符号，然后是过滤器名称。我们还可以使用多个过滤器名称，过滤器通过管道符分隔，按从左到右的顺序应用。以下是一个示例，确保所有用户都使用小写的用户名创建：
+- en: '[PRE19]'
+  id: totrans-145
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE19]'
+- en: 'Here are a few popular filters that you may find useful:'
+  id: totrans-146
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是一些你可能会发现有用的常见过滤器：
+- en: '| Filter | Description |'
+  id: totrans-147
+  prefs: []
+  type: TYPE_TB
+  zh: '| 过滤器 | 描述 |'
+- en: '| --- | --- |'
+  id: totrans-148
+  prefs: []
+  type: TYPE_TB
+  zh: '| --- | --- |'
+- en: '| `min` | When the argument is a list it returns only the smallest value. |'
+  id: totrans-149
+  prefs: []
+  type: TYPE_TB
+  zh: '| `min` | 当参数为列表时，返回列表中最小的值。 |'
+- en: '| `max` | When the argument is a list it returns only the largest value. |'
+  id: totrans-150
+  prefs: []
+  type: TYPE_TB
+  zh: '| `max` | 当参数为列表时，返回列表中最大的值。 |'
+- en: '| `random` | When the argument is a list it picks a random item from the list.
+    |'
+  id: totrans-151
+  prefs: []
+  type: TYPE_TB
+  zh: '| `random` | 当参数为列表时，从列表中随机选择一个项目。 |'
+- en: '| `changed` | When used on a variable created with the register keyword, it
+    returns `true` if the task changed anything; otherwise, it returns `false`. |'
+  id: totrans-152
+  prefs: []
+  type: TYPE_TB
+  zh: '| `changed` | 当用于使用register关键字创建的变量时，如果任务更改了任何内容则返回`true`；否则返回`false`。 |'
+- en: '| `failed` | When used on a variable created with the register keyword, it
+    returns `true` if the task failed; otherwise, it returns `false`. |'
+  id: totrans-153
+  prefs: []
+  type: TYPE_TB
+  zh: '| `failed` | 当用于使用register关键字创建的变量时，如果任务失败则返回`true`；否则返回`false`。 |'
+- en: '| `skipped` | When used on a variable created with the register keyword, it
+    returns `true` if the task changed anything; otherwise, it returns `false`. |'
+  id: totrans-154
+  prefs: []
+  type: TYPE_TB
+  zh: '| `skipped` | 当用于使用register关键字创建的变量时，如果任务未更改任何内容则返回`true`；否则返回`false`。 |'
+- en: '| `default(X)` | If the variable does not exist, then the value of X will be
+    used instead. |'
+  id: totrans-155
+  prefs: []
+  type: TYPE_TB
+  zh: '| `default(X)` | 如果变量不存在，则使用X的值。 |'
+- en: '| `unique` | When the argument is a list, return a list without any duplicate
+    items. |'
+  id: totrans-156
+  prefs: []
+  type: TYPE_TB
+  zh: '| `unique` | 当参数为列表时，返回一个没有重复项的列表。 |'
+- en: '| `b64decode` | Convert the base64 encoded string in the variable to its binary
+    representation. This is useful with the slurp modules, as it returns its data
+    as a base64 encoded string. |'
+  id: totrans-157
+  prefs: []
+  type: TYPE_TB
+  zh: '| `b64decode` | 将变量中的base64编码字符串转换为其二进制表示。这在与slurp模块一起使用时非常有用，因为它将其数据作为base64编码的字符串返回。
+    |'
+- en: '| `replace(X, Y)` | Return a copy of the string with any occurrences of `X`
+    replaced by `Y`. |'
+  id: totrans-158
+  prefs: []
+  type: TYPE_TB
+  zh: '| `replace(X, Y)` | 返回字符串的副本，其中任何出现的`X`都被`Y`替换。 |'
+- en: '| `join(X)` | When the variable is a list, return a string with all the entries
+    separated by `X`. |'
+  id: totrans-159
+  prefs: []
+  type: TYPE_TB
+  zh: '| `join(X)` | 当变量为列表时，返回所有条目用`X`分隔的字符串。 |'
+- en: Debugging playbooks
+  id: totrans-160
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 调试playbook
+- en: There are a few ways in which you can debug a playbook. Ansible includes both
+    a verbose mode and a `debug` module specifically for debugging. You can also use
+    modules such as `fetch` and `get_url` for help. These debugging techniques can
+    also be used to examine how modules behave when you wish to learn how to use them.
+  id: totrans-161
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有几种方法可以调试playbook。Ansible包括详细模式和专门用于调试的`debug`模块。您还可以使用诸如`fetch`和`get_url`等模块来获取帮助。这些调试技术还可以用于检查模块在学习如何使用它们时的行为。
+- en: The debug module
+  id: totrans-162
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: debug模块
+- en: Using the `debug` module is really quite simple. It takes two optional arguments,
+    `msg` and `fail.msg` to set the message that will be printed by the module and
+    `fail`, if set to `yes`, indicates a failure to Ansible, which will cause it to
+    stop processing the playbook for that host. We used this module earlier in the
+    skipping modules section to bail out of a playbook if the operating system was
+    not recognized.
+  id: totrans-163
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用`debug`模块非常简单。它接受两个可选参数，`msg`和`fail.msg`，用于设置模块将打印的消息和`fail`，如果设置为`yes`，则表示对Ansible的失败，这将导致它停止处理该主机的playbook。我们在跳过模块部分早些时候使用了此模块，以便在操作系统不被识别时退出playbook。
+- en: 'In the following example, we will show how to use the `debug` module to list
+    all the interfaces available on the machine:'
+  id: totrans-164
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在以下示例中，我们将展示如何使用`debug`模块列出机器上所有可用的接口：
+- en: '[PRE20]'
+  id: totrans-165
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE20]'
+- en: 'The preceding code gives the following output:'
+  id: totrans-166
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 前述代码输出如下：
+- en: '[PRE21]'
+  id: totrans-167
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE21]'
+- en: As you can see, the `debug` module is easy to use to see the current value of
+    a variable during the play.
+  id: totrans-168
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如您所看到的，使用`debug`模块来查看play期间变量的当前值非常容易。
+- en: The verbose mode
+  id: totrans-169
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 详细模式
+- en: 'Your other option for debugging is the verbose option. When running Ansible
+    with verbose, it prints out all the values that were returned by each module after
+    it runs. This is especially useful if you are using the `register` keyword introduced
+    in the previous section. To run `ansible-playbook` in verbose mode, simply add
+    `--verbose` to your command line as follows:'
+  id: totrans-170
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 调试的另一个选项是详细选项。在使用详细选项运行Ansible时，它会打印每个模块运行后返回的所有值。如果您使用前面介绍的`register`关键字，这尤其有用。要在详细模式下运行`ansible-playbook`，只需在命令行中添加`--verbose`如下：
+- en: '[PRE22]'
+  id: totrans-171
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE22]'
+- en: The check mode
+  id: totrans-172
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 检查模式
+- en: In addition to the verbose mode, Ansible also includes a check mode and a diff
+    mode. You can use the check mode by adding `--check` to the command line, and
+    `--diff` to use the diff mode. The check mode instructs Ansible to walk through
+    the play without actually making any changes to remote systems. This allows you
+    to obtain a listing of the changes that Ansible plans to make to the configured
+    system.
+  id: totrans-173
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 除了详细模式外，Ansible 还包括检查模式和差异模式。你可以通过在命令行中添加 `--check` 来使用检查模式，使用 `--diff` 来启用差异模式。检查模式指示
+    Ansible 在不对远程系统进行实际更改的情况下遍历剧本。这使你能够获取 Ansible 计划对配置系统进行的更改列表。
+- en: Note
+  id: totrans-174
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: It is important here to note that the check mode of Ansible is not perfect.
+    Any modules that do not implement the check feature are skipped. Additionally,
+    if a module is skipped that provides more variables, or the variables depend on
+    a module actually changing something (such as file size), then they will not be
+    available. This is an obvious limitation when using the `command` or `shell` modules
+  id: totrans-175
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这里需要注意的是，Ansible 的检查模式并不完美。任何未实现检查功能的模块将被跳过。此外，如果跳过的模块提供了更多的变量，或者这些变量依赖于模块实际更改某些内容（例如文件大小），那么这些变量将无法使用。使用
+    `command` 或 `shell` 模块时，这是一个明显的局限性。
+- en: The diff mode shows the changes that are made by the `template` module. This
+    limitation is because the `template` file only works with text files. If you were
+    to provide a diff of a binary file from the copy module, the result would almost
+    be unreadable. The diff mode also works with the check mode to show you the planned
+    changes that were not made due to being in check mode.
+  id: totrans-176
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 差异模式显示由 `template` 模块所做的更改。这一局限性是因为 `template` 文件只适用于文本文件。如果你尝试为 `copy` 模块中的二进制文件提供差异，结果几乎是无法读取的。差异模式还可以与检查模式一起使用，展示由于处于检查模式而未做的计划更改。
+- en: The pause module
+  id: totrans-177
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 暂停模块
+- en: Another technique is to use the `pause` module to pause the playbook while you
+    examine the configured machine as it runs. This way, you can see changes that
+    the modules have made at the current position in the play, and then watch while
+    it continues with the rest of the play.
+  id: totrans-178
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 另一种技巧是使用 `pause` 模块，在你检查正在运行的配置机器时暂停剧本。这样，你可以看到模块在当前剧本位置所做的更改，然后继续观察剧本的其余部分。
+- en: Summary
+  id: totrans-179
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 摘要
+- en: In this chapter, we explored the more advanced details of writing playbooks.
+    You should now be able to use features such as delegation, looping, conditionals,
+    and fact registration to make your plays much easier to maintain and edit. We
+    also looked at how to access information from other hosts, configure the environment
+    for a module, and gather data from external sources. Finally, we covered some
+    techniques for debugging plays that are not behaving as expected.
+  id: totrans-180
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们探讨了编写剧本的更多高级细节。现在，你应该能够使用委派、循环、条件语句和事实注册等功能，使你的剧本更容易维护和编辑。我们还研究了如何访问其他主机的信息、为模块配置环境以及从外部来源收集数据。最后，我们介绍了一些调试剧本的技巧，帮助解决剧本执行异常的问题。
+- en: In the next chapter, we will be covering how to use Ansible in a larger environment.
+    It will include methods for improving the performance of your playbooks that might
+    be taking a long time to execute. We will also cover a few more features that
+    make plays maintainable, particularly splitting them into many parts by purpose.
+  id: totrans-181
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一章，我们将讨论如何在更大规模的环境中使用 Ansible。内容将包括提高执行时间较长的剧本性能的方法。我们还将介绍一些能够使剧本更易于维护的特性，特别是通过目的将其拆分成多个部分。

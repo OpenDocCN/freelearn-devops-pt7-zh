@@ -1,0 +1,1032 @@
+- en: Chapter 4. Larger Projects
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 第4章. 更大的项目
+- en: 'Until now we have been looking at single plays in one playbook file. This approach
+    will work for simple infrastructures, or when using Ansible as a simple deployment
+    mechanism. However, if you have a large and complicated infrastructure, then you
+    will need to take actions to prevent things from going out of control. This chapter
+    will include the following topics:'
+  id: totrans-1
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 到目前为止，我们一直在查看单个剧本中的单个剧本文件。这种方法适用于简单的基础设施，或者在将Ansible用作简单的部署机制时。然而，如果你有一个庞大而复杂的基础设施，那么你需要采取措施以防止局面失控。本章将包括以下主题：
+- en: Separating your playbooks into different files, and including them from some
+    other location
+  id: totrans-2
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 将剧本拆分成不同的文件，并从其他位置包含它们
+- en: Using roles to include multiple files that perform a similar function
+  id: totrans-3
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用角色包含多个执行相似功能的文件
+- en: Methods for increasing the speed at which Ansible configures your machines
+  id: totrans-4
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 提高Ansible配置机器速度的方法
+- en: Includes
+  id: totrans-5
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 包含
+- en: One of the first issues you will face with a complex infrastructure is that
+    your playbooks will rapidly increase in size. Large playbooks can become difficult
+    to read and maintain. Ansible allows you to combat this problem by way of includes.
+  id: totrans-6
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你在面对复杂的基础设施时会遇到的第一个问题是，剧本文件的大小会迅速增加。大的剧本文件会变得难以阅读和维护。Ansible允许你通过包含来解决这个问题。
+- en: Includes allow you to split your plays into multiple sections. You can then
+    include each section from other plays. This allows you to have several different
+    parts built for a different purpose, all included in a main play.
+  id: totrans-7
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 包含允许你将剧本拆分为多个部分。然后，你可以从其他剧本中包含每个部分。这使得你可以为不同的目的构建多个不同的部分，并将它们全部包含在一个主剧本中。
+- en: 'There are four types of includes, namely, variable includes, playbook includes,
+    task includes, and handler includes. Including variables from an external `vars_file`
+    files has been discussed already in [Chapter 2](part0020.xhtml "Chapter 2. Simple
+    Playbooks"), *Simple Playbooks*. The following is a description of what each includes
+    does:'
+  id: totrans-8
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 包含有四种类型，分别是变量包含、剧本包含、任务包含和处理器包含。关于从外部`vars_file`文件包含变量的内容，已经在[第2章](part0020.xhtml
+    "第2章. 简单剧本")，*简单剧本*中讨论过了。以下是每种包含的描述：
+- en: '**Variable includes**: They allow you to put your variables in external YAML
+    files'
+  id: totrans-9
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**变量包含**：它们允许你将变量放在外部YAML文件中'
+- en: '**Playbook includes**: They are used to include plays from other files in a
+    single play'
+  id: totrans-10
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**剧本包含**：它们用于将其他文件中的剧本包含到单个剧本中'
+- en: '**Task includes**: They let you put common tasks in other files and include
+    them wherever required'
+  id: totrans-11
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**任务包含**：它们允许你将公共任务放到其他文件中，并在需要的地方包含它们'
+- en: '**Handler includes**: They let you put all your handlers at one place'
+  id: totrans-12
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**处理器包含**：它们允许你将所有的处理器放在一个地方'
+- en: We will be looking at these includes in the following section; however, including
+    variables from an external `vars_file` files has been discussed already in [Chapter
+    2](part0020.xhtml "Chapter 2. Simple Playbooks"), *Simple Playbooks*, so we will
+    not be discussing it in detail.
+  id: totrans-13
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将在接下来的章节中探讨这些包含；不过，关于从外部`vars_file`文件包含变量的内容，已经在[第2章](part0020.xhtml "第2章.
+    简单剧本")，*简单剧本*中讨论过了，因此我们不再详细讨论。
+- en: Task includes
+  id: totrans-14
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 任务包含
+- en: Task includes can be used when you have a lot of common tasks that will be repeated.
+    For example, you may have a set of tasks that removes a machine from monitoring
+    and a load balancer before you can configure it. You can put these tasks in a
+    separate YAML file, and then include them from your main task.
+  id: totrans-15
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当你有许多重复的公共任务时，可以使用任务包含。例如，你可能有一组任务，在配置机器之前，将其从监控和负载均衡器中移除。你可以将这些任务放在一个单独的YAML文件中，然后从主任务中包含它们。
+- en: Task includes inherit the facts from the play they are included from. You can
+    also provide your own variables, which are passed into the task and are available
+    for use.
+  id: totrans-16
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 任务包含会继承它们所包含的剧本中的事实。你还可以提供自己的变量，这些变量会传递到任务中，并可供使用。
+- en: Finally, task includes can have conditionals applied to them. If you do this,
+    conditionals will separately be added to each included task by Ansible automatically.
+    The tasks are all still included. In most cases, this is not an important distinction;
+    however, in circumstances where variables may change, it is.
+  id: totrans-17
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后，任务包含可以应用条件判断。如果你这样做，Ansible将自动为每个包含的任务单独添加条件判断。这些任务仍然会被包含。在大多数情况下，这是不重要的区别；然而，在变量可能发生变化的情况下，这是很重要的。
+- en: The file to include as a task includes contains a list of tasks. If you assume
+    the existence of any variables, hosts, or groups, then you should state them in
+    comments at the top of the file. This makes it easier for people who wish to reuse
+    the file later.
+  id: totrans-18
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 作为任务包含的文件包含一系列任务。如果你假设某些变量、主机或组的存在，那么应该在文件顶部的注释中说明它们。这可以帮助后来想要重用该文件的人。
+- en: 'So, if you wanted to create a bunch of users and set up their environment with
+    their public keys, you would split out the tasks that do a single user to one
+    file. This file will look similar to the following code:'
+  id: totrans-19
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 因此，如果你想创建一批用户并设置他们的环境和公钥，你可以将每个用户的任务拆分到一个单独的文件中。这个文件将类似于以下代码：
+- en: '[PRE0]'
+  id: totrans-20
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: 'We expect that a variable named `user` will be passed to us, and that their
+    public key will be in the `keys` directory. The account is created, the `ssh config`
+    directory is made, and finally we can copy this in their public key. The easiest
+    way to use this `config` file would be to include it with the `with_items` keyword
+    you learned about in [Chapter 3](part0028.xhtml "Chapter 3. Advanced Playbooks"),
+    *Advanced Playbooks*. This will look similar to the following code:'
+  id: totrans-21
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们预计将会传入一个名为`user`的变量，并且他们的公钥会存放在`keys`目录中。会创建帐户，生成`ssh config`目录，最后我们可以将他们的公钥复制到其中。使用这个`config`文件的最简单方法是通过你在[第3章](part0028.xhtml
+    "第3章。高级Playbooks")中学习的`with_items`关键字来包含它，*高级Playbooks*。这将类似于以下代码：
+- en: '[PRE1]'
+  id: totrans-22
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: Handler includes
+  id: totrans-23
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 处理器包含
+- en: 'When writing Ansible playbooks, you will constantly find yourself reusing the
+    same handlers multiple times. For instance, a handler used to restart MySQL is
+    going to look the same everywhere. To make this easier, Ansible allows you to
+    include other files in the handlers section. Handler includes look the same as
+    task includes. You should make sure to include a name on each of your handlers;
+    otherwise, you will not be able to refer to them easily in your tasks. A handler
+    includes file looks similar to the following code:'
+  id: totrans-24
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在编写Ansible playbook时，你会发现自己多次重复使用相同的处理器。例如，用于重启MySQL的处理器在任何地方看起来都一样。为了简化这一过程，Ansible允许你在处理器部分包含其他文件。处理器包含的写法与任务包含类似。你应该确保为每个处理器提供一个名称，否则你将无法在任务中轻松引用它们。一个处理器包含文件看起来类似于以下代码：
+- en: '[PRE2]'
+  id: totrans-25
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: 'This file provides several common tasks that you would want to handle after
+    configuring `sendmail`. By including the following handlers in their own files,
+    you can easily reuse them whenever you need to change the `sendmail` configuration:'
+  id: totrans-26
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本文件提供了在配置`sendmail`后你可能需要处理的几项常见任务。通过将以下处理器包含在各自的文件中，你可以在需要更改`sendmail`配置时轻松地重用它们：
+- en: The first handler regenerates the `sendmail` database's `config` file and triggers
+    a `reload` file of `sendmail` later
+  id: totrans-27
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 第一个处理器重新生成`sendmail`数据库的`config`文件，并在稍后触发`sendmail`的`reload`文件。
+- en: The second handler initializes the `aliases` database, and also schedules a
+    `reload` file of `sendmail`
+  id: totrans-28
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 第二个处理器初始化`aliases`数据库，并且还会安排一个`sendmail`的`reload`文件。
+- en: The third handler reloads `sendmail`; it may be triggered by the previous two
+    jobs, or it may be triggered directly from a task
+  id: totrans-29
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 第三个处理器重新加载`sendmail`；它可能由前两个任务触发，或者也可以直接通过任务触发。
+- en: The fourth handler restarts `sendmail` when triggered; this is useful if you
+    upgrade `sendmail` to a new version
+  id: totrans-30
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 第四个处理器在被触发时重启`sendmail`；如果你升级了`sendmail`到新版本，这将非常有用。
+- en: Note
+  id: totrans-31
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: Handlers can trigger other handlers provided they only trigger the ones specified
+    later, instead of the triggered ones. This means you can set up a series of cascading
+    handlers that call each other. This saves you from having long lists of handlers
+    in the notify section of tasks.
+  id: totrans-32
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 处理器可以触发其他处理器，只要它们仅触发后面指定的处理器，而不是已触发的处理器。这意味着你可以设置一系列相互调用的级联处理器。这将避免你在任务的notify部分写出一长串处理器。
+- en: 'Using the preceding handler file is easy now. We simply need to remember that
+    if we change a `sendmail` configuration file, then we should trigger `config sendmail`,
+    and if we change the `aliases` file, we should trigger `config aliases`. The following
+    code shows us an example of this:'
+  id: totrans-33
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用前面的处理器文件现在变得简单了。我们只需要记住，如果我们更改了`sendmail`配置文件，则应触发`config sendmail`，如果更改了`aliases`文件，则应触发`config
+    aliases`。以下代码为我们展示了这个示例：
+- en: '[PRE3]'
+  id: totrans-34
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: This playbook makes sure `sendmail` is installed. If it isn't installed, or
+    if it isn't running the latest version, then it installs it or updates it. After
+    it is updated, it schedules a restart so that we can be confident that the latest
+    version will be running once the playbook is done. In the next step, we replace
+    the `sendmail` configuration file with our template. If the `config` file was
+    changed by the template, then the `sendmail` configuration files will be regenerated,
+    and finally `sendmail` will be reloaded.
+  id: totrans-35
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个 playbook 确保 `sendmail` 已安装。如果没有安装，或者没有运行最新版本，则会安装或更新它。更新后，它会安排重启，以便我们可以确信在
+    playbook 执行完毕后，最新版本将会运行。在下一步中，我们用模板替换 `sendmail` 配置文件。如果配置文件被模板更改，则会重新生成 `sendmail`
+    配置文件，最后 `sendmail` 会被重新加载。
+- en: Playbook includes
+  id: totrans-36
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: Playbook includes
+- en: Playbook includes should be used when you want to include a whole set of tasks
+    designated for a set of machines. For example, you may have a play that gathers
+    the host keys of several machines and builds a `known_hosts` file to copy to all
+    the machines.
+  id: totrans-37
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Playbook includes 用于在你想要为一组机器包含一整套任务时使用。例如，你可能有一个 play，它收集几个机器的主机密钥，并构建一个 `known_hosts`
+    文件，将其复制到所有机器上。
+- en: While task includes allows you to include tasks, playbook includes allows you
+    to include whole plays. This allows you to select the hosts you wish to run on,
+    and provide handlers for notify events. Because you are including whole playbook
+    files, you can also include multiple plays.
+  id: totrans-38
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 虽然任务包含允许你包含任务，但 playbook includes 允许你包含完整的 play。这使你能够选择你希望执行的主机，并为通知事件提供处理程序。由于你包含的是完整的
+    playbook 文件，你还可以包含多个 plays。
+- en: Playbook includes allows you to embed fully self-contained files. It is for
+    this reason that you should provide any variables that it requires. If they depend
+    on any particular set of hosts or groups, this should be noted in a comment at
+    the top of the file.
+  id: totrans-39
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Playbook includes 允许你嵌入完全自包含的文件。因此，你需要提供它所需的任何变量。如果它们依赖于某些特定的主机或组，应该在文件顶部的注释中注明。
+- en: 'This is handy when you wish to run multiple different actions at once. For
+    example, let''s say we have a playbook that switches to our DR site, named `drfailover.yml`,
+    another named `upgradeapp.yml` that upgrades the app, another named `drfailback.yml`
+    that fails back, and finally `drupgrade.yml`. All these playbooks might be valid
+    to use separately; however, when performing a site upgrade, you will probably
+    want to perform them all at once. You can do this as shown in the following code:'
+  id: totrans-40
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当你希望一次执行多个不同的操作时，这非常方便。例如，假设我们有一个名为 `drfailover.yml` 的 playbook，用于切换到我们的灾难恢复站点，另一个名为
+    `upgradeapp.yml` 的 playbook 用于升级应用，另一个名为 `drfailback.yml` 的 playbook 用于故障恢复，最后一个名为
+    `drupgrade.yml`。这些 playbook 分别使用可能都是有效的；然而，在执行站点升级时，你可能希望一次执行所有这些操作。你可以像下面的代码那样做到这一点：
+- en: '[PRE4]'
+  id: totrans-41
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: As you can see, you can put full plays in the playbooks that you are including
+    other playbooks into.
+  id: totrans-42
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如你所看到的，你可以在包含其他 playbook 的 playbooks 中放入完整的 plays。
+- en: Roles
+  id: totrans-43
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 角色
+- en: If your playbooks start expanding beyond what includes can help you solve, or
+    you start gathering a large number of templates, you may want to use roles. Roles
+    in Ansible allow you to group files together in a defined structure. They are
+    essentially an extension to includes that handles a few things automatically,
+    and this helps you organize them inside your repository.
+  id: totrans-44
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你的 playbook 开始超出 includes 能解决的问题，或者你开始收集大量模板，你可能需要使用角色。Ansible 中的角色允许你将文件按定义的结构组合在一起。它们本质上是对
+    includes 的扩展，能够自动处理一些事情，这有助于你在代码库中组织这些文件。
+- en: Roles allow you to place your variables, files, tasks, templates, and handlers
+    in a folder, and then easily include them. You can also include other roles from
+    within roles, which effectively creates a tree of dependencies. Similar to task
+    includes, they can have variables passed to them. Using these features, you should
+    be able to build self-contained roles that are easy to share with others.
+  id: totrans-45
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 角色允许你将变量、文件、任务、模板和处理程序放在一个文件夹中，然后轻松地将它们包含进去。你还可以在角色中包含其他角色，这实际上创建了一个依赖树。与任务包含类似，它们也可以传递变量给角色。使用这些功能，你应该能够构建自包含的角色，方便与他人共享。
+- en: 'Roles are commonly set up to manage services provided by machines, but they
+    can also be daemons, options, or simply characteristics. Things you may want to
+    configure in a role are as follows:'
+  id: totrans-46
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 角色通常用于管理机器提供的服务，但它们也可以是守护进程、选项或简单的特性。你可能希望在角色中配置的内容如下：
+- en: Web servers, such as Nginx or Apache
+  id: totrans-47
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Web 服务器，如 Nginx 或 Apache
+- en: Messages of the day customized for the security level of the machine
+  id: totrans-48
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 根据机器的安全级别定制的每日信息 |
+- en: Database servers running PostgreSQL or MySQL
+  id: totrans-49
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 运行 PostgreSQL 或 MySQL 的数据库服务器 |
+- en: 'To manage roles in Ansible, perform the following steps:'
+  id: totrans-50
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要管理 Ansible 中的角色，请执行以下步骤： |
+- en: Create a folder named roles with your playbooks.
+  id: totrans-51
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建一个名为 `roles` 的文件夹，并将你的 playbooks 放入其中。 |
+- en: In the `roles` folder, make a folder for each role that you would like.
+  id: totrans-52
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在 `roles` 文件夹中，为你想要的每个角色创建一个文件夹。 |
+- en: In the folder for each role, make folders named `files`, `handlers`, `meta`,
+    `tasks`, `templates`, and finally `vars`. If you aren't going to use all these,
+    you can leave out the ones you don't need. Ansible will silently ignore any missing
+    files or directories when using roles.
+  id: totrans-53
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在每个角色的文件夹中，创建名为 `files`、`handlers`、`meta`、`tasks`、`templates` 和 `vars` 的文件夹。如果你不打算使用所有这些文件夹，可以省略不需要的部分。当使用角色时，Ansible
+    会默默忽略任何缺失的文件或目录。 |
+- en: In your playbooks, add the keyword roles followed by a list of roles that you
+    would like to apply to the hosts.
+  id: totrans-54
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在你的 playbooks 中，添加关键字 `roles`，后跟你希望应用于主机的角色列表。 |
+- en: For example, if you had the `common`, `apache`, `website1`, and `website2` roles,
+    your directory structure would look similar to the following example. The `site.yml`
+    file is for reconfiguring the entire site, and the `webservers1.yml` and `webservers2.yml`
+    files are for configuring each web server farm.![Roles](img/image00105.jpeg)
+  id: totrans-55
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 例如，如果你有 `common`、`apache`、`website1` 和 `website2` 角色，你的目录结构看起来会像以下示例。`site.yml`
+    文件用于重新配置整个站点，而 `webservers1.yml` 和 `webservers2.yml` 文件用于配置每个 Web 服务器集群。![Roles](img/image00105.jpeg)
+    |
+- en: 'The following file is what could be in `website1.yml`. It shows a playbook
+    that applies the `common`, `apache`, and `website1` roles to the `website1` group
+    in the inventory. The `website1` role is included using a more verbose format
+    that allows us to pass variables to the role, as follows:'
+  id: totrans-56
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下文件可能出现在 `website1.yml` 中。它展示了一个 playbook，将 `common`、`apache` 和 `website1`
+    角色应用到清单中的 `website1` 组。`website1` 角色使用更详细的格式进行包含，允许我们将变量传递给角色，如下所示： |
+- en: '[PRE5]'
+  id: totrans-57
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: 'For the role named `common`, Ansible will then try to load `roles/common/tasks/main.yml`
+    as a task include, `roles/common/handlers/main.yml` as a handler include, and
+    `roles/common/vars/main.yml` as a variable file include. If all of these files
+    are missing, Ansible will throw an error; however, if one of the files exists,
+    then the others, if missing, will be ignored. The following directories are used
+    by a default install of Ansible (other directories may be used by different modules):'
+  id: totrans-58
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于名为 `common` 的角色，Ansible 将尝试加载 `roles/common/tasks/main.yml` 作为任务包含，`roles/common/handlers/main.yml`
+    作为处理程序包含，`roles/common/vars/main.yml` 作为变量文件包含。如果这些文件都缺失，Ansible 会抛出错误；但是，如果其中一个文件存在，则缺失的其他文件将被忽略。以下目录是
+    Ansible 默认安装时使用的目录（其他目录可能被不同的模块使用）： |
+- en: '| Directory | Description |'
+  id: totrans-59
+  prefs: []
+  type: TYPE_TB
+  zh: '| 目录 | 描述 |'
+- en: '| --- | --- |'
+  id: totrans-60
+  prefs: []
+  type: TYPE_TB
+  zh: '| --- | --- |'
+- en: '| `tasks` | The `tasks` folder should contain a `main.yml` file, which should
+    include a list of the tasks for this role. Any task includes that are contained
+    in these roles will look for their files in this folder also. This allows you
+    to split a large number of tasks into separate files, and use other features of
+    task includes. |'
+  id: totrans-61
+  prefs: []
+  type: TYPE_TB
+  zh: '| `tasks` | `tasks` 文件夹应包含一个 `main.yml` 文件，该文件应包括该角色的任务列表。任何包含在这些角色中的任务也将在此文件夹中查找其文件。这允许你将大量任务拆分到单独的文件中，并使用任务包含的其他功能。
+    |'
+- en: '| `files` | The `files` folder is the default location for files in the roles
+    that are used by the copy or the script module. |'
+  id: totrans-62
+  prefs: []
+  type: TYPE_TB
+  zh: '| `files` | `files` 文件夹是用于存放由复制或脚本模块使用的角色的默认文件位置。 |'
+- en: '| `templates` | The `templates` directory is the location where the template
+    module will automatically look for the jinja2 templates included in the roles.
+    |'
+  id: totrans-63
+  prefs: []
+  type: TYPE_TB
+  zh: '| `templates` | `templates` 目录是模板模块将自动查找角色中包含的 jinja2 模板的位置。 |'
+- en: '| `handlers` | The `handlers` folder should contain a `main.yml` file, which
+    specifies the handlers for the roles, and any includes in that folder will also
+    look for the files in the same location. |'
+  id: totrans-64
+  prefs: []
+  type: TYPE_TB
+  zh: '| `handlers` | `handlers` 文件夹应包含一个 `main.yml` 文件，该文件指定角色的处理程序，并且该文件夹中的任何包含文件也会在相同位置查找文件。
+    |'
+- en: '| `vars` | The `vars` folder should contain a `main.yml` file, which contains
+    the variables for this role. |'
+  id: totrans-65
+  prefs: []
+  type: TYPE_TB
+  zh: '| `vars` | `vars` 文件夹应包含一个 `main.yml` 文件，该文件包含此角色的变量。 |'
+- en: '| `meta` | The `meta` folder should contain a `main.yml` file. This file can
+    contain settings for the role, and a list of its dependencies. This feature is
+    available only in Ansible 1.3 and above. |'
+  id: totrans-66
+  prefs: []
+  type: TYPE_TB
+  zh: '| `meta` | `meta` 文件夹应包含一个 `main.yml` 文件。此文件可以包含角色的设置以及其依赖项的列表。此功能仅在 Ansible
+    1.3 及以上版本中可用。 |'
+- en: '| `default` | You should use the `default` folder if you are expecting variables
+    to be sent to this role, and you want to make them optional. A `main.yml` file
+    in this folder is read, to get the initial values for variables that can be overridden
+    by variables, which are passed from the playbook calling the role. This feature
+    is only available in Ansible 1.3 and above. |'
+  id: totrans-67
+  prefs: []
+  type: TYPE_TB
+  zh: '| `default` | 如果你希望将变量传递给该角色并希望使其可选，则应使用 `default` 文件夹。该文件夹中的 `main.yml` 文件将被读取，以获取可以被从调用角色的
+    playbook 中传递的变量覆盖的初始变量值。此功能仅适用于 Ansible 1.3 及以上版本。 |'
+- en: 'When using roles, the behavior of the copy, the template, and the script modules
+    is slightly altered. In addition to searching for files by looking from the directory
+    in which the playbook file is located, Ansible will also look for the files in
+    the location of the role. For example, if you are using a role named `common`,
+    these modules will change to the following behavior:'
+  id: totrans-68
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用角色时，`copy`、`template` 和 `script` 模块的行为会略有改变。除了从 playbook 文件所在的目录中查找文件外，Ansible
+    还会在角色的位置查找文件。例如，如果你使用名为 `common` 的角色，这些模块的行为将变为如下：
+- en: The copy module will look for files in `roles/common/files`.
+  id: totrans-69
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`copy` 模块将查找 `roles/common/files` 中的文件。'
+- en: The template module will first look for templates in `roles/common/templates`.
+  id: totrans-70
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`template` 模块将首先在 `roles/common/templates` 中查找模板。'
+- en: The script module will first look for files in `roles/common/files`.
+  id: totrans-71
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`script` 模块将首先在 `roles/common/files` 中查找文件。'
+- en: The other modules might decide to look for their data in other folders inside
+    `roles/common/`. The documentation for modules can be retrieved using `ansible-doc`,
+    as was discussed in the *Module help* section of [Chapter 1](part0014.xhtml "Chapter 1. Getting
+    Started with Ansible"), *Getting Started with Ansible*.
+  id: totrans-72
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 其他模块可能会决定在 `roles/common/` 内的其他文件夹中查找其数据。模块的文档可以通过 `ansible-doc` 获取，正如在 [第 1
+    章](part0014.xhtml "第 1 章：开始使用 Ansible") 的 *模块帮助* 部分中讨论的那样，*开始使用 Ansible*。
+- en: Role metadata
+  id: totrans-73
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 角色元数据
+- en: Using role metadata allows us to specify that our role depends on other roles.
+    For example, if the application you are deploying needs to send an e-mail, your
+    role could depend on a Postfix role. This would mean that before the application
+    is set up and installed, Postfix will be installed and set up.
+  id: totrans-74
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用角色元数据允许我们指定我们的角色依赖于其他角色。例如，如果你正在部署的应用程序需要发送电子邮件，你的角色可能依赖于 Postfix 角色。这意味着在应用程序设置和安装之前，Postfix
+    将被安装和设置。
+- en: 'The `meta/main.yml` file will look similar to the following code:'
+  id: totrans-75
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`meta/main.yml` 文件将类似于以下代码：'
+- en: '[PRE6]'
+  id: totrans-76
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: The `allow_duplicates` line is set to `no`, which is the default. If you set
+    this to `no`, Ansible will not run a role the second time, if it is included twice
+    with the same arguments. If you set it to `yes`, it will repeat the role even
+    if it has run before. You can leave it `off` instead of setting it to `no`.
+  id: totrans-77
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`allow_duplicates` 行设置为 `no`，这是默认值。如果你将其设置为 `no`，那么如果该角色在相同的参数下被包含两次，Ansible
+    将不会再次运行该角色。如果将其设置为 `yes`，即使该角色之前已经运行过，也会重复执行。你可以将其保持为 `off`，而不是设置为 `no`。'
+- en: Dependencies are specified in the same format as roles. This means you can pass
+    variables here; either static values or variables that are passed to the current
+    role.
+  id: totrans-78
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 依赖项以与角色相同的格式指定。这意味着你可以在此传递变量；可以是静态值或传递给当前角色的变量。
+- en: Role defaults
+  id: totrans-79
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 角色默认值
+- en: 'The second feature included with Ansible 1.3 is variable default values. If
+    you place a `main.yml` file in the defaults directory for the role, these variables
+    will be read into the role; however, they can be overridden by variables in the
+    `vars/main.yml` file, or the variables that are passed to the role when it is
+    included. This allows you to make passing variables to the role optional. These
+    files look exactly like other variable files. For example, if you used a variable
+    named `port` in your role, and you want to default it to port `80`, your `defaults/main.yml`
+    file will look similar to the following code:'
+  id: totrans-80
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 1.3 版本新增的第二个功能是变量默认值。如果你在角色的 `defaults` 目录中放置一个 `main.yml` 文件，这些变量将被读取到角色中；然而，它们可以被
+    `vars/main.yml` 文件中的变量，或者在包含角色时传递给角色的变量覆盖。这使得向角色传递变量变得可选。这些文件与其他变量文件完全相同。例如，如果你在角色中使用了一个名为
+    `port` 的变量，并且你希望将其默认设置为端口 `80`，那么你的 `defaults/main.yml` 文件将类似于以下代码：
+- en: '[PRE7]'
+  id: totrans-81
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE7]'
+- en: Speeding things up
+  id: totrans-82
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 加速执行
+- en: As you add more and more machines and services to your Ansible configuration,
+    you will find things getting slower and slower. Fortunately, there are several
+    tricks you can use to make Ansible work on a bigger scale.
+  id: totrans-83
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 随着你在 Ansible 配置中添加越来越多的机器和服务，你会发现系统运行得越来越慢。幸运的是，有几种技巧可以让 Ansible 在更大规模下运行。
+- en: Provisioning
+  id: totrans-84
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 配置
+- en: Ansible isn't just limited to being able to configure our machines; we can also
+    use it to create the machines that we will be configuring. We are also not limited
+    to just making the machines to be configured, we can also make networks, load
+    balancers, DNS entries, or even your whole infrastructure. You can even have this
+    automatically happen before you provision the machine by using the `group`, `group_by`
+    and `add_host` modules.
+  id: totrans-85
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 不仅仅限于配置我们的机器；我们还可以用它来创建我们要配置的机器。我们不仅限于创建要配置的机器，还可以创建网络、负载均衡器、DNS 条目，甚至是整个基础设施。你甚至可以在配置机器之前，通过使用`group`、`group_by`和`add_host`模块让这一切自动发生。
+- en: 'In the following example, we use Google Compute to create two machines, and
+    then install and start MySQL server on them:'
+  id: totrans-86
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在以下示例中，我们使用 Google Compute 创建了两台机器，并在其上安装和启动了 MySQL 服务器：
+- en: '[PRE8]'
+  id: totrans-87
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE8]'
+- en: Tags
+  id: totrans-88
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 标签
+- en: Ansible tags are features that allow you to select the parts of a playbook that
+    you need to run, and which should be skipped. While Ansible modules are idempotent
+    and will automatically skip if there are no changes, this often requires a connection
+    to the remote hosts. The yum module is often quite slow in determining whether
+    a module is the latest, as it will need to refresh all the repositories.
+  id: totrans-89
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 标签是一个特性，它允许你选择剧本中需要执行的部分以及应跳过的部分。虽然 Ansible 模块是幂等的，并且在没有更改时会自动跳过，但这通常需要与远程主机建立连接。yum
+    模块在确定模块是否为最新时通常比较慢，因为它需要刷新所有的仓库。
+- en: If you know you don't need certain actions to be run, you can select to run
+    only those tasks that have been tagged with a particular tag. This doesn't even
+    try to run the tasks, it simply skips over it. This will save time on almost all
+    the modules even if there is nothing to be done.
+  id: totrans-90
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你知道不需要执行某些操作，可以选择只运行那些已被标记特定标签的任务。这甚至不尝试运行任务，它只是跳过它。这将节省几乎所有模块的时间，即使没有任何操作需要执行。
+- en: Let's say you have a machine that has a large number of shell accounts, but
+    also several services set up to run on it. Now, imagine that a single user's SSH
+    key has been compromised and needs to be removed immediately. Instead of running
+    the entire playbook, or rewriting the playbooks to only include the steps necessary
+    to remove that key, you could simply run the existing playbooks with the SSH keys
+    tag, and it would only run the steps necessary to copy out the new keys, instantly
+    skipping anything else.
+  id: totrans-91
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 假设你有一台机器上有大量的 Shell 账户，同时也配置了多个服务在其上运行。现在，假设某个用户的 SSH 密钥被泄露，需要立即移除。你可以不必运行整个剧本，或者重新编写剧本以只包括移除该密钥所需的步骤，而是可以通过已存在的剧本和
+    SSH 密钥标签来运行，这样它只会运行必要的步骤来复制新的密钥，立即跳过其他步骤。
+- en: This is particularly useful if you have a playbook with playbook includes in
+    it that covers your whole infrastructure. With this setup, you can quickly deploy
+    security patches, change passwords, and revoke keys across your entire infrastructure
+    as quickly as possible.
+  id: totrans-92
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这在你拥有一个包含整个基础设施的剧本时特别有用。有了这个设置，你可以迅速部署安全补丁、修改密码，并在整个基础设施中撤销密钥，尽可能快地进行操作。
+- en: 'Tagging tasks is really easy; simply add a key named `tag`, and set its value
+    to a list of the tags you want to give it. The following code shows us how to
+    do this:'
+  id: totrans-93
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 给任务打标签非常简单；只需添加一个名为`tag`的键，并将其值设置为你希望给予的标签列表。以下代码展示了我们如何做到这一点：
+- en: '[PRE9]'
+  id: totrans-94
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE9]'
+- en: 'This play defines the `patch`, `deploy`, and `config` tags. If you know which
+    operation you wish to do in advance, you can run Ansible with the correct argument,
+    only running the operations you choose. If you don''t supply a tag on the command
+    line, the default is to run every task. For example, if you want Ansible to only
+    run the tasks tagged as `deploy`, you will run the following command:'
+  id: totrans-95
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个剧本定义了`patch`、`deploy`和`config`标签。如果你事先知道要执行哪个操作，可以通过提供正确的参数来运行 Ansible，只执行你选择的操作。如果在命令行中没有提供标签，则默认会运行所有任务。例如，如果你只想让
+    Ansible 执行标记为`deploy`的任务，你可以运行以下命令：
+- en: '[PRE10]'
+  id: totrans-96
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE10]'
+- en: 'In addition to working on discrete tasks, tags are also available to roles,
+    which make Ansible apply only the roles for the tags that have been supplied on
+    the command line. You apply them similarly to the way they are applied to tasks.
+    For example, refer to the following code:'
+  id: totrans-97
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 除了适用于离散任务，标签也可以应用于角色，这使得 Ansible 只应用在命令行中提供的标签对应的角色。你可以像应用标签到任务一样应用它们。例如，参考以下代码：
+- en: '[PRE11]'
+  id: totrans-98
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE11]'
+- en: In the preceding code, the `common` role does not get any tags, and will not
+    be run if there are any tags applied. If the `patch` tag is applied, the `apache`
+    and `website2` roles will be applied, but not `common`. If the `deploy` tag is
+    applied; only the `website2` tag will be run. This will shorten the time required
+    to patch servers or run deployments, as the unnecessary steps will be completely
+    skipped.
+  id: totrans-99
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在前面的代码中，`common` 角色没有任何标签，如果应用了任何标签，它将不会被运行。如果应用了 `patch` 标签，则会应用 `apache` 和
+    `website2` 角色，但不会应用 `common`。如果应用了 `deploy` 标签，则只会运行 `website2` 角色。这样可以缩短修补服务器或运行部署所需的时间，因为不必要的步骤将被完全跳过。
+- en: Ansible's pull mode
+  id: totrans-100
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: Ansible 的拉取模式
+- en: Ansible includes a pull mode that can drastically improve the scalability of
+    your playbooks. So far we have only covered using Ansible to configure another
+    machine over SSH. This is a contrast to Ansible's pull mode, which runs on the
+    host that you wish to configure. Since `ansible-pull` runs on the machine that
+    it is configuring, it doesn't need to make connections to other machines and runs
+    much faster. In this mode, you provide your configuration in a git repository
+    that Ansible downloads and uses to configure your machine.
+  id: totrans-101
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 包含一个拉取模式，可以显著提升你的 playbook 的可扩展性。到目前为止，我们只讲了如何通过 SSH 使用 Ansible 配置另一台机器。这与
+    Ansible 的拉取模式不同，拉取模式在你想要配置的主机上运行。由于 `ansible-pull` 在配置的机器上运行，它不需要与其他机器建立连接，因此运行速度更快。在这种模式下，你将配置放在一个
+    Git 仓库中，Ansible 会下载并使用这些配置来配置你的机器。
+- en: 'You should use Ansible''s pull mode in the following situations:'
+  id: totrans-102
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你应该在以下情况使用 Ansible 的拉取模式：
+- en: Your node might not be available when configuring them, such as members of auto-scaling
+    server farms
+  id: totrans-103
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在配置节点时，你的节点可能无法访问，比如自动扩展服务器集群中的成员。
+- en: You have a large amount of machines to configure and even with large values
+    of forks, it would take a long time to configure them all
+  id: totrans-104
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 你有大量机器需要配置，即使使用较大的 fork 值，也会花费很长时间来配置它们。
+- en: You want machines to update their configuration automatically when the repository
+    changes
+  id: totrans-105
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 你希望机器在仓库更新时自动更新它们的配置。
+- en: You want to run Ansible on a machine that may not have network access yet, such
+    as in a kick start post install
+  id: totrans-106
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 你可能想在一台可能没有网络访问权限的机器上运行 Ansible，比如在启动后安装的 kickstart 环境中。
+- en: 'However, the pull mode does have the following disadvantages that make it unsuitable
+    for certain circumstances:'
+  id: totrans-107
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，拉取模式有以下一些缺点，这使得它不适用于某些特定的场景：
+- en: To connect to other machines and gather variables, or to copy a file, you need
+    to have credentials on the managed nodes
+  id: totrans-108
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 要连接到其他机器并收集变量，或复制文件，你需要在管理节点上拥有凭证。
+- en: You need to co-ordinate the running of the playbook across a server farm; for
+    example, if you could only take three servers offline at a time
+  id: totrans-109
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 你需要在服务器集群中协调 playbook 的运行；例如，如果你一次只能将三台服务器下线进行维护。
+- en: The servers are behind strict firewalls that don't allow incoming SSH connections
+    from the nodes you used to configure them for Ansible
+  id: totrans-110
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 这些服务器位于严格的防火墙后面，防火墙不允许从你用来配置它们的节点发起 SSH 连接。
+- en: 'The pull mode doesn''t require anything special in your playbooks, but it does
+    require some setup on the nodes you want configured. In some circumstances, you
+    can do this using Ansible''s normal push mode. Here is a small play to setup pull
+    mode on a machine:'
+  id: totrans-111
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 拉取模式不需要在 playbook 中做任何特殊设置，但需要在你想要配置的节点上进行一些配置。在某些情况下，你可以使用 Ansible 的正常推送模式来完成这项工作。这里有一个小的
+    play 用于在机器上设置拉取模式：
+- en: '[PRE12]'
+  id: totrans-112
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE12]'
+- en: 'In this example, we performed the following steps:'
+  id: totrans-113
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这个示例中，我们执行了以下步骤：
+- en: First we installed and set up **EPEL**. This is a repository with extra software
+    for CentOS. Ansible is available in the EPEL repository.
+  id: totrans-114
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 首先，我们安装并设置了 **EPEL**。这是一个包含 CentOS 额外软件的仓库，Ansible 可以在 EPEL 仓库中找到。
+- en: Next we installed Ansible, making sure to enable the EPEL repository.
+  id: totrans-115
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 接下来我们安装了 Ansible，并确保启用了 EPEL 仓库。
+- en: Then we created a directory for Ansible's pull mode to put the playbooks in.
+    Keeping these files around means you don't need to download the whole git repository
+    all the time; only updates are required.
+  id: totrans-116
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 然后，我们为 Ansible 的拉取模式创建了一个目录来存放 playbook。保留这些文件意味着你不需要每次都下载整个 Git 仓库；只需要更新即可。
+- en: Finally we set up a cron job that will try to run the `ansible-pull` mode config
+    every five minutes.
+  id: totrans-117
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 最后，我们设置了一个定时任务，每五分钟尝试运行`ansible-pull`模式配置。
+- en: Note
+  id: totrans-118
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: The preceding code downloads the repository off an internal HTTPS git server.
+    If you want to download the repository instead of SSH, you will need to add a
+    step to install SSH keys, or generate keys and copy them to the git machine.
+  id: totrans-119
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 上面的代码会从内部HTTPS git服务器下载仓库。如果你想通过SSH下载仓库，你需要添加一个步骤来安装SSH密钥，或者生成密钥并将其复制到git服务器。
+- en: Storing secrets
+  id: totrans-120
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 存储机密信息
+- en: Eventually, you will need to include sensitive data in your Ansible recipes.
+    All the recipes that we have discussed so far have to be stored on the disk in
+    plain text; if you are also storing it in source control, then third parties may
+    even have access to this data. This is risky and may be in violation of your corporate
+    policies.
+  id: totrans-121
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最终，你将需要在Ansible配方中包含敏感数据。到目前为止，我们讨论的所有配方都必须以纯文本的形式存储在磁盘上；如果你还将其存储在源代码控制中，第三方可能也能访问这些数据。这是有风险的，可能违反公司政策。
+- en: This can be avoided using Ansible vaults. Vaults are files that are encrypted
+    and can be decrypted by Ansible transparently. You can use them for includes,
+    variable files, tasks lists in roles and any other YAML formatted file that Ansible
+    uses. You can also use it with both JSON and YAML files included with the `-e`
+    command-line argument to ansible-playbook. Vault files are managed with the `ansible-vault`
+    command and can be used as if they were not encrypted at all.
+  id: totrans-122
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这可以通过使用Ansible密钥库来避免。密钥库是加密文件，Ansible可以透明地解密它们。你可以将它们用于包括、变量文件、角色中的任务列表以及Ansible使用的任何其他YAML格式文件。你还可以在使用`ansible-playbook`时，配合`-e`命令行参数使用包含JSON和YAML文件的密钥库文件。密钥库文件由`ansible-vault`命令管理，可以像没有加密一样使用。
+- en: 'The `ansible-vault` command has several modes, which are given as the first
+    argument. This table describes the modes:'
+  id: totrans-123
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`ansible-vault`命令有多个模式，作为第一个参数传递。此表描述了这些模式：'
+- en: '| Mode | Action |'
+  id: totrans-124
+  prefs: []
+  type: TYPE_TB
+  zh: '| 模式 | 操作 |'
+- en: '| --- | --- |'
+  id: totrans-125
+  prefs: []
+  type: TYPE_TB
+  zh: '| --- | --- |'
+- en: '| `Create` | This starts your default editor to create a new encrypted file
+    |'
+  id: totrans-126
+  prefs: []
+  type: TYPE_TB
+  zh: '| `创建` | 这将启动默认编辑器以创建一个新的加密文件 |'
+- en: '| `Encrypt` | This encrypts an existing file, turning it into a vault |'
+  id: totrans-127
+  prefs: []
+  type: TYPE_TB
+  zh: '| `加密` | 这将加密一个现有文件，将其转变为密钥库 |'
+- en: '| `Edit` | This edits a vault allowing you to change the content |'
+  id: totrans-128
+  prefs: []
+  type: TYPE_TB
+  zh: '| `编辑` | 这将编辑密钥库，允许你更改内容 |'
+- en: '| `Rekey` | This changes the password that is used to encrypt the vault |'
+  id: totrans-129
+  prefs: []
+  type: TYPE_TB
+  zh: '| `重设密码` | 这将更改用于加密密钥库的密码 |'
+- en: '| `Decrypt` | This decrypts the vault turning it back into a regular file |'
+  id: totrans-130
+  prefs: []
+  type: TYPE_TB
+  zh: '| `解密` | 这将解密密钥库，将其恢复为普通文件 |'
+- en: 'For example, to create a new variable file for your staging environment you
+    would run:'
+  id: totrans-131
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 例如，要为你的暂存环境创建一个新的变量文件，你可以运行：
+- en: '[PRE13]'
+  id: totrans-132
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE13]'
+- en: This command will prompt you for a password, ask you to confirm it, and then
+    open your editor so that you can add the content; finally, the encrypted content
+    will be saved in `vars/staging.yml`.
+  id: totrans-133
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 该命令会提示你输入密码，要求确认密码，然后打开编辑器让你添加内容；最后，加密的内容将保存在`vars/staging.yml`中。
+- en: When using a vault file, you need to provide the password so that they can be
+    decrypted. This can be done in one of three ways. You can give the `--ask-vault-pass`
+    argument to Ansible, which will cause Ansible to prompt for the password every
+    time it starts. You can also use the `--vault-password-file` argument, which points
+    to a file containing the password. Finally, you can add `vault_password_file`
+    to the `ansible.cfg` file to automatically make Ansible use the vault password
+    file for every command. It is important to note that only one password can be
+    supplied for each Ansible run, so you can't include several different files with
+    different passwords.
+  id: totrans-134
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用密钥库文件时，你需要提供密码以便解密。这可以通过三种方式完成。你可以将`--ask-vault-pass`参数传递给Ansible，这会导致Ansible在每次启动时都提示输入密码。你还可以使用`--vault-password-file`参数，它指向包含密码的文件。最后，你可以将`vault_password_file`添加到`ansible.cfg`文件中，使Ansible在每个命令中自动使用密钥库密码文件。需要注意的是，每次运行Ansible时只能提供一个密码，因此不能包含多个不同密码的文件。
+- en: 'In order to have Ansible prompt for a password to run a playbook that is encrypted,
+    you will do the following:'
+  id: totrans-135
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了让Ansible在运行加密的playbook时提示输入密码，你需要执行以下操作：
+- en: '[PRE14]'
+  id: totrans-136
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE14]'
+- en: Note
+  id: totrans-137
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: The password file can also be an executable. To print to the screen print to
+    standard error, to read from the user you can use `stdin` as usual and finally
+    the script needs to print the password to `stdout` before it exits.
+  id: totrans-138
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 密码文件也可以是可执行文件。要输出到屏幕上，你可以将内容输出到标准错误；要从用户处读取密码，你可以像往常一样使用`stdin`，最后脚本需要在退出之前将密码输出到`stdout`。
+- en: Summary
+  id: totrans-139
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 总结
+- en: In this chapter, we have covered the techniques required when moving from a
+    simple setup to a larger deployment. We discussed how to separate your playbook
+    into multiple parts using includes. We then looked at how we can package related
+    includes and automatically include them all at once using roles. Finally, we discussed
+    the pull mode, which allows you to automate the deployment of playbooks on the
+    remote node itself.
+  id: totrans-140
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们介绍了从简单的配置到更大规模部署时所需的技巧。我们讨论了如何使用 `include` 将你的 playbook 分成多个部分。接着，我们探讨了如何将相关的
+    `include` 打包，并通过角色一次性自动包含它们。最后，我们讨论了拉取模式，它允许你在远程节点本身上自动化 playbook 的部署。
+- en: In the next chapter, we will cover writing your own modules. We start this by
+    building a simple module using bash scripting. We then look at how Ansible searches
+    for modules, and how to make it find your own custom ones. Then, we take a look
+    at how you can use Python to write more advanced modules using features that Ansible
+    provides. Finally we will write a script that configures Ansible to pull its inventory
+    from an external source.
+  id: totrans-141
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一章中，我们将介绍如何编写你自己的模块。我们从使用 bash 脚本构建一个简单的模块开始。然后，我们将了解 Ansible 如何查找模块，以及如何让它找到你自己的自定义模块。接下来，我们看看如何使用
+    Python 编写更高级的模块，利用 Ansible 提供的功能。最后，我们将编写一个脚本，将 Ansible 配置为从外部源拉取其库存。

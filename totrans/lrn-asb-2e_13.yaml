@@ -1,0 +1,1374 @@
+- en: '13'
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '13'
+- en: Scanning Your Ansible Playbooks
+  id: totrans-1
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 扫描你的 Ansible 剧本
+- en: 'In this chapter, you will learn how to scan your Ansible playbooks using two
+    third-party tools: Checkov and KICS. Both are open source and can help you identify
+    and fix common configuration issues within your Ansible code, such as syntax errors,
+    misconfigurations, hardcoded secrets, and deployment problems, which could lead
+    to potential breaches.'
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章中，你将学习如何使用两个第三方工具扫描你的 Ansible 剧本：Checkov 和 KICS。它们都是开源工具，可以帮助你识别和修复 Ansible
+    代码中的常见配置问题，如语法错误、配置错误、硬编码的密钥和部署问题，这些都可能导致潜在的安全漏洞。
+- en: 'By the end of this chapter, you will have done the following:'
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 到本章结束时，你将完成以下任务：
+- en: Installed and run Checkov and KICS scans on our Ansible playbooks
+  id: totrans-4
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在我们的 Ansible 剧本上安装并运行 Checkov 和 KICS 扫描
+- en: Reviewed the results and reports generated during the scans
+  id: totrans-5
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 审查扫描过程中生成的结果和报告
+- en: Fixed any issues detected during the scans
+  id: totrans-6
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 修复扫描过程中检测到的任何问题
+- en: 'The chapter covers the following topics:'
+  id: totrans-7
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章涉及以下主题：
+- en: Why scan your playbooks?
+  id: totrans-8
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 为什么要扫描你的剧本？
+- en: Docker overview and installation
+  id: totrans-9
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Docker 概述与安装
+- en: Exploring Checkov
+  id: totrans-10
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 探索 Checkov
+- en: Exploring KICS
+  id: totrans-11
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 探索 KICS
+- en: Technical requirements
+  id: totrans-12
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 技术要求
+- en: Rather than installing the tools locally, we will use Docker to execute the
+    scans; there will be a little detail on how to install Docker later in the chapter.
+    Additionally, we will be scanning a variation of the playbook we wrote in [*Chapter
+    11*](B21620_11.xhtml#_idTextAnchor501), *Highly Available Cloud Deployments*;
+    this can be found in the repository at [https://github.com/PacktPublishing/Learn-Ansible-Second-Edition/tree/main/Chapter13](https://github.com/PacktPublishing/Learn-Ansible-Second-Edition/tree/main/Chapter13).
+  id: totrans-13
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将不再在本地安装工具，而是使用 Docker 来执行扫描；本章稍后会有关于如何安装 Docker 的详细内容。此外，我们将扫描我们在 [*第11章*](B21620_11.xhtml#_idTextAnchor501)
+    中编写的剧本的一个变种，*高可用云部署*；该剧本可以在 [https://github.com/PacktPublishing/Learn-Ansible-Second-Edition/tree/main/Chapter13](https://github.com/PacktPublishing/Learn-Ansible-Second-Edition/tree/main/Chapter13)
+    的代码库中找到。
+- en: Why scan your playbooks?
+  id: totrans-14
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 为什么要扫描你的剧本？
+- en: While we have been taking a sensible approach to deploying our cloud resources
+    in previous chapters, many of the guardrails we have put in place have all been
+    ones I have learned through experience and by applying a little common sense.
+  id: totrans-15
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 虽然在前几章中我们采取了合理的方式来部署云资源，但我们所设置的许多保护措施都是我通过经验和一些常识积累而来的。
+- en: For example, when launching a virtual machine resource in either Microsoft Azure
+    or Amazon Web Services, we have been locking down the SSH or RDP service to the
+    host’s public IP address, which is running Ansible; up until now, this has been
+    your local machine rather than just opening SSH or RDP to the world by using `0.0.0.0/0`
+    as the source address, which is the CIDR notation for *“**allow all.”*
+  id: totrans-16
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 例如，在微软 Azure 或亚马逊 Web 服务（AWS）中启动虚拟机资源时，我们一直将 SSH 或 RDP 服务限制为主机的公共 IP 地址，该主机运行着
+    Ansible；直到现在，这个主机通常是你的本地机器，而不是像使用 `0.0.0.0/0` 这样的源地址将 SSH 或 RDP 开放给全世界，这个地址的 CIDR
+    表示法是 *“**允许所有**”*。
+- en: This is not a problem for the workloads we have been working on; having a virtual
+    machine exposed directly to the internet with its management port open for everyone
+    to access is not considered best practice, as it will expose you to brute-force
+    attacks, which, if they are successful, will not only lead to that machine being
+    compromised; it could also act as a gateway to the rest of your network and other
+    associated resources such as databases and storage.
+  id: totrans-17
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对我们一直在处理的工作负载来说，这不是一个问题；将虚拟机直接暴露在互联网上，并且其管理端口对所有人开放并不是最佳实践，因为这将使你容易受到暴力破解攻击。如果攻击成功，不仅该机器可能会被攻破，还可能成为进入你网络其他部分以及其他相关资源（如数据库和存储）的跳板。
+- en: I would class the preceding example as common sense, but as we launch more and
+    more cloud services using our playbooks, how can we ensure that we are following
+    best practices for services that maybe we haven’t had much experience with outside
+    of getting something up and running? How can we put some guardrails in place to
+    stop us from doing something before resources are deployed?
+  id: totrans-18
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我将前面的示例归类为常识，但随着我们使用剧本（playbooks）发布越来越多的云服务，如何确保我们遵循最佳实践，特别是对于那些我们可能没有太多经验的服务，除了让它们上线之外？我们如何在资源部署之前设置一些保护措施，防止做出错误的操作？
+- en: This is where the two tools we will look at in this chapter come in; they are
+    designed to scan your playbooks, look at the configuration, and compare them to
+    their best practice policies. Eventually, in [*Chapter 15*](B21620_15.xhtml#_idTextAnchor641),
+    *Using Ansible with GitHub Actions and Azure DevOps*, we will build one of the
+    two tools into our deployment pipelines, but for now, we are going to look at
+    the tools and run them locally using Docker.
+  id: totrans-19
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这就是本章将要介绍的两款工具发挥作用的地方；它们的设计目的是扫描您的剧本，查看配置，并将其与最佳实践策略进行比较。最终，在[*第 15 章*](B21620_15.xhtml#_idTextAnchor641)，*使用
+    Ansible 与 GitHub Actions 和 Azure DevOps*，我们将把其中一个工具构建到我们的部署流水线中，但目前，我们将查看这些工具并使用
+    Docker 在本地运行它们。
+- en: Docker overview and installation
+  id: totrans-20
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Docker 概述与安装
+- en: Docker, the platform that made containers popular, is both an open source and
+    commercial solution that enables you to package all of the elements of your application,
+    including libraries and other dependencies, alongside your own code in a single,
+    easy-to-distribute package; this means that we won’t need to download and install
+    all of the prerequisites for the tools that we will be running in this chapter
+    or need to compile the tools from source to get working executables for our system.
+  id: totrans-21
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Docker，作为一个让容器流行的平台，既是开源解决方案也是商业解决方案，使您能够将应用程序的所有元素，包括库和其他依赖项，与您自己的代码一起打包到一个易于分发的包中；这意味着我们不需要为本章运行的工具下载和安装所有的前置条件，也不需要从源代码编译工具来获得适用于我们系统的可执行文件。
+- en: To follow the example in this chapter, you must install **Docker Desktop** on
+    your host.
+  id: totrans-22
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要按照本章的示例操作，您必须在主机上安装**Docker Desktop**。
+- en: Installing Docker Desktop on macOS
+  id: totrans-23
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 在 macOS 上安装 Docker Desktop
+- en: 'To install Docker Desktop on macOS, follow these three steps:'
+  id: totrans-24
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要在 macOS 上安装 Docker Desktop，请按照以下三个步骤操作：
+- en: 'Choose the appropriate installer for your Mac’s architecture:'
+  id: totrans-25
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 选择适合您 Mac 架构的安装程序：
+- en: For ARM64 (Apple Silicon), use [https://desktop.docker.com/mac/main/arm64/Docker.dmg](https://desktop.docker.com/mac/main/arm64/Docker.dmg).
+  id: totrans-26
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 对于 ARM64（Apple Silicon），请使用 [https://desktop.docker.com/mac/main/arm64/Docker.dmg](https://desktop.docker.com/mac/main/arm64/Docker.dmg)。
+- en: For AMD64 (Intel Macs), use [https://desktop.docker.com/mac/main/amd64/Docker.dmg](https://desktop.docker.com/mac/main/amd64/Docker.dmg).
+  id: totrans-27
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 对于 AMD64（Intel Macs），请使用 [https://desktop.docker.com/mac/main/amd64/Docker.dmg](https://desktop.docker.com/mac/main/amd64/Docker.dmg)。
+- en: After downloading, open the `Docker.dmg` file by double-clicking it. In the
+    opened window, drag the Docker icon to your Applications folder to install Docker
+    Desktop. It will be installed at `/Applications/Docker.app`.
+  id: totrans-28
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 下载完成后，双击打开`Docker.dmg`文件。在弹出的窗口中，将 Docker 图标拖入您的应用程序文件夹以安装 Docker Desktop。它将被安装在`/Applications/Docker.app`。
+- en: To launch Docker, navigate to the Applications folder and double-click on **Docker**;
+    this will start **Docker Desktop**.
+  id: totrans-29
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 要启动 Docker，请前往应用程序文件夹，双击**Docker**；这将启动**Docker Desktop**。
+- en: When you first launch Docker Desktop, it will walk you through the remaining
+    installation steps and run in the background once complete.
+  id: totrans-30
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当您首次启动 Docker Desktop 时，它将引导您完成剩余的安装步骤，并在完成后在后台运行。
+- en: Installing Docker Desktop on Windows
+  id: totrans-31
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 在 Windows 上安装 Docker Desktop
+- en: 'To install Docker Desktop on Windows, follow these instructions:'
+  id: totrans-32
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要在 Windows 上安装 Docker Desktop，请按照以下说明操作：
+- en: 'Download the Docker Desktop Installer for Windows from this link: [https://desktop.docker.com/win/main/amd64/Docker%20Desktop%20Installer.exe](https://desktop.docker.com/win/main/amd64/Docker%20Desktop%20Installer.exe).'
+  id: totrans-33
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 从此链接下载 Windows 版本的 Docker Desktop 安装程序：[https://desktop.docker.com/win/main/amd64/Docker%20Desktop%20Installer.exe](https://desktop.docker.com/win/main/amd64/Docker%20Desktop%20Installer.exe)。
+- en: Run the downloaded `C:\Program Files\Docker\Docker`.
+  id: totrans-34
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 运行下载的`C:\Program Files\Docker\Docker`。
+- en: During the installation, you may be prompted to choose whether to use **WSL
+    2 (Windows Subsystem for Linux 2)** or **Hyper-V** as the backend. Select the
+    **Use WSL 2 instead of Hyper-V** option, as we have used this throughout the book
+    to run Ansible.
+  id: totrans-35
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在安装过程中，您可能会被提示选择是否使用**WSL 2（Windows Subsystem for Linux 2）**或**Hyper-V**作为后端。请选择**使用
+    WSL 2 而非 Hyper-V**选项，因为我们在本书中使用的是这一选项来运行 Ansible。
+- en: Follow the on-screen instructions provided by the installation wizard to authorize
+    the installer and complete the installation process.
+  id: totrans-36
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 按照安装向导提供的屏幕指示授权安装程序并完成安装过程。
+- en: Once the installation is completed, click **Close** to finish the setup.
+  id: totrans-37
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 安装完成后，点击**关闭**以完成设置。
+- en: From here, you can open Docker Desktop from the start menu, and it will run
+    in the background.
+  id: totrans-38
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 从这里，您可以从开始菜单打开 Docker Desktop，它将会在后台运行。
+- en: Installing Docker Desktop on Linux
+  id: totrans-39
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 在 Linux 上安装 Docker Desktop
+- en: If you are running a Linux Desktop, the instructions will differ slightly depending
+    on your Linux distribution; for detailed instructions, see [https://docs.docker.com/desktop/linux/install/](https://docs.docker.com/desktop/linux/install/).
+  id: totrans-40
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你在运行 Linux 桌面系统，指令会根据你的 Linux 发行版有所不同；有关详细说明，请参见 [https://docs.docker.com/desktop/linux/install/](https://docs.docker.com/desktop/linux/install/)。
+- en: Now, with Docker Desktop installed, we can look at the first of the two tools
+    we will look at.
+  id: totrans-41
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，安装了 Docker Desktop 后，我们可以开始了解我们将要使用的两个工具中的第一个。
+- en: Exploring Checkov
+  id: totrans-42
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 探索 Checkov
+- en: Checkov is an open source static code analysis tool maintained by Prisma Cloud
+    designed for **infrastructure-as-code** (**IaC**).
+  id: totrans-43
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Checkov 是一个开源的静态代码分析工具，由 Prisma Cloud 维护，专为 **基础设施即代码** (**IaC**) 设计。
+- en: It helps developers and DevOps teams identify misconfigurations in their files
+    before deployment to cloud environments. By scanning the code for tools such as
+    Terraform, CloudFormation, Kubernetes, and others, including Ansible, Checkov
+    checks against best practices and compliance guidelines, ensuring your infrastructure
+    deployments are secure, efficient, and compliant with industry standards before
+    it is deployed.
+  id: totrans-44
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 它帮助开发人员和 DevOps 团队在部署到云环境之前识别文件中的错误配置。通过扫描 Terraform、CloudFormation、Kubernetes
+    以及其他工具（包括 Ansible）的代码，Checkov 会检查最佳实践和合规性指南，确保你的基础设施部署在发布之前是安全、高效且符合行业标准的。
+- en: Important note
+  id: totrans-45
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 重要提示
+- en: You may have noticed that Ansible is mentioned as “others” in the preceding
+    description; that is because support for Ansible was only just introduced at the
+    time of writing this in early 2024\. Because of this, while we will be looking
+    at Checkov during this chapter, we will not be going into as much detail about
+    Checkov or the second tool, Kics.
+  id: totrans-46
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可能已经注意到，前面的描述中提到了 Ansible 作为“其他工具”；这是因为在撰写本文时（2024 年初），Ansible 的支持才刚刚被引入。因此，虽然我们会在本章中查看
+    Checkov，但我们不会深入讲解 Checkov 或第二个工具 Kics。
+- en: 'Before we run our scan, we need a playbook; open your terminal and check out
+    the scan GitHub repository by running the following:'
+  id: totrans-47
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在运行扫描之前，我们需要一个 playbook；打开终端并通过运行以下命令检查 GitHub 仓库：
+- en: '[PRE0]'
+  id: totrans-48
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: This repository contains a copy of the final playbook code from [*Chapter 11*](B21620_11.xhtml#_idTextAnchor501),
+    *Highly Available* *Cloud Deployments*.
+  id: totrans-49
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 该仓库包含来自 [*第 11 章*](B21620_11.xhtml#_idTextAnchor501) 的最终 playbook 代码，*高度可用*
+    *云部署*。
+- en: 'Now that we have the code checked out, we can download the Checkov container
+    image. To do this, we need to pull it from Docker Hub by running the following
+    command:'
+  id: totrans-50
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 既然我们已经检查了代码，接下来可以下载 Checkov 容器镜像。为此，我们需要通过运行以下命令从 Docker Hub 拉取它：
+- en: '[PRE1]'
+  id: totrans-51
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: This will download the image from [https://hub.docker.com/r/bridgecrew/checkov](https://hub.docker.com/r/bridgecrew/checkov),
+    and with it downloaded, we can now scan our playbook code.
+  id: totrans-52
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这将从 [https://hub.docker.com/r/bridgecrew/checkov](https://hub.docker.com/r/bridgecrew/checkov)
+    下载镜像，下载完成后，我们现在可以扫描我们的 playbook 代码了。
+- en: 'To run the scan, issue the following commands:'
+  id: totrans-53
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要运行扫描，请执行以下命令：
+- en: '[PRE2]'
+  id: totrans-54
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: 'Before we review the results, let’s quickly break down the command that we
+    have just run:'
+  id: totrans-55
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在查看结果之前，让我们简要分析一下刚才执行的命令：
+- en: '`docker container run` executes a new Docker container.'
+  id: totrans-56
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`docker container run` 执行一个新的 Docker 容器。'
+- en: '`--rm` instructs Docker to remove the container after it exits automatically.'
+  id: totrans-57
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`--rm` 指示 Docker 在容器退出后自动移除容器。'
+- en: '`--tty` allocates a pseudo-TTY, which makes the scan output readable to our
+    session.'
+  id: totrans-58
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`--tty` 分配一个伪终端，使扫描输出对我们的会话可读。'
+- en: '`--volume ./:/ansible` mounts the current directory, defined as `./`, to the
+    `/ansible` path inside the container.'
+  id: totrans-59
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`--volume ./:/ansible` 将当前目录（定义为 `./`）挂载到容器内的 `/ansible` 路径。'
+- en: '`--workdir /ansible` sets the working directory inside the container to `/ansible`.'
+  id: totrans-60
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`--workdir /ansible` 将容器内的工作目录设置为 `/ansible`。'
+- en: '`bridgecrew/checkov` specifies the Checkov Docker image we have just pulled
+    from the Docker Hub.'
+  id: totrans-61
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`bridgecrew/checkov` 指定了我们刚从 Docker Hub 拉取的 Checkov Docker 镜像。'
+- en: '`--directory /ansible` instructs Checkov to scan files in `/ansible`; it is
+    not part of the Docker command but is sending instructions to the Checkov binary,
+    which is the default entry point for our container to run the scan. If we had
+    Checkov installed locally, then this would be the equivalent to running the `checkov
+    --directory /``ansible` command.'
+  id: totrans-62
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`--directory /ansible` 指示 Checkov 扫描 `/ansible` 目录中的文件；这不是 Docker 命令的一部分，而是向
+    Checkov 二进制文件发送指令，Checkov 是我们容器运行扫描的默认入口。如果我们在本地安装了 Checkov，那么这相当于运行 `checkov
+    --directory /ansible` 命令。'
+- en: 'Now that we have broken down the command used to run the scan, we can look
+    at the output of the scan itself, starting with the overview:'
+  id: totrans-63
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经拆解了用于运行扫描的命令，接下来我们可以查看扫描本身的输出，从概览开始：
+- en: '[PRE3]'
+  id: totrans-64
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: 'As you can see, we have more passes than failed checks, which is a good start;
+    the next section of the output details the checks, starting with the following
+    passes:'
+  id: totrans-65
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，我们的通过检查多于失败检查，这是个不错的开始；输出的下一部分详细列出了检查内容，从以下的通过检查开始：
+- en: '[PRE4]'
+  id: totrans-66
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: Our first pass checks to see if we are instructing the `ansible.builtin.get_url`
+    module to bypass certificate validation when connecting to an HTTPS site to download
+    content.
+  id: totrans-67
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们的第一次检查是查看我们是否指示 `ansible.builtin.get_url` 模块在连接到 HTTPS 网站下载内容时绕过证书验证。
+- en: 'The next four passes are for the two times our playbook uses the `ansible.builtin.apt`
+    module:'
+  id: totrans-68
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来的四次检查是针对我们在 playbook 中使用 `ansible.builtin.apt` 模块的两次情况：
+- en: '[PRE5]'
+  id: totrans-69
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: 'The first pair of passes ensures that we are not installing any packages that
+    are not correctly signed. The second pair of passes also checks for the same thing:'
+  id: totrans-70
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 第一对检查确保我们没有安装任何未正确签名的软件包。第二对检查也检查相同的内容：
+- en: '[PRE6]'
+  id: totrans-71
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: However, this time, the check ensures that we are not using the force parameter,
+    which, as you can see from the description, disables signature checks and can
+    also leave our APT database in a little bit of a state if things go wrong.
+  id: totrans-72
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，这次检查确保我们没有使用 force 参数，正如你从描述中看到的，这会禁用签名检查，并且如果出现问题，还可能导致我们的 APT 数据库处于某种不稳定状态。
+- en: 'Now, we move on to the failures; the first failure is the one we called out
+    as the example when we spoke about why you would want to use the tools we are
+    covering in this chapter:'
+  id: totrans-73
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来，我们进入失败的部分；第一个失败是我们在讲解为什么要使用本章所介绍的工具时提到的例子：
+- en: '[PRE7]'
+  id: totrans-74
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE7]'
+- en: So, what gives? As you may recall from [*Chapter 11*](B21620_11.xhtml#_idTextAnchor501),
+    *Highly Available Cloud Deployments*, the instance we are launching is only temporary
+    and accessible while the playbook is running. However, Checkov doesn’t know this,
+    so it rightly calls it out and, as you can see, provides details on why this is
+    via the guide URL, which, for this check, is [https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/public-policies/public-12](https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/public-policies/public-12).
+  id: totrans-75
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 那么，问题出在哪里？正如你可能还记得的 [*第 11 章*](B21620_11.xhtml#_idTextAnchor501)，《*高可用云部署*》中提到的，我们启动的实例是临时的，只能在
+    playbook 运行时访问。然而，Checkov 并不知道这一点，所以它正确地指出了这一点，并且正如你所看到的，提供了通过指南 URL 解释原因，对于此检查，指南
+    URL 是 [https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/public-policies/public-12](https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/public-policies/public-12)。
+- en: 'Moving on to the next failure in the scan, we see the following:'
+  id: totrans-76
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 继续查看扫描中的下一个失败，我们看到如下内容：
+- en: '[PRE8]'
+  id: totrans-77
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE8]'
+- en: In this case, Checkov believes a parameter is missing from the `amazon.aws.ec2_instance`
+    block when we launch the temporary EC2 instance. It is recommended that the parameter
+    `ebs_optimized` is set to `true` rather than keeping the value as `false`, which
+    is the default for the parameter.
+  id: totrans-78
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这种情况下，Checkov 认为在我们启动临时 EC2 实例时，`amazon.aws.ec2_instance` 块中缺少一个参数。建议将参数 `ebs_optimized`
+    设置为 `true`，而不是保持默认的 `false` 值。
+- en: 'The final failure in the scan output is as follows:'
+  id: totrans-79
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 扫描输出中的最后一个失败如下：
+- en: '[PRE9]'
+  id: totrans-80
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE9]'
+- en: As Checkov is doing static code analysis, it isn’t designed to check for the
+    contents of variables. Because the policy checks that we are providing a secure
+    URL (that is, `https://domain.com/` in the `url` section of the task) it fails,
+    as it is just seeing the `{{ wp_cli.download }}` variable name rather than the
+    contents of the variable.
+  id: totrans-81
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于 Checkov 是进行静态代码分析，它并没有设计用来检查变量的内容。因为我们提供的策略是检查是否使用了安全的 URL（也就是任务中的 `url`
+    部分是 `https://domain.com/`），它失败了，因为它只看到 `{{ wp_cli.download }}` 变量名，而不是变量的内容。
+- en: If you are keeping count, that makes two of the three failed checks false positives;
+    for the first failure, we can accept the risk, as we know the machine is only
+    temporary, and we know that we are locking the EC2 instance down to trusted IP
+    addresses.
+  id: totrans-82
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你在跟踪的话，那就意味着三次失败检查中有两次是误报；对于第一次失败，我们可以接受风险，因为我们知道该机器只是临时的，并且我们已经将 EC2 实例限制为可信的
+    IP 地址。
+- en: For the third failure, we can confirm that the contents of the `{{ wp_cli.download
+    }}` variable is a secure URL, as it is `https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar`.
+  id: totrans-83
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于第三次失败，我们可以确认 `{{ wp_cli.download }}` 变量的内容是一个安全的 URL，因为它是 `https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar`。
+- en: The second failure is the only one we need to look at; let’s take a look at
+    the tasks, starting with the `Amazon.aws.ec2_instance` one.
+  id: totrans-84
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 第二个失败是唯一需要我们查看的；让我们从 `Amazon.aws.ec2_instance` 任务开始看。
+- en: Here, we need to add two things; the first thing is a comment to instruct Checkov
+    that we accept the risk being highlighted by the `CKV_AWS_88` policy, and then
+    we need to set `ebs_optimized` to `true`.
+  id: totrans-85
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这里，我们需要添加两件事；第一件事是一个注释，指示 Checkov 我们接受 `CKV_AWS_88` 策略所突出显示的风险，然后我们需要将 `ebs_optimized`
+    设置为 `true`。
+- en: 'The following code shows the updates I have made to `roles/ec2tmp/tasks/main.yml`;
+    everything below the `name` parameter remains as is:'
+  id: totrans-86
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下代码展示了我对 `roles/ec2tmp/tasks/main.yml` 所做的更新；`name` 参数下方的内容保持不变：
+- en: '[PRE10]'
+  id: totrans-87
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE10]'
+- en: 'As you can see, instructing Checkov to skip a check is straightforward; the
+    comment is split into four parts:'
+  id: totrans-88
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，指示 Checkov 跳过检查非常简单；注释分为四个部分：
+- en: '`#` is the standard syntax for starting a comment in a YAML file'
+  id: totrans-89
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`#` 是在 YAML 文件中开始注释的标准语法'
+- en: '`checkov:` instructs Checkov to pay attention to the contents of the comment'
+  id: totrans-90
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`checkov:` 指示 Checkov 关注注释的内容'
+- en: '`skip=CKV_AWS_88:` instructs Checkov to skip the `CKV_AWS_88` check when it
+    runs'
+  id: totrans-91
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`skip=CKV_AWS_88:` 指示 Checkov 在运行时跳过 `CKV_AWS_88` 检查'
+- en: '`"While a public IP address is assigned to the instance, it is locked down
+    by the security group and the instance is temporary."` is the suppress comment
+    that will appear in the output when we run the scan'
+  id: totrans-92
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`"虽然实例分配了公共 IP 地址，但它已通过安全组进行限制，并且实例是临时的。"` 是我们运行扫描时将在输出中显示的抑制注释'
+- en: The next line in the update task implements the recommendation that we set the
+    `ebs_optimized` parameter to `true`.
+  id: totrans-93
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 更新任务中的下一行实现了我们将 `ebs_optimized` 参数设置为 `true` 的建议。
+- en: 'Now, we move on to the second task, which we need to update, and can be found
+    in `roles/wordpress/tasks/main.yml`. Here, we just add a comment to make Checkov
+    skip `CKV2_ANSIBLE_2`:'
+  id: totrans-94
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，我们进入第二个任务，需要更新的任务位于 `roles/wordpress/tasks/main.yml` 中。这里，我们只需要添加一个注释，让 Checkov
+    跳过 `CKV2_ANSIBLE_2`：
+- en: '[PRE11]'
+  id: totrans-95
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE11]'
+- en: 'If you are following along, the repository contains a branch called `checkov`;
+    with the preceding detailed changes applied, you can switch to it by running the
+    following:'
+  id: totrans-96
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你跟着操作，仓库中有一个名为 `checkov` 的分支；应用前述详细更改后，你可以通过运行以下命令切换到该分支：
+- en: '[PRE12]'
+  id: totrans-97
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE12]'
+- en: 'Then, we can re-run the scan using the following command:'
+  id: totrans-98
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后，我们可以使用以下命令重新运行扫描：
+- en: '[PRE13]'
+  id: totrans-99
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE13]'
+- en: 'I can see that my changes have both suppressed and resolved the three failures:'
+  id: totrans-100
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我看到我的更改已经抑制并解决了三个失败：
+- en: '[PRE14]'
+  id: totrans-101
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE14]'
+- en: 'We have the pass for `CKV_AWS_135`:'
+  id: totrans-102
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们已经通过了 `CKV_AWS_135`：
+- en: '[PRE15]'
+  id: totrans-103
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE15]'
+- en: 'We also have the two false positives now showing:'
+  id: totrans-104
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，我们也看到了显示的两个假阳性：
+- en: '[PRE16]'
+  id: totrans-105
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE16]'
+- en: 'For the second one, we have the following:'
+  id: totrans-106
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于第二个问题，我们有如下内容：
+- en: '[PRE17]'
+  id: totrans-107
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE17]'
+- en: As you can see, our comments are visible for all to see.
+  id: totrans-108
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，我们的注释对所有人都是可见的。
+- en: 'So, returning to the call-out at the start of the section, why have we covered
+    this tool if Checkov doesn’t have full coverage for Ansible? As you can see from
+    the output of the scan of our playbook, while there is not much coverage now,
+    each new release brings additional Ansible policies. Hence, as time goes on, coverage
+    should only get more robust, and hopefully, we will bring this promising tool
+    in line with the second tool we will look at: **KICS**, or to give it its full
+    title, **keeping infrastructure as** **code secure**.'
+  id: totrans-109
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 那么，回到本节开头的提问，既然 Checkov 并未完全覆盖 Ansible，为什么我们还要介绍这个工具呢？从我们对 playbook 执行扫描的输出中可以看到，尽管现在覆盖面不大，但每次新版本发布时都会增加更多的
+    Ansible 策略。因此，随着时间的推移，覆盖面应该只会变得更加健全，并且希望我们能将这个有前景的工具与我们将要看的第二个工具对接：**KICS**，或者其完整名称是
+    **保持基础设施即代码的安全**。
+- en: Exploring KICS
+  id: totrans-110
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 探索 KICS
+- en: KICS is another static code analysis tool, and like Checkov, it is open source.
+    It is designed to help you find common misconfiguration issues, potential compliance
+    issues, and even security vulnerabilities within your IaC code. It ships with
+    support for Kubernetes, Docker, AWS CloudFormation, Terram, and, of course, Ansible,
+    which we will be focusing on in this chapter.
+  id: totrans-111
+  prefs: []
+  type: TYPE_NORMAL
+  zh: KICS 是另一个静态代码分析工具，像 Checkov 一样，它是开源的。它旨在帮助你发现基础设施即代码（IaC）中的常见配置错误、潜在合规问题，甚至安全漏洞。它支持
+    Kubernetes、Docker、AWS CloudFormation、Terram，当然还有 Ansible，在本章中我们将重点讨论 Ansible。
+- en: KICS is designed to be easy to install, understand, and integrate into CI/CD
+    pipelines. It includes over 2,400 customizable rules and is built for extensibility,
+    allowing for the easy addition of support for new IaC tools and updates to existing
+    integrations.
+  id: totrans-112
+  prefs: []
+  type: TYPE_NORMAL
+  zh: KICS 设计易于安装、理解并集成到 CI/CD 流水线中。它包括超过 2400 条可定制规则，并且具备可扩展性，允许轻松添加对新的 IaC 工具的支持，并更新现有集成。
+- en: KICS is maintained and supported by **Checkmarx** specialists in software application
+    security testing, meaning that KICS has a good pedigree.
+  id: totrans-113
+  prefs: []
+  type: TYPE_NORMAL
+  zh: KICS 由 **Checkmarx** 的软件应用安全测试专家维护和支持，这意味着 KICS 具有很好的背景。
+- en: Running the scan
+  id: totrans-114
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 运行扫描
+- en: 'Let’s dive straight in. If you haven’t already, check out the example repository
+    using the following command:'
+  id: totrans-115
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们直接开始。如果你还没有，使用以下命令查看示例仓库：
+- en: '[PRE18]'
+  id: totrans-116
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE18]'
+- en: 'Now, we can pull the latest container image from Docker Hub ([https://hub.docker.com/r/checkmarx/kics](https://hub.docker.com/r/checkmarx/kics))
+    by using the following command:'
+  id: totrans-117
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，我们可以通过使用以下命令从 Docker Hub ([https://hub.docker.com/r/checkmarx/kics](https://hub.docker.com/r/checkmarx/kics))
+    拉取最新的容器镜像：
+- en: '[PRE19]'
+  id: totrans-118
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE19]'
+- en: 'Change to the folder containing our Ansible playbook:'
+  id: totrans-119
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 切换到包含我们 Ansible playbook 的文件夹：
+- en: '[PRE20]'
+  id: totrans-120
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE20]'
+- en: 'Then run the scan itself:'
+  id: totrans-121
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后运行扫描：
+- en: '[PRE21]'
+  id: totrans-122
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE21]'
+- en: As you can see, the docker command follows the same pattern we discussed when
+    we ran Checkov up until where we pass the options to the KICS binary; here, we
+    instruct KICS to run `scan` against the `--path /ansible/`, which is the directory
+    we have mounting from our host machine inside the container using the `--``volume`
+    option.
+  id: totrans-123
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，docker 命令遵循了我们在运行 Checkov 时讨论的相同模式，直到我们将选项传递给 KICS 二进制文件；在这里，我们指示 KICS
+    对 `--path /ansible/` 进行 `scan`，这是我们通过 `--volume` 选项将主机机上的目录挂载到容器中的路径。
+- en: Reviewing the results
+  id: totrans-124
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 审查结果
+- en: 'Now, let’s take a look at the result of the scan; KICS presents its output,
+    which is slightly different from Checkov in that the initial output is designed
+    to give real-time information on the scan itself:'
+  id: totrans-125
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，让我们来看一下扫描的结果；KICS 展示了它的输出，这与 Checkov 略有不同，因为初始输出旨在提供关于扫描本身的实时信息：
+- en: '[PRE22]'
+  id: totrans-126
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE22]'
+- en: Let’s now work through the various results and group them by severity levels.
+  id: totrans-127
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，让我们逐步分析各种结果，并按严重性级别进行分组。
+- en: Info and low-severity results
+  id: totrans-128
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 信息和低严重性结果
+- en: 'The first result highlights potentially risky file permissions for the files
+    we create (using templates) or copy:'
+  id: totrans-129
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 第一个结果突出了我们创建（使用模板）或复制的文件可能存在的风险文件权限：
+- en: '[PRE23]'
+  id: totrans-130
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE23]'
+- en: 'It then goes on to list all the affected files; here is a snippet of the first
+    few:'
+  id: totrans-131
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后，它列出了所有受影响的文件；以下是前几个文件的片段：
+- en: '[PRE24]'
+  id: totrans-132
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE24]'
+- en: 'Here is another:'
+  id: totrans-133
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这是另一个：
+- en: '[PRE25]'
+  id: totrans-134
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE25]'
+- en: 'Moving on to the next issue, we see the following:'
+  id: totrans-135
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 继续下一个问题，我们看到以下内容：
+- en: '[PRE26]'
+  id: totrans-136
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE26]'
+- en: 'Again, here is a sample of where it has spotted the issue:'
+  id: totrans-137
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 再次，下面是它发现问题的一个示例：
+- en: '[PRE27]'
+  id: totrans-138
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE27]'
+- en: 'The next and final low-scoring result is as follows:'
+  id: totrans-139
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 下一个也是最后一个低评分的结果如下：
+- en: '[PRE28]'
+  id: totrans-140
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE28]'
+- en: 'Here are the details:'
+  id: totrans-141
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 详细信息如下：
+- en: '[PRE29]'
+  id: totrans-142
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE29]'
+- en: Let’s quickly review the low-scoring ones before moving on to the one result
+    with a medium score.
+  id: totrans-143
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在继续到得分中等的结果之前，让我们快速回顾一下低评分的结果。
+- en: So, the first result was, **“Some modules could end up creating new files on
+    disk with permissions that might be too open or unpredictable”**. It called out
+    11 places within our playbook where this could be an issue, so we should look
+    at resolving these.
+  id: totrans-144
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 所以，第一个结果是**“一些模块可能会在磁盘上创建新的文件，权限可能过于开放或不可预测”**。它指出了我们 playbook 中的 11 个地方可能会出现这个问题，因此我们应该着手解决这些问题。
+- en: First off, if you ran the full scan, you will have noticed that three of the
+    results are from the `destroy.yml` file.
+  id: totrans-145
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 首先，如果你运行了完整的扫描，你会注意到三个结果来自 `destroy.yml` 文件。
+- en: Given that these tasks are removing files, we don’t care about the file permissions
+    here. So, rather than adding the permissions to the individual tasks, we should
+    instruct KICS not to run the check across the whole file.
+  id: totrans-146
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于这些任务涉及删除文件，我们不关心文件权限。因此，我们不应在单独的任务中添加权限，而应该指示 KICS 不要在整个文件上执行检查。
+- en: 'To do this, we need to add the following comment at the very top of the file:'
+  id: totrans-147
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要做到这一点，我们需要在文件的最顶部添加以下注释：
+- en: '[PRE30]'
+  id: totrans-148
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE30]'
+- en: 'Next, we have `ansible.builtin.template` in `roles/efs/tasks/main.yml`. Rather
+    than skip the test, I added the permissions using the `mode` key:'
+  id: totrans-149
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来，我们在 `roles/efs/tasks/main.yml` 中看到了 `ansible.builtin.template`。与其跳过测试，我通过
+    `mode` 键添加了权限：
+- en: '[PRE31]'
+  id: totrans-150
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE31]'
+- en: The final result is for the `ansible.builtin.get_url` module used by the task,
+    which downloads `wp-cli` in the `roles/wordpress/tasks/main.yml` file.
+  id: totrans-151
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最终结果是 `ansible.builtin.get_url` 模块，该模块由任务使用，下载 `wp-cli`，文件位于 `roles/wordpress/tasks/main.yml`。
+- en: 'When reviewing the code, it looked like the following:'
+  id: totrans-152
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 审查代码时，它看起来如下：
+- en: '[PRE32]'
+  id: totrans-153
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE32]'
+- en: 'This was immediately followed by the following:'
+  id: totrans-154
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 紧接着是以下内容：
+- en: '[PRE33]'
+  id: totrans-155
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE33]'
+- en: 'Here, KICS highlights that we can set the mode as part of `ansible.builtin.get_url`,
+    which means we do not have to do it separately, so I added the following to the
+    download task:'
+  id: totrans-156
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这里，KICS 强调我们可以将模式作为 `ansible.builtin.get_url` 的一部分进行设置，这意味着我们不需要单独处理它，因此我在下载任务中添加了以下内容：
+- en: '[PRE34]'
+  id: totrans-157
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE34]'
+- en: Then, I removed the second task. That clears the file permission issues KICS
+    reported.
+  id: totrans-158
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后，我删除了第二个任务。这解决了KICS报告的文件权限问题。
+- en: The next LOW score says, **“Setting state to latest performs an update and installs
+    additional packages possibly resulting in performance degradation or loss** **of
+    service”**.
+  id: totrans-159
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 下一个低评分显示，**“将状态设置为最新执行更新并安装附加包，可能导致性能下降或服务丢失”**。
+- en: 'This appears in `roles/stack-install/tasks/main.yml`, where the task uses `ansible.builtin.apt`
+    to update the installed images, as this task is only called when we bootstrap
+    our temporary EC2 instance and we made allowances for changes to the PHP version
+    in the main playbook. I think it is safe to accept this as a false positive, so
+    we can tell KICS not to run the test on this file by adding the following to the
+    very top of `roles/stack-install/tasks/main.yml`:'
+  id: totrans-160
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这出现在`roles/stack-install/tasks/main.yml`中，其中任务使用`ansible.builtin.apt`来更新已安装的镜像，因为这个任务仅在我们启动临时EC2实例时调用，而且我们已经在主剧本中考虑了PHP版本的变化。我认为可以将其视为假阳性，因此我们可以通过在`roles/stack-install/tasks/main.yml`文件的最顶部添加以下内容来告诉KICS不要对该文件运行测试：
+- en: '[PRE35]'
+  id: totrans-161
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE35]'
+- en: This leaves us with `destroy.yml`, so the lack of tags does matter.
+  id: totrans-162
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这就剩下`destroy.yml`，因此缺少标签确实很重要。
+- en: 'Let’s exclude the check from being run. To do this, we need to append it to
+    the end of the comment we already added, which means the comment at the end of
+    `destroy.yml` now reads this:'
+  id: totrans-163
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们排除该检查的执行。为此，我们需要将其附加到我们已添加的注释末尾，这意味着`destroy.yml`文件末尾的注释现在是这样：
+- en: '[PRE36]'
+  id: totrans-164
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE36]'
+- en: When appending IDs, please ensure that a comma separates them; otherwise, KICS
+    will read them as one string. Finally, we have the high-severity results.
+  id: totrans-165
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在附加ID时，请确保用逗号将它们分开；否则，KICS会将它们视为一个字符串。最后，我们来看看高严重性结果。
+- en: High-severity results
+  id: totrans-166
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 高严重性结果
+- en: 'Luckily, here we have just two problems called out across four tasks, starting
+    with the following:'
+  id: totrans-167
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 幸运的是，这里我们只有两个问题，分布在四个任务中，从以下任务开始：
+- en: '[PRE37]'
+  id: totrans-168
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE37]'
+- en: 'These are the two tasks:'
+  id: totrans-169
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这就是这两个任务：
+- en: '[PRE38]'
+  id: totrans-170
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE38]'
+- en: 'The second is in the `destroy.yml` file:'
+  id: totrans-171
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 第二个问题出现在`destroy.yml`文件中：
+- en: '[PRE39]'
+  id: totrans-172
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE39]'
+- en: 'I think you can probably guess how we are going to resolve the second one;
+    let’s get it to ignore the test in `destroy.yml`:'
+  id: totrans-173
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我想你应该能猜到我们如何解决第二个问题；让我们让它忽略`destroy.yml`中的测试：
+- en: '[PRE40]'
+  id: totrans-174
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE40]'
+- en: 'For `roles/efs/tasks/main.yml`, the recommendation is to enable encryption,
+    so let’s take that advice:'
+  id: totrans-175
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于`roles/efs/tasks/main.yml`，推荐启用加密，所以我们采取这个建议：
+- en: '[PRE41]'
+  id: totrans-176
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE41]'
+- en: As you can see from the preceding snippet, we have added the `encrypt` parameter
+    and set it to `true`.
+  id: totrans-177
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你从前面的代码片段中看到的，我们已经添加了`encrypt`参数并将其设置为`true`。
+- en: 'The next issue highlighted by KICS also has to do with EFS filesystem encryption:'
+  id: totrans-178
+  prefs: []
+  type: TYPE_NORMAL
+  zh: KICS指出的下一个问题也与EFS文件系统加密有关：
+- en: '[PRE42]'
+  id: totrans-179
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE42]'
+- en: The results are for the same files as the previous issue, so we will append
+    the ID to the list of checks to disable at the top of the `destroy.yml` file.
+  id: totrans-180
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 结果与前一个问题相同，因此我们将把ID附加到`destroy.yml`文件顶部的禁用检查列表中。
+- en: 'Given that this is just a demo environment, I am happy to accept the potential
+    risk of not using a customer-managed key vault to store my own managed encryption
+    keys; so, in this instance, I will add the following:'
+  id: totrans-181
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 鉴于这是一个演示环境，我愿意接受不使用客户管理的密钥库来存储我自己管理的加密密钥的潜在风险；因此，在这种情况下，我将添加以下内容：
+- en: '[PRE43]'
+  id: totrans-182
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE43]'
+- en: I’ll do so at the very top of the `roles/efs/tasks/main.yml` file. If this were
+    a fixed production environment, then I would have added a role to launch and maintain
+    AWS Key Management Service ([https://aws.amazon.com/kms/](https://aws.amazon.com/kms/))
+    as part of the deployment.
+  id: totrans-183
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我将在`roles/efs/tasks/main.yml`文件的最顶部进行此操作。如果这是一个固定的生产环境，那么我会添加一个角色来启动和维护AWS Key
+    Management Service（[https://aws.amazon.com/kms/](https://aws.amazon.com/kms/)）作为部署的一部分。
+- en: The results summary
+  id: totrans-184
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 结果总结
+- en: 'The final part of the rules gives an overview of everything we have covered,
+    which, for the initial scan with none of the fixes in place, is as follows:'
+  id: totrans-185
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 规则的最后部分概述了我们已覆盖的所有内容，对于没有应用任何修复的初始扫描，结果如下：
+- en: '[PRE44]'
+  id: totrans-186
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE44]'
+- en: Re-running the scan
+  id: totrans-187
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 重新运行扫描
+- en: 'As before, there is a branch containing all of the updated files we discussed
+    and implemented in the previous section; to change to it, run the following:'
+  id: totrans-188
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如之前所述，存在一个包含我们在上一节中讨论和实施的所有更新文件的分支；要切换到它，运行以下命令：
+- en: '[PRE45]'
+  id: totrans-189
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE45]'
+- en: 'You can then run the scan again using this:'
+  id: totrans-190
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后，你可以使用以下命令重新运行扫描：
+- en: '[PRE46]'
+  id: totrans-191
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE46]'
+- en: 'This should now return a clean bill of health:'
+  id: totrans-192
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在应该返回一个健康的结果：
+- en: '[PRE47]'
+  id: totrans-193
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE47]'
+- en: As you can see, no problems are being reported now.
+  id: totrans-194
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，现在没有报告任何问题。
+- en: Output files
+  id: totrans-195
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 输出文件
+- en: 'Before we finish the chapter, there is one more thing that we should quickly
+    discuss about KICS: its ability to output a report in various file formats.'
+  id: totrans-196
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在我们结束这一章之前，还有一件事情我们应该快速讨论一下 KICS：它能够以各种文件格式输出报告的能力。
+- en: 'If you were to re-run the scans against the `main` and `kics` branches but
+    using the following command, then you will notice that a file called `results.html`
+    appears in your repo folder:'
+  id: totrans-197
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你重新对`main`和`kics`分支运行扫描，但使用以下命令，你会注意到在你的存储库文件夹中出现了一个名为`results.html`的文件：
+- en: '[PRE48]'
+  id: totrans-198
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE48]'
+- en: As you can see, we are passing in two new flags; the first, `--report-formats`,
+    tells KICS to output a report as an `html` file, and the second, `--output-path`,
+    lets KICS know where to save the report file; in our case, as we are running KICS
+    in a container that needs to be a location within the container that persists,
+    once the container has finished running, the container will automatically be removed
+    along with any files written.
+  id: totrans-199
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如你所看到的，我们正在传入两个新标志；第一个，`--report-formats`，告诉 KICS 输出一个`html`文件作为报告，第二个，`--output-path`，让
+    KICS 知道在哪里保存报告文件；在我们的情况下，由于我们在需要持久化的容器中运行 KICS，所以这个位置必须是容器内的一个位置，一旦容器运行结束，容器将自动删除以及任何写入的文件。
+- en: 'When running the command against the main branch, which does not contain any
+    of the fixes, we applied the header of the report, which looks like the following:'
+  id: totrans-200
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当对不包含任何修复的主分支运行命令时，我们应用了报告的标题，看起来如下所示：
+- en: '![Figure 13.1 – Viewing the report showing issues](img/B21620_13_01.jpg)'
+  id: totrans-201
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 13.1 – 查看显示问题的报告](img/B21620_13_01.jpg)'
+- en: Figure 13.1 – Viewing the report showing issues
+  id: totrans-202
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 13.1 – 查看显示问题的报告
+- en: 'Then, re-running the scan against the KICS branch updates it to the following:'
+  id: totrans-203
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后，对 KICS 分支的重新运行扫描会更新为以下内容：
+- en: '![Figure 13.2 – A clean bill of health](img/B21620_13_02.jpg)'
+  id: totrans-204
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 13.2 – 健康的清单](img/B21620_13_02.jpg)'
+- en: Figure 13.2 – A clean bill of health
+  id: totrans-205
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 13.2 – 健康的清单
+- en: You can also output in PDF, JSON, and other standard reporting formats. As you
+    can see, this is a little more digestible than reading the output of the command
+    line report we covered in the previous section.
+  id: totrans-206
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你还可以输出 PDF、JSON 和其他标准报告格式。如你所见，这比阅读我们在前一节中介绍的命令行报告的输出要容易理解些。
+- en: We will put these reports to good use when we get to [*Chapter 15*](B21620_15.xhtml#_idTextAnchor641),
+    *Using Ansible with GitHub Actions and Azure DevOps*, as we will publish the results
+    as part of our pipeline runs.
+  id: totrans-207
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当我们进入[*第15章*](B21620_15.xhtml#_idTextAnchor641)，*使用 Ansible 与 GitHub Actions
+    和 Azure DevOps*，我们将利用这些报告，并将结果作为我们的流水线运行的一部分发布。
+- en: Summary
+  id: totrans-208
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 摘要
+- en: In this chapter, we have covered two tools that we can add to our workflows,
+    and we manually ran scans against the playbook we developed in [*Chapter 11*](B21620_11.xhtml#_idTextAnchor501),
+    *Highly Available Cloud Deployments*. As mentioned in the chapter, Checkov's support
+    for Ansible is relatively new, so it has a different coverage to KICS. However,
+    I am sure you agree that both tools worked well.
+  id: totrans-209
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们涵盖了两个可以添加到我们工作流程中的工具，并手动针对我们在[*第11章*](B21620_11.xhtml#_idTextAnchor501)开发的
+    playbook 运行了扫描，*高可用云部署*。正如本章所述，Checkov 对 Ansible 的支持相对较新，因此与 KICS 相比覆盖范围不同。然而，我相信你会同意这两个工具都表现不错。
+- en: Important note
+  id: totrans-210
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 重要提示
+- en: There is one elephant in the room, though; even without the same coverage level,
+    both tools came up with slightly different results, so you should never rely on
+    them 100% to fully secure your deployments. Think of them as trusted colleagues
+    reviewing your code for anything obvious that stands out as being an issue rather
+    than a security-focused cloud platform architect with a working knowledge of your
+    workload who dictates precisely what measures you should take when deploying your
+    infrastructure in a secure way fully.
+  id: totrans-211
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 不过，有一个大问题；即使覆盖级别不同，这两个工具的结果也略有不同，因此你不应完全依赖它们来完全保护你的部署。把它们看作是值得信赖的同事，检查你的代码中显而易见的问题，而不是专注于安全的云平台架构师，他对你的工作负载有详细了解，严格规定你在安全地部署基础设施时应该采取的措施。
+- en: As already mentioned at the end of the previous section, we will be revisiting
+    KICS in [*Chapter 15*](B21620_15.xhtml#_idTextAnchor641), *Using Ansible with
+    GitHub Actions and Azure DevOps*. Before we get there, now that we have looked
+    at how we can review and secure our playbook code, we can now look at how we can
+    secure our workload by quickly applying security best practices to the host operating
+    systems that we are targeting using Ansible.
+  id: totrans-212
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如前一节结尾所述，我们将在[*第15章*](B21620_15.xhtml#_idTextAnchor641)中重新讨论KICS，*使用Ansible与GitHub
+    Actions和Azure DevOps*。在进入这一章之前，既然我们已经了解了如何审查和保护我们的playbook代码，现在可以看看如何通过快速应用安全最佳实践，来保护我们目标主机操作系统的工作负载，使用Ansible来实现这一点。
+- en: Further reading
+  id: totrans-213
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 进一步阅读
+- en: 'For more information about the tools and their maintainers, see the following
+    links:'
+  id: totrans-214
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有关工具及其维护者的更多信息，请参阅以下链接：
+- en: '**Checkov**: [https://www.checkov.io/](https://www.checkov.io/)'
+  id: totrans-215
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**Checkov**: [https://www.checkov.io/](https://www.checkov.io/)'
+- en: '**Prisma** **Cloud**: [https://www.paloaltonetworks.com/prisma/cloud/](https://www.paloaltonetworks.com/prisma/cloud/)'
+  id: totrans-216
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**Prisma** **Cloud**: [https://www.paloaltonetworks.com/prisma/cloud/](https://www.paloaltonetworks.com/prisma/cloud/)'
+- en: '**KICS**: [http://kics.io/](http://kics.io/)'
+  id: totrans-217
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**KICS**: [http://kics.io/](http://kics.io/)'
+- en: '**Checkmarx**: [https://checkmarx.com/](https://checkmarx.com/)'
+  id: totrans-218
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**Checkmarx**: [https://checkmarx.com/](https://checkmarx.com/)'

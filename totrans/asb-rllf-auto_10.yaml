@@ -1,0 +1,1580 @@
+- en: '10'
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '10'
+- en: Managing Containers Using Ansible
+  id: totrans-1
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用 Ansible 管理容器
+- en: Since the introduction of containerization, organizations have been able to
+    deploy applications faster and accelerate release cycles with frequent updates
+    and deployments. However, containerizing applications involve more steps compared
+    to traditional server-based deployments. For example, you need to ensure the packaged
+    container image is working as per expectation, security standards are in place,
+    volume mounting is working, secrets are safe inside, and more. When you have more
+    frequent application releases, automating such container build and deployment
+    tasks will help you implement better CI/CD workflows and save time on manual processes.
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 自从容器化技术引入以来，组织可以更快速地部署应用，并通过频繁的更新和部署加速发布周期。然而，容器化应用相较于传统的服务器部署需要更多步骤。例如，你需要确保打包好的容器镜像按预期工作、安全标准已就位、卷挂载正常、机密信息安全存储等等。当应用发布频率更高时，自动化容器构建和部署任务将有助于实现更好的
+    CI/CD 工作流，并节省手动操作的时间。
+- en: With the Ansible collections for container management, we can manage the entire
+    life cycle of our containers. This includes building them, pushing them to the
+    registry, scanning them for vulnerabilities, and deploying them.
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用 Ansible 容器管理的集合，我们可以管理容器的整个生命周期。这包括构建容器、将其推送到注册表、扫描其漏洞并进行部署。
+- en: 'In this chapter, we will cover the following topics:'
+  id: totrans-4
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们将涵盖以下主题：
+- en: Managing the container host
+  id: totrans-5
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 管理容器主机
+- en: Ansible, containers, and CI/CD
+  id: totrans-6
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Ansible、容器与 CI/CD
+- en: Managing containers using Ansible
+  id: totrans-7
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用 Ansible 管理容器
+- en: Building container images using Ansible
+  id: totrans-8
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用 Ansible 构建容器镜像
+- en: Managing multi-container applications using Ansible
+  id: totrans-9
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用 Ansible 管理多容器应用
+- en: First, you will learn how to use Ansible to deploy the container engine to the
+    host machine and run containers inside it. Later, you will learn how to manage
+    the container image build and manage it in the container registry.
+  id: totrans-10
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 首先，你将学习如何使用 Ansible 部署容器引擎到主机上并在其中运行容器。接下来，你将学习如何管理容器镜像构建，并将其管理到容器注册表中。
+- en: Technical requirements
+  id: totrans-11
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 技术要求
+- en: 'You will need the following technical requirements for this chapter:'
+  id: totrans-12
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章需要以下技术要求：
+- en: A Linux machine for the Ansible control node (with internet access)
+  id: totrans-13
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 一台用于 Ansible 控制节点的 Linux 机器（需要连接互联网）
+- en: A Linux machine for installing and configuring Docker
+  id: totrans-14
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 一台用于安装和配置 Docker 的 Linux 机器
+- en: Access to a Docker container registry (`hub.docker.com`)
+  id: totrans-15
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 访问 Docker 容器注册表（`hub.docker.com`）
+- en: Basic knowledge about containers and container registries (Docker or Podman)
+  id: totrans-16
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 关于容器和容器注册表（Docker 或 Podman）的基础知识
+- en: All the Ansible code and playbooks, as well as the commands and snippets, for
+    this chapter can be found in this book’s GitHub repository at [https://github.com/PacktPublishing/Ansible-for-Real-life-Automation/tree/main/Chapter-10](https://github.com/PacktPublishing/Ansible-for-Real-life-Automation/tree/main/Chapter-10).
+  id: totrans-17
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章所有的 Ansible 代码和剧本，以及命令和代码片段，都可以在本书的 GitHub 仓库中找到，网址为：[https://github.com/PacktPublishing/Ansible-for-Real-life-Automation/tree/main/Chapter-10](https://github.com/PacktPublishing/Ansible-for-Real-life-Automation/tree/main/Chapter-10)。
+- en: Managing the container host
+  id: totrans-18
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 管理容器主机
+- en: Various types of container software are available, such as **Docker** and **Podman**.
+    In this chapter, we will be using Docker to explain and demonstrate container
+    management using Ansible. We will be using Docker **Community Edition** (**CE**),
+    which is free, though you can use Docker **Enterprise Edition** (**EE**) if needed.
+  id: totrans-19
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 市面上有各种类型的容器软件，例如 **Docker** 和 **Podman**。在本章中，我们将使用 Docker 来解释和演示如何使用 Ansible
+    管理容器。我们将使用 Docker **社区版**（**CE**），这是免费的，但如果需要，你也可以使用 Docker **企业版**（**EE**）。
+- en: Ansible Docker prerequisites
+  id: totrans-20
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: Ansible Docker 先决条件
+- en: To use the `docker` library, which you can do using `Python pip` or standard
+    packages managers such as `yum` (`yum install python-docker-py`) of `dnf` if available.
+    If you are using the old version of Python (2.6), then you should install and
+    use the old library called `docker-py`.
+  id: totrans-21
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要使用 `docker` 库，你可以通过 `Python pip` 或者标准的包管理工具（例如 `yum`（`yum install python-docker-py`）或
+    `dnf`）来安装。如果你使用的是旧版本的 Python（2.6），那么你应该安装并使用旧版库 `docker-py`。
+- en: Installing Docker on the host using Ansible
+  id: totrans-22
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 使用 Ansible 在主机上安装 Docker
+- en: Installing Docker software on a host involves multiple steps and configurations.
+    These steps can be completed manually or we can use the Ansible role available
+    in Ansible Galaxy. We will be using the community Ansible role called `geerlingguy.docker`
+    ([https://github.com/geerlingguy/ansible-role-docker](https://github.com/geerlingguy/ansible-role-docker)),
+    which was created by the well-known Ansible contributor *Jeff Geerling*.
+  id: totrans-23
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在主机上安装 Docker 软件涉及多个步骤和配置。这些步骤可以手动完成，或者我们可以使用 Ansible Galaxy 中的 Ansible 角色。我们将使用由著名
+    Ansible 贡献者 *Jeff Geerling* 创建的社区 Ansible 角色 `geerlingguy.docker`（[https://github.com/geerlingguy/ansible-role-docker](https://github.com/geerlingguy/ansible-role-docker)）。
+- en: We will also use `geerlingguy.pip` to install the Docker libraries (for example,
+    `docker`) using Ansible.
+  id: totrans-24
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们还将使用 `geerlingguy.pip` 来使用 Ansible 安装 Docker 库（例如，`docker`）。
+- en: 'Follow these steps to install the Docker software on a Linux machine:'
+  id: totrans-25
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 按照以下步骤在 Linux 机器上安装 Docker 软件：
+- en: 'Update the inventory with `node1` under the `dockerhost` host group (`chapter-10/hosts`):'
+  id: totrans-26
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在清单中将 `node1` 更新到 `dockerhost` 主机组（`chapter-10/hosts`）：
+- en: '![Figure 10.1 – Configure Docker host in inventory ](img/B18383_10_01.jpg)'
+  id: totrans-27
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 10.1 – 在清单中配置 Docker 主机](img/B18383_10_01.jpg)'
+- en: Figure 10.1 – Configure Docker host in inventory
+  id: totrans-28
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.1 – 在清单中配置 Docker 主机
+- en: 'Install `geerlingguy.docker` in the `roles` directory, as shown in the following
+    screenshot:'
+  id: totrans-29
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在 `roles` 目录中安装 `geerlingguy.docker`，如下所示：
+- en: '![Figure 10.2 – Installing Docker role ](img/B18383_10_02.jpg)'
+  id: totrans-30
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 10.2 – 安装 Docker 角色](img/B18383_10_02.jpg)'
+- en: Figure 10.2 – Installing Docker role
+  id: totrans-31
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.2 – 安装 Docker 角色
+- en: 'Create a playbook called `Chapter-10/deploy-docker.yaml` to install the role
+    and libraries:'
+  id: totrans-32
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建一个名为 `Chapter-10/deploy-docker.yaml` 的 playbook 来安装角色和库：
+- en: '![Figure 10.3 – Using deploy-docker.yaml to install Docker on the host ](img/B18383_10_03.jpg)'
+  id: totrans-33
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 10.3 – 使用 deploy-docker.yaml 在主机上安装 Docker](img/B18383_10_03.jpg)'
+- en: Figure 10.3 – Using deploy-docker.yaml to install Docker on the host
+  id: totrans-34
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.3 – 使用 deploy-docker.yaml 在主机上安装 Docker
+- en: The `pip_install_packages` variable will be used by the `geerlingguy.pip` role
+    to install the listed packages using `pip`.
+  id: totrans-35
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`pip_install_packages` 变量将由 `geerlingguy.pip` 角色使用，以通过 `pip` 安装列出的包。'
+- en: 'Execute the playbook to deploy Docker on the host:'
+  id: totrans-36
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 执行 playbook 在主机上部署 Docker：
+- en: '![Figure 10.4 – Execute the playbook to deploy Docker on the host ](img/B18383_10_04.jpg)'
+  id: totrans-37
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 10.4 – 执行 playbook 在主机上部署 Docker](img/B18383_10_04.jpg)'
+- en: Figure 10.4 – Execute the playbook to deploy Docker on the host
+  id: totrans-38
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.4 – 执行 playbook 在主机上部署 Docker
+- en: 'Verify that it has been installed. Log into `node1` and check the details:'
+  id: totrans-39
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 验证它是否已安装。登录到 `node1` 并检查详细信息：
+- en: '![Figure 10.5 – Verifying the Docker installation ](img/B18383_10_05.jpg)'
+  id: totrans-40
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 10.5 – 验证 Docker 安装](img/B18383_10_05.jpg)'
+- en: Figure 10.5 – Verifying the Docker installation
+  id: totrans-41
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.5 – 验证 Docker 安装
+- en: With that, Docker has been installed and configured on the host, which means
+    we can start running containers.
+  id: totrans-42
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这样，Docker 就已在主机上安装并配置完成，这意味着我们可以开始运行容器。
+- en: Next, you will learn about the capabilities of Ansible for managing containerized
+    applications.
+  id: totrans-43
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来，你将了解 Ansible 在管理容器化应用方面的能力。
+- en: Ansible, containers, and CI/CD
+  id: totrans-44
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Ansible、容器和 CI/CD
+- en: 'Containerizing applications will give you more options for integrating, delivering,
+    and deploying them since most of the tools support automated builds, tests, and
+    executions. A typical containerized application workflow can be seen in the following
+    diagram:'
+  id: totrans-45
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 将应用容器化将为你提供更多的集成、交付和部署选项，因为大多数工具都支持自动化构建、测试和执行。典型的容器化应用工作流程如下图所示：
+- en: '![Figure 10.6 – Typical CI/CD tasks in a Docker-based deployment ](img/B18383_10_06.jpg)'
+  id: totrans-46
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 10.6 – 基于 Docker 的部署中的典型 CI/CD 任务](img/B18383_10_06.jpg)'
+- en: Figure 10.6 – Typical CI/CD tasks in a Docker-based deployment
+  id: totrans-47
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.6 – 基于 Docker 的部署中的典型 CI/CD 任务
+- en: Most of the tasks in the preceding diagram can be automated using Ansible as
+    the Ansible collection for Docker and Podman contains several modules to support
+    building, running, and managing containers on your container host. Either implement
+    the entire workflow using Ansible or use Ansible with our favourite CI/CD tools
+    and execute the tasks more flexibly. You will learn how to integrate Ansible with
+    Jenkins in *Chapter 12*, *Integrating Ansible with Your Tools*.
+  id: totrans-48
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 上图中的大部分任务都可以使用 Ansible 自动化，因为 Ansible 的 Docker 和 Podman 集合包含了多个模块，用于支持在容器主机上构建、运行和管理容器。你可以使用
+    Ansible 实现整个工作流程，或者将 Ansible 与我们喜爱的 CI/CD 工具结合使用，更灵活地执行任务。你将学习如何在*第12章*，*将 Ansible
+    与工具集成*中将 Ansible 与 Jenkins 集成。
+- en: In this next section, you will learn how to manage containers using Ansible
+    and manage the container life cycle.
+  id: totrans-49
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在接下来的部分，你将学习如何使用 Ansible 管理容器并管理容器生命周期。
+- en: Managing containers using Ansible
+  id: totrans-50
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用 Ansible 管理容器
+- en: The Ansible collection, `community.docker` ([https://galaxy.ansible.com/community/docker](https://galaxy.ansible.com/community/docker)),
+    contains more than 25 Ansible modules and ~10 plugins for connection, inventory,
+    and more. These modules will help you manage containers, container images, images
+    in the container registry, the Docker network, Docker volumes, Docker swarm, and
+    other container-based operations.
+  id: totrans-51
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 集合 `community.docker` ([https://galaxy.ansible.com/community/docker](https://galaxy.ansible.com/community/docker))
+    包含 25 个以上的 Ansible 模块和大约 10 个用于连接、清单等的插件。这些模块将帮助你管理容器、容器镜像、容器注册表中的镜像、Docker 网络、Docker
+    卷、Docker 集群以及其他基于容器的操作。
+- en: If you are using Podman, then check out the `containers.podman` collection ([https://galaxy.ansible.com/containers/podman](https://galaxy.ansible.com/containers/podman))
+    in Ansible Galaxy.
+  id: totrans-52
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你使用的是 Podman，可以在 Ansible Galaxy 中查看 `containers.podman` 集合 ([https://galaxy.ansible.com/containers/podman](https://galaxy.ansible.com/containers/podman))。
+- en: In the upcoming sections, you will learn how to build, start, and manage containers
+    using Ansible.
+  id: totrans-53
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在接下来的章节中，你将学习如何使用 Ansible 构建、启动和管理容器。
+- en: Installing the Ansible Docker collection
+  id: totrans-54
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 安装 Ansible Docker 集合
+- en: 'Installing a collection is straightforward, as you learned in the previous
+    chapters:'
+  id: totrans-55
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 安装集合非常简单，正如你在前面的章节中所学的那样：
+- en: 'Update your `ansible.cfg` with the collection path:'
+  id: totrans-56
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 更新你的 `ansible.cfg` 配置文件，添加集合路径：
+- en: '![Figure 10.7 – ansible.cfg with the collection and role paths ](img/B18383_10_07.jpg)'
+  id: totrans-57
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 10.7 – ansible.cfg 配置文件，包含集合和角色路径](img/B18383_10_07.jpg)'
+- en: Figure 10.7 – ansible.cfg with the collection and role paths
+  id: totrans-58
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.7 – ansible.cfg 配置文件，包含集合和角色路径
+- en: 'Install the `community.docker` Ansible collection:'
+  id: totrans-59
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 安装 `community.docker` Ansible 集合：
+- en: '![Figure 10.8 – Installing community.docker collection ](img/B18383_10_08.jpg)'
+  id: totrans-60
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 10.8 – 安装 community.docker 集合](img/B18383_10_08.jpg)'
+- en: Figure 10.8 – Installing community.docker collection
+  id: totrans-61
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.8 – 安装 community.docker 集合
+- en: 'Verify that the collection has been installed in the collection path, as shown
+    in the following screenshot:'
+  id: totrans-62
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 验证集合是否已安装在集合路径中，如下所示的截图所示：
+- en: '![Figure 10.9 – Docker collection installed in the collection path ](img/B18383_10_09.jpg)'
+  id: totrans-63
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 10.9 – 安装在集合路径中的 Docker 集合](img/B18383_10_09.jpg)'
+- en: Figure 10.9 – Docker collection installed in the collection path
+  id: totrans-64
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.9 – 安装在集合路径中的 Docker 集合
+- en: 'If you are using the Ansible community package, then there might be an old
+    version of the `community.docker` collection in the default path. This is the
+    reason we are installing the latest version of the collection on our project path
+    (`COLLECTIONS_PATHS =`):'
+  id: totrans-65
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你使用的是 Ansible 社区包，则默认路径中可能有一个旧版本的 `community.docker` 集合。这就是我们在项目路径（`COLLECTIONS_PATHS
+    =`）中安装最新版本集合的原因：
+- en: '![Figure 10.10 – Docker collection from the default Ansible installation ](img/B18383_10_10.jpg)'
+  id: totrans-66
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 10.10 – 来自默认 Ansible 安装的 Docker 集合](img/B18383_10_10.jpg)'
+- en: Figure 10.10 – Docker collection from the default Ansible installation
+  id: totrans-67
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.10 – 来自默认 Ansible 安装的 Docker 集合
+- en: Once the collection is available to use, start using the Docker modules that
+    have been installed.
+  id: totrans-68
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦集合可用，开始使用已安装的 Docker 模块。
+- en: Installing an Ansible Collection on a Disconnected Ansible Control Node
+  id: totrans-69
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在断开网络的 Ansible 控制节点上安装 Ansible 集合
+- en: 'If you are inside a restricted environment (disconnected or no internet), then
+    follow an alternative method to install an Ansible collection and roles: *How
+    to install an Ansible Collection on a disconnected Ansible control node* ([https://www.techbeatly.com/how-to-install-an-ansible-collection-on-a-disconnected-ansible-control-node](https://www.techbeatly.com/how-to-install-an-ansible-collection-on-a-disconnected-ansible-control-node)).'
+  id: totrans-70
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你处于受限环境中（如断网或没有互联网），可以按照替代方法安装 Ansible 集合和角色：*如何在断开网络的 Ansible 控制节点上安装 Ansible
+    集合* ([https://www.techbeatly.com/how-to-install-an-ansible-collection-on-a-disconnected-ansible-control-node](https://www.techbeatly.com/how-to-install-an-ansible-collection-on-a-disconnected-ansible-control-node))。
+- en: Starting a Docker container using Ansible
+  id: totrans-71
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 使用 Ansible 启动 Docker 容器
+- en: Use your own container images or use the existing container images from the
+    public Docker registries such as Docker Hub (`https://hub.docker.com`), Quay.io
+    ([https://quay.io/repository](https://quay.io/repository)), and GitHub Container
+    Registry ([https://ghcr.io](https://ghcr.io)). It is also possible to use the
+    container images from private repositories, but you will need to authenticate
+    to the container registries (with a username, password, or tokens) to pull or
+    push the container images. You will learn about registry authentication in the
+    *Building container images using Ansible* section.
+  id: totrans-72
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用你自己的容器镜像，或者使用来自公共Docker注册中心的现有容器镜像，例如Docker Hub（`https://hub.docker.com`）、Quay.io（[https://quay.io/repository](https://quay.io/repository)）和GitHub容器注册中心（[https://ghcr.io](https://ghcr.io)）。也可以使用私有仓库中的容器镜像，但你需要通过用户名、密码或令牌进行认证，才能拉取或推送容器镜像。在*使用Ansible构建容器镜像*章节中，你将学习如何进行注册中心认证。
+- en: 'In this section, you will learn how to run a Docker container using Ansible.
+    To make this demonstration simple, we will be using the default `nginx` ([https://hub.docker.com/_/nginx](https://hub.docker.com/_/nginx))
+    container image, but always explore using other container images later:'
+  id: totrans-73
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本节中，你将学习如何使用Ansible运行Docker容器。为了简化演示，我们将使用默认的`nginx`（[https://hub.docker.com/_/nginx](https://hub.docker.com/_/nginx)）容器镜像，但之后可以探索使用其他容器镜像：
+- en: 'Create a playbook called `Chapter-10/container-manage.yaml`, as shown in the
+    following screenshot:'
+  id: totrans-74
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建一个名为`Chapter-10/container-manage.yaml`的playbook，如下所示：
+- en: '![Figure 10.11 – container-manage.yaml ](img/B18383_10_11.jpg)'
+  id: totrans-75
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 10.11 – container-manage.yaml](img/B18383_10_11.jpg)'
+- en: Figure 10.11 – container-manage.yaml
+  id: totrans-76
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.11 – container-manage.yaml
+- en: Note
+  id: totrans-77
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 注意
+- en: The variables can be configured in different variable files dynamically, such
+    as `host_vars` or `group_vars`, or via external variables. The variables that
+    have been used inside the playbook have been provided to demonstrate the use case’s
+    execution.
+  id: totrans-78
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 变量可以在不同的变量文件中动态配置，例如`host_vars`或`group_vars`，也可以通过外部变量进行配置。已在playbook中使用的变量已提供，以展示用例的执行过程。
+- en: 'Add a task to start a container using the variable details, as follows:'
+  id: totrans-79
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 添加一个任务，通过变量详情启动容器，如下所示：
+- en: '![Figure 10.12 – container-manage.yaml – part 2  ](img/B18383_10_12.jpg)'
+  id: totrans-80
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 10.12 – container-manage.yaml – 第二部分](img/B18383_10_12.jpg)'
+- en: Figure 10.12 – container-manage.yaml – part 2
+  id: totrans-81
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.12 – container-manage.yaml – 第二部分
+- en: We will use the `container_action` variable later to control other actions for
+    the container.
+  id: totrans-82
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们稍后将使用`container_action`变量来控制容器的其他操作。
+- en: 'Add another `Chapter-10/container-manage.yaml` in the repository for the full
+    playbook):'
+  id: totrans-83
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在仓库中添加另一个`Chapter-10/container-manage.yaml`以包含完整的playbook：
+- en: '![Figure 10.13 – container-manage.yaml – using a second play to verify the
+    application running inside the container ](img/B18383_10_13.jpg)'
+  id: totrans-84
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 10.13 – container-manage.yaml – 使用第二个play验证容器内运行的应用](img/B18383_10_13.jpg)'
+- en: Figure 10.13 – container-manage.yaml – using a second play to verify the application
+    running inside the container
+  id: totrans-85
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.13 – container-manage.yaml – 使用第二个play验证容器内运行的应用
+- en: (Refer to [*Chapter 1*](B18383_01.xhtml#_idTextAnchor014), *Ansible Automation
+    – Introduction* to see a playbook with multiple plays.)
+  id: totrans-86
+  prefs: []
+  type: TYPE_NORMAL
+  zh: （参见[*第1章*](B18383_01.xhtml#_idTextAnchor014)，*Ansible自动化 – 入门*，以查看包含多个play的playbook。）
+- en: 'Execute the playbook with `NODES` set to `dockerhost`:'
+  id: totrans-87
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 执行playbook时将`NODES`设置为`dockerhost`：
+- en: '![Figure 10.14 – Execute the playbook on the Docker host ](img/B18383_10_14.jpg)'
+  id: totrans-88
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 10.14 – 在Docker主机上执行playbook](img/B18383_10_14.jpg)'
+- en: Figure 10.14 – Execute the playbook on the Docker host
+  id: totrans-89
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.14 – 在Docker主机上执行playbook
+- en: 'Once the playbook has been successfully executed, verify the container from
+    the Docker host (`node1`), as shown in the following screenshot:'
+  id: totrans-90
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 一旦playbook成功执行，验证来自Docker主机（`node1`）的容器，如下所示：
+- en: '![Figure 10.15 – An nginx container running on the Docker host ](img/B18383_10_15.jpg)'
+  id: totrans-91
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 10.15 – 在Docker主机上运行的nginx容器](img/B18383_10_15.jpg)'
+- en: Figure 10.15 – An nginx container running on the Docker host
+  id: totrans-92
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.15 – 在Docker主机上运行的nginx容器
+- en: Here, the `nginx` container is called `web` and is exposing the service on port
+    `8080` of the Docker host.
+  id: totrans-93
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这里，`nginx`容器被命名为`web`，并在Docker主机的端口`8080`上暴露服务。
+- en: 'Access the website running inside the `nginx` container. You need to remember
+    to pass port `8080` since the Docker port is exposed on `8080`:'
+  id: totrans-94
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 访问运行在`nginx`容器内的网站。你需要记得使用端口`8080`，因为Docker端口已暴露在`8080`上：
+- en: '![Figure 10.16 – The nginx application available after using the curl command
+    ](img/B18383_10_16.jpg)'
+  id: totrans-95
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 10.16 – 使用curl命令后可用的nginx应用](img/B18383_10_16.jpg)'
+- en: Figure 10.16 – The nginx application available after using the curl command
+  id: totrans-96
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.16 – 使用 curl 命令后可用的 nginx 应用
+- en: 'Access the website from a web browser, as shown in the following screenshot:'
+  id: totrans-97
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 从浏览器访问网站，如下图所示：
+- en: '![Figure 10.17 – The nginx web server running inside a Docker container deployed
+    using Ansible ](img/B18383_10_17.jpg)'
+  id: totrans-98
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 10.17 – 使用 Ansible 部署的 Docker 容器内运行的 nginx Web 服务器](img/B18383_10_17.jpg)'
+- en: Figure 10.17 – The nginx web server running inside a Docker container deployed
+    using Ansible
+  id: totrans-99
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.17 – 使用 Ansible 部署的 Docker 容器内运行的 nginx Web 服务器
+- en: Add more complex configurations to the container, such as different Docker networks,
+    mounted volumes, and so on. Refer to the documentation at [https://docs.ansible.com/ansible/latest/collections/community/docker/docker_container_module.xhtml](https://docs.ansible.com/ansible/latest/collections/community/docker/docker_container_module.xhtml)
+    for various arguments and parameters.
+  id: totrans-100
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 向容器添加更复杂的配置，如不同的 Docker 网络、挂载卷等。请参考[https://docs.ansible.com/ansible/latest/collections/community/docker/docker_container_module.xhtml](https://docs.ansible.com/ansible/latest/collections/community/docker/docker_container_module.xhtml)文档，了解各种参数和选项。
+- en: Stopping Docker containers using Ansible
+  id: totrans-101
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 使用 Ansible 停止 Docker 容器
+- en: In the CI/CD process, when you build containers for testing, you also need to
+    take care of the cleanup tasks. Once the tests have been completed, you need to
+    stop the container and delete it as part of housekeeping. Use the same Ansible
+    module, `community.docker.docker_container`, to handle the entire container life
+    cycle, such as stopping, deleting, and more.
+  id: totrans-102
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 CI/CD 过程中，当您构建容器进行测试时，也需要处理清理任务。测试完成后，您需要停止容器并删除它作为后续维护的一部分。使用相同的 Ansible
+    模块 `community.docker.docker_container` 来处理整个容器生命周期，如停止、删除等操作。
+- en: 'In this section, you will learn how to stop and remove the container we created
+    in the previous exercise. Follow these steps:'
+  id: totrans-103
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本节中，您将学习如何停止并移除我们在上一练习中创建的容器。请按照以下步骤操作：
+- en: 'Update the previous playbook, `Chapter-10/container-manage.yaml`, and add tasks
+    to the first play, `Manage Docker containers`, as shown in the following screenshot:'
+  id: totrans-104
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 更新之前的 playbook `Chapter-10/container-manage.yaml`，并向第一个 play `管理 Docker 容器`
+    中添加任务，如下图所示：
+- en: '![Figure 10.18 – Adding tasks to stop and remove the container ](img/B18383_10_18.jpg)'
+  id: totrans-105
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 10.18 – 添加停止和移除容器的任务](img/B18383_10_18.jpg)'
+- en: Figure 10.18 – Adding tasks to stop and remove the container
+  id: totrans-106
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.18 – 添加停止和移除容器的任务
+- en: 'Execute the playbook and pass `container_action=stop` as an extra variable:'
+  id: totrans-107
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 执行 playbook 并传递 `container_action=stop` 作为额外变量：
+- en: '![Figure 10.19 - Execute the container-manage.yaml file to stop the container
+    ](img/B18383_10_19.jpg)'
+  id: totrans-108
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 10.19 - 执行 container-manage.yaml 文件以停止容器](img/B18383_10_19.jpg)'
+- en: Figure 10.19 - Execute the container-manage.yaml file to stop the container
+  id: totrans-109
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.19 - 执行 container-manage.yaml 文件以停止容器
+- en: 'On the container host (`node1`), verify whether any containers are running:'
+  id: totrans-110
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在容器主机（`node1`）上，验证是否有任何容器正在运行：
+- en: '![Figure 10.20 – The nginx container has been stopped and removed ](img/B18383_10_20.jpg)'
+  id: totrans-111
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 10.20 – nginx 容器已被停止并移除](img/B18383_10_20.jpg)'
+- en: Figure 10.20 – The nginx container has been stopped and removed
+  id: totrans-112
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.20 – nginx 容器已被停止并移除
+- en: Add more tasks to the playbook, such as for verifying the ports, backing up
+    some configurations from container volumes, and accessing API calls as part of
+    testing, as needed.
+  id: totrans-113
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 根据需要向 playbook 添加更多任务，例如验证端口、备份容器卷中的某些配置文件、进行 API 调用等作为测试的一部分。
+- en: In this section, you tested simple container executions using the public container
+    image from Docker Registry. In the next section, you will learn how to build a
+    custom container image with all the necessary dependencies using Ansible and run
+    containers using custom images.
+  id: totrans-114
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本节中，您使用 Docker Registry 的公共容器镜像进行了简单的容器执行测试。在下一节中，您将学习如何使用 Ansible 构建一个包含所有必要依赖项的自定义容器镜像，并使用自定义镜像运行容器。
+- en: Managing container images using Ansible
+  id: totrans-115
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用 Ansible 管理容器镜像
+- en: As we learned from *Figure 10.6*, your integration stage will begin when the
+    developers push the code or merge the branches in a Git repository. Call the container
+    build commands directly from your CI/CD tools, such as **Jenkins** or **GitHub
+    Actions**. However, commands and pipeline tasks are unpredictable, so you will
+    not have much control over the output and results. This is where you can utilize
+    Ansible playbooks as you have more flexibility and control over the build processes
+    and outputs.
+  id: totrans-116
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如我们从*图 10.6*中学到的，当开发人员将代码推送或合并分支到 Git 仓库时，您的集成阶段将开始。直接从您的 CI/CD 工具（如**Jenkins**或**GitHub
+    Actions**）调用容器构建命令。然而，命令和管道任务是不确定的，因此您对输出和结果的控制较少。这时，您可以利用 Ansible playbook，因为它能提供更多灵活性和对构建过程及输出的控制。
+- en: In the next few sections, you will learn how to create Docker container registry
+    access, build container images using Ansible, and save the container images in
+    the container registry.
+  id: totrans-117
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在接下来的几节中，您将学习如何创建 Docker 容器注册表访问、使用 Ansible 构建容器镜像，并将容器镜像保存到容器注册表中。
+- en: Configuring Docker Registry access
+  id: totrans-118
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 配置 Docker 注册表访问
+- en: 'Before pushing the latest images to the container registries, you need to log
+    into the registry with your credentials. Access Docker Registry using a username
+    and password, but it is a best practice to use **Access Tokens** instead of passwords.
+    The following diagram shows how Ansible accesses the container registry to manage
+    container images:'
+  id: totrans-119
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在将最新的镜像推送到容器注册表之前，您需要使用凭据登录到注册表。使用用户名和密码访问 Docker 注册表，但最佳实践是使用**访问令牌**而不是密码。下图显示了
+    Ansible 如何访问容器注册表以管理容器镜像：
+- en: '![Figure 10.21 – Ansible to Container Registry access ](img/B18383_10_21.jpg)'
+  id: totrans-120
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 10.21 – Ansible 到容器注册表访问](img/B18383_10_21.jpg)'
+- en: Figure 10.21 – Ansible to Container Registry access
+  id: totrans-121
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.21 – Ansible 到容器注册表访问
+- en: 'For this demonstration, you will be using Docker Registry. Check out the documentation
+    (refer to the *Container Registry Access Tokens* information box) for other registries.
+    Follow these steps:'
+  id: totrans-122
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本示范中，您将使用 Docker 注册表。有关其他注册表的信息，请查看文档（参考*容器注册表访问令牌*信息框）。请按照以下步骤操作：
+- en: Log in to Docker Hub at [hub.docker.com](http://hub.docker.com).
+  id: totrans-123
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 登录到 Docker Hub：[hub.docker.com](http://hub.docker.com)。
+- en: At the top right, click on your profile name and select **Account Settings**
+    from the menu.
+  id: totrans-124
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在右上角，点击您的个人资料名称并从菜单中选择**账户设置**。
+- en: Select the **Security** tab.
+  id: totrans-125
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 选择**安全性**选项卡。
+- en: 'Click on the **New Access Token** button and enter a name for your token. After
+    that, select the **Read, Write, Delete** permission under **Access permissions**
+    and click **Generate**:'
+  id: totrans-126
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击**新建访问令牌**按钮并为您的令牌输入名称。之后，在**访问权限**下选择**读取、写入、删除**权限并点击**生成**：
+- en: '![Figure 10.22 – Creating a new access token in Docker Hub ](img/B18383_10_22.jpg)'
+  id: totrans-127
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 10.22 – 在 Docker Hub 中创建新的访问令牌](img/B18383_10_22.jpg)'
+- en: Figure 10.22 – Creating a new access token in Docker Hub
+  id: totrans-128
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.22 – 在 Docker Hub 中创建新的访问令牌
+- en: You will see the instructions and token text on the next screen. Remember to
+    copy and keep the token safe as this token text will not be visible later.
+  id: totrans-129
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 您将在下一屏幕上看到说明和令牌文本。记得复制并妥善保管该令牌，因为之后将无法再看到该令牌文本。
+- en: Container Registry Access Tokens
+  id: totrans-130
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 容器注册表访问令牌
+- en: To learn more about Access Tokens, please refer to [https://docs.docker.com/docker-hub/access-tokens/](https://docs.docker.com/docker-hub/access-tokens/)
+    (Docker Hub) and [https://docs.quay.io/glossary/access-token.xhtml](https://docs.quay.io/glossary/access-token.xhtml)
+    (Quay).
+  id: totrans-131
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要了解更多关于访问令牌的信息，请参考[https://docs.docker.com/docker-hub/access-tokens/](https://docs.docker.com/docker-hub/access-tokens/)（Docker
+    Hub）和[https://docs.quay.io/glossary/access-token.xhtml](https://docs.quay.io/glossary/access-token.xhtml)（Quay）。
+- en: 'Create an Ansible Vault file to keep the Docker Registry credentials in, as
+    follows:'
+  id: totrans-132
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建一个 Ansible Vault 文件来存储 Docker 注册表凭据，具体如下：
+- en: '![Figure 10.23 – Using an Ansible Vault file for your Docker Registry credentials
+    ](img/B18383_10_23.jpg)'
+  id: totrans-133
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 10.23 – 使用 Ansible Vault 文件管理您的 Docker 注册表凭据](img/B18383_10_23.jpg)'
+- en: Figure 10.23 – Using an Ansible Vault file for your Docker Registry credentials
+  id: totrans-134
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.23 – 使用 Ansible Vault 文件管理您的 Docker 注册表凭据
+- en: 'Add your Docker username and Access Token value to the file and save it:'
+  id: totrans-135
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 将您的 Docker 用户名和访问令牌值添加到文件中并保存：
+- en: '![Figure 10.24 – Adding your Docker username and password to the Ansible Vault
+    file ](img/B18383_10_24.jpg)'
+  id: totrans-136
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 10.24 – 将您的 Docker 用户名和密码添加到 Ansible Vault 文件](img/B18383_10_24.jpg)'
+- en: Figure 10.24 – Adding your Docker username and password to the Ansible Vault
+    file
+  id: totrans-137
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.24 – 将您的 Docker 用户名和密码添加到 Ansible Vault 文件
+- en: These variables will be used to access Docker Registry in the next sections.
+    It is possible to keep this sensitive information in environment variables or
+    the built-in secret management features of your CI/CD software (such as credentials
+    in Jenkins).
+  id: totrans-138
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这些变量将在接下来的章节中用于访问 Docker Registry。你可以将这些敏感信息保存在环境变量中，或使用 CI/CD 软件的内置秘密管理功能（例如
+    Jenkins 中的凭证）。
+- en: Building container images using Ansible
+  id: totrans-139
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 使用 Ansible 构建容器镜像
+- en: As you may recall, you can use the existing available Docker container images
+    from public registries such as Docker Hub or Quay. But for our application, we
+    need to build container images and use them to deploy the application.
+  id: totrans-140
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所知，你可以使用公共注册表（如 Docker Hub 或 Quay）中的现有 Docker 容器镜像。但对于我们的应用程序，我们需要构建容器镜像并使用它们来部署应用程序。
+- en: With the help of `community.docker.docker_image` and other modules, we can easily
+    build container images and push those images to container registries.
+  id: totrans-141
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 `community.docker.docker_image` 和其他模块的帮助下，我们可以轻松构建容器镜像，并将这些镜像推送到容器注册表。
+- en: 'Create applications or find sample applications on the internet and use them
+    for practicing further. The following are some options:'
+  id: totrans-142
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 创建应用程序或在互联网上查找示例应用程序，并利用它们进行进一步练习。以下是一些选项：
+- en: '[https://github.com/spring-projects/spring-petclinic](https://github.com/spring-projects/spring-petclinic)'
+  id: totrans-143
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '[https://github.com/spring-projects/spring-petclinic](https://github.com/spring-projects/spring-petclinic)'
+- en: '[https://github.com/docker/getting-started/tree/master/app](https://github.com/docker/getting-started/tree/master/app)'
+  id: totrans-144
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '[https://github.com/docker/getting-started/tree/master/app](https://github.com/docker/getting-started/tree/master/app)'
+- en: '[https://github.com/dockersamples/example-voting-app](https://github.com/dockersamples/example-voting-app)'
+  id: totrans-145
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '[https://github.com/dockersamples/example-voting-app](https://github.com/dockersamples/example-voting-app)'
+- en: '[https://github.com/dockersamples](https://github.com/dockersamples)'
+  id: totrans-146
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '[https://github.com/dockersamples](https://github.com/dockersamples)'
+- en: 'In this section, you will containerize a simple Node.js application ([https://github.com/ginigangadharan/nodejs-todo-demo-app](https://github.com/ginigangadharan/nodejs-todo-demo-app))
+    using a Dockerfile. A Dockerfile ([https://docs.docker.com/engine/reference/builder](https://docs.docker.com/engine/reference/builder))
+    is a simple plain text file containing instructions for building the container
+    image. After that, you will use Ansible to build the container image and push
+    it to Docker Registry. The following diagram shows the steps involved:'
+  id: totrans-147
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本节中，你将使用 Dockerfile 将一个简单的 Node.js 应用程序（[https://github.com/ginigangadharan/nodejs-todo-demo-app](https://github.com/ginigangadharan/nodejs-todo-demo-app)）容器化。Dockerfile（[https://docs.docker.com/engine/reference/builder](https://docs.docker.com/engine/reference/builder)）是一个简单的文本文件，其中包含构建容器镜像的指令。之后，你将使用
+    Ansible 来构建容器镜像并将其推送到 Docker Registry。以下图示展示了涉及的步骤：
+- en: '![Figure 10.25 – Building and managing a container image using Ansible ](img/B18383_10_25.jpg)'
+  id: totrans-148
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 10.25 – 使用 Ansible 构建和管理容器镜像](img/B18383_10_25.jpg)'
+- en: Figure 10.25 – Building and managing a container image using Ansible
+  id: totrans-149
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.25 – 使用 Ansible 构建和管理容器镜像
+- en: Podman and Containerfiles
+  id: totrans-150
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Podman 和 Containerfiles
+- en: If you are using a different container engine, such as Podman, then check out
+    the respective module documentation and use it accordingly. Podman modules for
+    Ansible can be found at [https://docs.ansible.com/ansible/latest/collections/containers/podman/index.xhtml](https://docs.ansible.com/ansible/latest/collections/containers/podman/index.xhtml),
+    while the Podman build documentation is available at [https://docs.podman.io/en/latest/markdown/podman-build.1.xhtml](https://docs.podman.io/en/latest/markdown/podman-build.1.xhtml).
+    This will help you learn more about Containerfiles.
+  id: totrans-151
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你使用的是不同的容器引擎，例如 Podman，那么请查看相应的模块文档并根据需要使用它。Podman 的 Ansible 模块可以在 [https://docs.ansible.com/ansible/latest/collections/containers/podman/index.xhtml](https://docs.ansible.com/ansible/latest/collections/containers/podman/index.xhtml)
+    找到，而 Podman 的构建文档可在 [https://docs.podman.io/en/latest/markdown/podman-build.1.xhtml](https://docs.podman.io/en/latest/markdown/podman-build.1.xhtml)
+    查阅。这将帮助你了解更多关于 Containerfiles 的信息。
+- en: 'Access the repository and perform the following steps:'
+  id: totrans-152
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 访问仓库并执行以下步骤：
+- en: 'Verify the Dockerfile inside the application repository ([https://github.com/ginigangadharan/nodejs-todo-demo-app](https://github.com/ginigangadharan/nodejs-todo-demo-app)):'
+  id: totrans-153
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 验证应用程序仓库中的 Dockerfile（[https://github.com/ginigangadharan/nodejs-todo-demo-app](https://github.com/ginigangadharan/nodejs-todo-demo-app)）：
+- en: '![Figure 10.26 – Verifying the Dockerfile to build the container image  ](img/B18383_10_26.jpg)'
+  id: totrans-154
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 10.26 – 验证 Dockerfile 以构建容器镜像](img/B18383_10_26.jpg)'
+- en: Figure 10.26 – Verifying the Dockerfile to build the container image
+  id: totrans-155
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.26 – 验证 Dockerfile 以构建容器镜像
+- en: The Dockerfile contains instructions for building the container image and exposing
+    the application on port `3000`.
+  id: totrans-156
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Dockerfile 包含构建容器镜像的指令，并将应用程序暴露在端口 `3000` 上。
+- en: 'The repository also contains a simple **ToDo** application written in **Node.js**
+    with supported files and directories:'
+  id: totrans-157
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 仓库还包含一个用 **Node.js** 编写的简单 **ToDo** 应用程序，包含支持的文件和目录：
+- en: '![Figure 10.27 – Application repository content ](img/B18383_10_27.jpg)'
+  id: totrans-158
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 10.27 – 应用程序仓库内容](img/B18383_10_27.jpg)'
+- en: Figure 10.27 – Application repository content
+  id: totrans-159
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.27 – 应用程序仓库内容
+- en: Fork this repository and make changes as needed.
+  id: totrans-160
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: Fork 此仓库并根据需要进行更改。
+- en: 'Create a playbook called `Chapter-10/container-build.yaml` and add the required
+    variables to build the container image as follows:'
+  id: totrans-161
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建一个名为 `Chapter-10/container-build.yaml` 的 Playbook，并添加所需的变量以构建容器镜像，如下所示：
+- en: '![Figure 10.28 – Playbook to build the container image ](img/B18383_10_28.jpg)'
+  id: totrans-162
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 10.28 – 构建容器镜像的 Playbook](img/B18383_10_28.jpg)'
+- en: Figure 10.28 – Playbook to build the container image
+  id: totrans-163
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.28 – 构建容器镜像的 Playbook
+- en: Using variables will help you dynamically pass the values to the same playbook
+    for different image build tasks.
+  id: totrans-164
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用变量将帮助你动态地将值传递给同一个 Playbook，用于不同的镜像构建任务。
+- en: Docker Registry URL
+  id: totrans-165
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Docker 注册表 URL
+- en: Note that [https://index.docker.io/v1/](https://index.docker.io/v1/) is the
+    default URL for the Docker Hub registry. If you are using a different registry
+    or other private container registries, then find the correct registry URL and
+    use it as `container_registry_url`.
+  id: totrans-166
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请注意，[https://index.docker.io/v1/](https://index.docker.io/v1/) 是 Docker Hub
+    注册表的默认 URL。如果你使用的是其他注册表或私人容器注册表，请找到正确的注册表 URL 并将其用作 `container_registry_url`。
+- en: Also check the included variable file `vars/docker-credential.yaml`, which contains
+    the Docker Registry username and Access Token (refer to the *Configuring Docker
+    Registry access* section in this chapter for more details).
+  id: totrans-167
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 还需要检查包含的变量文件 `vars/docker-credential.yaml`，该文件包含 Docker 注册表的用户名和访问令牌（详细内容请参见本章的
+    *配置 Docker 注册表访问* 部分）。
+- en: 'Add a task that will create a temporary working directory on the host and check
+    out the application repository. This is to avoid using the default directory names
+    and overwriting issues when the same playbook executes in parallel. You also need
+    to delete the directory at the end of the play as part of housekeeping:'
+  id: totrans-168
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 添加一个任务，用于在主机上创建临时工作目录并签出应用程序仓库。这是为了避免使用默认的目录名称并在同一 Playbook 并行执行时出现覆盖问题。你还需要在
+    Playbook 结束时删除该目录，作为清理的一部分：
+- en: '![Figure 10.29 – Tasks to build the container image ](img/B18383_10_29.jpg)'
+  id: totrans-169
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 10.29 – 构建容器镜像的任务](img/B18383_10_29.jpg)'
+- en: Figure 10.29 – Tasks to build the container image
+  id: totrans-170
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.29 – 构建容器镜像的任务
+- en: 'Add a task to delete the image if it already exists with the same name and
+    tag before creating the new container image. Also add the task for building the
+    container image by providing the working directory path – that is, `temp_location.path`:'
+  id: totrans-171
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 添加一个任务，在创建新容器镜像之前，如果已有相同名称和标签的镜像，则删除该镜像。同时添加构建容器镜像的任务，提供工作目录路径，即 `temp_location.path`：
+- en: '![Figure 10.30 – Delete and create new container image ](img/B18383_10_30.jpg)'
+  id: totrans-172
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 10.30 – 删除并创建新的容器镜像](img/B18383_10_30.jpg)'
+- en: Figure 10.30 – Delete and create new container image
+  id: totrans-173
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.30 – 删除并创建新的容器镜像
+- en: 'If you want to include tasks such as scanning the image, testing the vulnerabilities,
+    and more, they can be included at this stage (or include this as part of the `post-build`
+    stage in your CI/CD pipeline):'
+  id: totrans-174
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如果你想包括像扫描镜像、测试漏洞等任务，可以在此阶段添加（或者将其作为 CI/CD 管道中的 `post-build` 阶段的一部分）：
+- en: '![Figure 10.31 – Include scanning or testing tasks ](img/B18383_10_31.jpg)'
+  id: totrans-175
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 10.31 – 包含扫描或测试任务](img/B18383_10_31.jpg)'
+- en: Figure 10.31 – Include scanning or testing tasks
+  id: totrans-176
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.31 – 包含扫描或测试任务
+- en: 'Now, we need to authenticate to Docker Registry before pushing the image to
+    the repository. Once authenticated, push the image to Docker Registry, as follows:'
+  id: totrans-177
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在，我们需要在将镜像推送到仓库之前对 Docker 注册表进行身份验证。验证通过后，将镜像推送到 Docker 注册表，如下所示：
+- en: '![Figure 10.32 – Authenticate to Docker Hub and push the image to the container
+    registry ](img/B18383_10_32.jpg)'
+  id: totrans-178
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 10.32 – 认证 Docker Hub 并将镜像推送到容器注册表](img/B18383_10_32.jpg)'
+- en: Figure 10.32 – Authenticate to Docker Hub and push the image to the container
+    registry
+  id: totrans-179
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.32 – 认证 Docker Hub 并将镜像推送到容器注册表
+- en: 'Optionally, add the `latest` tag to the image that will be used when you don’t
+    mention any tag while pulling the image:'
+  id: totrans-180
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 可选地，向镜像添加 `latest` 标签，这样在拉取镜像时如果没有提到标签就会使用该标签：
+- en: '![Figure 10.33 – Add the latest tag to the image and log out from Docker Hub
+    ](img/B18383_10_33.jpg)'
+  id: totrans-181
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 10.33 – 为镜像添加最新标签并从 Docker Hub 注销](img/B18383_10_33.jpg)'
+- en: Figure 10.33 – Add the latest tag to the image and log out from Docker Hub
+  id: totrans-182
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.33 – 为镜像添加最新标签并从 Docker Hub 注销
+- en: Also, notice the last task to log out from the container registry. For security
+    reasons, always log out of Docker Registry once the image has been pushed (or
+    pulled).
+  id: totrans-183
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 另外，注意最后一个任务是从容器注册表退出。出于安全原因，一旦镜像推送（或拉取）完成，务必从 Docker Registry 注销。
+- en: 'Finally, delete the temporary working directory as part of the cleanup process:'
+  id: totrans-184
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 最后，作为清理过程的一部分，删除临时工作目录：
+- en: '![Figure 10.34 – Delete the temporary working directory ](img/B18383_10_34.jpg)'
+  id: totrans-185
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 10.34 – 删除临时工作目录](img/B18383_10_34.jpg)'
+- en: Figure 10.34 – Delete the temporary working directory
+  id: totrans-186
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.34 – 删除临时工作目录
+- en: 'Execute the playbooks and verify the result. Remember to include `--ask-vault-password`
+    in the command since you have included the Docker credential using Ansible Vault:'
+  id: totrans-187
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 执行 playbook 并验证结果。记得在命令中加上 `--ask-vault-password`，因为你已使用 Ansible Vault 包含了 Docker
+    凭证：
+- en: '![Figure 10.35 – Execute the playbook to build and push the container image
+    ](img/B18383_10_35.jpg)'
+  id: totrans-188
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 10.35 – 执行 playbook 来构建并推送容器镜像](img/B18383_10_35.jpg)'
+- en: Figure 10.35 – Execute the playbook to build and push the container image
+  id: totrans-189
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.35 – 执行 playbook 来构建并推送容器镜像
+- en: 'Now, verify the image from multiple places, such as from a Docker host and
+    the Docker Registry GUI (Docker Hub: [https://hub.docker.com/repositories](https://hub.docker.com/repositories)).'
+  id: totrans-190
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: '现在，从多个地方验证镜像，例如从 Docker 主机和 Docker 注册表 GUI（Docker Hub: [https://hub.docker.com/repositories](https://hub.docker.com/repositories)）。'
+- en: 'Check the image on the Docker host (`node1`):'
+  id: totrans-191
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在 Docker 主机（`node1`）上检查镜像：
+- en: '![Figure 10.36 – Container image built using Ansible ](img/B18383_10_36.jpg)'
+  id: totrans-192
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 10.36 – 使用 Ansible 构建的容器镜像](img/B18383_10_36.jpg)'
+- en: Figure 10.36 – Container image built using Ansible
+  id: totrans-193
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.36 – 使用 Ansible 构建的容器镜像
+- en: 'Also, verify the image in the Docker Hub GUI ([https://hub.docker.com/repositories](https://hub.docker.com/repositories)),
+    as shown in the following screenshot:'
+  id: totrans-194
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 另外，按照以下截图的显示，验证 Docker Hub GUI 上的镜像 ([https://hub.docker.com/repositories](https://hub.docker.com/repositories))：
+- en: '![Figure 10.37 – Docker image in Docker Hub ](img/B18383_10_37.jpg)'
+  id: totrans-195
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 10.37 – Docker Hub 中的 Docker 镜像](img/B18383_10_37.jpg)'
+- en: Figure 10.37 – Docker image in Docker Hub
+  id: totrans-196
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.37 – Docker Hub 中的 Docker 镜像
+- en: 'Click on the container image entry to view more details about the image:'
+  id: totrans-197
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击容器镜像条目查看更多镜像详细信息：
+- en: '![Figure 10.38 – Docker image details ](img/B18383_10_38.jpg)'
+  id: totrans-198
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 10.38 – Docker 镜像详细信息](img/B18383_10_38.jpg)'
+- en: Figure 10.38 – Docker image details
+  id: totrans-199
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.38 – Docker 镜像详细信息
+- en: Add more details to the image, such as `README` information about the container
+    image, supported tags, documentation links, and so on.
+  id: totrans-200
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为镜像添加更多细节，如容器镜像的 `README` 信息、支持的标签、文档链接等。
+- en: With that, we have the latest container image ready with our application in
+    the container registry. We can test it with the same `Chapter-10/container-manage.yaml`
+    playbook.
+  id: totrans-201
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这样，我们就有了最新的容器镜像，并且应用已存储在容器注册表中。我们可以使用相同的 `Chapter-10/container-manage.yaml`
+    playbook 来进行测试。
+- en: 'Follow these steps to run container with new image:'
+  id: totrans-202
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 按照以下步骤运行容器并使用新镜像：
+- en: 'Run a new container using the `Chapter-10/container-manage.yaml` playbook but
+    pass appropriate extra variables such as `container_image`, `container_name`,
+    `container_port`, and `container_expose_port`, as follows:'
+  id: totrans-203
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用 `Chapter-10/container-manage.yaml` playbook 启动新容器，但传递适当的额外变量，如 `container_image`、`container_name`、`container_port`
+    和 `container_expose_port`，如下所示：
+- en: '![Figure 10.39 – Run container with different image ](img/B18383_10_39.jpg)'
+  id: totrans-204
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 10.39 – 使用不同镜像运行容器](img/B18383_10_39.jpg)'
+- en: Figure 10.39 – Run container with different image
+  id: totrans-205
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.39 – 使用不同镜像运行容器
+- en: 'Once the container has been created, verify it on the Docker host (`node1`),
+    as follows:'
+  id: totrans-206
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 容器创建完成后，按照以下步骤在 Docker 主机（`node1`）上进行验证：
+- en: '![Figure 10.40 – The ToDo application container deployed using Ansible ](img/B18383_10_40.jpg)'
+  id: totrans-207
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 10.40 – 使用 Ansible 部署的 ToDo 应用容器](img/B18383_10_40.jpg)'
+- en: Figure 10.40 – The ToDo application container deployed using Ansible
+  id: totrans-208
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.40 – 使用 Ansible 部署的 ToDo 应用容器
+- en: 'Verify the application from a web browser. Remember to add port `8081`, as
+    shown in the following screenshot, since we used port `8081` while running the
+    container:'
+  id: totrans-209
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 从网页浏览器验证应用。记得添加端口 `8081`，如下所示，因为我们在运行容器时使用了端口 `8081`：
+- en: '![Figure 10.41 – Accessing the ToDo app from a web browser ](img/B18383_10_41.jpg)'
+  id: totrans-210
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 10.41 – 从网页浏览器访问 ToDo 应用](img/B18383_10_41.jpg)'
+- en: Figure 10.41 – Accessing the ToDo app from a web browser
+  id: totrans-211
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.41 – 从网页浏览器访问 ToDo 应用
+- en: 'Add some entries and test the application, as shown in the following screenshot:'
+  id: totrans-212
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 添加一些条目并测试应用程序，如下截图所示：
+- en: '![Figure 10.42 – Testing the ToDo application with sample entries ](img/B18383_10_42.jpg)'
+  id: totrans-213
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 10.42 – 使用示例条目测试 ToDo 应用程序 ](img/B18383_10_42.jpg)'
+- en: Figure 10.42 – Testing the ToDo application with sample entries
+  id: totrans-214
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.42 – 使用示例条目测试 ToDo 应用程序
+- en: 'Stop the container as part of housekeeping using the same playbook but by passing
+    the `container_action=stop` action:'
+  id: totrans-215
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用相同的 playbook 停止容器作为日常管理的一部分，但传递 `container_action=stop` 动作：
+- en: '![Figure 10.43 – Stop container using playbooks ](img/B18383_10_43.jpg)'
+  id: totrans-216
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 10.43 – 使用 playbook 停止容器 ](img/B18383_10_43.jpg)'
+- en: Figure 10.43 – Stop container using playbooks
+  id: totrans-217
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.43 – 使用 playbook 停止容器
+- en: Note
+  id: totrans-218
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 注意
+- en: The data you have stored will be lost when you stop and kill the container as
+    you did not mount any volumes for data persistence. Add more configurations and
+    volume details to `Chapter-10/container-manage.yaml` and enhance your playbook.
+  id: totrans-219
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当您停止并销毁容器时，由于没有为数据持久性挂载任何卷，您存储的数据将会丢失。向 `Chapter-10/container-manage.yaml` 添加更多配置和卷的细节，增强您的
+    playbook。
+- en: In this section, you learned how to handle single containers and container images.
+    But it is possible to handle any number of images and containers using Ansible
+    based on your application stack. In the next section, you will learn how to handle
+    multiple containers using Ansible.
+  id: totrans-220
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本节中，您学习了如何处理单个容器和容器镜像。但是，您可以根据应用程序堆栈使用 Ansible 来处理任意数量的镜像和容器。在下一节中，您将学习如何使用
+    Ansible 处理多个容器。
+- en: Managing multi-container applications using Ansible
+  id: totrans-221
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用 Ansible 管理多容器应用程序
+- en: In this section, you will use the well-known **Content Management System** (**CMS**)
+    application stack known as WordPress ([https://wordpress.org](https://wordpress.org)).
+    The WordPress application is based on multiple application stacks, including PHP,
+    a web server, and a database. The WordPress application is available as a container
+    image ([https://hub.docker.com/_/wordpress](https://hub.docker.com/_/wordpress)).
+    For the database, we will deploy another container using MariaDB ([https://hub.docker.com/_/mariadb](https://hub.docker.com/_/mariadb)).
+  id: totrans-222
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本节中，您将使用著名的 **内容管理系统** (**CMS**) 应用堆栈 WordPress ([https://wordpress.org](https://wordpress.org))。WordPress
+    应用基于多个应用堆栈，包括 PHP、Web 服务器和数据库。WordPress 应用有一个容器镜像 ([https://hub.docker.com/_/wordpress](https://hub.docker.com/_/wordpress))。对于数据库，我们将使用
+    MariaDB 部署另一个容器 ([https://hub.docker.com/_/mariadb](https://hub.docker.com/_/mariadb))。
+- en: 'Please refer to the `Chapter-10/deploy-wordpress-on-docker.yaml` file to see
+    the Ansible playbook for deploying the WordPress CMS using Ansible. Follow these
+    steps:'
+  id: totrans-223
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请参考 `Chapter-10/deploy-wordpress-on-docker.yaml` 文件，查看使用 Ansible 部署 WordPress
+    CMS 的 Ansible playbook。请按照以下步骤操作：
+- en: 'We declared the essential parameters on top of the playbook, as shown in the
+    following screenshot. Remember to store sensitive data such as database usernames
+    and passwords using Ansible Vault (or Credential in Ansible Automation Controller)
+    or other secret management services. These variables are then passed to the container
+    as environment variables and Docker volumes will be created, as shown in the following
+    screenshot:'
+  id: totrans-224
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 我们在 playbook 顶部声明了必要的参数，如下截图所示。请记住，使用 Ansible Vault（或在 Ansible 自动化控制器中使用凭证）或其他秘密管理服务存储敏感数据，如数据库用户名和密码。然后，这些变量会作为环境变量传递给容器，同时创建
+    Docker 卷，如下截图所示：
+- en: '![Figure 10.44 – Deploying WordPress using Ansible ](img/B18383_10_44.jpg)'
+  id: totrans-225
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 10.44 – 使用 Ansible 部署 WordPress ](img/B18383_10_44.jpg)'
+- en: Figure 10.44 – Deploying WordPress using Ansible
+  id: totrans-226
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.44 – 使用 Ansible 部署 WordPress
+- en: 'There are two tasks, as shown in the following screenshot. The first task will
+    deploy the MariaDB container, while the second task will deploy the WordPress
+    container:'
+  id: totrans-227
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 有两个任务，如下截图所示。第一个任务将部署 MariaDB 容器，第二个任务将部署 WordPress 容器：
+- en: '![Figure 10.45 – Ansible tasks for deploying the WordPress and MariaDB containers
+    ](img/B18383_10_45.jpg)'
+  id: totrans-228
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 10.45 – 部署 WordPress 和 MariaDB 容器的 Ansible 任务 ](img/B18383_10_45.jpg)'
+- en: Figure 10.45 – Ansible tasks for deploying the WordPress and MariaDB containers
+  id: totrans-229
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.45 – 部署 WordPress 和 MariaDB 容器的 Ansible 任务
+- en: 'Execute the playbook to deploy the WordPress stack with the MariaDB database
+    on `node1`:'
+  id: totrans-230
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 执行 playbook 在 `node1` 上部署 WordPress 堆栈及 MariaDB 数据库：
+- en: '![Figure 10.46 – Deploy WordPress using Ansible ](img/B18383_10_46.jpg)'
+  id: totrans-231
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 10.46 – 使用 Ansible 部署 WordPress ](img/B18383_10_46.jpg)'
+- en: Figure 10.46 – Deploy WordPress using Ansible
+  id: totrans-232
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.46 – 使用 Ansible 部署 WordPress
+- en: 'On `node1`, verify the Docker containers and Docker volumes, as shown in the
+    following screenshot:'
+  id: totrans-233
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在 `node1` 上，验证 Docker 容器和 Docker 卷，如下截图所示：
+- en: '![Figure 10.47 – The WordPress and MariaDB containers running on the Docker
+    host ](img/B18383_10_47.jpg)'
+  id: totrans-234
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 10.47 – 在 Docker 主机上运行的 WordPress 和 MariaDB 容器](img/B18383_10_47.jpg)'
+- en: Figure 10.47 – The WordPress and MariaDB containers running on the Docker host
+  id: totrans-235
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.47 – 在 Docker 主机上运行的 WordPress 和 MariaDB 容器
+- en: 'Verify the WordPress application from a browser using port `8082`, which we
+    have configured to expose. The initial configuration for WordPress will be visible,
+    as shown in the following screenshot. Now, we can configure the WordPress CMS
+    application ([https://wordpress.org/support/article/how-to-install-wordpress/#setup-configuration-file](https://wordpress.org/support/article/how-to-install-wordpress/#setup-configuration-file)):'
+  id: totrans-236
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 通过浏览器使用我们已经配置的 `8082` 端口验证 WordPress 应用。初始的 WordPress 配置界面将可见，如下图所示。现在，我们可以配置
+    WordPress CMS 应用（[https://wordpress.org/support/article/how-to-install-wordpress/#setup-configuration-file](https://wordpress.org/support/article/how-to-install-wordpress/#setup-configuration-file)）：
+- en: '![Figure 10.48 – The initial WordPress configuration screen ](img/B18383_10_48.jpg)'
+  id: totrans-237
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 10.48 – 初始的 WordPress 配置界面](img/B18383_10_48.jpg)'
+- en: Figure 10.48 – The initial WordPress configuration screen
+  id: totrans-238
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.48 – 初始的 WordPress 配置界面
+- en: The playbook can be enhanced by configuring additional volumes and configurations;
+    please refer to the WordPress installation documentation to implement more automation
+    steps for such use cases ([https://wordpress.org/support/article/how-to-install-wordpress/#setup-configuration-file](https://wordpress.org/support/article/how-to-install-wordpress/#setup-configuration-file)).
+  id: totrans-239
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通过配置额外的卷和配置，可以增强 playbook；请参考 WordPress 安装文档，以便为此类用例实施更多自动化步骤（[https://wordpress.org/support/article/how-to-install-wordpress/#setup-configuration-file](https://wordpress.org/support/article/how-to-install-wordpress/#setup-configuration-file)）。
+- en: With that, you have learned that the entire container image life cycle can be
+    automated using Ansible in different stages of your CI/CD pipelines. This will
+    give you more control over building and testing compared to using the native container
+    management features in the available CI/CD tools.
+  id: totrans-240
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通过本章，你已经学会了如何在 CI/CD 管道的不同阶段使用 Ansible 自动化整个容器镜像生命周期。与使用现有 CI/CD 工具中的原生容器管理功能相比，这将使你对构建和测试过程拥有更多的控制权。
+- en: Summary
+  id: totrans-241
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 摘要
+- en: In this chapter, you learned how to install and configure Docker on a Linux
+    machine using Ansible. Then, you learned how to pull an image from the container
+    registry, and then start that container and stop it using Ansible modules. Finally,
+    you learned how to use Ansible to build container images with a Dockerfile, as
+    well as how to build application content and push a container image to the container
+    registry. You also tested the newly built container images by running a container
+    with Ansible modules. Knowing how to manage containers and container images using
+    Ansible will help you implement better and more efficient CI/CD workflows and
+    pipelines. Instead of struggling with the limited features in the CI/CD tools,
+    utilize the flexibility of Ansible to add more validations, tests, and integrations
+    to the container build process.
+  id: totrans-242
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章中，你学习了如何使用 Ansible 在 Linux 机器上安装和配置 Docker。接着，你学习了如何从容器注册表拉取镜像，然后使用 Ansible
+    模块启动和停止该容器。最后，你学习了如何使用 Ansible 根据 Dockerfile 构建容器镜像，以及如何构建应用内容并将容器镜像推送到容器注册表。你还通过使用
+    Ansible 模块运行容器，测试了新构建的容器镜像。掌握了如何使用 Ansible 管理容器和容器镜像，将帮助你实现更好、更高效的 CI/CD 工作流和管道。与其在
+    CI/CD 工具中挣扎于有限的功能，不如利用 Ansible 的灵活性，向容器构建过程添加更多的验证、测试和集成。
+- en: In the next chapter, you will learn how to manage containerized applications
+    in Kubernetes and manage other Kubernetes resources and applications using Ansible.
+  id: totrans-243
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一章中，你将学习如何在 Kubernetes 中管理容器化应用，并使用 Ansible 管理其他 Kubernetes 资源和应用。
+- en: Further reading
+  id: totrans-244
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 进一步阅读
+- en: 'To learn more about the topics that were covered in this chapter, take a look
+    at the following resources:'
+  id: totrans-245
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 若想进一步了解本章所涵盖的主题，请查看以下资源：
+- en: '*Container registry access tokens for Docker Hub*: [https://docs.docker.com/docker-hub/access-tokens](https://docs.docker.com/docker-hub/access-tokens)'
+  id: totrans-246
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*Docker Hub 的容器注册表访问令牌*：[https://docs.docker.com/docker-hub/access-tokens](https://docs.docker.com/docker-hub/access-tokens)'
+- en: '*Ansible docker-compose module*: [https://docs.ansible.com/ansible/latest/collections/community/docker/docker_compose_module.xhtml](https://docs.ansible.com/ansible/latest/collections/community/docker/docker_compose_module.xhtml)'
+  id: totrans-247
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*Ansible docker-compose 模块*：[https://docs.ansible.com/ansible/latest/collections/community/docker/docker_compose_module.xhtml](https://docs.ansible.com/ansible/latest/collections/community/docker/docker_compose_module.xhtml)'
+- en: '*Docker RUN and environment variables*: [https://docs.docker.com/engine/reference/commandline/run/#set-environment-variables--e---env---env-file](https://docs.docker.com/engine/reference/commandline/run/#set-environment-variables--e---env---env-file)'
+  id: totrans-248
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*Docker RUN 和环境变量*: [https://docs.docker.com/engine/reference/commandline/run/#set-environment-variables--e---env---env-file](https://docs.docker.com/engine/reference/commandline/run/#set-environment-variables--e---env---env-file)'
+- en: '*Dockerfile documentation*: [https://docs.docker.com/engine/reference/builder/](https://docs.docker.com/engine/reference/builder/)'
+  id: totrans-249
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*Dockerfile 文档*: [https://docs.docker.com/engine/reference/builder/](https://docs.docker.com/engine/reference/builder/)'
+- en: '*Top 5 Free Resources to Learn Docker*: [https://www.techbeatly.com/top-5-free-resources-to-learn-docker/](https://www.techbeatly.com/top-5-free-resources-to-learn-docker/)'
+  id: totrans-250
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*学习 Docker 的 5 大免费资源*: [https://www.techbeatly.com/top-5-free-resources-to-learn-docker/](https://www.techbeatly.com/top-5-free-resources-to-learn-docker/)'

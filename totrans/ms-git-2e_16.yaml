@@ -1,0 +1,3311 @@
+- en: '13'
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '13'
+- en: Customizing and Extending Git
+  id: totrans-1
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 自定义和扩展 Git
+- en: Earlier chapters were designed to help you understand how Git works and master
+    Git as a version control system. The following two chapters will help you set
+    up and configure Git, so that you can use it more effectively for yourself (this
+    chapter) and help other developers use it (the next chapter).
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 前面的章节旨在帮助你理解 Git 的工作原理，并掌握 Git 作为版本控制系统的使用。接下来的两章将帮助你设置和配置 Git，使你能够更加高效地使用它（本章）以及帮助其他开发人员使用它（下一章）。
+- en: This chapter will cover configuring and extending Git to fit one’s needs. First,
+    it will show how to set up a Git command line to make it easier to use. For some
+    tasks, though it is easier to use visual tools; the short introduction to graphical
+    interfaces in this chapter should help you in choosing one. Next, there will be
+    an explanation of how to change and configure Git behavior, from configuration
+    files (with the selected configuration options described) to a per-file configuration
+    with the `.``gitattributes` file.
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章将介绍如何配置和扩展 Git 以满足个人需求。首先，它将展示如何设置 Git 命令行以使其更易于使用。对于某些任务，使用视觉工具会更容易；本章对图形界面的简要介绍将帮助你做出选择。接下来，将解释如何通过配置文件（并描述所选配置选项）到每个文件的配置（使用
+    `.gitattributes` 文件）来更改和配置 Git 的行为。
+- en: Then this chapter will cover how to automate Git with hooks, describing for
+    example how to make Git check whether the commit being created passes coding guidelines
+    for a project. This part will focus on the client-side hook, and will only touch
+    upon the server-side hooks— those are left for [*Chapter 14*](B21194_14.xhtml#_idTextAnchor349),
+    *Git Administration*. The last part of the chapter will describe how to extend
+    Git, from the Git command aliases, through integrating new user-visible commands,
+    to helpers and drivers (new backend abilities).
+  id: totrans-4
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来，本章将介绍如何使用钩子自动化 Git，例如如何让 Git 检查正在创建的提交是否符合项目的编码规范。本部分将重点讨论客户端钩子，并仅简要涉及服务器端钩子——这些内容会留给
+    [*第14章*](B21194_14.xhtml#_idTextAnchor349)，*Git 管理*。本章的最后部分将描述如何扩展 Git，从 Git 命令别名，到集成新的用户可见命令，再到助手和驱动程序（新的后台功能）。
+- en: Many issues, such as gitattributes, remote and credential helpers, and the basics
+    of the Git configuration should be known from the previous chapters. This chapter
+    will gather this information in a single place, and expand it a bit.
+  id: totrans-5
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 许多问题，如 gitattributes、远程和凭证助手以及 Git 配置的基础知识，应该已经在前面的章节中了解。本章将把这些信息集中到一个地方，并稍作扩展。
+- en: 'In this chapter, we will cover the following topics:'
+  id: totrans-6
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章将涵盖以下主题：
+- en: Setting up the shell prompt and Tab completion for a command line
+  id: totrans-7
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 设置 shell 提示符和命令行的 Tab 补全功能
+- en: Types and examples of graphical user interfaces
+  id: totrans-8
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 图形用户界面的类型和示例
+- en: Configuration files and basic configuration options
+  id: totrans-9
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 配置文件和基本配置选项
+- en: Installing and using various types of hooks
+  id: totrans-10
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 安装和使用各种类型的钩子
+- en: Simple and complex aliases
+  id: totrans-11
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 简单和复杂的别名
+- en: Extending Git with new commands and helpers
+  id: totrans-12
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 扩展 Git 以增加新命令和助手
+- en: Git on the command line
+  id: totrans-13
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 命令行中的 Git
+- en: There are a lot of different ways to use the Git version control system. There
+    are many **graphical user interfaces** (**GUIs**) of varying use cases and capabilities,
+    and there exist tools and plugins that allow integration with an **integrated
+    development environment** (**IDE**) or a file manager.
+  id: totrans-14
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用 Git 版本控制系统的方式有很多种。存在许多不同用途和功能的 **图形用户界面**（**GUIs**），并且还存在允许与 **集成开发环境**（**IDE**）或文件管理器集成的工具和插件。
+- en: However, the command line is the only place you can run all of the Git commands
+    and which provides support for all their options. New features, which you might
+    want to use, are developed for the command line first. Also, most of the GUIs
+    implement only some subsets of the Git functionality. Mastering the command line
+    always guarantees a deep understanding of tools, mechanisms, and their abilities.
+    Just knowing how to use a GUI is probably not enough to get a founded knowledge.
+  id: totrans-15
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，命令行是你可以运行所有 Git 命令并支持其所有选项的唯一地方。你可能希望使用的新功能，通常首先会为命令行开发。此外，大多数图形用户界面（GUI）仅实现了
+    Git 功能的一部分。精通命令行总能保证对工具、机制及其功能的深入理解。仅仅知道如何使用图形界面可能不足以获得扎实的知识。
+- en: Whether you use Git on a command line from choice, as a preferred environment,
+    or you need it because it is the only way to access the required functionality,
+    there are a few shell features that Git can tap into to make your experience a
+    lot friendlier.
+  id: totrans-16
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 无论你是出于选择、偏好环境，还是因为这是唯一能访问所需功能的方式在命令行中使用 Git，Git 可以利用一些 shell 特性，使你的体验更加友好。
+- en: Git-aware command prompt
+  id: totrans-17
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: Git 感知命令提示符
+- en: It’s useful to customize your **shell prompt** to show information about the
+    state of the Git repository we are in.
+  id: totrans-18
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 自定义 **shell 提示符** 显示我们所在 Git 仓库的状态信息是很有用的。
+- en: Definition
+  id: totrans-19
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 定义
+- en: The **shell prompt** is a short text message that is written to the terminal
+    or the console output to notify the user of the interactive shell that some typed
+    input is expected (usually a shell command).
+  id: totrans-20
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**shell 提示符** 是写入终端或控制台输出的简短文本消息，用于通知用户交互式 shell 正在等待输入（通常是 shell 命令）。'
+- en: This information can be as simple or as complex as you want. Git’s prompt might
+    be similar to the ordinary command-line prompt (to reduce dissonance), or visibly
+    different (to be able to easily distinguish that we are inside the Git repository).
+  id: totrans-21
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这些信息可以根据需要简单或复杂。Git 的提示符可以类似于普通的命令行提示符（以减少不和谐感），也可以显著不同（以便能轻松区分我们是否在 Git 仓库中）。
+- en: 'There is an example implementation for `bash` and `zsh` shells in the `contrib/`
+    area. If you install Git from the sources, just copy the `contrib/completion/git-prompt.sh`
+    file to your home directory; if you have installed Git on Linux via a package
+    manager, you will probably have it at `/etc/bash_completion.d/git-prompt.sh`.
+    This file provides the `__git_ps1` shell function to generate a Git-aware prompt
+    in the Git repositories, but first, you need to source this file in your `.bashrc`
+    or `.zshrc` shell configuration file:'
+  id: totrans-22
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 `contrib/` 目录下有 `bash` 和 `zsh` shell 的示例实现。如果你是从源代码安装 Git，只需将 `contrib/completion/git-prompt.sh`
+    文件复制到主目录；如果你通过包管理器在 Linux 上安装了 Git，那么该文件可能位于 `/etc/bash_completion.d/git-prompt.sh`。此文件提供了
+    `__git_ps1` shell 函数，用于在 Git 仓库中生成 Git 感知提示符，但你需要先在 `.bashrc` 或 `.zshrc` shell
+    配置文件中加载此文件：
+- en: '[PRE0]'
+  id: totrans-23
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: 'The shell prompt is configured using environment variables. To set up a prompt,
+    you must change, directly or indirectly, the `PS1` (prompt string one, the default
+    interaction prompt) environment variable. Thus, one solution to create a Git-aware
+    command prompt is to include a call to the `__git_ps1` shell function in the `PS1`
+    environment variable, by using command substitution:'
+  id: totrans-24
+  prefs: []
+  type: TYPE_NORMAL
+  zh: shell 提示符是通过环境变量配置的。要设置提示符，必须直接或间接地更改 `PS1`（提示字符串一，默认交互提示符）环境变量。因此，创建一个 Git
+    感知命令提示符的一个解决方案是通过命令替换，将对 `PS1` 环境变量进行调用，加入 `__git_ps1` shell 函数：
+- en: '[PRE1]'
+  id: totrans-25
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: Note that, for `zsh`, you would also need to turn on the command substitution
+    in the shell prompt with the `setopt` `PROMPT_SUBST` command.
+  id: totrans-26
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 注意，对于 `zsh`，你还需要使用 `setopt` `PROMPT_SUBST` 命令打开命令替换功能。
+- en: 'Alternatively, for a slightly faster prompt and the possibility of color, you
+    can use `__git_ps1` to set `PS1`. This is done with the `PROMPT_COMMAND` environment
+    variable in `bash` and with the `precmd()` function in `zsh`. You can find more
+    information about this option in the comments in the `git-prompt.sh` file; for
+    `bash`, it could be the following:'
+  id: totrans-27
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 另外，为了获得稍微更快的提示符和支持颜色，你可以使用 `__git_ps1` 来设置 `PS1`。在 `bash` 中通过 `PROMPT_COMMAND`
+    环境变量完成，在 `zsh` 中则通过 `precmd()` 函数完成。你可以在 `git-prompt.sh` 文件的注释中找到有关此选项的更多信息；对于
+    `bash`，可能如下所示：
+- en: '[PRE2]'
+  id: totrans-28
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: 'With this configuration (either solution), the prompt will look as follows:'
+  id: totrans-29
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用此配置（任一解决方案），提示符将如下所示：
+- en: '[PRE3]'
+  id: totrans-30
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: The Git Bash command from Git for Windows comes out of the box with a similar
+    prompt configured (though the Git Bash default prompt takes two lines, not one).
+  id: totrans-31
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git for Windows 中的 Git Bash 命令自带类似的配置（尽管 Git Bash 默认提示符占两行，而非一行）。
+- en: 'The `bash` and `zsh` shell prompts can be customized with the use of special
+    characters that get expanded by a shell. In the example used here (you can find
+    more for example in the *Bash Reference Manual*), we have the following:'
+  id: totrans-32
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`bash` 和 `zsh` 的 shell 提示符可以通过特殊字符进行定制，shell 会扩展这些字符。在这里使用的示例中（你可以在 *Bash 参考手册*
+    中找到更多示例），我们有如下内容：'
+- en: '**\u** means the current user (**bob**)'
+  id: totrans-33
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**\u** 表示当前用户（**bob**）'
+- en: '**\h** is the current hostname (**host.company.org**)'
+  id: totrans-34
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**\h** 表示当前主机名（**host.company.org**）'
+- en: '**\w** means the current working directory (**~/random/src**)'
+  id: totrans-35
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**\w** 表示当前工作目录（**~/random/src**）'
+- en: '**\$** prints the **$** part of the prompt (**#** if you are logged in as the
+    root user)'
+  id: totrans-36
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**\$** 打印提示符中的 **$** 部分（如果以 root 用户身份登录，则为 **#**）'
+- en: '`$(...)` in the `PS1` setup is used to call external commands and shell functions.
+    `__git_ps1 " (%s)"` here calls the `git_ps1` shell function provided by `git-prompt.sh`
+    with a formatting argument: the `%s` token is the placeholder for the presented
+    Git status. Note that you need to either use single quotes while setting the `PS1`
+    variable from the command line, as in the example shown here, or escape shell
+    substitution, so it is expanded while showing the prompt and not while defining
+    the variable.'
+  id: totrans-37
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`$(...)` 在 `PS1` 设置中用于调用外部命令和 shell 函数。`__git_ps1 " (%s)"` 在这里调用由 `git-prompt.sh`
+    提供的 `git_ps1` shell 函数，并带有格式化参数：`%s` 标记是显示的 Git 状态的占位符。请注意，你需要在从命令行设置 `PS1` 变量时使用单引号，如示例所示，或者转义
+    shell 替换，以便在显示提示符时展开，而不是在定义变量时展开。'
+- en: 'If you are using the `__git_ps1` function, Git will also display information
+    about the current ongoing multistep operation: merging, rebasing, bisecting, and
+    so on. For example, during an interactive rebase (`-i`) on the branch `master`,
+    the relevant part of the prompt would be **master|REBASE-i**. It is very useful
+    to have this information right here in the command prompt, especially if you get
+    interrupted in the middle of the operation.'
+  id: totrans-38
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你使用 `__git_ps1` 函数，Git 还会显示有关当前正在进行的多步骤操作的信息：合并、变基、二分查找等。例如，在 `master` 分支上进行交互式变基（`-i`）时，提示符的相关部分将是
+    **master|REBASE-i**。如果在操作过程中被中断，将此信息直接显示在命令提示符中非常有用。
+- en: 'It is also possible to indicate in the command prompt the state of the working
+    tree, the index, and so on. We can enable these features by exporting the selected
+    subset of these environment variables (for some features you can additionally
+    turn it off on a per-repository basis with provided boolean-valued configuration
+    variables):'
+  id: totrans-39
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 还可以在命令提示符中指示工作树、索引等的状态。我们可以通过导出这些环境变量的选定子集来启用这些功能（对于某些功能，你还可以使用提供的布尔值配置变量在每个仓库的基础上单独关闭它们）：
+- en: '**GIT_PS1_SHOWDIRTYSTATE** (with **bash.showDirtyState** for per-repository
+    settings) shows “*****” for unstaged changes and “**+**” for staged changes, if
+    set to a non-empty value.'
+  id: totrans-40
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**GIT_PS1_SHOWDIRTYSTATE**（对于每个仓库的设置，可使用 **bash.showDirtyState**）显示“*****”表示未暂存更改，显示“**+**”表示已暂存更改，如果设置为非空值。'
+- en: '**GIT_PS1_SHOWSTASHSTATE** shows “**$**” if something is stashed.'
+  id: totrans-41
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**GIT_PS1_SHOWSTASHSTATE** 如果有内容被暂存，则显示“**$**”。'
+- en: '**GIT_PS1_SHOWUNTRACKEDFILES** and **bash.showUntrackedFiles** show “**%**”
+    if there are untracked files in the working directory.'
+  id: totrans-42
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**GIT_PS1_SHOWUNTRACKEDFILES** 和 **bash.showUntrackedFiles** 如果工作目录中存在未跟踪的文件，则显示“**%**”。'
+- en: '**GIT_PS1_SHOWUPSTREAM** and **bash.showUpstream** can be used to configure
+    the ahead-behind state of the upstream repository, with a value of **auto** in
+    a space-separated list of values makes the prompt show whether you are behind
+    “**<**”, up to date “**=**”, or ahead “**>**” of the upstream, **name** shows
+    the upstream name, and **verbose** details the number of commits you are ahead/behind
+    (with sign; for example "+1" for being 1 commit ahead). **git** compares HEAD
+    to **@{upstream}** and **svn** to the SVN upstream.'
+  id: totrans-43
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**GIT_PS1_SHOWUPSTREAM** 和 **bash.showUpstream** 可用于配置上游仓库的 ahead-behind 状态，值为
+    **auto** 的空格分隔列表将使提示符显示你是否落后于上游“**<**”、已同步“**=**”或领先于上游“**>**”，**name** 显示上游名称，**verbose**
+    显示你领先/落后的提交数量（带符号；例如，“+1”表示领先 1 次提交）。**git** 比较 HEAD 和 **@{upstream}**，**svn**
+    比较 SVN 上游。'
+- en: '**GIT_PS1_DESCRIBE_STYLE** can be set to configure how to show information
+    about a detached HEAD situation; it can be set to one of the following values:
+    **contains** uses newer annotated tags (v1.6.3.2~35), **branch** uses newer tag
+    or branch (main~4), **describe** uses the older annotated tag (v1.6.3.1-13-gdd42c2f),
+    **tag** uses any tag, **default** shows tag only if it is exactly matching the
+    current commit.'
+  id: totrans-44
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**GIT_PS1_DESCRIBE_STYLE** 可设置为配置如何显示脱离的 HEAD 情况；它可以设置为以下值之一：**contains** 使用更新的注释标签（v1.6.3.2~35），**branch**
+    使用更新的标签或分支（main~4），**describe** 使用旧的注释标签（v1.6.3.1-13-gdd42c2f），**tag** 使用任何标签，**default**
+    仅在标签完全匹配当前提交时显示标签。'
+- en: '**GIT_PS1_SHOWCONFLICTSTATE** set to “**yes**” will notify the user if there
+    are unresolved conflicts with **|CONFLICT**.'
+  id: totrans-45
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**GIT_PS1_SHOWCONFLICTSTATE** 设置为“**yes**”将通知用户是否存在未解决的冲突，显示“|CONFLICT”。'
+- en: '**GIT_PS1_SHOWCOLORHINTS** can be used to configure colored hints about the
+    current dirty state, that is about whether there are uncommitted changes (like
+    **git status -****sb** does).'
+  id: totrans-46
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**GIT_PS1_SHOWCOLORHINTS** 可用于配置当前脏状态的彩色提示，即是否存在未提交的更改（类似于 **git status -****sb**
+    的效果）。'
+- en: '**GIT_PS1_HIDE_IF_PWD_IGNORED** or **bash.hideIfPwdIgnored** are used to not
+    show a Git-aware prompt if the current directory is set to be ignored by Git,
+    even if we are inside a repository.'
+  id: totrans-47
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**GIT_PS1_HIDE_IF_PWD_IGNORED** 或 **bash.hideIfPwdIgnored** 用于在当前目录被 Git 忽略时，不显示
+    Git 友好的提示，即使我们处于一个仓库内。'
+- en: If you are using the `zsh` shell, you can take a look at the `zsh-git` set of
+    scripts, the `zshkit` configuration scripts, or the `oh-my-zsh` framework available
+    for `zsh`, instead of using `bash`—first complete the prompt setup from the Git
+    contrib/. Alternatively, you can use the `vcs_info` subsystem built in to `zsh`.
+  id: totrans-48
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你使用的是`zsh` shell，可以查看`zsh-git`脚本集、`zshkit`配置脚本，或可用于`zsh`的`oh-my-zsh`框架，而不是使用`bash`——首先完成来自
+    Git contrib/ 的提示设置。或者，你也可以使用`zsh`内建的`vcs_info`子系统。
+- en: There are also alternative prompt solutions for `bash` (usually for multiple
+    different shells), for example, `git-radar` or `powerline-shell`.
+  id: totrans-49
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于`bash`（通常适用于多个不同的 shell），也有一些替代的提示解决方案，例如`git-radar`或`powerline-shell`。
+- en: Tip
+  id: totrans-50
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 提示
+- en: You can, of course, generate your own Git-aware prompt. For example, you might
+    want to split the current directory into the repository path part and the project
+    subdirectory path part with the help of the **git** **rev-parse** command.
+  id: totrans-51
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当然，你也可以生成自己的 Git 友好的提示。例如，你可能希望利用**git** **rev-parse** 命令，将当前目录分为仓库路径部分和项目子目录路径部分。
+- en: Command-line completion for Git
+  id: totrans-52
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: Git 的命令行补全
+- en: Another shell feature that makes it easier to work with the Git command line
+    is the programmable **command-line completion**. This feature can dramatically
+    speed up typing Git commands. Command-line completion allows you to type the first
+    few characters of a command, or a filename, and press the completion key (usually
+    *Tab*) to fill the rest of the item. With the Git-aware completion, you can also
+    fill in subcommands, command-line parameters, remotes, branches, and tags (ref
+    names), each only where appropriate (for example, remote names are completed only
+    if the command expects the remote name at a given position).
+  id: totrans-53
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 另一个让 Git 命令行更易于使用的 shell 特性是可编程的**命令行补全**。此功能可以显著加快 Git 命令的输入速度。命令行补全允许你输入命令或文件名的前几个字符，然后按补全键（通常是*Tab*）来填充剩余部分。启用了
+    Git 友好的补全后，你还可以填充子命令、命令行参数、远程仓库、分支和标签（引用名称），并且只有在适当的位置才会自动补全（例如，只有在命令期望远程仓库名称的情况下，远程仓库名称才会被补全）。
+- en: Git comes with built-in (but not always installed) support for the auto-completion
+    of Git commands for the `bash` and `zsh` shells.
+  id: totrans-54
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git 自带（但并非总是安装）对`bash`和`zsh` shell 的 Git 命令自动补全支持。
+- en: 'For `bash`, if the completion functionality is not installed with Git (at `/etc/bash_completion.d/git.sh`
+    in Linux by default), you need to get a copy of the `contrib/completion/git-completion.bash`
+    file out of the Git source code. Copy it somewhere accessible, such as your home
+    directory, and source it from your `.bashrc` or `.bash_profile`:'
+  id: totrans-55
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于`bash`，如果没有随 Git 一起安装补全功能（默认情况下在 Linux 中位于`/etc/bash_completion.d/git.sh`），你需要从
+    Git 源代码中获取`contrib/completion/git-completion.bash`文件的副本。将其复制到一个可访问的位置，例如主目录，并从`.bashrc`或`.bash_profile`中引用它：
+- en: '[PRE4]'
+  id: totrans-56
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: 'Once the completion for Git is enabled, to test it, you can start to type a
+    Git command, then press the *Tab* key. For example, you can type `git check` and
+    then press *Tab*:'
+  id: totrans-57
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 启用 Git 补全后，测试方法是输入一个 Git 命令，然后按*Tab*键。例如，你可以输入`git check`，然后按*Tab*：
+- en: '[PRE5]'
+  id: totrans-58
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: With Git completion enabled, the `bash` (or `zsh`) shell would autocomplete
+    what you entered so far to `git checkout`.
+  id: totrans-59
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 启用 Git 补全后，`bash`（或`zsh`）shell 会自动补全你输入的部分，直到`git checkout`。
+- en: 'Similarly, in an ambiguous case, a double *Tab* press shows all the possible
+    completions (though this is not true for all shells; some instead cycle through
+    different completions):'
+  id: totrans-60
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 类似地，在模糊情况下，按两次*Tab*键会显示所有可能的补全项（尽管并非所有 shell 都支持此功能；有些 shell 会循环显示不同的补全项）：
+- en: '[PRE6]'
+  id: totrans-61
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: 'The completion feature also works with options; this is quite useful if you
+    don’t remember the exact option but only the prefix:'
+  id: totrans-62
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 补全功能也适用于选项；如果你不记得确切的选项而只记得前缀，这非常有用：
+- en: '[PRE7]'
+  id: totrans-63
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE7]'
+- en: Important note
+  id: totrans-64
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 重要提示
+- en: Instead of the list of possible completions, some shells use (or can be configured
+    to use) rotating completion, where with multiple possible completions, each *Tab*
+    shows a different completion for the same prefix (cycling through them).
+  id: totrans-65
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一些 shell 使用（或可以配置为使用）旋转补全功能，而不是显示可能的补全项列表。当有多个可能的补全项时，每按一次*Tab*键会显示一个不同的补全项，循环显示相同前缀的不同补全项。
+- en: Note that command-line completion (also called **tab completion**) generally
+    works only in the interactive mode, and is based on the unambiguous prefix, not
+    on the unambiguous abbreviation.
+  id: totrans-66
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请注意，命令行补全（也叫 **Tab 补全**）通常仅在交互模式下工作，并且基于明确的前缀，而不是明确的缩写。
+- en: Autocorrection for Git commands
+  id: totrans-67
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: Git 命令的自动更正
+- en: 'An unrelated built-in Git tool, but similar to tab completion, is **autocorrection**.
+    By default, if you type something that looks like a mistyped command, Git helpfully
+    tries to figure out what you meant. It still refuses to perform the guessed operation,
+    even if there is only one candidate:'
+  id: totrans-68
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一个与 Git 内置工具无关但类似于 Tab 补全的功能是 **自动更正**。默认情况下，如果你输入了看起来像是拼写错误的命令，Git 会尝试帮助你猜测你的意图。即使只有一个候选命令，Git
+    也不会执行该操作：
+- en: '[PRE8]'
+  id: totrans-69
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE8]'
+- en: 'However, with the `help.autoCorrect` configuration variable set to a positive
+    number, Git will automatically correct and execute the mistyped commands after
+    waiting for the given number of deciseconds (0.1 of second). You can use a negative
+    value with this option for immediate execution, or zero to go back to the default:'
+  id: totrans-70
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，当 `help.autoCorrect` 配置变量设置为正数时，Git 会在等待指定的百分之一秒（0.1 秒）后自动更正并执行拼写错误的命令。你可以使用负值来立即执行，或者使用零来恢复默认行为：
+- en: '[PRE9]'
+  id: totrans-71
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE9]'
+- en: If there is more than one command that can be deduced from the entered text,
+    nothing will be executed. This mechanism works only for Git commands; you cannot
+    autocorrect subcommands, parameters, and options (as opposed to tab completion).
+  id: totrans-72
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果输入的文本可以推导出多个命令，则不会执行任何操作。此机制仅适用于 Git 命令；你不能自动更正子命令、参数和选项（与 Tab 补全不同）。
+- en: Making the command line prettier
+  id: totrans-73
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 让命令行更美观
+- en: Git fully supports a colored terminal output, which greatly aids in visually
+    parsing the command output. A number of options can help you set the coloring
+    to your preference.
+  id: totrans-74
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git 完全支持彩色终端输出，这大大有助于视觉上解析命令输出。许多选项可以帮助你根据个人喜好设置颜色。
+- en: First, you can specify when to use colors, such as for the output of certain
+    commands. There is a `color.ui` master switch to control output coloring to turn
+    off all of Git’s colored terminal outputs and set them to `false`. The default
+    setting for this configuration variable is `auto`, which makes Git color the output
+    when it’s going straight to a terminal, but omit the color-control codes when
+    the output is redirected to a file or a pipe.
+  id: totrans-75
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 首先，你可以指定何时使用颜色，比如某些命令的输出。`color.ui` 是一个主开关，用来控制输出的着色，将 Git 的所有彩色终端输出关闭并设置为 `false`。该配置变量的默认设置是
+    `auto`，这意味着 Git 会在输出直接到终端时着色，但在输出被重定向到文件或管道时会省略颜色控制代码。
+- en: 'You can also set `color.ui` to `always`, though you’d rarely want this: if
+    you want color codes in your redirected output, simply pass a `--color` flag to
+    the Git command; conversely, the `--no-color` option would turn off the colored
+    output.'
+  id: totrans-76
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你也可以将 `color.ui` 设置为 `always`，尽管你很少会需要这样做：如果你希望在重定向的输出中看到颜色代码，只需将 `--color`
+    标志传递给 Git 命令；相反，`--no-color` 选项将关闭彩色输出。
+- en: 'If you want to be more specific about which commands and which parts of the
+    output are colored, Git provides appropriate coloring settings: `color.branch`,
+    `color.diff`, `color.interactive`, `color.status`, and so on. Just as with the
+    `color.ui` master switch, each of these can be set to `true`, `false`, `auto`,
+    and `always`.'
+  id: totrans-77
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你想更具体地控制哪些命令以及输出的哪些部分使用颜色，Git 提供了相应的颜色设置：`color.branch`、`color.diff`、`color.interactive`、`color.status`
+    等。就像 `color.ui` 主开关一样，每个设置都可以设置为 `true`、`false`、`auto` 或 `always`。
+- en: In addition, each of these settings has subsettings that you can use to set
+    specific colors for specific parts of the output. The color value of such configuration
+    variables – for example, `color.diff.meta` (to configure the coloring of meta
+    information in your diff output) – consists of space-separated names of the foreground
+    color, the background color (if set), and the text attribute.
+  id: totrans-78
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 此外，这些设置中的每一项都有子设置，可以用来为输出的特定部分设置特定的颜色。例如，`color.diff.meta`（用于配置差异输出中文本的元信息颜色）这样的配置变量的颜色值由前景色、背景色（如果设置）和文本属性的空格分隔的名称组成。
+- en: 'You can set the color to any of the following values: `normal`, `black`, `red`,
+    `green`, `yellow`, `blue`, `magenta`, `cyan`, or `white`. As for the attributes,
+    you can choose from `bold`, `dim`, `ul` (underline), `blink`, and `reverse` (swap
+    the foreground color with the background one).'
+  id: totrans-79
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以将颜色设置为以下任意值：`normal`、`black`、`red`、`green`、`yellow`、`blue`、`magenta`、`cyan`
+    或 `white`。至于属性，你可以选择 `bold`、`dim`、`ul`（下划线）、`blink` 和 `reverse`（将前景色与背景色互换）。
+- en: The pretty formats for `git log` also include an option to set colors; see the
+    `git log` documentation for more information.
+  id: totrans-80
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`git log` 的漂亮格式也包括设置颜色的选项；有关更多信息，请参阅 `git log` 文档。'
+- en: External tools
+  id: totrans-81
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 外部工具
+- en: There are diff syntax highlighters that can be used with Git. They can be set
+    up to work as a pager with the **core.pager** config variable, or configured via
+    an alias. Examples include **delta** ([https://dandavison.github.io/delta](https://dandavison.github.io/delta))
+    and **diff-highlight** from the contrib area of Git source code.
+  id: totrans-82
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 也有可以与 Git 一起使用的差异语法高亮工具。它们可以通过 **core.pager** 配置变量作为分页器进行设置，或通过别名进行配置。示例包括 **delta**
+    ([https://dandavison.github.io/delta](https://dandavison.github.io/delta)) 和来自
+    Git 源代码贡献区的 **diff-highlight**。
+- en: Alternative command line
+  id: totrans-83
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 替代命令行
+- en: To understand some of the rough edges of the Git user’s interface, you need
+    to remember that Git was developed to a large extent in a bottom-up fashion. Historically,
+    Git began as a tool to write version-control systems (you can see how early Git
+    was used in the *A Git core tutorial for developers* documentation that you can
+    view with the `git help` `core-tutorial` command).
+  id: totrans-84
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要理解 Git 用户界面的一些粗糙之处，你需要记住 Git 在很大程度上是自底向上开发的。从历史上看，Git 最初是作为一个编写版本控制系统的工具开发的（你可以通过
+    `git help` `core-tutorial` 命令查看早期 Git 的使用方式，这也是开发者核心教程的一部分）。
+- en: The first alternative “porcelain” (i.e., alternative user interface) for Git
+    was *Cogito*. Nowadays, Cogito is no more; all of its features have long been
+    incorporated into Git (or replaced by better solutions). There were some attempts
+    to write wrapper scripts (alternative UIs) designed to make it easy to learn and
+    use, for example, `eg`) and the newer `jj`) is a version control system in the
+    early stages of development that can use Git repositories to store project history,
+    and thus can be thought as a layer on top of Git, too.
+  id: totrans-85
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git 的第一个替代“瓷器”（即替代用户界面）是 *Cogito*。如今，Cogito 已不复存在；它的所有功能早已被 Git 纳入（或被更好的解决方案替代）。曾经有人尝试编写包装脚本（替代用户界面），目的是让其更容易学习和使用，例如
+    `eg`）以及较新的 `jj`）是一个版本控制系统，处于开发的初期阶段，能够使用 Git 仓库存储项目历史，因此也可以看作是 Git 上的一层。
+- en: There are also external Git porcelains that do not intend to replace the whole
+    user interface, but either provide access to some extra features, or wrap Git
+    to provide some restricted feature set. `gq`)), are created to make it easy to
+    rewrite, manipulate, and clean up selected parts of the unpublished history; these
+    were mentioned as an alternative to an interactive rebase in [*Chapter 10*](B21194_10_split_000.xhtml#_idTextAnchor247),
+    *Keeping History Clean*. Then, there are single-file version control systems,
+    such as **Zit**, which use Git as a backend.
+  id: totrans-86
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 还有一些外部 Git “瓷器”，它们并不打算替代整个用户界面，而是提供对一些额外功能的访问，或将 Git 封装起来提供一些有限的功能集。`gq`)) 被创建的目的是为了方便重写、操作和清理未发布历史的选定部分；这些被提及作为一种替代交互式变基的方式，在[*第10章*](B21194_10_split_000.xhtml#_idTextAnchor247)，“保持历史清洁”中有提到。接下来，是单文件版本控制系统，例如
+    **Zit**，它将 Git 用作后端。
+- en: Alternative implementations
+  id: totrans-87
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 替代实现
+- en: Beside alternative user interfaces, there are also different implementations
+    of Git (defined as reading and writing Git repositories). They are at different
+    stages of completeness. Besides the core C implementation, there is **JGit** in
+    Java, and also the **libgit2** project—the modern basis of Git bindings for various
+    programming languages.
+  id: totrans-88
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 除了替代用户界面外，还有不同的 Git 实现（定义为读取和写入 Git 仓库）。它们在完成度上处于不同的阶段。除了核心的 C 实现外，还有 Java 中的
+    **JGit**，以及 **libgit2** 项目——它是现代 Git 绑定各种编程语言的基础。
+- en: Graphical interfaces
+  id: totrans-89
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 图形界面
+- en: You have learned how to use Git on the command line. The previous section told
+    you how to customize and configure it to make it even more effective. But the
+    terminal is not the end. There are other kinds of environments you can use to
+    manage Git repositories. Sometimes, a visual representation is what you need.
+  id: totrans-90
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你已经学会了如何在命令行中使用 Git。上一节告诉你如何定制和配置 Git，使其更高效。但是，终端并不是终点。你还可以使用其他环境来管理 Git 仓库。有时，视觉表示正是你所需要的。
+- en: Now, we’ll take a short look at the various kinds of user-centered graphical
+    tools for Git; the tour of Git administrative tools is left for the next chapter,
+    [*Chapter 14*](B21194_14.xhtml#_idTextAnchor349),*Git Administration*.
+  id: totrans-91
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，我们将简要看一下各种以用户为中心的 Git 图形工具；Git 管理工具的介绍将在下一章[*第14章*](B21194_14.xhtml#_idTextAnchor349)，“Git
+    管理”中介绍。
+- en: Types of graphical tools
+  id: totrans-92
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 图形工具的类型
+- en: Different tools and interfaces are tailored for different workflows. Some tools
+    expose only a selected subset of the Git functionality or encourage a specific
+    way of working with version control.
+  id: totrans-93
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 不同的工具和接口针对不同的工作流程进行了定制。一些工具只暴露Git功能的一个子集，或者鼓励采用特定的版本控制工作方式。
+- en: To be able to make an informed choice when selecting a graphical tool for Git,
+    you need to know what types of operations the different types of tools support.
+    Note that one tool can support more than one type of use.
+  id: totrans-94
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了在选择Git的图形化工具时做出明智的决策，你需要了解不同类型工具支持哪些操作。请注意，某一个工具可能支持多种类型的使用。
+- en: First, there is the `git log`. This is the tool to be used when you are trying
+    to find something that happened in the past, or you are visualizing and browsing
+    your project’s history and the layout of branches. Such tools usually accept revision
+    selection command-line options, such as `--all`. Command-line Git has `git log
+    --graph` and the less-used `git show-branch` that uses ASCII art to show the history.
+  id: totrans-95
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 首先，有`git log`。这是用于查找过去发生的事情，或者浏览和可视化项目历史和分支布局的工具。这些工具通常接受修订选择命令行选项，如`--all`。命令行Git提供了`git
+    log --graph`，以及较少使用的`git show-branch`，通过ASCII艺术来显示历史。
+- en: A similar tool is `git log -L`) and the so-called pickaxe search (`git log -S`),
+    do not have many GUIs.
+  id: totrans-96
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一个类似的工具是`git log -L`）和所谓的镐式搜索（`git log -S`），它们没有很多图形用户界面（GUI）。
+- en: Next, there are `git add`, `git reset`, and so on, even allow you to stage and
+    unstage individual chunks of changes. A graphical version of an interactive add
+    is described in [*Chapter 3*](B21194_03_split_000.xhtml#_idTextAnchor049), *Managing
+    Your* *Worktrees*, and mentioned in [*Chapter 2*](B21194_02.xhtml#_idTextAnchor028),
+    *Developing with Git*. There are also tools to craft commit messages following
+    specified criteria.
+  id: totrans-97
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来，有`git add`、`git reset`等命令，甚至允许你逐个块地暂存和撤销更改。交互式添加的图形化版本在[*第3章*](B21194_03_split_000.xhtml#_idTextAnchor049)，*管理你的工作树*中有所描述，并在[*第2章*](B21194_02.xhtml#_idTextAnchor028)，*使用Git进行开发*中提到。还有一些工具可以根据指定的标准来编写提交信息。
+- en: Then, we have **file manager integration** (or **graphical shell integration**).
+    These plugins usually show the status of the file in Git (tracked/untracked/ignored)
+    using icon overlays. They can offer a context menu for a repository, directory,
+    and file, often with accompanying keyboard shortcuts. They may also bring drag
+    and drop support.
+  id: totrans-98
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后，我们有**文件管理器集成**（或**图形化外壳集成**）。这些插件通常通过图标叠加显示文件在Git中的状态（已跟踪/未跟踪/忽略）。它们可以为仓库、目录和文件提供右键菜单，通常附带键盘快捷键。它们还可能支持拖放功能。
+- en: Programmer editors and IDE) often offer support for **IDE integration** with
+    Git (or version control in general). These offer repository management (as a part
+    of team project management), make it possible to perform Git operations directly
+    from the IDE, show the status of the current file and the repository, and perhaps
+    even annotate the view of the file with version control information. They often
+    include the commit tool, remote management, the history viewer, and the diff viewer.
+  id: totrans-99
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 程序员编辑器和IDE通常提供对**IDE集成**的支持（或者一般的版本控制）。这些工具提供仓库管理（作为团队项目管理的一部分），使得可以直接从IDE执行Git操作，显示当前文件和仓库的状态，甚至可能在文件视图中标注版本控制信息。它们通常包括提交工具、远程管理、历史查看器和差异查看器。
+- en: Git repositories’ hosting sites often offer workflow-oriented **desktop clients**.
+    These mostly focus on a curated set of commonly used features that work well together
+    in the flow. They automate common Git tasks. They are often designed to highlight
+    their service, offering extra features and integration, but they will work with
+    any repository hosted anywhere.
+  id: totrans-100
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git仓库托管网站通常提供面向工作流的**桌面客户端**。这些客户端主要集中于一组精选的常用功能，这些功能能够很好地协同工作，自动化常见的Git任务。它们通常旨在突出其服务，提供额外的功能和集成，但它们也可以与任何托管在任何地方的仓库一起使用。
+- en: There are even `sequence.editor` config variable, or a syntax highlighting tool
+    for diffs that can be set up as the default Git pager with `core.pager`.
+  id: totrans-101
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 甚至还有`sequence.editor`配置变量，或者可以设置为默认Git分页器的语法高亮工具。
+- en: Graphical diff and merge tools
+  id: totrans-102
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 图形化的差异比较和合并工具
+- en: Graphical diff tools and graphical merge tools are somewhat special cases. In
+    these categories, Git includes the commands for integration with third-party graphical
+    tools, namely, `git difftool` and `git mergetool`. These tools are then called
+    from the Git repository. Note that this is different from the external diff or
+    diff merge drivers, which replace ordinary `git diff` or augment it.
+  id: totrans-103
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图形化差异工具和图形化合并工具在某些情况下是特殊的。在这些类别中，Git包含了与第三方图形工具集成的命令，即`git difftool`和`git mergetool`。这些工具随后从Git仓库中调用。请注意，这与外部差异或差异合并驱动程序不同，后者会替代普通的`git
+    diff`或对其进行增强。
+- en: Although Git has an internal implementation of diff and a mechanism for merge
+    conflict resolutions (see [*Chapter 9*](B21194_09.xhtml#_idTextAnchor229), *Merging*
+    *Changes Together*), you can use an external graphical diff tool instead. These
+    are often used to show the differences better (usually, as a side-by-side diff,
+    possibly with refinements), and help resolve a merge (often with a three-pane
+    interface).
+  id: totrans-104
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 尽管Git有内部的差异实现和解决合并冲突的机制（见[*第9章*](B21194_09.xhtml#_idTextAnchor229)，*合并* *更改*），但您仍然可以使用外部图形化差异工具。这些工具通常用于更好地显示差异（通常是并排显示差异，可能带有一些细化），并帮助解决合并（通常使用三窗格界面）。
+- en: 'Configuring the graphical diff or graphical merge tool requires configuring
+    a number of custom settings. To tell which tool to use for diff and merge, respectively,
+    you can set up `diff.tool` and `merge.tool`, respectively. Without setting, for
+    example, the `merge.tool` configuration variable, the `git mergetool` command
+    would print the information on how to configure it, and will attempt to run one
+    of predefined tools:'
+  id: totrans-105
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 配置图形化差异或图形化合并工具需要配置一些自定义设置。为了分别指定用于差异和合并的工具，您可以分别设置`diff.tool`和`merge.tool`。如果没有设置，例如，`merge.tool`配置变量，`git
+    mergetool`命令将打印如何配置的相关信息，并尝试运行预定义的工具之一：
+- en: '[PRE10]'
+  id: totrans-106
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE10]'
+- en: 'Running `git mergetool --tool-help` will show all the available tools, including
+    those that are not installed. If the tool you use is not in `$PATH`, or it has
+    the wrong version of the tool, you can use `mergetool.<tool>.path` to set or override
+    the path for the given tool:'
+  id: totrans-107
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 运行`git mergetool --tool-help`将显示所有可用的工具，包括那些未安装的工具。如果您使用的工具不在`$PATH`中，或者该工具的版本错误，您可以使用`mergetool.<tool>.path`设置或覆盖给定工具的路径：
+- en: '[PRE11]'
+  id: totrans-108
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE11]'
+- en: 'If there is no built-in support for your tool, you can still use it; you just
+    need to configure it. The `mergetool.<tool>.cmd` configuration variable specifies
+    how to run the command, while `mergetool.<tool>.trustExitCode` tells Git whether
+    the exit code of that program indicates a successful merge resolution or not.
+    The relevant fragment of the configuration file (for a graphical mergetool named
+    `extMerge`) could look as follows:'
+  id: totrans-109
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果您的工具没有内置支持，您仍然可以使用它；您只需要进行配置。`mergetool.<tool>.cmd`配置变量指定如何运行命令，而`mergetool.<tool>.trustExitCode`告诉Git该程序的退出代码是否表示合并解决成功。相关的配置文件片段（对于名为`extMerge`的图形化合并工具）可能如下所示：
+- en: '[PRE12]'
+  id: totrans-110
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE12]'
+- en: There are a few config options that control `git mergetool` behavior, either
+    globally or on a per-tool basis. One of those is `mergetool.hideResolved` (and
+    its per-tool `mergetool.<tool>.hideResolved` variant), which makes Git resolve
+    as many conflicts as possible by itself, and presents only unresolved conflicts
+    to the merge tool. Note that some merge tools do this themselves.
+  id: totrans-111
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有一些配置选项控制`git mergetool`的行为，可以是全局的，也可以是每个工具单独设置的。其中一个选项是`mergetool.hideResolved`（以及每个工具的`mergetool.<tool>.hideResolved`变体），它使Git尽可能自行解决冲突，并仅将未解决的冲突呈现给合并工具。请注意，一些合并工具会自行执行此操作。
+- en: Some merge tools, such as vimdiff, are text interface tools that can work without
+    the need for a graphical session. If you want to run one tool in text mode (for
+    example, when using plain SSH access to a remote host), and another one in graphical
+    mode, you can do this by configuring `mergetool.tool` in one tool, and `mergetool.guitool`
+    in another – and use `git mergetool --gui` to invoke the GUI one.
+  id: totrans-112
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一些合并工具，如vimdiff，是文本界面工具，可以在无需图形会话的情况下工作。如果您想在文本模式下运行一个工具（例如，当通过普通SSH访问远程主机时），而在图形模式下运行另一个工具，您可以通过在一个工具中配置`mergetool.tool`，在另一个工具中配置`mergetool.guitool`来实现——并使用`git
+    mergetool --gui`调用图形界面工具。
+- en: Graphical interface examples
+  id: totrans-113
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 图形界面示例
+- en: In this section, you will be presented with a selection of tools around Git
+    that you could use, or that might prompt you to research further. A nice way to
+    help you start this research is to list some selected GUI clients.
+  id: totrans-114
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本节中，您将看到一些围绕Git的工具，您可以使用它们，或者它们可能会激发您进一步研究的兴趣。帮助您开始研究的一种不错方式是列出一些选定的GUI客户端。
+- en: There are two visual tools that are a part of Git and are usually installed
+    with it, namely `gitk` is a `git gui` is a `git gui blame`, a visually `git gui`
+    opens `gitk`.
+  id: totrans-115
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git 有两个可视化工具，通常与 Git 一起安装，分别是 `gitk` 和 `git gui`，还有一个 `git gui blame`，一个视觉化的
+    `git gui` 打开 `gitk`。
+- en: Visual tools do not need to use the graphical environment. There is **tig**
+    (short for *Text Interface for Git*) that uses a nurses-based text-mode interface
+    (TUI) and functions as a repository browser and commit tool and can act as a Git
+    pager.
+  id: totrans-116
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 可视化工具不一定需要使用图形环境。比如**tig**（即 *Text Interface for Git*）使用基于文本模式的界面（TUI），作为仓库浏览器和提交工具，还可以充当
+    Git 分页器。
+- en: Another TUI example is **git interactive-rebase-tool**, which can be set up
+    as an interactive sequence editor for the interactive rebase instruction sheet.
+  id: totrans-117
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 另一个 TUI 示例是**git interactive-rebase-tool**，它可以作为交互式序列编辑器，用于交互式 rebase 指令表。
+- en: There is **git cola**, developed in Python and available for all the operating
+    systems, which includes commit tools and remotes management, and also a diff viewer.
+    Then, there is the simple and colorful **Gitg** tool for GNOME; you will get a
+    graphical history viewer, diff viewer, and file browser.
+  id: totrans-118
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有一个用 Python 开发的**git cola**，它适用于所有操作系统，包含提交工具和远程管理工具，还提供一个 diff 查看器。然后是一个简单且多彩的**Gitg**工具，适用于
+    GNOME；你将获得一个图形化的历史查看器、diff 查看器和文件浏览器。
+- en: One of the more popular open source GUI tools for macOS is **GitX**. There are
+    a lot of forks of this tool; one of the more interesting ones is **Gitbox**. It
+    features both the history viewer and commit tools.
+  id: totrans-119
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一个较受欢迎的 macOS 开源 GUI 工具是**GitX**。这个工具有很多分支，其中一个比较有趣的分支是**Gitbox**。它提供历史查看器和提交工具。
+- en: For MS Windows, there is **TortoiseGit** and **git-cheetah**, both of which
+    offer integration into the Windows context menu, so you can perform Git commands
+    inside Windows Explorer (the file manager integration and shell interface).
+  id: totrans-120
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于 MS Windows，有**TortoiseGit**和**git-cheetah**，这两款工具都提供与 Windows 上下文菜单的集成，因此你可以在
+    Windows 资源管理器内执行 Git 命令（文件管理器集成和 Shell 接口）。
+- en: GitHub Inc. and Atlassian both released a desktop GUI tool that you can easily
+    use with your GitHub or Bitbucket repository, respectively, but neither tool is
+    not limited to only interacting with a single service (GitHub or Bitbucket, respectively).
+    Both **GitHub Client** and **SourceTree** feature repository management and offer
+    a range of other common facilities to enhance your development workflow.
+  id: totrans-121
+  prefs: []
+  type: TYPE_NORMAL
+  zh: GitHub 公司和 Atlassian 都发布了一个桌面 GUI 工具，分别可以轻松与 GitHub 或 Bitbucket 仓库配合使用，但这两个工具不仅限于与单一服务（GitHub
+    或 Bitbucket）交互。**GitHub Client** 和 **SourceTree** 都具有仓库管理功能，并提供一系列其他常见功能来增强你的开发工作流程。
+- en: Many programming editors and IDEs have support for managing Git repositories,
+    and sometimes also for interacting with Git hosting sites. This can be either
+    built in, or available as IDE plugins or extensions. Examples include **GitLens**
+    for Visual Studio Code, **Magit** for GNU Emacs, and **Fugitive** for ViM. Those
+    tools often show information such as which lines are added or changed, or who
+    authored them, inside the editor pane.
+  id: totrans-122
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 许多编程编辑器和 IDE 都支持管理 Git 仓库，有时也支持与 Git 托管站点交互。这些功能可以是内置的，或者作为 IDE 插件或扩展提供。例如，**GitLens**（适用于
+    Visual Studio Code）、**Magit**（适用于 GNU Emacs）和 **Fugitive**（适用于 ViM）。这些工具通常会显示诸如哪些行被添加或更改，或者谁编写了这些行等信息，直接在编辑器窗格中展示。
+- en: Configuring Git
+  id: totrans-123
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 配置 Git
+- en: So far, while describing how Git works and how to use it, we have introduced
+    a number of ways to change its behavior. In this section, it will be explained
+    in a systematic fashion how to configure Git operations on a temporary and permanent
+    basis. We will also see how you can make Git behave in a customized fashion by
+    introducing and reintroducing several important configuration settings. With these
+    tools, it’s easy to get Git to work the way you want it to.
+  id: totrans-124
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 到目前为止，在描述 Git 的工作原理以及如何使用它时，我们已经介绍了多种改变其行为的方法。在本节中，将系统地解释如何临时和永久地配置 Git 操作。我们还将看到如何通过引入和重新引入几个重要的配置设置，使
+    Git 按照自定义的方式运行。通过这些工具，轻松让 Git 按照你想要的方式工作。
+- en: Command-line options and environment variables
+  id: totrans-125
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 命令行选项和环境变量
+- en: Git processes the switches that change its behavior in a hierarchical fashion,
+    from the least specific to the most specific one, with the most specific one (and
+    shortest term) taking precedence.
+  id: totrans-126
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git 按照层级结构处理更改其行为的选项，从最不具体到最具体，最具体的选项（且持续时间最短）具有优先权。
+- en: The most specific one, overriding all the others, is the command-line options.
+    They affect, obviously, only the current Git command.
+  id: totrans-127
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最具体的，覆盖其他所有方式的是命令行选项。显然，它们只影响当前的 Git 命令。
+- en: Important note
+  id: totrans-128
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 重要提示
+- en: 'One issue to note is that some command-line options, for example, **--no-pager**
+    or **--no-replace-objects**, go to the **git** wrapper, not to the Git command
+    itself. Examine, for example, the following line to see the distinction:'
+  id: totrans-129
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 需要注意的一个问题是，一些命令行选项，例如 **--no-pager** 或 **--no-replace-objects**，是传递给 **git**
+    外壳程序，而不是 Git 命令本身。例如，查看以下行可以看到这种区别：
+- en: '**$ git --no-replace-objects log -5 --oneline --****graph --decorate**'
+  id: totrans-130
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**$ git --no-replace-objects log -5 --oneline --****graph --decorate**'
+- en: You can find the conventions used through the Git command-line interface on
+    the manpage.
+  id: totrans-131
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以在 Git 命令行接口的手册页中找到使用的约定。
+- en: The second way to change how the Git command works is to use environment variables.
+    They are specific to the current shell, and you need to use the `export` built-in
+    command (or its equivalent) to propagate the variables to the subprocesses if
+    a replacement is used. There are some environment variables that apply to all
+    core Git commands, and some that are specific to a given (sub)command.
+  id: totrans-132
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 改变 Git 命令工作方式的第二种方法是使用环境变量。它们特定于当前的 shell，如果使用替代变量，则需要使用 `export` 内建命令（或其等价物）将变量传播到子进程。有些环境变量适用于所有核心
+    Git 命令，而有些则仅适用于某个特定的（子）命令。
+- en: Git also makes use of some nonspecific environment variables. These are meant
+    as a last resort; they are overridden by their Git-specific equivalents. Examples
+    include variables such as `PAGER` and `EDITOR`.
+  id: totrans-133
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git 还使用一些非特定的环境变量。这些变量作为最后的手段使用；它们会被对应的 Git 特定变量覆盖。例如，包括 `PAGER` 和 `EDITOR`
+    这样的变量。
+- en: Git configuration files
+  id: totrans-134
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: Git 配置文件
+- en: The final way to customize how Git works is with the configuration files. In
+    many cases, there is a command-line option to configure an action, an environment
+    variable for it, and finally a configuration variable, in descending order of
+    preference.
+  id: totrans-135
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 定制 Git 工作方式的最终方法是通过配置文件。在许多情况下，配置操作的命令行选项、环境变量和配置变量按优先级降序排列。
+- en: 'Git uses a series of configuration files to determine non-default behavior
+    that you might want to have. There are four layers of these files that Git looks
+    through for configuration values. Git reads all these files in order from the
+    least specific to the most specific one. The settings in the later ones override
+    those set in the earlier ones. You can access the Git configuration with the `git
+    config` command: by default, it operates on the union of all the files, but you
+    can specify which one you want to access with the command-line options. You can
+    also access any given file following the configuration file syntax (such as the
+    `.gitmodules` file mentioned in [*Chapter* *11*](B21194_11.xhtml#_idTextAnchor270),
+    *Managing Subprojects*) by using the `--file=<pathname>` option (or the `GIT_CONFIG`
+    environment variable).'
+  id: totrans-136
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git 使用一系列配置文件来确定你可能想要的非默认行为。Git 会按照从最不具体到最具体的顺序读取这些文件，配置设置越靠后越会覆盖早期的设置。你可以使用
+    `git config` 命令访问这些 Git 配置文件：默认情况下，它会操作所有文件的合并，但你可以通过命令行选项指定要访问的具体文件。你还可以按照配置文件语法访问任何给定的文件（例如
+    [*第 11 章*](B21194_11.xhtml#_idTextAnchor270) 中提到的 `.gitmodules` 文件，*管理子项目*），方法是使用
+    `--file=<pathname>` 选项（或 `GIT_CONFIG` 环境变量）。
+- en: Tip
+  id: totrans-137
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 提示
+- en: You can also read the values from any blob with configuration-like contents;
+    for example, you may use **git config --blob=master:.gitmodules** to read from
+    the **.gitmodules** file in the **master** branch.
+  id: totrans-138
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你也可以从任何具有配置类内容的 blob 中读取值；例如，你可以使用 **git config --blob=master:.gitmodules**
+    来读取 **master** 分支中的 **.gitmodules** 文件。
+- en: The first place Git looks for configuration is the `/etc/gitconfig`. Well, at
+    least, on Linux it is there, as the `/etc` is the directory for storing the host-specific
+    system-wide configuration files; Git for Windows puts this file in the subdirectory
+    of its `Program Files` folder. This file contains the values for every user on
+    the system and all their repositories. To make `git config` read from and write
+    and to this file specifically (and to open it with `--edit`), pass the `--system`
+    option to the `git` `config` command.
+  id: totrans-139
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git 查找配置文件的第一个地方是 `/etc/gitconfig`。至少在 Linux 上是如此，`/etc` 目录用于存储主机特定的系统级配置文件；Git
+    for Windows 会将此文件放在其 `Program Files` 文件夹的子目录中。此文件包含系统上每个用户及其所有仓库的配置值。要让 `git config`
+    专门从这个文件读取和写入（并用 `--edit` 打开它），需要将 `--system` 选项传递给 `git` 的 `config` 命令。
+- en: You can skip the reading settings from this file with the `GIT_CONFIG_NOSYSTEM`
+    environment variable. This can be used to set up a predictable environment or
+    to avoid using a buggy configuration you can’t fix.
+  id: totrans-140
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以通过设置 `GIT_CONFIG_NOSYSTEM` 环境变量来跳过从此文件读取设置。这可以用于设置可预测的环境或避免使用无法修复的有缺陷的配置。
+- en: 'The next place Git looks is the `~/.gitconfig`, falling back to `~/.config/git/config`
+    if it exists (with the default configuration). This file is specific to each user
+    and it affects all of the user’s repositories. If you pass the `--global` option
+    to `git config`, it will read and write from this file specifically. Reminder:
+    here, as in the other places, `~` (the tilde character) denotes the home directory
+    of the current user (`$HOME`).'
+  id: totrans-141
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git 接下来查找的地方是 `~/.gitconfig`，如果存在，还会回退到 `~/.config/git/config`（默认配置）。此文件特定于每个用户，并影响该用户的所有仓库。如果你向
+    `git config` 传递 `--global` 选项，它将专门从此文件读取和写入。提示：在此处与其他位置一样，`~`（波浪号字符）表示当前用户的主目录（`$HOME`）。
+- en: Finally, Git looks for the configuration values in the `.git/config`. Values
+    set there are specific to that local single repository. You can make Git read
+    and write to this file by passing the `--``local` option.
+  id: totrans-142
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后，Git 会在 `.git/config` 中查找配置值。此处设置的值是特定于该本地单个仓库的。你可以通过传递 `--``local` 选项来使 Git
+    读取和写入此文件。
+- en: With modern Git, if the `extensions.worktreeConfig` is set to true (the default
+    value is false), there can also be a `.git/config.worktree` file (see the `git`
+    `worktree` command).
+  id: totrans-143
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在现代 Git 中，如果 `extensions.worktreeConfig` 设置为 true（默认值为 false），还可以存在一个 `.git/config.worktree`
+    文件（参见 `git` `worktree` 命令）。
+- en: Each of these levels (system, global, and local) overrides the values from the
+    previous level, so for example, values in `.git/config` trump those in `~/.gitconfig`;
+    well, unless the configuration variable is multivalued.
+  id: totrans-144
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这些级别（系统级、全局级和本地级）会覆盖前一级的值，因此，例如，`.git/config` 中的值会覆盖 `~/.gitconfig` 中的值；不过，除非配置变量是多值的。
+- en: Tip
+  id: totrans-145
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 提示
+- en: You can use the fact that the local (per-repository) configuration overrides
+    the global (per-user) configuration to have your default identity in the per-user
+    file and to override it if necessary on a per-repository basis with a per-repository
+    configuration file.
+  id: totrans-146
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以利用本地（每个仓库）配置覆盖全局（每个用户）配置的特点，将默认身份设置在每个用户文件中，并在必要时通过每个仓库的配置文件在仓库级别进行覆盖。
+- en: 'Finally, you can set the config variable for an individual command with the
+    `-c` option to the `git` wrapper:'
+  id: totrans-147
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后，你可以通过 `-c` 选项为单个命令设置配置变量，方法是在 `git` 外壳中使用该选项：
+- en: '[PRE13]'
+  id: totrans-148
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE13]'
+- en: See the following sections for a full explanation of this result.
+  id: totrans-149
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请参阅以下章节，以获得对此结果的完整解释。
+- en: The syntax of Git configuration files
+  id: totrans-150
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: Git 配置文件的语法
+- en: Git’s configuration files are plain text, so you can also customize Git’s behavior
+    by manually editing the chosen file. The syntax is fairly flexible and permissive;
+    whitespaces are mostly ignored (contrary to `.gitattributes`). The hash `#` and
+    the semicolon `;` characters begin comments, which last until the end of the line.
+    Blank lines are ignored.
+  id: totrans-151
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git 的配置文件是纯文本文件，因此你也可以通过手动编辑选定的文件来自定义 Git 的行为。语法相当灵活和宽松；空格大多被忽略（与 `.gitattributes`
+    相反）。哈希符号 `#` 和分号 `;` 用于开始注释，注释内容持续到行尾。空白行会被忽略。
+- en: The file consists of sections and variables, and its syntax is similar to the
+    syntax of INI files. Both the section names and variable names are case-insensitive.
+    A section begins with the name of the section in square brackets **[section]**
+    and continues until the next section. Each variable must begin at some section,
+    which means that there must be a section header before the first setting of a
+    variable. Sections can repeat and can be empty.
+  id: totrans-152
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 该文件由节和变量组成，语法类似于 INI 文件的语法。节名和变量名均不区分大小写。节以方括号中的节名称 **[section]** 开始，并持续到下一个节为止。每个变量必须属于某个节，这意味着在设置变量之前必须有节头。节可以重复，也可以为空。
+- en: 'Sections can be further divided into subsections. Subsection names are case-sensitive
+    and can contain any character except newline (double quotes `"` and backslash
+    `\` must be escaped as `\"` and `\\`, respectively). The beginning of the subsection
+    will look as follows:'
+  id: totrans-153
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 节可以进一步划分为子节。子节名称区分大小写，并且可以包含除换行符以外的任何字符（双引号 `"` 和反斜杠 `\` 必须分别转义为 `\"` 和 `\\`）。子节的开始如下所示：
+- en: '[PRE14]'
+  id: totrans-154
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE14]'
+- en: All the other lines (and the remainder of the line after the section header)
+    are recognized as a setting variable in the `name = value` form. As a special
+    case, just `name` is a shorthand for `name = true` (boolean variables). Such lines
+    can be continued to the next line by ending it with `\` (the backslash character),
+    that is by escaping the end-of-line character. Leading and trailing whitespaces
+    are discarded; internal whitespaces within the value are retained verbatim. You
+    can use double quotes to preserve leading or trailing whitespaces in values.
+  id: totrans-155
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 所有其他行（以及节标题后的行其余部分）都被识别为 `name = value` 形式的设置变量。作为一种特例，只有 `name` 是 `name = true`（布尔变量）的简写。这类行可以通过在行尾加上
+    `\`（反斜杠字符）来续接到下一行，即通过转义行尾字符。前导和尾随的空格会被丢弃；值中的内部空格会原样保留。你可以使用双引号来保留值中的前导或尾随空格。
+- en: Includes and conditional includes
+  id: totrans-156
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 包含与有条件包含
+- en: You can include one config file from another by setting the special variable
+    `include.path` to the path of the file to be included. The included file will
+    be expanded immediately, similar to the mechanism of `#include` in C and C++.
+    The path is relative to the configuration file with the include directive. You
+    can turn this feature off with the `--``no-includes` option.
+  id: totrans-157
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以通过设置特殊变量 `include.path` 来包含另一个配置文件，路径指定要包含的文件位置。被包含的文件会立即展开，类似于 C 和 C++ 中的
+    `#include` 机制。该路径是相对于包含指令所在配置文件的路径。你可以通过 `--no-includes` 选项来关闭此功能。
+- en: You can also conditionally include a config file from another similarly by setting
+    an `includeIf.<condition>.path` variable. The condition starts with a keyword,
+    followed by a colon `:`, and data relevant to the type of conditional included.
+  id: totrans-158
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你也可以通过设置 `includeIf.<condition>.path` 变量来有条件地包含另一个配置文件。条件以一个关键字开始，后跟冒号 `:`，并包含与特定条件相关的数据。
+- en: 'The supported keywords are as follows:'
+  id: totrans-159
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 支持的关键字如下：
+- en: '**gitdir**, where the data that follows the keyword is used as a glob pattern
+    to match the location of the **.git** directory (of the repo itself). For convenience,
+    **~**and **~/** at the beginning of the pattern are substituted with the location
+    of the home directory, and **./** at the beginning of the pattern is replaced
+    with the directory containing the current config file. There is also **gitdir/i**
+    variant that does the matching in a case-insensitive way.'
+  id: totrans-160
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**gitdir**，其后跟随的关键词数据作为全局模式来匹配 **.git** 目录的位置（即仓库本身的目录）。为了方便起见，模式开头的 **~**
+    和 **~/** 会被替换为主目录的位置，而 **./** 则被替换为包含当前配置文件的目录。还有 **gitdir/i** 变体，它以不区分大小写的方式进行匹配。'
+- en: '**onbranch**, which can be used to match the currently checked-out branch against
+    the glob pattern.'
+  id: totrans-161
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**onbranch**，可以用于将当前已检出的分支与全局模式进行匹配。'
+- en: '**hasconfig:remote.*.url**, which checks whether, in any of the configuration,
+    there exists at least one remote URL that matches the glob pattern.'
+  id: totrans-162
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**hasconfig:remote.*.url**，该命令检查配置中是否存在至少一个符合全局模式的远程 URL。'
+- en: 'For example, to use a different configuration for repositories inside the `work-repos/`
+    subdirectory in your home directory, you could use the following:'
+  id: totrans-163
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 例如，若要为主目录中的 `work-repos/` 子目录中的仓库使用不同的配置，你可以使用以下命令：
+- en: '[PRE15]'
+  id: totrans-164
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE15]'
+- en: Accessing the Git configuration
+  id: totrans-165
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 访问 Git 配置
+- en: You can use the `git config` command to access the Git configuration, starting
+    from listing the configuration entries in a canonical form, through examining
+    individual variables, to editing and adding entries.
+  id: totrans-166
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以使用 `git config` 命令访问 Git 配置，从列出标准形式的配置条目、检查单个变量，到编辑和添加条目。
+- en: 'You can query the existing configuration with `git config --list`, adding an
+    appropriate parameter if you want to limit to a single configuration layer. On
+    a Linux box with the default installation, in the fresh empty Git repository just
+    after `git init`, the local (per-repository) setting would look approximately
+    like the following:'
+  id: totrans-167
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以使用 `git config --list` 查询现有配置，并根据需要添加适当的参数以限制为单一配置层级。在默认安装的 Linux 系统中，在刚执行
+    `git init` 后的空 Git 仓库中，本地（每个仓库的）配置大致如下：
+- en: '[PRE16]'
+  id: totrans-168
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE16]'
+- en: You can also use `git var -l` to list all configuration and environment variables
+    affecting Git.
+  id: totrans-169
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你也可以使用 `git var -l` 来列出所有影响 Git 的配置和环境变量。
+- en: 'You can also query a single key with `git config`, limiting (or not) the scope
+    to the specified file, by giving the name of the configuration variable as a parameter
+    (optionally preceded by `--get`), with the section, optional subsection, and variable
+    name (key) separated by a dot:'
+  id: totrans-170
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你还可以使用`git config`查询单个键，限制（或不限制）范围到指定的文件，只需将配置变量的名称作为参数（可选地加上`--get`），并且使用点号分隔部分、可选子部分和变量名（键）：
+- en: '[PRE17]'
+  id: totrans-171
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE17]'
+- en: This would return the last value, that is, the one with the greatest precedence.
+    You can get all the values with `--get-all`, or specific keys with `--get-regexp=<match>`.
+    This is quite useful while accessing a multivalued option such as `refspecs` for
+    a remote.
+  id: totrans-172
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这将返回最后一个值，即具有最高优先级的那个。你可以使用`--get-all`获取所有值，或者使用`--get-regexp=<match>`获取特定的键。这在访问像`refspecs`这样的多值选项时非常有用，尤其是对于远程访问。
+- en: Types of configuration variables and type specifiers
+  id: totrans-173
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 配置变量类型及类型说明符
+- en: While requesting (or writing) a config variable, you can give a *type specifier*
+    with the **--type=<type>** option. The type can be **bool**, which ensures that
+    the returned value is **true** or **false**; **int**, which expands the optional
+    value suffix of **k** (1,024 elements), **m** (1024k), or **g** (1024m); **path**,
+    which expands **~** for the value of **$HOME**; and **~user** for the home directory
+    of the given user, and **expiry-date** to convert a fixed or relative date string
+    to a timestamp.
+  id: totrans-174
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在请求（或写入）配置变量时，你可以通过**--type=<type>**选项提供一个*类型说明符*。类型可以是**bool**，确保返回的值是**true**或**false**；**int**，扩展**k**（1,024个元素）、**m**（1024k）或**g**（1024m）的可选值后缀；**path**，扩展**~**为**$HOME**的值；**~user**表示给定用户的主目录；以及**expiry-date**，将固定或相对日期字符串转换为时间戳。
+- en: There is also **bool-or-int**, and a few options related to storing colors and
+    retrieving color escape codes; see the **git** **config** documentation.
+  id: totrans-175
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 还有**bool-or-int**类型，以及与存储颜色和获取颜色转义码相关的一些选项；请参阅**git config**文档。
+- en: 'With `--get`, `--get-all`, and `--get-regexp`, you can also limit the listing
+    (and the settings for multiple-valued variables) to only those variables matching
+    the value `regexp` (which is passed as an optional last parameter). For example,
+    to find all configurations that affect proxying for a given host, you can use
+    the following command:'
+  id: totrans-176
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用`--get`、`--get-all`和`--get-regexp`时，你还可以将列表（以及多值变量的设置）限制为仅匹配`regexp`值的那些变量（`regexp`作为可选的最后一个参数传递）。例如，要查找所有影响给定主机代理设置的配置，你可以使用以下命令：
+- en: '[PRE18]'
+  id: totrans-177
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE18]'
+- en: 'You can also use the `git config` command to set the configuration variable
+    value. The local layer (per-repository file) is the default for writing if nothing
+    else is specified. For example, to set the email address of the user, which is
+    to be common to most of their repositories, you can run the following:'
+  id: totrans-178
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你还可以使用`git config`命令来设置配置变量的值。如果没有指定其他内容，本地层（每个仓库文件）是默认的写入位置。例如，要设置用户的电子邮件地址，使其适用于大多数仓库，你可以运行以下命令：
+- en: '[PRE19]'
+  id: totrans-179
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE19]'
+- en: 'For multivalue configuration options (multivar), you can add multiple lines
+    to it by using the `--add` option. To change a single entry of a multivar config
+    variable, you can use something like the following command, where the first value
+    denotes which value to change, and the second denotes the new value:'
+  id: totrans-180
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于多值配置选项（multivar），你可以使用`--add`选项向其添加多行。要更改一个多值配置变量的单个条目，你可以使用如下命令，其中第一个值表示要更改的值，第二个值表示新的值：
+- en: '[PRE20]'
+  id: totrans-181
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE20]'
+- en: It is also very easy to delete configuration entries with `git` `config --unset`.
+  id: totrans-182
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用`git config --unset`删除配置条目也非常简单。
+- en: Instead of setting all the configuration values on the command line, as shown
+    in the preceding example, it is possible to set or change them just by editing
+    the relevant configuration file directly. Simply open the configuration file in
+    your favorite editor, or run the `git config --``edit` command.
+  id: totrans-183
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 与前面示例中在命令行上设置所有配置值不同，你也可以直接通过编辑相关的配置文件来设置或更改它们。只需在你喜欢的编辑器中打开配置文件，或运行`git config
+    --edit`命令。
+- en: 'The local repository configuration file just after a fresh `git init` on Linux
+    looks as follows:'
+  id: totrans-184
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在Linux上，执行`git init`后，新的本地仓库配置文件如下所示：
+- en: '[PRE21]'
+  id: totrans-185
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE21]'
+- en: If you want to change a configuration by editing the configuration file, it
+    might be prudent to first find out where the configuration variable you want to
+    change came from.
+  id: totrans-186
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你想通过编辑配置文件来更改配置，最好先找出你要更改的配置变量的来源。
+- en: Finding where configuration value came from
+  id: totrans-187
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 查找配置值的来源
+- en: With three (or four) layers of configuration files, it might be difficult to
+    find out where the given configuration variable was set, and whether it was overridden
+    or added to in a more specific configuration file. Then there is the additional
+    complication of taking into account the `include` and `includeIf` sections.
+  id: totrans-188
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在有三层（或四层）配置文件的情况下，可能很难找出给定的配置变量是在哪里设置的，是否在更具体的配置文件中被覆盖或添加过。然后，还需要额外考虑`include`和`includeIf`部分的复杂性。
+- en: That is where the `--show-origin` and `--show-source` options passed to the
+    `git config` command together with the `--list` or `--get/--get-all` options can
+    help. The `git config --list` command will list all variables set in config files,
+    along with their values. The `--show-scope` option augments the output of all
+    queried config options with the scope of that value (worktree, local, global,
+    system, command), while `--show-source` shows the origin type (file, standard
+    input, command line, blob) and the actual origin (config file path, or blob ID,
+    if applicable).
+  id: totrans-189
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这时，传递给`git config`命令的`--show-origin`和`--show-source`选项，结合`--list`或`--get/--get-all`选项，可以提供帮助。`git
+    config --list`命令将列出所有在配置文件中设置的变量及其值。`--show-scope`选项会在所有查询的配置选项输出中增加该值的作用域（工作树、局部、全局、系统、命令），而`--show-source`则显示来源类型（文件、标准输入、命令行、blob）及其实际来源（配置文件路径或blob
+    ID，如果适用）。
+- en: Debugging per-file configuration
+  id: totrans-190
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 调试每个文件的配置
+- en: You can use **git check-ignore** to examine why a file is ignored, and **git
+    check-attr** to find out the attributes assigned to the file and where they came
+    from.
+  id: totrans-191
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以使用**git check-ignore**检查文件为什么被忽略，使用**git check-attr**找出文件所分配的属性以及它们来自哪里。
+- en: 'For example, let’s assume that user identity is defined in a per-user configuration
+    file: `~/.gitconfig`'
+  id: totrans-192
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 例如，假设用户身份是在每个用户的配置文件中定义的：`~/.gitconfig`
+- en: '[PRE22]'
+  id: totrans-193
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE22]'
+- en: 'Let’s also assume that the `git config` command was used to create the `work.inc`
+    file in the top directory of the project, and to include it from the per-repository
+    config file:'
+  id: totrans-194
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 还假设使用`git config`命令在项目的顶级目录中创建了`work.inc`文件，并从每个仓库的配置文件中包含它：
+- en: '[PRE23]'
+  id: totrans-195
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE23]'
+- en: 'In that context, we would get the following query results, shown here in shortened
+    form:'
+  id: totrans-196
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这种情况下，我们将获得以下查询结果，这里以简化的形式展示：
+- en: '[PRE24]'
+  id: totrans-197
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE24]'
+- en: The first column shows the scope, the second column the origin, and the third
+    the fully qualified config variable and its value.
+  id: totrans-198
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 第一列显示作用域，第二列显示来源，第三列显示完全限定的配置变量及其值。
+- en: Basic client-side configuration
+  id: totrans-199
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 基本的客户端配置
+- en: 'You can divide the configuration options recognized by Git into two categories:
+    client side and server side. The majority of the options are about configuring
+    your personal working preferences; they are client side. The server-side configuration
+    will be touched upon in more detail in [*Chapter 14*](B21194_14.xhtml#_idTextAnchor349),
+    *Git Administration*; in this section, you will find only the basics.'
+  id: totrans-200
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以将Git识别的配置选项分为两类：客户端和服务器端。大多数选项是关于配置个人工作偏好的，它们属于客户端。服务器端配置将在[*第14章*](B21194_14.xhtml#_idTextAnchor349)中详细讲解，*Git管理*；本节只介绍基本内容。
+- en: There are many supported configuration options, but only a small fraction of
+    them *needs* to be set; a large fraction of them has sensible defaults, and explicitly
+    setting them is only useful in certain edge cases. There are a lot of options
+    available; you can see a list of all the options with `git config --help`. Here
+    we’ll be covering only the most common and most useful options.
+  id: totrans-201
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有许多支持的配置选项，但其中只有一小部分*需要*设置；其中大部分有合理的默认值，显式设置它们仅在某些边缘情况下才有用。可用的选项很多；你可以通过`git
+    config --help`查看所有选项的列表。在这里，我们将只介绍最常见和最有用的选项。
+- en: Two variables that really need to be set up are **user.email** and **user.name**.Those
+    configuration variables define the user’s identity (though in modern Git, you
+    can set up separate identities for authoring changes and for committing them with
+    **author.name** and **committer.name**). Also, if you are signing annotated tags
+    or commits (as discussed in [*Chapter 6*](B21194_06.xhtml#_idTextAnchor140), *Collaborative
+    Development with Git*), you might want to set up your GPG signing key ID. This
+    is done with the **user.signingKey** configuration setting.
+  id: totrans-202
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 需要真正设置的两个变量是**user.email**和**user.name**。这些配置变量定义了用户的身份（尽管在现代Git中，你可以为更改作者和提交者分别设置不同的身份，使用**author.name**和**committer.name**）。另外，如果你正在签名注解标签或提交（如在[*第6章*](B21194_06.xhtml#_idTextAnchor140)中讨论的那样，*Git协作开发*），你可能希望设置你的GPG签名密钥ID。可以通过**user.signingKey**配置项来完成。
+- en: By default, Git uses whatever you’ve set on the system as your default text
+    editor (defined with the `VISUAL` or `EDITOR` environment variables; the first
+    only for the graphical desktop environment) to create and edit your commit and
+    tag messages. It also uses whatever you have set as the pager (`PAGER`) for paginating
+    and browsing the output of the Git commands. To change this default to something
+    else, you can use the `vi` editor and on the `less` pager.
+  id: totrans-203
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 默认情况下，Git会使用系统上设置的文本编辑器（通过`VISUAL`或`EDITOR`环境变量定义；`VISUAL`仅用于图形桌面环境）来创建和编辑提交和标签信息。它还会使用你设置的分页器（`PAGER`）来分页和浏览Git命令的输出。如果你想将默认编辑器更改为其他编辑器，可以使用`vi`编辑器，或者在`less`分页器上进行更改。
+- en: With Git, the pager is invoked automatically. The default `less` pager supports
+    not only pagination, but also incremental search and other features.
+  id: totrans-204
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在Git中，分页器会自动调用。默认的`less`分页器不仅支持分页功能，还支持增量搜索和其他功能。
+- en: Important note
+  id: totrans-205
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 重要提示
+- en: With the default configuration (the **LESS** environment variable is not set),
+    **less** when invoked by Git works as if it was invoked with **LESS=FRX**. This
+    means that it would skip pagination if there were less than one page of output,
+    it would pass through ANSI color codes, and it would not clear the screen on exit.
+  id: totrans-206
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在默认配置下（即**LESS**环境变量未设置时），Git调用`less`时的行为与设置了**LESS=FRX**相同。这意味着，如果输出少于一页，它将跳过分页，传递ANSI颜色代码，并且退出时不会清屏。
+- en: Creating commit messages is also affected by **commit.template**. If you set
+    this configuration variable, Git will use that file as the default message when
+    you commit. The template is not distributed with the repository in general. Note
+    that Git would add the status information to the commit message template unless
+    it is forbidden to do it by setting **commit.status** to false.
+  id: totrans-207
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 创建提交信息也受到**commit.template**的影响。如果你设置了该配置变量，Git将在提交时使用该文件作为默认信息。该模板通常不会随仓库一起分发。请注意，除非通过将**commit.status**设置为false来禁止，否则Git会将状态信息添加到提交信息模板中。
+- en: Such a template is quite convenient if you have a commit-message policy, as
+    it greatly increases the chances of this policy being followed. It can, for example,
+    include the commented-out instructions for filling the commit message. You can
+    augment this solution with an appropriate hook that checks whether the commit
+    message matches the policy (see the *Commit process hooks* section later in this
+    chapter).
+  id: totrans-208
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你有提交信息政策，这样的模板非常方便，因为它大大增加了遵循该政策的机会。它可以例如包括注释掉的提交信息填写说明。你可以通过适当的钩子进一步扩展此解决方案，检查提交信息是否符合政策（请参见本章后面的*提交过程钩子*部分）。
+- en: The status of the files in the working area is affected by the ignore patterns
+    and the file attributes (see [*Chapter 3*](B21194_03_split_000.xhtml#_idTextAnchor049),
+    *Managing Your* *Worktrees*). You can put ignore patterns in your project’s in-tree
+    `.gitignore` file (usually, `.gitignore` is about which files are not to be tracked,
+    and it is tracked itself by Git), or in the `.git/info/excludes` file for local
+    and private patterns, to define which files are not interesting. These are project-specific;
+    sometimes, you would want to write a kind of global (per-user) `.gitignore` file.
+    You can use `~/.config/git/ignore`. There is also a corresponding `.gitattributes`
+    files, which defaults to `~/.config/git/attributes`.
+  id: totrans-209
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 工作区中文件的状态会受到忽略模式和文件属性的影响（请参见[*第3章*](B21194_03_split_000.xhtml#_idTextAnchor049)，*管理你的工作树*）。你可以将忽略模式放在项目的内置`.gitignore`文件中（通常，`.gitignore`文件用于指定哪些文件不需要跟踪，且该文件本身会被Git跟踪），或者将其放在`.git/info/excludes`文件中，用于本地和私有模式，以定义哪些文件不感兴趣。这些是项目特定的；有时，你可能希望编写一个全局（每用户）的`.gitignore`文件。你可以使用`~/.config/git/ignore`。还有一个对应的`.gitattributes`文件，默认位于`~/.config/git/attributes`。
+- en: Trivia
+  id: totrans-210
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 小知识
+- en: Actually, it is **$XDG_CONFIG_HOME/git/ignore**; if the **$XDG_CONFIG_HOME**
+    environment variable is not set or is empty, **$HOME/.config/git/ignore** is used.
+  id: totrans-211
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 实际上，它是**$XDG_CONFIG_HOME/git/ignore**；如果未设置**$XDG_CONFIG_HOME**环境变量或该变量为空，则使用**$HOME/.config/git/ignore**。
+- en: 'Although Git has an internal implementation of diff, you can set up an external
+    tool to be used instead with the help of **diff.external**. You would usually
+    want to create a wrapper script that massages the parameters that Git passes to
+    it and passes the ones needed in the order external diff requires. By default,
+    Git passes the following arguments to the diff program:'
+  id: totrans-212
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 尽管 Git 有内置的 diff 实现，你可以借助**diff.external**配置项设置外部工具代替 Git 内部的 diff 工具。通常，你会想要创建一个包装脚本来调整
+    Git 传递给它的参数，并按外部 diff 工具要求的顺序传递必要的参数。默认情况下，Git 会向 diff 程序传递以下参数：
+- en: '[PRE25]'
+  id: totrans-213
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE25]'
+- en: See also the *Graphical diff and merge tools* section for the configuration
+    of `git difftool` and `git mergetool`.
+  id: totrans-214
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 参见 *图形化 diff 和合并工具* 部分，了解 `git difftool` 和 `git mergetool` 的配置。
+- en: The rebase and merge setup, configuring pull
+  id: totrans-215
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 变基和合并设置，配置拉取
+- en: When performing `git pull` operation, Git needs to know whether you prefer to
+    use the *merge* operation to join the local history and the history fetched from
+    the remote, or the *rebase* operation to join histories. That is why it requires
+    you to provide a value for the `pull.rebase` configuration variable. You can find
+    more information on the topic of merge and rebase in [*Chapter 9*](B21194_09.xhtml#_idTextAnchor229),
+    *Merging* *Changes Together*.
+  id: totrans-216
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在执行 `git pull` 操作时，Git 需要知道你是倾向于使用 *merge* 操作将本地历史和远程获取的历史合并，还是使用 *rebase* 操作来合并历史。这就是为什么它要求你提供
+    `pull.rebase` 配置变量的值。你可以在[*第9章*](B21194_09.xhtml#_idTextAnchor229)中找到更多关于合并和变基的内容，*合并*
+    *更改*。
+- en: There are several configuration settings that can be used to configure the behavior
+    of `git pull`. There is the `pull.rebase` configuration option and a branch-specific
+    `branch.<name>.rebase` option that, when set to `true`, tells Git to perform a
+    rebase during the pull operation (for the `<name>` branch only in the latter case).
+    If set to `false`, then `git pull` performs a merge. Both can also be set to `merges`
+    to run rebase with the `--rebase-merges` option, to have local merge commits not
+    be flattened in the process of rebasing.
+  id: totrans-217
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有几个配置设置可以用于配置 `git pull` 的行为。包括 `pull.rebase` 配置选项以及特定于分支的 `branch.<name>.rebase`
+    选项，当设置为 `true` 时，会告诉 Git 在拉取操作中执行变基（仅限 `<name>` 分支）。如果设置为 `false`，则 `git pull`
+    会执行合并操作。两者还可以设置为 `merges`，使用 `--rebase-merges` 选项执行变基，以便在变基过程中不将本地合并提交扁平化。
+- en: You can make Git automatically set up the per-branch “pull to rebase” configuration
+    while creating specific kinds of new branches with `branch.autoSetupRebase`. You
+    can set it to `never`, `local` (for locally tracked branches only), `remote` (for
+    remote tracked branches only), or `always` (for local plus remote). There is also
+    `branch.autoSetupMerge` to set up a branch to track another branch.
+  id: totrans-218
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以通过 `branch.autoSetupRebase` 在创建特定类型的新分支时，自动为每个分支设置“拉取变基”配置。可以将其设置为 `never`、`local`（仅适用于本地跟踪的分支）、`remote`（仅适用于远程跟踪的分支）或
+    `always`（适用于本地和远程）。还有 `branch.autoSetupMerge` 用于设置分支跟踪另一个分支。
+- en: Preserving undo information – the expiry of objects
+  id: totrans-219
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 保留撤销信息 – 对象的过期
+- en: By default, Git will automatically remove unreferenced objects, clean `git gc`
+    command. You should know about a repository’s object-oriented structure from [*Chapter
+    10*](B21194_10_split_000.xhtml#_idTextAnchor247), *Keeping* *History Clean*.
+  id: totrans-220
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 默认情况下，Git 会自动删除未引用的对象，并清理 `git gc` 命令。你可以在[*第10章*](B21194_10_split_000.xhtml#_idTextAnchor247)中了解关于仓库面向对象结构的更多内容，*保持*
+    *历史清晰*。
+- en: 'Git will, for safety reasons, use a grace period of two weeks while removing
+    unreferenced objects; this can be changed with the `gc.pruneExpire` configuration:
+    the setting is usually a relative date (for example, `1.month.ago`; you can use
+    dots as word separators). To disable the grace period (which is usually done from
+    the command line), the `now` value can be used.'
+  id: totrans-221
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了安全起见，Git 在删除未引用的对象时会使用两周的宽限期；这一设置可以通过 `gc.pruneExpire` 配置项进行更改：该设置通常是相对日期（例如，`1.month.ago`；你可以使用点作为单词分隔符）。要禁用宽限期（通常从命令行完成），可以使用
+    `now` 值。
+- en: The branch tip history is kept for 90 days by default (or `gc.reflogExpire`,
+    if set) for reachable revisions, and for 30 days (or `gc.reflogExpireUnreachable`)
+    for reflog entries that are not a part of the current history. Both settings can
+    be configured on a per-reframe basis, by supplying a pattern of the ref name to
+    be matched as a subsection name, that is, `gc.<pattern>.reflogExpire`, and similar
+    for the other setting. This can be used to change the expire settings for `HEAD`
+    or for `refs/stash` (see [*Chapter 3*](B21194_03_split_000.xhtml#_idTextAnchor049),
+    *Managing Your* *Worktrees*), or for remote-tracking branches `refs/remotes/*`
+    separately. The setting is a length of time (for example, 6 months); to completely
+    turn off reflog expiry, use the value of `never`. You can use the latter, for
+    example, to switch off the expiring of `stash` entries.
+  id: totrans-222
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 分支提示历史记录默认会保留 90 天（如果设置了 `gc.reflogExpire`，则按其设置）以用于可达修订版本，而对不属于当前历史记录的 reflog
+    条目，则保留 30 天（或 `gc.reflogExpireUnreachable`）。这两个设置可以按每个引用进行配置，方法是提供要匹配的引用名称模式作为子部分名称，即
+    `gc.<pattern>.reflogExpire`，其他设置类似。这可以用来更改 `HEAD` 或 `refs/stash`（参见[*第3章*](B21194_03_split_000.xhtml#_idTextAnchor049)，*管理你的*
+    *工作区*）的过期设置，或者单独为远程跟踪分支 `refs/remotes/*` 设置。该设置为一个时间长度（例如，6 个月）；要完全关闭 reflog 过期，请使用
+    `never` 的值。你可以使用后者，例如，关闭 `stash` 条目的过期。
+- en: Formatting and whitespace
+  id: totrans-223
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 格式化和空白
+- en: 'Code formatting and whitespace issues are some of the more frustrating and
+    subtle problems you may encounter while collaborating, especially with cross-platform
+    development. It’s very easy for patches and merges to introduce subtle and unnecessary
+    whitespace changes, because editing the code can silently introduce such changes
+    (which are often not visible), and because there are different notions of line
+    endings on different operating systems: MS Windows, Linux, and macOS. Git has
+    a few configuration options to help with these issues.'
+  id: totrans-224
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 代码格式化和空白问题是你在协作过程中可能遇到的一些令人头疼且微妙的问题，尤其是在跨平台开发时。补丁和合并很容易引入微妙且不必要的空白变化，因为编辑代码时可能悄悄引入这些变化（这些变化通常不可见），而且不同操作系统对行结尾有不同的定义：MS
+    Windows、Linux 和 macOS。Git 提供了一些配置选项来帮助解决这些问题。
+- en: One important issue for cross-platform work is the notion of **line-ending**.
+    This is because MS Windows uses a combination of a **carriage return** (**CR**)
+    character and a **linefeed** (**LF**) character for new lines in text files, whereas
+    macOS and Linux use only a linefeed character. Many editors on MS Windows will
+    silently replace existing LF-style line endings with CRLF or use CRLF for new
+    lines, which leads to subtle but annoying issues.
+  id: totrans-225
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 跨平台工作中一个重要的问题是 **行结尾** 的定义。这是因为 MS Windows 使用 **回车**（**CR**）字符和 **换行**（**LF**）字符的组合来表示文本文件中的新行，而
+    macOS 和 Linux 仅使用换行字符。许多 MS Windows 上的编辑器会悄悄地将现有的 LF 风格的行结尾替换为 CRLF，或者为新行使用 CRLF，这导致了微妙但恼人的问题。
+- en: 'Git can handle this issue by auto-converting line endings into LF when you
+    add a file to the index. If your editor uses CRLF line endings, Git can also convert
+    line endings to the native form when it checks out code in your filesystem. There
+    are two configuration settings that affect this matter: `core.eol` and `core.autocrlf`.
+    The first setting, `core.eol`, sets the line ending to be used while checking
+    out files into the working directory for files that have the `text` property set
+    (see the following *Per-file configuration with gitattributes* section, which
+    summarizes and recalls information about the file attributes from [*Chapter 3*](B21194_03_split_000.xhtml#_idTextAnchor049),
+    *Managing* *Your* *Worktrees*).'
+  id: totrans-226
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git 可以通过在将文件添加到索引时自动将行结尾转换为 LF 来处理此问题。如果你的编辑器使用 CRLF 行结尾，Git 在检出文件时也可以将行结尾转换为本地格式。影响此问题的有两个配置设置：`core.eol`
+    和 `core.autocrlf`。第一个设置 `core.eol`，设置在将文件检出到工作目录时使用的行结尾格式，对于已设置 `text` 属性的文件（请参见下面的*按文件配置的
+    gitattributes*部分，该部分总结并回顾了[*第3章*](B21194_03_split_000.xhtml#_idTextAnchor049)中关于文件属性的信息，*管理*
+    *你的* *工作区*）。
+- en: The second and older setting, `core.autocrlf`, can be used to turn on the automatic
+    conversion of line endings to CRLF. Setting it to `true` converts the LF line
+    endings in the repository into CRLF when you check out files, and vice versa when
+    you stage them; this is the setting you would probably want on a Windows machine.
+    (This is almost the same as setting the `text` attribute to `core.eol` to `crlf`.)
+    You can tell Git to convert CRLF to LF on a commit but not the other way around
+    by setting `core.autocrlf` to `input` instead; this is the setting to use if you
+    are on a Linux or Mac system. To turn off this functionality, recording the line-endings
+    in the repository as they are set this configuration value to `false`.
+  id: totrans-227
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 第二个较旧的设置，`core.autocrlf`，可以用于开启自动转换行尾为CRLF的功能。将其设置为`true`时，会在检出文件时将仓库中的LF行尾转换为CRLF，在暂存文件时则反向操作；这是你在Windows机器上可能需要的设置。（这几乎与将`text`属性设置为`core.eol`为`crlf`相同。）你也可以通过将`core.autocrlf`设置为`input`，让Git在提交时将CRLF转换为LF，但不会进行反向转换；如果你使用的是Linux或Mac系统，这种设置最为合适。要关闭此功能，并按当前设置记录仓库中的行尾，则将此配置值设置为`false`。
+- en: 'This handles one part of the whitespace issues – line-ending variance, and
+    one vector of introducing them – editing files. Git also comes with a way to detect
+    and fix some of the other whitespace issues. It can be configured to look for
+    a set of common whitespace problems. The `core.whitespace` configuration setting
+    can be used to activate them (for those disabled by default) or turn them off
+    (for those enabled by default). The three that are turned on by default are the
+    following:'
+  id: totrans-228
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这处理了空白字符问题的一个方面——行尾变异性，以及引入该问题的一种途径——编辑文件。Git还提供了一种检测并修复其他空白字符问题的方法。你可以配置它以查找一组常见的空白字符问题。可以使用`core.whitespace`配置选项来启用它们（对于那些默认禁用的选项），或将其关闭（对于那些默认启用的选项）。默认启用的三个选项如下：
+- en: '**blank-at-eol**: This looks for trailing spaces at the end of a line'
+  id: totrans-229
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**blank-at-eol**：此选项查找行尾的多余空格。'
+- en: '**blank-at-eof**: This notices blank lines at the end of a file'
+  id: totrans-230
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**blank-at-eof**：此选项查找文件末尾的空行。'
+- en: '**space-before-tab**: This looks for spaces immediately before the tabs at
+    the initial (beginning) indent part of the line'
+  id: totrans-231
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**space-before-tab**：此选项查找行首（开始处）缩进部分的制表符前面紧跟的空格。'
+- en: The `trailing-space` value in `core.whitespace` is a shorthand to cover both
+    `blank-at-eol` and `blank-at-eof`.
+  id: totrans-232
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`core.whitespace`中的`trailing-space`值是一个简写，涵盖了`blank-at-eol`和`blank-at-eof`。'
+- en: 'The three that are disabled by default but can be turned on are the following:'
+  id: totrans-233
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 默认情况下禁用但可以启用的三个选项如下：
+- en: '**indent-with-non-tab**: This treats the line that is indented with space characters
+    instead of the equivalent tabs as an error (where equivalence is controlled by
+    the **tabwidth** option). This option enforces *indenting with**Tab characters*.'
+  id: totrans-234
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**indent-with-non-tab**：此选项将把使用空格字符（而不是等效的制表符）缩进的行视为错误（等效性由**tabwidth**选项控制）。此选项强制执行*使用Tab字符缩进*。'
+- en: '**tab-in-indent**: This watches for tabs in the initial indentation portion
+    of the line (here, **tabwidth** is used to fix such whitespace errors). This option
+    enforces *indenting with* *space characters*.'
+  id: totrans-235
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**tab-in-indent**：此选项会检查行的初始缩进部分是否存在制表符（此处使用**tabwidth**来修复此类空白错误）。此选项强制执行*使用*
+    *空格字符*进行缩进。'
+- en: '**cr-at-eol**: This tells Git that carriage returns at the end of the lines
+    are OK (allowing CRLF endings in the repository).'
+  id: totrans-236
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**cr-at-eol**：此选项告诉Git，行尾的回车符是可以的（允许在仓库中使用CRLF行尾）。'
+- en: 'You can tell Git which of these you want enabled or disabled by setting `core.whitespace`
+    to the comma-separated list of values. To disable an option, prepend it with the
+    `-` prefix in front of the value. For example, if you want all but `cr-at-eol`
+    and `tab-in-indent` to be set, and also while setting the *Tab* space value to
+    `4`, you can use:'
+  id: totrans-237
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以通过将`core.whitespace`设置为用逗号分隔的值列表，来告诉Git启用或禁用这些选项。要禁用某个选项，只需在值前面加上`-`前缀。例如，如果你希望启用除了`cr-at-eol`和`tab-in-indent`以外的所有选项，并且同时将*Tab*空格值设置为`4`，你可以使用：
+- en: '[PRE26]'
+  id: totrans-238
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE26]'
+- en: 'You can also set these options on a per-file basis with the `whitespace` attribute.
+    For example, you can use it to turn off checking for whitespace problems in test
+    cases to handle whitespace issues or ensure that the Python 2 code indents with
+    spaces:'
+  id: totrans-239
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你也可以在每个文件的基础上使用`whitespace`属性来设置这些选项。例如，你可以用它来关闭对测试用例中空白字符问题的检查，处理空白字符问题，或确保Python
+    2代码使用空格缩进：
+- en: '[PRE27]'
+  id: totrans-240
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE27]'
+- en: EditorConfig
+  id: totrans-241
+  prefs: []
+  type: TYPE_NORMAL
+  zh: EditorConfig
+- en: There exists the EditorConfig project ([https://editorconfig.org/](https://editorconfig.org/))
+    that consists of a file format for defining coding styles, including the type
+    of line endings, and a collection of text editor plugins that make editors adhere
+    to the chosen style. The **.editorconfig** file should be tracked by Git.
+  id: totrans-242
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 存在一个名为 EditorConfig 的项目 ([https://editorconfig.org/](https://editorconfig.org/))，它包括一个用于定义编码风格的文件格式，其中包括行结束符的类型，以及一组文本编辑器插件，使编辑器遵循选定的风格。**.editorconfig**
+    文件应由 Git 进行跟踪。
+- en: Git will detect these issues when you run a `git diff` command and inform you
+    about them using the `color.diff.whitespace` color, so you can notice them and
+    possibly fix them before you create a new commit. While applying patches with
+    `git apply`, you can ask Git to either warn about the whitespace issues with `git
+    apply --whitespace=warn`, error out with `--whitespace=error`, or you can have
+    Git try to automatically fix the issue with `--whitespace=fix`. The same applies
+    to the `git rebase` command as well.
+  id: totrans-243
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当你运行 `git diff` 命令时，Git 会检测到这些问题，并通过 `color.diff.whitespace` 颜色通知你，以便你在创建新提交之前注意到它们并可能修复它们。在使用
+    `git apply` 应用补丁时，你可以要求 Git 通过 `git apply --whitespace=warn` 警告空格问题，或通过 `--whitespace=error`
+    报错，或者让 Git 尝试自动修复问题，使用 `--whitespace=fix`。同样的操作也适用于 `git rebase` 命令。
+- en: Server-side configuration
+  id: totrans-244
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 服务器端配置
+- en: There are a few configuration options available for the server side of Git.
+    They will be described in more detail in [*Chapter 14*](B21194_14.xhtml#_idTextAnchor349),
+    *Git Administration*; here you will find a short summary of some of the more interesting
+    parameters.
+  id: totrans-245
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git 服务器端有一些可用的配置选项，这些选项将在[*第14章*](B21194_14.xhtml#_idTextAnchor349)《Git 管理》一节中详细介绍；在这里，你将找到一些更有趣的参数的简短总结。
+- en: You can make the Git server check for object consistency, namely, that every
+    object received during a push matches its SHA-1 identifier, and that it is a valid
+    object, with a `receive.fsckObjects` Boolean-valued configuration variable. It
+    is turned off by default because `git fsck` is a fairly expensive operation, and
+    it might slow down operations, especially on large pushes (which are common in
+    large repositories). This is a check against faulty or malicious clients.
+  id: totrans-246
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以让 Git 服务器检查对象的一致性，即确保每个在推送过程中接收到的对象与其 SHA-1 标识符匹配，并且是有效对象，可以通过一个名为 `receive.fsckObjects`
+    的布尔配置变量来实现。默认情况下，该选项是关闭的，因为 `git fsck` 是一个相对昂贵的操作，可能会拖慢操作速度，特别是在进行大规模推送时（这在大型仓库中很常见）。这是对有缺陷或恶意客户端的检查。
+- en: If you rewrite commits that you have already pushed to a server (which is bad
+    practice, as explained in [*Chapter 10*](B21194_10_split_000.xhtml#_idTextAnchor247),
+    *Keeping History Clean*) and try to push again, you’ll be denied. The client might,
+    however, force-update the remote branch with the `--force` flag to the `git push`
+    command. However, the server can be told to refuse force-pushes by setting `receive.denyNonFastForward`
+    to `true`.
+  id: totrans-247
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你重写了已经推送到服务器的提交（如[*第10章*](B21194_10_split_000.xhtml#_idTextAnchor247)《保持历史清晰》中所解释的那样，这是不好的做法），并尝试再次推送，你将被拒绝。然而，客户端可以通过向
+    `git push` 命令添加 `--force` 标志来强制更新远程分支。但是，可以通过将 `receive.denyNonFastForward` 设置为
+    `true` 来让服务器拒绝强制推送。
+- en: The `receive.denyDeletes` setting blocks one of the workarounds to the `denyNonFastForward`
+    policy, namely, deleting and recreating a branch. This forbids the deletion of
+    branches and tags; you must remove refs from the server manually.
+  id: totrans-248
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`receive.denyDeletes` 设置阻止了 `denyNonFastForward` 策略的一个解决方法，即删除并重新创建一个分支。此设置禁止删除分支和标签；你必须手动从服务器中删除引用。'
+- en: All of these features could also be implemented via the server-side receive-like
+    hooks; this will be covered in the *Installing a Git hook* section, and also to
+    some extent in [*Chapter 14*](B21194_14.xhtml#_idTextAnchor349),*Git Administration*.
+  id: totrans-249
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 所有这些功能也可以通过类似于服务器端接收的钩子来实现；这将在 *安装 Git 钩子* 部分讨论，并在[*第14章*](B21194_14.xhtml#_idTextAnchor349)《Git
+    管理》中有所涉及。
+- en: Per-file configuration with gitattributes
+  id: totrans-250
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 使用 gitattributes 进行逐文件配置
+- en: Some of the customizations can also be specified for a path (perhaps via glob)
+    so that Git applies these settings only for a subset of files or for a subdirectory.
+    These path-specific settings are called gitattributes.
+  id: totrans-251
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一些自定义设置也可以为路径指定（可能通过 glob），这样 Git 仅对某些文件或子目录应用这些设置。这些路径特定的设置被称为 gitattributes。
+- en: The order of precedence of applying this type of settings starts with the per-repository
+    local (per-user) per-path settings in the `$GIT_DIR/info/attributes` file. Then,
+    the `.gitattributes` files are consulted, starting with the one in the same directory
+    as the path in question, going up through the `.gitattributes` files in the parent
+    directories, up to the top level of the worktree (the root directory of a project).
+  id: totrans-252
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 应用此类设置的优先顺序始于存储库本地（用户本地）路径设置，位于 `$GIT_DIR/info/attributes` 文件中。然后，会查阅`.gitattributes`
+    文件，从涉及路径所在目录开始，逐步向上查找父目录中的`.gitattributes` 文件，直至工作树的顶层（项目的根目录）。
+- en: Finally, the global per-user attributes file (specified by `core.attributesFile`,
+    or at `~/.config/git/attributes` if this is not set) and the system-wide file
+    (in `/etc/gitattributes` in the default installation) are considered.
+  id: totrans-253
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后，还会考虑全局用户属性文件（由 `core.attributesFile` 指定，如果未设置，则在 `~/.config/git/attributes`
+    中），以及系统范围内的文件（在默认安装中为 `/etc/gitattributes`）。
+- en: Available Git attributes are described in detail in [*Chapter 3*](B21194_03_split_000.xhtml#_idTextAnchor049),
+    *Managing Your* *Worktrees*. Using attributes, you can, among others, do things
+    such as specify the separate merge strategies via merge drivers for the specific
+    kind of files (for example, `ChangeLog`), tell Git how to diff non-text files,
+    or have Git filter content during checkout (on writing to the working area, that
+    is, to the filesystem) and commit (on staging contents and committing changes
+    to the repository, that is, creating objects in the repository database).
+  id: totrans-254
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 可用的 Git 属性在[*第 3 章*](B21194_03_split_000.xhtml#_idTextAnchor049)，*管理您的工作树*中有详细描述。通过属性，您可以执行诸如为特定类型的文件（例如
+    `ChangeLog`）指定单独的合并策略，告知 Git 如何比较非文本文件，或在检出（在写入到工作区域，即文件系统时）和提交（在暂存内容和提交更改到仓库，即创建对象到仓库数据库时）时过滤内容。
+- en: Syntax of the Git attributes file
+  id: totrans-255
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: Git 属性文件的语法
+- en: 'A `gitattributes` file is a simple text file that sets up the local configuration
+    on a per-path basis. Blank lines and lines starting with the hash character (`#`)
+    are ignored; thus, a line starting with `#` serves as a comment, while blank lines
+    can serve as separators for readability. To specify a set of attributes for a
+    path, put a pattern followed by an attributes list, separated by a horizontal
+    whitespace:'
+  id: totrans-256
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`gitattributes` 文件是一个简单的文本文件，以每个路径为基础设置本地配置。空行和以井号（`#`）开头的行将被忽略；因此，以 `#` 开头的行用作注释，而空行可用作可读性的分隔符。要为路径指定一组属性，请将模式放在水平空格分隔的属性列表之前：'
+- en: '[PRE28]'
+  id: totrans-257
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE28]'
+- en: When more than one pattern matches the path, a later line overrides an earlier
+    line, just like for the `.gitignore` files (you can also think that the Git attributes
+    files are read from the least specific system-wide file to the most specific local
+    repository file).
+  id: totrans-258
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当路径匹配多个模式时，后面的行将覆盖前面的行，就像`.gitignore` 文件一样（您也可以认为 Git 属性文件从最不特定的系统范围文件读取到最特定的本地存储库文件）。
+- en: Git uses a backslash (`\`) as an escape character for patterns. Thus, for patterns
+    that begin with a hash, you need to put a backslash in front of the first hash
+    (that is written as `\#`). Because the attributes information is separated by
+    whitespaces, trailing spaces in the pattern are ignored and inner spaces are treated
+    as the end of the pattern unless they are quoted with a backslash (that is, written
+    as “**\** “).
+  id: totrans-259
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git 使用反斜杠（`\`）作为模式的转义字符。因此，对于以井号开头的模式，需要在第一个井号前面加上反斜杠（写为 `\#`）。由于属性信息由空格分隔，模式末尾的空格将被忽略，内部空格将被视为模式的结尾，除非它们用反斜杠引用（即写为“**\**
+    “）。
+- en: If the pattern does not contain a slash (`/`), which is a directory separator,
+    Git will treat the pattern as a shell glob pattern and will check for a match
+    against the pathname relative to the location of the `.gitattributes` file (or
+    the top level for other attribute files). Thus, for example, the `*.c` patterns
+    match the C files anywhere down from the place the `.gitattributes` file resides.
+    A leading slash matches the beginning of the pathname. For example, `/*.c` matches
+    `bisect.c` but not `builtin/bisect--helper.c`, while the `*.c` pattern would match
+    both.
+  id: totrans-260
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果模式不包含斜杠（`/`），即目录分隔符，Git 将把该模式视为 shell 通配符模式，并检查相对于`.gitattributes` 文件所在位置的路径是否匹配。例如，`*.c`
+    模式将匹配任何从`.gitattributes` 文件所在位置开始的 C 文件。以斜杠开头的模式匹配路径的开头。例如，`/*.c` 匹配 `bisect.c`，但不匹配
+    `builtin/bisect--helper.c`，而 `*.c` 模式将匹配两者。
+- en: 'If the pattern includes at least one slash, Git will treat it as a shell glob
+    suitable for consumption by the `fnmatch(3)` function call with the `FNM_PATHNAME`
+    flag. This means that the wildcards in the pattern will not match the directory
+    separator, that is, the slash (`/`) in the pathname; the match is anchored to
+    the beginning of the path. For example, the `include/*.h` pattern matches `include/version.h`
+    but not `include/linux/asm.h` or `libxdiff/includes/xdiff.h`. The shell glob wildcards
+    are the following:'
+  id: totrans-261
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果模式包含至少一个斜杠，Git 会将其视为适合 `fnmatch(3)` 函数调用的 shell 通配符，并使用 `FNM_PATHNAME` 标志。这意味着模式中的通配符不会匹配目录分隔符，即路径名中的斜杠（`/`）；匹配是从路径的开始处进行的。例如，`include/*.h`
+    模式匹配 `include/version.h`，但不匹配 `include/linux/asm.h` 或 `libxdiff/includes/xdiff.h`。Shell
+    通配符如下：
+- en: '***** matching any string (including empty)'
+  id: totrans-262
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '***** 匹配任意字符串（包括空字符串）'
+- en: '**?** matching any single character'
+  id: totrans-263
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**?** 匹配任何单个字符'
+- en: '**[…]** expression matching the character class (inside brackets, asterisks
+    and question marks lose their special meaning); note that unlike in regular expressions,
+    the complementation/negation of the character class is done with **!** and not
+    **^**. For example, to match anything but a number, one can use the **[!0-9]**
+    shell pattern, which is equivalent to **[^0-9]** in a regexp.'
+  id: totrans-264
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**[…]** 表达式匹配字符类（在方括号内，星号和问号失去特殊意义）；注意，与正则表达式不同，字符类的补充/否定是用 **!** 而不是 **^**
+    来完成的。例如，要匹配任何非数字字符，可以使用 **[!0-9]** shell 模式，它等价于正则表达式中的 **[^0-9]**。'
+- en: Two consecutive asterisks (`**`) in patterns may have a special meaning, but
+    only between two slashes (`/**/`), or between a slash and at the beginning or
+    the end of the pattern. Such a wildcard matches zero or more path components.
+    Thus, a leading `**` followed by a slash (`**/`) means a match in all directories,
+    while a trailing `/**` matches every file or directory inside the specified directory.
+  id: totrans-265
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 模式中的两个连续星号（`**`）可能具有特殊含义，但仅在两个斜杠之间（`/**/`），或者在斜杠和模式的开始或结束之间。这种通配符匹配零个或多个路径组件。因此，前导
+    `**` 后跟斜杠（`**/`）表示在所有目录中进行匹配，而尾部的 `/**` 匹配指定目录内的所有文件或目录。
+- en: 'Each attribute can be in one of four states for a given path:'
+  id: totrans-266
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 每个属性可以在给定路径上处于四种状态之一：
+- en: First, it can be **set** (the attribute has a special value of true). This is
+    specified by simply listing the name of the attribute in the attribute list, for
+    example, **text**.
+  id: totrans-267
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 首先，它可以是 **设置**（该属性具有特殊值为 true）。通过仅在属性列表中列出属性的名称来指定，例如，**text**。
+- en: Second, it can be **unset** (the attribute has a special value of false). This
+    is specified by listing the name of the attribute prefixed with minus, for example,
+    **-text**.
+  id: totrans-268
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 其次，它可以是 **取消设置**（该属性具有特殊值为 false）。通过列出属性名称并加上负号来指定，例如，**-text**。
+- en: Third, it can be **set to a specific value**; this is specified by listing the
+    name of the attribute followed by an equal sign and its value, for example, **text=auto**
+    (note that there cannot be any whitespace around the equal sign as opposed to
+    the configuration file syntax).
+  id: totrans-269
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 其次，它可以 **设置为特定值**；通过列出属性名称后跟等号及其值来指定，例如，**text=auto**（请注意，与配置文件语法不同，等号两边不能有空格）。
+- en: If no pattern matches the path, and nothing dictates whether the path has or
+    does not have attributes, the attribute is said to be **unspecified** (you can
+    override the setting for an attribute, forcing it to be explicitly unspecified
+    with **!text**).
+  id: totrans-270
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 如果没有模式匹配路径，并且没有任何规则指定路径是否具有属性，则该属性被称为 **未指定**（你可以通过 **!text** 强制将属性显式设置为未指定）。
+- en: 'If you find yourself using the same set of attributes over and over for many
+    different patterns, you should consider defining a macro attribute. This can be
+    defined in the local, global, or system-wide attributes file, but (from all possible
+    places for a repository-specific attributes file), macros can be defined only
+    in the top level `.gitignore` file. The macro is defined using `[attr]<macro>`
+    in place of the file pattern; the attributes list defines the expansion of the
+    macro. For example, the built-in `binary` macro attribute is defined as follows:'
+  id: totrans-271
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你发现自己在多个不同模式中反复使用相同的属性集，你应该考虑定义一个宏属性。这可以在本地、全局或系统范围的属性文件中定义，但（在所有可能的仓库特定属性文件位置中），宏只能在顶级
+    `.gitignore` 文件中定义。宏使用 `[attr]<macro>` 代替文件模式来定义；属性列表定义了宏的扩展。例如，内建的 `binary` 宏属性定义如下：
+- en: '[PRE29]'
+  id: totrans-272
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE29]'
+- en: But command-line options, environment variables, configuration files, gitattributes,
+    and gitignore files are not the only ways to change what Git is doing. There is
+    also the hooks mechanism, which can be used to make Git trigger user-defined actions
+    automatically at specific points in Git’s execution.
+  id: totrans-273
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 但是，命令行选项、环境变量、配置文件、gitattributes 和 gitignore 文件并非改变 Git 行为的唯一方式。还有钩子机制，可以在 Git
+    执行的特定点自动触发用户定义的操作。
+- en: Automating Git with hooks
+  id: totrans-274
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用钩子自动化 Git
+- en: There are usually certain prerequisites to the code that is produced, either
+    self-induced or enforced externally. The code should always be able to compile
+    and pass at least a fast subset of the tests. With some development workflows,
+    each commit message may need to reference an issue ID (or match the message template),
+    or include a digital certificate of origin in the form of the **Signed-off-by**
+    line. In many cases, these parts of the development process can be automated by
+    Git.
+  id: totrans-275
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通常生成的代码都有一定的前提条件，可以是自我诱导的，也可以是外部强制的。代码应始终能够编译并至少通过一组快速测试。在某些开发工作流程中，每个提交消息可能需要引用一个问题
+    ID（或匹配消息模板），或者包括一个数字签名的 **Signed-off-by** 行。在许多情况下，这些开发过程的一部分可以由 Git 自动化完成。
+- en: Like many programming tools, Git includes a way to fire custom functionality
+    contained in the user-provided code (custom scripts), when certain important pre-defined
+    actions occur, that is, when certain events trigger. Such a functionality invoked
+    as an event handler is called a **hook**. It allows us to take additional action
+    and, at least for some hooks, also to stop the triggered functionality.
+  id: totrans-276
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 像许多编程工具一样，Git 包括一种方法来触发用户提供的代码中包含的自定义功能（自定义脚本），当某些重要预定义操作发生时，即当某些事件触发时。作为事件处理程序调用的这种功能称为
+    **钩子**。它允许我们采取额外的操作，并且至少对于某些钩子，还可以停止触发的功能。
+- en: Hooks in Git can be divided into client-side and server-side hooks. **Client-side
+    hooks** are triggered by local operations (on the client) such as committing,
+    applying a patch series, rebasing, and merging. **Server-side hooks** on the other
+    hand run on the server when network operations occur, such as receiving pushed
+    commits.
+  id: totrans-277
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git 中的钩子可以分为客户端钩子和服务器端钩子。**客户端钩子**由本地操作（在客户端上）触发，如提交、应用补丁系列、变基和合并。另一方面，**服务器端钩子**在网络操作发生时在服务器上运行，例如接收推送的提交。
+- en: You can also divide hooks into prehooks and post hooks. **Pre hooks** are called
+    before an operation is finished, usually before the next step while performing
+    an operation. If they exit with a nonzero value, they will cancel the current
+    Git operation. **Post hooks** are invoked after an operation finishes and can
+    be used for notification and logs; they cannot cancel an operation.
+  id: totrans-278
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 您还可以将钩子分为预钩子和后钩子。**预钩子**在操作完成之前调用，通常是在执行操作的下一步之前。如果它们以非零值退出，则会取消当前的 Git 操作。**后钩子**在操作完成后调用，可用于通知和日志记录；它们无法取消操作。
+- en: Installing a Git hook
+  id: totrans-279
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 安装 Git 钩子
+- en: The hooks in Git are executable programs (usually scripts), which are stored
+    in the `hooks/` subdirectory of the Git repository administrative area, that is,
+    `.git/hooks/` for non-bare repositories. You can change the location of the directory
+    that Git searches for hooks via `core.hooksPath` configuration variable.
+  id: totrans-280
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git 中的钩子是可执行程序（通常是脚本），存储在 Git 仓库管理区域的 `hooks/` 子目录中，即非裸仓库的 `.git/hooks/`。您可以通过
+    `core.hooksPath` 配置变量更改 Git 搜索钩子的目录位置。
+- en: Hook programs are each named after the event that triggers them. This means
+    that if you want one event to trigger more than one script, you will need to implement
+    multiplexing yourself.
+  id: totrans-281
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 钩子程序的命名方式是根据触发它们的事件命名的。这意味着如果您希望一个事件触发多个脚本，您将需要自己实现多路复用。
+- en: When you initialize a new repository with `git init` (this is done also while
+    using `git clone` to create a copy of the other repository; clone calls `init`
+    internally), Git populates the `.git/hooks/` directory with a bunch of inactive
+    example scripts. Many of these are useful by themselves, but they also document
+    the hook’s API. All the examples are written as shell or Perl scripts, but any
+    properly named executable would work just fine. If you want to use bundled example
+    hook scripts, you’ll need to rename them, stripping the `.sample` extension and
+    ensuring that they have the executable permission bit.
+  id: totrans-282
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当你使用 `git init` 初始化一个新的仓库时（在使用 `git clone` 创建另一个仓库的副本时也会执行此操作；`clone` 内部会调用
+    `init`），Git 会将一堆未激活的示例脚本填充到 `.git/hooks/` 目录中。许多这些脚本本身就非常有用，而且它们还记录了钩子的 API。所有的示例都是用
+    shell 或 Perl 脚本编写的，但任何正确命名的可执行文件都可以正常工作。如果你想使用捆绑的示例钩子脚本，你需要重命名它们，去掉 `.sample`
+    扩展名，并确保它们具有可执行权限。
+- en: A template for repositories
+  id: totrans-283
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 仓库模板
+- en: Sometimes you would want to have the same set of hooks for all your repositories.
+    You can have a global (per-user and system-wide) configuration file, a global
+    attributes file, and a global ignore list. It turns out that it is possible to
+    select hooks to be populated during the creation of the repository. The default
+    sample hooks that get copied to the `.git/hooks` repository are populated from
+    `/usr/share/git-core/templates`.
+  id: totrans-284
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有时你可能希望为所有的仓库使用相同的钩子集。你可以拥有一个全局（每个用户和系统范围内的）配置文件，一个全局属性文件和一个全局忽略列表。实际上，可以选择在创建仓库时填充钩子。默认的示例钩子会被复制到
+    `.git/hooks` 仓库，这些钩子是从 `/usr/share/git-core/templates` 填充的。
+- en: Also, the alternative directory with the repository creation templates can be
+    given as a parameter to the `--template` command-line option (to `git clone` and
+    `git init`), as the `GIT_TEMPLATE_DIR` environment variable, or as the `init.templateDir`
+    configuration option (which can be set in a per-user configuration file). This
+    directory must follow the directory structure of `.git` (of `$GIT_DIR`), which
+    means that the hooks need to be in the `hooks/` subdirectory there.
+  id: totrans-285
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 此外，可以将包含仓库创建模板的替代目录作为参数传递给 `--template` 命令行选项（用于 `git clone` 和 `git init`），作为
+    `GIT_TEMPLATE_DIR` 环境变量，或作为 `init.templateDir` 配置选项（可以在每个用户的配置文件中设置）。该目录必须遵循 `.git`（或
+    `$GIT_DIR`）的目录结构，这意味着钩子需要位于其中的 `hooks/` 子目录下。
+- en: Note, however, that this mechanism has some limitations. As the files from the
+    template directory are only copied to the Git repositories on their initialization,
+    updates to the template directory do not affect the existing repositories. Though
+    you can re-run `git init` in the existing repository to reinitialize it, just
+    remember to save any modifications made to the hooks.
+  id: totrans-286
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 需要注意的是，这种机制有一些限制。由于模板目录中的文件只会在初始化时复制到 Git 仓库，因此对模板目录的更新不会影响现有的仓库。尽管你可以重新运行 `git
+    init` 来重新初始化现有仓库，但请记得保存对钩子所做的任何修改。
+- en: Hook management tools
+  id: totrans-287
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 钩子管理工具
+- en: Maintaining hooks for a team of developers can be tricky. There are many tools
+    and frameworks for Git hook management; examples include **Husky** and **pre-commit**.
+    You can find more examples of such tools listed on the [https://githooks.com](https://githooks.com)
+    site. Those tools often allow for easier skipping hooks, running common code for
+    all the hooks, or running multiple scripts for a specific hook.
+  id: totrans-288
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为一组开发人员维护钩子可能会很棘手。有很多工具和框架可以用于 Git 钩子的管理；例如 **Husky** 和 **pre-commit**。你可以在
+    [https://githooks.com](https://githooks.com) 网站上找到更多此类工具的示例。这些工具通常允许更轻松地跳过钩子、为所有钩子运行公共代码，或为特定钩子运行多个脚本。
+- en: Client-side hooks
+  id: totrans-289
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 客户端钩子
+- en: There are quite a few client-side hooks. They can be divided into the commit-workflow
+    hooks (a set of hooks invoked by the different stages of creating a new commit),
+    apply-email workflow hooks, and everything else (not organized into a multihook
+    workflow).
+  id: totrans-290
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 客户端钩子有很多种。它们可以分为提交工作流钩子（由创建新提交的不同阶段调用的一组钩子）、应用邮件工作流钩子以及其他所有未组织成多钩子工作流的部分。
+- en: Important note
+  id: totrans-291
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 重要提示
+- en: It is important to note that hooks are *not* copied when you clone a repository.
+    This is done partially for security reasons, as hooks run unattended and mostly
+    invisibly. You need to copy (and rename) files themselves, though you can control
+    which hooks get installed when creating or reinitializing a repository (see the
+    previous subsection). This means that you cannot rely on the client-side hooks
+    to enforce a policy; if you need to introduce some hard requirements, you’ll need
+    to do it on the server side.
+  id: totrans-292
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 需要注意的是，钩子在你克隆仓库时*不会*被复制。这部分是出于安全原因，钩子是无人值守并且大多不可见地运行的。你需要手动复制（并重命名）钩子文件，但在创建或重新初始化仓库时，你可以控制哪些钩子会被安装（见前面的章节）。这意味着，你不能依赖客户端钩子来强制执行某些策略；如果你需要引入一些强制要求，必须在服务器端进行。
+- en: Commit process hooks
+  id: totrans-293
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 提交过程钩子
+- en: There are four client-side hooks invoked (by default) while committing changes.
+    They are as follows.
+  id: totrans-294
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在提交更改时（默认情况下）会调用四个客户端钩子。它们如下所示。
+- en: The pre-commit hook
+  id: totrans-295
+  prefs:
+  - PREF_H4
+  type: TYPE_NORMAL
+  zh: pre-commit 钩子
+- en: The `git commit -–no-verifies`. This hook takes no parameters.
+  id: totrans-296
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`git commit --no-verify`。这个钩子没有参数。'
+- en: This hook can, among others, be used to check for the correct code style, run
+    the static code analyzer (linter) to check for problematic constructs, make sure
+    that the code compiles and that it passes all the tests (and that the new code
+    is covered by the tests), or check for the appropriate documentation on some new
+    functionality. The default hook checks for whitespace errors (trailing whitespace
+    by default) with `git diff --check` (or rather its plumbing equivalent), and optionally
+    for non-ASCII filenames in the changed files. You can, for example, make a hook
+    that asks for a confirmation while committing with a dirty work-arena (for the
+    changes in the worktree that would not be a part of the commit being created);
+    though it is an advanced technique. Or, you can have it check whether there is
+    documentation and unit tests on the new methods.
+  id: totrans-297
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个钩子可以用于检查正确的代码风格、运行静态代码分析器（linter）检查问题代码结构、确保代码能够编译并通过所有测试（并且确保新代码被测试覆盖），或者检查某些新功能的适当文档。默认钩子检查空白错误（默认是尾部空白）使用
+    `git diff --check`（或者其内部实现），并可选地检查修改文件中的非 ASCII 文件名。例如，你可以创建一个钩子，在提交时确认工作区有未提交的修改（这些修改不会成为当前提交的一部分）；不过这是一个高级技巧。或者，你也可以让它检查新方法是否有文档和单元测试。
+- en: There is also the `git merge`. By default the hook, when enabled, runs the `pre-commit`
+    hook.
+  id: totrans-298
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 还有 `git merge`。默认情况下，当启用时，该钩子会运行 `pre-commit` 钩子。
+- en: The prepare-commit-msg hook
+  id: totrans-299
+  prefs:
+  - PREF_H4
+  type: TYPE_NORMAL
+  zh: prepare-commit-msg 钩子
+- en: 'The `commit.template`, if any), and before the commit message is opened in
+    the editor. It lets you edit the default commit message or create a template programmatically,
+    before the commit author sees it. If the hook fails with a nonzero status, the
+    commit will be aborted. This hook takes as parameters the path to the file that
+    holds the commit message (later passed to the editor) and the information about
+    source of the commit message (the latter is not present for ordinary `git commit`):
+    `-m` or `-F` option was given, `-t` option was given or `commit.template` was
+    set, `.git/MERGE_MSG` file exists, `.git/SQUASH_MSG` file exists, or `-c`, `-C`,
+    or `--amend` option was given. In the last case, the hook gets additional parameters,
+    namely, a SHA-1 hash of the commit that is the source of the message.'
+  id: totrans-300
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`commit.template`（如果有的话），并在提交信息在编辑器中打开之前。它允许你在提交作者看到信息之前，编辑默认的提交信息或以编程方式创建一个模板。如果钩子以非零状态失败，提交将被中止。这个钩子以文件路径作为参数，该文件包含提交信息（稍后传递给编辑器），以及提交信息的来源信息（对于普通的
+    `git commit` 不存在此信息）：如果给定了 `-m` 或 `-F` 选项、给定了 `-t` 选项或设置了 `commit.template`、存在
+    `.git/MERGE_MSG` 文件、存在 `.git/SQUASH_MSG` 文件，或者给定了 `-c`、`-C` 或 `--amend` 选项。在最后一种情况下，钩子会获得额外的参数，即作为信息来源的提交的
+    SHA-1 哈希值。'
+- en: The purpose of this hook is to edit or create the commit message, and this hook
+    is not suppressed by the `--no-verify` option. This hook is most useful when it
+    is used to affect commits where the default message is autogenerated, such as
+    the templated commit message, merged commits, squashed commits, and amended commits.
+    The sample hook that Git provides comments out the `Conflict:` part of the merge
+    commit message.
+  id: totrans-301
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个钩子的目的是编辑或创建提交信息，并且该钩子不会被 `--no-verify` 选项抑制。当使用自动生成默认信息的提交时，这个钩子最为有用，例如模板化的提交信息、合并提交、压缩提交和修改提交。Git
+    提供的示例钩子会将合并提交信息中的 `Conflict:` 部分注释掉。
+- en: Another example of what this hook can do is to use the description of the current
+    branch given by `branch.<branch-name>.description`, if it exists, as a base for
+    a branch-dependent dynamic commit template. Or perhaps, it can check whether we
+    are on the topic branch, and then list all the issues assigned to you on a project
+    issue tracker, to make it easy to add the proper artifact ID to the commit message.
+  id: totrans-302
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 另一个示例是，这个钩子可以使用 `branch.<branch-name>.description` 给出的当前分支描述（如果存在）作为分支相关的动态提交模板的基础。或者，它可以检查我们是否在主题分支上，然后列出项目问题跟踪器中分配给你的所有问题，以便轻松地将适当的工件
+    ID 添加到提交信息中。
+- en: The commit-msg hook
+  id: totrans-303
+  prefs:
+  - PREF_H4
+  type: TYPE_NORMAL
+  zh: commit-msg 钩子
+- en: The `.git/COMMIT_EDITMSG`).
+  id: totrans-304
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`.git/COMMIT_EDITMSG`。'
+- en: If this script exits with a nonzero status, Git aborts the commit process, so
+    you can use it to validate that, for example, the commit message matches the project
+    state, or that the commit message conforms to the required pattern. The sample
+    hook provided by Git can check, sort, and remove duplicated `Signed-off-by:`lines
+    (which might be not what you want to use, if signoffs are to be a chain of provenance).
+    You could conceivably check in this hook whether the references to the issue numbers
+    are correct (and perhaps expand them, adding the current summary of each mentioned
+    issue).
+  id: totrans-305
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果这个脚本以非零状态退出，Git 会中止提交过程，因此你可以使用它来验证，例如，提交信息是否与项目状态匹配，或提交信息是否符合所需的模式。Git 提供的示例钩子可以检查、排序并删除重复的
+    `Signed-off-by:` 行（如果签名是来源链的一部分，这可能不是你想要的）。你也可以在这个钩子中检查问题编号的引用是否正确（并可能扩展它们，添加每个提到的问题的当前总结）。
+- en: Gerrit Code Review provides a `commit-msg` hook (which needs to be installed
+    in the local Git repository) to automatically create, insert, and maintain a unique
+    `Change-Id:` line above the signoffs during `git commit`. This line is used to
+    track the iterations of coming up with a commit; if the commit message in the
+    revision pushed to Gerrit lacks such information, the server will provide instructions
+    on how to get and install that hook script.
+  id: totrans-306
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Gerrit 代码审查提供了一个 `commit-msg` 钩子（需要安装在本地 Git 仓库中），它可以在 `git commit` 时自动创建、插入并维护一个唯一的
+    `Change-Id:` 行，位于签名行之上。此行用于追踪提交的迭代；如果推送到 Gerrit 的修订版缺少此信息，服务器将提供关于如何获取和安装该钩子脚本的说明。
+- en: The post-commit hook
+  id: totrans-307
+  prefs:
+  - PREF_H4
+  type: TYPE_NORMAL
+  zh: post-commit 钩子
+- en: The `HEAD`. The exit status of this hook is ignored. There is also the **post-merge
+    hook**.
+  id: totrans-308
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`HEAD`。这个钩子的退出状态会被忽略。还有 **post-merge 钩子**。'
+- en: Generally, this script (like most of the `post-*` scripts) is most often used
+    for notifications and logging, and it obviously cannot affect the outcome of `git
+    commit`. You can use it, for example, to trigger a local build in a continuous
+    integration tool such as Jenkins. In most cases, however, you would want to do
+    this with the `post-receive` hook on the dedicated continuous integration server.
+  id: totrans-309
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通常，这个脚本（像大多数 `post-*` 脚本一样）最常用于通知和日志记录，显然它无法影响 `git commit` 的结果。你可以用它，例如，触发一个本地构建，使用类似
+    Jenkins 的持续集成工具。然而，在大多数情况下，你可能会希望在专用的持续集成服务器上使用 `post-receive` 钩子来完成这项工作。
+- en: Another use case is to list information about all the **TODO** and **FIXME**
+    comments in the code and documentation (for example, the author, version, file
+    path, line number, and message), printing them to the standard output of the hook,
+    so that that they are not forgotten and remain up to date and useful.
+  id: totrans-310
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 另一个用例是列出所有代码和文档中的 **TODO** 和 **FIXME** 注释信息（例如，作者、版本、文件路径、行号和信息），将它们打印到钩子的标准输出中，以确保它们不会被遗忘，并保持最新和有用。
+- en: Hooks for applying patches from emails
+  id: totrans-311
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 用于从电子邮件应用补丁的钩子
+- en: You can set up three client-side hooks for the email-based workflow (where commits
+    are sent by email). They are all invoked by the `git am` command (the name of
+    which comes from `git format-patch` and sent with `git sent-email`) and turn them
+    into a series of commits. We will cover these hooks next.
+  id: totrans-312
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以为基于电子邮件的工作流（提交通过电子邮件发送）设置三个客户端钩子。它们都由 `git am` 命令调用（其名称来源于 `git format-patch`，并通过
+    `git send-email` 发送），并将它们转化为一系列的提交。接下来我们将讨论这些钩子。
+- en: The applypatch-msg hook
+  id: totrans-313
+  prefs:
+  - PREF_H4
+  type: TYPE_NORMAL
+  zh: applypatch-msg 钩子
+- en: 'The first hook to run is the **applypatch-msg hook**. It is run after extracting
+    the commit message from the patch and before applying the patch itself. As usual,
+    for a hook which is not a post-* hook, Git aborts applying the patch if this hook
+    exists with a nonzero status. It takes a single argument: the name of the temporary
+    file with the extracted commit message.'
+  id: totrans-314
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 第一个运行的钩子是**applypatch-msg 钩子**。它在从补丁中提取提交消息后、应用补丁之前运行。像往常一样，对于非post-*钩子，如果该钩子以非零状态退出，Git将中止应用补丁。它接受一个参数：包含提取的提交消息的临时文件名。
+- en: You can use this hook to make sure that the commit message is properly formatted,
+    or to normalize the commit message by having the script alter the file. The example
+    `applypatch-msg` hook provided by Git simply runs the `commit-msg` hook if it
+    exists as a hook (the file exists and is executable).
+  id: totrans-315
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以使用此钩子确保提交消息的格式正确，或通过让脚本修改文件来规范化提交消息。Git 提供的示例`applypatch-msg`钩子会在存在钩子（文件存在且可执行）时，运行`commit-msg`钩子。
+- en: The pre-applypatch hook
+  id: totrans-316
+  prefs:
+  - PREF_H4
+  type: TYPE_NORMAL
+  zh: pre-applypatch 钩子
+- en: The next hook to run is the `git am` script without committing the patch.
+  id: totrans-317
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 下一个运行的钩子是`git am`脚本，但不提交补丁。
+- en: The sample hook provided by Git simply runs the `pre-commit` hook, if present.
+  id: totrans-318
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git 提供的示例钩子会运行`pre-commit`钩子（如果存在）。
+- en: The post-applypatch hook
+  id: totrans-319
+  prefs:
+  - PREF_H4
+  type: TYPE_NORMAL
+  zh: post-applypatch 钩子
+- en: The last hook to run is the **post-applypatch hook**, which runs after the commit
+    is made. It can be used for notifying or logging, for example, notifying all the
+    developers or just the author of the patch that you have applied it.
+  id: totrans-320
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后运行的钩子是**post-applypatch 钩子**，它在提交完成后运行。它可以用于通知或记录日志，例如，通知所有开发者或仅通知补丁的作者你已应用了补丁。
+- en: Other client-side hooks
+  id: totrans-321
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 其他客户端钩子
+- en: There are a few other client-side hooks that do not fit into a series of steps
+    in a single process.
+  id: totrans-322
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 还有一些其他不属于单一过程步骤的客户端钩子。
+- en: The pre-rebase hook
+  id: totrans-323
+  prefs:
+  - PREF_H4
+  type: TYPE_NORMAL
+  zh: pre-rebase 钩子
+- en: The `pre-*` hooks, it can abort the rebase process with a nonzero exit code.
+    You can use this hook to disallow rebasing (and thus rewriting) any commits that
+    were already published. The hook is called with the name of the base branch (the
+    upstream the series was forked from), and the name of the branch being rebased.
+    The name of the branch being rebased is passed to the hook only if it is not the
+    current branch. The sample `pre-rebase` hook provided by Git tries to do this,
+    though it makes some assumptions specific to Git’s project development that may
+    not match your workflow (take note that amending commits also rewrites them, and
+    that rebasing may create a copy of a branch instead of rewriting it).
+  id: totrans-324
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`pre-*`钩子可以通过非零退出码中止变基过程。你可以使用此钩子来禁止对已发布的任何提交进行变基（即重写）。该钩子会使用基分支的名称（分支系列所分叉的上游分支名称）和正在变基的分支名称进行调用。只有当变基的分支不是当前分支时，才会将变基的分支名称传递给钩子。Git
+    提供的示例`pre-rebase`钩子会尝试执行这一操作，尽管它假设了一些特定于Git项目开发的内容，这些假设可能不符合你的工作流程（请注意，修改提交也会重写它们，且变基可能会创建一个分支副本而非重写它）。'
+- en: The pre-push hook
+  id: totrans-325
+  prefs:
+  - PREF_H4
+  type: TYPE_NORMAL
+  zh: pre-push 钩子
+- en: The `git push` operation, after checking the remote status and identifying which
+    revisions are missing on the server, but before any changes are pushed. The hook
+    is called with the reference to the remote (the URL or the remote name) and the
+    actual push URL (the location of remote) as the script parameters. Information
+    about the commits to be pushed is provided on the standard input, one line per
+    ref to be updated. You can use this hook to validate a set of ref updates before
+    a push occurs; a nonzero exit code aborts the push. The example installed simply
+    checks whether there are commits beginning with **WIP** in a set of revisions
+    to be pushed or marked with the **nopush** keyword in the commit message, and
+    when either of those is true, it aborts the push. You can even make a hook prompt
+    the user to confirm they are sure. This hook compliments the server-side checks,
+    avoiding data transfer that would fail validation anyway.
+  id: totrans-326
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`git push` 操作，在检查远程状态并确定服务器上缺少哪些版本后，但在推送任何更改之前调用该钩子。该钩子使用远程的引用（URL 或远程名称）和实际的推送
+    URL（远程位置）作为脚本参数进行调用。待推送的提交信息通过标准输入提供，每个要更新的引用占一行。你可以使用此钩子在推送发生前验证一组引用更新；非零退出码会中止推送。Git
+    提供的示例会检查待推送的版本集中是否存在以**WIP**开头的提交，或者在提交消息中标记了**nopush**关键字，如果符合这两种情况中的任何一种，则会中止推送。你甚至可以让钩子提示用户确认他们是否确定要进行此操作。这个钩子补充了服务器端的检查，避免了那些反正会失败验证的数据传输。'
+- en: The post-rewrite hook
+  id: totrans-327
+  prefs:
+  - PREF_H4
+  type: TYPE_NORMAL
+  zh: post-rewrite 钩子
+- en: The `git commit --amend` and `git rebase`. Note, however, that this hook is
+    not run by large-scale history rewriting, such as `git filter-repo`. The type
+    of command that triggered the rewrite (`post-checkout` and `post-merge` hooks,
+    and it runs after the automatic copying of notes, which is controlled by the `notes.rewriteRef`
+    configuration variable (you can find more about the notes mechanism in [*Chapter
+    10*](B21194_10_split_000.xhtml#_idTextAnchor247)*, Keeping* *History Clean*).
+  id: totrans-328
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`git commit --amend` 和 `git rebase`。但是，请注意，这个钩子不会在大规模历史重写时执行，例如 `git filter-repo`。触发重写的命令类型（`post-checkout`
+    和 `post-merge` 钩子），并且它会在自动复制注释之后运行，这由 `notes.rewriteRef` 配置变量控制（你可以在 [*第 10 章*](B21194_10_split_000.xhtml#_idTextAnchor247)*,
+    保持* *历史清洁* 中找到更多关于注释机制的信息）。'
+- en: The post-checkout and post-merge hooks
+  id: totrans-329
+  prefs:
+  - PREF_H4
+  type: TYPE_NORMAL
+  zh: post-checkout 和 post-merge 钩子
+- en: 'The `git checkout` (or `git checkout <file>`) after having updated the worktree.
+    The hook is given three parameters: the SHA-1 hashes of the previous and current
+    `HEAD` (which may or may not be different) and a flag indicating whether it was
+    a whole project checkout (you were changing branches; the flag parameter is 1)
+    or a file checkout (retrieving files from the index or named commit; the flag
+    parameter is 0). As a special case, during the initial checkout after `git clone`,
+    this hook passes the all-zero SHA-1 as the first parameter (as a source revision).
+    You can use this hook to set up your working directory properly for your use case.
+    This may mean handling large binary files outside the repository (as an alternative
+    to applying the `filter` Git attribute on a per-file basis) that you don’t want
+    to have in the repository, or setting the working directory metadata properties
+    such as full permissions, owner, group, times, extended attributes, or ACLs. It
+    can also be used to perform repository validity checks or enhance the `git checkout`
+    output by auto-displaying the differences (or just the diff statistics) from the
+    previous checked-out revision (if they were different).'
+  id: totrans-330
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在更新工作树之后使用 `git checkout`（或 `git checkout <file>`）。该钩子会传递三个参数：前一个和当前 `HEAD`
+    的 SHA-1 哈希值（这两个值可能相同也可能不同），以及一个标志，指示是否为整个项目的检出（你正在切换分支；标志参数为 1），或者是文件的检出（从索引或指定的提交中恢复文件；标志参数为
+    0）。作为特殊情况，在 `git clone` 之后的初始检出期间，此钩子将传递全零的 SHA-1 作为第一个参数（作为源修订版本）。你可以使用这个钩子来根据你的使用场景正确设置工作目录。这可能意味着处理存储库之外的大型二进制文件（作为替代方案，不需要在每个文件上应用
+    `filter` Git 属性），或者设置工作目录的元数据属性，例如完整的权限、所有者、组、时间、扩展属性或 ACL。它还可以用于执行存储库有效性检查，或者通过自动显示与之前检出版本之间的差异（或仅显示差异统计信息），来增强
+    `git checkout` 输出（如果它们有所不同）。
+- en: The `post-checkout` to restore data and metadata in the working tree that Git
+    doesn’t track, such as full permissions data (or just make it invoke `post-checkout`
+    directly). This hook can likewise validate the presence of files external to Git
+    control that you might want copied in when the working tree changes.
+  id: totrans-331
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`post-checkout` 用于恢复 Git 不跟踪的工作树中的数据和元数据，如完整的权限数据（或者直接调用 `post-checkout`）。这个钩子同样可以验证
+    Git 控制之外的文件是否存在，并在工作树发生变化时将其复制进来。'
+- en: For Git, objects in the repository (for example, commit objects representing
+    revisions) are immutable; rewriting history (even amending a commit) is in fact
+    creating a modified copy and switching to it, leaving the pre-rewrite history
+    abandoned.
+  id: totrans-332
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于 Git，存储库中的对象（例如，表示修订的提交对象）是不可变的；重写历史（即使是修改提交）实际上是在创建一个修改过的副本并切换到它，从而将重写前的历史遗弃。
+- en: The pre-auto-gc hook
+  id: totrans-333
+  prefs:
+  - PREF_H4
+  type: TYPE_NORMAL
+  zh: pre-auto-gc 钩子
+- en: Deleting a branch also leaves abandoned history. To prevent the repository from
+    growing too much, Git occasionally performs garbage collection by removing old
+    unreferenced objects. In all but the most ancient instances of Git, this is done
+    as a part of normal Git operations by invoking `git gc --auto`. The **pre-auto-gc
+    hook** is invoked just before garbage collection takes place and can be used to
+    abort the operation, for example, if you are on battery power. It can also be
+    used to notify you that garbage collection is happening.
+  id: totrans-334
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 删除分支也会留下被遗弃的历史。为了防止存储库过度膨胀，Git 会偶尔执行垃圾回收，通过移除旧的、未引用的对象来清理。除非是在 Git 的最古老版本中，否则这通常会作为正常
+    Git 操作的一部分通过执行 `git gc --auto` 来完成。**pre-auto-gc 钩子** 在垃圾回收发生之前被调用，可以用于中止操作，例如，如果你正在使用电池电源。它也可以用来通知你正在进行垃圾回收。
+- en: Server-side hooks
+  id: totrans-335
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 服务器端钩子
+- en: In addition to the client-side hooks, which are run in your own repository,
+    there are a couple of important **server-side hooks** that a system administrator
+    can use to enforce nearly any kind of policy for your project.
+  id: totrans-336
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 除了在你自己仓库中运行的客户端钩子外，还有一些重要的 **服务器端钩子**，系统管理员可以使用这些钩子来强制执行几乎任何类型的项目策略。
+- en: These hooks are run before and after you do a push to the server. The pre hooks
+    (as mentioned earlier) can exit nonzero to reject a push or part of it; messages
+    printed by the pre hooks will be sent back to the client (sender). You can use
+    these hooks to set up complex push policies. Git repository management tools,
+    such as `gitolite` and Git hosting solutions, use these to implement more involved
+    access control for repositories. The post hooks can be used for notification,
+    starting a build process (or just to rebuild and redeploy the documentation),
+    or running a full test suite, for example as a part of a CI solution.
+  id: totrans-337
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这些钩子会在你推送到服务器之前和之后运行。前置钩子（如前所述）可以通过退出非零状态来拒绝推送或其中一部分；前置钩子打印的消息将被发送回客户端（发送者）。你可以利用这些钩子来设置复杂的推送策略。Git
+    仓库管理工具，如 `gitolite` 和 Git 托管解决方案，使用这些钩子来实现更复杂的仓库访问控制。后置钩子可以用于通知、启动构建过程（或仅仅是重新构建和重新部署文档），或者运行完整的测试套件，例如作为
+    CI 解决方案的一部分。
+- en: When writing server-side hooks, you need to take into account where in the sequence
+    of operations the hook takes place and what information is available there, in
+    the form of parameters, on the standard input, and in the repository.
+  id: totrans-338
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在编写服务器端钩子时，你需要考虑钩子在操作序列中的位置以及可用的相关信息，这些信息以参数、标准输入和仓库的形式提供。
+- en: 'Let’s review what happens on the server when it receives a push:'
+  id: totrans-339
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们回顾一下服务器接收到推送时发生的事情：
+- en: Simplifying it a bit, the first step is that all the objects that were present
+    in the client and missing on the server are sent to the server and stored (but
+    are not yet referenced). If the receiving end fails to do this correctly (for
+    example, because of the lack of disk space), the whole push operation will fail.
+  id: totrans-340
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 简单来说，第一步是将客户端存在而服务器缺失的所有对象发送到服务器并存储（但尚未被引用）。如果接收端未能正确完成此操作（例如，由于磁盘空间不足），整个推送操作将失败。
+- en: The **pre-receive hook** is run. It takes a list describing the references that
+    are being pushed on its standard input. If it exits with a nonzero status, it
+    aborts the whole operation and none of the references that were pushed are accepted.
+  id: totrans-341
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: '**pre-receive 钩子**会运行。它会将描述正在推送引用的列表传递到标准输入。如果它以非零状态退出，则会中止整个操作，且所有推送的引用都不会被接受。'
+- en: For each ref being updated, the built-in sanity checks may reject the push to
+    the ref, including the check for an update of a checked-out branch, a non-fast-forward
+    push (unless forced), and so on.
+  id: totrans-342
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 对于每个正在更新的引用，内置的有效性检查可能会拒绝对该引用的推送，包括检查正在更新的分支、非快进推送（除非强制推送）等。
+- en: The **update** hook is run for each ref, passing ref to be pushed in arguments;
+    if this script exits with a nonzero status, only this ref will be rejected.
+  id: totrans-343
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: '**update 钩子**会为每个引用运行，并将要推送的引用作为参数传递；如果此脚本以非零状态退出，只有这个引用会被拒绝。'
+- en: For each pushed ref, the ref in question is updated (unless it was rejected
+    in an earlier stage).
+  id: totrans-344
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 对于每个推送的引用，相关引用会被更新（除非在早期阶段被拒绝）。
+- en: The **post-receive hook** is run, taking the same data as the **pre-receive**
+    one. This one can be used to update other services (for example, to notify CI
+    servers) or notify users (via an email or a mailing list, IRC, or a ticket-tracking
+    system).
+  id: totrans-345
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: '**post-receive 钩子**会运行，接收与 **pre-receive** 钩子相同的数据。这个钩子可以用于更新其他服务（例如，通知 CI
+    服务器）或通知用户（通过电子邮件、邮件列表、IRC 或问题跟踪系统）。'
+- en: If the push is atomic, either all the refs are updated (if none were rejected),
+    or none are updated.
+  id: totrans-346
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果推送是原子的，要么所有引用都被更新（如果没有被拒绝），要么都不更新。
+- en: For each ref that was updated, the `git update-server-info` to prepare a repository,
+    saving extra information to be used over *dumb* transports, though it would work
+    better if run once as `post-receive`.
+  id: totrans-347
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于每个更新的引用，运行 `git update-server-info` 来准备一个仓库，保存额外的信息以便在 *简单* 传输中使用，尽管如果在 `post-receive`
+    后运行会更有效。
+- en: If push tries to update the currently checked-out branch and the `receive.denyCurrentBranch`
+    configuration variable is set to `updateInstead`, then the **push-to-checkout**
+    hook is run.
+  id: totrans-348
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果推送尝试更新当前检出的分支，而 `receive.denyCurrentBranch` 配置变量被设置为 `updateInstead`，则会运行
+    **push-to-checkout** 钩子。
+- en: Important note
+  id: totrans-349
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 重要提示
+- en: You need to remember that in pre hooks, you don’t have refs updated yet, and
+    that post hooks cannot affect the result of an operation. You can use pre hooks
+    for access control (permission checking), and post hooks for notification and
+    updating side data and logs.
+  id: totrans-350
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你需要记住，在 pre 钩子中，引用尚未更新，而 post 钩子不能影响操作结果。你可以将 pre 钩子用于访问控制（权限检查），并将 post 钩子用于通知、更新附加数据和日志。
+- en: You will see example hooks (server-side and client-side) for the Git-enforced
+    policy in [*Chapter 14*](B21194_14.xhtml#_idTextAnchor349), *Git Administration*.
+    You will also learn how other tools use those hooks, for example, for use in access
+    control and triggering actions on push.
+  id: totrans-351
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你将在[*第14章*](B21194_14.xhtml#_idTextAnchor349)《Git 管理》中看到 Git 强制执行的策略示例钩子（包括服务端和客户端）。你还将学习其他工具如何使用这些钩子，例如用于访问控制和在推送时触发操作。
+- en: Extending Git
+  id: totrans-352
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 扩展 Git
+- en: Git provides a few mechanisms to extend it. You can add shortcuts and create
+    new commands, and add support for new transports; all without requiring you to
+    modify Git sources.
+  id: totrans-353
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git 提供了几种扩展机制。你可以添加快捷方式、创建新命令，并为新传输方式提供支持；所有这些都不需要你修改 Git 源代码。
+- en: Command aliases for Git
+  id: totrans-354
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: Git 命令别名
+- en: There is one little tip that can make your Git command-line experience simpler,
+    easier, and more familiar, namely, `alias.<command-name>` configuration variable;
+    its value is the expansion of the alias.
+  id: totrans-355
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有一个小技巧可以使你的 Git 命令行体验更简单、更容易、更熟悉，即 `alias.<command-name>` 配置变量；其值是别名的扩展。
+- en: 'One of the uses for aliases is defining short abbreviations for commonly used
+    commands and their arguments. Another is creating new commands. Here are a couple
+    of examples you might want to set up:'
+  id: totrans-356
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用别名的一个场景是为常用命令及其参数定义简短的缩写。另一个场景是创建新命令。以下是你可能希望设置的一些示例：
+- en: '[PRE30]'
+  id: totrans-357
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE30]'
+- en: The preceding setup means that typing, for example, `git co` would be the same
+    as typing `git checkout`, and `git aliases` would print all defined aliases. Aliases
+    take arguments just as the regular Git commands do. Git does not provide any default
+    aliases to define shortcuts for common operations, unless you use `git-fc` project,
+    a friendly fork of Git by Felipe Contreras.
+  id: totrans-358
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 前述设置意味着例如输入 `git co` 等同于输入 `git checkout`，而 `git aliases` 会打印出所有定义的别名。别名接受参数，和常规
+    Git 命令一样。Git 默认不提供任何别名来为常见操作定义快捷方式，除非你使用 `git-fc` 项目，这是 Felipe Contreras 对 Git
+    的一个友好的分支。
+- en: Arguments here are split by spaces and the usual shell quoting and escaping
+    is supported. Notably, you can use a quote pair `("a b"`) or a backslash (`a\
+    b`) to include a space in a single argument.
+  id: totrans-359
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这里的参数由空格分隔，并且支持常规的 shell 引号和转义方式。特别地，你可以使用引号对 `("a b"`) 或反斜杠 (`a\ b`) 来将空格包含在单个参数中。
+- en: Important note
+  id: totrans-360
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 重要提示
+- en: Note, however, that you cannot have an alias with the same name as a Git command.
+    In other words, you cannot use aliases to change the behavior of commands. The
+    reasoning behind this restriction is that it could make existing scripts and hooks
+    fail unexpectedly. Aliases that hide existing Git commands (with the same name
+    as Git commands) are simply ignored.
+  id: totrans-361
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而需要注意的是，你不能将别名命名为与 Git 命令相同的名称。换句话说，你不能通过别名来改变命令的行为。做出这一限制的原因是，这样可能会导致现有的脚本和钩子意外失败。隐藏现有
+    Git 命令的别名（与 Git 命令同名的别名）会被直接忽略。
+- en: 'You might, however, want to run an external command rather than a Git command
+    in an alias. Or, you might want to join together the result of a few separate
+    commands. In this case, you can start the alias definition with the `!` character:'
+  id: totrans-362
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，你可能希望在别名中运行外部命令，而不是 Git 命令。或者，你可能希望将几个独立命令的结果组合在一起。在这种情况下，你可以通过 `!` 字符来开始别名定义：
+- en: '[PRE31]'
+  id: totrans-363
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE31]'
+- en: Because here the first command of the expansion of an alias can be an external
+    tool, you need to specify the `git` wrapper explicitly, as shown in the preceding
+    example.
+  id: totrans-364
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于在这里别名扩展的第一个命令可能是外部工具，因此需要明确指定 `git` 包装器，如前面的示例所示。
+- en: Note
+  id: totrans-365
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 注意
+- en: Note that in many shells, for example, in **bash**, the exclamation character
+    **!** is the history expansion character and it needs to be escaped as **\!**
+    or be within single quotes (**'**).
+  id: totrans-366
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请注意，在许多 shell 中，例如在 **bash** 中，感叹号 **!** 是历史扩展字符，需要转义为 **\!** 或者放在单引号 (**'**)
+    内。
+- en: Note that such shell commands will be executed from the top-level directory
+    of a repository (after doing `cd` to a top-level), which may not necessarily be
+    the current directory. Git sets the `GIT_PREFIX` environment variable to the current
+    directory path relative to the top directory of a repository, that is, `git rev-parse
+    --show-prefix`. As usual, `git rev-parse` (and some `git` wrapper options) may
+    be of use here.
+  id: totrans-367
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请注意，这些 shell 命令将从仓库的顶级目录执行（在执行 `cd` 到顶级目录后），而不一定是当前目录。Git 会将 `GIT_PREFIX` 环境变量设置为相对于仓库顶级目录的当前目录路径，即
+    `git rev-parse --show-prefix`。和往常一样，`git rev-parse`（以及一些 `git` 包装选项）在这里可能会派上用场。
+- en: 'The fact mentioned earlier can be used while creating aliases. The `git serve`
+    alias, running `git daemon` to serve (read-only) the current repository at `git://127.0.0.1/`,
+    makes use of the fact that the shell commands in aliases are executed from the
+    top-level directory of a repo:'
+  id: totrans-368
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 前面提到的事实可以在创建别名时使用。`git serve` 别名，通过运行 `git daemon` 来服务（只读）当前仓库，地址为 `git://127.0.0.1/`，利用了别名中的
+    shell 命令从仓库的顶级目录执行这一事实：
+- en: '[PRE32]'
+  id: totrans-369
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE32]'
+- en: 'Sometimes, you need to reorder arguments, use an argument twice, or pass an
+    argument to the command early in the pipeline. You would want to refer to subsequent
+    arguments as `$1`, `$2`, and so on, or to all arguments as `$@`, just like in
+    shell scripts. One trick that you can find in older examples is to run a shell
+    with a `-c` argument, like in the first of the examples mentioned next; the final
+    dash is so that the arguments start with `$1`, not with `$0`. A more modern idiom
+    is to define and immediately execute a shell function, like in the second example
+    (it is a preferred solution because it uses one level of quoting less, and lets
+    you use standard shell argument processing):'
+  id: totrans-370
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有时候，你需要重新排列参数，使用某个参数两次，或者在管道的早期阶段传递一个参数。你可能想要像在 shell 脚本中那样，通过 `$1`、`$2` 等方式引用后续参数，或者通过
+    `$@` 来引用所有参数。一个你可以在旧示例中找到的技巧是使用 `-c` 参数运行 shell，如下文第一个示例所示；最后的短横线是为了让参数从 `$1`
+    开始，而不是从 `$0` 开始。一种更现代的方式是定义并立即执行一个 shell 函数，如第二个示例所示（这种方法更受欢迎，因为它少用了一级引号，并且允许你使用标准的
+    shell 参数处理）：
+- en: '[PRE33]'
+  id: totrans-371
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE33]'
+- en: 'Aliases are integrated with command-line completion. While determining which
+    completion to use for an alias, Git searches for a `git` command, skipping an
+    opening brace or a single quote (thus, supporting both of the idioms mentioned
+    earlier). With modern Git you can use the null command “`:`” to declare the desired
+    completion style. For example, alias expanding to the following:'
+  id: totrans-372
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 别名与命令行补全功能集成。在确定使用哪个补全时，Git 会搜索一个 `git` 命令，跳过开括号或单引号（因此支持之前提到的两种语法）。在现代 Git
+    中，你可以使用空命令 "`:`" 来声明所需的补全样式。例如，别名扩展为以下内容：
+- en: '[PRE34]'
+  id: totrans-373
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE34]'
+- en: would use a command completion for `git commit`, regardless of the rest of the
+    alias.
+  id: totrans-374
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 会使用 `git commit` 的命令补全，不管别名的其余部分如何。
+- en: 'Git aliases are also integrated with the help system. If you use the `--help`
+    option on an alias, Git tells you its expansion (so you can check the relevant
+    man page):'
+  id: totrans-375
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git 别名也与帮助系统集成。如果你在别名上使用 `--help` 选项，Git 会告诉你它的扩展（这样你可以查看相关的手册页）：
+- en: '[PRE35]'
+  id: totrans-376
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE35]'
+- en: Adding new Git commands
+  id: totrans-377
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 添加新的 Git 命令
+- en: Aliases are best at taking small one-liners and converting them into small useful
+    Git commands. You can write complex aliases, but when it comes to larger scripts,
+    you would probably like to incorporate them into Git directly.
+  id: totrans-378
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 别名最适合将小的单行命令转化为小而有用的 Git 命令。你可以写复杂的别名，但当涉及到较大的脚本时，你可能更希望将它们直接集成到 Git 中。
+- en: Git subcommands can be standalone executables that live in the Git execution
+    path (which you can find by running `git --exec-path`); on Linux, this is normally
+    `/usr/libexec/git-core`. The `git` executable itself is a thin wrapper that knows
+    where the subcommands live. If `git foo` is not a built-in command, the wrapper
+    searches for the `git-foo` command first in the Git exec path, then in the rest
+    of your `$PATH`. The latter makes it possible to write local Git extensions (local
+    Git commands) without requiring access to the system’s space.
+  id: totrans-379
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git 子命令可以是独立的可执行文件，位于 Git 执行路径中（你可以通过运行 `git --exec-path` 来找到这个路径）；在 Linux 上，通常位于
+    `/usr/libexec/git-core`。`git` 可执行文件本身是一个薄的包装器，知道子命令的位置。如果 `git foo` 不是内建命令，包装器首先会在
+    Git 执行路径中搜索 `git-foo` 命令，然后在 `$PATH` 中的其他地方继续搜索。后者使得你可以编写本地 Git 扩展（本地 Git 命令），而无需访问系统的空间。
+- en: This feature is what it makes possible to have a user interface more or less
+    integrated with the rest of Git in projects such as `git imerge` (see [*Chapter
+    9*](B21194_09.xhtml#_idTextAnchor229), *Merging Changes Together*), or `git lfs`
+    or `git annex` (see [*Chapter 12*](B21194_12.xhtml#_idTextAnchor302),*Managing*
+    *Large Repositories*). It is also how projects such as **Git Extras**, providing
+    extra Git commands, were made.
+  id: totrans-380
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个特性使得在项目中实现一个与 Git 其余部分更或多或少集成的用户界面成为可能，比如在 `git imerge`（见 [*第9章*](B21194_09.xhtml#_idTextAnchor229)，*合并更改*）中，或者
+    `git lfs` 或 `git annex`（见 [*第12章*](B21194_12.xhtml#_idTextAnchor302)，*管理大型仓库*）中。这也是像
+    **Git Extras** 这样的项目得以实现的原因，它们提供了额外的 Git 命令。
+- en: Note, however, that if you don’t install the documentation for your command
+    in typical places, or configure the documentation system to find the help page
+    for a command, then `git foo --help` won’t work correctly.
+  id: totrans-381
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，请注意，如果你没有将命令的文档安装到典型位置，或者没有配置文档系统以查找命令的帮助页面，那么 `git foo --help` 将无法正确工作。
+- en: 'You can list all external commands installed this way with `git --list-cmds=others`,
+    or you can use `git help --all`, and the following list will appear at the end
+    of its command output:'
+  id: totrans-382
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以通过 `git --list-cmds=others` 列出所有以这种方式安装的外部命令，或者你可以使用 `git help --all`，该命令的输出末尾将出现以下列表：
+- en: '[PRE36]'
+  id: totrans-383
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE36]'
+- en: Credential helpers and remote helpers
+  id: totrans-384
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 凭证助手和远程助手
+- en: There is another place where simply putting an appropriately named executable
+    enhances and extends Git. **Remote helper** programs are invoked by Git when it
+    needs to interact with remote repositories and remote transport protocols not
+    supported by Git natively. You can find more about them in [*Chapter 6*](B21194_06.xhtml#_idTextAnchor140),
+    *Collaborative Development* *with Git*.
+  id: totrans-385
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 还有一个地方，通过简单地放置一个适当命名的可执行文件，可以增强和扩展 Git。Git 会在需要与远程仓库和 Git 本身不原生支持的远程传输协议交互时调用
+    **远程助手** 程序。你可以在 [*第6章*](B21194_06.xhtml#_idTextAnchor140) 中了解更多关于它们的内容，*使用 Git
+    进行协作开发*。
+- en: When Git encounters a URL of the form `<transport>://<address>`, where `<transport>`
+    is a (pseudo)protocol that is not natively supported, it automatically invokes
+    the `git remote-<transport>` command with a remote and full remote URL as arguments.
+    A URL of the form `<transport>::<address>` also invokes this remote helper, but
+    with just `<address>` as a second argument in the place of a URL. Additionally,
+    with `remote.<remote-name>.vcs` set to `<transport>`, Git would explicitly invoke
+    `git remote-<transport>` to access that remote.
+  id: totrans-386
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当 Git 遇到 `<transport>://<address>` 形式的 URL 时，其中 `<transport>` 是一个 Git 本身不原生支持的（伪）协议，它会自动调用
+    `git remote-<transport>` 命令，并以远程地址和完整的远程 URL 作为参数。`<transport>::<address>` 形式的
+    URL 也会调用这个远程助手，但只会将 `<address>` 作为第二个参数，而不是 URL。另外，如果 `remote.<remote-name>.vcs`
+    设置为 `<transport>`，Git 将显式调用 `git remote-<transport>` 来访问该远程。
+- en: The helpers mechanism in Git is about interacting with external scripts using
+    a well-defined format.
+  id: totrans-387
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git 中的助手机制是通过使用一个明确定义的格式与外部脚本进行交互。
+- en: Each remote helper is expected to support a subset of commands. You can find
+    more information about the issue of creating new helpers on the `gitremote-helpers(1)`
+    man page.
+  id: totrans-388
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 每个远程助手都需要支持一组命令。你可以在 `gitremote-helpers(1)` 手册页中找到有关创建新助手的更多信息。
+- en: There is another type of helpers in Git, namely, **credentials helpers**. They
+    can be used by Git to get the credentials from the user required, for example,
+    to access a remote repository over HTTP. They are specified by the configuration,
+    though, just like the merge and diff drivers and the clean and smudge filters.
+  id: totrans-389
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git 中还有另一种助手，即 **凭证助手**。它们可以被 Git 用来获取用户所需的凭证，例如，用于通过 HTTP 访问远程仓库。这些助手是通过配置指定的，就像合并和差异驱动程序以及清理和污染过滤器一样。
+- en: Summary
+  id: totrans-390
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 摘要
+- en: This chapter provided all the tools you need to use Git effectively. You got
+    to know how to make the command-line interface easier to use and more effective
+    with the Git-aware dynamic command prompt, command-line completion, autocorrection
+    for Git commands, and using colors. You learned of the existence of alternative
+    interfaces, from alternative porcelains to the various types of graphical clients.
+  id: totrans-391
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章提供了你使用 Git 所需的所有工具。你了解了如何通过 Git-aware 动态命令提示符、命令行自动补全、Git 命令的自动修正以及使用颜色来使命令行界面更易用、更有效。你还了解了替代接口的存在，从替代的瓷器到各种图形客户端。
+- en: You were reminded of the various ways to change the behavior of Git commands.
+    You discovered how Git accesses its configuration and learned about a selected
+    subset of configuration variables. You have learned how to automate Git with hooks
+    and how to make use of them. Finally, you have learned how to extend Git with
+    new commands and support new URL schemes.
+  id: totrans-392
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你已经了解了多种更改 Git 命令行为的方式。你发现了 Git 如何访问其配置，并了解了一部分配置变量。你学会了如何通过钩子自动化 Git 以及如何利用它们。最后，你还学会了如何通过新命令和支持新的
+    URL 方案来扩展 Git。
+- en: This chapter was mainly about making Git more effective for you; the next chapter,
+    [*Chapter 14*](B21194_14.xhtml#_idTextAnchor349)*,* *Git Administration*, explains
+    how to make Git more effective for other developers. You will cover more about
+    server-side hooks and see their usage. You will also learn about repository maintenance.
+  id: totrans-393
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章主要讲解了如何让 Git 对你更高效；下一章，[*第14章*](B21194_14.xhtml#_idTextAnchor349)*,* *Git
+    管理*，将解释如何让 Git 对其他开发者更高效。你将学习更多关于服务器端钩子的内容，并看到它们的使用。你还将学习关于仓库维护的知识。
+- en: Questions
+  id: totrans-394
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 问题
+- en: 'Answer the following questions to test your knowledge of this chapter:'
+  id: totrans-395
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 回答以下问题，测试你对本章内容的理解：
+- en: How do you save and reuse your favorite combination of options for the Git command?
+  id: totrans-396
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如何保存和重用你最喜欢的 Git 命令选项组合？
+- en: How can you find all created aliases?
+  id: totrans-397
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如何找到所有创建的别名？
+- en: How do you run a graphical tool to display a **git diff**, or to help with resolving
+    a merge?
+  id: totrans-398
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如何运行图形化工具来显示**git diff**，或帮助解决合并问题？
+- en: How can you find where a given configuration came from?
+  id: totrans-399
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如何找到给定配置的来源？
+- en: How can you help ensure that a commit matches the recommended best practices?
+  id: totrans-400
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如何确保一个提交符合推荐的最佳实践？
+- en: Answers
+  id: totrans-401
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 答案
+- en: 'Here are the answers to the questions given above:'
+  id: totrans-402
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是上面问题的答案：
+- en: Use a Git alias, a shell alias, or a shell function.
+  id: totrans-403
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用 Git 别名、Shell 别名或 Shell 函数。
+- en: You can use the **git config --get-regexp ^****alias\.** command.
+  id: totrans-404
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 你可以使用**git config --get-regexp ^****alias\.** 命令。
+- en: Use **git difftool** for displaying differences, or **git mergetool** to help
+    with resolving merge conflicts. There is built-in support for many of the existing
+    graphical tools.
+  id: totrans-405
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用**git difftool**显示差异，或使用**git mergetool**帮助解决合并冲突。内置支持许多现有的图形化工具。
+- en: If it is about configuration values, you can use **git config --show-origin**
+    (or **--show-scope**). If it is about per-file attributes, use **git check-attr**.
+    If it is about ignoring files, use **git check-ignore**.
+  id: totrans-406
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如果是关于配置值，你可以使用**git config --show-origin**（或**--show-scope**）。如果是关于每个文件的属性，可以使用**git
+    check-attr**。如果是关于忽略文件，可以使用**git check-ignore**。
+- en: Use the **pre-commit** hook (and other similar hooks) to warn if best practices
+    are not being followed. There are many third-party tools that help with hook management
+    and often support various helper tools such as linters and code formatting tools.
+  id: totrans-407
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用**pre-commit**钩子（以及其他类似的钩子）来提醒如果没有遵循最佳实践。有许多第三方工具可以帮助管理钩子，并且通常支持各种辅助工具，如代码检查器和格式化工具。
+- en: Further reading
+  id: totrans-408
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 进一步阅读
+- en: 'To learn more about the topics that were covered in this chapter, take a look
+    at the following resources:'
+  id: totrans-409
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要了解更多本章所涉及的主题，请查看以下资源：
+- en: 'Scott Chacon, Ben Straub: *Pro Git, 2nd Edition* (2014), Apress [https://git-scm.com/book/en/v2](https://git-scm.com/book/en/v2)'
+  id: totrans-410
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 'Scott Chacon, Ben Straub: *Pro Git, 第二版* (2014)，Apress [https://git-scm.com/book/en/v2](https://git-scm.com/book/en/v2)'
+- en: '[*Chapter 2*](B21194_02.xhtml#_idTextAnchor028) *- Git Basics, Section 2.1
+    -* *Git Aliases*'
+  id: totrans-411
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '[*第二章*](B21194_02.xhtml#_idTextAnchor028) *- Git 基础，2.1节 -* *Git 别名*'
+- en: '*Chapter 8 -* *Customizing Git*'
+  id: totrans-412
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*第8章 -* *自定义 Git*'
+- en: '*Appendix A: Git in* *Other Environments*'
+  id: totrans-413
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*附录 A: Git 在* *其他环境中的应用*'
+- en: 'Matthew Hudson: *Git Hooks - A Guide for* *Programmers* [https://githooks.com/](https://githooks.com/)'
+  id: totrans-414
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 'Matthew Hudson: *Git 钩子 - 程序员指南* [https://githooks.com/](https://githooks.com/)'
+- en: '*bash/zsh git prompt* *support* [https://github.com/git/git/blob/master/contrib/completion/git-prompt.sh](https://github.com/git/git/blob/master/contrib/completion/git-prompt.sh)'
+  id: totrans-415
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*bash/zsh git 提示* *支持* [https://github.com/git/git/blob/master/contrib/completion/git-prompt.sh](https://github.com/git/git/blob/master/contrib/completion/git-prompt.sh)'
+- en: '*bash/zsh completion support for core* *Git* [https://github.com/git/git/blob/master/contrib/completion/git-completion.bash](https://github.com/git/git/blob/master/contrib/completion/git-completion.bash)'
+  id: totrans-416
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*bash/zsh 完成支持核心* *Git* [https://github.com/git/git/blob/master/contrib/completion/git-completion.bash](https://github.com/git/git/blob/master/contrib/completion/git-completion.bash)'
+- en: 'Seth House: *Conflict resolution in various mergetools* (2020) [https://www.eseth.org/2020/mergetools.html](https://www.eseth.org/2020/mergetools.html)'
+  id: totrans-417
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Seth House：*在各种合并工具中的冲突解决*（2020） [https://www.eseth.org/2020/mergetools.html](https://www.eseth.org/2020/mergetools.html)
+- en: 'Julia Evans: *Popular git config options* (2024) [https://jvns.ca/blog/2024/02/16/popular-git-config-options/](https://jvns.ca/blog/2024/02/16/popular-git-config-options/)'
+  id: totrans-418
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Julia Evans：*流行的 git 配置选项*（2024） [https://jvns.ca/blog/2024/02/16/popular-git-config-options/](https://jvns.ca/blog/2024/02/16/popular-git-config-options/)
+- en: 'Ricardo Gerardi: *8 Git aliases that make me more efficient* (2020) [https://opensource.com/article/20/11/git-aliases](https://opensource.com/article/20/11/git-aliases)'
+  id: totrans-419
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Ricardo Gerardi：*让我更高效的 8 个 Git 别名*（2020） [https://opensource.com/article/20/11/git-aliases](https://opensource.com/article/20/11/git-aliases)
+- en: '*Git SCM Wiki* (archived): *Aliases* [https://archive.kernel.org/oldwiki/git.wiki.kernel.org/index.php/Aliases.html](https://archive.kernel.org/oldwiki/git.wiki.kernel.org/index.php/Aliases.html)'
+  id: totrans-420
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*Git SCM Wiki*（已归档）：*别名* [https://archive.kernel.org/oldwiki/git.wiki.kernel.org/index.php/Aliases.html](https://archive.kernel.org/oldwiki/git.wiki.kernel.org/index.php/Aliases.html)'
+- en: '*Git Homepage - GUI* *Clients* [https://git-scm.com/downloads/guis](https://git-scm.com/downloads/guis)'
+  id: totrans-421
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*Git 首页 - GUI* *客户端* [https://git-scm.com/downloads/guis](https://git-scm.com/downloads/guis)'
+- en: '*Git Rev* *News* [https://git.github.io/rev_news/](https://git.github.io/rev_news/)'
+  id: totrans-422
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*Git 版本* *新闻* [https://git.github.io/rev_news/](https://git.github.io/rev_news/)'

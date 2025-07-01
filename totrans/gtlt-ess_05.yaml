@@ -1,0 +1,350 @@
+- en: Chapter 5. Managing Repositories
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 第5章：管理仓库
+- en: One of the advantages of using Gitolite is that you do not need to create new
+    repositories manually, set their permissions, and so on. Gitolite does all this
+    for you, based on the contents of a specific file (`conf/gitolite.conf`) in the
+    gitolite-admin repository. In this chapter, we will show how you can add new repositories
+    to Gitolite, as well as how to bring in existing repositories in to Gitolite's
+    ambit.
+  id: totrans-1
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用Gitolite的一个优点是你不需要手动创建新仓库、设置权限等。Gitolite会根据`gitolite-admin`仓库中的特定文件(`conf/gitolite.conf`)的内容为你完成所有这些操作。本章将展示如何将新仓库添加到Gitolite，并且如何将现有仓库纳入Gitolite的管理。
+- en: Adding repositories
+  id: totrans-2
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 添加仓库
+- en: To add a new repository, you will need to do the following in your clone of
+    the gitolite-admin repository.
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要添加一个新仓库，你需要在`gitolite-admin`仓库的克隆中执行以下操作。
+- en: 'First, edit the `conf/gitolite.conf` file. This file should have some content
+    already, for example:'
+  id: totrans-4
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 首先，编辑`conf/gitolite.conf`文件。这个文件应该已经有一些内容，例如：
+- en: '[PRE0]'
+  id: totrans-5
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: This basically says that only the user called `adam` has the permission to make
+    changes to the `gitolite-admin` repository, and all users have the permission
+    to make changes to the testing repository.
+  id: totrans-6
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这基本上意味着只有名为`adam`的用户有权限对`gitolite-admin`仓库进行更改，所有用户都有权限对测试仓库进行更改。
+- en: 'To add a new repository, you will need to add a repo line, as well as at least
+    one access control rule. For example:'
+  id: totrans-7
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要添加一个新仓库，你需要添加一个`repo`行，并至少添加一条访问控制规则。例如：
+- en: '[PRE1]'
+  id: totrans-8
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: This will create a repository called `my-repo-1`, making `adam` the only user
+    who can read or write it.
+  id: totrans-9
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这将创建一个名为`my-repo-1`的仓库，使得`adam`是唯一能够读取或写入它的用户。
+- en: 'If you do not add an access rule, the repository is not created. For example,
+    if you had the following:'
+  id: totrans-10
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果没有添加访问规则，仓库将不会被创建。例如，如果你有如下内容：
+- en: '[PRE2]'
+  id: totrans-11
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: then the `my-repo-1` repository is neither created, not even recognized by Gitolite
+    in any way.
+  id: totrans-12
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 那么`my-repo-1`仓库既不会被创建，也不会以任何方式被Gitolite识别。
+- en: 'However, you can specify more than one repository name in the `repo` line,
+    so the following command is perfectly fine:'
+  id: totrans-13
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 但是，你可以在`repo`行中指定多个仓库名称，所以下面的命令完全是可以的：
+- en: '[PRE3]'
+  id: totrans-14
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: Adding existing repositories
+  id: totrans-15
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 添加现有的仓库
+- en: Adding a repository, as described in the previous section, will create an empty,
+    bare, repository on the server. You can then populate that repository by pushing
+    whatever content you like. This is certainly one way to bring existing content
+    under Gitolite's control, as long as those repositories did not have their own
+    Git hooks in place earlier.
+  id: totrans-16
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如前一节所述，添加一个仓库将会在服务器上创建一个空的裸仓库。你可以通过推送你喜欢的任何内容来填充这个仓库。这肯定是将现有内容纳入Gitolite管理的一种方式，只要这些仓库之前没有自己的Git钩子。
+- en: However, most sites will have several existing repositories that need to be
+    brought under Gitolite's control, and the technique of creating an empty repository
+    and pushing content from a workstation can be really slow, especially if the content
+    is already available on the server. This section will tell you how to do this
+    quickly and easily.
+  id: totrans-17
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，大多数站点将有几个现有的仓库需要纳入Gitolite管理，而通过创建一个空仓库并从工作站推送内容的方式可能会非常慢，特别是当内容已经在服务器上时。本节将告诉你如何快速轻松地做到这一点。
+- en: Tip
+  id: totrans-18
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 提示
+- en: It is always advisable to have backups so that you can recover if something
+    unexpected happens while following the procedure described.
+  id: totrans-19
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 始终建议有备份，这样在按照描述的步骤操作时如果发生意外情况，你可以恢复。
+- en: First, make sure the existing repositories you are looking at are bare repositories.
+    A bare Git repository is a repository that does not have a working tree. You cannot
+    reliably push to a repository that has a working tree attached, so server repositories
+    must always be bare. A bare repository is usually created by passing the `--bare`
+    option to the `git init` or `git clone` commands. A later section in this chapter
+    describes how to convert non-bare repositories to bare repositories.
+  id: totrans-20
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 首先，确保你查看的现有仓库是裸仓库。裸仓库是没有工作树的仓库。你不能可靠地推送到一个附带工作树的仓库，因此服务器上的仓库必须始终是裸仓库。通常，通过给`git
+    init`或`git clone`命令传递`--bare`选项来创建裸仓库。本章后面的部分会描述如何将非裸仓库转换为裸仓库。
+- en: Next, move or copy the bare repositories to `$HOME/repositories`, which is where
+    Gitolite expects to find all the repositories it is managing. When doing this,
+    make sure the name of the repository ends in `.git`.
+  id: totrans-21
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来，将裸仓库移动或复制到`$HOME/repositories`，这是Gitolite期望找到它所管理的所有仓库的位置。在进行此操作时，请确保仓库的名称以`.git`结尾。
+- en: Note
+  id: totrans-22
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: In common Git usage, it is merely a convention to name bare repositories with
+    names ending in `.git`, while non-bare repositories do not have an extension.
+    With Gitolite however, the trailing `.git` is necessary; it is no longer just
+    a convention.
+  id: totrans-23
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在常见的Git使用中，裸仓库通常以`.git`结尾命名，而非裸仓库没有扩展名。然而，在Gitolite中，结尾的`.git`是必要的，不再仅仅是一个约定。
+- en: Once you have all the repositories in place, run the `gitolite setup` command.
+  id: totrans-24
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦所有仓库就位，运行`gitolite setup`命令。
+- en: Finally, in a clone of the gitolite-admin repository, add these repositories
+    to the `conf/gitolite.conf` file as described earlier, save the changes, add,
+    commit, and push.
+  id: totrans-25
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后，在`gitolite-admin`仓库的克隆中，将这些仓库添加到`conf/gitolite.conf`文件中，如前所述，保存更改，添加、提交并推送。
+- en: Common problems and troubleshooting
+  id: totrans-26
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 常见问题及故障排除
+- en: You may need to modify the procedure described earlier under some circumstances.
+    This section will describe some of the problems that you may find and how to work
+    around them.
+  id: totrans-27
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在某些情况下，你可能需要修改前面描述的程序。本节将描述你可能遇到的一些问题以及如何解决它们。
+- en: Ownership and permissions
+  id: totrans-28
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 所有权和权限
+- en: Gitolite expects that all the files and directories inside `$HOME/repositories`
+    are owned by the Gitolite hosting user, and that this user is allowed to write
+    to all of them. If this condition is not met, both Git and Gitolite will be affected.
+  id: totrans-29
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Gitolite期望`$HOME/repositories`中的所有文件和目录都归Gitolite托管用户所有，并且该用户被允许对所有文件进行写操作。如果此条件未得到满足，Git和Gitolite都会受到影响。
+- en: The most common reason for such a condition to be violated is that the administrator
+    has copied some files (such as a bunch of existing repositories perhaps) as root.
+    When files are copied as root, they are not usually given the owner and group
+    ID of the directory in which they are being placed, but that of the original owner
+    or the user executing the copy.
+  id: totrans-30
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这种条件被违反的最常见原因是管理员以root身份复制了一些文件（比如一些现有的仓库）。当文件以root身份复制时，通常不会赋予它们所在目录的所有者和组ID，而是原始所有者或执行复制操作的用户的ID。
+- en: You can see this by running `ls -alR` on the repository in question; if the
+    owner and group of all the files and directories are not `git` (the hosting user),
+    then you will need to modify the ownership of that repository.
+  id: totrans-31
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以通过在相关仓库上运行`ls -alR`来查看；如果所有文件和目录的所有者和组不是`git`（托管用户），那么你需要修改该仓库的所有权。
+- en: 'To fix this, run the following command: (As in earlier chapters, we assume
+    the Gitolite hosting user is git; if not, please substitute accordingly.)'
+  id: totrans-32
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了解决这个问题，请运行以下命令：（与前面章节一样，我们假设Gitolite托管用户是git；如果不是，请相应替换。）
+- en: '[PRE4]'
+  id: totrans-33
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: If there are no ownership problems, but for some reason you do have permission
+    issues, you can omit the `chown` command and do the rest as `git` (that is, you
+    do not need to log in as root).
+  id: totrans-34
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果没有所有权问题，但由于某种原因你确实遇到了权限问题，你可以省略`chown`命令，并以`git`身份执行其余操作（也就是说，你无需以root身份登录）。
+- en: Converting a non-bare repository to a bare repository
+  id: totrans-35
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 将非裸仓库转换为裸仓库
+- en: A bare repository is a repository without the working tree attached to it. Instead,
+    the files and directories that, in a non-bare repository, are contained within
+    the special `.git` directory are directly placed in the repository at the top
+    level.
+  id: totrans-36
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 裸仓库是没有工作区的仓库。相反，在非裸仓库中包含在特殊的`.git`目录中的文件和目录，会直接放置在仓库的顶级目录下。
+- en: 'One way to convert a non-bare repository to a bare repository is to clone it
+    using the `--bare` option. The following command is the most generic way of doing
+    this:'
+  id: totrans-37
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 将非裸仓库转换为裸仓库的一种方式是使用`--bare`选项进行克隆。以下命令是实现这一操作的最通用方式：
+- en: '[PRE5]'
+  id: totrans-38
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: 'However, this makes a full copy of the source to the target, which might be
+    a problem if the repository is very large. But if the source repository is on
+    the same filesystem as the target, there is a very useful optimization that Git
+    provides, which you can take advantage of. This is affected by adding a `-l` option
+    to the `clone` command:'
+  id: totrans-39
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，这会将源代码的完整副本复制到目标位置，如果仓库非常大，这可能会成为一个问题。但如果源仓库和目标仓库位于同一文件系统中，Git提供了一个非常有用的优化，你可以利用这个优化。只需在`clone`命令中添加`-l`选项即可：
+- en: '[PRE6]'
+  id: totrans-40
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: The `-l` option tells Git to use hardlinks instead of copying the files over
+    to the new repository, and is almost instantaneous, regardless of how big the
+    repository actually is. Since it uses hardlinks (and not symlinks), you are free
+    to delete the source repository after the clone is done; it will not harm the
+    newly created target repository.
+  id: totrans-41
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`-l`选项告诉Git使用硬链接，而不是将文件复制到新仓库中，这几乎是瞬间完成的，无论仓库的大小如何。由于使用硬链接（而不是符号链接），在克隆完成后，你可以自由删除源仓库，它不会对新创建的目标仓库造成任何影响。'
+- en: Either way, at this point you will need to copy any hooks that already exist
+    in your repository from the `hooks` directory of the source to that of the destination.
+    This is because the `clone` method does not carry the hooks over.
+  id: totrans-42
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 无论哪种方式，到此为止，你需要将源仓库中`hooks`目录下已存在的钩子文件复制到目标仓库的`hooks`目录中。因为`clone`方法不会携带钩子。
+- en: Tip
+  id: totrans-43
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 提示
+- en: Git experts will realize that another way to convert a non-bare repo, say `my-repo`,
+    is to promote the `.git` directory up one level, renaming it `my-repo.git`. That
+    is, by running the command `mv my-repo/.git my-repo.git`. At this point, the old
+    `my-repo` directory can be deleted. As always, make sure you have backups before
+    deleting anything.
+  id: totrans-44
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git专家会意识到，将一个非裸仓库（如`my-repo`）转换为裸仓库的另一种方法是将`.git`目录提升一级，并重命名为`my-repo.git`。即通过运行命令`mv
+    my-repo/.git my-repo.git`。此时，可以删除旧的`my-repo`目录。像往常一样，在删除任何东西之前，确保有备份。
+- en: Gitolite and the update hook
+  id: totrans-45
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: Gitolite与更新钩子
+- en: Gitolite's access control mechanism for a push operation involves hooking into
+    Git's `update` hook mechanism (see the man page for `githooks` to get details
+    on the various hooks that Git provides).
+  id: totrans-46
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Gitolite的推送操作访问控制机制涉及钩入Git的`update`钩子机制（查看`githooks`的手册页面，了解Git提供的各种钩子）。
+- en: Therefore, if your existing repository already had an update hook, running the
+    `gitolite setup` described previously will wipe out this existing hook and install
+    Gitolite's own update hook in its place.
+  id: totrans-47
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 因此，如果你的现有仓库已经有了一个更新钩子，运行之前描述的`gitolite setup`将会删除这个现有的钩子，并用Gitolite自己的更新钩子替代它。
+- en: Gitolite *does* provide a mechanism that allows your old `update` hook to also
+    run, but it needs to be run by Gitolite. There is a supported mechanism for this
+    called `VREF`, which will be described briefly in [Chapter 7](ch07.html "Chapter 7. Advanced
+    Access Control and Configuration"), *Advanced Access Control and Configuration*,
+    and in detail in [Chapter 10](ch10.html "Chapter 10. Understanding VREFs"), Understanding
+    *VREFs*.
+  id: totrans-48
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Gitolite*确实*提供了一种机制，允许你的旧`update`钩子也能够运行，但它需要由Gitolite来运行。为此有一个支持的机制，称为`VREF`，将在[第7章](ch07.html
+    "第7章. 高级访问控制与配置")《高级访问控制与配置》中简要描述，并在[第10章](ch10.html "第10章. 理解VREFs")《理解*VREFs*》中详细说明。
+- en: Summary
+  id: totrans-49
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 总结
+- en: This chapter showed you how to add your own repositories, and told you about
+    some common problems that may occur when bringing in existing repositories in
+    to Gitolite's control. The previous chapter has already covered adding users,
+    so we are now ready to start looking at access control. Access control is the
+    reason Gitolite exists, and the next chapter will (finally!) show you some basic
+    access control syntax, rules, and other details.
+  id: totrans-50
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章向你展示了如何添加自己的代码库，并介绍了一些在将现有代码库引入Gitolite控制时可能出现的常见问题。上一章已经涵盖了添加用户的内容，因此我们现在可以开始查看访问控制了。访问控制是Gitolite存在的原因，下一章将（终于！）向你展示一些基本的访问控制语法、规则及其他细节。

@@ -1,0 +1,866 @@
+- en: Chapter 7. Advanced Access Control and Configuration
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 第7章 高级访问控制与配置
+- en: The basic access control methods described in the previous chapter are sufficient
+    for most sites, and there are many that do not go further than that. However,
+    Gitolite has a lot more features waiting for people who need them. We'll go through
+    some of these advanced features in this chapter. In each case, we'll attempt to
+    describe a practical scenario that demonstrates a need and then explain how the
+    feature fulfills that need.
+  id: totrans-1
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 上一章中描述的基本访问控制方法足以满足大多数站点的需求，许多站点甚至没有进一步的配置。然而，Gitolite有许多更多的功能，等待那些需要它们的用户。本章将介绍其中一些高级功能。每个功能我们都会尝试描述一个实际场景，说明该需求，然后解释该功能如何满足这个需求。
+- en: Making changes to the rc file
+  id: totrans-2
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 修改rc文件
+- en: Many of Gitolite's advanced features and configuration options are managed by
+    editing the *rc file*. This is a file named `.gitolite.rc`, which is present in
+    the home directory of the Gitolite hosting user.
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Gitolite的许多高级功能和配置选项是通过编辑*rc文件*来管理的。该文件名为`.gitolite.rc`，通常位于Gitolite托管用户的主目录下。
+- en: The file is liberally commented and it is generally easy to see where things
+    go.
+  id: totrans-4
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 该文件有很多注释，一般来说，查看文件时很容易理解每一部分内容的作用。
+- en: 'The bulk of the file is within a top-level definition that looks as follows:'
+  id: totrans-5
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 文件的大部分内容都在一个顶层定义中，形式如下：
+- en: '[PRE0]'
+  id: totrans-6
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: If you're familiar with Perl, you might realize that this is a Perl hash, but
+    it is not necessary to know Perl in order to edit this file.
+  id: totrans-7
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你熟悉Perl，可能会意识到这其实是一个Perl哈希，但并不需要懂Perl就能编辑这个文件。
+- en: 'The file has several simple variables defined, for example:'
+  id: totrans-8
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 文件中定义了几个简单的变量，例如：
+- en: '[PRE1]'
+  id: totrans-9
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: When the Gitolite documentation (or this book) tells you to edit a variable
+    in the rc file, it's best to look for such a variable first—most of the important
+    ones are already in the file but may be commented out, waiting to be un-commented
+    and the value edited as needed.
+  id: totrans-10
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当Gitolite文档（或本书）告诉你编辑rc文件中的变量时，最好先查找一下这些变量——大多数重要的变量已经存在于文件中，只是可能被注释掉，等待取消注释并根据需要编辑其值。
+- en: 'One of the variables within the `%RC` block is a list variable called `ENABLE`,
+    whose definition looks as follows:'
+  id: totrans-11
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`%RC`块中的一个变量是名为`ENABLE`的列表变量，其定义如下：'
+- en: '[PRE2]'
+  id: totrans-12
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: 'An example feature is as follows:'
+  id: totrans-13
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一个示例功能如下：
+- en: '[PRE3]'
+  id: totrans-14
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: This enables the `info` command.
+  id: totrans-15
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这将启用`info`命令。
+- en: Again, most features are already listed here, but may be commented out.
+  id: totrans-16
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 同样，大多数功能已经在这里列出，但可能被注释掉。
+- en: Giving users their own branches
+  id: totrans-17
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 为用户提供个人分支
+- en: 'When there are more than a few developers in a project, it is often necessary
+    for them to share code that is still under development, for comments, discussion,
+    preliminary testing, and so on. The obvious solution is for each developer to
+    push to a branch on the Gitolite server and inform his colleagues of the branch
+    name. A branch namespace dedicated to this can be created, giving all developers
+    access to it, as follows:'
+  id: totrans-18
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当项目中有多个开发者时，通常需要共享仍在开发中的代码，以便进行评论、讨论、初步测试等。显而易见的解决方案是，每个开发者将代码推送到Gitolite服务器上的一个分支，并告知同事该分支的名称。可以为此创建一个专门的分支命名空间，使所有开发者都能访问，具体如下：
+- en: '[PRE4]'
+  id: totrans-19
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: This works fine, but it could lead to a situation where one developer accidentally
+    overwrites or deletes another developer's branch if the branch naming within the
+    *sandbox* namespace is not strictly controlled.
+  id: totrans-20
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这种方法工作得很好，但如果在*沙箱*命名空间内的分支命名没有严格控制，可能会导致某个开发者不小心覆盖或删除另一个开发者的分支。
+- en: 'What is required, ideally, is something as follows:'
+  id: totrans-21
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 理想情况下，所需的应该是如下的方式：
+- en: '[PRE5]'
+  id: totrans-22
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: and so on, for each user who should be given access to the repository.
+  id: totrans-23
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 依此类推，为每个需要访问仓库的用户添加相应的配置。
+- en: Clearly, this is not at all scalable—you'd have to add one line for each user
+    if you did this. In fact, it's a step backward because we've suddenly lost all
+    the advantages of managing users in groups, since we are forced to use a separate
+    rule for each developer.
+  id: totrans-24
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 显然，这种方式并不具备可扩展性——如果你这样做，你必须为每个用户添加一行。事实上，这实际上是一种倒退，因为我们突然失去了将用户按组管理的所有优势，因为我们被迫为每个开发者使用单独的规则。
+- en: 'This situation is what led to the development of what are called **personal
+    branches** in Gitolite. This feature works on a simple idea, and is best described
+    with the following example rule:'
+  id: totrans-25
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这种情况促使了Gitolite中所谓的**个人分支**功能的开发。该功能基于一个简单的理念，最好的方式是通过以下示例规则来描述：
+- en: '[PRE6]'
+  id: totrans-26
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: 'The idea is that the word `USER`, surrounded by slashes, stands for the authenticated
+    username from the connection information, as long as the user is listed on the
+    right-hand side (or a group he/she belongs to is listed). Thus, if the user ID
+    `alice` is a member of the `@developers` group, and Alice attempts to access the
+    repository, this rule effectively becomes the following:'
+  id: totrans-27
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 其理念是，`USER` 这个词被斜线包围，代表了来自连接信息的认证用户名，只要该用户在右侧列出（或该用户所属的组被列出）。因此，如果用户 ID `alice`
+    是 `@developers` 组的成员，并且 Alice 尝试访问该仓库，那么此规则有效地变成如下：
+- en: '[PRE7]'
+  id: totrans-28
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE7]'
+- en: This allows Alice to write to her own sandbox branches; that is, branches whose
+    names start with `sandbox/alice/`. Note that this does not allow a branch called
+    `sandbox/alice`—the sandbox is meant to be a set of branches not just one branch.
+  id: totrans-29
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这允许 Alice 向她自己的沙箱分支写入；即以 `sandbox/alice/` 开头的分支名称。请注意，这不允许一个名为 `sandbox/alice`
+    的分支——沙箱是指一组分支，而不仅仅是一个分支。
+- en: Since Gitolite does not allow limiting read access by branch, every user who
+    is a member of the `@developers` group has read access to the repository, which
+    means they can read each other's development branches, but only write (push to)
+    their own sandbox branches.
+  id: totrans-30
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于 Gitolite 不允许按分支限制读取权限，因此所有属于 `@developers` 组的用户都有权限读取该仓库，这意味着他们可以读取彼此的开发分支，但只能对自己的沙箱分支进行写操作（推送）。
+- en: Types of write operations
+  id: totrans-31
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 写操作类型
+- en: So far, we have restricted ourselves to the `RW` and `RW+` permissions while
+    talking about permissions. The former gives users permission to create new branches
+    and tags, and make **fast forward** pushes to the branches, while the latter allows
+    users to also make non-fast forward pushes and rewrite tags, as well as delete
+    branches and tags.
+  id: totrans-32
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 到目前为止，我们在谈论权限时仅限于 `RW` 和 `RW+` 权限。前者允许用户创建新的分支和标签，并对分支进行**快速前进**推送，而后者允许用户进行非快速前进推送和重写标签，并且删除分支和标签。
+- en: Tip
+  id: totrans-33
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 提示
+- en: This is by far the most common situation, and this syntax serves for the vast
+    majority of access control needs. A push to an existing tag, even if the new commit
+    is a descendent of the current commit the tag is pointing to, is still considered
+    a non-fast forward push. This is because, unlike branches, tags are not *meant*
+    to be moved; once written, they're supposed to be fixed and never change.
+  id: totrans-34
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这是最常见的情况，且该语法适用于绝大多数访问控制需求。对现有标签的推送，即使新的提交是当前标签指向的提交的后代，仍然被视为非快速前进推送。这是因为，与分支不同，标签并不*意味着*可以被移动；一旦写入，标签应该是固定的，永远不会更改。
+- en: However, in some situations, you may need to explicitly specify the ability
+    to *create* a branch, separating it from that of pushing a new commit to it. Similarly,
+    you may want to explicitly specify permission to *delete* a branch or tag, separating
+    it from that of pushing a non-fast forward commit; or, you may want to do both.
+  id: totrans-35
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，在某些情况下，你可能需要显式指定*创建*分支的权限，将其与推送新提交的权限区分开。类似地，你可能希望显式指定*删除*分支或标签的权限，将其与推送非快速前进提交的权限区分开；或者，你可能希望同时指定两者。
+- en: In order to achieve this, Gitolite has an extended syntax for the permissions
+    field to let you specify explicit create and/or delete permissions. Using these
+    extended permissions in any rule applicable to a repository has the effect of
+    limiting the power of the normal `RW` and `RW+` permissions, in terms of creating
+    or deleting refs.
+  id: totrans-36
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了实现这一点，Gitolite 在权限字段中引入了扩展语法，让你可以明确指定创建和/或删除权限。在适用于仓库的任何规则中使用这些扩展权限，会限制正常
+    `RW` 和 `RW+` 权限在创建或删除引用方面的权限。
+- en: 'This extended syntax consists of the following *new permissions*: `RWC`, `RW+C`,
+    `RWD`, `RW+D`, `RWCD`, and `RW+CD`. When a rule specifying a permission containing
+    a `C` is added to a repository, the `RW` and `RW+` rules for that repository no
+    longer permit *creating* a branch or a tag. Similarly, when any rule specifies
+    a permission containing a `D`, the `RW+` rules for that repository no longer allow
+    *deleting* a ref. For ease of discussion, we can call these the *explicit create*
+    and *explicit delete* modes, respectively.'
+  id: totrans-37
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这种扩展语法包括以下*新权限*：`RWC`、`RW+C`、`RWD`、`RW+D`、`RWCD` 和 `RW+CD`。当一个规则指定了包含 `C` 的权限并添加到仓库时，该仓库的
+    `RW` 和 `RW+` 规则将不再允许*创建*分支或标签。类似地，当任何规则指定了包含 `D` 的权限时，该仓库的 `RW+` 规则将不再允许*删除*引用。为了便于讨论，我们可以分别将其称为*显式创建*和*显式删除*模式。
+- en: 'It is useful to summarize these rules in a tabular form, for ready reference
+    in case you ever need to use these special permission modes. The following table
+    shows you the minimum required permission "characters" to allow a given operation,
+    in each of the three modes (strictly speaking, there is a fourth mode, where both
+    explicit create and explicit delete are used, but that is just a combination of
+    the two):'
+  id: totrans-38
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 将这些规则总结成表格形式非常有用，以便在需要使用这些特殊权限模式时快速参考。下表展示了在三种模式下，执行给定操作所需的最小权限“字符”（严格来说，还有第四种模式，即同时使用显式创建和显式删除模式，但这只是两者的组合）：
+- en: '|   | Default mode | Explicit create mode | Explicit delete mode |'
+  id: totrans-39
+  prefs: []
+  type: TYPE_TB
+  zh: '|   | 默认模式 | 显式创建模式 | 显式删除模式 |'
+- en: '| --- | --- | --- | --- |'
+  id: totrans-40
+  prefs: []
+  type: TYPE_TB
+  zh: '| --- | --- | --- | --- |'
+- en: '| Create new branch | `RW` | `RW` and `C` | `RW` |'
+  id: totrans-41
+  prefs: []
+  type: TYPE_TB
+  zh: '| 创建新分支 | `RW` | `RW` 和 `C` | `RW` |'
+- en: '| Create new tag | `RW` | `RW` and `C` | `RW` |'
+  id: totrans-42
+  prefs: []
+  type: TYPE_TB
+  zh: '| 创建新标签 | `RW` | `RW` 和 `C` | `RW` |'
+- en: '| Fast forward push existing branch | `RW` | `RW` | `RW` |'
+  id: totrans-43
+  prefs: []
+  type: TYPE_TB
+  zh: '| 快进推送现有分支 | `RW` | `RW` | `RW` |'
+- en: '| Non-fast forward push a branch | `RW+` | `RW+` | `RW+` |'
+  id: totrans-44
+  prefs: []
+  type: TYPE_TB
+  zh: '| 非快进推送分支 | `RW+` | `RW+` | `RW+` |'
+- en: '| Overwrite an existing tag | `RW+` | `RW+` | `RW+` |'
+  id: totrans-45
+  prefs: []
+  type: TYPE_TB
+  zh: '| 覆盖现有标签 | `RW+` | `RW+` | `RW+` |'
+- en: '| Delete branch | `RW+` | `RW+` | `RW` and `D` |'
+  id: totrans-46
+  prefs: []
+  type: TYPE_TB
+  zh: '| 删除分支 | `RW+` | `RW+` | `RW` 和 `D` |'
+- en: '| Delete tag | `RW+` | `RW+` | `RW` and `D` |'
+  id: totrans-47
+  prefs: []
+  type: TYPE_TB
+  zh: '| 删除标签 | `RW+` | `RW+` | `RW` 和 `D` |'
+- en: Allowing Gitweb and Git-daemon access
+  id: totrans-48
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 允许 Gitweb 和 Git-daemon 访问
+- en: '**Gitweb** (and, to a lesser extent, **git-daemon**) are popular tools that
+    provide alternative, read-only access to Git repositories. Git-daemon provides
+    completely unauthenticated access to Git repositories, suitable for open source
+    or similar projects. Gitweb displays repositories, their branches, commit history,
+    and many more details on a web browser. Gitweb itself does not do any authentication,
+    but relies on the web server to authenticate users.'
+  id: totrans-49
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**Gitweb**（以及在较小程度上，**git-daemon**）是流行的工具，提供对 Git 仓库的只读访问。Git-daemon 提供完全无认证的
+    Git 仓库访问，适用于开源或类似项目。Gitweb 在网页浏览器中显示仓库、分支、提交历史以及更多细节。Gitweb 本身不进行任何认证，而是依赖于网页服务器来认证用户。'
+- en: Gitweb and git-daemon have ways to determine which repositories are allowed
+    to be made available to clients. For gitweb, the list of permitted repositories
+    is placed in a specific format (at its simplest, one repository name per line)
+    in a specific file at a configurable location (see the documentation for gitweb
+    for details). On the other hand, git-daemon looks inside each individual repository
+    for a file called `git-daemon-export-ok` , to determine if the repository should
+    be made accessible to clients. Of course, both tools have other one-time configuration
+    that needs to be handled and set up before they can be used. Gitweb, in particular,
+    may not even run as the Gitolite hosting user, and the one-time setup will probably
+    involve allowing it to read files owned by the Gitolite hosting user.
+  id: totrans-50
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Gitweb 和 git-daemon 通过不同的方式来确定哪些仓库可以对客户端开放。对于 gitweb，允许的仓库列表以特定格式（最简单的形式是每行一个仓库名称）放在一个特定文件中，该文件位于可配置的位置（具体细节请参见
+    gitweb 文档）。另一方面，git-daemon 会在每个仓库内部查找名为 `git-daemon-export-ok` 的文件，以确定该仓库是否可以对客户端开放。当然，两个工具在使用之前都需要进行一次性的配置设置。特别是，gitweb
+    可能甚至不会作为 Gitolite 托管用户运行，而一次性的设置可能涉及允许其读取 Gitolite 托管用户拥有的文件。
+- en: 'Although Gitolite cannot help in the one-time configuration of these tools,
+    it can certainly help in managing the access list. It does this by designating
+    two special Gitolite usernames: `gitweb` and `daemon`. These users do not have
+    public keys, so they''re not actual users in the same sense as Adam, Alice, or
+    Bob in our examples. However, they determine which repositories are accessible
+    by gitweb and git-daemon.'
+  id: totrans-51
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 虽然 Gitolite 无法帮助配置这些工具的首次设置，但它肯定能帮助管理访问列表。它通过指定两个特殊的 Gitolite 用户名：`gitweb` 和
+    `daemon` 来实现。这些用户没有公钥，因此他们不像 Adam、Alice 或 Bob 等示例中的实际用户。然而，他们决定了哪些仓库可以通过 gitweb
+    和 git-daemon 访问。
+- en: 'The idea is very simple. If you want a repository to be readable by gitweb,
+    you give the `gitweb` user *read* access. Similarly, if you want the repository
+    to be accessible via git-daemon, you give the `daemon` user *read* access. Here''s
+    an example that does both:'
+  id: totrans-52
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个概念非常简单。如果你希望一个仓库可以通过 gitweb 读取，你就给 `gitweb` 用户 *读* 权限。类似地，如果你希望仓库可以通过 git-daemon
+    访问，你就给 `daemon` 用户 *读* 权限。下面是一个同时进行两者操作的例子：
+- en: '[PRE8]'
+  id: totrans-53
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE8]'
+- en: Of course, instead of specifying each repository, you can use any repository
+    group name that you may have defined, or even the special group name `@all`.
+  id: totrans-54
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当然，你可以使用已定义的任何仓库组名称，甚至是特殊的组名`@all`，而不是指定每个仓库。
+- en: When the gitolite-admin repository is pushed, Gitolite checks each repository
+    to see if these special users have been given read access. For each such repository,
+    Gitolite adds the name to the projects list file mentioned previously if the `gitweb`
+    user can read it, and creates a file called `git-daemon-export-ok` if the `daemon`
+    user can. Also, if you previously allowed access and then decided to remove it,
+    Gitolite will delete the entry from the projects list file, and/or remove the
+    `git-daemon-export-ok` file, as applicable.
+  id: totrans-55
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当gitolite-admin仓库被推送时，Gitolite会检查每个仓库，看看这些特殊用户是否被授予了读取权限。对于每个这样的仓库，Gitolite会在之前提到的项目列表文件中添加该仓库的名称，如果`gitweb`用户可以读取它，并且如果`daemon`用户可以读取它，则会创建名为`git-daemon-export-ok`的文件。此外，如果你之前允许了访问权限，然后又决定删除它，Gitolite将删除项目列表文件中的条目，和/或删除`git-daemon-export-ok`文件（视情况而定）。
+- en: Locating the projects list file
+  id: totrans-56
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 定位项目列表文件
+- en: We mentioned earlier that Gitweb consults a file containing a list of permitted
+    repositories, and that Gitolite creates this file. Of course, Gitweb and Gitolite
+    must agree on where this file is. Gitolite places it, by default, in `$HOME/projects.list`,
+    but this can be changed to any other location if needed; simply add a line like
+    the following to the `$HOME/.gitolite.rc` file, substituting whatever path you
+    want of course.
+  id: totrans-57
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们之前提到过，Gitweb会查阅一个包含允许的仓库列表的文件，而Gitolite会创建这个文件。当然，Gitweb和Gitolite必须一致地知道这个文件的位置。默认情况下，Gitolite将其放在`$HOME/projects.list`，但如果需要，可以将其更改为任何其他位置；只需在`$HOME/.gitolite.rc`文件中添加一行，如下所示，当然要替换为你想要的路径。
+- en: '[PRE9]'
+  id: totrans-58
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE9]'
+- en: Note
+  id: totrans-59
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: The syntax of the preceding statement includes the trailing comma. This line
+    must be placed in the section marked `rc variables used by various features`.
+  id: totrans-60
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 上述语句的语法包括末尾的逗号。这一行必须放在标记为`rc variables used by various features`的部分中。
+- en: Unix permissions and the umask
+  id: totrans-61
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: Unix权限和umask
+- en: Gitweb is invoked by your web server (such as Apache), which is almost certainly
+    running under a different user ID than your Gitolite hosting user. Depending on
+    your OS and your web server, this could be a user called `apache`, `www-data`,
+    or something else.
+  id: totrans-62
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Gitweb由你的Web服务器（如Apache）调用，而Web服务器几乎肯定是以与你的Gitolite托管用户不同的用户ID运行的。根据你的操作系统和Web服务器的不同，可能是名为`apache`、`www-data`或其他名称的用户。
+- en: 'This means you need to make sure that this user can read the files it needs
+    (mainly the projects list file, and everything under `$HOME/repositories`). There
+    are usually two ways of doing this. The simplest way is to do the following:'
+  id: totrans-63
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这意味着你需要确保该用户能够读取它所需要的文件（主要是项目列表文件，以及`$HOME/repositories`下的所有文件）。通常有两种方法来做到这一点。最简单的方法是做如下操作：
+- en: Identify the primary group that your Gitolite hosting user belongs to (usually
+    the same as the username). You can find this by running the `id` command after
+    logging in to the server as the Gitolite hosting user. On most systems, it is
+    the same as the user ID, so for our discussion let's say it is `git`.
+  id: totrans-64
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 确定你的Gitolite托管用户所属的主要组（通常与用户名相同）。你可以通过以Gitolite托管用户身份登录服务器后运行`id`命令来查找。在大多数系统中，它与用户ID相同，因此为了方便讨论，我们假设它是`git`。
+- en: Identify the Unix user ID under which your web server is running. For our discussion,
+    let's say it is `apache`.
+  id: totrans-65
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 确定Web服务器运行时使用的Unix用户ID。为了讨论方便，我们假设它是`apache`。
+- en: Add the `apache` user to the `git` group using the `usermod` command. (You need
+    to run this as root on your server.) The exact syntax may vary depending on your
+    OS and OS version. As an example, the command on a Red Hat system is `usermod
+    -G git apache`.
+  id: totrans-66
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用`usermod`命令将`apache`用户添加到`git`组中。（你需要以root身份在服务器上运行此命令。）具体的语法可能根据你的操作系统和版本有所不同。例如，在Red
+    Hat系统上的命令是`usermod -G git apache`。
+- en: Change the `UMASK` value in `$HOME/.gitolite.rc` from the default `0077` to
+    `0027`.
+  id: totrans-67
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 将`UMASK`值从默认的`0077`更改为`0027`，在`$HOME/.gitolite.rc`文件中进行修改。
+- en: Fix up existing files manually. This is a one-time operation, required because
+    `umask` only affects permissions on newly created files, not existing ones. Log
+    in as the Gitolite hosting user and run the command `chmod -R g+rX $HOME/projects.list
+    $HOME/repositories`.
+  id: totrans-68
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 手动修复现有文件。这是一次性操作，所需操作是因为`umask`只会影响新创建文件的权限，而不会影响已有文件的权限。以Gitolite托管用户身份登录，并运行命令`chmod
+    -R g+rX $HOME/projects.list $HOME/repositories`。
+- en: The second method to deal with this involves running gitweb as the Gitolite
+    hosting user. Most web servers provide mechanisms to run specific programs under
+    some other user ID than the user ID under which the web server is running, such
+    as the `suexec` feature in the Apache web server. Configuring these features is
+    out of scope for this book; please check the documentation of your web server
+    for more information.
+  id: totrans-69
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 处理此问题的第二种方法是以 Gitolite 托管用户身份运行 gitweb。大多数 Web 服务器提供机制，允许在与 Web 服务器运行的用户 ID
+    不同的用户 ID 下运行特定程序，例如 Apache Web 服务器中的`suexec`功能。配置这些功能超出了本书的范围；有关更多信息，请查看你使用的 Web
+    服务器的文档。
+- en: Specifying Git config values and Gitolite options
+  id: totrans-70
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 指定 Git 配置值和 Gitolite 选项
+- en: If you're familiar with Git, you probably know the `git config` command, which
+    allows you to set repository options. Example of config variables that may be
+    useful for server-side (bare) repositories are `core.logAllRefUpdates`, `receive.fsckObjects`,
+    and various performance-related config variables. (Please see the man page for
+    `git-config` for details)
+  id: totrans-71
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你熟悉 Git，你可能知道`git config`命令，它允许你设置仓库选项。对于服务器端（裸）仓库，可能有用的配置变量示例包括`core.logAllRefUpdates`、`receive.fsckObjects`，以及各种与性能相关的配置变量。（有关详细信息，请参阅`git-config`的手册页）
+- en: 'Gitolite aims to allow almost all administration remotely, so it would be unreasonable
+    to expect the admin to log on to the server and run the `git` `config` command.
+    Therefore, Gitolite allows the admin to specify config settings within the conf
+    file, as follows:'
+  id: totrans-72
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Gitolite 旨在允许几乎所有管理操作都远程进行，因此期望管理员登录到服务器并运行`git config`命令是不合理的。因此，Gitolite 允许管理员在配置文件中指定配置设置，如下所示：
+- en: '[PRE10]'
+  id: totrans-73
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE10]'
+- en: Note
+  id: totrans-74
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: However, before you can use this feature, you need to enable the config keys
+    you wish to use in the *rc* file `($HOME/.gitolite.rc`). Look in this file for
+    a line that contains the word `GIT_CONFIG_KEYS` and edit the value, which is empty
+    by default, to contain a space separated list of the config keys you are planning
+    to use.
+  id: totrans-75
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，在使用此功能之前，你需要在*rc*文件`($HOME/.gitolite.rc)`中启用你希望使用的配置键。请在该文件中查找包含`GIT_CONFIG_KEYS`一词的行，并编辑其值，默认值为空，将其修改为包含你计划使用的配置键的以空格分隔的列表。
+- en: In general, the syntax is `config sectionname.keyname = value`. On the server,
+    this is executed as `git config sectionname.keyname value`. Gitolite does *not*
+    support any of the other forms of the `git config` command, especially keys with
+    multiple values.
+  id: totrans-76
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一般来说，语法是`config sectionname.keyname = value`。在服务器上，这会作为`git config sectionname.keyname
+    value`执行。Gitolite *不*支持`git config`命令的其他任何形式，尤其是带有多个值的键。
+- en: Deleting a git-config key
+  id: totrans-77
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 删除 git-config 键
+- en: Unfortunately, once a git `config` key has been created by Gitolite, simply
+    removing the line from the conf file will not, on the next push, delete the key
+    from the repository config file. This is because you *are* permitted to add keys
+    directly on the server if you choose to (or your repository may have inherited
+    some useful settings when you migrated it into Gitolite's control). Gitolite has
+    no simple way of distinguishing `config` keys you created manually from those
+    that were deleted in the conf file; that is, it can be done but it's complicated
+    and potentially error-prone.
+  id: totrans-78
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 不幸的是，一旦 Gitolite 创建了一个 git `config`键，仅仅从配置文件中删除该行，在下次推送时并不会从仓库配置文件中删除该键。这是因为你*可以*选择直接在服务器上添加键（或者你的仓库在迁移到
+    Gitolite 管理时可能继承了一些有用的设置）。Gitolite 没有简单的方法来区分你手动创建的`config`键和在配置文件中删除的键；也就是说，虽然可以做到，但这很复杂且容易出错。
+- en: 'Therefore, Gitolite requires the following syntax in order to explicitly delete
+    a `config` key from the repository config file on the server:'
+  id: totrans-79
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 因此，Gitolite 需要以下语法，以便明确从服务器上的仓库配置文件中删除一个`config`键：
+- en: '[PRE11]'
+  id: totrans-80
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE11]'
+- en: This is the only way to delete a `config` key using Gitolite.
+  id: totrans-81
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这是使用 Gitolite 删除`config`键的唯一方法。
+- en: Substituting the repository name
+  id: totrans-82
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 替换仓库名称
+- en: 'Sometimes you need the same config setting for multiple repositories, but you
+    only need to vary the repository name itself. The obvious way seems to be to do
+    the following:'
+  id: totrans-83
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有时候你需要在多个仓库中使用相同的配置设置，但只需要改变仓库名称。显而易见的方法似乎是这样做：
+- en: '[PRE12]'
+  id: totrans-84
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE12]'
+- en: But, of course, this does not scale at all!
+  id: totrans-85
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 但，当然，这完全无法扩展！
+- en: 'Gitolite allows you to do the following instead:'
+  id: totrans-86
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Gitolite 允许你做以下操作：
+- en: '[PRE13]'
+  id: totrans-87
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE13]'
+- en: Gitolite expands the token `%GL_REPO` into each repository's name when actually
+    applying the config lines.
+  id: totrans-88
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Gitolite 在实际应用配置行时，将令牌`%GL_REPO`扩展为每个仓库的名称。
+- en: Tip
+  id: totrans-89
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 提示
+- en: Don't forget that in the `repo` line, you can have one or more repository groups,
+    or a combination of repositories and groups. You can also use `@all` if you wish.
+  id: totrans-90
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 别忘了，在 `repo` 行中，你可以有一个或多个仓库组，或者仓库和组的组合。如果需要，你还可以使用 `@all`。
+- en: Overriding config values
+  id: totrans-91
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 重写配置值
+- en: Sometimes, you want to add a config value to all the repositories, except one
+    or two. For example, consider the `hooks.mailinglist config` variable shown earlier,
+    and imagine that, while the setting is correct for most repositories, one specific
+    repository needs a completely different mailing list.
+  id: totrans-92
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有时，你可能希望将一个配置值应用到所有仓库，除了其中一个或两个。例如，考虑前面提到的 `hooks.mailinglist config` 变量，假设对于大多数仓库，该设置是正确的，但某个特定仓库需要一个完全不同的邮件列表。
+- en: 'Gitolite allows you to do this as follows. First the general setting applicable
+    to all repositories is added. Then, specific settings for specific repositories
+    are added. Gitolite will ensure that for any repository, the last seen config
+    setting will be the one used (and therefore, the order of these statements matters):'
+  id: totrans-93
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Gitolite 允许你按以下方式操作。首先添加适用于所有仓库的一般设置。然后，针对特定仓库添加特定设置。Gitolite 会确保对于任何仓库，最后看到的配置设置会被使用（因此，这些语句的顺序非常重要）：
+- en: '[PRE14]'
+  id: totrans-94
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE14]'
+- en: You can even use an empty value for the last line, if you wish that the special
+    repository mentioned does not even have the corresponding entry in its config
+    file.
+  id: totrans-95
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你希望提到的特殊仓库甚至没有相应的配置条目在其配置文件中，你甚至可以对最后一行使用空值。
+- en: Gitolite options
+  id: totrans-96
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: Gitolite 选项
+- en: 'Similar to Git''s config keys and values, Gitolite also has its own set of
+    internal options, which are used to modify its default behavior in some way or
+    provide additional information that some feature may need. For example, if you
+    use Gitolite''s mirroring feature (discussed in [Chapter 11](ch11.html "Chapter 11. Mirroring"),
+    *Mirroring*), you will need to specify, for each repository, which server is the
+    master server and which are the slaves. These server names are specified using
+    Gitolite options, as follows:'
+  id: totrans-97
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 类似于 Git 的配置键和值，Gitolite 也有自己的一套内部选项，这些选项用于以某种方式修改其默认行为或提供某些功能可能需要的额外信息。例如，如果你使用
+    Gitolite 的镜像功能（在[第 11 章](ch11.html "第11章. 镜像")，*镜像*中讨论），你需要为每个仓库指定哪个服务器是主服务器，哪些是从服务器。这些服务器名称是通过
+    Gitolite 选项指定的，如下所示：
+- en: '[PRE15]'
+  id: totrans-98
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE15]'
+- en: When the mirroring code runs, it interrogates Gitolite for the value of these
+    options in order to do its job.
+  id: totrans-99
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当镜像代码运行时，它会查询 Gitolite 以获取这些选项的值，从而完成其任务。
+- en: Gitolite options behave just like the `config` entries, shown earlier, do in
+    terms of later entries overriding earlier values.
+  id: totrans-100
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Gitolite 选项的行为与之前展示的 `config` 项目类似，后来的条目会覆盖之前的值。
+- en: Applying deny rules to read access
+  id: totrans-101
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 将 deny 规则应用于读访问
+- en: In the previous chapter, when we looked at the `deny` rules, we showed them
+    only in the context of a write operation, controlling whether a certain branch
+    or tag can be pushed or not.
+  id: totrans-102
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在上一章中，当我们讨论 `deny` 规则时，我们仅在写操作的上下文中展示了这些规则，用于控制某个分支或标签是否可以被推送。
+- en: 'By default, the deny rules are not examined when checking read access. So something
+    like the following:'
+  id: totrans-103
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 默认情况下，在检查读访问时不会检查 deny 规则。所以像以下这样的内容：
+- en: '[PRE16]'
+  id: totrans-104
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE16]'
+- en: will not prevent Bob from at least reading the repository (that is, using `git
+    clone` or `git fetch`), even though the deny rule appears first.
+  id: totrans-105
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 即使 deny 规则首先出现，它也不会阻止 Bob 至少读取仓库（也就是使用 `git clone` 或 `git fetch`）。
+- en: 'However, it is possible to make Gitolite act on deny rules in this case also.
+    This is achieved by specifying a Gitolite option called `deny-rules`, as follows:'
+  id: totrans-106
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，在这种情况下，也可以使 Gitolite 对 deny 规则生效。这是通过指定一个名为 `deny-rules` 的 Gitolite 选项来实现的，如下所示：
+- en: '[PRE17]'
+  id: totrans-107
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE17]'
+- en: Now Bob will not even be able to clone the repository.
+  id: totrans-108
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，Bob 甚至无法克隆该仓库。
+- en: Note
+  id: totrans-109
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: 'It is also important to understand that, for read access, specifying an actual
+    branch in the deny rule, shown as follows:'
+  id: totrans-110
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 同样重要的是要理解，对于读访问，指定实际的分支作为 deny 规则，如下所示：
+- en: '[PRE18]'
+  id: totrans-111
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE18]'
+- en: is the same as not having a branch in the rule. This is because Git (and therefore
+    Gitolite) does not distinguish between branches for read access control, so any
+    specified refex is ignored.
+  id: totrans-112
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 与规则中没有分支相同。这是因为 Git（因此 Gitolite）在进行读访问控制时不区分分支，所以任何指定的 refex 都会被忽略。
+- en: The `deny-rules` option will prevent write access the same way it prevents read
+    access. It does not make sense to allow a user to write what they cannot read!
+  id: totrans-113
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`deny-rules` 选项将防止写访问，方式与防止读访问相同。允许用户写入他们无法读取的内容是没有意义的！'
+- en: Understanding VREFs
+  id: totrans-114
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 理解 VREFs
+- en: The previous chapter introduced us to the concept of a *refex*, which is a regular
+    expression that is used to match the ref being pushed. This allows us to make
+    decisions on allowing or rejecting the push based on the name of the ref (branch
+    or tag) being pushed.
+  id: totrans-115
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 前一章向我们介绍了*refex*的概念，它是一个正则表达式，用于匹配正在推送的ref。这样我们就可以根据推送的ref（分支或标签）的名称来决定是否允许或拒绝推送。
+- en: However, we might have other criteria for deciding whether to allow or deny
+    the push. The most common example is whether specific files have been changed,
+    and if they have, to disallow the push.
+  id: totrans-116
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，我们可能有其他标准来决定是否允许或拒绝推送。最常见的例子是是否更改了特定的文件，如果有，则拒绝推送。
+- en: A *VREF* is a special kind of refex; the "V" stands for "Virtual". This is a
+    refex that will not match the ref that Git knows about (which is a branch name
+    or a tag name). Rather, it will attempt to match against some other characteristic
+    of the commit or series of commits being pushed.
+  id: totrans-117
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '*VREF*是一种特殊类型的refex；其中“V”代表“虚拟”。这是一种不会匹配Git已知的ref（即分支名称或标签名称）的refex。相反，它会尝试与推送的提交或提交序列的某些其他特征进行匹配。'
+- en: 'Here''s an example. Let''s say you are running a project where the build system,
+    and in particular the `Makefile`, is a rather critical component and has been
+    finely tuned to play nicely with all the environments for which your product is
+    built and sold. As a result, you really don''t want anyone but the most experienced
+    people messing with that file (and perhaps others related to it). You would, therefore,
+    like to prevent your junior developers from being able to push changes to it.
+    Here''s how you would do that:'
+  id: totrans-118
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这是一个示例。假设你正在运行一个项目，其中构建系统，尤其是`Makefile`，是一个非常关键的组件，并且已经经过精心调试，可以很好地与产品构建和销售的所有环境兼容。因此，你确实不希望除了最有经验的人以外的任何人修改这个文件（以及可能与之相关的其他文件）。因此，你希望防止你的初级开发人员推送对其的更改。你可以这样做：
+- en: '[PRE19]'
+  id: totrans-119
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE19]'
+- en: That is basically all you have to do. First, the ruleset is checked for the
+    ref that is being pushed (in this example, we simplified all that by allowing
+    all developers—which includes junior developers—to push any branch). Once this
+    succeeds, the *VREFs* specified are checked in the order they appear in the list
+    of rules.
+  id: totrans-120
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这基本上就是你需要做的。首先，检查推送的ref（在这个例子中，我们通过允许所有开发人员——包括初级开发人员——推送任何分支来简化了这一过程）。一旦这个操作成功，*VREFs*
+    会按照规则列表中出现的顺序进行检查。
+- en: A VREF rule has a simple structure, consisting of the word `VREF`, followed
+    by the name of the VREF (in this case, `NAME`, which is a VREF that checks the
+    names of changed files and directories), followed by an argument of some kind.
+    The list of changed file names is matched against that argument, and if a match
+    is found, it is just as if you were trying to push a branch and the refex matched,
+    which is to say the permission in the rule line drives what happens next. In this
+    example, that results in the push being denied.
+  id: totrans-121
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一个VREF规则有一个简单的结构，由单词`VREF`组成，后跟VREF的名称（在这个例子中是`NAME`，它是一个检查已更改文件和目录名称的VREF），然后是某种类型的参数。更改的文件名列表会与该参数进行匹配，如果找到匹配项，就像你尝试推送一个分支并且refex匹配一样，这意味着规则行中的权限会决定接下来发生什么。在这个例子中，这将导致推送被拒绝。
+- en: This gives you a simple preview of the VREF feature. [Chapter 10](ch10.html
+    "Chapter 10. Understanding VREFs"), *Understanding VREFs*, will go into much more
+    detail about this powerful feature of Gitolite.
+  id: totrans-122
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这为你简单地预览了VREF特性。[第10章](ch10.html "第10章：理解VREFs")，*理解VREFs*，将详细讲解Gitolite这个强大特性的更多细节。
+- en: Summary
+  id: totrans-123
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 总结
+- en: In this chapter, we looked at some of Gitolite's advanced features, such as
+    personal branches, Git config variables, Gitolite options, and so on. The next
+    chapter will focus on another very powerful and popular feature of Gitolite, allowing
+    your users to create their own repositories without having to add anything new
+    to the conf file.
+  id: totrans-124
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章我们讨论了Gitolite的一些高级特性，如个人分支、Git配置变量、Gitolite选项等等。下一章将重点介绍Gitolite的另一个非常强大且受欢迎的特性——允许用户在不需要向conf文件中添加任何内容的情况下创建自己的仓库。

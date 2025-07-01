@@ -1,0 +1,1407 @@
+- en: Integrating Ansible with CI and CD Solutions
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 将 Ansible 与 CI 和 CD 解决方案集成
+- en: Ansible, DevOps, Agile, **Continuous Integration** (**CI**), and **Continuous
+    Delivery** (**CD**) implementations go hand in hand. Each transitions smoothly
+    into the next. Through Ansible's comprehensive module implementation that we learned
+    about in the last chapter, we can saw how Ansible integrates quite nicely with
+    many industry standard Agile, Continuous Integration and Continuous Delivery solutions.
+    Some of the more common CI->CD solutions that Ansible integrates with include
+    Jenkins, Artifactory, Maven, Bamboo, and so on. Ansible integrates with these
+    solutions so tightly that in fact, Ansible even has a complete CI->CD integration
+    guide provided at the following URL [https://www.ansible.com/continuous-delivery](https://www.ansible.com/continuous-delivery).
+  id: totrans-1
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible、DevOps、敏捷、**持续集成**（**CI**）和 **持续交付**（**CD**）的实现是密不可分的。每个阶段都顺利过渡到下一个。通过我们在上一章学习到的
+    Ansible 的全面模块实现，我们看到 Ansible 如何与许多行业标准的敏捷、持续集成和持续交付解决方案良好集成。一些 Ansible 集成的常见 CI->CD
+    解决方案包括 Jenkins、Artifactory、Maven、Bamboo 等。Ansible 与这些解决方案的集成非常紧密，实际上，Ansible 甚至提供了完整的
+    CI->CD 集成指南，网址为 [https://www.ansible.com/continuous-delivery](https://www.ansible.com/continuous-delivery)。
+- en: For those unfamiliar with Continuous Integration and Continuous Delivery, these
+    solutions have taken the software development world by storm. They propose a modern
+    standardized way for committing, building, delivering, and testing code via software
+    automation. The progression of code to production through automation and process
+    is called a pipeline. The result of implementing a CI->CD pipelines is a highly
+    effective way of automating the release of a software project by creating a repeatable
+    process, and providing the team members with automatic feedback loops on the quality.
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于那些不熟悉持续集成和持续交付的人来说，这些解决方案已经在软件开发界掀起了巨大的变革。它们提出了一种现代化的标准化方式，通过软件自动化进行代码提交、构建、交付和测试。通过自动化和流程将代码推向生产的过程被称为流水线。实施
+    CI->CD 流水线的结果是一种高效的自动化软件项目发布方式，通过创建可重复的流程，为团队成员提供关于质量的自动反馈。
+- en: CI->CD best practices aim to provide a highly reliable way to build and keep
+    a software project releasable at any moment in time. This is accomplished through
+    a combination of highly disciplined development practices and automation of the
+    build, delivery, and testing apparatuses of the software solution. By combining
+    some fundamental practices with automation, an organization can become highly
+    efficient at developing and delivering code.
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: CI->CD 最佳实践旨在提供一种高度可靠的方式，以确保软件项目随时都可以发布。通过结合高度规范化的开发实践和自动化构建、交付与测试工具链来实现这一目标。通过将一些基本实践与自动化结合起来，组织可以在开发和交付代码方面变得高效。
+- en: 'In this chapter, we will begin to look at Continuous Integration and Continuous
+    Delivery. We will take a deep dive into the fundamental constructs associated
+    with each and provide details on how to integrate Ansible with popular CI->CD
+    solutions that are readily available. Specifically, in this chapter, we will cover
+    the following topics:'
+  id: totrans-4
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章中，我们将开始探讨持续集成和持续交付。我们将深入分析与每个概念相关的基本结构，并提供如何将 Ansible 与现有的流行 CI->CD 解决方案集成的详细信息。具体而言，本章将涵盖以下主题：
+- en: Overview of Continuous Integration
+  id: totrans-5
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 持续集成概述
+- en: Overview of Continuous Delivery
+  id: totrans-6
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 持续交付概述
+- en: Ansible's Role in a CI->CD oriented organization
+  id: totrans-7
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Ansible 在面向 CI->CD 的组织中的作用
+- en: Integrating Ansible with Jenkins
+  id: totrans-8
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 将 Ansible 与 Jenkins 集成
+- en: Integrating Ansible with Vagrant
+  id: totrans-9
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 将 Ansible 与 Vagrant 集成
+- en: Let's begin exploring this crucial integration piece.
+  id: totrans-10
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们开始探索这个关键的集成部分。
+- en: Overview of Continuous Integration
+  id: totrans-11
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 持续集成概述
+- en: Continuous integration, otherwise known as CI, has been around for quite some
+    time. Its origins can be traced back to Kent Beck, Martin Fowler, and their work
+    at the Chrysler corporation in the mid-nineties. The basic idea was that organizations
+    could save a significant amount of time and effort by performing small yet frequent
+    code merges into a central mainline within source control instead of a large risky
+    merge just prior to release.
+  id: totrans-12
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 持续集成（CI）已经存在了一段时间。它的起源可以追溯到 Kent Beck、Martin Fowler 及其在九十年代中期的 Chrysler 公司工作。基本的想法是，组织通过频繁地将小规模代码合并到源代码管理的中央主线，而不是在发布前进行一次大规模且风险较大的合并，可以节省大量的时间和精力。
+- en: This way of thinking requires a team to discipline itself fairly well and requires
+    that each team member commit their code frequently. It discourages isolated feature
+    development efforts for long periods of time and encourages a higher level of
+    collaboration and communication. The result of such an implementation is a much
+    higher quality release due to less complex merge conflicts and code integration
+    issues.
+  id: totrans-13
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这种思维方式要求团队具备较好的自律性，并要求每个团队成员频繁提交代码。它不鼓励长时间独立开发特性，并鼓励更高水平的协作和沟通。这样实现的结果是，由于更少的复杂合并冲突和代码集成问题，发布的质量显著提高。
+- en: The idea of continuous integration has been a trending topic for years. This
+    is because of the higher level of communication that is required for it to become
+    a successful practice. Beyond the basic commit stage, CI also includes an automated
+    verification system and notification feedback loop so stakeholders can be notified
+    if the commit and merge were defective. This notification system provides instant
+    feedback on the quality of the commit.
+  id: totrans-14
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 持续集成的概念已经成为多年来的热门话题。这是因为它需要更高水平的沟通，以确保其成为一种成功的实践。除了基本的提交阶段，CI 还包括自动化验证系统和通知反馈回路，以便利益相关者能够在提交和合并出现缺陷时收到通知。该通知系统提供了关于提交质量的即时反馈。
+- en: 'Software development professionals have debated the effectiveness of this solution
+    for quite some time and will continue to debate in the future. Generally, the
+    practice of CI can be described with the following diagram:'
+  id: totrans-15
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 软件开发专业人员对于这种解决方案的有效性已经讨论了相当长的时间，并将在未来继续讨论。通常，CI 的实践可以通过以下图示进行描述：
+- en: '![](img/836870e3-079b-48a8-8b6e-0742ebe0507d.png)'
+  id: totrans-16
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/836870e3-079b-48a8-8b6e-0742ebe0507d.png)'
+- en: 'As we can see from this diagram, continuous integration spans the full development
+    life cycle of a software project. This specifically includes the following stages:'
+  id: totrans-17
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 从这个图示中我们可以看到，持续集成贯穿了软件项目的整个开发生命周期。具体包括以下阶段：
+- en: Code development collaboration
+  id: totrans-18
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 代码开发协作
+- en: Code commit and merging
+  id: totrans-19
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 代码提交与合并
+- en: Automation-based provisioning of build/development environment
+  id: totrans-20
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 基于自动化的构建/开发环境的配置
+- en: Automation-based builds
+  id: totrans-21
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 基于自动化的构建
+- en: Automation-based testing of the completed builds (unit test, code coverage,
+    lint and style tests)
+  id: totrans-22
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 完成构建的基于自动化的测试（单元测试、代码覆盖率、代码规范和样式测试）
+- en: Automation based packaging of the build results (binaries and deliverables)
+  id: totrans-23
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 基于自动化的构建结果打包（可执行文件和交付物）
+- en: Continuous integration concepts and practices
+  id: totrans-24
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 持续集成的概念和实践
+- en: 'As we mentioned earlier, the concept of Continuous Integration is not new.
+    The general practice of implementing a continuous integration oriented development
+    team requires a change in mindset across the team, a level of engineering collaboration
+    applied across the team, and a set of basic required practices. These practices
+    are outlined in the list here:'
+  id: totrans-25
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如我们之前提到的，持续集成的概念并不新鲜。实施持续集成的开发团队的普遍做法需要团队成员在思维方式上发生变化，团队之间应用一定程度的工程协作，并遵循一系列基本的实践。这些实践在此列表中概述：
+- en: Mainline development (no source-control-based branches or highly frequent branch
+    merges).
+  id: totrans-26
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 主干开发（没有基于版本控制的分支或高度频繁的分支合并）。
+- en: 'A CI based automation system that:'
+  id: totrans-27
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 一个基于 CI 的自动化系统：
+- en: Automatically checks out code onto a system
+  id: totrans-28
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 自动将代码检出到系统中
+- en: Verifies the compilability of the source code
+  id: totrans-29
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 验证源代码的可编译性
+- en: Notifies users of any failures
+  id: totrans-30
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 通知用户任何失败
+- en: 'The branching concept of CI over a period of time would look something like
+    what is shown in the following diagram:'
+  id: totrans-31
+  prefs: []
+  type: TYPE_NORMAL
+  zh: CI 的分支概念在一段时间内大致如下图所示：
+- en: '![](img/5af46a46-1827-416e-a4b7-b4f415f12671.png)'
+  id: totrans-32
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/5af46a46-1827-416e-a4b7-b4f415f12671.png)'
+- en: Based on this illustration, we can see that in a Continuous Integration environment,
+    developers would be required to push and pull from a central mainline frequently.
+    Each push is then automatically verified using an automated build and test system.
+    Any failures are reported to the larger team and stakeholders.
+  id: totrans-33
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 从这个示例中我们可以看到，在持续集成环境中，开发人员需要频繁地从中央主干推送和拉取代码。每次推送都会通过自动化构建和测试系统进行验证。任何失败都会报告给更大的团队和利益相关者。
+- en: If a failure is reported by the system, all commits and pushes to the system
+    should stop until the error is fixed. This is because the system is *not* in a
+    known working state and that failed state must be fixed in order to prevent compounded
+    errors.
+  id: totrans-34
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果系统报告出现失败，所有的提交和推送应停止，直到错误被修复。这是因为系统处于*非正常工作状态*，必须修复该失败状态，以防止错误的累积。
+- en: While CI generally encourages mainline development, it is possible to achieve
+    Continuous Integration with branches. The main requirement of CI is to have developers
+    remain in sync with the mainline. If a branching system is adopted, strict discipline
+    will need to be maintained in order to ensure branch development does not go on
+    in isolation for long periods of time.
+  id: totrans-35
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 虽然 CI 一般鼓励主干开发，但通过分支也可以实现持续集成。CI 的主要要求是开发者要与主干保持同步。如果采用分支系统，必须严格遵守纪律，确保分支开发不会长期孤立进行。
+- en: The result of implementing a CI solution is commit phase elements within a build
+    pipeline. Now that we have an understanding of what CI is and how it might work,
+    let's look at Continuous Delivery.
+  id: totrans-36
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 实现 CI 解决方案的结果是构建流水线中的提交阶段元素。现在我们已经理解了 CI 的概念以及它的工作方式，接下来让我们看看持续交付（Continuous
+    Delivery）。
+- en: Handling unfinished work
+  id: totrans-37
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 处理未完成的工作
+- en: When working in a Continuous Integration or Continuous Delivery development
+    environment, there is often a common misconception that developers need source
+    control branching as a way to isolate unfinished work. This branch-based development
+    is the antithesis of a Continuous Integration pattern. As such, there are structures
+    and development practices that can be implemented to allow CI and CD to continue
+    without the need for extraneous branches within source control. Let's spend a
+    few minutes looking at the options available to developers who want to satisfy
+    Continuous Integration without having their work complete.
+  id: totrans-38
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在持续集成（CI）或持续交付（CD）开发环境中，常常存在一种误解，认为开发者需要通过源代码管理分支来隔离未完成的工作。这种基于分支的开发与持续集成模式相对立。因此，存在一些结构和开发实践，可以实施这些方式，让
+    CI 和 CD 在不需要在源代码管理中创建额外分支的情况下继续进行。让我们花几分钟看看，哪些选项可以帮助开发者在未完成工作的情况下仍然满足持续集成要求。
+- en: Branch by abstraction
+  id: totrans-39
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 通过抽象进行分支
+- en: 'Branching by abstraction provides a solid way for developers to continue working
+    on an incomplete implementation and they not need to create a new branch. The
+    idea behind the branching by abstraction architecture is simple:'
+  id: totrans-40
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通过抽象进行分支为开发者提供了一种可靠的方式，可以在不需要创建新分支的情况下继续处理未完成的实现。通过抽象分支架构的思路很简单：
+- en: Modularize the architecture of the software system.
+  id: totrans-41
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 对软件系统的架构进行模块化。
+- en: Replace dated modules by simply creating a new class or folder structure on
+    side by side the old one.
+  id: totrans-42
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 通过创建一个新的类或文件夹结构，将过时的模块替换，只需将其与旧模块并排放置。
+- en: Swap out the calls to the module.
+  id: totrans-43
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 替换模块的调用。
+- en: 'The basic implementation documented earlier can also be summarized with the
+    following diagram:'
+  id: totrans-44
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 之前文档中提到的基本实现也可以通过以下图示进行总结：
+- en: '![](img/b30e833a-b65c-44a8-a972-edf62c4e88f1.png)'
+  id: totrans-45
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/b30e833a-b65c-44a8-a972-edf62c4e88f1.png)'
+- en: As we can see from the architecture, the new component is simply interchanged
+    from the old one once it has been completed and deemed functional. This allows
+    the source control level for the components to be committed and pushed without
+    the need for a new branch.
+  id: totrans-46
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 从架构中可以看出，新的组件在完成并被认为是可用后，直接替换旧组件。这允许组件的源代码管理级别进行提交和推送，而无需新建分支。
+- en: Feature toggles
+  id: totrans-47
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 特性切换
+- en: Feature toggles are another way to provide a comprehensive CI implementation.
+    Feature toggles exist in the form of switches. Switches can be turned off/turned
+    on via a configuration change, UI implementation switch, or other configurable
+    objects.
+  id: totrans-48
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 特性切换是提供全面 CI 实现的另一种方式。特性切换以开关的形式存在。通过配置更改、UI 实现开关或其他可配置对象，可以开启或关闭这些开关。
+- en: 'Software programming languages provide the ability to feature toggle code by
+    nature. The most simple example of a feature toggle would be a simple `if`/`else`
+    condition, as shown here:'
+  id: totrans-49
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 软件编程语言本身提供了特性切换的能力。特性切换最简单的例子就是一个简单的 `if`/`else` 条件，如下所示：
+- en: '[PRE0]'
+  id: totrans-50
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: 'Beyond a programmatic implementation, a feature toggle''s basic flow of operation
+    would be something like what is shown in the following figure:'
+  id: totrans-51
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 除了程序化实现外，特性切换的基本操作流程大概是如下图所示：
+- en: '![](img/1785885f-517f-4821-a51d-3cc09429c196.png)'
+  id: totrans-52
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/1785885f-517f-4821-a51d-3cc09429c196.png)'
+- en: Feature toggles allow us to commit code into the mainline and even push that
+    code into production without the necessary overhead of creating a branch.
+  id: totrans-53
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 特性切换使我们能够将代码提交到主干，甚至在不需要创建分支的情况下将代码推送到生产环境。
+- en: A/B testing patterns
+  id: totrans-54
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: A/B 测试模式
+- en: 'A/B testing is a relatively new addition to the software landscape. For those
+    not familiar with it, the user base is presented with two distinct data implementations.
+    Depending on which implementation the user base likes best, the feature that is
+    the most popular gets rolled out to the larger audience and becomes permanent.
+    Let''s look at a simple diagram of A/B testing:'
+  id: totrans-55
+  prefs: []
+  type: TYPE_NORMAL
+  zh: A/B 测试是软件领域中相对较新的一个概念。对于那些不熟悉它的人来说，用户群体会看到两个不同的数据实现。根据用户群体对哪种实现的喜好，最受欢迎的功能将推广到更广泛的用户，并成为永久功能。我们来看看一个简单的
+    A/B 测试示意图：
+- en: '![](img/bed39e93-73de-4dee-a57f-14aff1c17af4.png)'
+  id: totrans-56
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/bed39e93-73de-4dee-a57f-14aff1c17af4.png)'
+- en: As we can see in the preceding diagram, A/B testing allows us to expose only
+    a certain percentage of users to a feature and thus use that control group as
+    a testing ground for whether the feature is useful. This type of implementation
+    helps reduce the risk of over-engineering a feature only to find out it's not
+    actually valuable.
+  id: totrans-57
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如我们在前面的图示中所看到的，A/B 测试允许我们仅将一定比例的用户暴露于某个功能，从而使用这个控制组来测试该功能是否有用。这种实现方式有助于减少过度设计一个功能的风险，避免最终发现它实际上并没有价值。
+- en: Generally, A/B testing aims to save an organization time and money. These savings
+    provide the business with better agility and higher competency in becoming/remaining
+    competitive. Even though the diagram illustrates 50% of users being shown a **Variation
+    B**, it does not always need to be an exact 50%.
+  id: totrans-58
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一般而言，A/B 测试的目标是为组织节省时间和金钱。这些节省为业务提供了更好的敏捷性和更高的竞争力，帮助其变得更加竞争或保持竞争力。尽管示意图中显示了
+    50% 的用户展示 **B 变体**，但这不一定要完全是 50%。
+- en: For example, if we were doing A/B properly, we might show *only* 1% of users
+    a feature and leave the other 99% on the stable version. Then, if the 1% generally
+    approves of the feature, we might expand that scope.
+  id: totrans-59
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 举个例子，如果我们进行 A/B 测试时，我们可能只向 *1%* 的用户展示一个功能，其他 99% 的用户仍然使用稳定版本。然后，如果 1% 的用户普遍认可该功能，我们可能会扩大范围。
+- en: At this point in time, you may be asking where and how Ansible fits into A/B
+    testing. This would be a great question. Ansible provides us with a way of targeting
+    hosts with our playbook's. As such, 1% of users may simply be delegated to a single
+    host-oriented deployment. However, in most cases, you wouldn't want to just deploy
+    an upgrade to a single host. Instead, you might consider something like blue-green
+    deployments.
+  id: totrans-60
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个时候，你可能会问 Ansible 如何与 A/B 测试结合使用。这是一个非常好的问题。Ansible 为我们提供了一种通过我们的 playbook
+    定向目标主机的方式。因此，1% 的用户可能仅被分配到单个主机的部署。然而，在大多数情况下，你不希望仅将升级部署到单个主机。相反，你可能会考虑使用蓝绿部署之类的方式。
+- en: Overview of Continuous Delivery
+  id: totrans-61
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 持续交付概述
+- en: Continuous Delivery was conceptualized by Jez Humble in 2012 with his revolutionary
+    book on Continuous Delivery. The idea that Humble had when writing the book was
+    to extend the concept of CI to support the delivery and automated testing apparatuses
+    a software team would undertake prior to release. This concept radically changed
+    the way software organizations looked at releasing software solutions to customers
+    and aims to keep the software releasable at any time.
+  id: totrans-62
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 持续交付由 Jez Humble 于 2012 年在他那本具有革命性的《持续交付》书中提出。Humble 在写这本书时的想法是将持续集成（CI）的概念扩展，以支持软件团队在发布之前进行交付和自动化测试的机制。这个概念彻底改变了软件组织在向客户发布软件解决方案时的方式，并旨在保持软件在任何时候都可以发布。
+- en: In the previous years of software development, having and maintaining a build
+    system was considered a best practice. However, once the build was completed and
+    unit tests all passed, there were still numerous manual processes that needed
+    to be maintained in order to ensure the software solution was, in fact, releasable.
+  id: totrans-63
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在以往的软件开发中，拥有并维护一个构建系统被认为是最佳实践。然而，一旦构建完成并且单元测试全部通过，仍然有许多手动流程需要维护，以确保软件解决方案实际上是可以发布的。
+- en: 'Some of the more popular post build tasks include the following:'
+  id: totrans-64
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一些更受欢迎的构建后任务包括以下内容：
+- en: Installation verification
+  id: totrans-65
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 安装验证
+- en: Quality assurance testing
+  id: totrans-66
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 质量保证测试
+- en: Deployment environment provisioning
+  id: totrans-67
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 部署环境配置
+- en: Deployment
+  id: totrans-68
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 部署
+- en: Post-deployment verification
+  id: totrans-69
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 部署后验证
+- en: As software companies suffered more and more failures, those who were managing
+    software projects realized that manually performing these tasks can become error-prone
+    and time-consuming. These tasks also increased in complexity as the software systems
+    they were building grew in size and increased in the user base. The solution Jez
+    proposed was a repeatable and highly automated advance to Continuous Integration.
+    He titled the implementation Continuous Delivery, or CD.
+  id: totrans-70
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 随着软件公司失败的案例越来越多，负责软件项目管理的人们意识到，手动执行这些任务可能会变得容易出错且耗时。这些任务的复杂性也随着他们构建的软件系统的规模增大和用户群体的扩展而增加。Jez
+    提出的解决方案是一个可重复且高度自动化的持续集成进阶。他将这一实现称为持续交付（Continuous Delivery，简称 CD）。
+- en: Continuous Delivery defined
+  id: totrans-71
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 持续交付定义
+- en: CD, as we mentioned earlier, aimed to extend the implementation of CI. This
+    way, a software system remains in a releasable state. This is accomplished by
+    combining mainline development practices, Continuous Integration automation a
+    set of automated provisioning and deployment solutions (to pre-production environments),
+    and automated testing.
+  id: totrans-72
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如前所述，持续交付旨在扩展持续集成的实现。通过这种方式，软件系统始终保持在可发布的状态。这是通过结合主干开发实践、持续集成自动化、一套自动化的预生产环境配置和部署解决方案以及自动化测试来实现的。
+- en: 'In a Continuous Delivery oriented organization, deployment pipelines are created
+    to help implement the previously listed solutions. An example of a high-level
+    deployment pipeline is shown next:'
+  id: totrans-73
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在一个面向持续交付的组织中，部署流水线的创建有助于实施前述的解决方案。接下来展示的是一个高级别的部署流水线示例：
+- en: '![](img/b35ae327-5dea-4d02-b589-e066273b8ddb.png)'
+  id: totrans-74
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/b35ae327-5dea-4d02-b589-e066273b8ddb.png)'
+- en: 'The deployment pipeline shown here is pretty simple in nature. It simply shows
+    a commit flowing from a developer''s hands into production and release. In the
+    following diagram, we can see how a deployment pipeline looks from a bit lower
+    of a view:'
+  id: totrans-75
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这里展示的部署流水线本质上非常简单。它仅展示了一个开发者的提交从开发到生产和发布的过程。在下图中，我们可以看到从稍微低一点的视角来看，部署流水线是怎样的：
+- en: '![](img/965ee5fd-5959-46ab-a1f6-29f6bf0caef2.png)'
+  id: totrans-76
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/965ee5fd-5959-46ab-a1f6-29f6bf0caef2.png)'
+- en: 'From the shown diagram, we can see that there are a few more visible components
+    within the build pipeline. These components include the following:'
+  id: totrans-77
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 从展示的图表中，我们可以看到在构建流水线中有更多可见的组件。这些组件包括：
+- en: An artifact repository
+  id: totrans-78
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 一个工件仓库
+- en: Version control
+  id: totrans-79
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 版本控制
+- en: Push button deployments
+  id: totrans-80
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 一键部署
+- en: Configuration management
+  id: totrans-81
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 配置管理
+- en: Smoke tests
+  id: totrans-82
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 冒烟测试
+- en: Functional tests
+  id: totrans-83
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 功能测试
+- en: Capacity tests
+  id: totrans-84
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 容量测试
+- en: A production stage
+  id: totrans-85
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 生产阶段
+- en: 'These additional components of Continuous Delivery are important. Let''s go
+    over each and see what they do or aim to accomplish:'
+  id: totrans-86
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 持续交付的这些额外组件非常重要。让我们逐一回顾每个组件，看看它们的作用或目标：
+- en: '**Version control**: Version control aims to allow a central location for developers
+    to communicate their code changes with the larger group. Some examples of modern
+    version control systems include Git, Mercurial, SVN, and Perforce. The version
+    control system allows not only easy communication but also the reverting of faulty
+    code.'
+  id: totrans-87
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**版本控制**：版本控制旨在为开发者提供一个中心位置，以便与更大的团队沟通代码变更。一些现代版本控制系统的例子包括 Git、Mercurial、SVN
+    和 Perforce。版本控制系统不仅方便沟通，还允许恢复错误的代码。'
+- en: '**Artifact repository**: Adding a structured **Digital Media Library** (**DML**)
+    to your organization is an important step in relation to implementing Continuous
+    Delivery. This represents a definitive location where the output of the build
+    system can be versioned and kept as a release approaches. It also allows multiple
+    versions of the same.'
+  id: totrans-88
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**工件仓库**：为您的组织添加一个结构化的**数字媒体库**（**DML**）是实现持续交付的重要一步。这代表了一个明确的位置，在这个位置，构建系统的输出可以被版本控制并在发布临近时保留。它还允许同一内容的多个版本。'
+- en: '**Push button deployments**: Push button deployments are solutions that can
+    be automatically deployed via a single button push.'
+  id: totrans-89
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**一键部署**：一键部署是指可以通过按一个按钮自动部署的解决方案。'
+- en: 'This is how the solution can be deployed:'
+  id: totrans-90
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 解决方案可以通过以下方式部署：
+- en: The automation pulls the binary from the artifact repository.
+  id: totrans-91
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 自动化从工件仓库拉取二进制文件。
+- en: The automation pushes the artifact using a configuration management solution.
+  id: totrans-92
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 自动化通过配置管理解决方案推送工件。
+- en: The artifact is unzipped and the automation inside is executed to perform the
+    deployment.
+  id: totrans-93
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 工件被解压，并执行其中的自动化过程以完成部署。
+- en: 'Let''s look at the other component in detail:'
+  id: totrans-94
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们详细看一下其他组件：
+- en: '**Configuration management**: In this step, a configuration management solution
+    (such as Ansible) is used to deploy/configure the software installation onto the
+    target environment machine.'
+  id: totrans-95
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**配置管理**：在这一步，使用配置管理解决方案（例如Ansible）将软件安装部署/配置到目标环境机器上。'
+- en: '**Smoke tests**: Smoke tests are high-level functional tests that determine
+    whether the software is worth testing further.'
+  id: totrans-96
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**冒烟测试**：冒烟测试是高层次的功能测试，用于判断软件是否值得进一步测试。'
+- en: '**Functional tests**: Functional tests are verification tests (automated) that
+    verify that the software meets business functional requirements. Each test suite
+    within a functional test solution should be parallelized where possible in order
+    to ensure that there is no bottleneck in performance when executing these tests.'
+  id: totrans-97
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**功能测试**：功能测试是验证测试（自动化测试），用于验证软件是否符合业务功能需求。功能测试解决方案中的每个测试套件应尽可能并行执行，以确保在执行这些测试时不会出现性能瓶颈。'
+- en: '**Capacity tests**/**stress tests**: This type of test helps validate that
+    the software can operate and perform effectively under normal traffic loads from
+    the potential user base. Often, this type of test is overlooked, which results
+    in unscalable software solutions that crash under heavy load.'
+  id: totrans-98
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**容量测试**/**压力测试**：此类测试帮助验证软件在正常用户流量负载下的操作和性能表现。通常，这类测试会被忽视，导致软件在高负载下崩溃，从而无法扩展。'
+- en: Handling complex and long running builds and deployments
+  id: totrans-99
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 处理复杂且长时间运行的构建和部署
+- en: 'Sometimes, a build or deployment will be time-consuming (multiple different
+    components or complicated environment setup steps). When this happens, Continuous
+    Delivery-oriented organizations can handle this as well. This is best handled
+    by modularizing the architecture of the software project into uniquely deployable
+    entities. Once the software has been modularized, the deployment and automated
+    testing apparatuses can be broken into multiple component-oriented delivery pipelines.
+    An example of a multi-component delivery pipeline is shown next:'
+  id: totrans-100
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有时，构建或部署过程可能非常耗时（涉及多个不同组件或复杂的环境设置步骤）。遇到这种情况时，面向持续交付的组织同样可以应对。这最好通过将软件项目的架构模块化，拆分成独立可部署的实体来处理。一旦软件完成模块化，部署和自动化测试工具可以被拆解成多个以组件为导向的交付流水线。下图展示了一个多组件交付流水线的示例：
+- en: '![](img/d21a897d-478e-48c4-956a-54a6f1db4f58.png)'
+  id: totrans-101
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/d21a897d-478e-48c4-956a-54a6f1db4f58.png)'
+- en: As we can see from the diagram, multiple pipelines can be created in an effort
+    to streamline the deployment process. Each pipeline would have its own build,
+    package, unit test, and related apparatuses. From these multiple pipelines, we
+    can deploy individual component versions into environments swiftly and reliably.
+  id: totrans-102
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 从图中可以看出，可以创建多个流水线，以简化部署过程。每个流水线都有自己的构建、打包、单元测试和相关工具。通过这些多个流水线，我们可以迅速且可靠地将各个组件版本部署到不同的环境中。
+- en: Now that we have a good grasp on how a basic pipeline would be architected,
+    let's take a look at how the same type of pipeline would look in terms of notifications
+    and feedback.
+  id: totrans-103
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经很好地掌握了基本流水线的架构，接下来让我们看看在通知和反馈方面，同类型的流水线会是什么样子。
+- en: CI->CD feedback loop
+  id: totrans-104
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: CI->CD反馈循环
+- en: 'The CI feedback loop is one of the major selling points of CI->CD. The basic
+    idea is that the user base and stakeholders can get CD feedback loop almost instantaneous
+    feedback on the quality of committed code. This would allow the developers to
+    address automation-identified issues quickly and will help improve the quality
+    of the overall system. The basic feedback loop would look something like what
+    is shown in the following:'
+  id: totrans-105
+  prefs: []
+  type: TYPE_NORMAL
+  zh: CI反馈循环是CI->CD的一个主要卖点。基本的理念是，用户和利益相关者可以几乎即时地获取CD反馈循环，从而了解提交代码的质量。这使得开发人员能够迅速解决自动化识别的问题，并有助于提高整个系统的质量。基本的反馈循环大致如下所示：
+- en: '![](img/8c3cb88b-b73b-4248-a34e-53b340944aa3.png)'
+  id: totrans-106
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/8c3cb88b-b73b-4248-a34e-53b340944aa3.png)'
+- en: As you can see, the notification loop provides the stakeholders with a notification
+    (e-mail, IM, Slack, Hipchat, and so on) at every stage in the pipeline.
+  id: totrans-107
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如您所见，通知循环会在流水线的每个阶段向利益相关者发送通知（电子邮件、即时消息、Slack、Hipchat等）。
+- en: Blue-green deployments
+  id: totrans-108
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 蓝绿部署
+- en: Blue-green deployments represent a wise innovation on the part of system operators
+    and engineering groups. The basic concept of a blue-green deployment is, in many
+    ways, similar to the branching by abstraction concept we discussed earlier.
+  id: totrans-109
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 蓝绿部署代表了系统运维和工程团队的明智创新。蓝绿部署的基本概念，在许多方面类似于我们之前讨论的“抽象分支”概念。
+- en: 'Blue-green deployments offer the idea of deploying a side-by-side instance
+    of a component or application, all the while leaving the existing instance running
+    and serving live traffic. When the deployment is deemed a success, traffic is
+    flipped from the old version over to the new one. The following is a simple diagram
+    illustrating blue-green deployments:'
+  id: totrans-110
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 蓝绿部署提供了一个理念，即部署一个并行实例的组件或应用程序，同时保持现有实例运行并服务于实时流量。当部署被认为成功时，流量将从旧版本切换到新版本。下面是一个简单的图示，说明了蓝绿部署：
+- en: '![](img/0d5da00d-58a8-4f89-8682-f5fde552360e.png)'
+  id: totrans-111
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/0d5da00d-58a8-4f89-8682-f5fde552360e.png)'
+- en: As we can see, new connections go to the green instance and old connections
+    remain persistent with the blue instance.
+  id: totrans-112
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如我们所见，新连接会转向绿色实例，而旧连接则保持与蓝色实例的持续连接。
+- en: CI->CD anti-patterns
+  id: totrans-113
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: CI->CD 反模式
+- en: 'With all of the talk of CD anti-patterns branching by abstraction and feature
+    toggles it is probably a good idea at CD anti-patterns this point to look at some
+    anti-patterns that are commonly employed by organizations that represent the antithesis
+    of CI->CD best practices:'
+  id: totrans-114
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 既然讨论了CD反模式、抽象分支和功能开关，现在可能是时候查看一些组织常用的反模式，它们代表了CI->CD最佳实践的对立面：
+- en: '**Feature branches**: This is because one of the core tenants of Continuous
+    Integration is the merging of code with the main line. This is the area where
+    defects become most prevalent.'
+  id: totrans-115
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**功能分支**：这是因为持续集成的核心理念之一是将代码与主干合并。这也是缺陷最容易出现的地方。'
+- en: '**Leaving the build in a failed state**: Leaving the build in a known failed
+    state is a common anti-pattern for Continuous Integration efforts. This is an
+    anti-pattern since it effectively leaves a landmine for other developers.'
+  id: totrans-116
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**让构建处于失败状态**：将构建保持在已知的失败状态是持续集成中常见的反模式。这是一个反模式，因为它实际上给其他开发者留下了一个“地雷”。'
+- en: 'K**eeping code locally on a developer workstation for long periods of time**:
+    Coding software changes on a local system and not merging it with the mainline
+    is, in essence, hiding changes. The risk from this pattern comes with the huge
+    merge that needs to be done. This large-scale merge usually takes place right
+    before a release, which puts the release quality at risk.'
+  id: totrans-117
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**长时间将代码保存在开发者工作站本地**：在本地系统上编码软件更改而不与主干合并，本质上是隐藏更改。此模式带来的风险在于需要进行大规模合并。这样的合并通常发生在发布前，这会使发布质量面临风险。'
+- en: Ansible's Role in CI->CD
+  id: totrans-118
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Ansible 在 CI->CD 中的角色
+- en: Ansible fits in a number of areas of the CI->CD implementation. It can be used
+    for build environment provisioning, local workstation environment provisioning,
+    configuration management on deployment servers, managing physical deployments,
+    and much more.
+  id: totrans-119
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 适用于 CI->CD 实现中的多个领域。它可用于构建环境配置、本地工作站环境配置、部署服务器上的配置管理、管理物理部署等。
+- en: In this section of Implementing DevOps with Ansible, we will take a look at
+    where Ansible fits into the CI->CD pipeline implementation and some best practices
+    associated with each implementation location. Before we begin looking into focus
+    areas, let's identify the common steps in a CI->CD pipeline.
+  id: totrans-120
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在《使用 Ansible 实现 DevOps》这一部分中，我们将看看 Ansible 在 CI->CD 流水线实现中的角色，以及与每个实现位置相关的一些最佳实践。在我们开始关注具体领域之前，先来识别一下
+    CI->CD 流水线中的常见步骤。
+- en: 'Initially, a delivery pipeline will be simple; it may contain a set of very
+    basic steps. These steps might include the followng:'
+  id: totrans-121
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最初，一个交付流水线会很简单；它可能只包含一组非常基础的步骤。这些步骤可能包括以下内容：
+- en: Check out the source control when a change is committed.
+  id: totrans-122
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 当更改被提交时，检查源代码控制。
+- en: Perform a build or syntax check.
+  id: totrans-123
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 执行构建或语法检查。
+- en: Execute some unit tests.
+  id: totrans-124
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 执行一些单元测试。
+- en: Report on the quality of the commit.
+  id: totrans-125
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 报告提交的质量。
+- en: 'These steps are illustrated in the following diagram:'
+  id: totrans-126
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这些步骤在下图中有所展示：
+- en: '![](img/404eeb7a-2316-4612-a2f1-8106ce2d2760.png)'
+  id: totrans-127
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/404eeb7a-2316-4612-a2f1-8106ce2d2760.png)'
+- en: 'Based on the initial CI process described, we might consider using Ansible
+    in the following CI steps:'
+  id: totrans-128
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 根据初步描述的 CI 过程，我们可以考虑在以下 CI 步骤中使用 Ansible：
+- en: To help developers provision their development environment using an Ansible
+    playbook
+  id: totrans-129
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 帮助开发者使用 Ansible playbook 配置他们的开发环境
+- en: To provision the build machine automatically and ensure the build machine's
+    configuration is maintained by Ansible playbooks
+  id: totrans-130
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 通过 Ansible playbooks 自动配置构建机并确保构建机的配置得到维护
+- en: To act as the automation binding to execute the build and unit tests
+  id: totrans-131
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 作为执行构建和单元测试的自动化绑定
+- en: As we can see from these set of steps, we can leverage Ansible in more ways
+    than simply to perform configuration management tasks and deployments.
+  id: totrans-132
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如我们从这些步骤中看到的那样，我们可以利用 Ansible 的方式远不止于执行配置管理任务和部署。
+- en: 'Now that we have Continuous Integration defined, let''s take a look at how
+    Ansible can be used within the extension of CI and CD. Take a look at the following
+    Continuous Delivery diagram:'
+  id: totrans-133
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经定义了持续集成，让我们看看 Ansible 如何在 CI 和 CD 的扩展中使用。看看以下的持续交付图示：
+- en: '![](img/bd16b2d1-d389-4236-b18d-8a5d1f3d205c.png)'
+  id: totrans-134
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/bd16b2d1-d389-4236-b18d-8a5d1f3d205c.png)'
+- en: 'Based on this diagram and flowchart, we can see that there are a number of
+    places within CI->CD where Ansible would prove useful. Let''s take a look at these
+    places:'
+  id: totrans-135
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 基于这个图示和流程图，我们可以看到 CI->CD 中有许多地方可以利用 Ansible。让我们来看看这些地方：
+- en: In provisioning the test environments (smoke, functional, and unit).
+  id: totrans-136
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在提供测试环境（冒烟测试、功能测试和单元测试）时。
+- en: In provisioning the deployment environments (DEV, QA, STG, PROD).
+  id: totrans-137
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在提供部署环境（DEV、QA、STG、PROD）时。
+- en: In performing the deployment.
+  id: totrans-138
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在执行部署时。
+- en: In launching the application after it has been deployed.
+  id: totrans-139
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在应用程序部署后启动应用。
+- en: In rolling back the environment if there are failures.
+  id: totrans-140
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在出现故障时回滚环境。
+- en: In performing a feathered/incremental rollout of the application into production.
+  id: totrans-141
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在执行应用程序的分阶段/增量发布到生产环境时。
+- en: Ansible best practices in CI->CD
+  id: totrans-142
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Ansible 在 CI->CD 中的最佳实践
+- en: Ansible can be leveraged for a number of tasks within a Continuous Integration
+    and Continuous Delivery atmosphere. When adopting Ansible, it makes sense to start
+    with a small footprint and expand it to be more and more responsible for the automation
+    being executed.
+  id: totrans-143
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 可在持续集成和持续交付的环境中用于多种任务。在采用 Ansible 时，建议从小规模开始，并逐步扩展它，以承担越来越多的自动化执行任务。
+- en: 'In this section, let''s take a few minutes to explore some best practices within
+    CI->CD in conjunction with Ansible:'
+  id: totrans-144
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本节中，我们将花几分钟时间探索在 CI->CD 中与 Ansible 配合使用的一些最佳实践：
+- en: Always store your Ansible playbooks in source control.
+  id: totrans-145
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 始终将你的 Ansible playbooks 存储在源代码管理中。
+- en: Ship your ansible playbooks with your artifacts (version everything!).
+  id: totrans-146
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 将你的 Ansible playbooks 与构件一起交付（版本化所有内容！）。
+- en: Maintain separate inventory files for each environment (DEV, QA, and so on).
+  id: totrans-147
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 为每个环境（DEV、QA 等）维护独立的清单文件。
+- en: Try to use the same playbooks for deploying to DEV as you would in production.
+  id: totrans-148
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 尽量使用相同的 playbooks 部署到 DEV 和生产环境中。
+- en: Leverage Ansible's configuration management implementation to help keep your
+    infrastructure in sync.
+  id: totrans-149
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 利用 Ansible 的配置管理实现来帮助保持你的基础设施同步。
+- en: Keep your playbooks as simple as possible.
+  id: totrans-150
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 尽量保持你的 playbook 简单。
+- en: Use roles to help define reusable automation.
+  id: totrans-151
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用角色帮助定义可重用的自动化。
+- en: Use Ansible for your build and deployment automation glue where possible.
+  id: totrans-152
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在可能的情况下，使用 Ansible 进行构建和部署自动化操作。
+- en: Keep your environments in sync (Apples | Apples | Apples, Dev | QA | PROD).
+  id: totrans-153
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 保持你的环境同步（苹果 | 苹果 | 苹果，开发 | QA | 生产）。
+- en: Integrating Ansible with Jenkins
+  id: totrans-154
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 集成 Ansible 与 Jenkins
+- en: In this section, we will talk about integrating Ansible with Jenkins. Jenkins
+    is a modern CI and automation orchestration solution created and distributed by
+    the open source community. Jenkins originated as Hudson and was eventually transitioned
+    with a new brand name and developed into a comprehensive free and open source
+    build and delivery pipeline orchestration solution. You can download a copy of
+    Jenkins at [https://jenkins.io/](https://jenkins.io/)[.](https://www.ansible.com/continuous-delivery)
+  id: totrans-155
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本节中，我们将讨论如何将 Ansible 与 Jenkins 集成。Jenkins 是由开源社区创建和发布的现代 CI 和自动化编排解决方案。Jenkins
+    起初是 Hudson，后来以新品牌名转型并发展成一个全面的免费开源构建和交付管道编排解决方案。你可以在 [https://jenkins.io/](https://jenkins.io/)
+    下载 Jenkins。
+- en: Integrating Ansible with Jenkins is generally a straightforward task. To accomplish
+    this, there are a few well-known integration points where Ansible can be leveraged.
+    They include the Jenkins Ansible plugin, installing Ansible on the Jenkins CI
+    server directly and calling it through an execute shell operation and using the
+    Ansible module to control Jenkins. Let's spend a few minutes discussing each of
+    these options and see how they work.
+  id: totrans-156
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 将 Ansible 与 Jenkins 集成通常是一个直接的任务。为了实现这一目标，有几个众所周知的集成点可以利用 Ansible。这些包括 Jenkins
+    Ansible 插件、直接在 Jenkins CI 服务器上安装 Ansible 并通过执行 shell 操作调用它，以及使用 Ansible 模块来控制
+    Jenkins。让我们花几分钟讨论每个选项，看看它们是如何工作的。
+- en: The Jenkins Ansible plugin
+  id: totrans-157
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Jenkins Ansible 插件
+- en: The Jenkins Ansible plugin provides the ability for Jenkins to directly communicate
+    with Ansible and run a playbook. This option is probably the most straightforward
+    integration point between Jenkins and Ansible. Using this solution, Ansible doesn't
+    necessarily need to run playbooks on a remote server (however, it definitely can).
+    In this solution, we can run playbooks directly from the Jenkins server and either
+    have those playbooks run locally or run them against targeted infrastructure.
+  id: totrans-158
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Jenkins Ansible 插件提供了 Jenkins 与 Ansible 之间直接通信并执行 playbook 的能力。这个选项可能是 Jenkins
+    与 Ansible 之间最直接的集成方式。使用此解决方案时，Ansible 并不一定需要在远程服务器上运行 playbooks（但它确实可以）。在这个方案中，我们可以直接从
+    Jenkins 服务器上运行 playbooks，既可以在本地运行，也可以将其应用于目标基础设施。
+- en: In order to facilitate the execution of playbooks through Jenkins, we will need
+    to first install the Ansible plugin via the Jenkins plugin manager. Let's take
+    a look at how to do this.
+  id: totrans-159
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了方便通过 Jenkins 执行 playbooks，我们首先需要通过 Jenkins 插件管理器安装 Ansible 插件。接下来我们来看看如何操作。
+- en: This tutorial assumes you have a Jenkins instance already installed and running.
+  id: totrans-160
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本教程假设你已经安装并运行了一个 Jenkins 实例。
+- en: 'The first thing we will want to do is fire up Jenkins. Upon the initial load
+    of Jenkins, we will see something like the following:'
+  id: totrans-161
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们要做的第一件事是启动 Jenkins。初次加载 Jenkins 时，我们将看到类似如下的界面：
+- en: '![](img/e42cccfa-03ad-4904-9489-d82b47fb8f80.png)'
+  id: totrans-162
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/e42cccfa-03ad-4904-9489-d82b47fb8f80.png)'
+- en: 'To install the Ansible plugin. simply navigate to Plugin Manager (as a Jenkins
+    administrator) and select Ansible plugin from the Available plugins tab and install
+    the plugin. This is shown in the following screenshots:'
+  id: totrans-163
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要安装 Ansible 插件，只需导航到插件管理器（作为 Jenkins 管理员）并从“可用插件”选项卡中选择 Ansible 插件，然后安装该插件。以下截图展示了这个过程：
+- en: '![](img/110ed814-1452-4a1d-a822-c2d034ffa808.png)'
+  id: totrans-164
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/110ed814-1452-4a1d-a822-c2d034ffa808.png)'
+- en: 'Search for the Ansible plugin and select it. Now install the plugin by clicking
+    on Install without restart:'
+  id: totrans-165
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 搜索 Ansible 插件并选择它。现在，通过点击“安装而不重启”来安装插件：
+- en: '![](img/a64391d6-fab8-427f-ad7f-f8fabe6e5e55.png)'
+  id: totrans-166
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/a64391d6-fab8-427f-ad7f-f8fabe6e5e55.png)'
+- en: 'Next, we will want to go to the job configuration page for the job we wish
+    to leverage Ansible through and enable the job to use Ansible. The configuration
+    would look something like what is shown in the following screenshot:'
+  id: totrans-167
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来，我们需要进入希望通过 Ansible 利用的作业的配置页面，并启用该作业使用 Ansible。配置可能类似于以下截图所示：
+- en: '![](img/815c6266-2d26-4738-bc2f-e181af812dd5.png)'
+  id: totrans-168
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/815c6266-2d26-4738-bc2f-e181af812dd5.png)'
+- en: From this screenshot, we can see that there are a number of options available
+    for use with the Ansible plugin in Jenkins. The complete documentation is available
+    at [https://wiki.jenkins-ci.org/display/JENKINS/Ansible+Plugin](https://wiki.jenkins-ci.org/display/JENKINS/Ansible+Plugin).
+  id: totrans-169
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 从这张截图中，我们可以看到 Ansible 插件在 Jenkins 中可用的一些选项。完整文档可以在 [https://wiki.jenkins-ci.org/display/JENKINS/Ansible+Plugin](https://wiki.jenkins-ci.org/display/JENKINS/Ansible+Plugin)
+    查阅。
+- en: 'Once the plugin and job are configured, run the Jenkins job to see it connect
+    to Ansible and leverage Ansible for the automation engine of the job. The output
+    from the execution of a Jenkins job using the Ansible plugin would be something
+    like what is shown in the following screenshot:'
+  id: totrans-170
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 插件和作业配置完成后，运行 Jenkins 作业，查看它如何连接到 Ansible，并利用 Ansible 作为作业的自动化引擎。使用 Ansible
+    插件执行 Jenkins 作业时，输出结果可能类似于以下截图所示：
+- en: '![](img/428f61dc-4658-48e5-b9e0-e6028bdd8c30.png)'
+  id: totrans-171
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/428f61dc-4658-48e5-b9e0-e6028bdd8c30.png)'
+- en: Now that we have a good idea of how to leverage Jenkins to execute Ansible playbook,
+    let's take a look at how to have Ansible control Jenkins via the API.
+  id: totrans-172
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经大致了解了如何利用 Jenkins 执行 Ansible playbook，接下来让我们看看如何通过 API 让 Ansible 控制 Jenkins。
+- en: Ansible playbooks in this scenario are best stored in source control and checked
+    out during the SCM phase of the Jenkins job.
+  id: totrans-173
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这种场景中，Ansible 的 playbooks 最好存储在源代码管理（SCM）中，并在 Jenkins 作业的 SCM 阶段进行检出。
+- en: The Jenkins Ansible API modules
+  id: totrans-174
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Jenkins Ansible API 模块
+- en: The Jenkins Ansible module provides a direct API-level integration between Jenkins
+    and Ansible. Through this solution, Ansible can manage and control Jenkins through
+    its REST API. The Jenkins REST API is fairly robust and provides the ability to
+    create jobs, execute jobs, manage users, and much more. In this section, we will
+    take a look at some examples of the capabilities that the Ansible module provide.
+  id: totrans-175
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Jenkins Ansible 模块提供了 Jenkins 与 Ansible 之间的直接 API 集成。通过这个解决方案，Ansible 可以通过其
+    REST API 管理和控制 Jenkins。Jenkins REST API 功能强大，能够创建作业、执行作业、管理用户等。在本节中，我们将看看 Ansible
+    模块提供的一些功能示例。
+- en: 'Ansible''s integration with Jenkins is broken down into three uniquely classified
+    modules. These modules (as mentioned previously) communicate with Jenkins on an
+    API level and provide a level of control over the Jenkins solution. The three
+    specific modules that we will be looking at are as follows:'
+  id: totrans-176
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 与 Jenkins 的集成分为三个独立分类的模块。这些模块（如前所述）通过 API 与 Jenkins 通信，并提供对 Jenkins
+    解决方案的控制。这三个具体模块如下：
+- en: '`jenkins_job`: Manages Jenkins jobs'
+  id: totrans-177
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`jenkins_job`：管理 Jenkins 作业'
+- en: '`jenkins_plugin`: Adds or removes the Jenkins plugin'
+  id: totrans-178
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`jenkins_plugin`：添加或移除 Jenkins 插件'
+- en: '`jenkins_script`: Executes a groovy script in the Jenkins instance'
+  id: totrans-179
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`jenkins_script`：在 Jenkins 实例中执行 Groovy 脚本'
+- en: Let's start with the `jenkins_job` Ansible module.
+  id: totrans-180
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们从 `jenkins_job` Ansible 模块开始。
+- en: The jenkins_job Ansible Module
+  id: totrans-181
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: jenkins_job Ansible 模块
+- en: 'The `jenkins_job` Ansible module provides a level of inter-connectivity between
+    Jenkins jobs and Ansible. Through this module, Ansible can create Jenkins jobs,
+    execute them, manage them, delete them, and more. In order to use this module,
+    we will need the following package libraries installed on the Ansible control
+    server:'
+  id: totrans-182
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`jenkins_job` Ansible 模块提供了 Jenkins 作业与 Ansible 之间的互联互通。通过此模块，Ansible 可以创建
+    Jenkins 作业、执行它们、管理它们、删除它们等等。为了使用此模块，我们需要在 Ansible 控制服务器上安装以下软件包库：'
+- en: '`python-jenkins` >= 0.4.12'
+  id: totrans-183
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`python-jenkins` >= 0.4.12'
+- en: '`lxml` >= 3.3.3'
+  id: totrans-184
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`lxml` >= 3.3.3'
+- en: These libraries can be installed using `pip` or a package management system
+    such as `apt-get` or `yum`.
+  id: totrans-185
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这些库可以通过 `pip` 或类似 `apt-get` 或 `yum` 的包管理系统安装。
+- en: 'After making sure the modules are installed, we can begin to make use of the
+    Ansible module''s features. Let''s take a look at some example playbook plays
+    to create and control Jenkins jobs via the REST API. In addition to this, we will
+    also take a look at the documentation for the supported features of the module:'
+  id: totrans-186
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在确保模块已安装后，我们可以开始使用 Ansible 模块的功能。让我们通过一些示例 playbook 来创建和控制 Jenkins 作业，使用 REST
+    API 进行操作。此外，我们还将查看该模块支持的功能文档：
+- en: '[PRE1]'
+  id: totrans-187
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: '[PRE2]'
+  id: totrans-188
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: '[PRE3]'
+  id: totrans-189
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: 'To create the `example.xml` template, you will need to use the Jenkins UI wizard
+    to create a new template. This can be done via the job templates plugin. More
+    information on this plugin can be found at the following URL: [https://www.cloudbees.com/products/cloudbees-jenkins-platform/enterprise-edition/features/templates-plugin](https://www.cloudbees.com/products/cloudbees-jenkins-platform/enterprise-edition/features/templates-plugin)'
+  id: totrans-190
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要创建 `example.xml` 模板，你需要使用 Jenkins UI 向导创建一个新模板。可以通过作业模板插件完成此操作。有关此插件的更多信息，请访问以下网址：[https://www.cloudbees.com/products/cloudbees-jenkins-platform/enterprise-edition/features/templates-plugin](https://www.cloudbees.com/products/cloudbees-jenkins-platform/enterprise-edition/features/templates-plugin)
+- en: Integrating Ansible with Vagrant
+  id: totrans-191
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 将 Ansible 与 Vagrant 集成
+- en: In this section, we will talk about integrating Ansible with Vagrant. Vagrant
+    is a freely available infrastructure virtualization solution that is currently
+    in use by countless organizations. It is provided free of charge via the kind
+    folks at HashiCorp. A complete documentation for Vagrant can be found at [https://www.vagrantup.com/intro/index.html](https://www.vagrantup.com/intro/index.html).
+  id: totrans-192
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本节中，我们将讨论如何将 Ansible 与 Vagrant 集成。Vagrant 是一种自由提供的基础设施虚拟化解决方案，当前被众多组织使用。它由
+    HashiCorp 提供免费支持。有关 Vagrant 的完整文档，请访问：[https://www.vagrantup.com/intro/index.html](https://www.vagrantup.com/intro/index.html)
+- en: To begin, we will assume you already have Vagrant up and running. If not, refer
+    to the instructions located within HashiCorp's Vagrant Up website at [https://www.vagrantup.com/docs/cli/up.html](https://www.vagrantup.com/docs/cli/up.html)
+    to get the initial setup completed. Once the initial setup of Vagrant has been
+    completed, we can take a look at how to leverage Ansible within Vagrant.
+  id: totrans-193
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 首先，我们假设你已经启动并运行了 Vagrant。如果没有，请参考 HashiCorp 的 Vagrant Up 网站上的说明：[https://www.vagrantup.com/docs/cli/up.html](https://www.vagrantup.com/docs/cli/up.html)
+    来完成初始设置。一旦完成 Vagrant 的初始设置，我们就可以开始了解如何在 Vagrant 中利用 Ansible。
+- en: Leveraging Ansible for Vagrant provisioning
+  id: totrans-194
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 利用 Ansible 进行 Vagrant 配置
+- en: 'Ansible''s playbook implementation can be used to provision Vagrant machines
+    through the Ansible provider. Providers in Vagrant allow the Vagrant user to specify
+    a configuration management solution that will be leveraged to automate the standup
+    of a given virtual machine. This information is contained in a Ruby Vagrantfile.
+    An example of a simple Vagrantfile is provided here:'
+  id: totrans-195
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 的 playbook 实现可以通过 Ansible 提供者来配置 Vagrant 虚拟机。Vagrant 中的提供者允许 Vagrant
+    用户指定一个配置管理解决方案，该解决方案将被用来自动化指定虚拟机的搭建。这些信息包含在一个 Ruby Vagrantfile 中。这里提供了一个简单 Vagrantfile
+    的例子：
+- en: '[PRE4]'
+  id: totrans-196
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: From this example, we can see that we use Ansible to configure our Vagrant environment.
+    This will cause Vagrant to execute the Ansible playbook. Once the Vagrantfile
+    has been updated, we can run it using the `vagrant up` command.
+  id: totrans-197
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 从这个例子中，我们可以看到我们使用 Ansible 来配置我们的 Vagrant 环境。这将导致 Vagrant 执行 Ansible playbook。一旦
+    Vagrantfile 被更新，我们可以使用`vagrant up`命令来运行它。
+- en: Summary
+  id: totrans-198
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 摘要
+- en: In this chapter, we talked about Continuous Integration, Continuous Delivery,
+    and Ansible. We also talked about the organizational requirements of CI->CD and
+    how CI->CD makes software delivery more efficient. You learned about some of the
+    patterns that make a CI->CD implementation effective.
+  id: totrans-199
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们讨论了持续集成、持续交付和 Ansible。我们还讨论了 CI->CD 的组织需求，以及 CI->CD 如何使软件交付更加高效。你了解了一些使
+    CI->CD 实现有效的模式。
+- en: After talking about CI->CD in depth and discussing the said patterns, we talked
+    about Ansible's role within a CI->CD oriented organization. We discovered the
+    connecting points that tools such as Ansible can be leveraged to make the process
+    more efficient. By standardizing and making a software development organization
+    more efficient through the use of modern tools such as Ansible, we can save the
+    organization time and money.
+  id: totrans-200
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在深入讨论 CI->CD 并讨论相关模式后，我们谈到了 Ansible 在 CI->CD 组织中的作用。我们发现了 Ansible 等工具如何帮助连接不同环节，提升效率。通过标准化和利用像
+    Ansible 这样的现代工具，使软件开发组织更加高效，我们能够节省组织的时间和金钱。
+- en: In the next chapter, we will explore how to use Ansible with Docker. The chapter
+    will teach you how to provision docker containers using Ansible, how to integrate
+    Ansible with dockers service, how to manage docker image facts, and how to gain
+    full control over docker images.
+  id: totrans-201
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一章中，我们将探索如何将 Ansible 与 Docker 配合使用。本章将教你如何使用 Ansible 来配置 Docker 容器，如何将 Ansible
+    与 Docker 服务集成，如何管理 Docker 镜像信息，以及如何完全控制 Docker 镜像。

@@ -1,0 +1,1623 @@
+- en: '11'
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '11'
+- en: Managing Kubernetes Using Ansible
+  id: totrans-1
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用Ansible管理Kubernetes
+- en: Due to the containerization of applications and the revolution in microservices,
+    Kubernetes-based platforms have become popular. The containerization of applications
+    and container orchestration using Kubernetes provide additional layers and complexity
+    to infrastructure that requires automated solutions for managing a large number
+    of components.
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于应用程序的容器化和微服务革命，基于Kubernetes的平台变得越来越流行。应用程序的容器化和使用Kubernetes进行容器编排，为基础设施增加了额外的层次和复杂性，这需要自动化解决方案来管理大量组件。
+- en: In the previous chapter, you learned about the capabilities of Ansible to build
+    and manage container images and containers. When it comes to container orchestration
+    tools, such as Kubernetes or Red Hat OpenShift, there are Ansible collections
+    available with modules and plugins for supporting and managing your Kubernetes
+    and Red Hat OpenShift clusters and resources.
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在前一章中，你了解了Ansible构建和管理容器镜像与容器的功能。当涉及到容器编排工具时，如Kubernetes或Red Hat OpenShift，有Ansible集合可用，包含模块和插件，用于支持和管理你的Kubernetes和Red
+    Hat OpenShift集群及资源。
+- en: Using Ansible for Kubernetes resource management will help you to implement
+    more integrations in your DevOps workflow and **Continuous** **Integration/Continuous
+    Deployment** (**CI/CD**) pipelines to deploy your applications very flexibly.
+  id: totrans-4
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用Ansible进行Kubernetes资源管理将帮助你在DevOps工作流和**持续集成/持续部署**（**CI/CD**）管道中实现更多的集成，从而灵活地部署应用程序。
+- en: 'In this chapter, we will cover the following topics:'
+  id: totrans-5
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们将覆盖以下主题：
+- en: An introduction to Kubernetes
+  id: totrans-6
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Kubernetes简介
+- en: Managing Kubernetes clusters using Ansible
+  id: totrans-7
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用Ansible管理Kubernetes集群
+- en: Configuring Ansible for Kubernetes
+  id: totrans-8
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 配置Ansible以支持Kubernetes
+- en: Deploying applications to Kubernetes using Ansible
+  id: totrans-9
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用Ansible将应用程序部署到Kubernetes
+- en: Scaling Kubernetes applications
+  id: totrans-10
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 扩展Kubernetes应用程序
+- en: Executing commands inside a Kubernetes Pod
+  id: totrans-11
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在Kubernetes Pod内部执行命令
+- en: We will learn about using the Ansible collection for Kubernetes management and
+    automating Kubernetes cluster operations and resource management with it.
+  id: totrans-12
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将学习如何使用Ansible集合来管理Kubernetes，并通过它自动化Kubernetes集群操作和资源管理。
+- en: Technical requirements
+  id: totrans-13
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 技术要求
+- en: 'The following are the technical requirements to proceed with this chapter:'
+  id: totrans-14
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是继续本章所需的技术要求：
+- en: One Linux machine for the Ansible control node
+  id: totrans-15
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 一台用于Ansible控制节点的Linux机器
+- en: A working Kubernetes cluster with API access (refer to [https://minikube.sigs.k8s.io/docs/start](https://minikube.sigs.k8s.io/docs/start)
+    to spin up a local Kubernetes cluster)
+  id: totrans-16
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 一个具有API访问权限的工作Kubernetes集群（参考[https://minikube.sigs.k8s.io/docs/start](https://minikube.sigs.k8s.io/docs/start)来启动一个本地Kubernetes集群）
+- en: Basic knowledge about containers and Kubernetes
+  id: totrans-17
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 关于容器和Kubernetes的基础知识
+- en: All the Ansible code, Ansible playbooks, commands, and snippets for this chapter
+    can be found in the GitHub repository at [https://github.com/PacktPublishing/Ansible-for-Real-life-Automation/tree/main/Chapter-11](https://github.com/PacktPublishing/Ansible-for-Real-life-Automation/tree/main/Chapter-11).
+  id: totrans-18
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章的所有Ansible代码、Ansible剧本、命令和片段可以在GitHub仓库中找到：[https://github.com/PacktPublishing/Ansible-for-Real-life-Automation/tree/main/Chapter-11](https://github.com/PacktPublishing/Ansible-for-Real-life-Automation/tree/main/Chapter-11)。
+- en: An introduction to Kubernetes
+  id: totrans-19
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Kubernetes简介
+- en: '**Kubernetes** is an open source container orchestration platform where we
+    can deploy and manage our containerized applications without worrying about the
+    underlying layers. This model of service is known as **Platform as a Service**
+    (**PaaS**), where developers have the freedom to deploy their applications and
+    other required resources, such as storage, network, and secrets, without assistance
+    from the platform team.'
+  id: totrans-20
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**Kubernetes**是一个开源容器编排平台，在这里我们可以部署和管理我们的容器化应用程序，而无需担心底层层次结构。这种服务模型被称为**平台即服务**（**PaaS**），开发人员可以自由地部署他们的应用程序及其他必要的资源，如存储、网络和密钥，而无需平台团队的帮助。'
+- en: 'The Kubernetes platform contains many components to manage container deployment
+    and orchestration, as shown in *Figure 11.1*:'
+  id: totrans-21
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Kubernetes平台包含多个组件，用于管理容器的部署和协调，如*图11.1*所示：
+- en: '![Figure 11.1 – The components of a Kubernetes cluster (source: https://kubernetes.io/docs/concepts/overview/components/)
+    ](img/B18383_11_01.jpg)'
+  id: totrans-22
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图11.1 – Kubernetes集群的组件（来源：https://kubernetes.io/docs/concepts/overview/components/）](img/B18383_11_01.jpg)'
+- en: 'Figure 11.1 – The components of a Kubernetes cluster (source: [https://kubernetes.io/docs/concepts/overview/components/](https://kubernetes.io/docs/concepts/overview/components/))'
+  id: totrans-23
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 11.1 – Kubernetes 集群的组件（来源：[https://kubernetes.io/docs/concepts/overview/components/](https://kubernetes.io/docs/concepts/overview/components/)）
+- en: Let’s briefly have a look at these components in the following sections.
+  id: totrans-24
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们在接下来的部分简要了解这些组件。
+- en: The Kubernetes control plane
+  id: totrans-25
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: Kubernetes 控制平面
+- en: 'The control plane is responsible for making decisions on behalf of the cluster
+    and application, such as scheduling the application Pods, detecting and responding
+    to Pod failures, and managing cluster nodes. The control plane has multiple components
+    to handle these operations, as follows:'
+  id: totrans-26
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 控制平面负责代表集群和应用程序做出决策，例如调度应用程序 Pods、检测和响应 Pod 故障，以及管理集群节点。控制平面有多个组件来处理这些操作，如下所示：
+- en: '**kube-apiserver** – Exposes the Kubernetes cluster API that will take care
+    of all central management and communications. Each and every task inside a Kubernetes
+    cluster is operated via the Kubernetes API server.'
+  id: totrans-27
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**kube-apiserver** – 提供 Kubernetes 集群 API，负责所有的中央管理和通信。Kubernetes 集群中的每个任务都是通过
+    Kubernetes API 服务器操作的。'
+- en: '**kube-controller-manager** – Consists of several controller processes, such
+    as a Node controller, Job controller, Service account controller, and Endpoints
+    controller.'
+  id: totrans-28
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**kube-controller-manager** – 包含多个控制器进程，如节点控制器、任务控制器、服务账户控制器和端点控制器。'
+- en: '**etcd** – A **high-availability** (**HA**) key-value store used for storing
+    Kubernetes cluster data.'
+  id: totrans-29
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**etcd** – 一个 **高可用性**（**HA**）键值存储，用于存储 Kubernetes 集群数据。'
+- en: '**kube-scheduler** – Helps to select nodes for deploying Pods.'
+  id: totrans-30
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**kube-scheduler** – 帮助选择节点以部署 Pods。'
+- en: Components on the nodes
+  id: totrans-31
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 节点上的组件
+- en: 'These are the Kubernetes components running on every node in the cluster, managing
+    the application Pods and its network:'
+  id: totrans-32
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这些是运行在集群中每个节点上的 Kubernetes 组件，管理应用程序 Pods 及其网络：
+- en: '**Container runtime** – The actual software that is running the containers
+    in the backend, such as **containerd** and **CRI-O**'
+  id: totrans-33
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**容器运行时** – 实际在后台运行容器的软件，例如 **containerd** 和 **CRI-O**。'
+- en: '**kubelet** – Takes care of the running containers, as per specifications'
+  id: totrans-34
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**kubelet** – 按照规范管理运行中的容器。'
+- en: '**kube-proxy** – Helps to implement Kubernetes Services by maintaining network
+    rules on the nodes'
+  id: totrans-35
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**kube-proxy** – 通过维护节点上的网络规则，帮助实现 Kubernetes 服务。'
+- en: Like any other open source project, Kubernetes is also free to use and supported
+    by the Kubernetes user and developer community ([https://kubernetes.io/community](https://kubernetes.io/community)).
+    If an organization is looking for enterprise Kubernetes distributions and support,
+    there are different Kubernetes distributions available on the market as turnkey
+    solutions, such as Red Hat OpenShift, Rancher, and VMware Tanzu.
+  id: totrans-36
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 和其他开源项目一样，Kubernetes 也是免费的，且得到 Kubernetes 用户和开发者社区的支持 ([https://kubernetes.io/community](https://kubernetes.io/community))。如果一个组织正在寻找企业级的
+    Kubernetes 发行版和支持，市场上有多种 Kubernetes 发行版作为交钥匙解决方案，例如 Red Hat OpenShift、Rancher
+    和 VMware Tanzu。
+- en: Explaining the Kubernetes platform, concepts, and architecture is beyond the
+    scope of this book. You can find more details in the *Further reading* section
+    at the end of this chapter.
+  id: totrans-37
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 解释 Kubernetes 平台、概念和架构超出了本书的范围。你可以在本章末的 *进一步阅读* 部分找到更多详细信息。
+- en: For using Ansible with Kubernetes, we can use **minikube**, which is a local
+    Kubernetes cluster for learning about and developing Kubernetes Deployments. Refer
+    to the documentation at [https://minikube.sigs.k8s.io/docs/start](https://minikube.sigs.k8s.io/docs/start),
+    where you will find installation instructions for Linux, Windows, and macOS platforms.
+  id: totrans-38
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要在 Kubernetes 中使用 Ansible，我们可以使用 **minikube**，它是一个本地的 Kubernetes 集群，用于学习和开发
+    Kubernetes 部署。请参考 [https://minikube.sigs.k8s.io/docs/start](https://minikube.sigs.k8s.io/docs/start)
+    上的文档，那里你可以找到适用于 Linux、Windows 和 macOS 平台的安装说明。
+- en: The Kubernetes Documentation
+  id: totrans-39
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Kubernetes 文档
+- en: Refer to the Kubernetes documentation at [https://kubernetes.io/docs/home](https://kubernetes.io/docs/home)
+    to learn more about Kubernetes. Also refer to *Top 15 Free Kubernetes Courses*
+    ([https://www.techbeatly.com/kubernetes-free-courses](https://www.techbeatly.com/kubernetes-free-courses))
+    to learn the basics about Kubernetes.
+  id: totrans-40
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请参考 Kubernetes 文档 [https://kubernetes.io/docs/home](https://kubernetes.io/docs/home)
+    以了解更多关于 Kubernetes 的信息。也可以参考 *前 15 个免费 Kubernetes 课程* ([https://www.techbeatly.com/kubernetes-free-courses](https://www.techbeatly.com/kubernetes-free-courses))
+    了解 Kubernetes 的基础知识。
+- en: In the next section, we will learn about the Ansible method for managing Kubernetes
+    clusters.
+  id: totrans-41
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在接下来的部分，我们将学习用于管理 Kubernetes 集群的 Ansible 方法。
+- en: Managing Kubernetes clusters using Ansible
+  id: totrans-42
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用 Ansible 管理 Kubernetes 集群
+- en: Deploying a Kubernetes cluster involves many steps, including preparing nodes,
+    installing container runtime packages, and configuring networking. There are multiple
+    methods we can use for deploying Kubernetes clusters within testing or production
+    environments. The installation method for a Kubernetes cluster also depends on
+    your requirements, whether you are using single-node clusters or multi-node clusters
+    with HA or you require the option to scale the cluster whenever needed, for example.
+  id: totrans-43
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 部署 Kubernetes 集群涉及许多步骤，包括准备节点、安装容器运行时包和配置网络。我们可以使用多种方法在测试或生产环境中部署 Kubernetes
+    集群。Kubernetes 集群的安装方法还取决于您的需求，例如，您是使用单节点集群还是使用具有 HA 的多节点集群，或者是否需要随时扩展集群。
+- en: '**Kubespray** is a production-grade Kubernetes cluster deployment method that
+    uses Ansible as its foundation for provisioning and orchestration. Using Kubespray,
+    it is possible deploy a Kubernetes cluster on top of bare-metal servers, virtual
+    machines, and private cloud or public cloud platforms (for example, AWS, GCE,
+    Azure, and OpenStack).'
+  id: totrans-44
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**Kubespray** 是一种生产级的 Kubernetes 集群部署方法，基于 Ansible 进行配置和编排。使用 Kubespray，可以在裸金属服务器、虚拟机以及私有云或公有云平台（例如，AWS、GCE、Azure
+    和 OpenStack）上部署 Kubernetes 集群。'
+- en: 'Kubespray is highly customizable and you can configure the cluster with different
+    Kubernetes components of your choice, as follows:'
+  id: totrans-45
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Kubespray 高度可定制，您可以根据需要选择不同的 Kubernetes 组件配置集群，如下所示：
+- en: A supported **Container Network Interface** (**CNI**) – Calico, Flannel, Kube-router,
+    Kube-OVN, Weave, or Multus
+  id: totrans-46
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 支持的 **容器网络接口**（**CNI**） – Calico、Flannel、Kube-router、Kube-OVN、Weave 或 Multus
+- en: A supported **Container Runtime Interface** (**CRI**) – containerd, Docker,
+    CRI-O, Kata Containers, or gVisor
+  id: totrans-47
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 支持的 **容器运行时接口**（**CRI**） – containerd、Docker、CRI-O、Kata Containers 或 gVisor
+- en: Supported cloud providers – AWS, Azure, OpenStack, or vSphere
+  id: totrans-48
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 支持的云服务提供商 – AWS、Azure、OpenStack 或 vSphere
+- en: A supported **Ingress** – Kube-vip, ALB Ingress, MetalLB, or Nginx
+  id: totrans-49
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 支持的 **Ingress** – Kube-vip、ALB Ingress、MetalLB 或 Nginx
+- en: Supported operating systems – Debian, Fedora CoreOS, Flatcar Container Linux,
+    openSUSE, Red Hat Enterprise Linux, CentOS, or Amazon Linux 2
+  id: totrans-50
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 支持的操作系统 – Debian、Fedora CoreOS、Flatcar Container Linux、openSUSE、Red Hat Enterprise
+    Linux、CentOS 或 Amazon Linux 2
+- en: Kubernetes deployment using Kubespray is explained in the documentation ([https://kubespray.io](https://kubespray.io))
+    and other online guides.
+  id: totrans-51
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用 Kubespray 部署 Kubernetes 的详细说明可以在文档 ([https://kubespray.io](https://kubespray.io))
+    和其他在线指南中找到。
+- en: Once provisioned, the Kubernetes cluster can be scaled as needed (by adding
+    or removing nodes) using Kubespray without worrying about the manual configurations
+    of the new nodes and cluster-joining steps. Refer to the following information
+    box and the *Further reading* section at the end of this chapter for links to
+    further information on Kubespray.
+  id: totrans-52
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦完成配置，Kubernetes 集群可以根据需要进行扩展（通过添加或删除节点），使用 Kubespray 无需担心新节点的手动配置和集群加入步骤。请参考以下信息框和本章末尾的
+    *进一步阅读* 部分，获取关于 Kubespray 更多信息的链接。
+- en: Kubespray
+  id: totrans-53
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Kubespray
+- en: Refer to the documentation ([https://kubespray.io](https://kubespray.io)) and
+    project repository ([https://github.com/kubernetes-sigs/kubespray](https://github.com/kubernetes-sigs/kubespray))
+    to learn more about the different options available with Kubespray. Also, check
+    out [https://www.techbeatly.com/deploying-kubernetes-with-kubespray](https://www.techbeatly.com/deploying-kubernetes-with-kubespray)
+    for a detailed guide on how to deploy a multi-node Kubernetes cluster using Kubespray.
+  id: totrans-54
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请参考文档 ([https://kubespray.io](https://kubespray.io)) 和项目仓库 ([https://github.com/kubernetes-sigs/kubespray](https://github.com/kubernetes-sigs/kubespray))
+    了解有关 Kubespray 的更多选项。还可以查看 [https://www.techbeatly.com/deploying-kubernetes-with-kubespray](https://www.techbeatly.com/deploying-kubernetes-with-kubespray)，以获取关于如何使用
+    Kubespray 部署多节点 Kubernetes 集群的详细指南。
+- en: 'For the demonstration of Ansible use cases, we have used a minikube Kubernetes
+    environment, as follows:'
+  id: totrans-55
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了演示 Ansible 用例，我们使用了一个 minikube Kubernetes 环境，如下所示：
+- en: '![Figure 11.2 – minikube Kubernetes cluster details ](img/B18383_11_02.jpg)'
+  id: totrans-56
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 11.2 – minikube Kubernetes 集群详情](img/B18383_11_02.jpg)'
+- en: Figure 11.2 – minikube Kubernetes cluster details
+  id: totrans-57
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 11.2 – minikube Kubernetes 集群详情
+- en: Refer to the documentation ([https://minikube.sigs.k8s.io/docs/start](https://minikube.sigs.k8s.io/docs/start))
+    for more details on how to create a minikube environment.
+  id: totrans-58
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请参考文档 ([https://minikube.sigs.k8s.io/docs/start](https://minikube.sigs.k8s.io/docs/start))
+    了解如何创建 minikube 环境的更多细节。
+- en: We will learn how to configure Ansible for Kubernetes cluster access and check
+    cluster resources in the next section.
+  id: totrans-59
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一节中，我们将学习如何配置 Ansible 以访问 Kubernetes 集群并检查集群资源。
+- en: Configuring Ansible for Kubernetes
+  id: totrans-60
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 配置 Ansible 以支持 Kubernetes
+- en: 'Ansible can communicate with Kubernetes clusters using the Kubernetes Python
+    libraries or directly via the Kubernetes API, as shown in *Figure 11.3*:'
+  id: totrans-61
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 可以使用 Kubernetes Python 库或直接通过 Kubernetes API 与 Kubernetes 集群进行通信，如*图
+    11.3*所示：
+- en: '![Figure 11.3 – Communication between Ansible and Kubernetes  ](img/B18383_11_03.jpg)'
+  id: totrans-62
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 11.3 - Ansible 与 Kubernetes 的通信](img/B18383_11_03.jpg)'
+- en: Figure 11.3 – Communication between Ansible and Kubernetes
+  id: totrans-63
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 11.3 - Ansible 与 Kubernetes 的通信
+- en: Ansible modules and plugins for managing Kubernetes are available in the `kubernetes.core`
+    Ansible collection. (The Ansible Kubernetes collection was released as `community.kubernetes`
+    prior to the release of `kubernetes.core` 1.1.) We will install, configure, and
+    use the `kubernetes.core` collection in the following sections.
+  id: totrans-64
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 用于管理 Kubernetes 的 Ansible 模块和插件可以在 `kubernetes.core` Ansible 集合中找到。（在 `kubernetes.core`
+    1.1 版本发布之前，Ansible Kubernetes 集合以 `community.kubernetes` 发布。）我们将在接下来的章节中安装、配置并使用
+    `kubernetes.core` 集合。
+- en: Python requirements
+  id: totrans-65
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: Python 要求
+- en: 'To communicate with the Kubernetes or OpenShift API, use the **Python client
+    for the OpenShift API** ([https://github.com/openshift/openshift-restclient-python](https://github.com/openshift/openshift-restclient-python))
+    Python library. Before using any of the Kubernetes modules, you need to install
+    the required Python libraries, as follows:'
+  id: totrans-66
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要与 Kubernetes 或 OpenShift API 通信，可以使用 **OpenShift API 的 Python 客户端**（[https://github.com/openshift/openshift-restclient-python](https://github.com/openshift/openshift-restclient-python)）Python
+    库。在使用任何 Kubernetes 模块之前，你需要安装以下所需的 Python 库：
+- en: '[PRE0]'
+  id: totrans-67
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: If you are using Ansible inside a Python virtual environment, then remember
+    to activate it and install the libraries within it.
+  id: totrans-68
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你在 Python 虚拟环境中使用 Ansible，请记得激活该环境并在其中安装库。
+- en: The Python Library for Kubernetes
+  id: totrans-69
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Kubernetes 的 Python 库
+- en: The OpenShift REST client depends on the Kubernetes Python client ([https://github.com/kubernetes-client/python](https://github.com/kubernetes-client/python))
+    and this Kubernetes Python client will be installed as part of the dependencies.
+    Also check the Ansible Content Collection for Red Hat OpenShift (Ansible blog)
+    – [https://www.ansible.com/blog/introducing-the-ansible-content-collection-for-red-hat-openshift](https://www.ansible.com/blog/introducing-the-ansible-content-collection-for-red-hat-openshift)
+  id: totrans-70
+  prefs: []
+  type: TYPE_NORMAL
+  zh: OpenShift REST 客户端依赖于 Kubernetes Python 客户端（[https://github.com/kubernetes-client/python](https://github.com/kubernetes-client/python)），该
+    Kubernetes Python 客户端将作为依赖项安装。同时，请查看 Ansible 为 Red Hat OpenShift 提供的内容集合（Ansible
+    博客）– [https://www.ansible.com/blog/introducing-the-ansible-content-collection-for-red-hat-openshift](https://www.ansible.com/blog/introducing-the-ansible-content-collection-for-red-hat-openshift)
+- en: Installing the Ansible Kubernetes collection
+  id: totrans-71
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 安装 Ansible Kubernetes 集合
+- en: 'Install the Ansible Kubernetes collection from Ansible Galaxy ([https://galaxy.ansible.com/kubernetes/core](https://galaxy.ansible.com/kubernetes/core)),
+    as follows:'
+  id: totrans-72
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 从 Ansible Galaxy 安装 Ansible Kubernetes 集合（[https://galaxy.ansible.com/kubernetes/core](https://galaxy.ansible.com/kubernetes/core)），步骤如下：
+- en: 'Configure the `ansible.cfg` object type with the collection path if you want
+    to install the collection inside the project directory:'
+  id: totrans-73
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如果你希望将集合安装到项目目录中，可以在 `ansible.cfg` 文件中配置集合路径的对象类型：
+- en: '![Figure 11.4 - Configure collection path in ansible.cfg ](img/B18383_11_04.jpg)'
+  id: totrans-74
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 11.4 - 在 ansible.cfg 中配置集合路径](img/B18383_11_04.jpg)'
+- en: Figure 11.4 - Configure collection path in ansible.cfg
+  id: totrans-75
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 11.4 - 在 ansible.cfg 中配置集合路径
+- en: 'Install the `kubernetes.core` collection:'
+  id: totrans-76
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 安装 `kubernetes.core` 集合：
+- en: '![Figure 11.5 - Install kubernetes.core collection ](img/B18383_11_05.jpg)'
+  id: totrans-77
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 11.5 - 安装 kubernetes.core 集合](img/B18383_11_05.jpg)'
+- en: Figure 11.5 - Install kubernetes.core collection
+  id: totrans-78
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 11.5 - 安装 kubernetes.core 集合
+- en: The `kubernetes.core` collection will be installed inside the collection directory
+    (`COLLECTIONS_PATHS = ./collections`) as you mentioned in the `ansible.cfg` file.
+  id: totrans-79
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`kubernetes.core` 集合将根据你在 `ansible.cfg` 文件中提到的路径安装到集合目录内（`COLLECTIONS_PATHS
+    = ./collections`）。'
+- en: Connecting Ansible to Kubernetes
+  id: totrans-80
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 将 Ansible 连接到 Kubernetes
+- en: Ansible will try to use the `$HOME/.kube/config` file, which is the default
+    Kubernetes configuration file (`kubeconfig`) containing Kubernetes cluster details,
+    credential details, and connection contexts. If your `kubeconfig` file is residing
+    in a different path or has a different filename, then specify this in the Kubernetes
+    `module` parameter inside the Ansible playbook.
+  id: totrans-81
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible将尝试使用`$HOME/.kube/config`文件，这是默认的Kubernetes配置文件（`kubeconfig`），包含Kubernetes集群的详细信息、凭证详细信息和连接上下文。如果你的`kubeconfig`文件位于其他路径或具有不同的文件名，请在Ansible剧本中的Kubernetes
+    `module`参数中指定此路径。
+- en: 'As we mentioned earlier, we have a Kubernetes cluster running on minikube.
+    The `kubeconfig` file and certificate credentials are copied to the Ansible control
+    node, as shown in the following figure:'
+  id: totrans-82
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如前所述，我们有一个在minikube上运行的Kubernetes集群。`kubeconfig`文件和证书凭证已复制到Ansible控制节点，如下图所示：
+- en: '![Figure 11.6 – The kubeconfig file and certificates ](img/B18383_11_06.jpg)'
+  id: totrans-83
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图11.6 – kubeconfig文件和证书](img/B18383_11_06.jpg)'
+- en: Figure 11.6 – The kubeconfig file and certificates
+  id: totrans-84
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图11.6 – kubeconfig文件和证书
+- en: If you are using basic authentication (a username and password) for accessing
+    the cluster, then specify these details inside the Kubernetes module itself.
+  id: totrans-85
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你使用基本身份验证（用户名和密码）来访问集群，请在Kubernetes模块中指定这些详细信息。
+- en: For production environments, remember to follow best practices for storing the
+    credentials, certificates, and access keys, using Ansible Vault or any other secret
+    management system.
+  id: totrans-86
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于生产环境，请记得遵循最佳实践来存储凭证、证书和访问密钥，使用Ansible Vault或任何其他秘密管理系统。
+- en: Installing the kubectl CLI tool
+  id: totrans-87
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 安装kubectl CLI工具
+- en: Since we are working from the control node, install the `kubectl` CLI tool on
+    the machine and execute the `kubectl` command to verify the resources that we
+    will be creating using Ansible.
+  id: totrans-88
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于我们从控制节点进行操作，请在机器上安装`kubectl` CLI工具，并执行`kubectl`命令以验证我们将通过Ansible创建的资源。
+- en: If you have a machine installed with `kubectl` and access to the Kubernetes
+    cluster, then skip this step.
+  id: totrans-89
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你的机器上已安装`kubectl`并能够访问Kubernetes集群，则跳过此步骤。
+- en: 'Follow the `kubectl` installation document ([https://kubernetes.io/docs/tasks/tools/install-kubectl-linux](https://kubernetes.io/docs/tasks/tools/install-kubectl-linux))
+    and use the appropriate method suitable for your environment (since we are running
+    the Ansible control node on a Red Hat Enterprise Linux machine, the following
+    commands are based on Red Hat Enterprise Linux/Fedora distributions):'
+  id: totrans-90
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请参阅`kubectl`安装文档（[https://kubernetes.io/docs/tasks/tools/install-kubectl-linux](https://kubernetes.io/docs/tasks/tools/install-kubectl-linux)），并使用适合您环境的正确方法（由于我们在Red
+    Hat Enterprise Linux机器上运行Ansible控制节点，以下命令基于Red Hat Enterprise Linux/Fedora发行版）：
+- en: Add the repository for the `kubectl` package.
+  id: totrans-91
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 添加`kubectl`包的仓库。
+- en: '![Figure 11.7 – Add the repository for the kubectl package ](img/B18383_11_07.jpg)'
+  id: totrans-92
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图11.7 – 添加kubectl包的仓库](img/B18383_11_07.jpg)'
+- en: Figure 11.7 – Add the repository for the kubectl package
+  id: totrans-93
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图11.7 – 添加kubectl包的仓库
+- en: 'Install the `kubectl` package:'
+  id: totrans-94
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 安装`kubectl`包：
+- en: '![Figure 11.8 – Installing the kubectl utility ](img/B18383_11_08.jpg)'
+  id: totrans-95
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图11.8 – 安装kubectl工具](img/B18383_11_08.jpg)'
+- en: Figure 11.8 – Installing the kubectl utility
+  id: totrans-96
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图11.8 – 安装kubectl工具
+- en: 'Configure the `KUBECONFIG` environment variable, as our `kubeconfig` filename
+    is different (`/home/ansible/.kube/minikube-config`) from the default filename
+    (`/home/ansible/.kube/config`):'
+  id: totrans-97
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 配置`KUBECONFIG`环境变量，因为我们的`kubeconfig`文件名不同（`/home/ansible/.kube/minikube-config`），与默认文件名（`/home/ansible/.kube/config`）不同：
+- en: '![Figure 11.9 – Configure the KUBECONFIG environment variable ](img/B18383_11_09.jpg)'
+  id: totrans-98
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图11.9 – 配置KUBECONFIG环境变量](img/B18383_11_09.jpg)'
+- en: Figure 11.9 – Configure the KUBECONFIG environment variable
+  id: totrans-99
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图11.9 – 配置KUBECONFIG环境变量
+- en: Verify the `kubectl` CLI version and cluster details.
+  id: totrans-100
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 验证`kubectl` CLI版本和集群详细信息。
+- en: '![Figure 11.10 – kubectl version information ](img/B18383_11_10.jpg)'
+  id: totrans-101
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图11.10 – kubectl版本信息](img/B18383_11_10.jpg)'
+- en: Figure 11.10 – kubectl version information
+  id: totrans-102
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图11.10 – kubectl版本信息
+- en: The `kubectl` CLI is able to access the cluster and we will go on to use it
+    in the following sections to verify the resources in the Kubernetes cluster.
+  id: totrans-103
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`kubectl` CLI可以访问集群，我们将在接下来的章节中使用它来验证Kubernetes集群中的资源。'
+- en: Verifying the Kubernetes cluster details using Ansible
+  id: totrans-104
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 使用Ansible验证Kubernetes集群详细信息
+- en: 'Collecting the cluster details and resource information is an important step.
+    The Kubernetes cluster details can be collected using the `kubectl` CLI, as shown
+    in *Figure 11.11*:'
+  id: totrans-105
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 收集集群详细信息和资源信息是一个重要步骤。Kubernetes集群的详细信息可以通过`kubectl` CLI收集，如*图11.11*所示：
+- en: '![Figure 11.11 – Kubernetes cluster details, collected using the kubectl CLI
+    ](img/B18383_11_11.jpg)'
+  id: totrans-106
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图11.11 – 使用kubectl CLI收集的Kubernetes集群详细信息](img/B18383_11_11.jpg)'
+- en: Figure 11.11 – Kubernetes cluster details, collected using the kubectl CLI
+  id: totrans-107
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图11.11 – 使用kubectl CLI收集的Kubernetes集群详细信息
+- en: Use the `kubernetes.core.k8s_info` module to collect similar details about the
+    Kubernetes cluster using Ansible (prior to Ansible 2.9, the module was called
+    `k8s_facts`).
+  id: totrans-108
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用`kubernetes.core.k8s_info`模块通过Ansible收集Kubernetes集群的类似详细信息（在Ansible 2.9之前，该模块被称为`k8s_facts`）。
+- en: 'Follow these steps to create our first Ansible playbook to interact with a
+    Kubernetes cluster:'
+  id: totrans-109
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 按照以下步骤创建我们的第一个Ansible playbook与Kubernetes集群交互：
+- en: 'Create `Chapter-11/k8s-details.yaml`, as follows:'
+  id: totrans-110
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建`Chapter-11/k8s-details.yaml`，如下所示：
+- en: '![Figure 11.12 – The task for fetching Pod details from the kube-system namespace
+    ](img/B18383_11_12.jpg)'
+  id: totrans-111
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图11.12 – 从kube-system命名空间获取Pod详细信息的任务](img/B18383_11_12.jpg)'
+- en: Figure 11.12 – The task for fetching Pod details from the kube-system namespace
+  id: totrans-112
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图11.12 – 从kube-system命名空间获取Pod详细信息的任务
+- en: 'We are fetching the Pod details from the `kube-system` namespace in the Kubernetes
+    cluster. Note the `hosts: localhost` line as the execution needs to happen on
+    `localhost`. The Python libraries will take care of the Kubernetes operations.'
+  id: totrans-113
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '我们正在从Kubernetes集群的`kube-system`命名空间中获取Pod的详细信息。注意`hosts: localhost`这一行，因为执行需要在`localhost`上进行。Python库将处理Kubernetes操作。'
+- en: 'Execute the playbook and verify the output. You will see a lot of details about
+    the Pods running inside the `kube-system` namespace, as shown in *Figure 11.13*:'
+  id: totrans-114
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 执行playbook并验证输出。你将看到很多关于运行在`kube-system`命名空间内的Pods的详细信息，如*图11.13*所示：
+- en: '![Figure 11.13 – Pod details from a Kubernetes namespace ](img/B18383_11_13.jpg)'
+  id: totrans-115
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图11.13 – 来自Kubernetes命名空间的Pod详细信息](img/B18383_11_13.jpg)'
+- en: Figure 11.13 – Pod details from a Kubernetes namespace
+  id: totrans-116
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图11.13 – 来自Kubernetes命名空间的Pod详细信息
+- en: Add one more task in the same playbook to collect the Kubernetes cluster node
+    details.
+  id: totrans-117
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在同一个playbook中添加一个任务，以收集Kubernetes集群节点的详细信息。
+- en: '![Figure 11.14 – The task to get the Kubernetes node details ](img/B18383_11_14.jpg)'
+  id: totrans-118
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图11.14 – 获取Kubernetes节点详细信息的任务](img/B18383_11_14.jpg)'
+- en: Figure 11.14 – The task to get the Kubernetes node details
+  id: totrans-119
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图11.14 – 获取Kubernetes节点详细信息的任务
+- en: Execute the playbook again and verify the results.
+  id: totrans-120
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 再次执行playbook并验证结果。
+- en: See the node name (in this case, `minikube`), as in the output in *Figure 11.15*.
+    If you have multiple nodes, you will see multiple entries here.
+  id: totrans-121
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 查看节点名称（在此示例中为`minikube`），如*图11.15*中的输出所示。如果你有多个节点，你将在这里看到多个条目。
+- en: '![Figure 11.15 – Fetching the Kubernetes cluster node details ](img/B18383_11_15.jpg)'
+  id: totrans-122
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图11.15 – 获取Kubernetes集群节点详细信息](img/B18383_11_15.jpg)'
+- en: Figure 11.15 – Fetching the Kubernetes cluster node details
+  id: totrans-123
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图11.15 – 获取Kubernetes集群节点详细信息
+- en: Customize the playbook for different clusters by using different `kubeconfig`
+    files or providing the credential details in the module itself, such as `api_key`,
+    `client_cert`, and `client_key`. Refer to the `kubernetes.core.k8s_info` module
+    ([https://docs.ansible.com/ansible/latest/collections/kubernetes/core/k8s_info_module.xhtml](https://docs.ansible.com/ansible/latest/collections/kubernetes/core/k8s_info_module.xhtml))
+    for more details.
+  id: totrans-124
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通过使用不同的`kubeconfig`文件或在模块本身中提供凭证信息，如`api_key`、`client_cert`和`client_key`，来自定义不同集群的playbook。有关更多详细信息，请参考`kubernetes.core.k8s_info`模块（[https://docs.ansible.com/ansible/latest/collections/kubernetes/core/k8s_info_module.xhtml](https://docs.ansible.com/ansible/latest/collections/kubernetes/core/k8s_info_module.xhtml)）。
+- en: Now, you have learned how to communicate with Kubernetes clusters using Ansible
+    modules and how to fetch cluster details. In the next section, we will learn more
+    about Ansible for Kubernetes automation by creating resources and objects in Kubernetes
+    clusters.
+  id: totrans-125
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，你已经学会了如何使用Ansible模块与Kubernetes集群进行通信，以及如何获取集群的详细信息。在下一节中，我们将通过在Kubernetes集群中创建资源和对象，进一步学习Kubernetes自动化的Ansible应用。
+- en: Deploying applications to Kubernetes using Ansible
+  id: totrans-126
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用Ansible将应用部署到Kubernetes
+- en: Containerized applications can be deployed inside Kubernetes via the Kubernetes
+    dashboard (web UI) or using the `kubectl` CLI ([https://kubernetes.io/docs/reference/kubectl](https://kubernetes.io/docs/reference/kubectl)).
+    By using Ansible, we can automate most of the deployment operations that take
+    place inside our Kubernetes clusters. Since Ansible can easily integrate within
+    CI/CD pipelines, it is possible to achieve more control over your application
+    deployments in a containerized environment such as Kubernetes.
+  id: totrans-127
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 可以通过 Kubernetes 仪表板（Web UI）或使用 `kubectl` CLI ([https://kubernetes.io/docs/reference/kubectl](https://kubernetes.io/docs/reference/kubectl))
+    在 Kubernetes 内部部署容器化应用程序。通过使用 Ansible，我们可以自动化在 Kubernetes 集群内部发生的大多数部署操作。由于 Ansible
+    可以轻松集成到 CI/CD 流水线中，因此可以在像 Kubernetes 这样的容器化环境中对应用程序部署进行更多控制。
+- en: 'Applications are deployed inside logical isolated groups called Kubernetes
+    **namespaces**. There can be default namespaces and Kubernetes cluster-related
+    namespaces, and we can also create additional namespaces as required to deploy
+    applications. *Figure 11.16* demonstrates the relation between Deployments, Pods,
+    Services, and namespaces in a Kubernetes cluster:'
+  id: totrans-128
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 应用程序部署在称为 Kubernetes **命名空间** 的逻辑隔离组内。可以有默认命名空间和与 Kubernetes 集群相关的命名空间，我们还可以根据需要创建额外的命名空间来部署应用程序。*图
+    11.16* 展示了 Kubernetes 集群中部署、Pod、服务和命名空间之间的关系：
+- en: '![Figure 11.16 – Kubernetes Deployments and namespaces ](img/B18383_11_16.jpg)'
+  id: totrans-129
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 11.16 – Kubernetes 部署和命名空间](img/B18383_11_16.jpg)'
+- en: Figure 11.16 – Kubernetes Deployments and namespaces
+  id: totrans-130
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 11.16 – Kubernetes 部署和命名空间
+- en: 'In the following exercise, we will deploy an application in Kubernetes by creating
+    a dedicated namespace, Deployment configuration, and Service:'
+  id: totrans-131
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在以下练习中，我们将通过创建专用的命名空间、部署配置和服务来部署一个应用程序：
+- en: Prepare the `Chapter-11/todo-app-deploy.yaml` Deployment definition file, which
+    will be used to create a Kubernetes Deployment resource in the next steps. We
+    can create `ginigangadharan/todo-app:latest` image that we created in [*Chapter
+    10*](B18383_10.xhtml#_idTextAnchor178), *Managing Containers Using Ansible*.
+  id: totrans-132
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 准备 `Chapter-11/todo-app-deploy.yaml` 部署定义文件，接下来的步骤中将使用该文件创建 Kubernetes 部署资源。我们可以创建在
+    [*第 10 章*](B18383_10.xhtml#_idTextAnchor178)《使用 Ansible 管理容器》中创建的 `ginigangadharan/todo-app:latest`
+    镜像。
+- en: '![Figure 11.17 – The Kubernetes definition file for the to-do app Deployment
+    ](img/B18383_11_17.jpg)'
+  id: totrans-133
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 11.17 – 待办事项应用的 Kubernetes 定义文件](img/B18383_11_17.jpg)'
+- en: Figure 11.17 – The Kubernetes definition file for the to-do app Deployment
+  id: totrans-134
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 11.17 – 待办事项应用的 Kubernetes 定义文件
+- en: Prepare a `Chapter-11/todo-app-service.yaml` Kubernetes Service definition file
+    to expose the application using `NodePort 300080`. Use different `NodePort`, `ClusterIP`,
+    or `LoadBalancer` type Services depending on the Kubernetes cluster that you are
+    using.
+  id: totrans-135
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 准备一个 `Chapter-11/todo-app-service.yaml` Kubernetes 服务定义文件，以使用 `NodePort 300080`
+    暴露应用程序。根据所使用的 Kubernetes 集群，可以选择不同的 `NodePort`、`ClusterIP` 或 `LoadBalancer` 类型的服务。
+- en: '![Figure 11.18 – The Kubernetes definition file for the to-do app Service ](img/B18383_11_18.jpg)'
+  id: totrans-136
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 11.18 – 待办事项应用的 Kubernetes 服务定义文件](img/B18383_11_18.jpg)'
+- en: Figure 11.18 – The Kubernetes definition file for the to-do app Service
+  id: totrans-137
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 11.18 – 待办事项应用的 Kubernetes 服务定义文件
+- en: 'Create a `Chapter-11/k8s-app-deploy.yaml` playbook and add contents, as follows:'
+  id: totrans-138
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建 `Chapter-11/k8s-app-deploy.yaml` playbook，并添加如下内容：
+- en: '![Figure 11.19 – A playbook to deploy the application in Kubernetes ](img/B18383_11_19.jpg)'
+  id: totrans-139
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 11.19 – 用于在 Kubernetes 中部署应用的 playbook](img/B18383_11_19.jpg)'
+- en: Figure 11.19 – A playbook to deploy the application in Kubernetes
+  id: totrans-140
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 11.19 – 用于在 Kubernetes 中部署应用的 playbook
+- en: 'Execute the playbook:'
+  id: totrans-141
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 执行 playbook：
+- en: '![Figure 11.20 – Execute the playbook to deploy todo-app ](img/B18383_11_20.jpg)'
+  id: totrans-142
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 11.20 – 执行 playbook 部署 todo-app](img/B18383_11_20.jpg)'
+- en: Figure 11.20 – Execute the playbook to deploy todo-app
+  id: totrans-143
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 11.20 – 执行 playbook 部署 todo-app
+- en: 'Verify that the namespace was created using the `kubectl` CLI, as shown in
+    *Figure 11.21*:'
+  id: totrans-144
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用 `kubectl` CLI 验证命名空间是否创建，如 *图 11.21* 所示：
+- en: '![Figure 11.21 – A Kubernetes namespace created using Ansible ](img/B18383_11_21.jpg)'
+  id: totrans-145
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 11.21 – 使用 Ansible 创建的 Kubernetes 命名空间](img/B18383_11_21.jpg)'
+- en: Figure 11.21 – A Kubernetes namespace created using Ansible
+  id: totrans-146
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 11.21 – 使用 Ansible 创建的 Kubernetes 命名空间
+- en: 'Add a task in the same playbook to create the Deployment using the `todo-app-deploy.yaml`
+    Deployment definition file and to create the Kubernetes Service resource using
+    the `todo-app-service.yaml` file, as follows:'
+  id: totrans-147
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在同一个 playbook 中添加一个任务，用于使用 `todo-app-deploy.yaml` 部署定义文件创建部署，并使用 `todo-app-service.yaml`
+    文件创建 Kubernetes 服务资源，内容如下：
+- en: '![Figure 11.22 – Tasks to create Deployment and Service resources in Kubernetes
+    ](img/B18383_11_22.jpg)'
+  id: totrans-148
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 11.22 – 在 Kubernetes 中创建 Deployment 和 Service 资源的任务](img/B18383_11_22.jpg)'
+- en: Figure 11.22 – Tasks to create Deployment and Service resources in Kubernetes
+  id: totrans-149
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 11.22 – 在 Kubernetes 中创建 Deployment 和 Service 资源的任务
+- en: Execute the playbook again to create the Deployment.
+  id: totrans-150
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 再次执行 playbook 来创建 Deployment。
+- en: 'Verify that the Deployment, Pods, ReplicaSet, and Service resources were created,
+    as shown in *Figure 11.23*:'
+  id: totrans-151
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 验证 Deployment、Pods、ReplicaSet 和 Service 资源是否已创建，如 *图 11.23* 所示：
+- en: '![Figure 11.23 – Deployment, Pod, and Service created by Ansible ](img/B18383_11_23.jpg)'
+  id: totrans-152
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 11.23 – 由 Ansible 创建的 Deployment、Pod 和 Service](img/B18383_11_23.jpg)'
+- en: Figure 11.23 – Deployment, Pod, and Service created by Ansible
+  id: totrans-153
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 11.23 – 由 Ansible 创建的 Deployment、Pod 和 Service
+- en: 'As we are using a minikube cluster, we can get the exposed Service details
+    using the `minikube service list` command from the machine running the minikube
+    cluster (not from the Ansible control node), as shown in *Figure 11.24*:'
+  id: totrans-154
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 由于我们使用的是 minikube 集群，我们可以通过运行 minikube 集群的机器（而不是 Ansible 控制节点）使用 `minikube service
+    list` 命令获取暴露的服务详情，如 *图 11.24* 所示：
+- en: '![Figure 11.24 – Exposed Service details in a minikube cluster ](img/B18383_11_24.jpg)'
+  id: totrans-155
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 11.24 – 在 minikube 集群中暴露的服务详情](img/B18383_11_24.jpg)'
+- en: Figure 11.24 – Exposed Service details in a minikube cluster
+  id: totrans-156
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 11.24 – 在 minikube 集群中暴露的服务详情
+- en: Find the URL for the `todo-app` application (`http://192.168.64.10:30080`, in
+    this case) based on the name and use it in the next step.
+  id: totrans-157
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 根据名称查找 `todo-app` 应用的 URL（在此案例中为 `http://192.168.64.10:30080`），并在下一步中使用它。
+- en: 'Access the application from a web browser using the URL `http://192.168.64.10:30080`,
+    as shown in *Figure 11.25*:'
+  id: totrans-158
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 通过 URL `http://192.168.64.10:30080` 在网页浏览器中访问应用，如 *图 11.25* 所示：
+- en: '![Figure 11.25 – Accessing the to-do app deployed in a Kubernetes cluster ](img/B18383_11_25.jpg)'
+  id: totrans-159
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 11.25 – 访问部署在 Kubernetes 集群中的待办应用](img/B18383_11_25.jpg)'
+- en: Figure 11.25 – Accessing the to-do app deployed in a Kubernetes cluster
+  id: totrans-160
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 11.25 – 访问部署在 Kubernetes 集群中的待办应用
+- en: 'Expand the playbook with more resources and configurations as part of your
+    application deployment. For example, we can create an Ingress resource with the
+    Ingress definition, as follows:'
+  id: totrans-161
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在你的应用部署中扩展 playbook，加入更多资源和配置。例如，我们可以通过 Ingress 定义创建一个 Ingress 资源，如下所示：
+- en: '![Figure 11.26 – Ingress resource definition for the to-do app ](img/B18383_11_26.jpg)'
+  id: totrans-162
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 11.26 – 待办应用的 Ingress 资源定义](img/B18383_11_26.jpg)'
+- en: Figure 11.26 – Ingress resource definition for the to-do app
+  id: totrans-163
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 11.26 – 待办应用的 Ingress 资源定义
+- en: 'Use the Ingress definition in the Ansible task to create an Ingress resource,
+    as follows:'
+  id: totrans-164
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用 Ansible 任务中的 Ingress 定义来创建 Ingress 资源，如下所示：
+- en: '![Figure 11.27 – Create an Ingress resource using Ansible ](img/B18383_11_27.jpg)'
+  id: totrans-165
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 11.27 – 使用 Ansible 创建 Ingress 资源](img/B18383_11_27.jpg)'
+- en: Figure 11.27 – Create an Ingress resource using Ansible
+  id: totrans-166
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 11.27 – 使用 Ansible 创建 Ingress 资源
+- en: We can also pass the Deployment information in the form of variables and integrate
+    them into our CD workflow.
+  id: totrans-167
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们还可以以变量的形式传递 Deployment 信息，并将其集成到我们的 CD 工作流中。
+- en: You have learned how to deploy applications and Service resources in Kubernetes
+    using Ansible. Most of the resources in Kubernetes can be created using the `kubernetes.core.k8s`
+    module with the resource definition files. However, there are other useful modules
+    in the `kubernetes.core` collection and we will go on to learn how to use a few
+    of them, such as scaling applications and running commands inside a Pod.
+  id: totrans-168
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你已经学会了如何使用 Ansible 在 Kubernetes 中部署应用和服务资源。大多数 Kubernetes 资源可以通过 `kubernetes.core.k8s`
+    模块和资源定义文件来创建。然而，在 `kubernetes.core` 集合中还有其他有用的模块，我们将继续学习如何使用其中的一些模块，比如扩展应用和在 Pod
+    中运行命令。
+- en: Scaling Kubernetes applications
+  id: totrans-169
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 扩展 Kubernetes 应用
+- en: 'The **ReplicaSet** resource in Kubernetes ensures that a specified number of
+    application Pod replicas are running as part of the Deployment. This mechanism
+    will help to scale the application horizontally whenever needed and without additional
+    resource configurations. A ReplicaSet resource will be created when you create
+    a deployment resource in Kubernetes, as shown in *Figure 11.28*:'
+  id: totrans-170
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Kubernetes 中的 **ReplicaSet** 资源确保指定数量的应用 Pod 副本作为 Deployment 的一部分运行。这个机制有助于在需要时横向扩展应用，而无需额外的资源配置。当你在
+    Kubernetes 中创建 Deployment 资源时，将会创建一个 ReplicaSet 资源，如 *图 11.28* 所示：
+- en: '![Figure 11.28 – A ReplicaSet resource created as part of Deployment ](img/B18383_11_23.jpg)'
+  id: totrans-171
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 11.28 – 作为 Deployment 一部分创建的 ReplicaSet 资源](img/B18383_11_23.jpg)'
+- en: Figure 11.28 – A ReplicaSet resource created as part of Deployment
+  id: totrans-172
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 11.28 – 作为 Deployment 一部分创建的 ReplicaSet 资源
+- en: 'Specify the initial number of replicas inside the Deployment definition file
+    as `replicas: 1` . ReplicaSet will scale the number of Pods based on the replica
+    number.'
+  id: totrans-173
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '在部署定义文件中指定初始副本数为`replicas: 1`。ReplicaSet将根据副本数量扩展Pod的数量。'
+- en: 'When there is extra traffic on the application Pods, scale the application
+    using the `kubectl scale` command, as follows (modify the Deployment, not the
+    ReplicaSet):'
+  id: totrans-174
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当应用Pod上有额外流量时，使用`kubectl scale`命令扩展应用，如下所示（修改部署，而不是ReplicaSet）：
+- en: '![Figure 11.29 – Scaling an application using kubectl ](img/B18383_11_29.jpg)'
+  id: totrans-175
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图11.29 – 使用kubectl扩展应用](img/B18383_11_29.jpg)'
+- en: Figure 11.29 – Scaling an application using kubectl
+  id: totrans-176
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图11.29 – 使用kubectl扩展应用
+- en: 'Wait for the replication changes to take effect and check the resource details
+    again. You will find multiple Pods (three) now running, as shown in *Figure 11.30*:'
+  id: totrans-177
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 等待复制更改生效并再次检查资源详细信息。你将发现现在有多个Pod（三个）在运行，如*图11.30*所示：
+- en: '![Figure 11.30 – An application scaled up using a ReplicaSet resource ](img/B18383_11_30.jpg)'
+  id: totrans-178
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图11.30 – 使用ReplicaSet资源扩展的应用](img/B18383_11_30.jpg)'
+- en: Figure 11.30 – An application scaled up using a ReplicaSet resource
+  id: totrans-179
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图11.30 – 使用ReplicaSet资源扩展的应用
+- en: 'The traffic will be distributed to all Pods using the `service/todoapp-svc`
+    module as a load balancer. Refer to *Figure 11.31*, which highlights the multiple
+    *endpoints*, which are Pod IP addresses:'
+  id: totrans-180
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 流量将通过`service/todoapp-svc`模块作为负载均衡器，分配给所有Pods。请参考*图11.31*，其中突出显示了多个*端点*，即Pod的IP地址：
+- en: '![Figure 11.31 – A Kubernetes Service with multiple Pod replicas as endpoints
+    ](img/B18383_11_31.jpg)'
+  id: totrans-181
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图11.31 – 一个具有多个Pod副本作为端点的Kubernetes服务](img/B18383_11_31.jpg)'
+- en: Figure 11.31 – A Kubernetes Service with multiple Pod replicas as endpoints
+  id: totrans-182
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图11.31 – 一个具有多个Pod副本作为端点的Kubernetes服务
+- en: We can manage the scaling of the Kubernetes application based on traffic and
+    conditions automatically using Ansible. We will learn more about the `kubernetes.core.k8s_scale`
+    module and practice using it in the next section.
+  id: totrans-183
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以使用Ansible自动根据流量和条件管理Kubernetes应用的扩展。我们将在下一节中进一步了解`kubernetes.core.k8s_scale`模块，并进行实践。
+- en: Scaling Kubernetes Deployments using Ansible
+  id: totrans-184
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 使用Ansible扩展Kubernetes部署
+- en: The `k8s_scale` module is part of the `kubernetes.core` collection and we can
+    use it for scaling up or scaling down Kubernetes Deployments.
+  id: totrans-185
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`k8s_scale`模块是`kubernetes.core`集合的一部分，我们可以使用它来扩展或缩小Kubernetes部署。'
+- en: 'Before proceeding with the exercise, remember to scale down the application
+    to one replica (`--replicas=1`), as follows:'
+  id: totrans-186
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在开始练习之前，记得将应用缩小为一个副本（`--replicas=1`），如下所示：
+- en: '![Figure 11.32 – Scale down todo-app replica ](img/B18383_11_32.jpg)'
+  id: totrans-187
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图11.32 – 缩小todo-app副本](img/B18383_11_32.jpg)'
+- en: Figure 11.32 – Scale down todo-app replica
+  id: totrans-188
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图11.32 – 缩小todo-app副本
+- en: 'Follow these steps to create Ansible artifacts for scaling a Kubernetes application:'
+  id: totrans-189
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 按照以下步骤创建用于扩展Kubernetes应用的Ansible工件：
+- en: 'Create a `Chapter-11/k8s-app-scale.yaml` playbook and add content, as follows:'
+  id: totrans-190
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建一个`Chapter-11/k8s-app-scale.yaml`剧本，并添加以下内容：
+- en: '![Figure 11.33 – An Ansible playbook to scale a Kubernetes Deployment ](img/B18383_11_33.jpg)'
+  id: totrans-191
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图11.33 – 扩展Kubernetes部署的Ansible剧本](img/B18383_11_33.jpg)'
+- en: Figure 11.33 – An Ansible playbook to scale a Kubernetes Deployment
+  id: totrans-192
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图11.33 – 扩展Kubernetes部署的Ansible剧本
+- en: 'Adjust `wait_timeout: 30` depending on your next task in the workflow. For
+    example, increase the value to ensure the Pod replicas are created and running
+    successfully before proceeding with the next task.'
+  id: totrans-193
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '根据工作流中的下一个任务，调整`wait_timeout: 30`。例如，增加该值，以确保Pod副本在继续执行下一任务之前已经创建并成功运行。'
+- en: 'Execute the playbook:'
+  id: totrans-194
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 执行剧本：
+- en: '![Figure 11.34 – Execute Kubernetes Deployment scaling playbook ](img/B18383_11_34.jpg)'
+  id: totrans-195
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图11.34 – 执行Kubernetes部署扩展剧本](img/B18383_11_34.jpg)'
+- en: Figure 11.34 – Execute Kubernetes Deployment scaling playbook
+  id: totrans-196
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图11.34 – 执行Kubernetes部署扩展剧本
+- en: 'Verify the Pod replicas using the `kubectl` command, as shown in *Figure 11.35*:'
+  id: totrans-197
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用`kubectl`命令验证Pod副本，如*图11.35*所示：
+- en: '![Figure 11.35 – Pod replicas after scaling ](img/B18383_11_35.jpg)'
+  id: totrans-198
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图11.35 – 扩展后的Pod副本](img/B18383_11_35.jpg)'
+- en: Figure 11.35 – Pod replicas after scaling
+  id: totrans-199
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图11.35 – 扩展后的Pod副本
+- en: 'Customize the scaling based on several conditions, as follows:'
+  id: totrans-200
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 根据以下条件定制扩展：
+- en: '`current_replicas: x`: This will change the replicas only if the current number
+    of replicas matches the `current_replicas` value.'
+  id: totrans-201
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`current_replicas: x`：只有当前副本数量与`current_replicas`值匹配时，才会更改副本。'
+- en: '`src: deployment.ym`l: This will read the Deployment and the replicas definition
+    from a file.'
+  id: totrans-202
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`src: deployment.ym`l：这将从文件中读取部署和副本定义。'
+- en: '`wait: no`: This will not wait for the scaling to complete.'
+  id: totrans-203
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`wait: no`：这将不会等待缩放完成。'
+- en: Refer to the `k8s_scale` module documentation for more details ([https://docs.ansible.com/ansible/latest/collections/kubernetes/core/k8s_scale_module.xhtml](https://docs.ansible.com/ansible/latest/collections/kubernetes/core/k8s_scale_module.xhtml)).
+  id: totrans-204
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 参阅 `k8s_scale` 模块文档获取更多细节（[https://docs.ansible.com/ansible/latest/collections/kubernetes/core/k8s_scale_module.xhtml](https://docs.ansible.com/ansible/latest/collections/kubernetes/core/k8s_scale_module.xhtml)）。
+- en: In the next section, we will learn about the `k8s_exec` module and how to use
+    it to troubleshoot Pods.
+  id: totrans-205
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一节中，我们将学习 `k8s_exec` 模块，并了解如何使用它来排查 Pod 问题。
+- en: Executing commands inside a Kubernetes Pod
+  id: totrans-206
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 在 Kubernetes Pod 中执行命令
+- en: In a normal situation, we do not need to log in to a Pod or container, as the
+    application is exposed on some ports and Services are talking over these exposed
+    ports. However, when there are issues, we need to access the containers and check
+    what is happening inside, by checking logs, accessing other Pods, or running any
+    necessary troubleshooting commands.
+  id: totrans-207
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在正常情况下，我们不需要登录到 Pod 或容器中，因为应用程序通过一些端口暴露，服务会通过这些暴露的端口进行通信。然而，当出现问题时，我们需要访问容器并检查内部情况，通过查看日志、访问其他
+    Pod 或运行必要的故障排除命令。
+- en: 'Use the `kubectl exec` command if you are doing this troubleshooting or information
+    gathering manually:'
+  id: totrans-208
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你正在手动排查问题或收集信息，请使用 `kubectl exec` 命令：
+- en: '![Figure 11.36 – Execute commands inside a Pod using the kubectl utility ](img/B18383_11_36.jpg)'
+  id: totrans-209
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 11.36 – 使用 kubectl 工具在 Pod 中执行命令](img/B18383_11_36.jpg)'
+- en: Figure 11.36 – Execute commands inside a Pod using the kubectl utility
+  id: totrans-210
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 11.36 – 使用 kubectl 工具在 Pod 中执行命令
+- en: However, when we automate Kubernetes operations using Ansible, use the `k8s_exec`
+    module and automate the verification tasks or validation tasks as well.
+  id: totrans-211
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，当我们使用 Ansible 自动化 Kubernetes 操作时，应使用 `k8s_exec` 模块，并同时自动化验证任务或验证过程。
+- en: 'For such scenarios, we can deploy debug Pods using suitable images (for example,
+    images with required utilities, such as `ping`, `curl`, or `netstat`) and execute
+    validation commands from these Pods. A typical deployment scenario with test Pods
+    (`curl-pod`) is shown in *Figure 11.37*, as follows:'
+  id: totrans-212
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于这种场景，我们可以使用合适的镜像（例如，包含所需工具的镜像，如`ping`、`curl`或`netstat`）部署调试 Pod，并从这些 Pod 执行验证命令。一个典型的部署场景是使用测试
+    Pod（`curl-pod`），如*图 11.37*所示：
+- en: '![Figure 11.37– A debug Pod to validate and verify applications ](img/B18383_11_37.jpg)'
+  id: totrans-213
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 11.37 – 用于验证和确认应用程序的调试 Pod](img/B18383_11_37.jpg)'
+- en: Figure 11.37– A debug Pod to validate and verify applications
+  id: totrans-214
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 11.37 – 用于验证和确认应用程序的调试 Pod
+- en: 'In the following scenario, we will create a playbook to deploy a `curl-pod`
+    Pod using a `busyboxplus` image ([https://hub.docker.com/r/radial/busyboxplus](https://hub.docker.com/r/radial/busyboxplus))
+    and verify the `todoapp-svc` Service from the `curl-pod` Pod:'
+  id: totrans-215
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在以下场景中，我们将创建一个 playbook，使用 `busyboxplus` 镜像（[https://hub.docker.com/r/radial/busyboxplus](https://hub.docker.com/r/radial/busyboxplus)）部署一个
+    `curl-pod` Pod，并验证 `curl-pod` Pod 中的 `todoapp-svc` 服务：
+- en: 'Create the `curl-app-pod.yaml` definition file for the `curl-pod` Pod, as follows:'
+  id: totrans-216
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建 `curl-app-pod.yaml` 定义文件用于定义 `curl-pod` Pod，如下所示：
+- en: '![Figure 11.38 – Kubernetes Deployment definition for a curl-pod Pod ](img/B18383_11_38.jpg)'
+  id: totrans-217
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 11.38 – curl-pod Pod 的 Kubernetes Deployment 定义](img/B18383_11_38.jpg)'
+- en: Figure 11.38 – Kubernetes Deployment definition for a curl-pod Pod
+  id: totrans-218
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 11.38 – curl-pod Pod 的 Kubernetes Deployment 定义
+- en: We have added a `sleep 50000` command; otherwise, the Pod will exit without
+    running any processes.
+  id: totrans-219
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们添加了一个 `sleep 50000` 命令；否则，Pod 会在没有运行任何进程的情况下退出。
+- en: 'Create a `Chapter-11/curl-app-deploy.yaml` playbook and add content, as follows:'
+  id: totrans-220
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建一个 `Chapter-11/curl-app-deploy.yaml` playbook，并添加如下内容：
+- en: '![Figure 11.39 – Ansible playbook for deploying curl-pod ](img/B18383_11_39.jpg)'
+  id: totrans-221
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 11.39 – 用于部署 curl-pod 的 Ansible playbook](img/B18383_11_39.jpg)'
+- en: Figure 11.39 – Ansible playbook for deploying curl-pod
+  id: totrans-222
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 11.39 – 用于部署 curl-pod 的 Ansible playbook
+- en: 'Add a task to execute the `curl` command inside the `curl-pod` Pod to verify
+    whether the `todoapp-svc` Service is accessible or not. Then, add tasks for displaying
+    the output of the `curl` command, and validate the success and fail status (`curl_output.failed
+    == true`), as follows:'
+  id: totrans-223
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 添加一个任务，在 `curl-pod` Pod 中执行 `curl` 命令，以验证 `todoapp-svc` 服务是否可以访问。然后，添加任务以显示
+    `curl` 命令的输出，并验证成功与失败状态（`curl_output.failed == true`），如下所示：
+- en: '![Figure 11.40– Tasks to execute the curl command inside the curl-pod Pod and
+    to display its status ](img/B18383_11_40.jpg)'
+  id: totrans-224
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 11.40 – 在 curl-pod Pod 中执行 curl 命令并显示其状态](img/B18383_11_40.jpg)'
+- en: Figure 11.40– Tasks to execute the curl command inside the curl-pod Pod and
+    to display its status
+  id: totrans-225
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 11.40 – 在 curl-pod Pod 内执行 curl 命令并显示其状态的任务
+- en: The last task is optional but adding more validations and messages will help
+    you to implement a better workflow.
+  id: totrans-226
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后一个任务是可选的，但添加更多的验证和消息将有助于实现更好的工作流程。
+- en: Once the verification is complete, delete the `curl-pod` Pod, as we do not require
+    it anymore.
+  id: totrans-227
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 一旦验证完成，删除 `curl-pod` Pod，因为我们不再需要它。
+- en: '![Figure 11.41 – Remove the curl-pod Pod after testing ](img/B18383_11_41.jpg)'
+  id: totrans-228
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 11.41 – 测试完成后删除 curl-pod Pod](img/B18383_11_41.jpg)'
+- en: Figure 11.41 – Remove the curl-pod Pod after testing
+  id: totrans-229
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 11.41 – 测试完成后删除 curl-pod Pod
+- en: 'Execute the playbook and verify the output. We can see the `curl` output as
+    shown in *Figure 11.42* if the `todoapp-svc` Service is reachable from the `curl-pod`
+    Pod:'
+  id: totrans-230
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 执行 playbook 并验证输出。如果 `todoapp-svc` 服务可以从 `curl-pod` Pod 访问，我们可以看到如 *图 11.42*
+    所示的 `curl` 输出：
+- en: '![Figure 11.42 – The curl command output for todoapp-svc ](img/B18383_11_42.jpg)'
+  id: totrans-231
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 11.42 – todoapp-svc 的 curl 命令输出](img/B18383_11_42.jpg)'
+- en: Figure 11.42 – The curl command output for todoapp-svc
+  id: totrans-232
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 11.42 – todoapp-svc 的 curl 命令输出
+- en: The `kubernetes.core.k8s_exec` module is very useful for the validation and
+    verification of Kubernetes applications and cluster management using Ansible.
+    The command can be executed inside a debug Pod, as we learned in the preceding
+    exercise, or even inside the application Pod for verifying facts.
+  id: totrans-233
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`kubernetes.core.k8s_exec` 模块在使用 Ansible 进行 Kubernetes 应用程序和集群管理的验证和确认中非常有用。该命令可以在调试
+    Pod 内执行，正如我们在前面的练习中所学的那样，甚至可以在应用程序 Pod 内执行以验证信息。'
+- en: Explore the `kubernetes.core` collection and find other useful modules and plugins
+    to automate your Kubernetes Deployments and resources.
+  id: totrans-234
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 探索 `kubernetes.core` 集合，查找其他有用的模块和插件，以自动化您的 Kubernetes 部署和资源。
+- en: Summary
+  id: totrans-235
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 总结
+- en: In this chapter, we have learned about the Ansible collection for Kubernetes
+    cluster and resource management. We started by covering the basics of Kubernetes
+    components and discussed how to use Kubespray to deploy and manage Kubernetes
+    clusters and their supported features.
+  id: totrans-236
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们学习了用于 Kubernetes 集群和资源管理的 Ansible 集合。我们从 Kubernetes 组件的基础知识开始，讨论了如何使用
+    Kubespray 部署和管理 Kubernetes 集群及其支持的功能。
+- en: After that, we learned the method of connecting a Kubernetes cluster to Ansible
+    to automate cluster operations. We have used the Kubernetes Ansible collection
+    to deploy applications and scale Deployments. We have also learned how to execute
+    commands inside a running Kubernetes Pod using Ansible, which can be utilized
+    for validation and troubleshooting purposes. This chapter has provided a brief
+    introduction to Kubernetes automation using Ansible and other important information,
+    such as Kubernetes content collection and methods of connecting Ansible to Kubernetes.
+  id: totrans-237
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 之后，我们学习了将 Kubernetes 集群连接到 Ansible 以自动化集群操作的方法。我们使用 Kubernetes Ansible 集合部署应用程序并扩展
+    Deployments。我们还学习了如何使用 Ansible 在运行中的 Kubernetes Pod 内执行命令，这可以用于验证和故障排除。本章简要介绍了使用
+    Ansible 自动化 Kubernetes 及其他重要信息，如 Kubernetes 内容集合以及将 Ansible 连接到 Kubernetes 的方法。
+- en: In the next chapter, you will learn about the different available methods of
+    integrating your CI/CD and communication tools using Ansible. We will learn more
+    about the enterprise version of Ansible, which is called Ansible Automation Platform,
+    and its flexible integration features.
+  id: totrans-238
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一章中，您将学习如何使用 Ansible 集成 CI/CD 和通信工具的不同方法。我们将进一步了解 Ansible 的企业版，名为 Ansible
+    Automation Platform，以及其灵活的集成功能。
+- en: Further reading
+  id: totrans-239
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 进一步阅读
+- en: 'For more information on the topics covered in this chapter, please refer to
+    the following links:'
+  id: totrans-240
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 欲了解更多本章内容的相关信息，请参考以下链接：
+- en: '*Introduction to Ansible for Kubernetes guide* – [https://docs.ansible.com/ansible/latest/collections/kubernetes/core/docsite/scenario_guide.xhtml](https://docs.ansible.com/ansible/latest/collections/kubernetes/core/docsite/scenario_guide.xhtml)'
+  id: totrans-241
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*Kubernetes Ansible 入门指南* – [https://docs.ansible.com/ansible/latest/collections/kubernetes/core/docsite/scenario_guide.xhtml](https://docs.ansible.com/ansible/latest/collections/kubernetes/core/docsite/scenario_guide.xhtml)'
+- en: '*Play with Kubernetes – free hands-on labs* – [https://labs.play-with-k8s.com/](https://labs.play-with-k8s.com/)'
+  id: totrans-242
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*Play with Kubernetes – 免费的动手实验室* – [https://labs.play-with-k8s.com/](https://labs.play-with-k8s.com/)'
+- en: '*CRI-O* – [https://cri-o.io](https://cri-o.io)'
+  id: totrans-243
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*CRI-O* – [https://cri-o.io](https://cri-o.io)'
+- en: '*containerd* – [https://containerd.io/](https://containerd.io/)'
+  id: totrans-244
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*containerd* – [https://containerd.io/](https://containerd.io/)'
+- en: '*Top 15 Free Kubernetes Courses* – [https://www.techbeatly.com/kubernetes-free-courses/](https://www.techbeatly.com/kubernetes-free-courses/)'
+  id: totrans-245
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*前15名免费Kubernetes课程* – [https://www.techbeatly.com/kubernetes-free-courses/](https://www.techbeatly.com/kubernetes-free-courses/)'
+- en: '*What is Kubernetes?* – [https://www.redhat.com/en/topics/containers/what-is-kubernetes](https://www.redhat.com/en/topics/containers/what-is-kubernetes)'
+  id: totrans-246
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*什么是Kubernetes？* – [https://www.redhat.com/en/topics/containers/what-is-kubernetes](https://www.redhat.com/en/topics/containers/what-is-kubernetes)'
+- en: '*Free OpenShift labs* – [learn.openshift.com](http://learn.openshift.com)'
+  id: totrans-247
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*免费的OpenShift实验室* – [learn.openshift.com](http://learn.openshift.com)'
+- en: '*The Ansible kubernetes.core collection* – [https://galaxy.ansible.com/kubernetes/core](https://galaxy.ansible.com/kubernetes/core)
+    or [https://console.redhat.com/ansible/automation-hub/repo/published/kubernetes/core](https://console.redhat.com/ansible/automation-hub/repo/published/kubernetes/core)'
+  id: totrans-248
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*Ansible kubernetes.core 集合* – [https://galaxy.ansible.com/kubernetes/core](https://galaxy.ansible.com/kubernetes/core)
+    或 [https://console.redhat.com/ansible/automation-hub/repo/published/kubernetes/core](https://console.redhat.com/ansible/automation-hub/repo/published/kubernetes/core)'
+- en: '*The Ansible community.kubernetes collection* – [https://galaxy.ansible.com/community/kubernetes](https://galaxy.ansible.com/community/kubernetes)'
+  id: totrans-249
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*Ansible community.kubernetes 集合* – [https://galaxy.ansible.com/community/kubernetes](https://galaxy.ansible.com/community/kubernetes)'
+- en: '*Templating (Jinja2)* – [https://docs.ansible.com/ansible/latest/user_guide/playbooks_templating.xhtml](https://docs.ansible.com/ansible/latest/user_guide/playbooks_templating.xhtml)'
+  id: totrans-250
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*模板化（Jinja2）* – [https://docs.ansible.com/ansible/latest/user_guide/playbooks_templating.xhtml](https://docs.ansible.com/ansible/latest/user_guide/playbooks_templating.xhtml)'
+- en: '*What is PaaS?* – [https://www.redhat.com/en/topics/cloud-computing/what-is-paas](https://www.redhat.com/en/topics/cloud-computing/what-is-paas)'
+  id: totrans-251
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*什么是PaaS？* – [https://www.redhat.com/en/topics/cloud-computing/what-is-paas](https://www.redhat.com/en/topics/cloud-computing/what-is-paas)'
+- en: '*Microk8s* – [https://microk8s.io](https://microk8s.io)'
+  id: totrans-252
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*Microk8s* – [https://microk8s.io](https://microk8s.io)'
+- en: '*Red Hat OpenShift* – [https://www.redhat.com/en/technologies/cloud-computing/openshift](https://www.redhat.com/en/technologies/cloud-computing/openshift)'
+  id: totrans-253
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*Red Hat OpenShift* – [https://www.redhat.com/en/technologies/cloud-computing/openshift](https://www.redhat.com/en/technologies/cloud-computing/openshift)'
+- en: '*Kubespray* – [https://kubespray.io](https://kubespray.io), [https://github.com/kubernetes-sigs/kubespray](https://github.com/kubernetes-sigs/kubespray)'
+  id: totrans-254
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*Kubespray* – [https://kubespray.io](https://kubespray.io), [https://github.com/kubernetes-sigs/kubespray](https://github.com/kubernetes-sigs/kubespray)'

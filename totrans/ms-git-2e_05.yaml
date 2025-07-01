@@ -1,0 +1,1659 @@
+- en: '4'
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '4'
+- en: Exploring Project History
+  id: totrans-1
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 探索项目历史
+- en: One of the important parts of mastering a **version control system** (**VCS**)
+    is exploring project history and making use of the fact that with the VCS, we
+    have an archive of every version that has ever existed. For example, you might
+    want to examine what other developers did or remind yourself what you are about
+    to publish.
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 掌握**版本控制系统（VCS）**的一个重要部分是探索项目历史，并利用 VCS 保存了每个版本的档案这一事实。例如，你可能希望查看其他开发者所做的工作，或提醒自己即将发布的内容。
+- en: In this chapter, you will learn how to select and view a revision or a range
+    of revisions, as well as how to refer to them. The following chapter will continue
+    this topic and explain how to find revisions using different criteria, as well
+    as how to search through selected revisions; it will also describe how to search
+    through project content.
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，你将学习如何选择和查看一个修订或一系列修订，以及如何引用它们。下一章将继续这一主题，解释如何使用不同的标准查找修订，并如何在已选择的修订中进行搜索；同时，它还会描述如何在项目内容中进行搜索。
+- en: This chapter will also introduce the concept of **Directed Acyclic Graph** (**DAG**)
+    of revisions and explain how this concept relates to the idea of the project history,
+    as well as the ideas of branches, tags, and the current branch in Git.
+  id: totrans-4
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章还将介绍修订的**有向无环图（DAG）**概念，并解释该概念与项目历史的关系，以及与 Git 中分支、标签和当前分支的关系。
+- en: 'Here is the list of topics we will cover in this chapter:'
+  id: totrans-5
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这里是我们将在本章中讨论的主题列表：
+- en: DAG of revisions as a way of representing history
+  id: totrans-6
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 作为表示历史的方式的修订 DAG
+- en: Different ways of revision selection
+  id: totrans-7
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 不同的修订选择方式
+- en: Selecting starting branches and tags
+  id: totrans-8
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 选择起始分支和标签
+- en: Using data from reflog to select revisions
+  id: totrans-9
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用 reflog 中的数据来选择修订
+- en: Double-dot (A..B) and triple-dot notation (A…B) for revision range selection
+  id: totrans-10
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 双点（A..B）和三点表示法（A…B）用于修订范围选择
+- en: Advanced revision range selection
+  id: totrans-11
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 高级修订范围选择
+- en: The purpose of this chapter is to teach you how to select relevant parts of
+    project history. The next chapter will explain how to investigate this further
+    by searching through what you’ve selected.
+  id: totrans-12
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章的目的是教你如何选择项目历史中的相关部分。下一章将解释如何通过搜索你选择的内容进一步探讨这个问题。
+- en: DAGs
+  id: totrans-13
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: DAGs
+- en: What makes VCSs different from backup applications is *the ability to represent
+    more than linear history*. This is necessary both to support the simultaneous
+    parallel development by different developers (each developer in their own clone
+    of the repository) and to allow independent parallel lines of development – branches.
+    For example, with a VCS, you might want to keep the ongoing development and the
+    work on bug fixes for the stable version isolated. You can do this by using individual
+    branches for those separate lines of development. So, the VCS needs to be able
+    to model such a non-linear way of development and needs to have some structure
+    to represent it.
+  id: totrans-14
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 版本控制系统（**VCS**）与备份应用程序的不同之处在于*能够表示超越线性历史的内容*。这对于支持不同开发者之间的并行开发（每个开发者在自己克隆的仓库中）以及允许独立的并行开发线（即分支）是必要的。例如，使用
+    VCS，你可能希望将正在进行的开发与稳定版本的 bug 修复工作隔离开来。你可以通过为这些不同的开发线使用单独的分支来实现这一点。因此，VCS 需要能够建模这种非线性的开发方式，并且需要具备一些结构来表示它。
+- en: The structure that Git uses (on the abstract level) to represent the possibly
+    non-linear history of a project is called a **Directed Acyclic** **Graph (DAG)**.
+  id: totrans-15
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git 用来表示项目可能存在的非线性历史的结构（在抽象层次上）叫做**有向无环图（DAG）**。
+- en: 'The following diagram (*Figure 4**.1*) shows an example of a DAG, drawn in
+    two different ways. The same graph is represented on both sides of the figure:
+    using the free-form layout on the left and the left-to-right layout on the right.'
+  id: totrans-16
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 下图（*图 4.1*）展示了一个 DAG 的示例，使用两种不同的方式绘制。图中的相同图形在两侧都呈现：左侧使用自由格式布局，右侧使用从左到右的布局。
+- en: '![Figure 4.1 – Generic example of a DAG, with the same graph drawn with different
+    layouts](img/B21194_04_01.jpg)'
+  id: totrans-17
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 4.1 – DAG 的通用示例，使用不同布局绘制的相同图形](img/B21194_04_01.jpg)'
+- en: Figure 4.1 – Generic example of a DAG, with the same graph drawn with different
+    layouts
+  id: totrans-18
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 4.1 – DAG 的通用示例，使用不同布局绘制的相同图形
+- en: A **directed graph** is a data structure from computer science and mathematics
+    that’s composed of *nodes* (vertices) connected with *directed edges* (arrows).
+    A directed graph is *acyclic* if it doesn’t contain any cycles, which means that
+    there is no way to start at some node and follow a sequence of directed edges
+    to end up at the starting node again.
+  id: totrans-19
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**有向图**是计算机科学和数学中的一种数据结构，由*节点*（顶点）通过*有向边*（箭头）连接组成。如果一个有向图不包含任何循环，它就是*无环*的，这意味着无法从某个节点出发，沿着有向边的序列返回到起始节点。'
+- en: Understanding this topic, in my opinion, helps with mastering the art of exploring,
+    searching, and shaping the project history. You might want to read it more times
+    to internalize this knowledge. It is not, however, required to be able to use
+    Git successfully, so this section can be skipped on the first pass.
+  id: totrans-20
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我认为理解这个主题有助于掌握探索、搜索和塑造项目历史的艺术。你可能需要多读几遍以内化这些知识。然而，这并不是使用 Git 成功所必需的，因此在第一次阅读时可以跳过这一部分。
+- en: In a specific realization of a graph, each node represents some object (or a
+    piece of data), and each edge from one node to another represents some kind of
+    relationship between the objects it connects (or between data represented by nodes).
+  id: totrans-21
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在图的特定实现中，每个节点代表某个对象（或数据的一部分），而从一个节点到另一个节点的每一条边代表它们之间某种关系（或者节点所代表的数据之间的关系）。
+- en: 'The DAG of revisions in **distributed version control systems** (**DVCSs**)
+    uses the following representation:'
+  id: totrans-22
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**分布式版本控制系统**（**DVCS**）中的修订版的有向无环图（DAG）使用如下表示：'
+- en: '**Nodes**: In DVCSs, each node represents one **revision** (one version) of
+    a project (of the entire tree). Those objects are called **commits**.'
+  id: totrans-23
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**节点**：在分布式版本控制系统（DVCS）中，每个节点代表项目（整个树）的一个**修订版**（一个版本）。这些对象被称为**提交**。'
+- en: '**Directed edges**: In DVCSs, each edge represents the *this revision is based
+    on that revision* relationship between two revisions. The arrow goes from a later
+    **child** revision to an earlier **parent** revision it was based on – that is,
+    the revision it was created from. This is *the reverse* of the way most people
+    like to think of *the arrow of time* – that is, the arrow pointing from an earlier
+    commit to a later one.'
+  id: totrans-24
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**有向边**：在 DVCS 中，每条边表示两个修订版之间的*某修订版基于某修订版*的关系。箭头从较新的**子节点**指向较早的**父节点**，即它基于的修订版。这与大多数人习惯的*时间箭头*的思维方式相反——也就是，从较早的提交指向较新的提交。'
+- en: Because directed edges represent the *is based on* causal relationship between
+    revisions, the arrows in the DAG of revisions cannot form a cycle. Usually, the
+    DAG of revisions is laid out left-to-right (root nodes on the left, leaves on
+    the right) or bottom-to-top (most recent revisions on the top). The figures in
+    this book and ASCII-art examples in the Git documentation use the left-to-right
+    convention, while the Git command line uses bottom-to-top, which is the most recent
+    first convention.
+  id: totrans-25
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于有向边表示修订版之间的*基于*因果关系，修订版的有向无环图中的箭头不能形成循环。通常，修订版的有向无环图是从左到右（根节点在左，叶子节点在右）或从下到上（最新的修订版在上）排列的。本书中的图示和
+    Git 文档中的 ASCII 艺术示例采用的是从左到右的排列方式，而 Git 命令行使用的是从下到上的排列方式，即最新的修订版在上。
+- en: 'There are two special types of nodes in any DAG (see *Figure 4**.1*):'
+  id: totrans-26
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在任何有向无环图中都有两种特殊类型的节点（见*图 4.1*）：
+- en: '**Root nodes** (or **roots**): These are nodes (revisions) that have no parents
+    (have no outgoing edges). There is at least one root node in the DAG of revisions,
+    which represents the initial (starting) version of a project.'
+  id: totrans-27
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**根节点**（或**根**）：这些是没有父节点（没有出边）的节点（修订版）。在修订版的有向无环图中至少有一个根节点，它代表项目的初始（起始）版本。'
+- en: '**Leaf nodes** (or **leaves**): These are nodes that have no children (no incoming
+    edges); there is at least one such node. They represent the most recent versions
+    of the project, not having any work based on them. Usually, each leaf in the DAG
+    of revisions has a branch head pointing to it.'
+  id: totrans-28
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**叶子节点**（或**叶子**）：这些是没有子节点（没有入边）的节点；至少会有一个这样的节点。它们代表项目的最新版本，且没有任何基于它们的工作。通常，修订版的有向无环图（DAG）中的每个叶子节点都有一个指向它的分支头。'
+- en: Important note
+  id: totrans-29
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 重要提示
+- en: There can be more than one root node in Git’s DAG of revisions. Additional root
+    nodes can be created when you’re joining two formerly originally independent projects
+    together; each joined project brings its own root node. As this is a very rare
+    occasion, with modern Git, you need to pass the **--allow-unrelated-histories**
+    option to the **git merge** or **git pull** command to do so, to help avoid mistakes.
+  id: totrans-30
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 Git 的修订 DAG 中可以有多个根节点。当你将两个原本独立的项目合并时，可以创建额外的根节点；每个合并的项目都会带来自己的根节点。由于这是一个非常罕见的情况，现代
+    Git 中你需要为**git merge**或**git pull**命令传递**--allow-unrelated-histories**选项，以帮助避免错误。
+- en: Another source of root nodes is **orphan branches** – that is, disconnected
+    branches with no history in common. They are, for example, used by GitHub to manage
+    a project’s web pages together in one repository with the code (in the **gh-pages**
+    branch), and by the Git project itself to store pre-generated documentation (the
+    **man** and **html** branches) and related projects (the **todo** branch). To
+    create such a branch, you need to use the **--orphan** option in **git checkout**
+    or **git switch**.
+  id: totrans-31
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 另一个根节点的来源是**孤立分支**——即没有共同历史的断开分支。例如，GitHub 用它们来管理项目的网页，这些网页与代码存储在同一个仓库中（在**gh-pages**分支中）；Git
+    项目本身也使用它们来存储预生成的文档（**man**和**html**分支）以及相关项目（**todo**分支）。要创建这样的分支，需要在**git checkout**或**git
+    switch**中使用**--orphan**选项。
+- en: The fact that the DAG can have more than one leaf node means that there is no
+    inherent notion of the latest version, as it was in the linear history paradigm.
+  id: totrans-32
+  prefs: []
+  type: TYPE_NORMAL
+  zh: DAG 可以有多个叶子节点，这意味着不存在像线性历史范式中的“最新版本”这一概念。
+- en: Whole-tree commits
+  id: totrans-33
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 整棵树的提交
+- en: 'In DVCSs, each node of the DAG of revisions (DVCS’s model of history) represents
+    a version of the project as a whole single entity: a **snapshot** of the whole
+    directory tree contents of a project.'
+  id: totrans-34
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在分布式版本控制系统（DVCS）中，修订的每个节点（DVCS 的历史模型）代表一个项目作为一个整体的版本：一个**快照**，即项目整个目录树内容的快照。
+- en: This means that by default, each developer will get the history of all the files
+    in their clone of the repository. Where needed, they can choose to get only a
+    part of the history (shallow clone and/or cloning only selected branches), they
+    can checkout only selected files (sparse checkout), or they can use the partial
+    clone feature (with, for example, different versions of files contents loaded
+    on demand). Those special cases, and more, will be described in [*Chapter 12*](B21194_12.xhtml#_idTextAnchor302),
+    *Managing* *Large Repositories*.
+  id: totrans-35
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这意味着默认情况下，每个开发者都会获得他们仓库克隆中的所有文件的历史记录。如果需要，他们可以选择仅获取部分历史记录（浅克隆和/或仅克隆选定分支），可以仅签出选定文件（稀疏签出），或者使用部分克隆功能（例如，根据需求加载不同版本的文件内容）。这些特殊情况，以及更多内容，将在[*第
+    12 章*](B21194_12.xhtml#_idTextAnchor302)《管理大型仓库》中详细描述。
+- en: Branches and tags
+  id: totrans-36
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 分支和标签
+- en: A `maintenance`, to help in managing bug fixes to the released stable version
+    of a project, while isolating this activity from the rest of the development.
+  id: totrans-37
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一个 `maintenance` 分支，帮助管理对项目发布的稳定版本的 bug 修复，同时将这一活动与其他开发工作隔离开来。
+- en: A `v1.3-rc3` tag, among others, to be able to go back to this specific version,
+    check the validity of bug reports from your testers, and find the sources of reported
+    bugs.
+  id: totrans-38
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一个 `v1.3-rc3` 标签等，可以让你回到这个特定版本，检查测试人员报告的 bug 的有效性，并找到报告的 bug 来源。
+- en: 'Both branches and tags, sometimes called **references** (**refs**) when used
+    together, have the same meaning and almost the same representation within the
+    DAG of revisions. They are external references (pointers) to the graph of revisions,
+    as shown in *Figure 4**.2*:'
+  id: totrans-39
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 分支和标签，有时也称为**引用**（**refs**），当一起使用时，它们在修订的 DAG 中具有相同的含义和几乎相同的表示方式。它们是修订图的外部引用（指针），如*图
+    4.2*所示：
+- en: '![Figure 4.2 – Example DAG of revisions in a VCS with two branches, a single
+    tag, one fork point, and a single merge commit](img/B21194_04_02.jpg)'
+  id: totrans-40
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 4.2 – 一个包含两个分支、一个标签、一个分叉点和一个合并提交的版本控制系统（VCS）修订的示例有向无环图（DAG）](img/B21194_04_02.jpg)'
+- en: Figure 4.2 – Example DAG of revisions in a VCS with two branches, a single tag,
+    one fork point, and a single merge commit
+  id: totrans-41
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 4.2 – 一个包含两个分支、一个标签、一个分叉点和一个合并提交的版本控制系统（VCS）修订的示例有向无环图（DAG）
+- en: A `v1.3-rc3` in *Figure 4**.2*. It always points to the same object; it doesn’t
+    change. The idea behind having tags is to be able to refer to the given revision
+    with a symbolic name and to have this symbolic name mean the same for every developer.
+    Checking out or viewing the given tag should provide the same results for everyone.
+  id: totrans-42
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`v1.3-rc3`在*图4.2*中。它始终指向相同的对象；它不会改变。使用标签的想法是能够通过符号名称引用给定的修订，并且这个符号名称对每个开发者来说都意味着相同的内容。检出或查看给定标签时，每个人都应该得到相同的结果。'
+- en: A `maint` and `master`.)
+  id: totrans-43
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一个`maint`和`master`。
+- en: The branch in the DAG is, as a line of development, the subgraph of the DAG
+    composed of those revisions that can be **reached** from the tip of the branch
+    (from the branch head) – in other words, of those revisions that you can walk
+    to by following the parent edges starting from the branch head.
+  id: totrans-44
+  prefs: []
+  type: TYPE_NORMAL
+  zh: DAG中的分支，作为一个开发线路，是DAG的子图，由那些可以从分支的末端（从分支头）到达的修订组成——换句话说，就是从分支头开始，沿着父节点的边走到的那些修订。
+- en: Git needs to know which branch tip to advance when creating a new commit. It
+    needs to know which branch is the current one and is `HEAD` points directly to
+    a node in the DAG.
+  id: totrans-45
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在创建新提交时，Git需要知道哪个分支的末端需要推进。它需要知道当前的分支是哪一个，`HEAD`直接指向DAG中的一个节点。
+- en: Full names of references (branches and tags)
+  id: totrans-46
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 引用（分支和标签）的全名
+- en: Originally, Git stored branches and tags in files inside the `.git` administrative
+    area, in the `.git/refs/heads/` and `.git/refs/tags/` directories, respectively.
+    Modern Git can store information about tags and branches inside the `.git/packed-refs`
+    file to avoid handling a very large number of small files. Nevertheless, active
+    references use the original *loose* format – one file per reference.
+  id: totrans-47
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最初，Git将分支和标签存储在`.git`管理区域中的文件内，分别位于`.git/refs/heads/`和`.git/refs/tags/`目录下。现代Git可以将有关标签和分支的信息存储在`.git/packed-refs`文件中，以避免处理大量小文件。然而，活动引用仍然使用原始的*松散*格式——每个引用一个文件。
+- en: 'The `HEAD` pointer (denoting the current branch) is stored in `.git/HEAD`.
+    It is usually a symbolic reference – for example, **ref: refs/heads/master**.'
+  id: totrans-48
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`HEAD`指针（表示当前分支）存储在`.git/HEAD`中。它通常是一个符号引用——例如，**ref: refs/heads/master**。'
+- en: The `master` branch is stored in `.git/refs/heads/master` and has `refs/heads/master`
+    as its full name (in other words, branches reside in the `refs/heads/` namespace).
+    The tip of the branch is referred to as the **head** of a branch, hence the name
+    of this namespace. In *loose* format, the file contents are an SHA-1 identifier
+    of the most current revision on the branch (the **branch tip**), in plain text
+    as hexadecimal digits. It is sometimes required to use the full name if there
+    is ambiguity among refs.
+  id: totrans-49
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`master`分支存储在`.git/refs/heads/master`中，并以`refs/heads/master`作为它的全名（换句话说，分支位于`refs/heads/`命名空间中）。分支的末端称为分支的**头**，因此这个命名空间的名称。以*松散*格式存储时，文件内容是分支上最新修订的SHA-1标识符（**分支末端**），以十六进制数字的纯文本形式表示。如果引用之间存在歧义，有时需要使用全名。'
+- en: The remote-tracking branch, `origin/master`, which remembers the last seen position
+    of the `master` branch in the remote repository, `origin`, is stored in `.git/refs/remotes/origin/master`
+    and has `refs/remotes/origin/master` as its full name. The concept of **remotes**
+    will be explained in [*Chapter 6*](B21194_06.xhtml#_idTextAnchor140), *Collaborative
+    Development with Git*, while **remote-tracking branches** will be covered in [*Chapter
+    8*](B21194_08_split_000.xhtml#_idTextAnchor196), *Advanced* *Branching Techniques*.
+  id: totrans-50
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 远程跟踪分支`origin/master`，记住远程仓库`origin`中`master`分支的最后位置，存储在`.git/refs/remotes/origin/master`中，并以`refs/remotes/origin/master`作为其全名。**远程**的概念将在[*第6章*](B21194_06.xhtml#_idTextAnchor140)，*与Git的协同开发*中解释，而**远程跟踪分支**将在[*第8章*](B21194_08_split_000.xhtml#_idTextAnchor196)，*高级分支技巧*中讨论。
+- en: The `v1.3-rc3` tag has `refs/tags/v1.3-rc3` as its full name (tags reside in
+    the `refs/tags/` namespace). To be more precise, in the case of **annotated**
+    and **signed tags**, this file stores a reference to the **tag object**, which,
+    in turn, points to the node in the DAG, and not directly to a commit. This is
+    the only type of ref that can point to any type of object; branches and remote-tracking
+    branches always point to a commit.
+  id: totrans-51
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`v1.3-rc3`标签的全名是`refs/tags/v1.3-rc3`（标签位于`refs/tags/`命名空间中）。更准确地说，在**注释**和**签名标签**的情况下，这个文件存储的是指向**标签对象**的引用，标签对象反过来指向DAG中的节点，而不是直接指向一个提交。这是唯一一种可以指向任何类型对象的引用；分支和远程跟踪分支始终指向一个提交。'
+- en: 'These full names (fully qualified names) can be seen when using commands intended
+    for scripts (so-called `git show-ref`:'
+  id: totrans-52
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用为脚本设计的命令时（如`git show-ref`），可以看到这些全名（完全限定名）：
+- en: '[PRE0]'
+  id: totrans-53
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: Branch points
+  id: totrans-54
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 分支点
+- en: When you create a new branch starting at a given version, the lines of development
+    usually diverge. The act of creating a divergent branch is denoted in the DAG
+    by a commit that has more than one child – that is, a node pointed to by more
+    than one arrow.
+  id: totrans-55
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当你从某个版本开始创建一个新分支时，开发线通常会发生分歧。创建一个分支的行为在 DAG 中表示为一个有多个子节点的提交——也就是说，某个节点被多个箭头指向。
+- en: Important note
+  id: totrans-56
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 重要提示
+- en: 'Git does not track information about creating (forking) a branch and does not
+    mark branch points in any way that they’re preserved across clones and pushes.
+    There is information about this event in the **reflog** (**branch: Created from
+    HEAD**), but this is local to the repository where branching occurred and is temporary.
+    However, if you know that the **B** branch started from the **A** branch, you
+    can find the branching point with **git merge-base A B**. In modern Git, you can
+    use the **--fork-point** option to make this command use the information from
+    the reflog, when available.'
+  id: totrans-57
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'Git 并不跟踪创建（分叉）分支的信息，也不会以任何方式标记分支点，这些标记不会在克隆和推送中被保存。有关此事件的信息存在于**reflog**中（**branch:
+    Created from HEAD**），但它仅限于发生分支的仓库，并且是临时的。然而，如果你知道**B**分支是从**A**分支开始的，你可以使用**git
+    merge-base A B**来找到分支点。在现代 Git 中，你可以使用**--fork-point**选项来使该命令在有可用的情况下使用 reflog
+    中的信息。'
+- en: In *Figure 4**.2*, the `34ac2` commit is a branching point, or a `master` and
+    `maint` branches.
+  id: totrans-58
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在*图 4.2*中，`34ac2`提交是一个分支点，或者说是`master`和`maint`两个分支。
+- en: Merge commits
+  id: totrans-59
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 合并提交
+- en: Typically, when you’ve used branches to enable independent parallel development,
+    you will want to join them later. For example, you would want bug fixes that have
+    been applied to the stable (maintenance) branch so that they’re included in the
+    main line of development as well (if they’re applicable and weren’t fixed accidentally
+    during the main line development).
+  id: totrans-60
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通常，当你使用分支来实现独立的并行开发时，稍后你会希望将它们合并。例如，你可能希望将已应用到稳定（维护）分支上的 bug 修复合并到主开发线中（如果它们适用且在主开发线中没有被意外修复）。
+- en: You would also want to merge changes created in parallel by different developers
+    working simultaneously on the same project, each using their own clone of the
+    repository, and creating their own lines of commits.
+  id: totrans-61
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可能还希望合并不同开发者在同一项目中并行创建的更改，每个开发者使用自己克隆的仓库并创建自己的一系列提交。
+- en: Such a **merge operation** will create a new revision, joining two lines of
+    development. The result of this operation will be based on more than one commit.
+    The node in the DAG representing said revision will have more than one parent
+    and more than one outgoing edge. Such an object is called a **merge commit**.
+  id: totrans-62
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这样的**合并操作**会创建一个新的修订，将两个开发线合并。该操作的结果将基于多个提交。表示该修订的 DAG 中的节点将有多个父节点和多个输出边。这样的对象称为**合并提交**。
+- en: You can see a merge commit, `3fb00`, in *Figure 4**.2*.
+  id: totrans-63
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在*图 4.2*中，你可以看到合并提交`3fb00`。
+- en: Single revision selection
+  id: totrans-64
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 单一修订选择
+- en: During development, often, you’ll want to select a single revision in the history
+    of the project so that you can examine it or compare it with the current version.
+    The ability to select a revision is also the basis for selecting a revision range
+    – for example, selecting a subsection of history to examine.
+  id: totrans-65
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在开发过程中，通常你会想选择项目历史中的某个修订，以便检查它或与当前版本进行比较。选择修订的能力也是选择修订范围的基础——例如，选择某一历史子集进行检查。
+- en: Many Git commands take revision parameters as arguments, which are typically
+    denoted by `<rev>` in the Git reference documentation. Git allows you to specify
+    a commit or a range of commits in several ways. This will be described in this
+    and the next section.
+  id: totrans-66
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 许多 Git 命令会将修订作为参数，这些修订通常在 Git 参考文档中以`<rev>`表示。Git 允许你以多种方式指定某个提交或一系列提交。接下来将会在本节及下一节中描述这些方式。
+- en: HEAD – the implicit revision
+  id: totrans-67
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: HEAD – 隐式修订
+- en: Most, but not all, Git commands that require the revision parameter default
+    to using `HEAD`. For example, `git log` and `git log HEAD` will show the same
+    information. You can also use `@` alone as a shortcut for `HEAD`.
+  id: totrans-68
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 大多数（但并非全部）需要修订参数的 Git 命令默认为使用`HEAD`。例如，`git log`和`git log HEAD`将显示相同的信息。你还可以单独使用`@`作为`HEAD`的快捷方式。
+- en: Here, `HEAD` denotes the **current branch**, or in other words, the commit that
+    was checked out into the working directory and forms a base of current work (a
+    current revision).
+  id: totrans-69
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这里，`HEAD`表示**当前分支**，换句话说，表示已经检出的提交，它形成了当前工作的基础（当前修订）。
+- en: 'There are a few other references that are similar to `HEAD`:'
+  id: totrans-70
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 还有一些其他类似于`HEAD`的引用：
+- en: '**FETCH_HEAD**: This records the information about the remote branches that
+    were fetched from a remote repository with your last **git fetch** or **git pull**
+    invocation. It is very useful for one-off fetching, with a repository to fetch
+    from given by a URL (**git fetch <URL>**), unlike when we’re fetching from a named
+    repository such as **origin**, where we can use a remote tracking branch instead,
+    such as **origin/master**. Moreover, with named repositories, we can use the reflog
+    for the remote-tracking branch – for example, **origin/master@{1}** – to get the
+    position before the fetch. Note that **FETCH_HEAD** is overwritten by each fetch
+    from any repository.'
+  id: totrans-71
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**FETCH_HEAD**：此记录了从远程仓库通过上一次**git fetch**或**git pull**操作获取的远程分支的信息。它在一次性获取时非常有用，例如通过给定的
+    URL（**git fetch <URL>**）获取，而不像从命名仓库（如**origin**）获取时，可以使用远程跟踪分支，例如**origin/master**。此外，使用命名仓库时，可以使用远程跟踪分支的
+    reflog —— 例如，**origin/master@{1}** —— 来获取 fetch 之前的位置。请注意，**FETCH_HEAD**会在每次从任何仓库进行
+    fetch 时被覆盖。'
+- en: '**ORIG_HEAD**: This records the previous position of the current branch. This
+    reference is created by commands that move the current branch in a drastic way
+    (creating a new commit doesn’t set **ORIG_HEAD**) to record the position of **HEAD**
+    before the operation. This is very useful if you want to undo or abort such an
+    operation. However, nowadays, the same can be done using reflogs, which store
+    additional information that can be examined in their use; see the *Reflogging
+    shortnames* section for more details.'
+  id: totrans-72
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**ORIG_HEAD**：此记录了当前分支的上一个位置。此引用是由那些以剧烈方式移动当前分支的命令创建的（创建新提交不会设置**ORIG_HEAD**），用来记录**HEAD**在操作前的位置。如果你想撤销或中止此类操作，这非常有用。然而，如今，也可以通过
+    reflog 来实现相同的功能，reflog 存储了更多可以在其使用过程中查看的信息；有关更多详情，请参见*Reflogging shortnames*章节。'
+- en: 'You can also stumble upon the short-lived temporary references that are used
+    during specific operations:'
+  id: totrans-73
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你还可能遇到在特定操作期间使用的短暂临时引用：
+- en: During a merge, before creating a merge commit, **MERGE_HEAD** records the commit(s)
+    that you’re merging into your branch. It vanishes after creating a merge commit
+  id: totrans-74
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在合并过程中，在创建合并提交之前，**MERGE_HEAD**记录了你正在合并到当前分支的提交。它在创建合并提交后消失。
+- en: During a cherry-pick, before creating a commit that copies picked changes into
+    another branch, **CHERRY_PICK_HEAD** records the commit that you’ve selected for
+    cherry-picking
+  id: totrans-75
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在 cherry-pick 过程中，在创建将选定更改复制到另一个分支的提交之前，**CHERRY_PICK_HEAD**记录了你为 cherry-pick
+    选择的提交。
+- en: Branch and tag references
+  id: totrans-76
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 分支和标签引用
+- en: 'The most straightforward and commonly used way to specify a revision is to
+    use symbolic names: branches, naming the line of development, pointing to the
+    tip of said line; and tags, naming the specific revision. This way of specifying
+    revisions can be used to view the history of a line of development, examine the
+    most current revision (current work) on a given branch, or compare a branch or
+    a tag with the current work.'
+  id: totrans-77
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 指定修订的最直接和最常用的方式是使用符号名称：分支，命名开发线路，指向该线路的末端；以及标签，命名特定的修订。此方式可以用来查看开发线路的历史，检查给定分支上当前的修订（当前工作），或比较分支或标签与当前工作。
+- en: You can use any of the *refs* (external references to the DAG of revisions)
+    to select a commit. You can use a branch name, a tag name, and a remote-tracking
+    branch name in any Git command that requires a revision as a parameter.
+  id: totrans-78
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以使用任何*refs*（指向修订的有向无环图的外部引用）来选择一个提交。你可以在任何需要修订作为参数的 Git 命令中使用分支名、标签名和远程跟踪分支名。
+- en: Usually, it is enough to give the *short* name of a branch or tag, such as `git
+    log master`, to view the history of a `master` branch, or `git log v1.3-rc3` to
+    see how version `v1.3-rc1` came about. It can, however, happen that there are
+    different types of refs with the same name, such as both the branch and tag being
+    named `dev` (though it is recommended to avoid such situations. Alternatively,
+    you could have created (usually by accident) the local `origin/master` branch
+    when there was a remote-tracking branch with a short named `origin/master`, tracking
+    where the `master` branch was in the remote repository named `origin`.
+  id: totrans-79
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通常，给出分支或标签的*简短*名称就足够了，例如 `git log master` 查看 `master` 分支的历史，或 `git log v1.3-rc3`
+    查看版本 `v1.3-rc1` 的历史。然而，也有可能存在具有相同名称的不同类型引用，例如同时存在名为 `dev` 的分支和标签（虽然建议避免这种情况）。另外，你可能（通常是无意的）创建了本地
+    `origin/master` 分支，而远程跟踪分支有一个名为 `origin/master` 的短名称，它跟踪远程仓库中 `master` 分支的位置。
+- en: 'In such a situation, when the ref name is ambiguous, it is disambiguated by
+    taking the first match in the following rules (this is a shortened and simplified
+    version – for the full list, see the **gitrevisions(7)** manpage):'
+  id: totrans-80
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这种情况下，当引用名称模糊时，系统会通过以下规则中的第一个匹配项来消除歧义（这是一个简化版，完整列表请参见 **gitrevisions(7)** 手册页）：
+- en: The top-level symbolic name – for example, **HEAD**.
+  id: totrans-81
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 顶级符号名称——例如，**HEAD**。
+- en: Otherwise, the name of the tag (the **refs/tags/** namespace).
+  id: totrans-82
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 否则，使用标签的名称（**refs/tags/** 命名空间）。
+- en: Otherwise, the name of the local branch (the **refs/heads/** namespace).
+  id: totrans-83
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 否则，使用本地分支的名称（**refs/heads/** 命名空间）。
+- en: Otherwise, the name of the remote-tracking branch (the **refs/remotes/** namespace).
+  id: totrans-84
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 否则，使用远程跟踪分支的名称（**refs/remotes/** 命名空间）。
+- en: Otherwise, the name of the remote if a default branch exists for it; the revision
+    is said to be the default branch (for example, **refs/remotes/origin/HEAD** for
+    **origin** as a parameter).
+  id: totrans-85
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 否则，若存在默认分支，则使用远程名称；该修订被认为是默认分支（例如，**refs/remotes/origin/HEAD**，表示 **origin**
+    作为参数）。
+- en: The --branches, --tags, and similar options
+  id: totrans-86
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: '`--branches`、`--tags` 和类似选项'
+- en: If you want to see the whole graph of revisions, you need a way to specify all
+    the refs – that is, branches, remote-tracking branches, and tags. That’s what
+    the `--all` option to the `git log` command is for. With this option, Git pretends
+    as if all the refs in the `refs/` namespace, along with `HEAD`, were listed as
+    starting points for revision traversal (for viewing the history of a project).
+  id: totrans-87
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你想查看整个修订历史图谱，需要一种方式来指定所有的引用——即分支、远程跟踪分支和标签。这就是 `git log` 命令的 `--all` 选项的作用。使用此选项，Git
+    会假装列出 `refs/` 命名空间中的所有引用，以及 `HEAD`，作为修订遍历的起点（用于查看项目历史）。
+- en: 'If you want to limit yourself to branches, remote-tracking branches, or tags,
+    you can use the `--branches`, `--remotes`, or `--tags` option, respectively. All
+    of those options take an optional `<pattern>` parameter, which limits respective
+    refs to ones matching the given shell glob. If the pattern lacks glob wildcards
+    (that is, `*`, `?`, or `[`), then `/*` at the end of the pattern is implied. For
+    example, to pretend as if all topic branches (with hierarchical names that begin
+    with author initials) and all remote-tracking branches for the `origin` remote
+    were listed on the command line, you can use the following command:'
+  id: totrans-88
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你想限制自己仅操作分支、远程跟踪分支或标签，可以分别使用 `--branches`、`--remotes` 或 `--tags` 选项。所有这些选项都可以使用可选的
+    `<pattern>` 参数，限制对应的引用匹配给定的 shell 通配符。如果模式没有通配符（即没有 `*`、`?` 或 `[`），则默认会在模式末尾添加
+    `/*`。例如，如果你想模拟列出所有主题分支（以作者缩写开头的层次化名称）和所有 `origin` 远程的远程跟踪分支，可以使用以下命令：
+- en: '[PRE1]'
+  id: totrans-89
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: The `--all` option with the `<pattern>` parameter is named `--glob=<pattern>`.
+  id: totrans-90
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 带有 `<pattern>` 参数的 `--all` 选项被命名为 `--glob=<pattern>`。
+- en: Glob patterns
+  id: totrans-91
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通配符模式
+- en: In computer science, **glob patterns** are used to match strings using a specific
+    set of wildcard characters. This is the syntax that’s used by UNIX shells and
+    is described on the **glob(7)** manpage. It is simpler but less expressive than
+    **regular expressions**.
+  id: totrans-92
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在计算机科学中，**glob 模式**用于使用特定的通配符字符匹配字符串。这是 UNIX shell 使用的语法，并在 **glob(7)** 手册页中有描述。它比
+    **正则表达式** 简单，但表达能力较弱。
+- en: The most common glob wildcards are *****, **?**, and **[…]**. The ***** wildcard
+    character matches any number of characters including none, **?** matches a single
+    character, and **[abc]** matches one character from the one listed inside brackets.
+    You can simplify the list of characters using the character range – for example,
+    **[a-z]**.
+  id: totrans-93
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最常见的通配符有 *****、**?** 和 **[…]**。***** 通配符字符匹配任意数量的字符，包括零个字符，**?** 匹配一个字符，**[abc]**
+    匹配括号内列出的一个字符。你可以使用字符范围简化字符列表——例如，**[a-z]**。
+- en: 'Pattern matching can be enhanced with the help of the `--exclude=<pattern>`
+    option, which affects `--all`, `--branches`, `--tags`, `--remotes`, and `--glob`,
+    excluding refs that the next such option would otherwise consider. This option
+    can be given multiple times, accumulating exclusion patterns. For example, to
+    include all topic branches but exclude your own topic branches (which have names
+    starting with `jn/`), you can use the following command:'
+  id: totrans-94
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用 `--exclude=<pattern>` 选项可以增强模式匹配功能，该选项会影响 `--all`、`--branches`、`--tags`、`--remotes`
+    和 `--glob`，排除下一个此类选项原本会考虑的引用。这个选项可以多次使用，累积排除模式。例如，要包括所有的主题分支，但排除你自己的主题分支（这些分支的名称以
+    `jn/` 开头），你可以使用以下命令：
+- en: '[PRE2]'
+  id: totrans-95
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: SHA-1 and the shortened SHA-1 identifier
+  id: totrans-96
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: SHA-1 和缩短的 SHA-1 标识符
+- en: 'In Git, each revision is given a unique identifier (object name), which is
+    a `git` `log` output:'
+  id: totrans-97
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 Git 中，每个修订版本都会被赋予一个唯一的标识符（对象名称），它是 `git` `log` 输出的一部分：
+- en: '[PRE3]'
+  id: totrans-98
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: It isn’t necessary to give the full 40 characters of the SHA-1 identifier. Git
+    is smart enough to figure out what you meant if you provide it with the first
+    few characters of the SHA-1 revision identifier, so long as the partial SHA-1
+    is at least 4 characters long. To be able to use a shortened SHA-1 to select revision,
+    it must be long enough to be unambiguous – that is, there must be one and only
+    one commit object where the SHA-1 identifier begins with given characters.
+  id: totrans-99
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 不必提供完整的 40 个字符的 SHA-1 标识符。如果你提供 SHA-1 修订标识符的前几个字符，Git 足够智能，能够推断出你想表达的意思，只要部分
+    SHA-1 至少有 4 个字符长。为了能够使用缩短的 SHA-1 来选择修订版本，它必须足够长，以避免歧义——也就是说，必须有且只有一个提交对象的 SHA-1
+    标识符以给定的字符开头。
+- en: 'For example, both `dae86e1950b1277e545cee180551750029cfe735` and `dae86e` name
+    the same commit object, assuming, of course, that that there is no other object
+    in your repository whose object name starts with `dae86e`. If there is any ambiguity,
+    Git will tell us about all the choices, like so:'
+  id: totrans-100
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 例如，`dae86e1950b1277e545cee180551750029cfe735` 和 `dae86e` 都指向同一个提交对象，当然，前提是你的仓库中没有其他对象的名称以
+    `dae86e` 开头。如果存在歧义，Git 会告诉我们所有的选择，如下所示：
+- en: '[PRE4]'
+  id: totrans-101
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: In many places, Git shows unambiguously shortened SHA-1 identifiers in its command
+    output. For example, in the preceding example of the `git log` output, we can
+    see the shortened SHA-1 identifiers in the `Merge:` line.
+  id: totrans-102
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在许多地方，Git 会在命令输出中清晰地显示缩短的 SHA-1 标识符。例如，在前面的 `git log` 输出示例中，我们可以在 `Merge:` 行看到缩短的
+    SHA-1 标识符。
+- en: You can also request that Git use the shortened SHA-1 in place of the full SHA-1
+    revision identifiers with the `--abbrev-commit` option. By default, Git will use
+    at least 7 characters for the shortened SHA-1; you can change this with the optional
+    parameter – for example, `--abbrev-commit=12`.
+  id: totrans-103
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你还可以请求 Git 用缩短的 SHA-1 替代完整的 SHA-1 修订标识符，使用 `--abbrev-commit` 选项。默认情况下，Git 会使用至少
+    7 个字符来表示缩短的 SHA-1；你可以通过可选参数来更改这一点——例如，`--abbrev-commit=12`。
+- en: Note that Git will use as many characters as is required for the shortened SHA-1
+    to be unique at the time the command was issued. The parameter to `--abbrev-commit`
+    (and the similar `--abbrev` option) is the minimal length of the abbreviation.
+  id: totrans-104
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请注意，Git 会根据命令执行时需要的字符数来使用缩短的 SHA-1 以确保其唯一性。`--abbrev-commit`（以及类似的 `--abbrev`
+    选项）参数表示缩写的最小长度。
+- en: A short note about shortened SHA-1
+  id: totrans-105
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 关于缩短的 SHA-1 简单说明
+- en: Generally, 8 to 10 characters is more than enough for the shortened SHA-1 (for
+    the SHA-1 prefix)to be unique within a project. One of the largest Git projects,
+    the Linux kernel, is beginning to need 12 characters out of the possible 40 to
+    stay unique. While a hash collision, which means having two revisions (two objects)
+    that have the same full SHA-1 identifier, is extremely unlikely (with *1/2^80
+    ≈ 1/1.2×10^24* probability), the formerly unique shortened SHA-1 identifier may
+    stop being unique due to repository growth.
+  id: totrans-106
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通常，8到10个字符的缩短SHA-1（对于SHA-1前缀）在项目中已足够唯一。最大的Git项目之一，Linux内核，开始需要12个字符中的40个，以保持唯一性。尽管哈希冲突，即两个修订（两个对象）具有相同的完整SHA-1标识符，是极不可能的（其概率为*1/2^80
+    ≈ 1/1.2×10^24*），但由于仓库的增长，原本唯一的缩短SHA-1标识符可能会变得不再唯一。
+- en: The SHA-1 and the shortened SHA-1 are often copied from the command output and
+    pasted as revision parameters in another command. They can also be used to communicate
+    between developers in case of doubt or ambiguity as SHA-1 identifiers are the
+    same in any clone of the repository. *Figure 4**.2* uses a five-character shortened
+    SHA-1 to identify revisions in the DAG.
+  id: totrans-107
+  prefs: []
+  type: TYPE_NORMAL
+  zh: SHA-1和缩短版SHA-1通常是从命令输出中复制并粘贴作为另一个命令的修订参数。当有疑问或模糊不清时，它们也可以用于开发者之间的沟通，因为SHA-1标识符在任何仓库的克隆中都是相同的。*图4.2*使用了五个字符的缩短SHA-1来标识DAG中的修订。
+- en: Ancestry references
+  id: totrans-108
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 祖先引用
+- en: The other main way to specify a revision is via its `HEAD`, a branch head, or
+    a tag), and then follow through parent relationships to the commit in question.
+    There is a special suffix syntax to specify such ancestry paths.
+  id: totrans-109
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 另一种指定修订的方法是通过其`HEAD`、分支头或标签，然后通过父关系跟踪到相关的提交。对于这种祖先路径，有一种特殊的后缀语法来指定。
+- en: If you place `^` at the end of a revision name, Git resolves it to mean a (first)
+    parent of that revision. For example, `HEAD^` means the parent of `HEAD` – that
+    is, the previous commit.
+  id: totrans-110
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你将`^`放在修订名称的末尾，Git会将其解析为该修订的（第一个）父提交。例如，`HEAD^`表示`HEAD`的父提交——即上一个提交。
+- en: 'This is a shortcut syntax. For merge commits, which have more than one parent,
+    you might want to follow any of the parents. To select a parent, put its number
+    after the `^` character: using the `^<n>` suffix means the *n-th* parent of a
+    revision. We can see that `^` is a short version of `^1`.'
+  id: totrans-111
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这是一个简化语法。对于合并提交，它们有多个父提交，你可能希望选择任何一个父提交。要选择父提交，可以在`^`字符后加上父提交的编号：使用`^<n>`后缀表示修订的第*n*个父提交。我们可以看到，`^`是`^1`的简化版本。
+- en: As a special case, `^0` means the commit itself; it is only important when a
+    command behaves differently when you’re using the branch name as a parameter and
+    when you’re using other revision specifiers. It can be also used to get the commit
+    that an annotated (or a signed) tag points to; compare `git show v0.9` and `git
+    show v0.9^0`. Note that you can do the latter operation with `<tag>^{commit}`;
+    in most cases, it is what `<tag>^{}` would do (follow this until you find an object
+    that isn’t a tag).
+  id: totrans-112
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 作为特殊情况，`^0`表示提交本身；当命令在使用分支名称作为参数与使用其他修订标识符时行为不同，它才显得重要。它也可以用于获取一个注释（或签名）标签所指向的提交；例如，`git
+    show v0.9`和`git show v0.9^0`。注意，你也可以使用`<tag>^{commit}`来执行后一操作；在大多数情况下，这和`<tag>^{}`做的事情一样（继续查找直到遇到一个不是标签的对象）。
+- en: This suffix syntax is composable. You can use `HEAD^^` to mean the grandparent
+    of `HEAD` and the parent of `HEAD^`. There is another shortcut syntax for specifying
+    a chain of first parents. Instead of writing *n* times the `^` suffix – that is,
+    `^^…^` or `^1^1…^1` – you can simply use `~<n>`. As a special case, `~` is equivalent
+    to `~1`, so `HEAD~` and `HEAD^` are equivalent. In a similar vein, `HEAD~2` means
+    the first parent of the first parent or the grandparent and is equivalent to `HEAD^^`.
+  id: totrans-113
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这种后缀语法是可组合的。你可以使用`HEAD^^`表示`HEAD`的祖父提交，也就是`HEAD^`的父提交。还有一种指定首个父提交链的简化语法。你可以直接使用`~<n>`来代替写`n`次`^`后缀，即`^^…^`或`^1^1…^1`。作为特殊情况，`~`等同于`~1`，因此`HEAD~`和`HEAD^`是等价的。同理，`HEAD~2`表示第一个父提交的第一个父提交，或者是祖父提交，它等同于`HEAD^^`。
+- en: 'You can also combine everything. For example, you can get the second parent
+    of a great-grandparent of `HEAD` (assuming it was a merge commit) by using `HEAD~3^2`,
+    and so on. You can use `git name-rev` or `git describe --contains` to find out
+    how a revision is related to local refs, like so:'
+  id: totrans-114
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你还可以将所有内容组合起来。例如，你可以使用`HEAD~3^2`来获取`HEAD`的曾祖父的第二个父提交（假设它是一个合并提交），依此类推。你可以使用`git
+    name-rev`或`git describe --contains`来了解修订与本地引用的关系，如下所示：
+- en: '[PRE5]'
+  id: totrans-115
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: As you can see, with `git name-rev --stdin` used as a filter for `git log`,
+    after each SHA-1 identifier, you get its ancestry reference in parentheses – for
+    example, **(master~1)**.
+  id: totrans-116
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，使用`git name-rev --stdin`作为`git log`的过滤器时，在每个SHA-1标识符后，你会看到其祖先引用（括号内）——例如，**(master~1)**。
+- en: Reverse ancestry references – git-describe output
+  id: totrans-117
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 逆向祖先引用 – git-describe输出
+- en: The ancestry reference describes how a historic version relates to the current
+    branches and tags. It depends on the position of the starting revision. For example,
+    `HEAD^` would usually mean a completely different commit next month.
+  id: totrans-118
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 祖先引用描述了历史版本与当前分支和标签之间的关系。它取决于起始修订的位置。例如，`HEAD^`通常表示下个月会有一个完全不同的提交。
+- en: Sometimes, we want to describe how the current version relates to the prior
+    named version. For example, we might want to have a human-readable name of the
+    current version to store in the generated binary application. We want this name
+    to refer to the same revision for everybody. This is the task of `git describe`.
+  id: totrans-119
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有时候，我们希望描述当前版本与先前命名版本的关系。例如，我们可能希望为当前版本提供一个易于人类阅读的名称，以便将其存储在生成的二进制应用程序中。我们希望这个名称对每个人来说都指向相同的修订版本。这就是`git
+    describe`的任务。
+- en: Here, `git describe` finds the most recent tag that can be reached from a given
+    revision (by default, from `HEAD`) and uses it to describe that version. If the
+    found tag points to the given commit, then (by default) only the tag is shown.
+    Otherwise, `git describe` suffixes the tag name with the number of additional
+    commits on top of the tagged object and uses the abbreviated SHA-1 identifier
+    of the given revision. For example, `v1.0.4-14-g2414721` means that the given
+    commit was based on the named (tagged) version `v1.0.4`, which was 14 commits
+    ago, and that it has `2414721` as a shortened SHA-1\. Without the SHA-1 abbreviation,
+    the notation would be ambiguous; in the presence of non-linear history, there
+    can be many revisions that are 14 commits away from the given tag.
+  id: totrans-120
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这里，`git describe`会找到从给定修订（默认是`HEAD`）可以到达的最新标签，并使用该标签来描述这个版本。如果找到的标签指向给定的提交，那么（默认情况下）只显示标签名。否则，`git
+    describe`会在标签名后添加标签对象上方的提交数量，并使用给定修订的简短SHA-1标识符。例如，`v1.0.4-14-g2414721`表示给定的提交是基于命名（已标签化）版本`v1.0.4`，距离当前提交14次提交，并且它的简短SHA-1是`2414721`。如果没有SHA-1缩写，表示法会产生歧义；在非线性历史的情况下，可能会有多个修订版本与给定标签相距14个提交。
+- en: Git understands this output format as a revision specifier.
+  id: totrans-121
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git理解这种输出格式作为修订标识符。
+- en: Reflogging shortnames
+  id: totrans-122
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: Reflog短名称
+- en: To help you recover from some types of mistakes, and to be able to undo changes
+    (to go back to the state before the change), Git keeps a `HEAD` and branch references
+    have been for the last few months, and how they got there, as described in [*Chapter
+    2*](B21194_02.xhtml#_idTextAnchor028), *Developing with Git*. The default is to
+    keep reflog entries up to 90 days; 30 days for revisions that can only be reached
+    through reflog (for example, amended commits). This can be configured on a ref-by-ref
+    basis; see [*Chapter 13*](B21194_13_split_000.xhtml#_idTextAnchor320), *Customizing*
+    *and* *Extending Git*.
+  id: totrans-123
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了帮助你从某些类型的错误中恢复，并能够撤销更改（回到更改前的状态），Git保持`HEAD`和分支引用的记录，记录了过去几个月它们的变化情况以及它们是如何到达当前状态的，具体内容在[*第二章*](B21194_02.xhtml#_idTextAnchor028)，《使用Git开发》中有所描述。默认情况下，Git会保留reflog条目90天；对于那些只能通过reflog访问的修订（例如，修改过的提交），则保留30天。这可以在每个引用上单独配置；详情请见[*第13章*](B21194_13_split_000.xhtml#_idTextAnchor320)，《定制与扩展Git》。
+- en: 'You can examine and manipulate your reflog with the `git reflog` command and
+    its subcommands. You can also display history with `git log -g` (or `git` `log
+    --walk-reflog`):'
+  id: totrans-124
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以使用`git reflog`命令及其子命令来查看和操作你的reflog。你还可以使用`git log -g`（或`git log --walk-reflog`）来显示历史记录：
+- en: '[PRE6]'
+  id: totrans-125
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: 'Every time `HEAD` and your branch head are updated for any reason, Git stores
+    that information for you in this local temporary log of ref history. The data
+    from the reflog can be used to specify references (and therefore to specify revisions):'
+  id: totrans-126
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 每当`HEAD`和你的分支头因任何原因更新时，Git会将这些信息存储在这个本地临时的引用历史日志中。reflog中的数据可以用来指定引用（从而指定修订版本）：
+- en: To specify the *n*th prior value of **HEAD** in your local repository, you can
+    use **HEAD@{n}** notation that you can see in the **git reflog** output. It’s
+    the same with the *n*th prior value of the given branch – for example, **master@{n}**.
+    The special syntax, **@{n}**, means the *n*th prior value of the current branch,
+    which can be different from **HEAD@{n}**.
+  id: totrans-127
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 要指定你本地仓库中**HEAD**的第*n*个先前值，你可以使用**HEAD@{n}**语法，你可以在**git reflog**的输出中看到这个值。同样，这也适用于指定分支的第*n*个先前值——例如，**master@{n}**。这个特殊的语法**@{n}**表示当前分支的第*n*个先前值，它可能与**HEAD@{n}**不同。
+- en: You can also use this syntax to see where a branch was some specific amount
+    of time ago. For instance, to denote where your **master** branch was yesterday
+    in your local repository, you can use **master@{yesterday}**.
+  id: totrans-128
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 你也可以使用这种语法来查看某个分支在特定时间点的位置。例如，要表示你本地仓库中**master**分支昨天的位置，可以使用**master@{yesterday}**。
+- en: You can use the **@{-n}** syntax to refer to the *n*th branch that was checked
+    out (used) before the current one. In some places, you can simply use **– (dash)**
+    in place of **@{-1}**. For example**, git checkout –** or **git switch –** will
+    switch to the previous branch.
+  id: totrans-129
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 你可以使用**@{-n}**语法来引用当前分支之前第*n*个被检出的分支。在某些地方，你可以简单地用**– (dash)**替代**@{-1}**。例如，**git
+    checkout –** 或 **git switch –** 会切换到上一个分支。
+- en: Upstreaming remote-tracking branches
+  id: totrans-130
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 上游远程跟踪分支
+- en: The local repository that you use to work doesn’t usually live in isolation.
+    It interacts with other repositories, usually at least with the `origin` repository
+    it was cloned from (unless it was started from scratch with `git init`).
+  id: totrans-131
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你用来工作的本地仓库通常不会孤立存在。它与其他仓库进行交互，通常至少与从中克隆出来的`origin`仓库进行交互（除非是通过`git init`从头开始创建的仓库）。
+- en: Note
+  id: totrans-132
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 注意
+- en: The name of the default remote can be set using **clone.defaultRemoteName**.
+  id: totrans-133
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 默认远程仓库的名称可以通过设置**clone.defaultRemoteName**来指定。
+- en: For these remote repositories with which you interact often, Git will track
+    where their branches were at the time of the last contact.
+  id: totrans-134
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于这些你经常交互的远程仓库，Git会跟踪它们分支在上次接触时的位置。
+- en: To follow the movement of branches in the remote repository, Git uses `some-branch`,
+    then the `git checkout <some-branch>` command will create a local branch based
+    on this remote-tracking branch for you.
+  id: totrans-135
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了跟踪远程仓库中分支的移动，Git使用`some-branch`，然后运行`git checkout <some-branch>`命令，Git会为你基于这个远程跟踪分支创建一个本地分支。
+- en: For example, when working on a line of development that is to be ultimately
+    published to the `next` branch in the `origin` repository, which is tracked by
+    the `origin/next` remote-tracking branch, you would create a local `next` branch.
+    We say that `origin/next` is upstream of the `next` branch, and we can refer to
+    it as `next@{upstream}`.
+  id: totrans-136
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 例如，当你在一个开发分支上工作，最终该分支要发布到`origin`仓库中的`next`分支，而该`next`分支由`origin/next`远程跟踪分支进行跟踪时，你需要创建一个本地的`next`分支。我们说`origin/next`是`next`分支的上游分支，我们可以将其称为`next@{upstream}`。
+- en: The `@{upstream}` suffix (short form `<refname>@{u}`), which can only be applied
+    to a local branch name, selects the branch that the ref is set to build on top
+    of. A missing ref defaults to the current branch – that is, `@{u}` is the upstream
+    for the current branch.
+  id: totrans-137
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**@{upstream}**后缀（简写为`<refname>@{u}`），只能应用于本地分支名称，选择与引用设置的基础分支。缺少引用时，默认使用当前分支——即`@{u}`是当前分支的上游分支。'
+- en: There is also `[<branch>]@{push}`, which is useful for triangular workflows,
+    where the repository you push your changes to is different from the repository
+    you get updates from.
+  id: totrans-138
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 还有`[<branch>]@{push}`，它对于三角工作流很有用，其中你推送更改的仓库与获取更新的仓库不同。
+- en: Selecting revisions via a commit message
+  id: totrans-139
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 通过提交信息选择修订版本
+- en: 'You can specify the revision by matching its commit message with a regular
+    expression. The `:/<pattern>` notation (for example, `:/^Bugfix`) specifies the
+    youngest matching commit that can be reached from any ref, while `<rev>^{/<pattern>}`
+    (for example, `next^{/fix bug}`) specifies the youngest matching commit that can
+    be reached from `<rev>`:'
+  id: totrans-140
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以通过使用正则表达式匹配提交信息来指定修订版本。`:/<pattern>`表示从任何引用可以访问的最新匹配提交（例如，`:/^Bugfix`），而`<rev>^{/<pattern>}`（例如，`next^{/fix
+    bug}`）表示从`<rev>`可以访问的最新匹配提交：
+- en: '[PRE7]'
+  id: totrans-141
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE7]'
+- en: This revision specifier gives similar results to the `--grep=<pattern>` option
+    to `git log`, but it’s composable. This means that it can be combined with other
+    components, such as ancestry references. On the other hand, it only returns the
+    first (youngest) matching revision, while the `--grep` option returns all matching
+    revisions.
+  id: totrans-142
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这种修订指定器给出的结果类似于`git log`的`--grep=<pattern>`选项，但它是可组合的。这意味着它可以与其他组件（如祖先引用）结合使用。另一方面，它只返回第一个（最年轻的）匹配修订，而`--grep`选项返回所有匹配的修订。
+- en: Selecting the revision range
+  id: totrans-143
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 选择修订范围
+- en: Now that you can specify individual revisions in multiple ways, let’s learn
+    how to specify ranges of revisions, a subset of the DAG we want to examine. **Revision
+    ranges** are particularly useful for viewing selected parts of the history of
+    a project.
+  id: totrans-144
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在你可以通过多种方式指定单个修订，让我们学习如何指定修订范围，这是我们想要查看的DAG的一个子集。**修订范围**特别适合用于查看项目历史中的选定部分。
+- en: For example, you can use range specifications to answer questions such as, “What
+    work is on this branch that I haven’t yet merged into my main branch?”, “What
+    works on my main branch I haven’t yet published?”, or simply “What was done on
+    this branch since its creation?”
+  id: totrans-145
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 例如，你可以使用范围指定来回答一些问题，如：“这个分支上有哪些工作我还没有合并到主分支中？”、“我主分支上的哪些工作我还没有发布？”或者简单地问：“自从创建这个分支以来，做了哪些工作？”
+- en: Single revision as a revision range
+  id: totrans-146
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 单一修订作为修订范围
+- en: History traversing commands such as `git log` operate on a set of commits, walking
+    down a chain of revisions from child to parent. These kinds of commands, given
+    a single revision as an argument (as described in the *Single revision selection*
+    section of this chapter), will show the set of commits that can be reached from
+    that revision, following the commit ancestry chain, all the way down to root commits.
+    Thanks to Git using pager by default, Git will stop after one full page – that
+    is, one full screen of commits.
+  id: totrans-147
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 历史遍历命令，如`git log`，在一组提交上操作，从子提交向父提交逐步遍历。这类命令，在作为参数提供单个修订时（如本章*单一修订选择*部分所述），将显示从该修订开始，沿着提交的祖先链一直到根提交的所有提交。由于Git默认使用分页器，Git将在显示一整页后停止——即显示一整屏的提交。
+- en: For example, `git log master` would show all commits that can be found from
+    the tip of a `master` branch (all revisions that are or were based on the current
+    work on the said branch), which means that it would show the whole `master` branch
+    – that is, the whole line of development.
+  id: totrans-148
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 例如，`git log master`会显示从`master`分支的最新提交开始的所有提交（所有基于当前工作在该分支上的修订），这意味着它会显示整个`master`分支——也就是整个开发线路。
+- en: Double-dot notation
+  id: totrans-149
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 双点符号
+- en: 'The most common range specification is the double-dot syntax, `A..B`. For a
+    linear history, it means all revisions between `A` and `B`, or to be more exact
+    all the commits that are in `B` but not in `A`, as shown in *Figure 4**.3*. For
+    example, the `HEAD~4..HEAD` range means four commits: `HEAD`, `HEAD^`, `HEAD^^`,
+    and `HEAD^^^`. In other words, it means `HEAD~0`, `HEAD~1`, `HEAD~2`, and `HEAD~3`,
+    assuming that there is no merge commit between the current branch and its fourth
+    ancestor:'
+  id: totrans-150
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最常见的范围指定方法是双点语法，`A..B`。对于线性历史，这意味着`A`和`B`之间的所有修订，或者更准确地说，是所有在`B`中但不在`A`中的提交，如*图
+    4.3*所示。例如，`HEAD~4..HEAD`范围表示四个提交：`HEAD`、`HEAD^`、`HEAD^^`和`HEAD^^^`。换句话说，它意味着`HEAD~0`、`HEAD~1`、`HEAD~2`和`HEAD~3`，假设当前分支与其第四个祖先之间没有合并提交：
+- en: '![Figure 4.3 – Double-dot notation A..B for linear history. The selected revision
+    range is marked with a thin halo (with an outline)](img/B21194_04_03.jpg)'
+  id: totrans-151
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 4.3 – 线性历史的双点符号A..B。选定的修订范围用细光环（带有轮廓）标记](img/B21194_04_03.jpg)'
+- en: Figure 4.3 – Double-dot notation A..B for linear history. The selected revision
+    range is marked with a thin halo (with an outline)
+  id: totrans-152
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 4.3 – 线性历史的双点符号A..B。选定的修订范围用细光环（带有轮廓）标记
+- en: Tip
+  id: totrans-153
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 提示
+- en: If you want to include a starting commit (in the general case, boundary commits),
+    which Git considers uninteresting by default, you can use the **--boundary** option
+    with **git log**.
+  id: totrans-154
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你想包括起始提交（在一般情况下，边界提交），而Git默认认为这些提交不感兴趣，你可以使用**--boundary**选项与**git log**一起使用。
+- en: 'The situation is more complicated for a history that is not a straight line.
+    One such case is when `A` is not the ancestor of `B` (there is no path in the
+    DAG of revisions leading from `B` to `A`), but both have a common ancestor, as
+    shown in *Figure 4**.4*:'
+  id: totrans-155
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于不是直线的历史，情况会更复杂。一个这样的情况是当`A`不是`B`的祖先（在修订的DAG中没有从`B`到`A`的路径），但它们有一个共同的祖先，如*图
+    4.4*所示：
+- en: '![Figure 4.4 – Double-dot notation A..B for non-linear history, where revision
+    A is not an ancestor of revision B, showing the case with a divergent history
+    (with a fork point)](img/B21194_04_04.jpg)'
+  id: totrans-156
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 4.4 – 非线性历史的双点符号 A..B，其中修订版本 A 不是修订版本 B 的祖先，显示具有分叉点的情况](img/B21194_04_04.jpg)'
+- en: Figure 4.4 – Double-dot notation A..B for non-linear history, where revision
+    A is not an ancestor of revision B, showing the case with a divergent history
+    (with a fork point)
+  id: totrans-157
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 4.4 – 非线性历史的双点符号 A..B，其中修订版本 A 不是修订版本 B 的祖先，显示具有分叉点的情况
+- en: 'Another situation with non-linear history is when the path from `B` to `A`
+    is not a simple line – that is, when there are merge commits between `A` and `B`,
+    as shown in *Figure 4**.5*. In the view of nonlinear history, the double-dot notation,
+    `A..B`, or *between A and B*, is defined as those commits that can be reached
+    from `A` while being not reachable from `B`:'
+  id: totrans-158
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 另一个非线性历史的情况是路径从 `B` 到 `A` 不是一个简单的线路 – 也就是说，在 `A` 和 `B` 之间存在合并提交，如 *图 4**.5*
+    所示。在非线性历史视图中，双点符号 `A..B` 或 *在 A 和 B 之间* 被定义为那些可以从 `A` 到达而从 `B` 到达不了的提交：
+- en: '![Figure 4.5 – Double-dot notation A..B for a non-linear history, with merge
+    commit between A and B. To exclude commits marked with *, use the --strict-ancestor
+    option](img/B21194_04_05.jpg)'
+  id: totrans-159
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 4.5 – 非线性历史的双点符号 A..B，A 和 B 之间具有合并提交。要排除带有 * 标记的提交，请使用 --strict-ancestor
+    选项](img/B21194_04_05.jpg)'
+- en: Figure 4.5 – Double-dot notation A..B for a non-linear history, with merge commit
+    between A and B. To exclude commits marked with *, use the --strict-ancestor option
+  id: totrans-160
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 4.5 – 非线性历史的双点符号 A..B，A 和 B 之间具有合并提交。要排除带有 * 标记的提交，请使用 --strict-ancestor 选项
+- en: For Git, `A..B` means a range of all commits that can be reached from one revision
+    (`B`) but can’t be reached from another revision (`A`) while following the ancestry
+    chain. In the case of divergent `A` and `B`, as shown in *Figure 4**.4*, this
+    is simply all commits in `B` from the branch point of `A`.
+  id: totrans-161
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于 Git 来说，`A..B` 表示一个范围，包括从一个修订版本 (`B`) 到另一个修订版本 (`A`) 无法到达的所有提交，同时遵循祖先链。在 `A`
+    和 `B` 分歧的情况下，如 *图 4**.4* 所示，这简单地是从 `A` 的分支点开始的 `B` 中的所有提交。
+- en: For example, say your `master` and `experiment` branches diverge. You want to
+    see what’s in your `experiment` branch that hasn’t been merged into your `master`
+    branch yet. You can ask Git to show you a log of just those commits with `master..experiment`.
+  id: totrans-162
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 例如，假设你的 `master` 和 `experiment` 分支分岔。你想查看你的 `experiment` 分支中尚未合并到 `master` 分支的内容。你可以要求
+    Git 只显示这些提交的日志，使用 `master..experiment`。
+- en: If, on the other hand, you want to see the opposite – all the commits in `master`
+    that aren’t in `experiment` – you can reverse the branch names. The `experiment..master`
+    notation shows you everything in `master` that can’t be reached from `experiment`.
+  id: totrans-163
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 另一方面，如果你想看到相反的情况 – 所有 `master` 中没有的 `experiment` 中的提交 – 你可以反转分支名称。`experiment..master`
+    符号显示了 `master` 中所有无法从 `experiment` 到达的内容。
+- en: Another example is that `origin/master..HEAD` shows what you’re about to push
+    to a remote repository (commits in your current branch that are not yet present
+    in the `master` branch in `origin`), while `HEAD..origin/master` can show what
+    you have fetched but not yet merged in.
+  id: totrans-164
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 另一个例子是 `origin/master..HEAD` 显示即将推送到远程仓库的内容（当前分支中尚未在 `origin` 的 `master` 分支中存在的提交），而
+    `HEAD..origin/master` 可显示已获取但尚未合并的内容。
+- en: Tip
+  id: totrans-165
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 小贴士
+- en: 'You can also leave off one side of the syntax to have Git assume **HEAD**:
+    **origin/master..** is **origin/master..HEAD** and **..origin/master** is **HEAD..origin/master**;
+    Git substitutes **HEAD** if one side is missing.'
+  id: totrans-166
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你也可以省略语法的一侧，让 Git 假设 **HEAD**：**origin/master..** 就是 **origin/master..HEAD**，而
+    **..origin/master** 就是 **HEAD..origin/master**；如果一侧缺失，Git 会替换为 **HEAD**。
+- en: 'Git uses double-dot notation in many places, such as in the output of `git
+    fetch` and `git push` for ordinary fast-forward cases. Here, you can just copy
+    and paste a fragment of output as parameters to `git log`. In this case, the beginning
+    of the range is the ancestor of the end of the range – that is, the range is linear:'
+  id: totrans-167
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git 在许多地方使用双点符号，例如在 `git fetch` 和 `git push` 的输出中用于普通快进情况。在这里，你可以只需复制粘贴输出片段作为
+    `git log` 的参数。在这种情况下，范围的起始点是结束点的祖先 – 也就是说，这个范围是线性的：
+- en: '[PRE8]'
+  id: totrans-168
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE8]'
+- en: Creating the range by including and excluding revisions
+  id: totrans-169
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 创建范围时包括和排除修订版本
+- en: The double-dot `A..B` syntax is very useful and quite intuitive, but it is a
+    shorthand notation. Usually, it’s enough, but sometimes, you might want more than
+    it provides. Perhaps you want to specify more than two branches to indicate your
+    revision, such as seeing what commits are present in any of several branches that
+    aren’t in the branch you’re currently on. Perhaps you want to see only those changes
+    on the `master` branch that aren’t in any of the other long-lived branches.
+  id: totrans-170
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 双点符号 `A..B` 语法非常有用且直观，但它是一个简写符号。通常，它已经足够了，但有时你可能希望获得比它提供的更多功能。也许你想指定多个分支来标识你的修订，例如查看哪些提交出现在多个分支中，但不在你当前所在的分支中。也许你只想查看
+    `master` 分支中那些不在其他长期存在的分支中的更改。
+- en: Git allows you to exclude the commits that can be reached from a given revision
+    by *prefixing* said revision with `^`. For example, to view all revisions that
+    are on `maint` or `master`, but are not in `next`, you can use `git log maint
+    master ^next`. This means that the `A..B` notation is just a shorthand for `B
+    ^A`.
+  id: totrans-171
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git 允许通过*前缀*给定修订版本来排除可以从该修订版本到达的提交。例如，要查看所有位于 `maint` 或 `master` 上，但不在 `next`
+    中的修订版本，可以使用 `git log maint master ^next`。这意味着 `A..B` 符号只是 `B ^A` 的简写。
+- en: Instead of having to use the `^` character as a prefix for each of the revisions
+    we want to exclude, Git allows us to use the `--not` option, which *negates* all
+    the following revisions. For example, `B ^A ^C` might be written as `B --not A
+    C`. This is useful, for example, when we’re generating excluded revisions programmatically.
+  id: totrans-172
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git 允许我们使用 `--not` 选项来替代在每个我们想要排除的修订版本前加上 `^` 字符，这个选项会*否定*所有后续的修订。例如，`B ^A ^C`
+    可以写成 `B --not A C`。这种方法在我们通过编程生成排除的修订版本时特别有用。
+- en: 'Thus, these three commands are equivalent:'
+  id: totrans-173
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 因此，这三个命令是等效的：
+- en: '[PRE9]'
+  id: totrans-174
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE9]'
+- en: The revision range for a single revision
+  id: totrans-175
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 单个修订版本的修订范围
+- en: There is another useful shortcut, `A^!`, that is a range composed of a single
+    commit. For non-merge commits, it is simply `A^..A`.
+  id: totrans-176
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 还有一个有用的简写符号 `A^!`，它表示由单个提交组成的范围。对于非合并提交，它就是 `A^..A`。
+- en: For merge commits, `A^!` excludes all the parents. With the help of yet another
+    special notation, namely `A^@`, denoting all the parents of `A` (that is, `A^1`,
+    `A^2`,… `A^n`), we can say that `A^!` is a shortcut for `A --``not A^@`.
+  id: totrans-177
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于合并提交，`A^!` 会排除所有父提交。借助另一个特殊符号 `A^@`，表示 `A` 的所有父提交（即 `A^1`，`A^2`，… `A^n`），我们可以说
+    `A^!` 是 `A --not A^@` 的简写。
+- en: Triple-dot notation
+  id: totrans-178
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 三点符号
+- en: 'The last major syntax for specifying revision ranges is the triple-dot syntax,
+    `A...B`. It selects all the commits that can be reached by either of two references,
+    but not by both of them; see *Figure 4**.6*. In mathematics, this notation is
+    called the **symmetric difference of A** **and B**:'
+  id: totrans-179
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 指定修订范围的最后一种主要语法是三点语法 `A...B`。它选择能够由两个引用之一到达的所有提交，但不能同时由它们两个到达；见 *图 4**.6*。在数学中，这种表示法被称为**A
+    和 B 的对称差**：
+- en: '![Figure 4.6 – A triple-dot notation, A...B, for a non-linear history, where
+    the selected range is shown with a thin outline, and O is the boundary commit
+    – the merge base of A and B](img/B21194_04_06.jpg)'
+  id: totrans-180
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 4.6 – 三点符号 A...B，用于非线性历史，所选范围以细线框显示，O 是边界提交 —— A 和 B 的合并基点](img/B21194_04_06.jpg)'
+- en: Figure 4.6 – A triple-dot notation, A...B, for a non-linear history, where the
+    selected range is shown with a thin outline, and O is the boundary commit – the
+    merge base of A and B
+  id: totrans-181
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 4.6 – 三点符号 A...B，用于非线性历史，所选范围以细线框显示，O 是边界提交 —— A 和 B 的合并基点
+- en: It is a shortcut notation for `A B --not $(git merge-base --all A B)`, where
+    `$(…)` denotes shell `git merge-base` command to find out all the best common
+    ancestors (all merge bases), and then paste its output on the command line so
+    that it can be negated.
+  id: totrans-182
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这是 `A B --not $(git merge-base --all A B)` 的简写，其中 `$(…)` 表示 shell `git merge-base`
+    命令，用于查找所有最佳共同祖先（所有合并基点），然后将其输出粘贴到命令行中，以便进行否定操作。
+- en: 'A common switch to the `git log` command to use with the triple dot notation
+    is `--left-right`. This option makes Git show which side of the range each commit
+    is in by prefixing commits from the left-hand side (`A` in `A...B`) with `<`,
+    and those from the right (`B` in `A...B`) with `>`, as shown in *Figure 4**.6*
+    and the following example. This helps make the data more useful:'
+  id: totrans-183
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`git log` 命令在使用三点符号时常用的一个开关是 `--left-right`。此选项使 Git 通过在来自左侧（`A` 在 `A...B`
+    中）的提交前添加 `<`，以及在来自右侧（`B` 在 `A...B` 中）的提交前添加 `>` 来显示每个提交属于范围的哪一侧，如 *图 4**.6* 所示，以及以下示例。这有助于使数据更具实用性：'
+- en: '[PRE10]'
+  id: totrans-184
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE10]'
+- en: Important note
+  id: totrans-185
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 重要提示
+- en: If the **--left-right** option is combined with **--boundary**, these normally
+    uninteresting boundary commits are prefixed with **-**.
+  id: totrans-186
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果**--left-right**选项与**--boundary**结合使用，这些通常不感兴趣的边界提交将以**-**为前缀。
+- en: In the case of using the triple-dot **A...B** revision range, these boundary
+    commits are **git merge-base --all** **A B**.
+  id: totrans-187
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用三点符号**A...B**修订范围时，这些边界提交是**git merge-base --all** **A B**。
+- en: 'Git uses triple-dot notation in `git fetch` and `git push` output when there
+    is a **forced update**, in cases where the old version (left-hand side) and the
+    updated version (right-hand side) diverged, and the new version was forced to
+    overwrite the old version:'
+  id: totrans-188
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当发生**强制更新**时，Git在`git fetch`和`git push`的输出中使用三点符号表示，在旧版本（左侧）和更新版本（右侧）分叉的情况下，并且新版本被强制覆盖旧版本：
+- en: '[PRE11]'
+  id: totrans-189
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE11]'
+- en: Using the revision range notation in diff
+  id: totrans-190
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在diff中使用修订范围符号
+- en: To make it easier to copy and paste between the **log** and **diff** commands,
+    Git allows us to use the *revision range* double-dot notation, **A..B**, and triple-dot,
+    **A...B**, as a *set of revisions (endpoints)* in the **git** **diff** command.
+  id: totrans-191
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了方便在**log**和**diff**命令之间复制粘贴，Git允许我们在**git** **diff**命令中使用*修订范围*双点符号**A..B**和三点符号**A...B**，作为*修订集（端点）*。
+- en: For Git, using **git diff A..B** is the same as **git diff A B**, which means
+    the difference between revision **A** and revision **B**. If the revision on either
+    side of the double dot is omitted, it will have the same effect as using **HEAD**
+    instead. For example, **git diff A..** is equivalent to **git diff** **A HEAD**.
+  id: totrans-192
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于Git来说，使用**git diff A..B**与**git diff A B**是一样的，这表示修订**A**和修订**B**之间的差异。如果省略双点符号两侧的修订，它将产生与使用**HEAD**相同的效果。例如，**git
+    diff A..**等同于**git diff** **A HEAD**。
+- en: The **git diff A...B** notation is intended to show incoming changes on branch
+    **B**. Incoming changes mean revisions up to **B**, starting at a common ancestor
+    – that is, a merge base of both **A** and **B**. Thus, writing **git diff A...B**
+    is equivalent to **git diff $(git merge-base A B) B**; note that **git merge-base**
+    is without **--all** here. The result of this convention makes it so that a copy
+    and paste of the **git fetch** output (whether with double-dot or triple-dot)
+    as an argument to **git diff** will always show fetched changes. Note, however,
+    that it doesn’t include changes that were made on **A** since divergence at all!
+  id: totrans-193
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**git diff A...B**符号表示显示分支**B**上的传入更改。传入更改意味着从公共祖先——即**A**和**B**的合并基点开始，直到修订**B**。因此，写**git
+    diff A...B**相当于**git diff $(git merge-base A B) B**；请注意，这里**git merge-base**没有使用**--all**选项。此约定的结果是，将**git
+    fetch**输出（无论是双点符号还是三点符号）作为参数传递给**git diff**时，始终会显示已获取的更改。但需要注意的是，它不包括自分叉以来在**A**上所做的更改！'
+- en: With modern Git, you can use the less cryptic **git diff --merge-base A B**
+    instead of using triple-dot notation – that is, **git** **diff A...B**.
+  id: totrans-194
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在现代Git中，你可以使用不那么难懂的**git diff --merge-base A B**，而不必使用三点符号表示法——也就是说，**git diff
+    A...B**。
+- en: Additionally, this feature makes it possible to use **git diff A^!** to view
+    how revision **A** differs from its parent (it’s the shortcut for **git diff**
+    **A^ A**).
+  id: totrans-195
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 此外，此功能使得可以使用**git diff A^!**查看修订**A**与其父提交的差异（它是**git diff** **A^ A**的快捷方式）。
+- en: Summary
+  id: totrans-196
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 总结
+- en: 'This chapter covered the various ways you can explore project history: to find
+    relevant revisions, select revisions to display, and for further analysis.'
+  id: totrans-197
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章涵盖了探索项目历史的各种方法：查找相关的修订，选择要显示的修订，并进行进一步分析。
+- en: 'We started by describing the conceptual model of project history: the DAG of
+    revisions. Understanding this concept is very important because many selection
+    tools refer directly or indirectly to the DAG.'
+  id: totrans-198
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们从描述项目历史的概念模型开始：修订的有向无环图（DAG）。理解这一概念非常重要，因为许多选择工具直接或间接地引用了DAG。
+- en: Then, you learned how to select a single revision and range of revisions, as
+    well as how the concept of revision range works for a non-linear history. We can
+    use this knowledge to see what changes were made on a branch since its divergence
+    from the base branch, and vice versa; we can also examine what happened to both
+    branches since their divergence.
+  id: totrans-199
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后，你学习了如何选择单个修订和修订范围，以及修订范围的概念如何适用于非线性历史。我们可以利用这些知识查看自分支与基础分支分叉以来，分支上做了哪些更改，反之亦然；我们还可以检查自分叉以来两个分支发生了什么。
+- en: Selecting revisions is an important first step in searching through project
+    history. This will be described in the next chapter.
+  id: totrans-200
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 选择修订是搜索项目历史的第一步。这将在下一章中描述。
+- en: Questions
+  id: totrans-201
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 问题
+- en: 'Answer the following questions to test your knowledge of this chapter:'
+  id: totrans-202
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 回答以下问题，以测试你对本章内容的理解：
+- en: How would you list all revisions that are present upstream for the current branch
+    but are not present in the current branch (are not integrated)?
+  id: totrans-203
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如何列出所有当前分支上未包含的、在上游分支上存在的修订版（尚未集成的）？
+- en: How would you list all revisions that you would send using **git push**, allowing
+    for a triangular workflow (remote to push to is different from remote to pull
+    from)?
+  id: totrans-204
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如何列出你将使用 **git push** 发送的所有修订版，支持三角工作流（推送远程仓库与拉取远程仓库不同）？
+- en: How can you find all divergent changes in two branches, **A** and **B**, starting
+    from a fork point, and show which changeset is present on which branch?
+  id: totrans-205
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如何查找从分叉点开始的两个分支 **A** 和 **B** 中的所有分歧更改，并显示哪个更改集位于哪个分支上？
+- en: How can you list all commits that were made on any remote-tracking branch whose
+    name starts with **fix-**, from any remote repository?
+  id: totrans-206
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如何列出所有在任何远程追踪分支上进行的提交，这些分支的名称以 **fix-** 开头，并且来自任何远程仓库？
+- en: What is the simplest way of switching to the previous branch, and how does it
+    work?
+  id: totrans-207
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 切换到前一个分支的最简单方法是什么？它是如何工作的？
+- en: Answers
+  id: totrans-208
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 答案
+- en: 'Here are the answers to this chapter’s questions:'
+  id: totrans-209
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是本章问题的答案：
+- en: 'Combine the double-dot notation with the notation for the upstream branch:
+    **git** **log ..@****{upstream}**.'
+  id: totrans-210
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 将双点表示法与上游分支的表示法结合使用：**git** **log ..@****{upstream}**。
+- en: Use **git log @{push}..HEAD**, combining double-dot notation with the “where
+    to push to” notation. Note that for simple workflows, **@{push}** is the same
+    as **@{upstream}**.
+  id: totrans-211
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用 **git log @{push}..HEAD**，将双点表示法与“推送到的位置”表示法结合使用。请注意，对于简单的工作流程，**@{push}**
+    与 **@{upstream}** 是相同的。
+- en: 'Use the triple-dot notation and the appropriate **git log** option: **git log
+    --left-right** **A...B**.'
+  id: totrans-212
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用三点表示法和适当的 **git log** 选项：**git log --left-right** **A...B**。
+- en: 'Use the **--remotes[=<pattern>]** option with the appropriate glob pattern:
+    **git** **log --remotes=*/fix-***.'
+  id: totrans-213
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用 **--remotes[=<pattern>]** 选项，并搭配适当的通配符模式：**git** **log --remotes=*/fix-***。
+- en: Use **git checkout –** or **git switch -**. In those commands, **-** means **@{-1}**,
+    which uses the reflog to find the previous value of the current branch.
+  id: totrans-214
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用 **git checkout –** 或 **git switch -**。在这些命令中，**-** 表示 **@{-1}**，该符号利用 reflog
+    查找当前分支的前一个值。
+- en: Further reading
+  id: totrans-215
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 进一步阅读
+- en: 'To learn more about the topics that were covered in this chapter, take a look
+    at the following resources:'
+  id: totrans-216
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 若要了解本章所涉及的更多主题，可以查看以下资源：
+- en: 'gitrevisions(7) – specifying revisions and ranges for Git: [https://git-scm.com/docs/gitrevisions](https://git-scm.com/docs/gitrevisions)'
+  id: totrans-217
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: gitrevisions(7) – 指定Git的修订版和范围：[https://git-scm.com/docs/gitrevisions](https://git-scm.com/docs/gitrevisions)
+- en: 'Scott Chacon, Ben Straub: *Pro Git*, 2nd Edition (2014), Apress *Chapter 2**.3:
+    Git Basics - Viewing the Commit* *History*: [https://git-scm.com/book/en/v2/Git-Basics-Viewing-the-Commit-History](https://git-scm.com/book/en/v2/Git-Basics-Viewing-the-Commit-History)'
+  id: totrans-218
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 'Scott Chacon, Ben Straub: *Pro Git*, 第二版（2014年），Apress *第二章 2.3：Git基础 - 查看提交历史*：[https://git-scm.com/book/en/v2/Git-Basics-Viewing-the-Commit-History](https://git-scm.com/book/en/v2/Git-Basics-Viewing-the-Commit-History)'
+- en: '*glob(7)* – globbing pathnames (shell wildcard patterns): [https://man7.org/linux/man-pages/man7/glob.7.html](https://man7.org/linux/man-pages/man7/glob.7.html)'
+  id: totrans-219
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*glob(7)* – 通配符模式的路径匹配（Shell通配符模式）：[https://man7.org/linux/man-pages/man7/glob.7.html](https://man7.org/linux/man-pages/man7/glob.7.html)'
+- en: 'Jan Goyvaerts: *Regular Expressions Tutorial: Learn How to Use and Get The
+    Most out of Regular* *Expressions*: [https://www.regular-expressions.info/tutorial.html](https://www.regular-expressions.info/tutorial.html)'
+  id: totrans-220
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 'Jan Goyvaerts: *正则表达式教程：学习如何使用并充分利用正则表达式*：[https://www.regular-expressions.info/tutorial.html](https://www.regular-expressions.info/tutorial.html)'

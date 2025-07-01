@@ -1,0 +1,1674 @@
+- en: Chapter 1. Plugin Development Process
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 第 1 章 插件开发流程
+- en: 'In this chapter, we will cover:'
+  id: totrans-1
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章内容包括：
+- en: Setting up the development environment
+  id: totrans-2
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 设置开发环境
+- en: Creating a Skeleton plugin
+  id: totrans-3
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 创建骨架插件
+- en: Deploying a JIRA plugin
+  id: totrans-4
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 部署 JIRA 插件
+- en: Testing and debugging
+  id: totrans-5
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 测试和调试
+- en: Introduction
+  id: totrans-6
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 介绍
+- en: Atlassian JIRA, as we all know, is primarily an **Issue Tracking** and **Project
+    Tracking System**. What many people do not know, though, is the power of its numerous
+    customization capabilities, using which we can turn it into a different system
+    altogether! Maybe a helpdesk system, a user story management system, an online
+    approval process, and a lot more. This is in addition to the issue tracking and
+    project tracking capabilities for which JIRA, arguably, is the best player in
+    the market.
+  id: totrans-7
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如我们所知，Atlassian JIRA 主要是一个**问题跟踪**和**项目跟踪系统**。然而，很多人并不知道的是，它强大的定制功能使得我们能够将其转变成完全不同的系统！比如，帮助台系统、用户故事管理系统、在线审批流程等。这些都可以在
+    JIRA 本身作为问题跟踪和项目跟踪功能的基础上实现，而 JIRA 在这一领域无疑是市场上的最佳选择。
+- en: So what are these customizations? How can we convert the JIRA we know into a
+    product we want? Or maybe just add extra functionalities that are specific to
+    our organization?
+  id: totrans-8
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 那么，这些定制化功能是什么呢？我们如何将我们所知道的 JIRA 转变成我们需要的产品？或者只是为我们的组织增加一些特定的功能？
+- en: The answer to these questions probably can be summarized in a single word—**plugins**.
+    JIRA has given the power to its users to write plugins and customize the functionality
+    in a way they find suitable.
+  id: totrans-9
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这些问题的答案可能可以用一个词来概括——**插件**。JIRA 赋予了用户编写插件的能力，从而使他们能够按自己的需求定制功能。
+- en: But is that the only way? Definitely not! JIRA itself provides a lot of customization
+    options through its user interface, and in more demanding cases, using property
+    files like **jira-application.properties**. In some cases, you will also find
+    yourself modifying some of the JIRA core files to tweak functionality or to work
+    around a problem. We will see more of that in the chapters to come but the best
+    entry point to JIRA customizations are plugins. And that is where we start our
+    cookbook, before we move on to the in-depth details.
+  id: totrans-10
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 但是，这就是唯一的方法吗？当然不是！JIRA 本身通过其用户界面提供了许多定制选项，在更复杂的情况下，你可以通过像 **jira-application.properties**
+    这样的属性文件进行配置。在某些情况下，你还可能需要修改一些 JIRA 核心文件，以调整功能或解决问题。我们将在接下来的章节中看到更多内容，但插件是进入 JIRA
+    定制化的最佳切入点。我们将在这本教程中从这里开始，然后再深入探讨更详细的内容。
+- en: What is a JIRA plugin?
+  id: totrans-11
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 什么是 JIRA 插件？
+- en: So, what is a JIRA plugin? JIRA itself is a web application written in Java.
+    But that doesn't mean you need to know JAVA to write a plugin, though in most
+    cases you will need to. You might end up writing a simple descriptor file to add
+    few links here and there. If that makes the non-Java developer in you happy, watch
+    out for the different plugin modules JIRA supports.
+  id: totrans-12
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 那么，什么是 JIRA 插件呢？JIRA 本身是一个用 Java 编写的 Web 应用程序。但这并不意味着你需要知道 Java 来编写插件，尽管在大多数情况下你可能需要。你可能只需要编写一个简单的描述符文件，来添加一些链接。如果这样让你这个非
+    Java 开发者感到满意，那就看看 JIRA 支持的各种插件模块吧。
+- en: A JIRA plugin is a JAR file that has a mandatory plugin **descriptor** and some
+    optional Java classes and velocity templates. The velocity templates are used
+    to render the HTML pages associated with your plugin, but in some cases, you might
+    also want to introduce JSPs to make use of some pre-existing templates in JIRA.
+    JSPs, as opposed to velocity templates, cannot be embedded in the plugin, but
+    instead they should be dropped into the appropriate folders in the JIRA web application.
+  id: totrans-13
+  prefs: []
+  type: TYPE_NORMAL
+  zh: JIRA 插件是一个 JAR 文件，包含一个必需的插件**描述符**以及一些可选的 Java 类和 Velocity 模板。Velocity 模板用于渲染与插件关联的
+    HTML 页面，但在某些情况下，你也可能需要引入 JSP 来使用 JIRA 中一些现有的模板。与 Velocity 模板不同，JSP 无法嵌入插件中，而应该被放入
+    JIRA Web 应用程序中的适当文件夹中。
+- en: The plugin descriptor, the only mandatory part of a plugin, is an XML file which
+    must be named `atlassian-plugin.xml`. This file is located at the root of the
+    plugin. The `atlassian-plugin.xml` file defines the various modules in a plugin.
+    The different types of available plugin modules include reports, custom field
+    types, and so on, and these are discussed in detail in the next chapter.
+  id: totrans-14
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 插件描述符是插件中唯一必需的部分，它是一个 XML 文件，必须命名为 `atlassian-plugin.xml`。此文件位于插件的根目录。`atlassian-plugin.xml`
+    文件定义了插件中的各种模块。可用的插件模块类型包括报告、自定义字段类型等，这些将在下一章中详细讨论。
+- en: The plugin development process
+  id: totrans-15
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 插件开发流程
+- en: 'The process of developing a JIRA plugin can be of varying complexity depending
+    on the functionality we are trying to achieve. The plugin development process
+    essentially is a four step process:'
+  id: totrans-16
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 开发JIRA插件的过程可以根据我们尝试实现的功能而复杂度不同。插件开发过程本质上是一个四步过程：
+- en: Develop the plugin.
+  id: totrans-17
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 开发插件。
+- en: Deploy it into our local JIRA.
+  id: totrans-18
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 将其部署到我们的本地JIRA。
+- en: Test the plugin functionality.
+  id: totrans-19
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 测试插件功能。
+- en: Make changes and re-deploy the plugin, if required.
+  id: totrans-20
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如有需要，修改并重新部署插件。
+- en: Each of these is explained in detail through the various recipes in this book!
+  id: totrans-21
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本书中的各种食谱会详细解释这些内容！
+- en: JIRA, on start-up, identifies all the plugins that are deployed in the current
+    installation. You can deploy multiple plugins, but there are some things you need
+    to keep an eye on!
+  id: totrans-22
+  prefs: []
+  type: TYPE_NORMAL
+  zh: JIRA在启动时会识别当前安装中所有已部署的插件。你可以部署多个插件，但有些事情需要注意！
+- en: The `atlassian-plugin.xml` file has a plugin **key** which should be unique
+    across all the plugins. It is much similar to a Java package. Each module in the
+    plugin also has a key that is unique within the plugin. The plugin key combined
+    with the module key, separated by a colon, forms the complete key of a plugin
+    module.
+  id: totrans-23
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`atlassian-plugin.xml`文件有一个插件**键**，该键应该在所有插件中是唯一的。它类似于Java包。插件中的每个模块也有一个在插件内唯一的键。插件键和模块键组合在一起，并用冒号分隔，形成一个插件模块的完整键。'
+- en: 'Following is a sample `atlassian-plugin.xml` file without any plugin modules
+    in it:'
+  id: totrans-24
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是一个没有任何插件模块的示例`atlassian-plugin.xml`文件：
+- en: '[PRE0]'
+  id: totrans-25
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: The plugin, as you can see, has details such as description, version, vendor-details,
+    and so on.
+  id: totrans-26
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，插件包含了描述、版本、供应商信息等详细信息。
+- en: When a plugin is loaded, all the unique modules in it are also loaded. The plugin
+    classes override the system classes and so if there is an action that has the
+    same **alias** name as that of a JIRA action, it is the plugin action class that
+    will be loaded. We will see more about extending actions in the coming chapters.
+  id: totrans-27
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当一个插件被加载时，插件中的所有独立模块也会被加载。插件类会覆盖系统类，因此如果有一个动作与JIRA的动作具有相同的**别名**，那么将加载插件的动作类。我们将在接下来的章节中详细了解如何扩展动作。
+- en: 'Suppose you have a report module in your plugin, it will look as follows:'
+  id: totrans-28
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 假设你的插件中有一个报告模块，它将如下所示：
+- en: '[PRE1]'
+  id: totrans-29
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: The plugin key, in this case, will be `com.jtricks.demo` and the module key
+    will be `com.jtricks.demo:demo-report`.
+  id: totrans-30
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这种情况下，插件键将是`com.jtricks.demo`，模块键将是`com.jtricks.demo:demo-report`。
+- en: Hang on, before you start writing your little plugin for a much wanted feature,
+    have a look at the Atlassian plugin exchange to see if someone else has already
+    done the dirty work for you!
+  id: totrans-31
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 等一下，在你开始编写你梦寐以求功能的插件之前，先看看Atlassian插件交换平台，看看是否有人已经为你完成了这项工作！
+- en: Atlassian plugin exchange
+  id: totrans-32
+  prefs:
+  - PREF_H4
+  type: TYPE_NORMAL
+  zh: Atlassian插件交换平台
+- en: Atlassian plugin exchange is a one stop shop where you can find the entire list
+    of commercial and open source plugins people around the world have written. See
+    [https://plugins.atlassian.com/search/by/jira](https://plugins.atlassian.com/search/by/jira)
+    for more details.
+  id: totrans-33
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Atlassian插件交换平台是一个一站式商店，您可以在这里找到世界各地的人编写的所有商业和开源插件的完整列表。有关更多详情，请参见[https://plugins.atlassian.com/search/by/jira](https://plugins.atlassian.com/search/by/jira)。
+- en: Troubleshooting
+  id: totrans-34
+  prefs:
+  - PREF_H4
+  type: TYPE_NORMAL
+  zh: 故障排除
+- en: A common scenario that people encounter while deploying their plugin is when
+    the plugin fails to load even though everything looks fine. Make sure your plugin's
+    key is unique and is not duplicated in one of yours or another third-party's plugin!
+  id: totrans-35
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在部署插件时，常见的场景是即使一切看起来正常，插件仍然无法加载。确保插件的键值是唯一的，并且没有与您或其他第三方的插件重复！
+- en: The same applies to individual plugin modules.
+  id: totrans-36
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 同样适用于单独的插件模块。
+- en: Setting up the development environment
+  id: totrans-37
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 设置开发环境
+- en: Now that we know what a plugin is, let 's aim at writing one! The first step
+    in writing a JIRA plugin is to set up your environment, if you haven't done that
+    already. In this recipe, we will see how to set up a local environment.
+  id: totrans-38
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经了解了插件是什么，接下来让我们开始编写一个插件！编写JIRA插件的第一步是设置开发环境，如果你还没有完成的话。在这个食谱中，我们将看到如何设置本地环境。
+- en: To make plugin development easier, Atlassian provides the **Atlassian Plugin
+    Software Development Kit** (**SDK**). It comes along with Maven and a pre-configured
+    `settings.xml` to make things easier.
+  id: totrans-39
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了简化插件开发，Atlassian提供了**Atlassian插件软件开发工具包**（**SDK**）。它包含Maven和一个预配置的`settings.xml`，让事情变得更加简便。
+- en: Atlassian Plugin SDK can be used to develop plugins for other Atlassian products,
+    including Confluence, Crowd, and so on, but we are concentrating only on JIRA.
+  id: totrans-40
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Atlassian 插件 SDK 可用于开发其他 Atlassian 产品的插件，包括 Confluence、Crowd 等，但我们仅专注于 JIRA。
+- en: Getting ready
+  id: totrans-41
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 准备就绪
+- en: 'The following are the pre-requisites for running the Atlassian plugin SDK:'
+  id: totrans-42
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是运行 Atlassian 插件 SDK 的前提条件：
+- en: 'The default port for the SDK: 2990 should be available. This is important because
+    different ports are reserved for different Atlassian products.'
+  id: totrans-43
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: SDK 的默认端口 2990 应该是可用的。这一点很重要，因为不同的端口为不同的 Atlassian 产品保留。
+- en: JDK Java version 1.5 - 6 must be installed.
+  id: totrans-44
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 必须安装 JDK Java 版本 1.5 - 6。
+- en: Make sure `JAVA_HOME` is set properly and the command `java –version` outputs
+    the correct Java version details.
+  id: totrans-45
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 确保正确设置 `JAVA_HOME`，并且命令 `java –version` 输出正确的 Java 版本信息。
+- en: And of course, JIRA 4.x+ should be installed in your development environment.
+  id: totrans-46
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 当然，你的开发环境中应该已经安装了 JIRA 4.x 或更高版本。
+- en: Note
+  id: totrans-47
+  prefs:
+  - PREF_IND
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: Make sure you use a context path for your JIRA because there are known issues
+    with the SDK not working when the context path is empty. See [https://studio.atlassian.com/browse/AMPS-122](https://studio.atlassian.com/browse/AMPS-122)
+    for more details.
+  id: totrans-48
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 确保为你的 JIRA 使用一个上下文路径，因为已知 SDK 在上下文路径为空时无法正常工作。更多细节请参见[https://studio.atlassian.com/browse/AMPS-122](https://studio.atlassian.com/browse/AMPS-122)。
+- en: How to do it...
+  id: totrans-49
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何操作…
+- en: Once we have Java installed and the port ready, we can download the latest version
+    of Atlassian Plugin SDK from [https://maven.atlassian.com/content/repositories/atlassian-public/com/atlassian/amps/atlassian-plugin-sdk/](https://maven.atlassian.com/content/repositories/atlassian-public/com/atlassian/amps/atlassian-plugin-sdk/).
+  id: totrans-50
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 一旦我们安装了 Java 并准备好端口，就可以从[https://maven.atlassian.com/content/repositories/atlassian-public/com/atlassian/amps/atlassian-plugin-sdk/](https://maven.atlassian.com/content/repositories/atlassian-public/com/atlassian/amps/atlassian-plugin-sdk/)下载最新版本的
+    Atlassian Plugin SDK。
+- en: Unzip the version into a directory of your choice. Let's call this directory
+    `SDK_HOME` going forward.
+  id: totrans-51
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 将该版本解压到你选择的目录中。接下来我们将该目录称为 `SDK_HOME`。
+- en: Add the SDK's bin directory into the environment `PATH` variable.
+  id: totrans-52
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 将 SDK 的 bin 目录添加到环境 `PATH` 变量中。
+- en: Create a new environment variable `M2_HOME` pointing to the Apache-Maven directory
+    in your SDK Home.
+  id: totrans-53
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建一个新的环境变量 `M2_HOME`，指向 SDK Home 中的 Apache-Maven 目录。
+- en: A lot of commonly used dependencies are already available in the repository
+    folder embedded in the SDK. To use this, edit the `settings.xml` under `M2_HOME/conf/`
+    and modify the `localRepository` attribute to point to the embedded repository
+    folder. By default, it will use the `USER_HOME/.m2/repository`.
+  id: totrans-54
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: SDK 中嵌入的仓库文件夹中已经包含了许多常用的依赖项。要使用这些依赖项，请编辑 `M2_HOME/conf/` 下的 `settings.xml`，并修改
+    `localRepository` 属性，将其指向嵌入的仓库文件夹。默认情况下，它将使用 `USER_HOME/.m2/repository`。
+- en: Install the IDE of your choice. Atlassian recommends Eclipse, IntelliJ IDEA,
+    or NetBeans, as they all support Maven.
+  id: totrans-55
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 安装你选择的 IDE。Atlassian 推荐使用 Eclipse、IntelliJ IDEA 或 NetBeans，它们都支持 Maven。
+- en: Ready, Set, Go…
+  id: totrans-56
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 准备、设置、开始…
+- en: How it works...
+  id: totrans-57
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 工作原理…
+- en: With these steps executed properly, we have a development environment for JIRA
+    plugins.
+  id: totrans-58
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 只要正确执行这些步骤，我们就可以为 JIRA 插件创建一个开发环境。
+- en: The next step is to create a Skeleton plugin, import it into your IDE, and start
+    writing some code! Creating the Skeleton plugin, deploying it, and so on, is explained
+    in detail in the following recipes.
+  id: totrans-59
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 下一步是创建一个骨架插件，将其导入到你的 IDE 中，并开始编写一些代码！创建骨架插件、部署插件等操作将在以下教程中详细说明。
+- en: There's more...
+  id: totrans-60
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 还有更多…
+- en: Even though the aforementioned steps will work in most cases, we will come across
+    scenarios where the setting up of the development environment is not that straightforward.
+    For example, there are extra settings needed for Maven if the machine is behind
+    a firewall. You might even have a local Maven version already installed. In this
+    section, we will see some useful tips on similar cases.
+  id: totrans-61
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 尽管上述步骤在大多数情况下都能奏效，但我们也会遇到一些设置开发环境并不那么简单的情况。例如，如果机器在防火墙后面，Maven 可能需要额外的设置。你可能已经安装了本地的
+    Maven 版本。在这一节中，我们将看到一些在类似情况下有用的提示。
+- en: Proxy settings for Maven
+  id: totrans-62
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: Maven 的代理设置
+- en: 'If you are behind a firewall, make sure you configure the proxy in the Maven
+    `settings.xml` file. The proxy can be configured as follows:'
+  id: totrans-63
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你位于防火墙后面，请确保在 Maven 的 `settings.xml` 文件中配置代理。代理可以按如下方式配置：
+- en: '[PRE2]'
+  id: totrans-64
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: Find out more about that and other aspects of Maven at [http://maven.apache.org/index.html](http://maven.apache.org/index.html).
+  id: totrans-65
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 了解更多有关 Maven 的信息，参见[http://maven.apache.org/index.html](http://maven.apache.org/index.html)。
+- en: Using local Maven
+  id: totrans-66
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 使用本地 Maven
+- en: If you are a developer, in many cases you will have Maven already installed
+    in your local machine. In that case, point `M2_HOME` to your local Maven and update
+    the respective `settings.xml` with the repository details in the default `settings.xml`
+    that ships with Atlassian plugin SDK.
+  id: totrans-67
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你是开发者，在许多情况下，你的本地机器上已经安装了 Maven。在这种情况下，指向你本地的 Maven，并更新相应的`settings.xml`，将
+    Atlassian 插件 SDK 附带的默认 `settings.xml` 中的仓库详情添加进去。
+- en: Configuring IDEs to use SDK
+  id: totrans-68
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 配置 IDE 使用 SDK
+- en: If you are using IntelliJ IDEA, it is an easy job because IDEA integrated Maven
+    out-of-the-box. Just load the project by selecting the `pom.xml`!
+  id: totrans-69
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你使用的是 IntelliJ IDEA，那会非常简单，因为 IDEA 开箱即集成了 Maven。只需选择 `pom.xml` 加载项目即可！
+- en: If you are using Eclipse, make sure you have M2Eclipse installed. This is because
+    Eclipse integrates Maven through the Sonatype M2Eclipse plugin. You can find more
+    details on configuring this at [http://confluence.atlassian.com/display/DEVNET/Configuring+Eclipse+to+use+the+SDK](http://confluence.atlassian.com/display/DEVNET/Configuring+Eclipse+to+use+the+SDK).
+  id: totrans-70
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你使用的是 Eclipse，请确保安装了 M2Eclipse 插件。这是因为 Eclipse 通过 Sonatype M2Eclipse 插件集成了
+    Maven。你可以在 [http://confluence.atlassian.com/display/DEVNET/Configuring+Eclipse+to+use+the+SDK](http://confluence.atlassian.com/display/DEVNET/Configuring+Eclipse+to+use+the+SDK)
+    查找有关如何配置的更多细节。
+- en: Troubleshooting
+  id: totrans-71
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 故障排除
+- en: 'If you see Maven download errors like *Could not resolve artifact*, make sure
+    you verify the following:'
+  id: totrans-72
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你看到 Maven 下载错误，如*无法解析工件*，请确保验证以下内容：
+- en: Entry in Maven `settings.xml` is correct. That is, it points to the correct
+    repositories
+  id: totrans-73
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Maven `settings.xml` 中的条目正确。即，它指向正确的仓库
+- en: Proxy configuration is done if required
+  id: totrans-74
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 如果需要，进行代理配置
+- en: Antivirus in the local machine is disabled if none of the above works! Seriously,
+    it makes a difference.
+  id: totrans-75
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 如果上述方法都无效，本地机器上的防病毒软件会被禁用！真的，它会有所不同。
+- en: See also
+  id: totrans-76
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 另见
+- en: '*Creating a skeleton plugin*'
+  id: totrans-77
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*创建骨架插件*'
+- en: Creating a skeleton plugin
+  id: totrans-78
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 创建骨架插件
+- en: In this recipe, we will look at creating a skeleton plugin. We will use the
+    Atlassian Plugin SDK to create the skeleton!
+  id: totrans-79
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本教程中，我们将创建一个骨架插件。我们将使用 Atlassian Plugin SDK 来创建这个骨架！
+- en: Getting ready
+  id: totrans-80
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 准备工作
+- en: Make sure you have the Atlassian Plugin SDK installed and a version of JIRA
+    4.x running on your local machine.
+  id: totrans-81
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 确保你已经安装了 Atlassian Plugin SDK，并且本地机器上运行了 JIRA 4.x 版本。
+- en: How to do it...
+  id: totrans-82
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: Open a command window and go to the folder where you want to create the plugin.
+  id: totrans-83
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 打开命令窗口，进入你想创建插件的文件夹。
+- en: Note
+  id: totrans-84
+  prefs:
+  - PREF_IND
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: Make sure you use a directory without any spaces because there are known issues
+    with the SDK not working in directories with spaces in it. See [https://studio.atlassian.com/browse/AMPS-126](https://studio.atlassian.com/browse/AMPS-126)
+    for details.
+  id: totrans-85
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 确保你使用的目录中没有空格，因为已知 SDK 在包含空格的目录中无法正常工作。详情请参见 [https://studio.atlassian.com/browse/AMPS-126](https://studio.atlassian.com/browse/AMPS-126)。
+- en: Type `atlas-create-jira-plugin` and press *Enter*.
+  id: totrans-86
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 输入`atlas-create-jira-plugin`并按*Enter*。
+- en: Enter the `groupID` when prompted. GroupID would normally be coming from your
+    organization name and mostly resembles the Java package. Of course, you can enter
+    a different package name as we move forward if you want to keep it separate. GroupID
+    will be used to identify your plugin along with `artifactId`.
+  id: totrans-87
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在提示时输入`groupID`。GroupID 通常来自于你的组织名称，并且通常类似于 Java 包名。当然，如果你想保持它的独立性，可以在后续过程中输入不同的包名。GroupID
+    将与`artifactId`一起用于标识你的插件。
+- en: 'For example: `com.jtricks.demo`.'
+  id: totrans-88
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 例如：`com.jtricks.demo`。
+- en: Enter the `artifactId`—the identifier for this artifact. Do not use spaces here.
+  id: totrans-89
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 输入`artifactId`—该工件的标识符。这里不要使用空格。
+- en: 'For example: `demoplugin`.'
+  id: totrans-90
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 例如：`demoplugin`。
+- en: '`Version`—the default version is `1.0-SNAPSHOT`. Enter a new version if you
+    want to change it or press *Enter* to keep the default.'
+  id: totrans-91
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: '`Version`—默认版本是`1.0-SNAPSHOT`。如果你想更改它，请输入新版本，或按*Enter* 保持默认版本。'
+- en: 'For example: `1.0`'
+  id: totrans-92
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 例如：`1.0`
+- en: '`Package`—press *Enter* if the package value is same as the `groupID`. If not,
+    enter the new value here and press *Enter*.'
+  id: totrans-93
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: '`Package`—如果包名与`groupID`相同，请按*Enter*。如果不同，请在此输入新值并按*Enter*。'
+- en: For example, `com.jtricks.mypackage`
+  id: totrans-94
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 例如，`com.jtricks.mypackage`
+- en: Confirm the selection when prompted. If you want to change any of the entered
+    values, type `N` and press *Enter*.
+  id: totrans-95
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在提示时确认选择。如果你想更改任何已输入的值，请输入`N`并按*Enter*。
+- en: Wait for the `BUILD SUCCESSFUL` message. You might see a few warnings which
+    can be ignored.
+  id: totrans-96
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 等待`BUILD SUCCESSFUL`消息。你可能会看到一些可以忽略的警告。
+- en: How it works...
+  id: totrans-97
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 它是如何工作的...
+- en: A skeleton plugin is nothing but a set of directories and sub directories along
+    with a `pom.xml` (Maven Project Object Model) file and some sample Java and XML
+    files in the appropriate folders.
+  id: totrans-98
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 插件骨架就是一组目录和子目录，带有`pom.xml`（Maven项目对象模型）文件以及适当文件夹中的一些示例Java和XML文件。
+- en: 'Here is a snapshot of how the project will look like in Eclipse. It also shows
+    the design view of the default `atlassian-plugin.xml` file:'
+  id: totrans-99
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这里是项目在Eclipse中的外观快照。它还显示了默认`atlassian-plugin.xml`文件的设计视图：
+- en: '![How it works...](img/1803-01-01.jpg)'
+  id: totrans-100
+  prefs: []
+  type: TYPE_IMG
+  zh: '![它是如何工作的...](img/1803-01-01.jpg)'
+- en: As you can see, there is a `pom.xml` at the root level and a `src` folder. A
+    sample `LICENSE` file and a `README` file are also created for you at the root
+    level.
+  id: totrans-101
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，根目录下有一个`pom.xml`文件和一个`src`文件夹。根目录下还为你创建了一个示例的`LICENSE`文件和一个`README`文件。
+- en: Under the `src` folder, you will find out two folders, `main` and `test`, with
+    identical folder structure. All your main Java code goes under the `main` folder.
+    Any JUnit tests you write will go into the same location under the `test` folder.
+    There is an additional folder, `it`, under the test folder where all the integration
+    tests will go!
+  id: totrans-102
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在`src`文件夹下，你会发现两个文件夹，`main`和`test`，它们的文件夹结构相同。所有的主Java代码都放在`main`文件夹下。你编写的任何JUnit测试都会放在`test`文件夹下的相同位置。测试文件夹下还有一个额外的文件夹，`it`，所有的集成测试都将放在那里！
+- en: You will find the plugin descriptor under `src/main/resources` with sample values
+    already populated in it. The values in the preceding screenshot are populated
+    from the `pom.xml`. In our case, the plugin key will be populated as `com.jtricks.demo:demoplugin`
+    when the plugin is built.
+  id: totrans-103
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你会在`src/main/resources`下找到插件描述文件，文件中已填充了示例值。前面截图中的值是从`pom.xml`文件中填充的。在我们的例子中，当插件构建时，插件密钥将填充为`com.jtricks.demo:demoplugin`。
+- en: There are two more folders under the `src/test. src/test/resources`, which will
+    hold any resources required for unit tests or integration tests, and the `src/test/xml`
+    folder can hold the XML data from any other JIRA instance. If the XML is supplied,
+    the SDK will use it to configure the JIRA instance before running the integration
+    tests.
+  id: totrans-104
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在`src/test`下还有两个文件夹，`src/test/resources`，它们将包含单元测试或集成测试所需的任何资源，`src/test/xml`文件夹可以存放来自其他JIRA实例的XML数据。如果提供了XML文件，SDK将在运行集成测试之前使用它来配置JIRA实例。
+- en: So, that is our plugin Skeleton. All that is pending is some useful Java code
+    and proper module types in the `atlassian-plugin.xml` file!
+  id: totrans-105
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这就是我们的插件骨架。剩下的就是一些有用的Java代码和`atlassian-plugin.xml`文件中的正确模块类型！
+- en: Note
+  id: totrans-106
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: Remember, the first Maven run is going to take some time as it downloads all
+    the dependencies into your local repository. A coffee break might not be enough!!
+    If you have a choice, plan your meals. ;)
+  id: totrans-107
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请记住，第一次运行Maven会花费一些时间，因为它会将所有依赖项下载到本地仓库。一个咖啡休息时间可能都不够！如果你可以选择，最好计划好你的餐饮时间。 ;)
+- en: There's more...
+  id: totrans-108
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 还有更多...
+- en: Sometimes, for the geeks, it is much easier to run a single command to create
+    a project without bothering about the step-by-step creation. In this section,
+    we will quickly see how to do it. We will also have a look at how to create an
+    Eclipse project if you opt out of installing m2eclipse.
+  id: totrans-109
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有时，对于极客来说，运行单个命令来创建一个项目要比逐步创建更简单。在本节中，我们将快速了解如何实现。我们还将看看如何在选择不安装m2eclipse的情况下创建一个Eclipse项目。
+- en: One step to your skeleton plugin
+  id: totrans-110
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 朝着插件骨架迈出一步
+- en: You can ignore the interactive mode by passing the parameters like `groupID`,
+    `artifactId`, and so on, as arguments to the `atlas-create-jira-plugin` command.
+  id: totrans-111
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以通过将`groupID`、`artifactId`等参数作为参数传递给`atlas-create-jira-plugin`命令来忽略交互模式。
+- en: '[PRE3]'
+  id: totrans-112
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: 'In this example, for the values we saw previously, the single line command
+    will be:'
+  id: totrans-113
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这个例子中，对于我们之前看到的值，单行命令将是：
+- en: '[PRE4]'
+  id: totrans-114
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: You can pick and choose the parameters and provide the rest in an interactive
+    mode as well!
+  id: totrans-115
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以选择并选择参数，也可以在交互模式下提供其余参数！
+- en: Creating an Eclipse project
+  id: totrans-116
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 创建Eclipse项目
+- en: 'If you are not using m2eclipse, just run the following command from the folder
+    where you have the `pom.xml` file:'
+  id: totrans-117
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你没有使用m2eclipse，只需从包含`pom.xml`文件的文件夹中运行以下命令：
+- en: '[PRE5]'
+  id: totrans-118
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: This will generate the plugin project for Eclipse and you can then import this
+    project into the IDE.
+  id: totrans-119
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这将为Eclipse生成插件项目，你可以将该项目导入到IDE中。
+- en: Type `atlas-mvn eclipse:clean eclipse:eclipse` if you want to clean the old
+    project and create again!
+  id: totrans-120
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你想清理旧项目并重新创建，请键入`atlas-mvn eclipse:clean eclipse:eclipse`！
+- en: With IDEA or m2eclipse, just opening a file will do. That is, you can just import
+    the project using the option **File** | **Import** | **Existing** **Maven** **Projects**,
+    and select the relevant project.
+  id: totrans-121
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用 IDEA 或 m2eclipse，只需打开一个文件即可。也就是说，你可以通过选择 **文件** | **导入** | **现有** **Maven**
+    **项目** 来导入项目，并选择相关项目。
+- en: See also
+  id: totrans-122
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 另见
+- en: '*Deploying a plugin*'
+  id: totrans-123
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*部署插件*'
+- en: '*Making changes and re-deploying a plugin*'
+  id: totrans-124
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*修改并重新部署插件*'
+- en: Deploying a plugin
+  id: totrans-125
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 部署插件
+- en: In this recipe, we will see how to deploy a plugin into JIRA. We will see both
+    the automated deployment using Atlassian Plugin SDK and the manual deployment.
+  id: totrans-126
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本教程中，我们将学习如何将插件部署到 JIRA。我们将看到使用 Atlassian 插件 SDK 进行自动化部署和手动部署的过程。
+- en: Getting ready
+  id: totrans-127
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 准备工作
+- en: Make sure you have the development environment set up, as we discussed earlier.
+    Also the skeleton plugin should now have the plugin logic implemented in it.
+  id: totrans-128
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 确保你已经设置好开发环境，正如我们之前讨论的那样。同时，骨架插件现在应该已经实现了插件逻辑。
+- en: How to do it...
+  id: totrans-129
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: 'Installing a JIRA plugin using Atlassian Plugin SDK is a cake walk. Here is
+    how it is done:'
+  id: totrans-130
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用 Atlassian 插件 SDK 安装 JIRA 插件简直易如反掌。下面是操作方法：
+- en: Open a command window and go to your plugin's root folder, that is, the folder
+    where your `pom.xml` resides.
+  id: totrans-131
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 打开命令窗口，进入插件的根文件夹，也就是 `pom.xml` 所在的文件夹。
+- en: 'Type `atlas-run` and press *Enter*. It is possible to pass more options as
+    argument to this command for which the details can be found at: [http://confluence.atlassian.com/display/DEVNET/atlas-run](http://confluence.atlassian.com/display/DEVNET/atlas-run).'
+  id: totrans-132
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 输入 `atlas-run` 并按 *Enter*。你也可以传递更多选项作为该命令的参数，详细信息可以在此查看：[http://confluence.atlassian.com/display/DEVNET/atlas-run](http://confluence.atlassian.com/display/DEVNET/atlas-run)。
+- en: You will see a lot of things happening as Maven downloads all the dependent
+    libraries into your local repository. As usual, it is going to take lot of time
+    when you run it for the first time.
+  id: totrans-133
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 当 Maven 下载所有依赖库到本地仓库时，你会看到很多操作。像往常一样，第一次运行时会花费大量时间。
+- en: If you are on Windows, and if you see a security alert popping up, click on
+    **Unblock** to allow incoming network connections.
+  id: totrans-134
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如果你在 Windows 上，如果弹出安全警告，点击 **解除阻止** 以允许传入的网络连接。
+- en: 'When the installation is completed, you will see the following message:'
+  id: totrans-135
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 安装完成后，你将看到以下消息：
+- en: '[PRE6]'
+  id: totrans-136
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: Open `http://localhost:2990/jira` in your browser.
+  id: totrans-137
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在浏览器中打开 `http://localhost:2990/jira`。
+- en: Login using the username as **admin** and password as **admin**.
+  id: totrans-138
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用用户名 **admin** 和密码 **admin** 登录。
+- en: Test your plugin! You can always go to the **Administration** | **Plugin** menu
+    to confirm that the plugin is deployed properly.
+  id: totrans-139
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 测试你的插件！你可以随时访问 **管理** | **插件** 菜单，确认插件是否已正确部署。
+- en: If you already have a local JIRA installed or if you want to manually install
+    your plugin for some reason, all you need to do is to package the plugin JAR and
+    copy it across to the `JIRA_Home/plugins/installed-plugins` directory.
+  id: totrans-140
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你已经安装了本地 JIRA，或者因为某些原因需要手动安装插件，你只需打包插件 JAR 文件并将其复制到 `JIRA_Home/plugins/installed-plugins`
+    目录中。
+- en: 'You can package the plugin using the following command:'
+  id: totrans-141
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以使用以下命令打包插件：
+- en: '[PRE7]'
+  id: totrans-142
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE7]'
+- en: Use `atlas-mvn clean install` if you also want to install the package plugin
+    into your local repository.
+  id: totrans-143
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你还想将插件包安装到本地仓库，可以使用 `atlas-mvn clean install` 命令。
+- en: How it works...
+  id: totrans-144
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 它是如何工作的...
+- en: 'There is only one single command that does the whole thing: `atlas-run`. When
+    you execute this command, it does the following:'
+  id: totrans-145
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有一个单一的命令完成整个过程：`atlas-run`。当你执行此命令时，它会做以下几件事：
+- en: Builds your plugin JAR file
+  id: totrans-146
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 构建你的插件 JAR 文件
+- en: Downloads the latest/specified version of JIRA to your local machine if it is
+    the first time you're running the command.
+  id: totrans-147
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如果这是你第一次运行该命令，它将下载最新/指定版本的 JIRA 到本地机器。
+- en: Creates a virtual JIRA installation under your plugin/target folder.
+  id: totrans-148
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在你的插件/target 文件夹下创建一个虚拟的 JIRA 安装。
+- en: Copies the JAR file into the /`target/jira/home/plugins/installed-plugins` directory
+  id: totrans-149
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 将 JAR 文件复制到 `/`target/jira/home/plugins/installed-plugins` 目录
+- en: Starts JIRA in the Tomcat container.
+  id: totrans-150
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在 Tomcat 容器中启动 JIRA。
+- en: Now, if you look at your target folder, you will see a lot of new folders which
+    were created for the virtual JIRA installation! The two main folders are the `container`
+    folder, which has the Tomcat container setup, and the `jira` folder, which has
+    the JIRA WAR along with the JIRA home setup!
+  id: totrans-151
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，如果你查看目标文件夹，你会看到许多新创建的文件夹，这些是虚拟 JIRA 安装所创建的！两个主要文件夹分别是 `container` 文件夹，它包含
+    Tomcat 容器设置，以及 `jira` 文件夹，它包含 JIRA WAR 文件和 JIRA 配置！
+- en: You will find the database (`HSQLDB`), indexes, backups, and attachments under
+    /`target/jira/home`. And you will see your `jira-webapp` at `/target/container/tomcat6x/cargo-jira-home/webapps/jira`.
+  id: totrans-152
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你会在/`target/jira/home`下找到数据库（`HSQLDB`）、索引、备份和附件。并且你会看到你的`jira-webapp`位于`/target/container/tomcat6x/cargo-jira-home/webapps/jira`。
+- en: If you have any JSPs that need to be put under the webapp, you will have to
+    copy it to the appropriate folder under the aforementioned path!
+  id: totrans-153
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你有任何需要放入 webapp 下的 JSP 文件，你必须将其复制到上述路径下的适当文件夹！
+- en: There's more...
+  id: totrans-154
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 还有更多内容...
+- en: There's more to this.
+  id: totrans-155
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 还有更多内容。
+- en: Using a specific version of JIRA
+  id: totrans-156
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 使用特定版本的 JIRA
+- en: As mentioned earlier, `atlas-run` deploys the latest version of JIRA. But what
+    if you want to deploy the plugin into an earlier version of JIRA and test it?
+  id: totrans-157
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如前所述，`atlas-run`部署的是最新版本的 JIRA。但如果你想将插件部署到早期版本的 JIRA 并进行测试怎么办？
+- en: 'There are two ways to do it:'
+  id: totrans-158
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有两种方法可以做到：
+- en: 'Mention the JIRA version as an argument to `atlas-run`; make sure you run `atlas-clean`,
+    if you already have the latest version deployed:'
+  id: totrans-159
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在`atlas-run`中作为参数提及 JIRA 版本；如果你已经部署了最新版本，确保运行`atlas-clean`：
+- en: Run `atlas-clean` (if required).
+  id: totrans-160
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 运行`atlas-clean`（如有需要）。
+- en: Run `atlas-run –v 4.1.2` or `atlas-run –version 4.1.2` if you are developing
+    for JIRA version 4.1.2\. Replace the version number with a version of your choice.
+  id: totrans-161
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 如果你正在为 JIRA 版本 4.1.2 开发，运行`atlas-run –v 4.1.2` 或 `atlas-run –version 4.1.2`。将版本号替换为你选择的版本。
+- en: 'Permanently change the JIRA version in your plugin `pom.xml`:'
+  id: totrans-162
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 永久更改插件 `pom.xml` 中的 JIRA 版本：
+- en: Go to your `pom.xml`.
+  id: totrans-163
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 转到你的`pom.xml`。
+- en: Modify the `jira.version` property value to the desired version.
+  id: totrans-164
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 将`jira.version`属性值修改为所需的版本。
+- en: Modify the `jira.data.version` to a matching version.
+  id: totrans-165
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 将`jira.data.version`修改为匹配的版本。
+- en: 'This is how it will look for JIRA 4.1.2:'
+  id: totrans-166
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于 JIRA 4.1.2，它将是这样的：
+- en: '[PRE8]'
+  id: totrans-167
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE8]'
+- en: Reusing the configurations in each run
+  id: totrans-168
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 在每次运行时重用配置
+- en: Suppose you added some data on to virtual JIRA, how do you retain it when you
+    clean start-up JIRA next time?
+  id: totrans-169
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 假设你向虚拟 JIRA 添加了一些数据，如何在下次清理启动 JIRA 时保留这些数据？
+- en: This is where a new SDK command comes to our rescue.
+  id: totrans-170
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这时一个新的 SDK 命令来帮助我们。
+- en: 'After the `atlas-run` is finished, that is, after you pressed *Ctrl* + *C*,
+    execute the following command:'
+  id: totrans-171
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在`atlas-run`完成后，也就是按下*Ctrl* + *C*之后，执行以下命令：
+- en: '[PRE9]'
+  id: totrans-172
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE9]'
+- en: 'This will generate a file named `generated-test-resources.zip` under the target
+    folder. Copy this file to the `/src/test/resources` folder or any other known
+    locations. Now modify the `pom.xml` to add the following entry under configurations
+    in the `maven-jira-plugin`:'
+  id: totrans-173
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这将在目标文件夹下生成一个名为`generated-test-resources.zip`的文件。将该文件复制到`/src/test/resources`文件夹或任何其他已知位置。现在修改`pom.xml`，在`maven-jira-plugin`的配置项下添加以下条目：
+- en: '[PRE10]'
+  id: totrans-174
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE10]'
+- en: Modify the path accordingly. This will reuse the configurations the next time
+    you run `atlas-run`.
+  id: totrans-175
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 根据需要修改路径。下次运行`atlas-run`时将重用这些配置。
+- en: Troubleshooting
+  id: totrans-176
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 故障排除
+- en: Missing JAR file exception? Make sure the local-repository attribute in the
+    `settings.xml` file points to the embedded Maven repository that comes with the
+    SDK. If the problem still persists, manually download the missing JAR files and
+    `use atlas-mvn install` to install them in to the local repository.
+  id: totrans-177
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 缺少 JAR 文件异常？确保`settings.xml`文件中的local-repository属性指向与 SDK 一起提供的嵌入式 Maven 仓库。如果问题仍然存在，手动下载缺失的
+    JAR 文件并使用`atlas-mvn install`将它们安装到本地仓库。
+- en: Watch out for the proxy settings or antivirus settings that can potentially
+    block the download in some cases!
+  id: totrans-178
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 留意可能会阻止下载的代理设置或防病毒设置！
+- en: 'BeanCreationException? Make sure your plugin is of version 2\. Check your `atlassian-plugin.xml`
+    to see if the following entry is there or not. If not, add the entry:'
+  id: totrans-179
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: BeanCreationException？确保你的插件是版本 2。检查你的`atlassian-plugin.xml`文件，看看是否包含以下条目。如果没有，请添加该条目：
+- en: '[PRE11]'
+  id: totrans-180
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE11]'
+- en: Run `atlas-clean` followed by `atlas-run` after you do that.
+  id: totrans-181
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 完成后，运行`atlas-clean`，然后运行`atlas-run`。
+- en: Making changes and re-deploying a plugin
+  id: totrans-182
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 进行更改并重新部署插件
+- en: Now that we have deployed the test plugin, it is time to add some proper logic,
+    re-deploy the plugin, and test it. Making the changes and re-deploying a plugin
+    is pretty easy. In this recipe, we will quickly look at how to do this.
+  id: totrans-183
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经部署了测试插件，是时候添加一些适当的逻辑、重新部署插件并进行测试了。进行更改并重新部署插件非常简单。在这个食谱中，我们将快速查看如何做到这一点。
+- en: How to do it...
+  id: totrans-184
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: 'You can make changes to the plugin and re-deploy it while the JIRA application
+    is still running. Here is how we do it:'
+  id: totrans-185
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 JIRA 应用程序仍在运行时，你可以对插件进行更改并重新部署。我们是这样做的：
+- en: Keep the JIRA application running in the window where we ran `atlas-run`.
+  id: totrans-186
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 保持 JIRA 应用程序在我们运行`atlas-run`的窗口中继续运行。
+- en: Open a new command window and go to the root plugin folder where your `pom.xml`
+    resides.
+  id: totrans-187
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 打开一个新的命令窗口，进入你的插件根目录，那里应该有 `pom.xml` 文件。
+- en: Run `atlas-cli`.
+  id: totrans-188
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 运行 `atlas-cli`。
+- en: Wait for the command—`Waiting for messages`.
+  id: totrans-189
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 等待命令——`等待消息`。
+- en: Run `pi`. Pi stands for "plugin install" and this will compile your changes,
+    package the plugin JAR, and install it into the `installed-plugins` folder.
+  id: totrans-190
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 运行`pi`。Pi 代表“插件安装”，这将编译你的更改，打包插件 JAR，并将其安装到`installed-plugins`文件夹中。
+- en: 'Now, there is one thing you need to keep an eye on! Not all the plugin modules
+    can be redeployed like this prior to JIRA 4.4\. The following is a list of the
+    plugin modules that can be reloaded with `pi` in JIRA 4.0.x:'
+  id: totrans-191
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，有一件事你需要留意！并不是所有插件模块都可以像这样在 JIRA 4.4 之前重新部署。以下是 JIRA 4.0.x 中可以通过 `pi` 重新加载的插件模块列表：
+- en: '`ComponentImport`'
+  id: totrans-192
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`组件导入`'
+- en: '`Gadget`'
+  id: totrans-193
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`小部件`'
+- en: '`ModuleType`'
+  id: totrans-194
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`模块类型`'
+- en: '`Resource`'
+  id: totrans-195
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`资源`'
+- en: '`REST`'
+  id: totrans-196
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`REST`'
+- en: '`ServletContextListener`'
+  id: totrans-197
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`Servlet上下文监听器`'
+- en: '`ServletContextParameter`'
+  id: totrans-198
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`Servlet上下文参数`'
+- en: '`ServletFilter`'
+  id: totrans-199
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`Servlet过滤器`'
+- en: '`Servlet`'
+  id: totrans-200
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`Servlet`'
+- en: '`WebItem`'
+  id: totrans-201
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`Web项`'
+- en: '`WebResource`'
+  id: totrans-202
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`Web资源`'
+- en: '`WebSection`'
+  id: totrans-203
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`Web部分`'
+- en: If your plugin module is not there in the preceding list or if the changes doesn't
+    seem to be reflected, press *Ctrl* + *C* in the command window running `atlas-run`
+    and re-run the `atlas-run` command. That will re-deploy the plugin and restart
+    JIRA.
+  id: totrans-204
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你的插件模块不在上面的列表中，或者更改似乎没有反映出来，在运行 `atlas-run` 的命令窗口中按 *Ctrl* + *C*，然后重新运行 `atlas-run`
+    命令。这将重新部署插件并重启 JIRA。
+- en: Post JIRA 4.1, SDK supports reloading of more modules, but whether it works
+    or not depends on what the module does internally.
+  id: totrans-205
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 JIRA 4.1 之后，SDK 支持重新加载更多模块，但是否有效取决于模块内部的实现。
+- en: JIRA 4.4+ supports reloading of all the plugin modules.
+  id: totrans-206
+  prefs: []
+  type: TYPE_NORMAL
+  zh: JIRA 4.4+ 支持重新加载所有插件模块。
+- en: Debugging in Eclipse
+  id: totrans-207
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 在 Eclipse 中调试
+- en: It is also possible to run the plugin in debug mode and point your IDE's remote
+    debugger to it.
+  id: totrans-208
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 也可以以调试模式运行插件，并将 IDE 的远程调试器指向它。
+- en: 'Following are the steps to do this in Eclipse:'
+  id: totrans-209
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是在 Eclipse 中执行此操作的步骤：
+- en: Use `atlas-debug` instead of `atlas-run`.
+  id: totrans-210
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用`atlas-debug`代替`atlas-run`。
+- en: Once the virtual JIRA is up and running with tour plugin deployed in it, go
+    to **Run** | **Debug Configurations** in Eclipse.
+  id: totrans-211
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 一旦虚拟 JIRA 启动并成功部署了你的插件，进入 Eclipse 中的 **运行** | **调试配置**。
+- en: Create a new `Remote Java Application`.
+  id: totrans-212
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建一个新的 `远程 Java 应用程序`。
+- en: Give a name, keep the defaults, and give the port number as `5005`. This is
+    the default debug port on which the virtual JIRA runs.
+  id: totrans-213
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 给定一个名称，保持默认设置，并将端口号设为 `5005`。这是虚拟 JIRA 运行的默认调试端口。
+- en: Happy Debugging!
+  id: totrans-214
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 调试愉快！
+- en: See also
+  id: totrans-215
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 另见
+- en: '*Setting up the development environment*'
+  id: totrans-216
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*设置开发环境*'
+- en: '*Creating a skeleton plugin*'
+  id: totrans-217
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*创建骨架插件*'
+- en: Testing and debugging
+  id: totrans-218
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 测试和调试
+- en: In the world of **Test Driven Development** (**TDD**), writing tests is a part
+    and parcel of the development process. I don't want to bore you with why testing
+    is important! Let us just say, all these holds true for JIRA plugin development
+    as well.
+  id: totrans-219
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 **测试驱动开发**（**TDD**）的世界里，编写测试是开发过程中的一部分。我不想让你厌烦为什么测试很重要！我们只要说，所有这些也适用于 JIRA
+    插件开发。
+- en: In this recipe, we will see the various commands for running unit tests and
+    integration tests in JIRA plugins.
+  id: totrans-220
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本篇教程中，我们将看到运行 JIRA 插件的单元测试和集成测试的各种命令。
+- en: Getting ready
+  id: totrans-221
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 正在准备中
+- en: Make sure you have the plugin development environment set up and the skeleton
+    plugin created!
+  id: totrans-222
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 确保你已经设置了插件开发环境并创建了骨架插件！
+- en: You might have noticed that there are two sample test files, one each for unit
+    tests and integration tests, created under the `src/test/java/your_package/` and
+    `src/test/java/it` folders.
+  id: totrans-223
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可能已经注意到，在 `src/test/java/your_package/` 和 `src/test/java/it` 文件夹下创建了两个示例测试文件，分别用于单元测试和集成测试。
+- en: Once you have it ready, it is time to write some tests and run those tests to
+    make sure things work as expected!
+  id: totrans-224
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦准备好，就该编写一些测试并运行这些测试，确保一切按预期工作！
+- en: How to do it...
+  id: totrans-225
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何执行……
+- en: The first step is to write some tests! We recommend you to use some powerful
+    testing frameworks like JUnit in collaboration with mocking frameworks like **PowerMock**
+    or **Mockito**. Make sure you have the valid dependencies added on to your `pom.xml`.
+  id: totrans-226
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 第一步是编写一些测试！我们推荐你使用一些强大的测试框架，比如 JUnit，并与 **PowerMock** 或 **Mockito** 等模拟框架配合使用。确保你在
+    `pom.xml` 中添加了有效的依赖项。
+- en: Let us now make a huge assumption that you have written a few tests!
+  id: totrans-227
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在让我们做一个大胆的假设，你已经编写了几个测试！
+- en: 'Following is the command to run your unit tests from the command line:'
+  id: totrans-228
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是从命令行运行单元测试的命令：
+- en: '[PRE12]'
+  id: totrans-229
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE12]'
+- en: 'The normal Maven command `atlas-mvn clean test` also does the same thing. If
+    you are running the integration tests, the command to use is:'
+  id: totrans-230
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正常的 Maven 命令 `atlas-mvn clean test` 也做同样的事情。如果你正在运行集成测试，使用的命令是：
+- en: '[PRE13]'
+  id: totrans-231
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE13]'
+- en: 'Or the Maven command: `atlas-mvn clean integration-test`.'
+  id: totrans-232
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 或者使用 Maven 命令：`atlas-mvn clean integration-test`。
+- en: Once we are on to the stage of running tests, we will see it failing at times.
+    There comes the need for debugging. Checkout the `*.txt` and `*.xml` files created
+    under `target/ surefire-reports/` which has all the required information on the
+    various tests that are executed.
+  id: totrans-233
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦进入运行测试的阶段，我们有时会看到测试失败。此时需要调试。查看在 `target/surefire-reports/` 下创建的 `*.txt` 和
+    `*.xml` 文件，它们包含了所有执行的测试所需的详细信息。
+- en: Now, if you want to skip the tests at the various stages, use `–skip-tests`.
+    For example, `atlas-unit-test --skip-tests` will skip the unit tests.
+  id: totrans-234
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，如果你想跳过各个阶段的测试，请使用 `–skip-tests`。例如，`atlas-unit-test --skip-tests` 将跳过单元测试。
+- en: You can also use the Maven options directly to skip the unit/integrations tests
+    or both together.
+  id: totrans-235
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你还可以直接使用 Maven 选项来跳过单元测试、集成测试或两者一起跳过。
+- en: '`-Dmaven.test.skip=true`: skips both unit and integration tests'
+  id: totrans-236
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`-Dmaven.test.skip=true`：跳过单元测试和集成测试'
+- en: '`-Dmaven.test.unit.skip=true`: skips unit tests'
+  id: totrans-237
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`-Dmaven.test.unit.skip=true`：跳过单元测试'
+- en: '`-Dmaven.test.it.skip=true`: skips integration tests'
+  id: totrans-238
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`-Dmaven.test.it.skip=true`：跳过集成测试'
+- en: How it works...
+  id: totrans-239
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 它是如何工作的...
+- en: 'The `atlas-unit-test` command merely runs the related Maven command: `atlas-mvn
+    clean test` in the backend to execute the various unit tests. It also generates
+    the outputs into the `surefire-reports` directory for reference or debugging.'
+  id: totrans-240
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`atlas-unit-test` 命令仅在后台运行相关的 Maven 命令：`atlas-mvn clean test`，以执行各种单元测试。它还将输出生成到
+    `surefire-reports` 目录中以供参考或调试。'
+- en: The `atlas-integration-test` does a bit more. It runs the integration tests
+    in a virtual JIRA environment. It will start up a new JIRA instance running inside
+    a Tomcat container, set up the instance with some default data including a temporary
+    license that lasts for three hours, and execute your tests!
+  id: totrans-241
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`atlas-integration-test` 做得更多。它在一个虚拟的 JIRA 环境中运行集成测试。它将启动一个运行在 Tomcat 容器中的新
+    JIRA 实例，并为该实例设置一些默认数据，包括一个持续三小时的临时许可证，并执行你的测试！'
+- en: How does JIRA differentiate between the unit tests and integration tests? This
+    is where the folder structure plays an important role. Anything under the `src/test/java/it/`
+    folder will be treated as integration tests and everything else will be treated
+    as unit tests!
+  id: totrans-242
+  prefs: []
+  type: TYPE_NORMAL
+  zh: JIRA 如何区分单元测试和集成测试？这里文件夹结构起着重要作用。任何位于 `src/test/java/it/` 文件夹下的内容将被视为集成测试，其余的将被视为单元测试！
+- en: There's more...
+  id: totrans-243
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 还有更多...
+- en: There is more to it.
+  id: totrans-244
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 还有更多内容。
+- en: Using custom data for Integration/Functional Tests
+  id: totrans-245
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 使用自定义数据进行集成/功能测试
+- en: While `atlas-integration-test` makes our life easier by setting up a JIRA instance
+    with some default data in it, we might need some custom data as well to successfully
+    run a few functional tests.
+  id: totrans-246
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 虽然 `atlas-integration-test` 通过在 JIRA 实例中设置一些默认数据让我们的生活更轻松，但我们可能还需要一些自定义数据来成功执行一些功能测试。
+- en: 'We can do this in a couple of steps:'
+  id: totrans-247
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以通过几个步骤来完成：
+- en: Export the data from a pre-configured JIRA instance into XML.
+  id: totrans-248
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 从预配置的 JIRA 实例中导出数据为 XML 格式。
+- en: Put it under the `src/test/xml/` directory.
+  id: totrans-249
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 将其放在 `src/test/xml/` 目录下。
+- en: Provide this path as the value for the `jira.xml.data.location` property in
+    the `localtest.properties` under `src/main/resources`.
+  id: totrans-250
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 将此路径作为 `localtest.properties` 中 `jira.xml.data.location` 属性的值，位于 `src/main/resources`
+    下。
+- en: The XML resource will then be imported to JIRA before the tests are executed.
+  id: totrans-251
+  prefs: []
+  type: TYPE_NORMAL
+  zh: XML 资源将在执行测试之前导入到 JIRA 中。
+- en: Testing against different version of JIRA/Tomcat
+  id: totrans-252
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 针对不同版本的 JIRA/Tomcat 进行测试
+- en: Just like the `atlas-run` command, you can use the `-v` option to test your
+    plugin against a different version of JIRA. As before, make sure you do an `atlas-clean`
+    before running the tests if you had tested it against another version before.
+  id: totrans-253
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 就像 `atlas-run` 命令一样，你可以使用 `-v` 选项将插件测试不同版本的 JIRA。如之前所述，如果你之前已对另一个版本进行了测试，请确保在运行测试前执行
+    `atlas-clean`。
+- en: You can also use the `-c` option to test it against a different version of the
+    Tomcat container.
+  id: totrans-254
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你还可以使用 `-c` 选项将其测试不同版本的 Tomcat 容器。
+- en: For example, `atlas-clean && atlas-integration-test -v 3.0.1 -c tomcat5x` will
+    test your plugin against JIRA version 3.0.1 using Tomcat container 5.
+  id: totrans-255
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 例如，`atlas-clean && atlas-integration-test -v 3.0.1 -c tomcat5x` 将使用 Tomcat 5
+    容器在 JIRA 版本 3.0.1 上测试你的插件。
+- en: See also
+  id: totrans-256
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 另见
+- en: '*Setting up the development environment*'
+  id: totrans-257
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*设置开发环境*'
+- en: '*Deploying a plugin*'
+  id: totrans-258
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*部署插件*'

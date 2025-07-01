@@ -1,0 +1,2343 @@
+- en: '2'
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '2'
+- en: Developing with Git
+  id: totrans-1
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用 Git 开发
+- en: This chapter will describe how to create new revisions and new lines of development
+    (new branches) with Git.
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章将描述如何使用 Git 创建新的修订版本和新的开发线路（新分支）。
+- en: Here, we will focus on committing one’s own work on the solo development. The
+    description of working as one of the contributors is left for [*Chapter 6*](B21194_06.xhtml#_idTextAnchor140),
+    *Collaborative Development with Git*, while [*Chapter 9*](B21194_09.xhtml#_idTextAnchor229),
+    *Merging Changes Together*, will show how to join created lines of development
+    and how Git can help in maintainer duties.
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这里，我们将专注于提交自己在独立开发中的工作。作为贡献者之一的工作描述留给了[*第 6 章*](B21194_06.xhtml#_idTextAnchor140)，*使用
+    Git 进行协同开发*，而[*第 9 章*](B21194_09.xhtml#_idTextAnchor229)，*合并更改*，将展示如何将创建的开发线路合并以及
+    Git 如何帮助维护者工作。
+- en: This chapter will introduce the very important Git concept of the **staging
+    area** (also called the index), while more advanced techniques for manipulating
+    it will be described in [*Chapter 3*](B21194_03_split_000.xhtml#_idTextAnchor049),
+    *Managing Your* *Worktrees*. It will also explain, in detail, the idea of a **detached
+    HEAD** — that is, an anonymous, unnamed branch. Here, you can also find how Git
+    describes differences between two versions of the project, or changes to the project,
+    including a detailed description of the so-called extended **unified** **diff
+    format**.
+  id: totrans-4
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章将介绍 Git 中非常重要的概念——**暂存区**（也叫索引），而更高级的操作技巧将在[*第 3 章*](B21194_03_split_000.xhtml#_idTextAnchor049)，*管理你的工作树*中进行描述。它还将详细解释**分离的
+    HEAD**的概念——即一个匿名的、无名的分支。在这里，你还可以了解 Git 如何描述两个项目版本之间的差异，或项目的更改，包括对所谓扩展**统一****差异格式**的详细描述。
+- en: 'The following is the list of the topics we will cover in this chapter:'
+  id: totrans-5
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是本章我们将涉及的主题列表：
+- en: The index — a staging area for commits
+  id: totrans-6
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 索引——提交的暂存区
+- en: Examining the status of the working area, and changes in it
+  id: totrans-7
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 检查工作区的状态，以及其中的变化
+- en: How to read the extended unified diff that is used to describe changes
+  id: totrans-8
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 如何阅读描述更改的扩展统一差异（unified diff）
+- en: Selective and interactive commit, and amending a commit
+  id: totrans-9
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 选择性和交互式提交，并修改提交
+- en: Creating, listing, renaming, and switching to branches, and listing tags
+  id: totrans-10
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 创建、列出、重命名和切换分支，以及列出标签
+- en: What can prevent switching branches, and what you can do then
+  id: totrans-11
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 什么可能会阻止切换分支，以及在这种情况下你可以做什么
+- en: Rewinding a branch with **git reset**
+  id: totrans-12
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用**git reset**回退分支
+- en: Detached **HEAD** — that is, the unnamed branch (for example, a result of checking
+    out a tag)
+  id: totrans-13
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 分离的**HEAD**——即无名分支（例如，检查某个标签的结果）
+- en: Creating a new commit
+  id: totrans-14
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 创建新的提交
+- en: Before starting to develop with Git, you should introduce yourself with a name
+    and an email, as shown in [*Chapter 1*](B21194_01.xhtml#_idTextAnchor015), *Git
+    Basics in Practice*. This information will be used to identify your work, either
+    as an author or as a committer. The setup can be global for all your repositories
+    (with `git config --global`, or by editing the `~/.gitconfig` file directly),
+    or local to a repository (with `git config`, or by editing the `.git/config` file
+    inside the given repository). The per-repository configuration overrides the per-user
+    one (you will learn more about this in [*Chapter 13*](B21194_13_split_000.xhtml#_idTextAnchor320),
+    *Customizing and* *Extending Git*).
+  id: totrans-15
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在开始使用 Git 开发之前，你应该用一个姓名和电子邮件进行自我介绍，正如在[*第 1 章*](B21194_01.xhtml#_idTextAnchor015)中所示，*Git
+    基础实用技巧*。这些信息将用于识别你的工作，无论是作为作者还是提交者。配置可以是全局的，适用于你所有的仓库（使用 `git config --global`，或直接编辑
+    `~/.gitconfig` 文件），也可以是针对单个仓库的（使用 `git config`，或编辑给定仓库中的 `.git/config` 文件）。每个仓库的配置会覆盖每个用户的配置（你将在[*第
+    13 章*](B21194_13_split_000.xhtml#_idTextAnchor320)中进一步了解这一点，*Git 的自定义和扩展*）。
+- en: Multiple identities
+  id: totrans-16
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 多重身份
+- en: You might want to use your company email for *work* repositories, but your own,
+    non-work email for public repositories you work on. This can be done by setting
+    one identity globally (for the user) and using the local repository config for
+    setting an alternate identity for exceptions. Another possible solution would
+    be to use **conditional includes** with the **includeIf** section, using it to
+    include appropriate configuration files with per-directory identities.
+  id: totrans-17
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可能希望为*工作*仓库使用公司邮箱，但为你参与的公开仓库使用个人的非工作邮箱。这可以通过全局设置一个身份（针对用户），然后在局部仓库配置中设置一个备用身份来处理例外情况。另一个可能的解决方案是使用**条件包含**和**includeIf**部分，利用它来包含带有每目录身份的适当配置文件。
+- en: 'The relevant fragment of the appropriate config file could look like the following
+    example:'
+  id: totrans-18
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 相关配置文件片段可能如下所示：
+- en: '[PRE0]'
+  id: totrans-19
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: How a new commit extends a project’s history
+  id: totrans-20
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 新提交如何扩展项目历史
+- en: Contributing to the development of a project usually consists of creating new
+    revisions of said project. To mark the current state of the project as a new version,
+    you use the `git commit` command. Git will then ask for a description of changes
+    (**commit message**), and then extend the project history with the newly created
+    revision. Here’s what is happening behind the curtain — it’s useful to understand
+    this to better use advanced Git techniques.
+  id: totrans-21
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对项目的开发做出贡献通常包括创建该项目的新修订版。为了将项目的当前状态标记为新版本，你使用 `git commit` 命令。Git 会要求输入更改的描述（**提交信息**），然后将新创建的修订版添加到项目历史中。这背后的过程是这样的——了解这些有助于更好地使用高级
+    Git 技巧。
+- en: In Git, the history of the project is stored as a graph of revisions (versions),
+    where each revision points to the previous version it was based on. The `git commit`
+    command simply creates a new node in this graph (a **commit** node), extending
+    it.
+  id: totrans-22
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 Git 中，项目的历史存储为修订图（版本图），每个修订都指向它所基于的前一个版本。`git commit` 命令只是创建这个图中的一个新节点（一个
+    **提交** 节点），从而扩展了它。
+- en: To know where each branch is, Git uses **branch HEAD** as a reference to the
+    graph of revisions. The **HEAD** denotes which branch is the current branch —
+    that is, on which branch to create new commits at a given point in time.
+  id: totrans-23
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了知道每个分支的位置，Git 使用 **branch HEAD** 作为指向修订图的参考。**HEAD** 表示当前分支，即在哪个分支上创建新提交。
+- en: You can find out more about the concept of the **Directed Acyclic Graph** (**DAG**)
+    of revisions in [*Chapter 4*](B21194_04.xhtml#_idTextAnchor083), *Exploring Project
+    History*. Creating a new commit adds a new node to the graph of revisions, and
+    adjusts the position of branch tips (heads), as shown on the following figure.
+  id: totrans-24
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以在 [*第 4 章*](B21194_04.xhtml#_idTextAnchor083)，*探索项目历史* 中了解更多关于 **有向无环图**
+    (**DAG**) 的概念。创建新提交会在修订图中添加一个新节点，并调整分支头（head）的定位，如下图所示。
+- en: '![Figure 2.1 – The graph of revisions for an example project, before and after
+    creating a new commit on the “master” branch](img/B21194_02_01.jpg)'
+  id: totrans-25
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 2.1 – 示例项目的修订图，创建新提交前后，位于 “master” 分支上](img/B21194_02_01.jpg)'
+- en: Figure 2.1 – The graph of revisions for an example project, before and after
+    creating a new commit on the “master” branch
+  id: totrans-26
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 2.1 – 示例项目的修订图，创建新提交前后，位于 “master” 分支上
+- en: Let’s assume that we are on the `master` branch and that we want to create a
+    new version (the details of this operation will be described in more detail later).
+    The `git commit` command will create a new commit object — a new revision node.
+    This commit will have the checked-out revision (**c7cd3** in the example in *Figure
+    2**.1*) as the previous node (as a **parent**).
+  id: totrans-27
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 假设我们在 `master` 分支上，并且我们想要创建一个新版本（这个操作的细节将在稍后详细描述）。`git commit` 命令将创建一个新的提交对象
+    —— 一个新的修订节点。这个提交将以已检出的修订（*图 2.1* 中的 **c7cd3**）作为上一个节点（作为 **父节点**）。
+- en: That revision is found by following references starting from `HEAD`; here, it
+    is a chain starting at `HEAD`, then following to `master`, and finally arriving
+    at `c7cd3`.
+  id: totrans-28
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个修订可以通过从 `HEAD` 开始跟踪引用来找到；在这里，它是从 `HEAD` 开始的链，然后指向 `master`，最后到达 `c7cd3`。
+- en: Then, Git will create a new commit node, `a3b79`, and then move the `master`
+    pointer to that new node. In *Figure 2**.1*, the new commit is marked with a thick
+    red outline. Note that the `HEAD` pointer doesn’t change; all the time, it points
+    to `master`. The performed commit operation is logged in the `master` branch and
+    for `HEAD` (current branch); one can examine this log with the `git reflog master`
+    or `git reflog` `HEAD` command.
+  id: totrans-29
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后，Git 会创建一个新的提交节点，`a3b79`，并将 `master` 指针移到这个新节点。在 *图 2.1* 中，新的提交用粗红色轮廓标出。注意，`HEAD`
+    指针没有变化；它始终指向 `master`。执行的提交操作会记录在 `master` 分支以及 `HEAD`（当前分支）中；可以通过 `git reflog
+    master` 或 `git reflog HEAD` 命令查看此日志。
+- en: The index — a staging area for commits
+  id: totrans-30
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 索引 —— 提交的暂存区
+- en: Each of the files inside the working area of the Git repository can at a given
+    point in time be either known or unknown to Git — that is, version-controlled
+    or not. Any file known to Git is also known as a `git` `add` command.
+  id: totrans-31
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git 仓库工作区中的每个文件在某一时刻都可以是 Git 已知的或未知的 —— 即，版本控制的或未版本控制的。任何 Git 已知的文件也被称为 `git
+    add` 命令的文件。
+- en: 'Files tracked by Git are usually in either of the two states: committed (or
+    unchanged) or modified. The `HEAD`), which is safely stored in the repository.
+    The file is `HEAD`.'
+  id: totrans-32
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git 跟踪的文件通常有两种状态：已提交（或未更改）或已修改。`HEAD`），这些文件被安全地存储在仓库中。该文件是 `HEAD`。
+- en: However, in Git, there are other states possible. Let’s consider what happens
+    when we use the `git add` command to add a file that was previously unknown to
+    Git (an untracked file), but before creating a new commit that adds this file.
+    A version control system needs to store somewhere the information that the given
+    file is to be included in the next commit. Git uses something called the `git
+    add <file>` command **stages** the current contents (current version) of the file,
+    adding it to the index.
+  id: totrans-33
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，在 Git 中，还存在其他可能的状态。我们考虑使用 `git add` 命令将一个之前 Git 未知的文件（一个未跟踪的文件）添加到暂存区的情况，但在创建包含此文件的新提交之前。版本控制系统需要存储某处信息，指示该文件将在下次提交中包含。Git
+    使用一个叫做 `git add <file>` 的命令来**暂存**文件的当前内容（当前版本），并将其添加到索引中。
+- en: Important note
+  id: totrans-34
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 重要说明
+- en: If you want to only *mark a file for the addition*, you can use **git add -N
+    <file>** or **git add --intent-to-add <file>**; these commands simply stage the
+    empty contents for a file (**<file>** here is a placeholder for the file’s name).
+  id: totrans-35
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你只想*标记文件为添加状态*，可以使用 **git add -N <file>** 或 **git add --intent-to-add <file>**；这些命令只是暂存文件的空内容（这里的
+    **<file>** 是文件名的占位符）。
+- en: 'The staging area stores the state of the project. It is the third such section,
+    after a working directory (which contains your own copy of the project files and
+    is used as a private isolated workspace to make changes) and a local repository
+    (which stores your own copy of the project history and is used to synchronize
+    changes with other developers). *Figure 2**.2* shows how you can interact with
+    these three sections, specifically in the context of creating a new commit:'
+  id: totrans-36
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 暂存区存储项目的状态。它是第三个这样的部分，前两个部分是工作目录（包含你自己的项目文件副本，用作私有独立工作空间以进行更改）和本地仓库（存储你自己的项目历史副本，用于与其他开发者同步更改）。*图
+    2.2* 显示了如何在创建新提交的上下文中与这三个部分交互：
+- en: '![Figure 2.2 – The working directory, the staging area, and the local git repository,
+    creating a new commit](img/B21194_02_02.jpg)'
+  id: totrans-37
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 2.2 – 工作目录、暂存区和本地 Git 仓库，创建新提交](img/B21194_02_02.jpg)'
+- en: Figure 2.2 – The working directory, the staging area, and the local git repository,
+    creating a new commit
+  id: totrans-38
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 2.2 – 工作目录、暂存区和本地 Git 仓库，创建新提交
+- en: 'The arrows on this diagram show how the Git commands copy contents. For example,
+    `git add` takes the content of the file from the working directory and puts it
+    into the staging area. Creating a new commit requires, explicitly or implicitly,
+    the following steps:'
+  id: totrans-39
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图中的箭头显示了 Git 命令如何复制内容。例如，`git add` 命令将文件的内容从工作目录复制到暂存区。创建新的提交需要明确或隐式地执行以下步骤：
+- en: You make changes to files in your working directory, usually modifying them
+    using your favorite editor.
+  id: totrans-40
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 你在工作目录中对文件进行更改，通常使用你最喜欢的编辑器来修改它们。
+- en: You stage the files, adding snapshots of them (their current contents) to your
+    staging area, usually with the **git** **add** command.
+  id: totrans-41
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 你将文件暂存，添加它们的快照（当前内容）到暂存区，通常使用 **git** **add** 命令。
+- en: You create a new revision with the **git commit** command, which takes the files
+    as they are in the staging area and stores that snapshot permanently in your **local
+    repository**.
+  id: totrans-42
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 你使用 **git commit** 命令创建一个新的版本，该命令将暂存区中的文件作为当前状态，永久地将该快照存储到你的 **本地仓库**。
+- en: In the beginning, and usually just after the commit (unless it was a selective
+    commit), the tracked files are identical in the working directory, in the staging
+    area, and in the last commit (in the committed version, that is `HEAD`).
+  id: totrans-43
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在开始时，通常在提交之后（除非是选择性提交），跟踪的文件在工作目录、暂存区和最后一次提交中是相同的（在已提交版本中，也就是`HEAD`）。
+- en: Examining the staged file contents and the committed file contents
+  id: totrans-44
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 检查暂存文件内容与已提交文件内容
+- en: To examine the working directory state of a file, you can simply open it in
+    an editor, or (on Linux or in Git Bash) simply use **cat <filename>**; examining
+    other stages is more involved. To see the state in the staging area, you can use
+    the **git show :<filename>** command. To see the committed version, use the **git
+    show <revision>:<filename>** command (where **<revision>** may be **HEAD**). Here,
+    a filename starting with **./** or **../** denotes that the path is relative to
+    the current directory; otherwise, it is taken to be relative to the top-level
+    directory of the repository you are in.
+  id: totrans-45
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要检查文件在工作目录中的状态，您可以简单地将其打开并编辑，或者（在 Linux 或 Git Bash 中）直接使用**cat <filename>**；检查其他阶段则较为复杂。要查看暂存区的状态，可以使用**git
+    show :<filename>**命令。要查看已提交版本，请使用**git show <revision>:<filename>**命令（其中**<revision>**可能是**HEAD**）。在这里，以**./**或**../**开头的文件名表示路径是相对于当前目录的；否则，它被视为相对于您所在的仓库的顶级目录。
+- en: Often, however, one would use a special shortcut, the `git commits -a` command
+    (spelled as `git commit --all` in the long form), which would take *all the changed
+    tracked files*, add them to the staging area, and create a new commit (see *Figure
+    2**.2*). This command gives the same result as running `git add --update`, followed
+    by a `git commit` command. Note that the new files still need to be explicitly
+    added using `git add` to be tracked and included in new commits.
+  id: totrans-46
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，通常人们会使用一个特别的快捷命令——`git commit -a`（长形式为`git commit --all`），它会将*所有已更改的跟踪文件*添加到暂存区并创建一个新提交（参见*图
+    2.2*）。此命令的效果与运行`git add --update`，然后再运行`git commit`命令相同。请注意，新文件仍需通过`git add`明确添加，才能被跟踪并包含在新提交中。
+- en: Examining the changes to be committed
+  id: totrans-47
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 检查待提交的更改
+- en: Before committing to the changes and creating a new revision (a new commit),
+    you would want to see what you have done.
+  id: totrans-48
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在提交更改并创建新修订（新提交）之前，您会希望查看自己所做的修改。
+- en: Git adds the information about the changes to be committed to the commit message
+    template, which is then passed to the editor, and you will see this when writing
+    the commit message. This is, of course, unless you specify the commit message
+    on the command line — for example, with `git commit -m "Short description"`. The
+    commit message template in Git is configurable (refer to [*Chapter 13*](B21194_13_split_000.xhtml#_idTextAnchor320),
+    *Customizing and Extending Git,* for more information).
+  id: totrans-49
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git会将待提交的更改信息添加到提交消息模板中，然后传递给编辑器，您将在编写提交消息时看到这一点。当然，除非您在命令行中指定提交消息——例如，使用`git
+    commit -m "简短描述"`。Git中的提交消息模板是可配置的（有关更多信息，请参见[*第13章*](B21194_13_split_000.xhtml#_idTextAnchor320)，*自定义和扩展
+    Git*）。
+- en: Important note
+  id: totrans-50
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 重要提示
+- en: You can always abort creating a commit by exiting the editor without any changes,
+    or with an empty commit message (comment lines — that is, lines beginning with
+    **#** — do not count). If you want to create a commit with an empty commit message,
+    you need to use the **--****allow-empty-message** option.
+  id: totrans-51
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 您可以通过在编辑器中退出并不做任何更改，或者使用空的提交信息（注释行——即以**#**开头的行——不计入）来随时中止创建提交。如果您希望创建一个没有提交信息的提交，您需要使用**--allow-empty-message**选项。
+- en: In most cases, you would want to examine pending changes for correctness before
+    creating a commit.
+  id: totrans-52
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在大多数情况下，您会希望在创建提交之前检查待处理更改的正确性。
+- en: The status of the working directory
+  id: totrans-53
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 工作目录的状态
+- en: The main tool you use to examine which files are in which state — that is, which
+    files have changed, whether there are any new files, and so on — is the `git`
+    `status` command.
+  id: totrans-54
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 您用来检查哪些文件处于哪种状态——即哪些文件已更改，是否有新文件等等——的主要工具是`git status`命令。
+- en: 'The default output is explanatory and quite verbose. If there are no changes,
+    for example, directly after cloning, you could see something like this:'
+  id: totrans-55
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 默认输出是解释性的，并且非常详细。例如，在克隆后，如果没有任何更改，您可能会看到如下内容：
+- en: '[PRE1]'
+  id: totrans-56
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: 'If the current branch (which, in this example, is the `master` branch) is a
+    local branch intended to create changes that are to be published and to appear
+    in the public repository, and is configured to track its upstream branch, `origin/master`,
+    you would also see the information about the tracked branch:'
+  id: totrans-57
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果当前分支（在本示例中是`master`分支）是一个本地分支，旨在创建要发布并出现在公共仓库中的更改，并且已配置为跟踪其上游分支`origin/master`，您还会看到有关跟踪分支的信息：
+- en: '[PRE2]'
+  id: totrans-58
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: In further examples in this chapter, we will ignore it and not include the information
+    about branches and tracking branches.
+  id: totrans-59
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章的进一步示例中，我们将忽略这一点，不包括关于分支和跟踪分支的信息。
+- en: 'Let’s say you have added two new files to your project: a `COPYING` file with
+    the copyright and license, and a `NEWS` file, which is currently empty. In order
+    to begin tracking a new `COPYING` file, you used `git add COPYING`. Accidentally,
+    you removed the `README` file from the working directory with `rm README`. You
+    also modified the `Makefile` and renamed `rand.c` to `random.c` with `git mv`
+    without modifying the file.'
+  id: totrans-60
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 假设你向项目中添加了两个新文件：一个包含版权和许可信息的 `COPYING` 文件，以及一个当前为空的 `NEWS` 文件。为了开始跟踪新的 `COPYING`
+    文件，你使用了 `git add COPYING`。不小心，你通过 `rm README` 命令将 `README` 文件从工作目录中删除了。你还修改了 `Makefile`
+    文件，并通过 `git mv` 将 `rand.c` 重命名为 `random.c`，但没有修改文件内容。
+- en: 'The default long format is designed to be human-readable, verbose, and descriptive:'
+  id: totrans-61
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 默认的长格式旨在易于人类阅读、详细且具描述性：
+- en: '[PRE3]'
+  id: totrans-62
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: Older versions of Git will suggest using different commands than `git restore`.
+  id: totrans-63
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 较早版本的 Git 会建议使用与 `git restore` 不同的命令。
+- en: 'As you can see, Git not only describes which files have changed but also explains
+    how to change their status — either include it in the commit or remove it from
+    the set of pending changes (more information about commands shown in the `git
+    status` output can be found in [*Chapter 3*](B21194_03_split_000.xhtml#_idTextAnchor049),
+    *Managing Your* *Worktrees*). There are up to three sections present in the output:'
+  id: totrans-64
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，Git 不仅描述了哪些文件发生了变化，还解释了如何改变它们的状态——要么将其包含在提交中，要么将其从待处理的更改集中移除（关于 `git status`
+    输出中显示的命令的更多信息，可以参考 [*第 3 章*](B21194_03_split_000.xhtml#_idTextAnchor049)，*管理你的工作树*）。输出中最多可能会有三个部分：
+- en: '**Changes to be committed**: This section is about the staged changes that
+    would be committed with **git commit** (without the **-a**/**--all** option).
+    It lists files whose snapshot in the staging area is different from the version
+    from the last commit (**HEAD**).'
+  id: totrans-65
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**待提交的更改**：此部分列出的是那些已经暂存的、更改内容将在使用 **git commit** 提交时生效的文件（不带 **-a**/**--all**
+    选项）。它列出了那些在暂存区的快照与上次提交的版本（**HEAD**）不同的文件。'
+- en: '**Changes not staged for commit**: This section lists the files whose working
+    directory contents are different from their snapshots in the staging area. Those
+    changes would not be committed with **git commit**, but would be committed with
+    **git commit -a** as changes in the tracked files.'
+  id: totrans-66
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**未暂存的更改**：此部分列出的是那些工作目录中的内容与暂存区快照不同的文件。这些更改不会通过 **git commit** 提交，但会通过 **git
+    commit -a** 作为已跟踪文件的更改提交。'
+- en: '**Untracked files**: This lists the files, unknown to Git, that are not ignored
+    (refer to [*Chapter 3*](B21194_03_split_000.xhtml#_idTextAnchor049), *Managing
+    Your* *Worktrees* for how to use **gitignores** to make files be ignored). These
+    files would be added with the bulk add command, **git add .**, if run in the top
+    directory of the project. You can skip this section with the **--untracked-files=no**
+    (**-uno** for short) option.'
+  id: totrans-67
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**未跟踪的文件**：此部分列出了 Git 不认识的文件，这些文件未被忽略（关于如何使用 **gitignores** 使文件被忽略，参见 [*第 3
+    章*](B21194_03_split_000.xhtml#_idTextAnchor049)，*管理你的工作树*）。如果在项目的根目录运行，使用大批量添加命令
+    **git add .** 会将这些文件添加进来。你可以通过 **--untracked-files=no** (**-uno** 缩写) 选项跳过此部分。'
+- en: If the section does not contain any files, it will be not shown. Note also that
+    the file may appear in more than one section. For example, a new file that got
+    added with `git add` and then modified would appear in both **Changes to be committed**
+    and **Changes not staged** **for commit**.
+  id: totrans-68
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果该部分没有任何文件，它将不会显示。请注意，文件可能出现在多个部分。例如，使用 `git add` 添加的新文件然后被修改过，会同时出现在 **待提交的更改**
+    和 **未暂存的更改** 两个部分。
+- en: One does not need to make use of the flexibility that the explicit staging area
+    gives; one can simply use `git add` just to add new files and `git commit –a`
+    to create the commit from changes to all tracked files. In this case, you would
+    create a commit from both the **Changes to be committed** and **Changes not staged
+    for** **commit** sections.
+  id: totrans-69
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 不需要利用显式暂存区的灵活性；你可以仅通过 `git add` 来添加新文件，再用 `git commit -a` 来将所有已跟踪文件的更改一起提交。在这种情况下，你会从
+    **待提交的更改** 和 **未暂存的更改** 两个部分创建一个提交。
+- en: 'There is also a terse `--short` output format for `git status`. Its `--porcelain`
+    version is suitable for scripting because it is promised to remain stable, while
+    `--short` is intended for user output, uses color if possible, and could change
+    in the future. For the same set of changes, this output format would look something
+    like the following:'
+  id: totrans-70
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`git status` 还提供了一个简洁的 `--short` 输出格式。它的 `--porcelain` 版本适合用于脚本，因为它保证保持稳定，而
+    `--short` 主要面向用户输出，若可能的话会使用颜色，并且未来可能会发生变化。对于相同的更改集，输出格式可能类似于以下内容：'
+- en: '[PRE4]'
+  id: totrans-71
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: 'In this format, the status of each path is shown using a *two-letter status
+    code*. The first letter shows the status of the index (the difference between
+    the staging area and the last commit), and the second letter shows the status
+    of the worktree (the difference between the working area and the staging area):'
+  id: totrans-72
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在此格式中，每个路径的状态使用*两个字母的状态代码*显示。第一个字母显示索引的状态（暂存区和上次提交之间的差异），第二个字母显示工作树的状态（工作区和暂存区之间的差异）：
+- en: '| **Symbol** | **Meaning** |'
+  id: totrans-73
+  prefs: []
+  type: TYPE_TB
+  zh: '| **符号** | **含义** |'
+- en: '| --- | --- |'
+  id: totrans-74
+  prefs: []
+  type: TYPE_TB
+  zh: '| --- | --- |'
+- en: '| (a space) | Not updated/unchanged |'
+  id: totrans-75
+  prefs: []
+  type: TYPE_TB
+  zh: '| (空格) | 未更新/未更改 |'
+- en: '| M | *M*odified (updated) |'
+  id: totrans-76
+  prefs: []
+  type: TYPE_TB
+  zh: '| M | *修改*（已更新） |'
+- en: '| A | *A*dded |'
+  id: totrans-77
+  prefs: []
+  type: TYPE_TB
+  zh: '| A | *添加* |'
+- en: '| D | *D*eleted |'
+  id: totrans-78
+  prefs: []
+  type: TYPE_TB
+  zh: '| D | *删除* |'
+- en: '| R | *R*enamed |'
+  id: totrans-79
+  prefs: []
+  type: TYPE_TB
+  zh: '| R | *重命名* |'
+- en: '| C | *C*opied |'
+  id: totrans-80
+  prefs: []
+  type: TYPE_TB
+  zh: '| C | *复制* |'
+- en: Table 2.1 – Letter status codes used in the short format of the git-status command
+  id: totrans-81
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 表 2.1 – `git-status`命令短格式中使用的字母状态代码
+- en: Not all combinations are possible. Status letters *A*, *R*, and *C* are possible
+    only in the first column, for the status of the index.
+  id: totrans-82
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 并非所有组合都是可能的。状态字母*A*、*R*和*C*仅在第一列中表示索引状态时可能出现。
+- en: A special case, `??`, is used for the unknown (untracked) files, and `!!` for
+    ignored files (when using `git status --``short --ignored`).
+  id: totrans-83
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 特殊情况`??`用于表示未知（未跟踪）文件，`!!`用于表示被忽略的文件（当使用`git status --short --ignored`时）。
+- en: Note about status codes
+  id: totrans-84
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 关于状态代码的说明
+- en: All the possible outputs are described here; the case where we have just done
+    a merge that resulted in merge conflicts is not shown in *Table 2.1* but is left
+    to be described in [*Chapter 9*](B21194_09.xhtml#_idTextAnchor229), *Merging*
+    *Changes Together*.
+  id: totrans-85
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 所有可能的输出在这里进行了描述；我们刚刚进行的合并导致了合并冲突的情况未在*表格 2.1*中显示，而是留待在[*第9章*](B21194_09.xhtml#_idTextAnchor229)中描述，*合并*
+    *更改*。
+- en: Examining differences from the last revision
+  id: totrans-86
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 检查自上次修订以来的差异
+- en: 'If you want to know not only which files were changed (which you get with `git
+    status`), but also what exactly you have changed, you can use the `git` `diff`
+    command:'
+  id: totrans-87
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你不仅想知道哪些文件被更改了（可以通过`git status`得到），还想知道具体更改了什么，可以使用`git` `diff`命令：
+- en: '![Figure 2.3 – Examining the differences between the working directory, the
+    staging area, and the local Git repository](img/B21194_02_03.jpg)'
+  id: totrans-88
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 2.3 – 检查工作目录、暂存区和本地 Git 仓库之间的差异](img/B21194_02_03.jpg)'
+- en: Figure 2.3 – Examining the differences between the working directory, the staging
+    area, and the local Git repository
+  id: totrans-89
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 2.3 – 检查工作目录、暂存区和本地 Git 仓库之间的差异
+- en: 'In the last section, we learned that in Git, there are three stages: the working
+    directory, the staging area, and the repository (usually the last commit). Therefore,
+    we have not one set of differences, but three, as shown in *Figure 2**.3*. You
+    can ask Git the following questions:'
+  id: totrans-90
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在上一部分中，我们了解到在 Git 中，有三个阶段：工作目录、暂存区和仓库（通常是上次提交）。因此，我们不仅有一组差异，而是三组，如*图 2.3*所示。你可以向
+    Git 提出以下问题：
+- en: What have you changed but not yet staged — that is, what are the differences
+    between the staging area and the working directory?
+  id: totrans-91
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 你更改了什么但还未暂存——也就是说，暂存区和工作目录之间有什么差异？
+- en: What have you staged that you are about to commit — that is, what are the differences
+    between the last commit (**HEAD**) and the staging area?
+  id: totrans-92
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 你已经暂存了哪些内容，准备提交——也就是说，最后一次提交（**HEAD**）和暂存区之间有什么差异？
+- en: What changes have you made to the files in the working directory since the last
+    commit (**HEAD**)?
+  id: totrans-93
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 自上次提交（**HEAD**）以来，你对工作目录中的文件做了哪些更改？
+- en: To see what you’ve changed but not yet staged, type `git diff` with no other
+    arguments. This command compares what is in your working directory to what is
+    in your staging area. These are the changes that could be added but wouldn’t be
+    present if we created a commit with `git commit` (without `-a`); those changes
+    are listed in the `git` `status` output.
+  id: totrans-94
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 若要查看你已更改但尚未暂存的内容，请输入`git diff`，不带任何其他参数。此命令将工作目录中的内容与暂存区中的内容进行比较。这些更改是可以添加的，但如果我们创建一个提交（使用`git
+    commit`而不加`-a`），它们不会出现在提交中；这些更改会在`git` `status`的输出中列出。
+- en: To see what you’ve staged that will go into your next commit, use `git diff
+    --staged` (or `git diff --cached`). This command compares what is in your staging
+    area to the content of your last commit. These are the changes that *would* be
+    added with `git commit` (without `-a`) — `git status` output. You can compare
+    your staging area to any commit with `git diff --staged <commit>`; `HEAD` (the
+    last commit) is just the default.
+  id: totrans-95
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要查看你已经暂存的、将要进入下次提交的内容，可以使用`git diff --staged`（或`git diff --cached`）。此命令将暂存区的内容与上次提交的内容进行比较。这些是*将会*在执行`git
+    commit`时添加的更改（不带`-a`）—`git status`的输出。你也可以通过`git diff --staged <commit>`将暂存区与任何提交进行比较；`HEAD`（最后一次提交）是默认的比较目标。
+- en: You can use `git diff HEAD` to compare what is in your working directory to
+    the last commit (or arbitrary commit with `git diff <commit>`). These are the
+    changes that would be added with the `git commit -``a` shortcut.
+  id: totrans-96
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以使用`git diff HEAD`来比较工作目录中的内容与最后一次提交的内容（或使用`git diff <commit>`与任意提交进行比较）。这些是通过`git
+    commit -a`快捷方式将会添加的更改。
+- en: If you are using `git commit –a` and not making use of the staging area, usually,
+    it is enough to use `git diff` to examine the changes that will land in the next
+    commit. The only issue is the new files that are added with bare `git add`; they
+    won’t show in the `git diff` output unless you use `git add --intent-to-add` (or
+    its equivalent `git add -N`) to add new files.
+  id: totrans-97
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你使用`git commit –a`并且没有使用暂存区，通常只需使用`git diff`来检查将进入下次提交的更改。唯一的问题是通过普通的`git
+    add`添加的新文件；除非你使用`git add --intent-to-add`（或其等效命令`git add -N`）来添加新文件，否则它们不会出现在`git
+    diff`的输出中。
+- en: Unified Git diff format
+  id: totrans-98
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 统一的Git差异格式
+- en: Git, by default, and in most cases, will show the changes in the `git bisect`
+    has found the suspected commit.
+  id: totrans-99
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git默认情况下，在大多数情况下，会显示`git bisect`找到的可疑提交的更改。
+- en: Different ways of examining differences
+  id: totrans-100
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 检查差异的不同方式
+- en: You can request only *statistics of changes* with the **--stat** or **--dirstat**
+    option, just *names of the changed files* with **--name-only**, filenames with
+    the type of changes with **--name-status**, a tree-level view of changes with
+    **--raw**, or a *condensed summary* of extended header information with **--summary**
+    (see later for an explanation of what “extended header” means and what information
+    it contains). You can also request **word diff** rather than line diff with **--word-diff**,
+    though this changes only the description of changes; headers and hunk headers
+    remain similar.
+  id: totrans-101
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以使用**--stat**或**--dirstat**选项仅请求*更改统计*，使用**--name-only**仅请求*更改文件的名称*，使用**--name-status**请求带有更改类型的文件名，使用**--raw**请求更改的树级视图，或者使用**--summary**请求*简洁的摘要*（稍后将解释“扩展头信息”是什么意思以及包含哪些信息）。你还可以使用**--word-diff**请求**字级差异**而非行级差异，尽管这仅改变了更改的描述；标题和块头信息仍然类似。
+- en: Diff generation can also be configured for specific files or types of files
+    with appropriate **gitattributes**. You can specify an external *diff helper*
+    — that is, the command that describes the changes — or you can specify a *text
+    conversion* filter for binary files (you will learn more about this in [*Chapter
+    3*](B21194_03_split_000.xhtml#_idTextAnchor049), *Managing* *Your* *Worktrees*).
+  id: totrans-102
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 差异生成还可以通过适当的**gitattributes**为特定文件或文件类型配置。你可以指定一个外部的*差异辅助工具*——也就是描述更改的命令——或者你可以为二进制文件指定一个*文本转换*过滤器（关于这一点，你将在[*第3章*](B21194_03_split_000.xhtml#_idTextAnchor049)，*管理工作区*中学到更多）。
+- en: If you prefer to examine the changes in a graphical tool (which usually provides
+    *side-by-side diff*), you can do it by using **git difftool** instead of **git
+    diff**. You can specify the tool with the **--tool=<tool>** option or with the
+    **diff.tool** configuration variable. If the tool you use is not supported by
+    Git or is not in **PATH**, this may require some configuration. Using external
+    tools with Git like this will be explained in more detail in [*Chapter 13*](B21194_13_split_000.xhtml#_idTextAnchor320),
+    *Customizing and* *Extending Git.*
+  id: totrans-103
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你更喜欢在图形工具中查看更改（通常提供*并排差异*），你可以使用**git difftool**而不是**git diff**来实现。你可以通过**--tool=<tool>**选项或**diff.tool**配置变量来指定工具。如果你使用的工具不受Git支持或不在**PATH**中，这可能需要进行一些配置。像这样使用外部工具与Git配合，稍后会在[*第13章*](B21194_13_split_000.xhtml#_idTextAnchor320)，*自定义与扩展Git*中进行更详细的说明。
+- en: 'Let’s look at an example of an advanced diff from Git project history, using
+    the diff from the `1088261f` commit from the `git.git` repository. You can view
+    these changes in a web browser — for example, on GitHub; this is the third patch
+    in this commit, [https://github.com/git/git/commit/1088261f6fc90324014b5306cca4171987da85](https://github.com/git/git/commit/1088261f6fc90324014b5306cca4171987da85):'
+  id: totrans-104
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们来看一个来自 Git 项目历史的高级差异示例，使用来自 `git.git` 仓库的 `1088261f` 提交的差异。你可以在网页浏览器中查看这些更改——例如，在
+    GitHub 上；这是该提交中的第三个补丁，[https://github.com/git/git/commit/1088261f6fc90324014b5306cca4171987da85](https://github.com/git/git/commit/1088261f6fc90324014b5306cca4171987da85)：
+- en: '[PRE5]'
+  id: totrans-105
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: Let’s analyze this patch line by line. The first line, `diff --git a/builtin-http-fetch.c
+    b/http-fetch.c`, is a `diff --git a/file1 b/file2`. The `a/` and `b/` filenames
+    are the same unless rename or copy operation is involved (such as in our case),
+    even if the file is added or deleted. The `--git` option means that the diff is
+    in the git diff output format.
+  id: totrans-106
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们逐行分析这个补丁。第一行，`diff --git a/builtin-http-fetch.c b/http-fetch.c`，是一个 `diff
+    --git a/file1 b/file2`。`a/` 和 `b/` 的文件名除非涉及重命名或复制操作（如我们的例子中所示），即使文件被添加或删除，它们也是相同的。`--git`
+    选项表示差异是以 Git 差异输出格式呈现的。
+- en: 'The next lines are one or more `builtin-http-fetch.c` to `http-fetch.c` and
+    that these two files are 95% identical (information that was used to detect this
+    rename):'
+  id: totrans-107
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来的几行是 `builtin-http-fetch.c` 到 `http-fetch.c` 的差异，这两个文件有 95% 的相似度（用于检测此重命名的信息）：
+- en: '[PRE6]'
+  id: totrans-108
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: Important note
+  id: totrans-109
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 重要说明
+- en: Extended header lines describe information that cannot be represented in an
+    ordinary unified diff, except for information that the file was renamed. Besides
+    a similarity or dissimilarity score, like in this example, those lines can also
+    describe the changes in file type (such as from a non-executable to an executable
+    file).
+  id: totrans-110
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 扩展头部行描述了在普通统一差异中无法表示的信息，除了文件重命名的信息之外。除了像本例中那样的相似度或差异度分数，这些行还可以描述文件类型的变化（例如从非可执行文件变为可执行文件）。
+- en: 'The last line in the extended diff header, in this example, is as follows:'
+  id: totrans-111
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 扩展差异头的最后一行，在这个例子中如下所示：
+- en: '[PRE7]'
+  id: totrans-112
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE7]'
+- en: The preceding code tells us about the mode (permissions) of a given file. Here,
+    `100644` means that it is an ordinary file and not a symbolic link, and that it
+    hasn’t set the executable permission bit (these three are the only file permissions
+    tracked by Git). This line also tells us about the shortened hash of the `f3e63d7206`
+    here) and `e8f44babd9` here). This line is used by `git am --3way` to try to do
+    a three-way merge if the patch cannot be applied itself. For the new files, the
+    pre-image hash is `0000000000`; it’s the same for the deleted files with the post-image
+    hash.
+  id: totrans-113
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 上面的代码告诉我们有关给定文件的模式（权限）。这里的 `100644` 表示这是一个普通文件而不是符号链接，并且它没有设置可执行权限位（这些是 Git
+    跟踪的三种文件权限）。这一行还告诉我们关于 `f3e63d7206`（这里）和 `e8f44babd9`（这里）缩短的哈希值。这一行用于 `git am --3way`，如果补丁无法应用，它将尝试进行三方合并。对于新文件，源图像的哈希值为
+    `0000000000`；对于删除的文件，目标图像的哈希值相同。
+- en: 'Next is the **unified diff header**, which consists of two lines:'
+  id: totrans-114
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来是 **统一差异头**，由两行组成：
+- en: '[PRE8]'
+  id: totrans-115
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE8]'
+- en: Compared to the `diff -U` result, it doesn’t have a from-file modification time
+    or a to-file modification time. Those should be present after the space just after
+    the source (pre-image) and the destination or the target (post-image) filenames.
+    If the file was created, the source would be `/dev/null`; if the file was deleted,
+    the target would be `/dev/null`.
+  id: totrans-116
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 与 `diff -U` 结果相比，它没有源文件修改时间和目标文件修改时间。这些应位于源文件（源图像）和目标文件（目标图像）文件名之后的空格处。如果文件是新创建的，则源文件为
+    `/dev/null`；如果文件已被删除，则目标文件为 `/dev/null`。
+- en: Tip
+  id: totrans-117
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 提示
+- en: If you set the **diff.mnemonicPrefix** configuration variable to **true** in
+    place of the **a/** prefix for the pre-image and **b/** for the post-image in
+    this two-line header, you would instead have the **c/** prefix for commit, **i/**
+    for index, **w/** for worktree, and **o/** for object, respectively, to show what
+    you’re comparing This makes it easy to distinguish sides in **git diff**, **git
+    diff --cached**, **git diff HEAD** output, and so on.
+  id: totrans-118
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你将 **diff.mnemonicPrefix** 配置变量设置为 **true**，以取代该两行头部中的 **a/** 前缀（表示源文件）和 **b/**
+    前缀（表示目标文件），那么你将分别看到 **c/**（表示提交）、**i/**（表示索引）、**w/**（表示工作树）和 **o/**（表示对象）前缀，来显示你正在比较的内容。这使得在
+    **git diff**、**git diff --cached**、**git diff HEAD** 输出等命令中很容易区分各个方面。
+- en: 'Next comes one or more **change hunks**, or hunks of differences; each hunk
+    shows one area where the files differ. Unified format hunks start with the line
+    describing where the changes were in the file, called the **hunk header**, as
+    follows:'
+  id: totrans-119
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来是一个或多个 **差异块**，即文件之间差异的区域；每个差异块显示文件不同之处的一个区域。统一格式的差异块以描述更改所在行的行开始，称为 **差异块头**，如以下所示：
+- en: '[PRE9]'
+  id: totrans-120
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE9]'
+- en: 'This line matches the following format pattern: `@@ from-file-range to-file-range
+    @@`. The from-file range is in the form `-<start line>,<number of lines`>, and
+    the *to-file range* is `+<start line>,<number of lines>`. Both `start line` and
+    `number of lines` refer to the position and length of the hunk in the pre-image
+    and post-image, respectively. If `number of lines` is not shown, it means that
+    it is `0`.'
+  id: totrans-121
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这一行匹配以下格式模式：`@@ from-file-range to-file-range @@`。`from-file` 范围的格式为 `-<起始行>,<行数>`，而
+    *to-file 范围* 为 `+<起始行>,<行数>`。`起始行` 和 `行数` 分别指代前后图像中文件的起始位置和长度。如果没有显示 `行数`，则表示其值为
+    `0`。
+- en: In this example, we can see that the changes begin at the first line of the
+    file, both in the pre-image (file before the changes) and post-image (file after
+    the changes). We also see that the fragment of code corresponding to this hunk
+    of diff has eight lines in the pre-image and nine lines in the post-image. This
+    difference in the number of lines means that one line is added. By default, Git
+    will also show three unchanged lines surrounding changes (three so-called **context
+    lines**).
+  id: totrans-122
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这个例子中，我们可以看到变化从文件的第一行开始，无论是前图像（更改前的文件）还是后图像（更改后的文件）。我们还看到，这个差异块对应的代码片段在前图像中有八行，在后图像中有九行。行数的差异意味着添加了一行。默认情况下，Git
+    还会显示环绕变化的三行未更改的行（即所谓的 **上下文行**）。
+- en: 'Git will also show the “*function name*” where each change occurs (or equivalent,
+    if any, for other types of files; this can be configured with `.gitattributes`
+    via diff driver —see [*Chapter 3*](B21194_03_split_000.xhtml#_idTextAnchor049),
+    *Managing Your* *Worktrees*, in the *Configuring diff output* section in *File
+    attributes*); it is like the `-p` option in GNU diff:'
+  id: totrans-123
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git 还会显示每个更改发生的“*函数名称*”（或者对于其他类型的文件，如果有的话，可以通过 `.gitattributes` 配置文件的 diff 驱动程序来实现
+    —— 请参见 [*第3章*](B21194_03_split_000.xhtml#_idTextAnchor049)，*管理你的* *工作区*，在 *配置
+    diff 输出* 部分中的 *文件属性*）；这就像 GNU diff 中的 `-p` 选项：
+- en: '[PRE10]'
+  id: totrans-124
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE10]'
+- en: Git includes many builds in patterns for extracting the “*function*” heading
+    for the hunk for various programming languages.
+  id: totrans-125
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git 包含了许多用于提取不同编程语言中“*函数*”头的构建模式。
+- en: 'Next is the description of where and how files differ. The lines common to
+    both files are prefixed with a space “`(" ")`” indicator character. The lines
+    that differ between the two files have one of the following indicator characters
+    in the left print column:'
+  id: totrans-126
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来是描述文件差异的部分。两个文件中共有的行会以空格 "`(" ")"`” 指示符作为前缀。两个文件之间不同的行在左侧打印列中会有以下指示符之一：
+- en: '**+**: A line was added here to the second file'
+  id: totrans-127
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**+**：这里向第二个文件添加了一行'
+- en: '**-**: A line was removed here from the first file'
+  id: totrans-128
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**-**：这里从第一个文件删除了一行'
+- en: Note
+  id: totrans-129
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 注意
+- en: 'In the **plain word-diff** format, instead of comparing file contents line
+    by line, added words are surrounded by **{+** and **+}** and removed words by
+    **[-** and **-]**, as in the following example:'
+  id: totrans-130
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 **纯文本词差异** 格式中，不是逐行比较文件内容，新增的单词会被 **{+** 和 **+}** 包围，删除的单词则被 **[-** 和 **-]**
+    包围，如以下示例所示：
+- en: '[PRE11]'
+  id: totrans-131
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE11]'
+- en: 'If the last hunk includes, among its lines, the very last line of either version
+    of the file, and that last line is **incomplete line** (which means that the file
+    does not end with the end-of-line character at the end of the hunk), you will
+    find the following:'
+  id: totrans-132
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果最后一个差异块的行中包含文件的最后一行，并且该最后一行是 **不完整行**（意味着文件在差异块末尾没有以行结束符结束），你将会看到以下情况：
+- en: '[PRE12]'
+  id: totrans-133
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE12]'
+- en: This situation is not present in the example used.
+  id: totrans-134
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个情况在所用的例子中并不存在。
+- en: 'So, for the example used here, the first hunk means that `cmd_http_fetch` was
+    replaced by `main` and the `const char *prefix;` line was added:'
+  id: totrans-135
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 因此，在这里使用的例子中，第一个差异块意味着 `cmd_http_fetch` 被 `main` 替换，`const char *prefix;` 这一行被添加：
+- en: '[PRE13]'
+  id: totrans-136
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE13]'
+- en: See how for the *replaced line*, the old version of the line appears as removed
+    (`-`) and the new version as added (`+`).
+  id: totrans-137
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 看一下 *替换行*，旧版本的行被标记为删除（`-`），新版本则被标记为添加（`+`）。
+- en: 'In other words, before the change, the appropriate fragment of the file, which
+    was then named `builtin-http-fetch.c`, looked similar to the following code fragment:'
+  id: totrans-138
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 换句话说，在更改之前，名为 `builtin-http-fetch.c` 的文件的相应片段大致如下所示：
+- en: '[PRE14]'
+  id: totrans-139
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE14]'
+- en: 'After the change, this fragment of the file, which is now named `http-fetch.c`,
+    looks similar to the following instead:'
+  id: totrans-140
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 更改后，这段文件，现在名为`http-fetch.c`，看起来类似于以下内容：
+- en: '[PRE15]'
+  id: totrans-141
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE15]'
+- en: Selective commit
+  id: totrans-142
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 选择性提交
+- en: Sometimes, after examining the pending changes as explained, you realize that
+    you have two (or more) unrelated changes in your working directory that should
+    belong to two different logical changes; such a problem is sometimes called the
+    **tangled working copy problem**. You need to put those unrelated changes into
+    separate commits as separate changesets. This is the type of situation that can
+    occur even when trying to follow best practices (see [*Chapter 15*](B21194_15.xhtml#_idTextAnchor371),
+    *Git* *Best Practices*).
+  id: totrans-143
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有时，在检查了待处理的更改后，你会意识到工作目录中有两个（或更多）不相关的更改，它们应该属于两个不同的逻辑更改；这种问题有时被称为**交织工作副本问题**。你需要将这些不相关的更改放入单独的提交中，作为单独的更改集。这种情况即使在尝试遵循最佳实践时也可能发生（参见[*第15章*](B21194_15.xhtml#_idTextAnchor371)，*Git*
+    *最佳实践*）。
+- en: One solution is to create the commit as-is and fix it later (split it in two).
+    You can read about how to do this in [*Chapter 10*](B21194_10_split_000.xhtml#_idTextAnchor247),
+    *Keeping* *History Clean*.
+  id: totrans-144
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一种解决方案是按原样创建提交，并稍后修复它（将其分成两部分）。你可以阅读如何做这件事的内容，见[*第10章*](B21194_10_split_000.xhtml#_idTextAnchor247)，*保持*
+    *历史清晰*。
+- en: Sometimes, however, some of the changes are needed now and must be shipped immediately
+    (for example, a bugfix to a live website), while the rest of the changes are not
+    ready yet (they are a work in progress). You need to tease those changes apart
+    into two separate commits.
+  id: totrans-145
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，有时，一些更改现在是必要的，必须立即发布（例如，修复在线网站的bug），而其余的更改尚未准备好（它们还在进行中）。你需要将这些更改分开成两个独立的提交。
+- en: Selecting files to commit
+  id: totrans-146
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 选择要提交的文件
+- en: 'The simplest situation is when these unrelated changes touch different files.
+    For example, if the bug was in the `view/entry.tmpl` file and the bugfix changes
+    only this file (and there were no other changes to this file, unrelated to fixing
+    the bug), you can create a bugfix commit with the following command:'
+  id: totrans-147
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最简单的情况是当这些不相关的更改影响不同的文件时。例如，如果bug出现在`view/entry.tmpl`文件中，并且bug修复只更改了这个文件（且该文件没有其他与修复bug无关的更改），你可以使用以下命令创建一个bug修复提交：
+- en: '[PRE16]'
+  id: totrans-148
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE16]'
+- en: This command will ignore changes staged in the index (what was in the staging
+    area), and instead record the current contents of a given file or files (what
+    is in the working directory).
+  id: totrans-149
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 该命令将忽略在索引中暂存的更改（即暂存区中的内容），而记录给定文件或文件的当前内容（即工作目录中的内容）。
+- en: Interactively selecting changes
+  id: totrans-150
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 交互式选择更改
+- en: 'Sometimes, however, the changes cannot be separated in this simple way; the
+    changes to the file are tangled together. You can try to tease them apart by giving
+    the `-``‍``-``‍``interactive` option to the `git` `commit` command:'
+  id: totrans-151
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，有时这些更改无法以这种简单的方式分开；文件的更改是交织在一起的。你可以通过给`git` `commit`命令添加`-``‍``-``‍``interactive`选项来尝试将它们分开：
+- en: '[PRE17]'
+  id: totrans-152
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE17]'
+- en: Here, Git shows us the status and the summary of changes to the working area
+    (`unstaged`) and the staging area (`staged`), which is also the output of the
+    `status` subcommand. The changes are described by the number of added and deleted
+    lines — for example, `+3/-2` here (this is similar to what the `git diff --numstat`
+    command would show).
+  id: totrans-153
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这里，Git向我们展示了工作区（`unstaged`）和暂存区（`staged`）的状态和更改总结，这也是`status`子命令的输出。更改通过添加和删除的行数来描述——例如，这里的`+3/-2`（这类似于`git
+    diff --numstat`命令所显示的内容）。
+- en: Tip
+  id: totrans-154
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 提示
+- en: It might be easier to use a graphical tool such as **git gui** with this capability.
+    In GUIs, such as the one mentioned, one can use the mouse to select which lines
+    of changes to include or exclude.
+  id: totrans-155
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用像**git gui**这样的图形工具可能会更容易，具有这种功能的GUI可以使用鼠标选择要包含或排除的更改行。
+- en: 'You can use the `help` subcommand, accessed by pressing *h*, to check what
+    those listed operations mean:'
+  id: totrans-156
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以使用`help`子命令，通过按*h*键访问，以检查这些列出的操作意味着什么：
+- en: '[PRE18]'
+  id: totrans-157
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE18]'
+- en: 'To tease apart changes, you need to choose the `patch` subcommand (for example,
+    with *5* or *p*). Git will then ask for the files with the `Update>>` prompt;
+    you then need to select the files to selectively update with their numeric identifiers,
+    as shown in the status, and type `return`. You can type `*` to select all the
+    files possible. After making the selection, end it by answering with an empty
+    line:'
+  id: totrans-158
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要分开更改，你需要选择`patch`子命令（例如，使用*5*或*p*）。Git随后会提示你输入`Update>>`，你需要选择要更新的文件及其数字标识符，如在状态中所示，并输入`return`。你可以输入`*`来选择所有可能的文件。选择完后，按空行结束：
+- en: '[PRE19]'
+  id: totrans-159
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE19]'
+- en: You can skip directly to patching files by using `git commit --patch` instead
+    of `git` `commit -``‍``-``‍``interactive`.
+  id: totrans-160
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以通过使用 `git commit --patch` 跳过交互式选择文件，而直接进行文件修补。
+- en: 'Git will then display all the changes to the specified files on a hunk-by-hunk
+    basis, and let you choose, among others, one of the following options for each
+    hunk:'
+  id: totrans-161
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git 将逐块显示指定文件的所有更改，并让你在每个块中选择以下选项之一：
+- en: '[PRE20]'
+  id: totrans-162
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE20]'
+- en: 'The hunk output and the prompt look similar to the following:'
+  id: totrans-163
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 块输出和提示类似如下：
+- en: '[PRE21]'
+  id: totrans-164
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE21]'
+- en: In many cases, it is enough to simply select which of those hunks of changes
+    you want to have in the commit. In extreme cases, you can split a chunk into smaller
+    pieces, or even manually edit the difference.
+  id: totrans-165
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在许多情况下，只需选择哪些更改块要包含在提交中就足够了。在极端情况下，你可以将一个块拆分成更小的部分，甚至手动编辑差异。
+- en: Many graphical tools, including `git gui`, also allow for the interactive selection
+    of changes going to the next commit. You can find out more in [*Chapter 13*](B21194_13_split_000.xhtml#_idTextAnchor320),
+    *Customizing and Extending Git*, in the *Graphical* *interfaces* section.
+  id: totrans-166
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 许多图形工具，包括 `git gui`，也允许交互式选择哪些更改将被提交到下一个提交。你可以在[*第13章*](B21194_13_split_000.xhtml#_idTextAnchor320)中找到更多信息，*定制和扩展
+    Git*，在*图形* *界面*部分。
+- en: Creating a commit step by step
+  id: totrans-167
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 一步步创建提交
+- en: Using `git commit --interactive` to select changes to a commit doesn’t, unfortunately,
+    allow you to test the changes to be committed. You can always check that everything
+    works after creating a commit (that is, compile the code and/or run tests), and
+    then amend it if there are any errors (see the next section, *Amending a commit*).
+    There is, however, an alternative solution.
+  id: totrans-168
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用 `git commit --interactive` 选择要提交的更改，不幸的是，它无法让你测试即将提交的更改。你可以在创建提交后检查所有内容是否正常（即编译代码和/或运行测试），然后如果有任何错误，再进行修改（请参见下节，*修改提交*）。不过，也有一个替代方案。
+- en: Instead of using the interactive commit feature, you can prepare to commit by
+    putting the pending changes into the staging area with `git add --interactive`
+    or an equivalent solution (such as a graphical commit tool for Git — for example,
+    `git gui`). The interactive commit is just a shortcut for `git diff --cached`,
+    modifying them as appropriate with `git add <file>`, `git checkout <file`>, and
+    `git` `reset <file>`.
+  id: totrans-169
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果不想使用交互式提交功能，你可以通过将待提交的更改放入暂存区来准备提交，方法是使用 `git add --interactive` 或其他等效方案（例如
+    Git 的图形化提交工具 — 例如 `git gui`）。交互式提交只是 `git diff --cached` 的快捷方式，可以通过 `git add <file>`、`git
+    checkout <file>` 和 `git reset <file>` 等命令进行适当修改。
+- en: In theory, you should also test whether these changes are correct, checking
+    that at least they do not break the build. To do this, first use `git stash save
+    --keep-index` to save the current state and bring the working directory to the
+    state prepared in the staging area (the index). After this command, you can run
+    tests (or at least check whether the program compiles and doesn’t crash). If tests
+    pass, you can then run `git commit` to create a new revision. If tests fail, you
+    should restore the working directory while keeping the staging area state with
+    the `git stash pop --index` command; it might be required to precede it with `git
+    reset --hard`. The latter might be needed because Git is overly conservative when
+    preserving your work and does not know that you have just stashed. First, there
+    are uncommitted changes in the index that prevent Git from applying the stash,
+    and second, the changes to the working directory are the same as those stashed,
+    so, of course, they would conflict.
+  id: totrans-170
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 理论上，你还应该测试这些更改是否正确，至少确保它们不会破坏构建。为此，首先使用 `git stash save --keep-index` 保存当前状态，并将工作目录恢复到暂存区（索引）中准备好的状态。执行此命令后，你可以运行测试（或至少检查程序是否能编译且不崩溃）。如果测试通过，你可以使用
+    `git commit` 创建新版本。如果测试失败，你应该通过 `git stash pop --index` 命令恢复工作目录，同时保持暂存区的状态；有时可能需要在其前加上
+    `git reset --hard`。之所以需要这样做，是因为 Git 在保留你的工作时非常保守，它不知道你刚才已经进行了 stash。首先，暂存区中有未提交的更改，导致
+    Git 无法应用 stash；其次，工作目录中的更改与 stash 中的内容相同，因此，当然会发生冲突。
+- en: You can find more information about **stashes**, including how they work, in
+    [*Chapter 3*](B21194_03_split_000.xhtml#_idTextAnchor049), *Managing Your* *Worktrees*,
+    in the *Stashing away your* *changes* section.
+  id: totrans-171
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以在[*第3章*](B21194_03_split_000.xhtml#_idTextAnchor049)中找到关于 **stash** 的更多信息，包括它是如何工作的，*管理你的工作树*，在*暂存你的*
+    *更改*部分。
+- en: Amending a commit
+  id: totrans-172
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 修改提交
+- en: One of the better things about Git is that you can undo almost anything; you
+    only need to know how to. This is because no matter how carefully you craft your
+    commits, sooner or later, you’ll forget to add a change or mistype the commit
+    message. That’s when the `--amend` flag of the `git commit` command comes in handy;
+    it allows you to change the very last commit really easily. Note that with `git
+    commit -- amend`, you can also amend the merge commits (for example, to fix a
+    merging error). *Figure 2**.4* shows how this amend operation changes the graph
+    of revisions which represents the history of the project.
+  id: totrans-173
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git的一个优点是，你几乎可以撤销任何操作；你只需要知道如何操作。因为无论你多么仔细地编写提交，迟早你会忘记添加某些更改或者提交信息写错。这时候，`git
+    commit`命令的`--amend`标志就派上用场了；它可以让你非常容易地修改最后一次提交。请注意，使用`git commit --amend`时，你还可以修改合并提交（例如，修复合并错误）。*图
+    2.4*展示了此修改操作如何改变修订图表，图表代表了项目的历史。
+- en: Tip
+  id: totrans-174
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 提示
+- en: If you want to change a commit deeper in the history (assuming that it was not
+    published, or, at least, there isn’t anyone who based their work on the old version
+    of the said commit), you need to use **interactive rebase**, or some specialized
+    tool such as **StGit** (a **patch stack management interface** on top of Git).
+    Refer to [*Chapter 10*](B21194_10_split_000.xhtml#_idTextAnchor247), *Keeping
+    History Clean*, for more information.
+  id: totrans-175
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你想修改历史中更早的某个提交（假设它还没有发布，或者至少没有人基于该旧版本提交开始工作），你需要使用**交互式变基**，或者一些专用工具，如**StGit**（Git上的**补丁堆栈管理界面**）。更多信息请参考[*第十章*](B21194_10_split_000.xhtml#_idTextAnchor247)，*保持历史清洁*。
+- en: '![Figure 2.4 – The graph of revisions before and after amending the last commit](img/B21194_02_04.jpg)'
+  id: totrans-176
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 2.4 – 修正最后一次提交前后修订的图表](img/B21194_02_04.jpg)'
+- en: Figure 2.4 – The graph of revisions before and after amending the last commit
+  id: totrans-177
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 2.4 – 修正最后一次提交前后修订的图表
+- en: 'If you just want to correct the commit message, assuming you don’t have any
+    staged changes, you simply run `git commit --amend` and fix it (note that we use
+    `git commit` without the `-a` / `--``all` flag):'
+  id: totrans-178
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你只是想修正提交信息，并且假设没有任何已暂存的更改，你只需要运行`git commit --amend`并修正它（请注意，我们使用的是不带`-a`
+    / `--all`标志的`git commit`）：
+- en: '[PRE22]'
+  id: totrans-179
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE22]'
+- en: 'If you want to add some more changes to that last commit, you can simply stage
+    them as normal with `git add` and then *amend* the last commit, as shown in the
+    preceding example, or make the changes and then use `git commit -``a --amend`:'
+  id: totrans-180
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你想对最后一次提交进行更多更改，你可以像正常一样使用`git add`暂存它们，然后像前面的例子一样*修改*最后一次提交，或者直接进行更改后使用`git
+    commit -a --amend`：
+- en: Important note
+  id: totrans-181
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 重要提示
+- en: 'There is a very important caveat: you should *never* amend a commit that has
+    already been published! This is because amending effectively produces a completely
+    new commit object that replaces the old one, as can be seen in *Figure 2**.4*.
+    In this figure, you can see that the most recent commit before the operation,
+    denoted by **C5**, is replaced in the project history by the commit **C5’**, with
+    amended changes.'
+  id: totrans-182
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有一个非常重要的警告：你*永远不要*修改已经发布的提交！这是因为修改操作实际上会产生一个完全新的提交对象，替换掉旧的提交对象，正如在*图 2.4*中所见。在这个图中，你可以看到，操作前最近的提交（标记为**C5**）被项目历史中的提交**C5'**所替代，后者包含了修改后的内容。
+- en: If you’re the only person who had this commit, doing this is safe. However,
+    after publishing the original commit to a remote repository, other people might
+    already have based their new work on that version of the commit. In this case,
+    replacing the original with an amended version will cause problems downstream.
+    You will find out more about this issue in [*Chapter 10*](B21194_10_split_000.xhtml#_idTextAnchor247),
+    *Keeping* *History Clean*.
+  id: totrans-183
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果只有你一个人有这个提交，做这件事是安全的。然而，在将原始提交发布到远程仓库后，其他人可能已经基于该版本的提交开始了新的工作。在这种情况下，用修改后的版本替换原始版本会在后续造成问题。你将在[*第十章*](B21194_10_split_000.xhtml#_idTextAnchor247)，*保持历史清洁*中了解更多关于这个问题的信息。
+- en: That is why, if you try to push (publish) a branch with the published commit
+    amended, Git prevents overwriting the published history and asks you to **force
+    push** if you really want to replace the old version (unless you configure it
+    to force push by default). More about that in [*Chapter 6*](B21194_06.xhtml#_idTextAnchor140),
+    *Collaborative Development* *with Git*.
+  id: totrans-184
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这就是为什么，如果你尝试推送（发布）一个已经修改过的提交的分支，Git会阻止覆盖已发布的历史，并要求你**强制推送**，如果你确实想要替换旧版本（除非你配置了默认强制推送）。关于这一点，请参见[*第六章*](B21194_06.xhtml#_idTextAnchor140)，*与
+    Git 的协作开发*。
+- en: The old version of the commit before amending would be available in the branch
+    reflog and in the HEAD reflog; for example, just after amending, the amended version
+    would be available as `@{1}`. This means that you can undo the amend operation
+    with, for example, `git reset --keep HEAD@{1}`, as described in the *Rewinding
+    or resetting a branch* section. Git would keep the old version for a month (30
+    days) by default if not configured otherwise, unless the reflog is manually purged.
+  id: totrans-185
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 修改前的提交的旧版本将保留在分支的reflog中和HEAD的reflog中；例如，在修改后，修改后的版本将作为`@{1}`可用。这意味着你可以使用例如`git
+    reset --keep HEAD@{1}`来撤销修改操作，如在*回退或重置分支*部分所描述。默认情况下，Git会将旧版本保留一个月（30天），除非有其他配置，或者手动清除reflog。
+- en: 'You can always check the log of operations in the reflog by using the `git
+    reflog` command. Just after amending a commit, that command output would look
+    like the following:'
+  id: totrans-186
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你始终可以通过使用`git reflog`命令检查操作的日志。在修改提交后，该命令的输出如下所示：
+- en: '[PRE23]'
+  id: totrans-187
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE23]'
+- en: Here, `HEAD@{1}` means the position of the current branch `1` operation back.
+    Besides the HEAD reflog, there is also a reflog for each branch, as described
+    later. Note that you can read more about using reflog to refer to commits in [*Chapter
+    4*](B21194_04.xhtml#_idTextAnchor083), *Exploring* *Project History*.
+  id: totrans-188
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这里，`HEAD@{1}`表示当前分支向后退1次操作的位置。除了HEAD的reflog外，每个分支也有一个自己的reflog，稍后会有详细描述。注意，你可以在[*第4章*](B21194_04.xhtml#_idTextAnchor083)中阅读更多关于如何使用reflog引用提交的内容，*探索*
+    *项目历史*。
+- en: Working with branches and tags
+  id: totrans-189
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用分支和标签
+- en: In version control, **branches** are separate lines of development, a way of
+    separating different ideas and different parts of changes. You can use branches
+    in different ways, which are described in [*Chapter 8*](B21194_08_split_000.xhtml#_idTextAnchor196),
+    *Advanced* *Branching Techniques*.
+  id: totrans-190
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在版本控制中，**分支**是独立的开发线，一种将不同想法和不同部分的变更分开的方式。你可以以不同的方式使用分支，具体方法在[*第8章*](B21194_08_split_000.xhtml#_idTextAnchor196)中有详细描述，*高级*
+    *分支技巧*。
+- en: '`v1.0` tag, you will be able to go to exactly version 1.0 of the code. Additionally,
+    with **annotated tags**, you can give a longer description of the tagged revision,
+    and **signed tags** also help ensure that it was you who created it.'
+  id: totrans-191
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用`v1.0`标签，你将能够精确地访问版本1.0的代码。此外，使用**注释标签**，你可以为标记的修订提供更长的描述，而**签名标签**则有助于确保是你创建了它。
+- en: In Git, each branch is realized as a named “*pointer*” (reference) to some commit
+    in the graph of revisions, the so-called branch head. The same is true for **lightweight
+    tags**; for annotated and signed tags, the “*pointer*” refers to the tag object
+    (with annotation or signature), which points to a commit.
+  id: totrans-192
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在Git中，每个分支实现为一个命名的“*指针*”（引用），指向修订图中的某个提交，称为分支头部。**轻量标签**也遵循相同的方式；对于注释标签和签名标签，“*指针*”指向标签对象（包含注释或签名），该对象指向一个提交。
+- en: Representation of branches in Git
+  id: totrans-193
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git中分支的表示
+- en: 'Git currently uses two different on-disk representations of branches: the “*loose*”
+    format (which takes precedence) and the “*packed*” format.'
+  id: totrans-194
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git目前使用两种不同的磁盘上分支表示方式：“*松散*”格式（优先使用）和“*打包*”格式。
+- en: Take, for example, the **master** branch (which is currently the default name
+    of the branch in Git; you start on this branch in a newly created repository,
+    unless configured otherwise). In the “*loose*” format (which takes precedence),
+    the branch is represented as the one-line **.git/refs/heads/master** file with
+    a textual hexadecimal representation of SHA-1 at the tip of the branch. In the
+    “*packed*” format, a branch is represented as a line in the .**git/packed-refs**
+    file, connecting the SHA-1 identifier of the top commit with the fully qualified
+    branch name.
+  id: totrans-195
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以**master**分支为例（目前是Git中新建仓库的默认分支名称，除非另行配置，否则会从该分支开始）。在“*松散*”格式（优先使用）中，分支表示为**.git/refs/heads/master**文件，文件中包含分支头部的SHA-1的十六进制文本表示。在“*打包*”格式中，分支表示为**.git/packed-refs**文件中的一行，连接了顶端提交的SHA-1标识符和完全限定的分支名称。
+- en: The (named) **line of development** is then a set of all the revisions that
+    are reachable from the branch head. It is not necessarily a straight line of revisions
+    — it can fork and join.
+  id: totrans-196
+  prefs: []
+  type: TYPE_NORMAL
+  zh: （命名的）**开发线**是从分支头部可达的所有修订的集合。它不一定是连续的修订线——它可以分叉并合并。
+- en: Creating a new branch
+  id: totrans-197
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 创建新分支
+- en: When creating a new branch, you can just create it and switch to it later, or
+    you can create it and switch to it with a single command. This is explained in
+    *Figure 2**.5*.
+  id: totrans-198
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 创建新分支时，你可以先创建分支，稍后再切换过去，或者你也可以使用一个命令同时创建并切换到该分支。这在*图2.5*中有说明。
+- en: 'You can create a new branch with the `git branch` command. For example, to
+    create a new `testing` branch starting from the current branch (see the top-right
+    part of *Figure 2**.5*), run the following:'
+  id: totrans-199
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以使用 `git branch` 命令来创建新分支。例如，要从当前分支创建一个新的 `testing` 分支（见 *图 2.5* 的右上部分），可以运行以下命令：
+- en: '[PRE24]'
+  id: totrans-200
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE24]'
+- en: 'What happens here? Well, this command creates a new pointer (a new reference)
+    for you to move around. You can give an optional parameter to this command if
+    you want to create the new branch pointing to some other commit, like in the following
+    example:'
+  id: totrans-201
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这里发生了什么呢？这个命令为你创建了一个新的指针（一个新的引用），你可以移动它。如果你希望将新分支指向某个特定的提交，可以给这个命令传递一个可选的参数，像下面的示例一样：
+- en: '[PRE25]'
+  id: totrans-202
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE25]'
+- en: '![Figure 2.5 – Creating a new branch named “testing” and switching to this
+    branch, or creating a new branch and switching to it at once, with one command](img/B21194_02_05.jpg)'
+  id: totrans-203
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 2.5 – 创建一个名为“testing”的新分支并切换到此分支，或者通过一个命令同时创建新分支并切换到它](img/B21194_02_05.jpg)'
+- en: Figure 2.5 – Creating a new branch named “testing” and switching to this branch,
+    or creating a new branch and switching to it at once, with one command
+  id: totrans-204
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 2.5 – 创建一个名为“testing”的新分支并切换到此分支，或者通过一个命令同时创建新分支并切换到它
+- en: Note
+  id: totrans-205
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 注意
+- en: The **HEAD^^^** notation will be explained in [*Chapter 4*](B21194_04.xhtml#_idTextAnchor083),
+    *Exploring* *Project History*.
+  id: totrans-206
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**HEAD^^^** 表示法将在 [*第 4 章*](B21194_04.xhtml#_idTextAnchor083) *探索项目历史* 中解释。'
+- en: However, the `git branch <new branch>` command would not change which branch
+    is the current branch; it does not switch to the just-created branch. It would
+    not change the position of the `HEAD` (the symbolic reference pointing to the
+    current branch) and would not change the contents of the working directory.
+  id: totrans-207
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，`git branch <new branch>` 命令不会改变当前分支。它不会切换到刚刚创建的分支，也不会改变 `HEAD`（指向当前分支的符号引用）的指向，也不会改变工作目录的内容。
+- en: 'If you want to create a new branch and switch to it (to start working on a
+    new branch immediately), you can use the following shortcut:'
+  id: totrans-208
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你想创建一个新分支并立即切换到它（开始在新分支上工作），你可以使用以下快捷方式：
+- en: '[PRE26]'
+  id: totrans-209
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE26]'
+- en: 'Here, the short `-c` option stands for `--create`. You can also use the following
+    alternative command, which is the only option for older Git:'
+  id: totrans-210
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这里，简短的 `-c` 选项代表 `--create`。你也可以使用以下替代命令，这在旧版本的 Git 中是唯一可用的选项：
+- en: '[PRE27]'
+  id: totrans-211
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE27]'
+- en: If you want to forcibly create a branch with a name that already exists, effectively
+    deleting the existing branch, you will need to use the `-C` and `-B` options instead
+    of the `-c` and `-b` options, respectively.
+  id: totrans-212
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你想强制创建一个已经存在名称的分支，相当于删除现有分支，你需要使用 `-C` 和 `-B` 选项，而不是 `-c` 和 `-b` 选项。
+- en: If we create a new branch at the current state of the repository, the `switch
+    -c` and `checkout -b` commands differ only in that they also move the `HEAD` pointer;
+    see the transition from the left-hand side to the bottom right in *Figure 2**.5*.
+  id: totrans-213
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果我们在仓库的当前状态下创建一个新分支，`switch -c` 和 `checkout -b` 命令的唯一区别在于它们还会移动 `HEAD` 指针；参见从左侧到右下角的过渡，见
+    *图 2.5*。
+- en: Creating orphan branches
+  id: totrans-214
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 创建孤立分支
+- en: Rarely, you might want to create a new unconnected **orphan branch** in your
+    repository that doesn’t share any history with other branches. Perhaps you want
+    to store the generated documentation for each release to make it easy for users
+    to get readable documentation (for example, as man pages or HTML help) without
+    requiring the installation of conversion tools or renderers (for example, AsciiDoc
+    or a Markdown parser). Or, you might want to store web pages for a project in
+    the same repository as the project itself; that is what GitHub project pages can
+    use. Perhaps you want to open source your code, but you need to clean up the code
+    first (for example, because of copyrights and licensing).
+  id: totrans-215
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 很少情况下，你可能希望在仓库中创建一个全新的孤立分支，该分支与其他分支没有任何历史关联。或许你想要存储每个发布版本生成的文档，以便用户能够轻松地获得可读的文档（例如，作为
+    man 页或 HTML 帮助），而无需安装转换工具或渲染器（例如，AsciiDoc 或 Markdown 解析器）。或者，你可能想将项目的网页存储在与项目本身相同的仓库中，这正是
+    GitHub 项目页面可以使用的方式。也许你想开源代码，但需要先清理代码（例如，因版权和许可问题）。
+- en: One solution is to create a separate repository for the contents of an orphan
+    branch and fetch from it into some remote-tracking branch. You can then create
+    a local branch based on it. This has the advantage of having unconnected contents
+    separately, but on the other hand, it is one more repository to manage.
+  id: totrans-216
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一种解决方案是为孤立分支的内容创建一个单独的仓库，并将其拉取到某个远程追踪分支中。然后你可以基于该分支创建一个本地分支。这种方式的优点是将不相关的内容分开管理，但另一方面，这也意味着需要管理更多的仓库。
+- en: 'You can also do this with either the `git switch` or `git checkout` command
+    by using the `--``orphan` option:'
+  id: totrans-217
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你也可以使用 `git switch` 或 `git checkout` 命令，结合 `--orphan` 选项来实现此操作：
+- en: '[PRE28]'
+  id: totrans-218
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE28]'
+- en: 'This reproduces the state similar to just after `git init`: the `HEAD` `symref`
+    points to the `gh-pages` branch, which does not exist yet; it will be created
+    on the first commit.'
+  id: totrans-219
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这会重现类似于刚执行 `git init` 后的状态：`HEAD` 的 `symref` 指向 `gh-pages` 分支，该分支尚不存在；它将在第一次提交时被创建。
+- en: 'If you want to start with a clean state, such as with GitHub Pages, you will
+    also need to remove the contents of the start point of the branch (which defaults
+    to `HEAD` — that is, to the current branch and the current state of the working
+    directory) — for example, with the following:'
+  id: totrans-220
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你希望从一个干净的状态开始，比如使用 GitHub Pages，你还需要删除分支起始点的内容（默认是 `HEAD` —— 即当前分支及工作目录的当前状态）——例如，使用以下命令：
+- en: '[PRE29]'
+  id: totrans-221
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE29]'
+- en: In the case of open sourcing code with proprietary parts to be excluded, where
+    the orphan branch is used to make sure not to bring the proprietary code accidentally
+    to the open source version on merging, you would want to carefully edit the working
+    directory instead.
+  id: totrans-222
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在公开源代码时，如果需要排除专有部分，使用孤立分支来确保在合并时不会意外地将专有代码带入开源版本，这时你可能需要小心地编辑工作目录。
+- en: Selecting and switching to a branch
+  id: totrans-223
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 选择并切换到一个分支
+- en: 'To switch to an existing local branch, you need to run the `git switch` command.
+    For example, after creating the `testing` branch, you can switch to it with the
+    following command:'
+  id: totrans-224
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要切换到现有的本地分支，你需要运行 `git switch` 命令。例如，在创建了 `testing` 分支后，你可以使用以下命令切换到该分支：
+- en: '[PRE30]'
+  id: totrans-225
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE30]'
+- en: This is shown in *Figure 2**.6* as the vertical transition from the top-right
+    to the bottom-right state; this figure also shows that you can use `git checkout`
+    to switch branches.
+  id: totrans-226
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如*图 2.6*所示，这是从右上方到右下方的垂直过渡；该图还显示了你可以使用 `git checkout` 来切换分支。
+- en: Obstacles to switching to a branch
+  id: totrans-227
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 切换到分支的障碍
+- en: When switching to a branch, Git also checks out its contents in the working
+    directory. What happens then if you have uncommitted changes (that are not considered
+    by Git to be on any branch)?
+  id: totrans-228
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 切换到分支时，Git 还会将其内容检出到工作目录。如果此时你有未提交的更改（并且 Git 并未将其视为任何分支上的更改），那么会发生什么呢？
+- en: Tip
+  id: totrans-229
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 提示
+- en: It is a good practice to switch branches in a clean state, stashing away changes
+    or creating a commit if necessary. Checking out a branch with uncommitted changes
+    is useful only in a few rare cases, some of which are described in the following
+    section.
+  id: totrans-230
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在干净的状态下切换分支是一个好习惯，可以将更改暂存或必要时创建提交。只有在少数几种特殊情况下，才会有未提交更改时检查分支的需求，这些情况将在下面的章节中描述。
+- en: If the difference between the current branch and the branch you want to switch
+    to does not touch the changed files, the uncommitted changes are moved to the
+    new branch. This is very useful if you started working on something and only later
+    realized that it would be better to do this work in a separate feature branch.
+  id: totrans-231
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果当前分支与目标切换分支之间的差异没有涉及到更改的文件，则未提交的更改会被移动到新分支。这在你开始工作后才意识到最好在单独的功能分支中完成该工作时非常有用。
+- en: 'If uncommitted changes conflict with changes on the given branch, Git will
+    refuse to switch to the said branch to prevent you from losing your work:'
+  id: totrans-232
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果未提交的更改与给定分支上的更改冲突，Git 会拒绝切换到该分支，以防止你丢失工作内容：
+- en: '[PRE31]'
+  id: totrans-233
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE31]'
+- en: 'In such a situation, you have a few possible different solutions:'
+  id: totrans-234
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这种情况下，你有几种可能的解决方案：
+- en: You can *stash away* your changes with the **git stash** command and restore
+    them when you come back to the branch you were on. This is usually the preferred
+    solution.
+  id: totrans-235
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 你可以使用 **git stash** 命令将更改暂存，并在返回到你之前的分支时恢复它们。这通常是首选的解决方案。
+- en: Alternatively, you can simply create a temporary commit of the work in progress
+    with those changes, and then either amend the commit or rewind the branch when
+    you get back to it.
+  id: totrans-236
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 另外，你可以简单地将正在进行的工作和这些更改创建一个临时提交，然后在回到该分支时修改提交或回滚分支。
+- en: You can try to move your changes to the new branch by *merging*, either with
+    **git switch --merge** (which would do the three-way merge between the current
+    branch, the contents of your working directory with unsaved changes, and the new
+    branch), or by stashing away your changes before checkout and then unstashing
+    them after a switch.
+  id: totrans-237
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 你可以尝试通过*合并*将更改移到新分支，可以使用 **git switch --merge**（它会执行当前分支、带有未保存更改的工作目录内容和新分支之间的三方合并），或者在切换之前将更改暂存，然后在切换后恢复它们。
+- en: You can also *throw away* your changes with **git switch --discard-changes**
+    or **git** **checkout --force**.
+  id: totrans-238
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 你还可以使用 **git switch --discard-changes** 或 **git** **checkout --force** 来 *丢弃*
+    你的更改。
+- en: Anonymous branches
+  id: totrans-239
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 匿名分支
+- en: What happens if you try to check out (switch to) something that is not a local
+    branch — for example, an arbitrary revision (such as `HEAD^`), a tag (such as
+    `v0.9`), or a remote-tracking branch (for example, `origin/master`)? Git assumes
+    that you need to be able to create commits on top of the current state of the
+    working directory.
+  id: totrans-240
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你尝试检出（切换到）一个不是本地分支的东西——例如一个任意修订（如 `HEAD^`）、一个标签（如 `v0.9`）或者一个远程追踪分支（例如 `origin/master`）会发生什么？Git
+    假设你需要能够在当前工作目录的状态上创建提交。
+- en: Older Git refused to switch to a non-branch. Nowadays, Git will create an **anonymous
+    branch** by detaching the **HEAD** pointer and making it refer directly to a commit
+    (that’s why it is also called a detached HEAD state) rather than being a symbolic
+    reference to a branch; see *Figure 2**.6* for an example.
+  id: totrans-241
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 旧版本的 Git 会拒绝切换到非分支。如今，Git 会通过分离 **HEAD** 指针并使其直接指向一个提交（这就是为什么它也被称为分离 HEAD 状态），而不是作为对分支的符号引用，来创建一个
+    **匿名分支**；参见 *图 2.6* 以获取示例。
+- en: "![Figure 2.6 – \uFEFFThe result of checking out a non-branch is a detached\
+    \ HEAD state (which is like being on the anonymous branch)](img/B21194_02_06.jpg)"
+  id: totrans-242
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 2.6 – 检出非分支的结果是分离的 HEAD 状态（就像在匿名分支上一样）](img/B21194_02_06.jpg)'
+- en: Figure 2.6 – The result of checking out a non-branch is a detached HEAD state
+    (which is like being on the anonymous branch)
+  id: totrans-243
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 2.6 – 检出非分支的结果是分离的 HEAD 状态（就像在匿名分支上一样）
+- en: Because this feature is used only rarely, to avoid landing in such a state explicitly,
+    the `git switch` command requires the use of the `--detach` option; for backward
+    compatibility, `git checkout` does not require using this option to detach the
+    **HEAD** pointer. This option is also useful to explicitly create an anonymous
+    branch at the current position. The detached HEAD state is shown in the branch
+    listing as (**no branch**) in older versions of Git, or (**detached from HEAD**)
+    or (**HEAD detached at**...) in newer versions.
+  id: totrans-244
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于这个功能仅在少数情况下使用，为了避免明确地进入这种状态，`git switch` 命令需要使用 `--detach` 选项；为了向后兼容，`git
+    checkout` 不需要使用此选项来分离 **HEAD** 指针。此选项还可以用于在当前位置显式创建一个匿名分支。在旧版本的 Git 中，分离的 HEAD
+    状态在分支列表中显示为（**no branch**），在新版本的 Git 中显示为（**detached from HEAD**）或（**HEAD detached
+    at**...）。
+- en: 'If you did detach HEAD by mistake, you can always *go back to the previous
+    branch* with the following command (where `-` means the name of the previous branch):'
+  id: totrans-245
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你不小心分离了 HEAD，你可以随时使用以下命令 *返回到上一个分支*（其中 `-` 表示上一个分支的名称）：
+- en: '[PRE32]'
+  id: totrans-246
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE32]'
+- en: Important note
+  id: totrans-247
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 重要提示
+- en: The **git switch -** command uses the HEAD reflog to switch to a previous branch.
+    This may not work correctly after renaming the branch.
+  id: totrans-248
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**git switch -** 命令使用 HEAD 的 reflog 切换到上一个分支。重命名分支后，可能无法正常工作。'
+- en: As Git informs you, when creating a detached branch without using the `--detach`
+    option, you can always give a name to the anonymous branch with `git switch -``c
+    <new-branch-name>`.
+  id: totrans-249
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如 Git 所告知的，创建一个分离分支时，如果不使用 `--detach` 选项，你始终可以使用 `git switch -``c <new-branch-name>`
+    给匿名分支命名。
+- en: Because tags are meant to be immutable, trying to check one out (or switch to
+    it) also creates a detached `HEAD` — tags are not branches.
+  id: totrans-250
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 因为标签是不可变的，所以尝试检出（或切换到）标签也会创建一个分离的 `HEAD` —— 标签不是分支。
+- en: The switch command DWIM-mery
+  id: totrans-251
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 切换命令 DWIM-谋略
+- en: There is a special case of checking out something that is not a branch. If you
+    check out a remote-tracking branch (for example, `origin/next`) by its short name
+    (in this case, `next`) as if it were a local branch, Git would assume that you
+    meant to create new contents on top of the remote-tracking branch state and will
+    do what it thinks you need. This `--no-guess` option, or the accompanying `checkout.guess`
+    configuration variable.
+  id: totrans-252
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 检出非分支的情况有一个特殊情况。如果你通过其短名称（在此情况下是 `next`）像对待本地分支一样检出一个远程追踪分支（例如 `origin/next`），Git
+    会假设你是想在远程追踪分支的状态上创建新的内容，并会按照它认为你需要的方式进行操作。这个 `--no-guess` 选项，或者伴随的 `checkout.guess`
+    配置变量。
+- en: 'This means that:'
+  id: totrans-253
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这意味着：
+- en: '[PRE33]'
+  id: totrans-254
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE33]'
+- en: 'is equivalent to:'
+  id: totrans-255
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 等同于：
+- en: '[PRE34]'
+  id: totrans-256
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE34]'
+- en: 'Git will do it only if there are no ambiguities; the local branch must not
+    exist (otherwise the command would simply switch to the local branch given) and
+    there can be only one remote-tracking branch that matches. The latter condition
+    can be checked by running `git show-ref next` (using the short name) and verifying
+    that it returns only one line, with remote-tracking branch information:'
+  id: totrans-257
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git 只有在没有歧义的情况下才会执行此操作；本地分支必须不存在（否则该命令会直接切换到给定的本地分支），并且必须只有一个远程跟踪分支与之匹配。可以通过运行`git
+    show-ref next`（使用短名称）来检查此条件，验证它只返回一行，且包含远程跟踪分支的信息：
+- en: '[PRE35]'
+  id: totrans-258
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE35]'
+- en: Listing branches and tags
+  id: totrans-259
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 列出分支和标签
+- en: If you use the `git branch` command without any other arguments, it will list
+    all the branches, marking the current branch with an asterisk — that is, `*`.
+  id: totrans-260
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你使用`git branch`命令而不带其他参数，它将列出所有分支，并用星号标记当前分支——即`*`。
+- en: Programmatically determining the current branch
+  id: totrans-261
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 程序化地确定当前分支
+- en: The **git branch** command is intended for the end user; its output may change
+    in the future version of Git. To find out programmatically, in a shell script,
+    the name of the current branch, uses **git symbolic-ref HEAD** (or **git branch
+    --show-current**). To find the SHA-1 function of the current commit, use **git
+    rev-parse HEAD**. To list all the branches, use **git show-ref** or **git for-each-ref**;
+    this also works for tags and remote-tracking branches.
+  id: totrans-262
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**git branch** 命令是面向最终用户的；其输出可能在未来的 Git 版本中发生变化。要以编程方式获取当前分支的名称，可以使用**git symbolic-ref
+    HEAD**（或**git branch --show-current**）。要获取当前提交的 SHA-1 值，请使用**git rev-parse HEAD**。要列出所有分支，请使用**git
+    show-ref** 或 **git for-each-ref**；这同样适用于标签和远程跟踪分支。'
+- en: The **git symbolic-ref**, **git rev-parse**, **git show-ref,** and **git for-each-ref**
+    commands are all **plumbing** — that is, commands intended for use in scripts.
+  id: totrans-263
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**git symbolic-ref**、**git rev-parse**、**git show-ref** 和 **git for-each-ref**
+    命令都属于**管道命令** —— 即，专门用于脚本中的命令。'
+- en: You can request more information with `-v` ( `--verbose`) or `-vv`. You can
+    also limit branches shown to only those matching the given shell wildcard with
+    `git branch --list <pattern>` (quoting the pattern to prevent its expansion by
+    the shell, if necessary).
+  id: totrans-264
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以使用`-v`（`--verbose`）或`-vv`请求更多信息。你还可以通过`git branch --list <pattern>`来限制显示的分支，仅显示匹配给定
+    shell 通配符的分支（如果需要，引用模式以防止其被 shell 展开）。
+- en: Querying information about remotes, which includes the list of remote branches,
+    by using `git remote show` is described in [*Chapter 8*](B21194_08_split_000.xhtml#_idTextAnchor196),
+    *Advanced* *Branching Techniques*.
+  id: totrans-265
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 查询远程信息，包括远程分支列表，可以使用`git remote show`，该内容将在[*第8章*](B21194_08_split_000.xhtml#_idTextAnchor196)中描述，*高级*
+    *分支技术*。
+- en: 'To list all tags, you can use the `git tag` command without any arguments,
+    or `git tag --list`; with `git tag --list <pattern>`, you can select which tags
+    to show (such as for branches), as in the following example:'
+  id: totrans-266
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要列出所有标签，可以使用不带任何参数的 `git tag` 命令，或者 `git tag --list`；使用 `git tag --list <pattern>`，你可以选择显示哪些标签（例如，按分支），如下例所示：
+- en: '[PRE36]'
+  id: totrans-267
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE36]'
+- en: Rewinding or resetting a branch
+  id: totrans-268
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 回退或重置分支
+- en: What do you do if you want to abandon the last commit and `git reset --keep`
+    (to try to keep the uncommitted changes) or `git reset --hard` (to drop them).
+    The result of such reset operation is shown in *Figure 2**.7*.
+  id: totrans-269
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你想放弃最后一个提交并且执行`git reset --keep`（尝试保留未提交的更改）或`git reset --hard`（放弃它们），该重置操作的结果如*图
+    2.7*所示。
+- en: '![Figure 2.7 – Rewinding a branch one commit back, to HEAD^, with the reset
+    command](img/B21194_02_07.jpg)'
+  id: totrans-270
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 2.7 – 使用重置命令将分支回退一个提交至 HEAD^](img/B21194_02_07.jpg)'
+- en: Figure 2.7 – Rewinding a branch one commit back, to HEAD^, with the reset command
+  id: totrans-271
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 2.7 – 使用重置命令将分支回退一个提交至 HEAD^
+- en: The reset command and its effects on the working area will be explained in more
+    detail in [*Chapter 3*](B21194_03_split_000.xhtml#_idTextAnchor049), *Managing*
+    *Your* *Worktrees*.
+  id: totrans-272
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 重置命令及其对工作区的影响将在[*第3章*](B21194_03_split_000.xhtml#_idTextAnchor049)中详细说明，*管理*
+    *你的* *工作树*。
+- en: Note
+  id: totrans-273
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 注意
+- en: The **git reset <commit>** command always changes where the current branch points
+    to (moves the ref), while **git switch** always modifies where the **HEAD** points
+    to, either changing the current branch or detaching it.
+  id: totrans-274
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**git reset <commit>** 命令总是改变当前分支指向的位置（移动引用），而**git switch** 总是修改**HEAD**指向的位置，要么改变当前分支，要么将其分离。'
+- en: Deleting a branch
+  id: totrans-275
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 删除分支
+- en: Because in Git, a branch is just a pointer and an external reference to the
+    node in the DAG of revisions, deleting a branch is just deleting a pointer. This
+    means that deleting the branch does not immediately delete the history, but it
+    might make it not accessible except via `reflog`. It is not kept forever, though;
+    the `reflog` entries expire.
+  id: totrans-276
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 因为在 Git 中，分支只是一个指针，是指向修订历史中某个节点的外部引用，删除分支实际上只是删除一个指针。这意味着，删除分支并不会立即删除历史记录，但可能会使其无法通过其他途径访问，除非通过
+    `reflog`。不过，这些信息并不是永久保存的；`reflog` 条目会过期。
+- en: Important note
+  id: totrans-277
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 重要提示
+- en: Actually, deleting a branch also removes, irretrievably (at least, in the current
+    Git version), the **reflog** for the branch being deleted — that is, the log of
+    its history of local operations.
+  id: totrans-278
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 实际上，删除一个分支也会不可恢复地（至少在当前版本的 Git 中）删除该分支的 **reflog**——即它的本地操作历史记录。
+- en: "![Figure 2.8 – Deleting \uFEFFthe 'based-doc' branch that just got merged into\
+    \ 'master', while being on \uFEFFthe 'master' branch that includes it](img/B21194_02_08.jpg)"
+  id: totrans-279
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 2.8 – 删除刚刚合并到 ''master'' 分支的 ''based-doc'' 分支，同时在包含它的 ''master'' 分支上](img/B21194_02_08.jpg)'
+- en: Figure 2.8 – Deleting the 'based-doc' branch that just got merged into 'master',
+    while being on the 'master' branch that includes it
+  id: totrans-280
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 2.8 – 删除刚刚合并到 'master' 分支的 'based-doc' 分支，同时在包含它的 'master' 分支上
+- en: You can delete a branch with `git branch --delete <branch-name>`, or with `branch
+    -d`, provided that the branch is not checked out anywhere.
+  id: totrans-281
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以使用 `git branch --delete <branch-name>` 或 `branch -d` 来删除分支，前提是该分支没有被检出。
+- en: There is, however, one issue to consider — what happens if you delete a branch,
+    and there is no other reference to the part of the project history it pointed
+    to? Those revisions will become unreachable, and Git would delete them after the
+    HEAD reflog expires (which, with default configuration, is after 30 days).
+  id: totrans-282
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 但是，有一个问题需要考虑——如果删除一个分支，并且该分支指向的项目历史部分没有其他引用，会发生什么？这些修订将变得不可达，Git 会在 HEAD reflog
+    过期后删除它们（在默认配置下，通常是 30 天后）。
+- en: That is why Git would allow you to delete only the completely merged-in branch,
+    whose commits are all reachable from `HEAD`, as in the example in *Figure 2**.8*
+    (or if the branch deleted is reachable from its upstream branch, if it exists).
+  id: totrans-283
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这就是为什么 Git 只允许删除完全合并的分支的原因，所有提交都可以通过 `HEAD` 访问，如*图 2.8*中的示例所示（或者如果删除的分支可以从其上游分支访问，也允许删除）。
+- en: To delete a branch that was not merged in, which risks parts of the DAG becoming
+    unreachable, as seen in *Figure 2**.9*, you need a stronger command — namely,
+    `git branch -D` or `git branch --delete --force`. Git will suggest this operation
+    when refusing to delete an unmerged branch.
+  id: totrans-284
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要删除一个未合并的分支，这会导致 DAG 的部分内容变得不可达，如*图 2.9*所示，你需要使用更强的命令——即 `git branch -D` 或 `git
+    branch --delete --force`。当拒绝删除未合并的分支时，Git 会建议执行此操作。
+- en: '![Figure 2.9 – Deleting the unmerged branch, which results in parts of the
+    history being unreachable](img/B21194_02_09.jpg)'
+  id: totrans-285
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 2.9 – 删除未合并的分支，导致部分历史记录变得不可达](img/B21194_02_09.jpg)'
+- en: Figure 2.9 – Deleting the unmerged branch, which results in parts of the history
+    being unreachable
+  id: totrans-286
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 2.9 – 删除未合并的分支，导致部分历史记录变得不可达
+- en: You can check whether the branch was merged into any other branch by checking
+    whether `git branch --contains <branch>` shows anything. You cannot delete the
+    current branch.
+  id: totrans-287
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以通过检查 `git branch --contains <branch>` 是否显示内容来判断分支是否已经合并到其他分支。你不能删除当前分支。
+- en: 'If you ever switched to the branch that got deleted, this event and the switch
+    away from the branch will be kept in the `reflog` for HEAD. This information can
+    then be used to undelete that branch, or rather, to recreate it:'
+  id: totrans-288
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你曾切换到被删除的分支，那么这个事件和切换离开该分支的信息将保存在 `HEAD` 的 `reflog` 中。这些信息可以用来恢复该分支，或者更准确地说，用来重新创建它：
+- en: '[PRE37]'
+  id: totrans-289
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE37]'
+- en: Changing the branch name
+  id: totrans-290
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 更改分支名称
+- en: Sometimes, the name chosen for a branch needs to be changed. This can happen,
+    for example, if the scope of the branch changes during the development and the
+    old name no longer fits it. Names of branches will appear and be kept forever,
+    by default, in commit messages for merge commits; that’s why you want them to
+    be meaningful.
+  id: totrans-291
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有时候，分支的名称需要更改。例如，如果分支的范围在开发过程中发生变化，旧名称可能就不再适用了。分支的名称默认会出现在合并提交的提交信息中，并永远保留；这就是为什么你希望分支名称有意义的原因。
+- en: You can rename a branch with `git branch -m` (use `-M` if the target name exists
+    and you want to overwrite it); it will rename a branch and move the corresponding
+    reflog. This will also change the name of the branch in all of its configuration
+    (its description, its upstream, and so on).
+  id: totrans-292
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以使用 `git branch -m` 来重命名一个分支（如果目标名称已存在并且你想覆盖它，则使用 `-M`）；它会重命名分支并移动相应的 reflog。这也会改变该分支在所有配置中的名称（包括描述、上游等）。
+- en: 'The renaming event is stored in the reflog, where you can find the previous
+    name and use it to undo the operation (to rename the branch back to the old name):'
+  id: totrans-293
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 重命名事件存储在 reflog 中，你可以找到之前的名称并使用它来撤销操作（将分支重命名回旧名称）：
+- en: '[PRE38]'
+  id: totrans-294
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE38]'
+- en: Summary
+  id: totrans-295
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 总结
+- en: In this chapter, we have learned how to develop with Git and extend the project
+    history by creating new commits and new lines of development (branches). We know
+    what it means to create a commit, amend a commit, create a branch, switch a branch,
+    rewind a branch, and delete a branch from the point of view of the graph of revisions.
+  id: totrans-296
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们学习了如何使用 Git 开发并通过创建新的提交和新的开发线路（分支）扩展项目历史。从修订图的角度来看，我们了解了创建提交、修改提交、创建分支、切换分支、回退分支以及删除分支意味着什么。
+- en: This chapter showed a very important Git feature — the staging area for creating
+    commits, also known as the index. This is what makes it possible to untangle the
+    changes to the working directory by selectively and interactively choosing what
+    to commit.
+  id: totrans-297
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章展示了 Git 的一个非常重要的功能——用于创建提交的暂存区，也称为索引。这使得通过选择性和交互式地选择要提交的内容，从而理清工作目录中的更改成为可能。
+- en: We learned how to examine the changes to the working area before creating a
+    commit. This chapter described, in detail, the extended unified diff format that
+    Git uses to describe the changes.
+  id: totrans-298
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们学习了如何在创建提交之前检查工作区的更改。本章详细描述了 Git 用来描述更改的扩展统一差异格式（unified diff format）。
+- en: We also learned about the concept of detached HEAD (or anonymous branch) and
+    orphan branches.
+  id: totrans-299
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们还学习了分离头指针（detached HEAD，或称匿名分支）和孤立分支的概念。
+- en: In [*Chapter 3*](B21194_03_split_000.xhtml#_idTextAnchor049), *Managing Your*
+    *Worktrees*, we will learn how to use Git to prepare new commits and how to configure
+    it to make our work easier. We will also learn how to examine, search, and study
+    the contents of the working directory, the staging area, and the project history.
+    We will also see how to use Git to deal with interruptions and recover from mistakes.
+  id: totrans-300
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 [*第3章*](B21194_03_split_000.xhtml#_idTextAnchor049)，*管理你的工作区*，我们将学习如何使用 Git
+    来准备新的提交，并如何配置它以便使我们的工作更轻松。我们还将学习如何检查、搜索和研究工作目录、暂存区以及项目历史的内容。我们还将看到如何使用 Git 处理中断并从错误中恢复。
+- en: Questions
+  id: totrans-301
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 问题
+- en: 'Answer the following questions to test your knowledge of this chapter:'
+  id: totrans-302
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 回答以下问题，以测试你对本章的理解：
+- en: How does creating a new commit change the history stored in the repository —
+    that is, how does it change the graph of revisions and where branch heads point
+    to?
+  id: totrans-303
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建新的提交如何改变存储在仓库中的历史——也就是说，它如何改变修订图以及分支头指针指向的位置？
+- en: What is the difference between **git commit** and **git commit --all** (or **git**
+    **commit -a**)?
+  id: totrans-304
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: '**git commit** 和 **git commit --all**（或 **git commit -a**）有什么区别？'
+- en: How do you check what changes you have made in the local repository? How do
+    you undo them?
+  id: totrans-305
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如何检查你在本地仓库中做了哪些更改？如何撤销它们？
+- en: What is the simplest way to fix an error in the commit message of the last commit
+    on the current branch?
+  id: totrans-306
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 修复当前分支上最后一次提交的提交信息的最简单方法是什么？
+- en: What do you do when you realize that the changes you started to write (but didn’t
+    commit) should be made on a separate new branch?
+  id: totrans-307
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 当你意识到你开始写的更改（但还未提交）应该在一个新的分支上进行时，你该怎么办？
+- en: What is the simplest way to switch to the previous branch, and when can it fail?
+  id: totrans-308
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 切换到上一分支的最简单方法是什么？什么时候它可能失败？
+- en: Answers
+  id: totrans-309
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 答案
+- en: 'Here are the answers to the questions given above:'
+  id: totrans-310
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是上述问题的答案：
+- en: Creating a new commit makes a new node in the graph of revisions that has a
+    previous commit as a parent, advances the branch head ref for the current branch
+    to the freshly created node, and keeps **HEAD** unchanged.
+  id: totrans-311
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建新的提交会在修订图中生成一个新的节点，该节点的父节点是先前的提交，并将当前分支的分支头引用推进到新创建的节点，同时保持 **HEAD** 不变。
+- en: The **git commit** operation creates the new commit out of the staging area
+    contents, while the **git commit --all** creates it out of the changes to all
+    tracked files.
+  id: totrans-312
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: '**git commit** 操作从暂存区内容创建新的提交，而 **git commit --all** 则从所有已跟踪文件的更改中创建提交。'
+- en: You can use **git status** to examine what files have changed and **git diff**
+    or **git diff HEAD** to examine the changes. You can find the explanation of how
+    to undo changes you have made in the full **git** **status** output.
+  id: totrans-313
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 可以使用**git status**查看哪些文件已更改，使用**git diff**或**git diff HEAD**查看更改。你可以在完整的**git
+    status**输出中找到如何撤销所做更改的解释。
+- en: To change the commit message (that is, the description of the changes) of the
+    last commit, you can use **git** **commit --amend**.
+  id: totrans-314
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 若要更改最后一次提交的提交信息（即更改的描述），可以使用**git commit --amend**。
+- en: Because uncommitted changes do not belong to a branch, you can simply create
+    a new branch and switch to it with **git switch -c <branch-name>** or **git checkout
+    -****b <branch-name>**.
+  id: totrans-315
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 因为未提交的更改不属于任何分支，所以你可以简单地创建一个新分支并切换到该分支，使用**git switch -c <branch-name>**或**git
+    checkout -b <branch-name>**。
+- en: To switch to the previous branch, you can use **git switch -** (with **-** in
+    place of the branch name). Git finds what the previous branch was by searching
+    reflogs. This operation can fail if the branch was deleted or rename
+  id: totrans-316
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 若要切换到上一个分支，可以使用**git switch -**（用**-**代替分支名）。Git 通过查找 reflogs 来确定上一个分支。如果分支已被删除或重命名，则此操作可能失败。
+- en: Further reading
+  id: totrans-317
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 进一步阅读
+- en: 'To learn more about the topics that were covered in this chapter, take a look
+    at the following resources:'
+  id: totrans-318
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要了解更多本章涉及的主题，请查看以下资源：
+- en: 'Scott Chacon, Ben Straub. *Pro Git*, 2nd Edition (2014), Apress, *Chapter 2**.2*,
+    *Git Basics - Recording Changes to the* *Repository*: [https://git-scm.com/book/en/v2/Git-Basics-Recording-Changes-to-the-Repository](https://git-scm.com/book/en/v2/Git-Basics-Recording-Changes-to-the-Repository)'
+  id: totrans-319
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Scott Chacon, Ben Straub. *Pro Git*，第二版（2014），Apress，*第2章 2节*，*Git 基础 - 记录变更到仓库*：[https://git-scm.com/book/en/v2/Git-Basics-Recording-Changes-to-the-Repository](https://git-scm.com/book/en/v2/Git-Basics-Recording-Changes-to-the-Repository)
+- en: 'Jakub Narębski. *How to read the output from git diff?* (the answer to the
+    question on StackOverflow): [https://stackoverflow.com/questions/2529441/how-to-read-the-output-from-git-diff/2530012#2530012](https://stackoverflow.com/questions/2529441/how-to-read-the-output-from-git-diff/2530012#2530012)'
+  id: totrans-320
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Jakub Narębski. *如何阅读 git diff 的输出？*（对 StackOverflow 问题的回答）：[https://stackoverflow.com/questions/2529441/how-to-read-the-output-from-git-diff/2530012#2530012](https://stackoverflow.com/questions/2529441/how-to-read-the-output-from-git-diff/2530012#2530012)
+- en: 'Dragos Barosan. *New in Git: switch and restore* (2021): [https://www.banterly.net/2021/07/31/new-in-git-switch-and-restore/](https://www.banterly.net/2021/07/31/new-in-git-switch-and-restore/)'
+  id: totrans-321
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Dragos Barosan. *Git 新特性：switch 和 restore*（2021）：[https://www.banterly.net/2021/07/31/new-in-git-switch-and-restore/](https://www.banterly.net/2021/07/31/new-in-git-switch-and-restore/)
+- en: 'Junio C Hamano. *Fun with a new feature in recent Git* (2016), about the **--sort**
+    option of the **git branch** command: [https://git-blame.blogspot.com/2016/05/fun-with-new-feature-in-recent-git.html](https://git-blame.blogspot.com/2016/05/fun-with-new-feature-in-recent-git.html)'
+  id: totrans-322
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Junio C Hamano. *近期 Git 新特性乐趣*（2016），关于**git branch**命令的**--sort**选项：[https://git-blame.blogspot.com/2016/05/fun-with-new-feature-in-recent-git.html](https://git-blame.blogspot.com/2016/05/fun-with-new-feature-in-recent-git.html)
+- en: 'Tobias Günther. *A look under the hood: how branches work in Git* (2021): [https://stackoverflow.blog/2021/04/05/a-look-under-the-hood-how-branches-work-in-git/](https://stackoverflow.blog/2021/04/05/a-look-under-the-hood-how-branches-work-in-git/)'
+  id: totrans-323
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Tobias Günther. *从幕后看 Git 分支如何工作*（2021）：[https://stackoverflow.blog/2021/04/05/a-look-under-the-hood-how-branches-work-in-git/](https://stackoverflow.blog/2021/04/05/a-look-under-the-hood-how-branches-work-in-git/)
+- en: 'Ryan Tomayko. *The Thing About Git* (2008), about the tangled working copy
+    problem, and how to resolve it in Git: [https://tomayko.com/blog/2008/the-thing-about-git](https://tomayko.com/blog/2008/the-thing-about-git)'
+  id: totrans-324
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Ryan Tomayko. *关于 Git 的事情*（2008），讨论了复杂的工作副本问题，以及如何在 Git 中解决它：[https://tomayko.com/blog/2008/the-thing-about-git](https://tomayko.com/blog/2008/the-thing-about-git)
+- en: 'Nick Quaranto. *Reflog, your safety net* (2009), on Gitready: [http://gitready.com/intermediate/2009/02/09/reflog-your-safety-net.html](http://gitready.com/intermediate/2009/02/09/reflog-your-safety-net.html)'
+  id: totrans-325
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Nick Quaranto. *Reflog，你的安全网*（2009），在 Gitready 上：[http://gitready.com/intermediate/2009/02/09/reflog-your-safety-net.html](http://gitready.com/intermediate/2009/02/09/reflog-your-safety-net.html)

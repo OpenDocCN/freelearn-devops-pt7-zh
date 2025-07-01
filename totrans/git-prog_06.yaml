@@ -1,0 +1,1096 @@
+- en: '6'
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '6'
+- en: Interactive Rebasing
+  id: totrans-1
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 交互式变基
+- en: Interactive rebasing is a confusing name for a very useful Git functionality.
+    From a user's perspective, rebase and interactive rebase have little in common.
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 交互式变基是 Git 中一个非常有用的功能，但其名字可能会让人感到困惑。从用户的角度来看，变基和交互式变基几乎没有什么共同点。
+- en: 'Interactive rebase allows you to clean up your commits, but only *before* you
+    push them to the server. With interactive rebasing you can:'
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 交互式变基允许你清理提交，但只能在你推送到服务器之前进行。通过交互式变基，你可以：
+- en: '"Squash" your commits so that your commit history is sparser and easier to
+    read'
+  id: totrans-4
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: “压缩”你的提交，以使提交历史更简洁，便于阅读
+- en: Modify the message for your commits
+  id: totrans-5
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 修改提交信息
+- en: Fixup, which is just like squash except that it doesn't stop and ask for a new
+    message
+  id: totrans-6
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Fixup，功能类似于 squash，不同的是它不会停止并要求你输入新的提交信息
+- en: Drop, which removes a commit
+  id: totrans-7
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Drop，用于移除一个提交
+- en: The key thing here is that you are modifying commits, not the files that go
+    into a commit. And, as I'll keep mentioning, you must do this interactive rebasing
+    *before* you push your commits to origin. You never modify commits once they are
+    on the server because other developers may be interacting with the commits, and
+    you will likely create conflicts, which are time-consuming to repair. See *Chapter
+    4*, *Merging, Pull Requests and Handling Merge Conflicts*, for information on
+    merge conflicts.
+  id: totrans-8
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这里的关键是你正在修改提交，而不是提交中的文件。而且，正如我会一再强调的，你必须在推送提交到 origin 之前进行交互式变基。提交一旦推送到服务器，就不应再修改，因为其他开发人员可能正在与这些提交进行交互，修改可能会导致冲突，而冲突的修复非常耗时。关于合并冲突的处理，请参见*第4章*，《合并、拉取请求与处理合并冲突》。
+- en: Interactive rebasing at work
+  id: totrans-9
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 交互式变基的工作示例
+- en: To see this at work, we need a dozen commits. Let's create a new quick and dirty
+    program and create commits with every line. Once we have that, we can look at
+    how interactive rebasing is accomplished at the command line and also in Visual
+    Studio.
+  id: totrans-10
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了了解这一点的工作原理，我们需要做几个提交。让我们创建一个简单的程序，并为每一行代码创建一个提交。等我们完成后，就可以在命令行和 Visual Studio
+    中查看如何进行交互式变基。
+- en: '**Note**: you would never commit this frequently, but we need commits to work
+    with.'
+  id: totrans-11
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**注意**：你通常不会这么频繁地提交，但我们需要一些提交来进行演示。'
+- en: Creating our example
+  id: totrans-12
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 创建我们的示例
+- en: 'For variety''s sake, let''s create the skeleton of a music tracking application.
+    The first step is to create the repository on GitHub:'
+  id: totrans-13
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了多样性，我们来创建一个音乐跟踪应用程序的框架。第一步是在 GitHub 上创建一个仓库：
+- en: '![](img/B17741_06_01.png)'
+  id: totrans-14
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_06_01.png)'
+- en: 'Figure 6.1: Creating a repository'
+  id: totrans-15
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 6.1：创建仓库
+- en: 'With the repository created, we need to clone it into a local repository. This
+    time let''s use Visual Studio, and GitHub''s awareness of Visual Studio. On GitHub
+    click on **Code** and when the dropdown opens, choose **Open with Visual Studio**:'
+  id: totrans-16
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 创建仓库后，我们需要将其克隆到本地仓库。这次我们使用 Visual Studio，并利用 GitHub 与 Visual Studio 的集成。在 GitHub
+    上点击**代码**，然后在下拉菜单中选择**使用 Visual Studio 打开**：
+- en: '![](img/B17741_06_02.png)'
+  id: totrans-17
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_06_02.png)'
+- en: 'Figure 6.2: Downloading a commit with Visual Studio'
+  id: totrans-18
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 6.2：使用 Visual Studio 下载提交
+- en: 'When you do, Visual Studio will open and offer to save your project, with the
+    name and default location chosen. For this exercise, create a solution with that
+    project, and then add a `Music` class:'
+  id: totrans-19
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当你这么做时，Visual Studio 会打开并提供保存你的项目，选择了名称和默认位置。对于这个练习，创建一个包含该项目的解决方案，然后添加一个`Music`类：
+- en: '![](img/B17741_06_03.png)'
+  id: totrans-20
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_06_03.png)'
+- en: 'Figure 6.3: Cloning a repository with Visual Studio'
+  id: totrans-21
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 6.3：使用 Visual Studio 克隆一个仓库
+- en: Click on **Clone** in the lower-right corner and you will be brought to your
+    application. You may be asked to sign in to GitHub if you haven't already done
+    so from Visual Studio.
+  id: totrans-22
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 点击右下角的**克隆**，你将进入你的应用程序。如果你尚未在 Visual Studio 中登录 GitHub，系统可能会要求你进行登录。
+- en: Because the checkboxes were selected at repo creation, your three files are
+    already in the **Solution Explorer** (`README.md`, `LICENSE`, and `.gitignore`).
+    Your next step is to create a project in that solution. In our case, we'll create
+    a console application named `MusicHandler`. Click on **File** | **New Project**
+    and select **Console Application**. You'll be asked what framework you'd like
+    to use. For this console application any will do; I'll choose .NET 5\. Click on
+    **Create** in the lower right-hand corner.
+  id: totrans-23
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于在创建仓库时已选择了勾选框，你的三个文件已经出现在**解决方案资源管理器**中（`README.md`、`LICENSE` 和 `.gitignore`）。下一步是创建一个项目。在我们的案例中，我们将创建一个名为`MusicHandler`的控制台应用程序。点击**文件**
+    | **新建项目**，然后选择**控制台应用程序**。系统会询问你想使用哪个框架。对于这个控制台应用程序，任意框架都可以，我选择.NET 5。点击右下角的**创建**。
+- en: 'Your application is created, complete with `Program.cs`. Let''s make this our
+    first commit. Staying in Visual Studio, we can click on the **Git** menu item,
+    and choose **Commit or Stash**:'
+  id: totrans-24
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你的应用程序已经创建，并包括`Program.cs`。让我们将其作为第一次提交。在 Visual Studio 中，我们可以点击**Git**菜单项，并选择**提交或暂存**：
+- en: '![](img/B17741_06_04.png)'
+  id: totrans-25
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_06_04.png)'
+- en: 'Figure 6.4: Your first commit with Visual Studio'
+  id: totrans-26
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 6.4：在 Visual Studio 中的第一次提交
+- en: 'As soon as you select it, the right-hand window (where **Solution Explorer**
+    is) will turn into a Git handler:'
+  id: totrans-27
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦你选择它，右侧窗口（即**解决方案资源管理器**所在的地方）将变成 Git 处理器：
+- en: '![](img/B17741_06_05.png)'
+  id: totrans-28
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_06_05.png)'
+- en: 'Figure 6.5: Visual Studio''s principal Git handler'
+  id: totrans-29
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 6.5：Visual Studio 的主要 Git 处理器
+- en: There is a lot of information here. At the bottom of the figure, you see that
+    the project and `Program.cs` are marked as new (capital A) and that there are
+    two changes (which is correct). You can stage them by clicking on the **+** sign.
+    Or you can click on **Commit All** to both stage and commit your files.
+  id: totrans-30
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这里有很多信息。在图形的底部，你可以看到项目和`Program.cs`被标记为新的（大写字母A），并且有两个更改（这是正确的）。你可以通过点击**+**号来暂存它们，或者你可以点击**提交全部**来同时暂存和提交文件。
+- en: 'Enter your message and select **Commit All**:'
+  id: totrans-31
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 输入你的信息并选择**提交全部**：
+- en: '![](img/B17741_06_06.png)'
+  id: totrans-32
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_06_06.png)'
+- en: 'Figure 6.6: After creating a commit in Visual Studio'
+  id: totrans-33
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 6.6：在 Visual Studio 中创建提交后
+- en: The view immediately changes in a few significant ways. At the top you see that
+    a commit was created locally – that is, in the local repository. You also see
+    that you now have "1 outgoing" – that is, one commit locally that has not been
+    pushed to the server.
+  id: totrans-34
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 视图会立即在几个显著的方面发生变化。顶部显示了一个本地创建的提交——也就是说，提交是在本地仓库中创建的。你还会看到现在有“1 个待推送”——即本地有一个提交尚未推送到服务器。
+- en: You also see an **Amend** checkbox; you can use that if you want to change the
+    message on the most recent commit. Even though we have one outgoing, we are not
+    going to push that commit. We need a number of local commits.
+  id: totrans-35
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你还会看到一个**修正**复选框；如果你想更改最近一次提交的信息，可以使用它。即使我们有一个待推送的提交，我们也不打算推送那个提交。我们需要一些本地提交。
+- en: 'We need a solution to work with, so create a new project/solution in the same
+    location. When you are done, your **Solution Explorer** should look like *Figure
+    6.7*:'
+  id: totrans-36
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们需要一个解决方案来继续工作，因此在相同位置创建一个新的项目/解决方案。完成后，你的**解决方案资源管理器**应该像*图 6.7*所示：
+- en: '![](img/B17741_06_07.png)'
+  id: totrans-37
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_06_07.png)'
+- en: 'Figure 6.7: Creating a project in the repo folder'
+  id: totrans-38
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 6.7：在仓库文件夹中创建项目
+- en: 'We''re now ready to create our `Music` class:'
+  id: totrans-39
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们现在准备创建我们的`Music`类：
+- en: '[PRE0]'
+  id: totrans-40
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: 'Let''s commit that. You will see that your files are not yet tracked. You''ll
+    need to add them to the index:'
+  id: totrans-41
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们提交它。你会看到文件尚未被追踪。你需要将它们添加到索引中：
+- en: '[PRE1]'
+  id: totrans-42
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: 'Now you are ready to commit it:'
+  id: totrans-43
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在你准备好提交它了：
+- en: '[PRE2]'
+  id: totrans-44
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: 'If you look at the log, `git log --oneline`, you should see all three commits:
+    the one created when you cloned the repository and the two you created by hand:'
+  id: totrans-45
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你查看日志（`git log --oneline`），你应该会看到所有三个提交：一个是在你克隆仓库时创建的，另两个是你手动创建的：
+- en: '[PRE3]'
+  id: totrans-46
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: 'Let''s create two more commits. We''ll start by giving the `Music` class some
+    properties, committing as we add each one:'
+  id: totrans-47
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们创建两个新的提交。我们将首先为`Music`类添加一些属性，并在添加每个属性时进行提交：
+- en: '[PRE4]'
+  id: totrans-48
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: 'We can review our commits by going to the **Git** menu and choosing **View
+    Branch History** (which is much like `git log ––oneline`):'
+  id: totrans-49
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以通过进入**Git**菜单并选择**查看分支历史**来查看我们的提交（这和`git log --oneline`很像）：
+- en: '![](img/B17741_06_08.png)'
+  id: totrans-50
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_06_08.png)'
+- en: 'Figure 6.8: Reviewing a commit in Visual Studio'
+  id: totrans-51
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 6.8：在 Visual Studio 中查看提交
+- en: 'The result is a list of the IDs, the author of the commit, the date of the
+    commit, and the commit message, as shown in *Figure 6.9*:'
+  id: totrans-52
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 结果是一个包含提交ID、提交作者、提交日期和提交信息的列表，如*图 6.9*所示：
+- en: '![](img/B17741_06_09.png)'
+  id: totrans-53
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_06_09.png)'
+- en: 'Figure 6.9: Reviewing the history of commits in Visual Studio'
+  id: totrans-54
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 6.9：在 Visual Studio 中查看提交历史
+- en: Notice that Visual Studio differentiates between those commits that are already
+    on the server (under **Local History**) and those that have not yet been pushed
+    (under **Outgoing**).
+  id: totrans-55
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 注意，Visual Studio 会区分那些已经在服务器上的提交（在**本地历史**下）和那些尚未推送的提交（在**待推送**下）。
+- en: 'Let''s add just three more commits. If you followed along, then you are as
+    stuck as I am with `Music` outside of any namespace. Let''s fix that:'
+  id: totrans-56
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们再做三个提交。如果你按照步骤操作，那么你应该和我一样，`Music`类没有放在任何命名空间下。让我们来修复它：
+- en: '[PRE5]'
+  id: totrans-57
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: Now drag `Music.cs` out of the solution and into the project, and you will thus
+    have fixed my error. This is an easy error to make when grabbing a solution from
+    a repository using Visual Studio.
+  id: totrans-58
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在将 `Music.cs` 从解决方案中拖出并放入项目中，这样你就修复了我的错误。当从 Git 仓库中通过 Visual Studio 获取解决方案时，这是一个常见的错误。
+- en: Commit these changes.
+  id: totrans-59
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 提交这些更改。
+- en: 'Now we can make an instance of `Music` inside `Program.cs` and commit that:'
+  id: totrans-60
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们可以在 `Program.cs` 中创建一个 `Music` 实例并提交：
+- en: '[PRE6]'
+  id: totrans-61
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: 'We can now use the **Git** menu in Visual Studio to see the entire commit history:'
+  id: totrans-62
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们可以使用 Visual Studio 中的 **Git** 菜单来查看完整的提交历史：
+- en: '![](img/B17741_06_10.png)'
+  id: totrans-63
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_06_10.png)'
+- en: 'Figure 6.10: Returning to Visual Studio to see the entire commit history'
+  id: totrans-64
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 6.10：返回 Visual Studio 查看完整的提交历史
+- en: 'We should see the same information in our log from the command line:'
+  id: totrans-65
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们应该在命令行的日志中看到相同的信息：
+- en: '![](img/B17741_06_11.png)'
+  id: totrans-66
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_06_11.png)'
+- en: 'Figure 6.11: Using the log to see the commit history'
+  id: totrans-67
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 6.11：使用日志查看提交历史
+- en: Using interactive rebase to clean up your commits
+  id: totrans-68
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 使用互动 rebase 清理你的提交记录
+- en: 'Let us suppose that we do not want the three commits of name, artist, and release
+    date to appear as separate commits, cluttering up the history. This is where interactive
+    rebase comes in. We need only to count the number of commits down to one or two
+    past the `Add Name property`. Let''s say we decide on `7`. We can then enter:'
+  id: totrans-69
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 假设我们不希望名称、艺术家和发行日期这三个提交作为独立的提交出现在历史记录中，造成杂乱。这时互动 rebase 就派上用场了。我们只需要计算出从 `Add
+    Name property` 开始的提交数量，向下数到一或两个。假设我们选择了 `7`，然后输入：
+- en: '[PRE7]'
+  id: totrans-70
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE7]'
+- en: 'Git will respond with:'
+  id: totrans-71
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git 会回应：
+- en: '[PRE8]'
+  id: totrans-72
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE8]'
+- en: 'and it will open Visual Studio Code as shown in *Figure 6.12*:'
+  id: totrans-73
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 它将打开 Visual Studio Code，如*图 6.12*所示：
+- en: '![](img/B17741_06_12.png)'
+  id: totrans-74
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_06_12.png)'
+- en: 'Figure 6.12: Waiting for your editor to open'
+  id: totrans-75
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 6.12：等待你的编辑器打开
+- en: 'Now comes the fun part. For each line, we have a number of options:'
+  id: totrans-76
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来是有趣的部分。对于每一行，我们有几个选项：
+- en: Leave pick, which will just keep the commit as is
+  id: totrans-77
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 保留 pick，表示保持提交不变
+- en: Squash – the one we want, explained below
+  id: totrans-78
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 合并 – 我们想要的那个，下面会解释
+- en: Drop – leave that commit out – erase it
+  id: totrans-79
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 删除 – 跳过该提交 – 删除它
+- en: Label – label chosen commit(s) with a label (see *Chapter 6*, *Using the Log*)
+  id: totrans-80
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 标记 – 用标签标记选择的提交（参见*第 6 章*，*使用日志*）
+- en: You can also re-order your commits if that is somehow helpful to you.
+  id: totrans-81
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果这对你有帮助，你还可以重新排序你的提交。
+- en: 'Let''s do what we set out to do, squash the release, name, and artist into
+    the commit above (create the `music` class). With Visual Studio Code make the
+    changes shown in *Figure 6.13*:'
+  id: totrans-82
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们做我们打算做的事，将发行日期、名称和艺术家合并到上面的提交中（创建 `music` 类）。在 Visual Studio Code 中进行如*图
+    6.13*所示的更改：
+- en: '![](img/B17741_06_13.png)'
+  id: totrans-83
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_06_13.png)'
+- en: 'Figure 6.13: Inside the editor for an interactive rebase'
+  id: totrans-84
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 6.13：互动 rebase 编辑器中的内容
+- en: Notice we are set to squash the release date into the artist (making them one
+    commit), then squash that commit into Name, and then take all of that and squash
+    it into the `music` class. This will make one commit out of the four.
+  id: totrans-85
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 注意，我们设置为将发行日期合并到艺术家中（使它们成为一个提交），然后将该提交合并到名称中，再将所有这些合并到 `music` 类中。这样，四个提交将合并为一个提交。
+- en: 'Save the file; Git comes back and re-opens the file and offers to allow you
+    to fix up the messages. It starts by showing you what messages you had, as shown
+    in *Figure 6.14*:'
+  id: totrans-86
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 保存文件；Git 会重新打开文件并提供修正消息的选项。它首先会显示你之前的消息，如*图 6.14*所示：
+- en: '![](img/B17741_06_14.png)'
+  id: totrans-87
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_06_14.png)'
+- en: 'Figure 6.14: The history of the messages'
+  id: totrans-88
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 6.14：消息历史
+- en: You can now choose your message (and edit it as well) leaving out or including
+    the previous messages.
+  id: totrans-89
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你现在可以选择你的消息（并且可以编辑它），包括或排除之前的消息。
+- en: 'I will choose one meaningful message:'
+  id: totrans-90
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我将选择一条有意义的消息：
+- en: '![](img/B17741_06_15.png)'
+  id: totrans-91
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_06_15.png)'
+- en: 'Figure 6.15: Choosing the messages you want to keep'
+  id: totrans-92
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 6.15：选择你想保留的消息
+- en: 'Notice, again, that there are extensive comments at the bottom of the file
+    to help you understand what is happening:'
+  id: totrans-93
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 再次注意，文件底部有大量评论，帮助你理解发生了什么：
+- en: '![](img/B17741_06_16.png)'
+  id: totrans-94
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_06_16.png)'
+- en: 'Figure 6.16: Progress notes on your interactive feedback'
+  id: totrans-95
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 6.16：关于互动反馈的进度笔记
+- en: When we save and close this file, Git tells us that the rebase was successful.
+  id: totrans-96
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当我们保存并关闭这个文件时，Git 告诉我们 rebase 成功完成。
+- en: 'If you ask Git for the status at this point, you''ll get a review of where
+    your rebase stands:'
+  id: totrans-97
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果此时你询问 Git 当前的状态，你将看到关于 rebase 进度的回顾：
+- en: '![](img/B17741_06_17.png)'
+  id: totrans-98
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_06_17.png)'
+- en: 'Figure 6.17: Git status after an interactive rebase'
+  id: totrans-99
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 6.17：互动 rebase 后的 Git 状态
+- en: 'Enter `git rebase ––continue` and you should see a recap and success message
+    as shown in *Figure 6.18*:'
+  id: totrans-100
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 输入 `git rebase ––continue`，你应该会看到如 *图 6.18* 所示的回顾和成功信息：
+- en: '![](img/B17741_06_18.png)'
+  id: totrans-101
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_06_18.png)'
+- en: 'Figure 6.18: Git summary of interactive rebase'
+  id: totrans-102
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 6.18：交互式 rebase 的 Git 摘要
+- en: 'Your rebase worked. Let''s look at the log:'
+  id: totrans-103
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你的 rebase 操作成功了。我们来看看日志：
+- en: '![](img/B17741_06_19.png)'
+  id: totrans-104
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_06_19.png)'
+- en: 'Figure 6.19: Log reflects the interactive rebase'
+  id: totrans-105
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 6.19：日志反映了交互式 rebase
+- en: 'Let''s turn back to Visual Studio and ask for a history:'
+  id: totrans-106
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们回到 Visual Studio 并查看历史：
+- en: '![](img/B17741_06_20.png)'
+  id: totrans-107
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_06_20.png)'
+- en: 'Figure 6.20: Looking at the modified history in Visual Studio'
+  id: totrans-108
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 6.20：在 Visual Studio 中查看修改后的历史
+- en: Notice that the interim commits are gone! They have been merged into **Add music
+    class**.
+  id: totrans-109
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 注意，中间的提交已消失！它们已合并到 **添加音乐课** 中。
+- en: 'Interactive rebase is both powerful and safe. It can clean up your commits
+    before pushing them, making it easier for your teammates to read the history.
+    If you get into trouble during the interaction with interactive rebase, you can
+    enter:'
+  id: totrans-110
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 交互式 rebase 既强大又安全。它可以在推送之前清理你的提交，使得你的队友更容易阅读历史。如果在使用交互式 rebase 时遇到问题，你可以输入：
+- en: '[PRE9]'
+  id: totrans-111
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE9]'
+- en: to return to where you were before the interactive rebase started.
+  id: totrans-112
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 返回到交互式 rebase 开始之前的状态。
+- en: I confess, I use squash all the time, and I almost never use any of the other
+    options; though it is good to know they are there.
+  id: totrans-113
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我承认，我一直在使用压缩操作，几乎从不使用其他选项；不过，知道它们的存在是很好的。
+- en: Summary
+  id: totrans-114
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 总结
+- en: 'In this chapter you learned:'
+  id: totrans-115
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，你学到了：
+- en: How to use interactive rebase to squash commits before pushing them
+  id: totrans-116
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 如何使用交互式 rebase 在推送之前压缩提交
+- en: Other options in interactive rebase
+  id: totrans-117
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 交互式 rebase 中的其他选项
+- en: The impact of squash in interactive rebase
+  id: totrans-118
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 交互式 rebase 中压缩操作的影响
+- en: How to fix up the messages for your rebased files
+  id: totrans-119
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 如何修正你的 rebase 文件的提交信息
+- en: Challenge
+  id: totrans-120
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 挑战
+- en: In this challenge you will create a new project that you will clone to your
+    local repository using GitHub Desktop. You will then add at least 7-8 commits.
+    Finally, you'll use interactive rebase to squash some of your commits together.
+    Feel free to experiment with some of the other options in interactive rebase.
+  id: totrans-121
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这个挑战中，你将创建一个新项目，并使用 GitHub Desktop 克隆到本地仓库。然后，你将至少添加 7-8 次提交。最后，你将使用交互式 rebase
+    将一些提交压缩到一起。你可以自由地尝试交互式 rebase 中的其他选项。
+- en: For my project I'm going to create a solution that tracks the Rocky Horror Picture
+    Show (a true classic).
+  id: totrans-122
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于我的项目，我将创建一个追踪《摇滚恐怖秀》的解决方案（这是一部真正的经典）。
+- en: 'Step 1, as usual, is to create the new repository:'
+  id: totrans-123
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 第一步，像往常一样，创建新的仓库：
+- en: '![](img/B17741_06_21.png)'
+  id: totrans-124
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_06_21.png)'
+- en: 'Figure 6.21: Creating the repo'
+  id: totrans-125
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 6.21：创建仓库
+- en: 'Step 2 is to clone to your disk; however, this time we''ll use GitHub Desktop:'
+  id: totrans-126
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 第二步是将仓库克隆到你的磁盘；不过这次我们将使用 GitHub Desktop：
+- en: '![](img/B17741_06_22.png)'
+  id: totrans-127
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_06_22.png)'
+- en: 'Figure 6.22: Downloading the repository with GitHub Desktop'
+  id: totrans-128
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 6.22：使用 GitHub Desktop 下载仓库
+- en: 'GitHub Desktop will be launched:'
+  id: totrans-129
+  prefs: []
+  type: TYPE_NORMAL
+  zh: GitHub Desktop 将启动：
+- en: '![](img/B17741_06_23.png)'
+  id: totrans-130
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_06_23.png)'
+- en: 'Figure 6.23: Launching GitHub Desktop'
+  id: totrans-131
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 6.23：启动 GitHub Desktop
+- en: 'GitHub Desktop will launch and pop up a modal dialog box asking you to confirm
+    or change the repository and where you want to put it on your disk:'
+  id: totrans-132
+  prefs: []
+  type: TYPE_NORMAL
+  zh: GitHub Desktop 会启动并弹出一个模式对话框，要求你确认或更改仓库，并选择将其放置在哪个磁盘位置：
+- en: '![](img/B17741_06_24.png)'
+  id: totrans-133
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_06_24.png)'
+- en: 'Figure 6.24: Cloning to GitHub Desktop'
+  id: totrans-134
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 6.24：克隆到 GitHub Desktop
+- en: 'As expected, your repository is cloned to the folder you designated, and GitHub
+    Desktop is set to your repository and main branch:'
+  id: totrans-135
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如预期，你的仓库已克隆到你指定的文件夹，并且 GitHub Desktop 已设置为你的仓库和主分支：
+- en: '![](img/B17741_06_25.png)'
+  id: totrans-136
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_06_25.png)'
+- en: 'Figure 6.25: Confirming the local repository was created'
+  id: totrans-137
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 6.25：确认本地仓库已创建
+- en: 'The next step is to create a project in that directory. GitHub Desktop is immediately
+    populated on the left side with the files you''ve entered, and on the right side
+    with the changes to the selected file:'
+  id: totrans-138
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 下一步是创建该目录中的一个项目。GitHub Desktop 会立即在左侧显示你输入的文件，在右侧显示已选文件的更改：
+- en: '![](img/B17741_06_26.png)'
+  id: totrans-139
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_06_26.png)'
+- en: 'Figure 6.26: Creating a project in your repository directory'
+  id: totrans-140
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 6.26：在你的仓库目录中创建项目
+- en: 'We want to commit this, but not push it. We make the commit using the commit
+    section at the bottom left:'
+  id: totrans-141
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们想要提交这个，但不推送它。我们通过左下角的提交区域进行提交：
+- en: '![](img/B17741_06_27.png)'
+  id: totrans-142
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_06_27.png)'
+- en: 'Figure 6.27: Creating a commit (with a message) in GitHub Desktop'
+  id: totrans-143
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 6.27：在 GitHub Desktop 中创建提交（带有信息）
+- en: 'GitHub Desktop reconfigures to show you the current state of your project:'
+  id: totrans-144
+  prefs: []
+  type: TYPE_NORMAL
+  zh: GitHub Desktop 重新配置，展示你的项目当前状态：
+- en: '![](img/B17741_06_28.png)'
+  id: totrans-145
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_06_28.png)'
+- en: 'Figure 6.28: The state of your project, shown in GitHub Desktop'
+  id: totrans-146
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图6.28：你在GitHub Desktop中的项目状态
+- en: Following the arrows from left to right we see that there are now zero changes
+    to report; this is reiterated in the headline and the third arrow points to the
+    button that would push your changes to origin (which we will not do now).
+  id: totrans-147
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 从左到右跟随箭头，我们看到现在没有更改要报告；这一点在标题中得到了重复，第三个箭头指向按钮，表示将更改推送到远程仓库（我们现在不会进行推送）。
+- en: 'In the upper left-hand corner is a button that says **History**; clicking that
+    brings you to your commit history, with each file added or modified in that commit
+    listed:'
+  id: totrans-148
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在左上角有一个按钮，显示为**历史记录**；点击该按钮会带你到提交历史页面，列出每次提交中添加或修改的文件：
+- en: '![](img/B17741_06_29.png)'
+  id: totrans-149
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_06_29.png)'
+- en: 'Figure 6.29: Your commit history in GitHub Desktop'
+  id: totrans-150
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图6.29：GitHub Desktop中的提交历史
+- en: There is quite a bit to see here. The highlighted commit has an up arrow offering
+    to push it to origin. It also has the one-line headline from the commit, which
+    is repeated on the right where you will also find the commit message. Once again,
+    clicking on any of the files in that commit will show the changes in the right-hand
+    window (not shown).
+  id: totrans-151
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这里有很多信息可以查看。高亮显示的提交有一个向上的箭头，表示可以将其推送到远程仓库。它还显示了提交的单行标题，右侧也会显示提交消息。再次强调，点击该提交中的任何文件都会在右侧窗口显示更改（未显示）。
+- en: 'Now let''s add commits as we have in the past. I opted to begin by creating
+    a class called `Showing`, which will have properties for the location and time
+    of each showing of the film in Boston for a given week:'
+  id: totrans-152
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在让我们像过去一样添加提交。我选择从创建一个名为`Showing`的类开始，该类将包含电影在波士顿一周内每个放映的地点和时间的属性：
+- en: '[PRE10]'
+  id: totrans-153
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE10]'
+- en: 'I''ll commit after creating the class and each of its properties. When I''m
+    done, `Showing` looks like this:'
+  id: totrans-154
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我会在创建类及其每个属性后进行提交。完成后，`Showing`看起来是这样的：
+- en: '[PRE11]'
+  id: totrans-155
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE11]'
+- en: The first time I saved this file, `ShowTimes` was just a `DateTime`, but I quickly
+    realized that would require an object at each location for each showtime, so I
+    changed it to a list of `DateTime` objects.
+  id: totrans-156
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我第一次保存这个文件时，`ShowTimes`只是一个`DateTime`，但我很快意识到，这样会需要在每个位置为每个放映时间创建一个对象，因此我将其更改为`DateTime`对象的列表。
+- en: '`Program.cs` ended up looking like this:'
+  id: totrans-157
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`Program.cs`最终看起来像这样：'
+- en: '[PRE12]'
+  id: totrans-158
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE12]'
+- en: 'The first time I committed the `ShowTimes` I forgot to include midnight (horrors!).
+    Let''s look at the history available in GitHub Desktop:'
+  id: totrans-159
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我第一次提交`ShowTimes`时，忘记了包括午夜（天啊！）。让我们来看一下GitHub Desktop中的历史记录：
+- en: '![](img/B17741_06_30.png)'
+  id: totrans-160
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_06_30.png)'
+- en: 'Figure 6.30: Commit history in GitHub Desktop'
+  id: totrans-161
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图6.30：GitHub Desktop中的提交历史
+- en: Before we push these, let's clean them up with an interactive rebase. We can
+    combine some commits, and more interesting, we can drop the commit with just a
+    single time because it is replaced with the commit that makes `ShowTimes` into
+    a list.
+  id: totrans-162
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在我们推送这些更改之前，让我们用交互式变基清理一下。我们可以合并一些提交，更有趣的是，我们可以丢弃只包含单个时间的提交，因为它已经被将`ShowTimes`转变为列表的提交所取代。
+- en: The easiest way to do so is to use the command line to bring up the editor.
+  id: totrans-163
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最简单的方式是使用命令行调出编辑器。
+- en: 'Here is the initial state of our interactive rebase:'
+  id: totrans-164
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这是我们交互式变基的初始状态：
+- en: '![](img/B17741_06_31.png)'
+  id: totrans-165
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_06_31.png)'
+- en: 'Figure 6.31: Before the interactive rebase'
+  id: totrans-166
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图6.31：交互式变基前的状态
+- en: 'And here is where we''ll end up:'
+  id: totrans-167
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这里是最终的样子：
+- en: '![](img/B17741_06_32.png)'
+  id: totrans-168
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_06_32.png)'
+- en: 'Figure 6.32: After the interactive rebase'
+  id: totrans-169
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图6.32：交互式变基后的状态
+- en: We are dropping the commit in which showtime was a `DateTime` as it is replaced
+    by the next commit where `ShowTimes` is a list of `DateTime` objects. We are also
+    squashing all the entries into our instance into a single commit. Once we save
+    this, we will have an opportunity to fix up the messages.
+  id: totrans-170
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将放弃包含`DateTime`的提交，因为它被下一个提交替代，在该提交中，`ShowTimes`变成了`DateTime`对象的列表。我们还将把所有条目压缩为一个提交。保存后，我们将有机会修正提交消息。
+- en: 'Oops, we are notified there is a conflict:'
+  id: totrans-171
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 哎呀，我们收到了一个冲突通知：
+- en: '![](img/B17741_06_33.png)'
+  id: totrans-172
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_06_33.png)'
+- en: 'Figure 6.33: A conflict during the interactive rebase'
+  id: totrans-173
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图6.33：交互式变基过程中的冲突
+- en: 'Git offers us a number of alternatives: fix the conflict and then continue
+    the rebase or skip the conflicted commit and abort the rebase. Let''s fix the
+    problem by returning to GitHub Desktop:'
+  id: totrans-174
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git为我们提供了几种选择：解决冲突然后继续变基，或者跳过有冲突的提交并中止变基。我们来通过回到GitHub Desktop来解决问题：
+- en: '![](img/B17741_06_34.png)'
+  id: totrans-175
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_06_34.png)'
+- en: 'Figure 6.34: Finding the conflict in GitHub Desktop'
+  id: totrans-176
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图6.34：在GitHub Desktop中找到冲突
+- en: 'Notice that GitHub Desktop knows about the conflict too, and offers a number
+    of choices:'
+  id: totrans-177
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 注意GitHub Desktop 也知道冲突，并提供多种选择：
+- en: Open in Visual Studio Code
+  id: totrans-178
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在Visual Studio Code中打开
+- en: Open in the command line
+  id: totrans-179
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在命令行中打开
+- en: Open with your tool of choice
+  id: totrans-180
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 用你喜欢的工具打开
+- en: Resolve manually
+  id: totrans-181
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 手动解决
+- en: 'Let''s choose to open in Visual Studio Code:'
+  id: totrans-182
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们选择在Visual Studio Code中打开：
+- en: '![](img/B17741_06_35.png)'
+  id: totrans-183
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_06_35.png)'
+- en: 'Figure 6.35: The conflict in Visual Studio'
+  id: totrans-184
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图6.35：Visual Studio中的冲突
+- en: 'Visual Studio Code works hard to help you make the changes. Notice the small
+    menus that allow you to accept one or the other or both changes (and it gives
+    you the message on the incoming change to make sure you know what you are choosing).
+    When you are done, the file looks as you intended:'
+  id: totrans-185
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Visual Studio Code 努力帮助你进行更改。注意小菜单，允许你接受其中一个或两个更改（并且它会给出关于传入更改的消息，确保你知道自己在选择什么）。完成后，文件看起来和你打算的一样：
+- en: '[PRE13]'
+  id: totrans-186
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE13]'
+- en: 'Save and close the file. When you return to the command line, add the fixed
+    file back in and then tell Git to continue:'
+  id: totrans-187
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 保存并关闭文件。当你返回命令行时，将修复后的文件添加回去，然后告诉Git继续：
+- en: '[PRE14]'
+  id: totrans-188
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE14]'
+- en: 'Visual Studio Code will open again, to allow you to fix up the commit messages.
+    Save and close and Visual Studio Code will open a third time to allow you to fix
+    up all your messages. Once you save and close that, much to your relief, Git will
+    tell you that the rebase has succeeded:'
+  id: totrans-189
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Visual Studio Code 将再次打开，允许你修正提交消息。保存并关闭后，Visual Studio Code 将再次打开，允许你修正所有消息。一旦保存并关闭，非常令你宽慰的是，Git会告诉你变基成功了：
+- en: '![](img/B17741_06_37.png)'
+  id: totrans-190
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_06_37.png)'
+- en: 'Figure 6.36: Your interactive rebase worked!'
+  id: totrans-191
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图6.36：您的交互式变基已成功！

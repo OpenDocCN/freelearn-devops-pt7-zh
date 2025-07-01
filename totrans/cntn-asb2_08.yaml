@@ -1,0 +1,955 @@
+- en: Building and Deploying a Multi-Container Project
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 构建和部署多容器项目
+- en: So far, throughout the course of this book, we have explored the many facets
+    of Ansible Container and containerized application deployments. We have looked
+    at building Docker containers from basic Dockerfiles, using Ansible Container
+    to install roles, build containers, and even deploy applications to cloud solutions
+    such as Kubernetes and OpenShift. However, you may have noticed that our discussion
+    so far has been centered around deploying single microservice applications such
+    as Apache2, Memcached, NGINX, and MariaDB. These applications can be deployed
+    standalone, without any dependency on other services or applications aside from
+    a basic Docker daemon. While learning containerization from building single-container
+    microservices is a great way to learn the core concepts of containerization, it
+    isn't an accurate reflection of real-world application infrastructures.
+  id: totrans-1
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 到目前为止，在本书的过程中，我们已经探索了 Ansible 容器和容器化应用程序部署的多个方面。我们已经学习了如何从基本的 Dockerfile 构建
+    Docker 容器，使用 Ansible 容器安装角色、构建容器，甚至将应用程序部署到像 Kubernetes 和 OpenShift 这样的云解决方案中。然而，你可能已经注意到，我们到目前为止的讨论主要集中在部署单一微服务应用程序，例如
+    Apache2、Memcached、NGINX 和 MariaDB。这些应用程序可以独立部署，不依赖于除了基本 Docker 守护进程以外的其他服务或应用程序。虽然通过构建单容器微服务来学习容器化是学习容器化核心概念的好方法，但它并不能准确反映现实世界中的应用程序基础设施。
+- en: As you may already know, applications usually comprise stacks of interconnected
+    software that work together to deliver a service to end users. A typical application
+    stack might involve a web frontend that receives input from a user. The web interface
+    might be responsible for knowing how to contact a database backend to store the
+    data provided to it by the user, as well as retrieve previously stored data. Big
+    data applications might periodically analyze the data within the database in an
+    attempt to figure out trends in data, analyze usage, or perform other functions
+    that give data scientists insight into how users are operating the application.
+    These applications live in a delicate balance that's dependent on network connectivity,
+    DNS resolution, and service discovery in order to talk to each other and perform
+    their overarching functions.
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如你可能已经知道的，应用程序通常由一堆互相连接的软件组成，它们共同工作，为最终用户提供服务。一个典型的应用程序栈可能涉及一个接收用户输入的 Web 前端。Web
+    界面可能需要知道如何联系数据库后端来存储用户提供的数据，并且能够检索之前存储的数据。大数据应用程序可能会定期分析数据库中的数据，试图找出数据趋势、分析使用情况或执行其他功能，帮助数据科学家了解用户如何使用应用程序。这些应用程序依赖于网络连接、DNS
+    解析和服务发现来进行相互通信并执行它们的整体功能。
+- en: The world of containers is not very different at the outset. After all, the
+    containerized software still draws dependencies on other containerized and non-containerized
+    applications to store, retrieve, and process data, and perform distinct functions.
+    As we touched on in [Chapter 5](ccc07e61-25e7-4984-953b-586b28b12aab.xhtml), *Containers
+    at Scale with Kubernetes,* and [Chapter 6](d3c6ddae-003d-4f20-a3a5-efd018ac61ee.xhtml),
+    *Managing Containers with OpenShift*, containers bring a lot more versatility
+    and much reduced management complexity to the problem of deploying and scaling
+    multi-tiered applications.
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 容器的世界在最开始时并没有太大不同。毕竟，容器化的软件仍然依赖于其他容器化和非容器化的应用程序来存储、检索和处理数据，并执行不同的功能。正如我们在[第5章](ccc07e61-25e7-4984-953b-586b28b12aab.xhtml)《*使用
+    Kubernetes 扩展容器*》和[第6章](d3c6ddae-003d-4f20-a3a5-efd018ac61ee.xhtml)《*使用 OpenShift
+    管理容器*》中提到的那样，容器为部署和扩展多层次应用程序问题带来了更多的灵活性，并且显著降低了管理复杂性。
+- en: 'In this chapter we will cover the following topics:'
+  id: totrans-4
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们将涵盖以下主题：
+- en: Defining complex applications using Docker networks
+  id: totrans-5
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用 Docker 网络定义复杂应用程序
+- en: Exploring the Ansible Container django-gulp-nginx project
+  id: totrans-6
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 探索 Ansible 容器 django-gulp-nginx 项目
+- en: Building the django-gulp-nginx project
+  id: totrans-7
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 构建 django-gulp-nginx 项目
+- en: Development and production configurations
+  id: totrans-8
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 开发和生产配置
+- en: Deploying the project to OpenShift
+  id: totrans-9
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 将项目部署到 OpenShift
+- en: Defining complex applications using Docker networking
+  id: totrans-10
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用 Docker 网络定义复杂应用程序
+- en: Containerized environments are dynamic and apt to change state quickly. Unlike
+    traditional infrastructure, containers are continually scaling up and down, perhaps
+    even migrating between hosts. It is critical that containers are able to discover
+    other containers, establish network connectivity, and share resources quickly
+    and efficiently.
+  id: totrans-11
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 容器化环境是动态的，容易快速改变状态。与传统基础设施不同，容器在不断地扩展和缩减，甚至可能在主机之间迁移。容器能够快速高效地发现其他容器、建立网络连接并共享资源至关重要。
+- en: As we touched on in previous chapters, Docker, Kubernetes, and OpenShift have
+    the native functionality to automatically discover and access other containers
+    using various networking protocols and DNS resolution, not unlike bare-metal or
+    virtualized servers. When deploying containers on a single Docker host, Docker
+    will assign each container an IP address in a virtual subnet that can be used
+    to talk to other container IP addresses in the same subnet. Likewise, Docker will
+    also provide simple DNS resolution that can be used to resolve container names
+    internally. When scaled out across multiple hosts using container orchestration
+    systems such as Kubernetes, OpenShift, or Docker Swarm, containers use an overlay
+    network to establish network connectivity between hosts and run as though they
+    exist on the same host. As we saw in [Chapter 5](ccc07e61-25e7-4984-953b-586b28b12aab.xhtml),
+    *Containers at Scale with Kubernetes*, Kubernetes provides a sophisticated internal
+    DNS system to resolve containers based on namespaces within the larger Kubernetes
+    DNS domain. There is a lot to be said about container networking, so for the purposes
+    of this chapter, we will look at Docker networking for service discovery. In this
+    section, we will create a dedicated Docker network subnet and create containers
+    that leverage DNS to establish network connectivity to other running containers.
+  id: totrans-12
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如我们在前几章中提到的，Docker、Kubernetes 和 OpenShift 具有原生功能，可以使用各种网络协议和 DNS 解析自动发现并访问其他容器，这与裸机或虚拟化服务器并无太大不同。当在单个
+    Docker 主机上部署容器时，Docker 会为每个容器分配一个 IP 地址，该地址位于一个虚拟子网中，可以用于与同一子网中的其他容器 IP 地址进行通信。同样，Docker
+    还会提供简单的 DNS 解析，可以用来解析容器名称。当通过容器编排系统如 Kubernetes、OpenShift 或 Docker Swarm 在多个主机上扩展时，容器使用覆盖网络在主机之间建立网络连接，并像在同一主机上一样运行。正如我们在[第
+    5 章](ccc07e61-25e7-4984-953b-586b28b12aab.xhtml)《*使用 Kubernetes 扩展容器*》中看到的，Kubernetes
+    提供了一个复杂的内部 DNS 系统，可以根据更大的 Kubernetes DNS 域中的命名空间解析容器。关于容器网络的内容很多，因此本章将重点讨论 Docker
+    网络以实现服务发现。在本节中，我们将创建一个专用的 Docker 网络子网，并创建利用 DNS 建立与其他运行中容器的网络连接的容器。
+- en: 'To demonstrate basic network connectivity between Docker containers, let''s
+    use the Docker environment in our Vagrant lab host to create a new virtual container
+    network using the bridge networking driver. Bridge networking is one of the most
+    basic types of container networks that is limited to a single Docker host. We
+    can create this using the `docker network create` command. In this example, we
+    will create a network called `SkyNet` using the `172.100.0.0/16` CIDR block, with
+    the `bridge` networking driver:'
+  id: totrans-13
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了演示 Docker 容器之间的基本网络连接性，我们将在 Vagrant 实验室主机的 Docker 环境中使用桥接网络驱动程序创建一个新的虚拟容器网络。桥接网络是最基本的容器网络类型之一，它仅限于单个
+    Docker 主机。我们可以使用 `docker network create` 命令创建此网络。在本例中，我们将使用 `172.100.0.0/16` CIDR
+    块和 `bridge` 网络驱动程序创建一个名为 `SkyNet` 的网络：
+- en: '[PRE0]'
+  id: totrans-14
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: 'We can validate this network has been successfully created using the `docker
+    network ls` command:'
+  id: totrans-15
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以使用 `docker network ls` 命令验证该网络是否已成功创建：
+- en: '[PRE1]'
+  id: totrans-16
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: 'We can see detailed information about this network in JSON format using the
+    `docker network inspect` command:'
+  id: totrans-17
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以使用 `docker network inspect` 命令，以 JSON 格式查看关于此网络的详细信息：
+- en: '[PRE2]'
+  id: totrans-18
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: 'Now that we have established a network on our Docker host, we can create containers
+    to connect to this network to test the functionality. Let''s create two Alpine
+    Linux containers to connect to this network and use them to test DNS resolution
+    and reachability. The Alpine Linux Docker image is an extremely lightweight container
+    image that can be used to quickly spin up containers for testing purposes. In
+    this example, we will create two Alpine Linux containers named `service1` and
+    `service2`, connected to the SkyNet Docker network using `--network` flag:'
+  id: totrans-19
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经在Docker主机上建立了一个网络，我们可以创建容器连接到此网络以测试其功能。让我们创建两个Alpine Linux容器，连接到该网络，并用它们测试DNS解析和可达性。Alpine
+    Linux Docker镜像是一个极其轻量的容器镜像，可用于快速启动容器进行测试。在此示例中，我们将创建两个名为`service1`和`service2`的Alpine
+    Linux容器，并使用`--network`标志将它们连接到SkyNet Docker网络：
+- en: '[PRE3]'
+  id: totrans-20
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: 'In a similar way, we can start the `service2` container, using the `SkyNet`
+    network:'
+  id: totrans-21
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以类似的方式，我们可以启动`service2`容器，使用`SkyNet`网络：
+- en: '[PRE4]'
+  id: totrans-22
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: Although these containers are not running a service, they are running by allocating
+    a pseudo-tty instance to them using the `-t` flag. Allocating a pseudo-tty to
+    the container will keep it from immediately exiting, but will cause the container
+    to exit if the TTY session is terminated. Throughout this book, we have looked
+    at running containers using command and entrypoint arguments, which is the recommended
+    approach. Running containers by allocating a pseudo-tty is great for quickly spinning
+    up containers for testing purposes, but not a recommended way to run traditional
+    application containers.  Application containers should always run based on the
+    status of the **process ID** (**PID**) running within it.
+  id: totrans-23
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 尽管这些容器没有运行服务，但它们通过使用`-t`标志分配一个伪终端（pseudo-tty）实例给它们，从而使容器能够运行。分配伪终端给容器将防止容器立即退出，但如果终端会话终止，容器将退出。在本书中，我们探讨了通过命令和入口点参数来运行容器，这是推荐的方法。通过分配伪终端来运行容器非常适合快速启动容器进行测试，但这并不是运行传统应用容器的推荐方式。应用容器应该始终根据其中运行的**进程ID**（**PID**）的状态来运行。
+- en: 'In the first example, we can see that our local Docker host pulled down the
+    latest Alpine container image and ran it using the parameters we passed into the
+    `docker run` command. Likewise, the second `docker run` command created a second
+    instance of this container image using the same parameters. Using the `docker
+    inspect` command, we can see which IP addresses the Docker daemon assigned our
+    containers:'
+  id: totrans-24
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在第一个示例中，我们可以看到我们的本地Docker主机拉取了最新的Alpine容器镜像，并使用我们传递给`docker run`命令的参数运行它。同样，第二个`docker
+    run`命令使用相同的参数创建了该容器镜像的第二个实例。使用`docker inspect`命令，我们可以查看Docker守护进程为我们的容器分配了哪些IP地址：
+- en: '[PRE5]'
+  id: totrans-25
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: 'And we can do the same for `service2`:'
+  id: totrans-26
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们也可以对`service2`执行相同的操作：
+- en: '[PRE6]'
+  id: totrans-27
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: 'As you can see, Docker assigned the IP address of `172.100.0.2` to our `service1`
+    container, and the IP address of `172.100.0.3` to our `service2` container. These
+    IP addresses provide network connectivity exactly as  you would expect between
+    two hosts attached to the same network segment. If we use `docker exec` to log
+    into the `service1` container, we can check to see whether `service1` can ping
+    `service2` using the IP addresses Docker assigned:'
+  id: totrans-28
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，Docker将IP地址`172.100.0.2`分配给了我们的`service1`容器，将IP地址`172.100.0.3`分配给了我们的`service2`容器。这些IP地址提供了正如你所期望的，在同一网络段上连接的两个主机之间的网络连接。如果我们使用`docker
+    exec`登录到`service1`容器，我们可以检查`service1`是否能够通过Docker分配的IP地址ping通`service2`：
+- en: '[PRE7]'
+  id: totrans-29
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE7]'
+- en: 'Since these containers are running using a pseudo-tty instead of a command
+    or entrypoint, simply typing `exit` in the container shell will kill the TTY session
+    and stop the container. To keep the container running when exiting the shell,
+    use the Docker escape sequence from your keyboard: *Ctrl* + *P* *Ctrl* + *Q*.'
+  id: totrans-30
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于这些容器是通过伪终端而不是命令或入口点运行的，只需在容器的Shell中键入`exit`即可终止TTY会话并停止容器。要在退出Shell时保持容器运行，请使用键盘上的Docker逃逸序列：*Ctrl*
+    + *P* *Ctrl* + *Q*。
+- en: 'We can as well do this test likewise from the  `service2` container:'
+  id: totrans-31
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们也可以从`service2`容器执行此测试：
+- en: '[PRE8]'
+  id: totrans-32
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE8]'
+- en: 'It is easy to see that IP-based networking works well to establish network
+    connectivity between running containers. The downside of this approach is that
+    we cannot always know ahead of time what IP addresses the container runtime environment
+    will assign our containers. For example, a container may require an entry in a
+    configuration file to point to a service it depends on. Although you might be
+    tempted to plug an IP address into your container role and build it, this container
+    role would have to be rebuilt for each and every environment it is deployed into.
+    Furthermore, when containers get stopped and restarted, they could take on different
+    IP addresses, which will cause the application to break down. Luckily, as a solution
+    to this issue, Docker provides a DNS resolution based on the container name, which
+    will actively keep track of running containers and resolve the correct IP address
+    in the event that a container should change IP addresses. Container names, unlike
+    IP addresses, can be known in advance and be used to point containers to the correct
+    services inside of configuration files, or stored in memory as environment variables.
+    We can see this in action by logging back into the `service1` container and using
+    the `ping` command to ping the name `service2`:'
+  id: totrans-33
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 很容易看出，基于IP的网络通信在建立运行中的容器之间的网络连接时效果良好。该方法的缺点是，我们不能总是提前知道容器运行环境会分配给容器的IP地址。例如，某个容器可能需要在配置文件中添加一个条目，以指向它所依赖的服务。虽然你可能会想直接将一个IP地址插入容器角色并进行构建，但每次在不同的环境中部署时，这个容器角色都必须重新构建。此外，当容器停止并重新启动时，它们可能会获得不同的IP地址，这将导致应用程序崩溃。幸运的是，作为解决这一问题的方案，Docker提供了基于容器名称的DNS解析，这将主动跟踪运行中的容器，并在容器的IP地址发生变化时解析出正确的IP地址。与IP地址不同，容器名称可以提前知道，并且可以用于在配置文件中指向正确的服务，或作为环境变量存储在内存中。我们可以通过重新登录`service1`容器，并使用`ping`命令ping
+    `service2`的名称来看到这一点的实际应用：
+- en: '[PRE9]'
+  id: totrans-34
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE9]'
+- en: 'Furthermore, we can create a third service container and check to see if the
+    new container has the ability to resolve the names of `service1` and `service2`
+    respectively:'
+  id: totrans-35
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 此外，我们可以创建一个第三个服务容器，并检查新容器是否能够分别解析`service1`和`service2`的名称：
+- en: '[PRE10]'
+  id: totrans-36
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE10]'
+- en: 'Finally, if we log into the `service2` container, we can use the `nslookup`
+    command to resolve the IP address of the newly created `service3` container:'
+  id: totrans-37
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后，如果我们登录到`service2`容器，我们可以使用`nslookup`命令解析新创建的`service3`容器的IP地址：
+- en: '[PRE11]'
+  id: totrans-38
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE11]'
+- en: Docker creates DNS resolution using the name of the Docker network as a domain.
+    As such, the `nslookup` results are showing the fully qualified domain name of
+    `service3` as `service3.SkyNet`. However, as I'm sure you could imagine, having
+    DNS resolution for containers is an incredibly powerful tool for building reliable
+    and robust containerized infrastructures. Just by knowing the name of the container,
+    you can establish links and dependencies between containers that will scale with
+    your infrastructure. This concept extends far beyond learning the individual IP
+    addresses of containers. For example, as we saw in [Chapter 5](ccc07e61-25e7-4984-953b-586b28b12aab.xhtml),
+    *Containers at Scale with Kubernetes*, and [Chapter 6](d3c6ddae-003d-4f20-a3a5-efd018ac61ee.xhtml), *Managing
+    Your Applications with OpenShift*, Kubernetes and OpenShift allow for the creation
+    of services that logically connect to backend pods using labels or other identifiers.
+    When other pods pass traffic to the service DNS entry, Kubernetes will load-balance
+    traffic to the running pods that match the label rules configured in the service
+    entry. The only thing the containers that rely on that service need to know is
+    how to resolve the service FQDN, and the container orchestrator takes care of
+    the rest. The backend pods could scale up or down, but as long as the container
+    orchestrator's DNS service is able to resolve the service entry, the other containers
+    calling the service will not notice a difference.
+  id: totrans-39
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Docker 通过将 Docker 网络的名称作为域名来创建 DNS 解析。因此，`nslookup` 结果显示了 `service3` 的完全限定域名
+    `service3.SkyNet`。然而，正如你所想象的那样，为容器提供 DNS 解析是构建可靠且强大的容器化基础设施的一个非常强大的工具。仅仅通过知道容器的名称，你就可以在容器之间建立链接和依赖关系，这些关系会随着基础设施的扩展而扩展。这个概念远远超出了学习容器的单独
+    IP 地址。例如，正如我们在[第 5 章](ccc07e61-25e7-4984-953b-586b28b12aab.xhtml)《*Kubernetes
+    下的容器规模化*》和[第 6 章](d3c6ddae-003d-4f20-a3a5-efd018ac61ee.xhtml)《*使用 OpenShift 管理应用程序*》中所见，Kubernetes
+    和 OpenShift 允许创建与后端 Pod 使用标签或其他标识符进行逻辑连接的服务。当其他 Pod 向服务 DNS 条目传递流量时，Kubernetes
+    会根据服务条目中配置的标签规则负载均衡流量到与之匹配的正在运行的 Pod。依赖该服务的容器只需要知道如何解析服务的 FQDN，容器编排器会处理其余的部分。后端
+    Pod 可以扩展或缩减，但只要容器编排器的 DNS 服务能够解析服务条目，调用该服务的其他容器就不会察觉到任何变化。
+- en: Exploring the Ansible Container django-gulp-nginx project
+  id: totrans-40
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 探索 Ansible Container django-gulp-nginx 项目
+- en: Now that we have a basic understanding of container networking concepts and
+    Docker DNS resolution, we can build projects that have multi-container dependencies.
+    Ansible Container has a concept of creating fully reusable full stack containerized
+    applications, aptly named Container Apps. Container Apps are able to be downloaded
+    and deployed quickly from Ansible Galaxy very similar to container-enabled roles.
+    Container Apps have the benefit of allowing users to get started developing quickly
+    against fully functional multi-tier applications that run as separate microservice
+    containers. In this example, we will use a community-developed web application
+    project that spins up a Python-based Django, Gulp, and NGINX environment we can
+    deploy locally and to a container orchestration environment such as OpenShift
+    or Kubernetes.
+  id: totrans-41
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经对容器网络概念和 Docker DNS 解析有了基本的理解，接下来我们可以构建具有多容器依赖的项目。Ansible Container 提出了创建完全可重用的全栈容器化应用程序的概念，恰当地称为容器应用（Container
+    Apps）。容器应用可以像容器启用角色一样，从 Ansible Galaxy 快速下载并部署。容器应用的好处在于，用户可以迅速开始开发，开发的对象是完全功能的多层应用，这些应用作为独立的微服务容器运行。在本例中，我们将使用一个社区开发的
+    web 应用项目，该项目启动一个基于 Python 的 Django、Gulp 和 NGINX 环境，我们可以将其部署到本地以及像 OpenShift 或
+    Kubernetes 这样的容器编排环境。
+- en: 'You can explore a wide range of container apps using Ansible Galaxy by simply
+    going to the Ansible Galaxy website at [https://galaxy.ansible.com](https://galaxy.ansible.com/),
+    selecting BROWSE ROLES, clicking on Role Type from the Keyword drop-down box,
+    and selecting Container App from the search dialog:'
+  id: totrans-42
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以通过访问 Ansible Galaxy 网站 [https://galaxy.ansible.com](https://galaxy.ansible.com/)，选择“浏览角色”（BROWSE
+    ROLES），点击关键字下拉框中的“角色类型”（Role Type），并从搜索对话框中选择“容器应用”（Container App），来探索各种容器应用：
+- en: '![](img/6c64ca50-00dd-44b7-81ad-52584fdf6e2d.png)'
+  id: totrans-43
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/6c64ca50-00dd-44b7-81ad-52584fdf6e2d.png)'
+- en: 'Figure 1: Searching for Container Apps in Ansible Galaxy'
+  id: totrans-44
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 1：在 Ansible Galaxy 中搜索容器应用
+- en: In this example, we are going to leverage the pre-built Ansible `django-gulp-nginx`
+    Container App, which is an official Ansible Container project. This container
+    app creates a containerized Django framework web application that leverages NGINX
+    as a web server, Django and Gulp as a framework, and PostgreSQL as a database
+    server. In this project is an entirely self-contained demo environment we can
+    use to explore how Ansible Container works with other services and dependencies.
+  id: totrans-45
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这个例子中，我们将利用预构建的 Ansible `django-gulp-nginx` 容器应用程序，这是一个官方的 Ansible 容器项目。这个容器应用程序创建了一个容器化的
+    Django 框架 Web 应用，使用 NGINX 作为 Web 服务器，Django 和 Gulp 作为框架，PostgreSQL 作为数据库服务器。这个项目是一个完全自包含的演示环境，我们可以利用它来探索
+    Ansible 容器如何与其他服务和依赖项一起工作。
+- en: 'In order to get started with using this project, we need to first install it
+    in a clean directory on our Vagrant Lab VM. First, create a new directory (I will
+    call mine `demo`), and run the `ansible-container init` command followed by the
+    name of the Container App we want to install, `ansible.django-gulp-nginx`. You
+    can find the full name for this project on Ansible Galaxy, using the preceding
+    steps to search for Container Apps. Following code demonstrates creating a new
+    directory and initializing the Django-Gulp-NGINX project:'
+  id: totrans-46
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了开始使用这个项目，我们需要先在 Vagrant 实验室虚拟机上的一个干净目录中安装它。首先，创建一个新目录（我将它命名为 `demo`），然后运行
+    `ansible-container init` 命令，后跟我们想要安装的容器应用程序名称 `ansible.django-gulp-nginx`。你可以在
+    Ansible Galaxy 上找到该项目的完整名称，使用之前的步骤来搜索容器应用程序。以下代码演示了如何创建新目录并初始化 Django-Gulp-NGINX
+    项目：
+- en: '[PRE12]'
+  id: totrans-47
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE12]'
+- en: 'Upon successfully initializing the project, you should see the Ansible Container
+    initialized from Galaxy Container App `ansible.django-gulp-nginx` message appear.
+    This indicates that the container app was successfully installed from Ansible
+    Galaxy. Executing the `ls` command in the `demo/ directory` should display project
+    files similar to the following:'
+  id: totrans-48
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在成功初始化项目后，你应该会看到来自 Galaxy 容器应用程序 `ansible.django-gulp-nginx` 的 Ansible 容器初始化信息。这表明容器应用程序已成功从
+    Ansible Galaxy 安装。执行 `ls` 命令查看 `demo/` 目录时，应该会显示类似如下的项目文件：
+- en: '[PRE13]'
+  id: totrans-49
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE13]'
+- en: 'A lot of the files listed are configuration files that support the Gulp/Django
+    framework for the application we are going to create. The primary file we are
+    concerned with for the purposes of this demonstration is the core file in all
+    Ansible Container projects: `container.yml`. If you open the `container.yml` file
+    in a text editor, it should resemble the following:'
+  id: totrans-50
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 列出的许多文件是配置文件，支持我们将要创建的 Gulp/Django 框架应用程序。我们在此次演示中关心的主要文件是所有 Ansible 容器项目中的核心文件：`container.yml`。如果你用文本编辑器打开
+    `container.yml` 文件，它应该类似如下内容：
+- en: '[PRE14]'
+  id: totrans-51
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE14]'
+- en: The output shown here is a reflection of the contents of `container.yml` at
+    the time of writing. Yours may look slightly different if updates have been made
+    to this project since the time of writing.
+  id: totrans-52
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这里显示的输出反映了在写作时 `container.yml` 文件的内容。如果自写作以来该项目有更新，可能会与这里显示的内容略有不同。
+- en: 'As you can see, this `container.yml` file contains many of the same specifications
+    we have covered already in previous chapters of the book. Out of the box, this
+    project contains the service declarations to build the Gulp, Django, NGINX, and
+    Postgres containers, complete with the role paths and various role variables defined
+    to ensure the project is able to run in a completely self-contained format. Also
+    built into this project is support for deploying this project to OpenShift. One
+    of the benefits of this project is that it exposes virtually every possible configuration
+    option available in an Ansible Container project, as well as the proper syntax
+    to activate these features. Personally, I like to use this project as a reference
+    guide in case I forget the proper syntax to use in my project''s `container.yml`
+    files. Following is a list of sections from the `container.yml` that are useful
+    for the user to have an understanding of, starting from the top and moving towards
+    the bottom:'
+  id: totrans-53
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，这个 `container.yml` 文件包含了我们在本书前几章已经讨论过的许多相同规格。开箱即用，这个项目包含了构建 Gulp、Django、NGINX
+    和 Postgres 容器的服务声明，完整的角色路径和各种角色变量被定义以确保项目能够以完全自包含的方式运行。此项目还内建了对将项目部署到 OpenShift
+    的支持。这个项目的一个优点是，它几乎暴露了 Ansible 容器项目中可用的所有配置选项，以及激活这些功能所需的正确语法。就我个人而言，我喜欢将这个项目作为参考指南，以防我忘记在我的项目
+    `container.yml` 文件中使用的正确语法。以下是 `container.yml` 文件中一些对用户理解有帮助的部分，从顶部开始，逐渐往下查看：
+- en: '`conductor`: As we have seen throughout this book, this section defines the
+    conductor container and the base container image to build the conductor from.
+    In this case, the conductor image will be a Centos 7 container that leverages
+    a volume mount from the `temp-space` directory in the `root` of the project to
+    the `/tmp` directory inside of the container. It is important to note here that
+    the conductor image can leverage volume mounts in order to store data during the
+    build process.'
+  id: totrans-54
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`conductor`：正如我们在本书中所看到的，这一部分定义了指挥容器及其基础容器镜像的构建方式。在这种情况下，指挥容器镜像将是一个CentOS 7容器，它利用`root`目录下`temp-space`目录的卷挂载，将数据挂载到容器内的`/tmp`目录。值得注意的是，指挥容器镜像可以利用卷挂载来在构建过程中存储数据。'
+- en: '`defaults`: This section is known as the top-level defaults section and is
+    used to instantiate variables that can be used throughout the project. Here, you
+    can define variables that can be used in the service section of the project as
+    role variable overrides, or simply in place of hardcoding the same values over
+    and over again in the `container.yml` file. It is important to note that in the
+    order that, Ansible Container evaluates variable precedence, the top-level defaults
+    section has the lowest precedence.'
+  id: totrans-55
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`defaults`：这一部分被称为顶级默认值部分，用于实例化可以在整个项目中使用的变量。在这里，您可以定义变量，这些变量可以用作项目中服务部分的角色变量重写，或者简单地代替在`container.yml`文件中反复硬编码的相同值。值得注意的是，在Ansible
+    Container评估变量优先级的顺序中，顶级默认值部分的优先级最低。'
+- en: '`services`: In the `services` section, we see entries for the core service
+    that will run in this stack (`django`, `gulp`, `nginx`, and `postgresql`). This
+    section, for the most part, should be reviewed based on what we have covered in
+    previous chapters up until this point. However, you will notice that, in the container
+    definition for the `django` container, there is a `link` line that specifies the
+    `postgresql` container name. You will notice this as well in the other container
+    definitions that list the name of the `django` container. In previous versions
+    of Docker, links were a way of establishing networking connectivity and container
+    name resolution for individual containers. However, recent versions of Docker
+    have deprecated the `link` syntax in favor of the native container name resolution
+    built into the Docker networking stack. It is important to note that many projects
+    still use links as a way to establish network dependencies and container name
+    resolution, but will most likely be removed in future versions of Docker. Container
+    orchestration tools such as Kubernetes and OpenShift also ignore the `link` syntax
+    since they only use native DNS services to resolve other containers and services.
+    Another aspect I would like to draw the readers attention to in the `services`
+    section is the `nginx`, `gulp`, and `django` containers have a new sub-section
+    titled `dev-overrides`. This section is for specifying container configuration
+    that will only be present when building testing containers locally. Usually, developers
+    use `dev-overrides` to run containers with verbose debugging output turned on,
+    or other similar logging mechanisms are used to troubleshoot potential issues.
+    The `dev-override` configuration will be ignored when using the `--production`
+    flag when executing `ansible-container run`.'
+  id: totrans-56
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`services`：在`services`部分，我们可以看到在此堆栈中运行的核心服务条目（`django`、`gulp`、`nginx`和`postgresql`）。大部分情况下，该部分应该根据我们之前章节所讲解的内容进行审核。然而，您会注意到，在`django`容器的定义中，有一行`link`，它指定了`postgresql`容器的名称。您在其他容器定义中也会注意到这一点，这些定义列出了`django`容器的名称。在Docker的早期版本中，`link`是用来为单独的容器建立网络连接和容器名称解析的方式。然而，Docker的最新版本已废弃了`link`语法，转而使用内建的容器名称解析功能，结合Docker的网络堆栈。值得注意的是，尽管许多项目仍然使用`link`来建立网络依赖关系和容器名称解析，但它们很可能在未来的Docker版本中被移除。像Kubernetes和OpenShift这样的容器编排工具也会忽略`link`语法，因为它们仅使用本地DNS服务来解析其他容器和服务。在`services`部分，我还想特别提一下，`nginx`、`gulp`和`django`容器有一个新子部分，名为`dev-overrides`。该部分用于指定仅在本地构建测试容器时才会存在的容器配置。通常，开发人员使用`dev-overrides`来运行容器，开启详细的调试输出，或使用其他类似的日志机制来排查潜在的问题。当使用`--production`标志执行`ansible-container
+    run`时，`dev-override`配置将被忽略。'
+- en: '`volumes`: The top-level volumes section is used to specify **persistent volume
+    claims** (**PVCs**) that continue to exist even if the container is stopped or
+    destroyed. This section normally maps volumes that have already been created in
+    the container-specific services section of the `container.yml` file to provide
+    a more verbose configuration for how the container orchestrator should handle
+    the persistent volume claim. In this case, the `postgres-data` volume that has
+    been mapped in the PostgreSQL container is given the OpenShift specific configuration
+    of `ReadWriteMany` access mode, as well as 3 GB of storage. PVCs are usually required
+    for applications dependent on storing and retrieving data, such as databases or
+    storage APIs. The overall goal of PVCs is that we do not want to lose data if
+    need to redeploy, upgrade, or migrate the container to another host.'
+  id: totrans-57
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`volumes`：顶级 volumes 部分用于指定 **持久卷声明**（**PVCs**），即使容器被停止或销毁，这些声明仍然存在。此部分通常会将已在
+    `container.yml` 文件中容器特定服务部分创建的卷映射到该部分，提供更详细的配置，以说明容器编排器应该如何处理持久卷声明。在此情况下，已在 PostgreSQL
+    容器中映射的 `postgres-data` 卷被赋予了 OpenShift 特定的 `ReadWriteMany` 访问模式，并且分配了 3 GB 的存储空间。PVC
+    通常用于依赖存储和检索数据的应用程序，例如数据库或存储 API。PVC 的整体目标是，如果需要重新部署、升级或将容器迁移到另一个主机时，我们不希望丢失数据。'
+- en: Building the django-gulp-nginx project
+  id: totrans-58
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 构建 django-gulp-nginx 项目
+- en: 'Now that we have a firm understanding of some of the more advanced Ansible
+    Container syntax that is commonly found in Container Apps, we can apply the knowledge
+    we have learned so far of the Ansible Container workflow to build and run the
+    container App. Since container apps are full Ansible Container projects complete
+    with roles, a `container.yml` file, and other supporting project data, the same
+    Ansible Container workflow commands we used previously can be used here with no
+    modifications. When you are ready, execute the `ansible-container build` command
+    in the `root` directory of the project:'
+  id: totrans-59
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经对一些在容器应用程序中常见的更高级的 Ansible Container 语法有了深入了解，我们可以将目前学到的 Ansible Container
+    工作流知识应用于构建和运行容器应用程序。由于容器应用程序是完整的 Ansible Container 项目，包含角色、`container.yml` 文件和其他支持的项目数据，因此我们之前使用的相同的
+    Ansible Container 工作流命令也可以在这里无修改地使用。当你准备好时，请在项目的 `root` 目录下执行 `ansible-container
+    build` 命令：
+- en: '[PRE15]'
+  id: totrans-60
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE15]'
+- en: 'Since the Container App is building four service containers, it may take a
+    little longer than usual for the build process to complete. If you are following
+    along, you will see Ansible Container go through each playbook role individually
+    as it creates the containers and works to bring them into the desired state described
+    in the playbooks. When the build has completed successfully, we can execute `ansible-container
+    run` command to start the containers and bring our new web service online:'
+  id: totrans-61
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于容器应用程序正在构建四个服务容器，因此构建过程可能比平常稍长一些。如果你在跟随操作，你会看到 Ansible Container 逐个处理每个 playbook
+    角色，创建容器并努力使其达到 playbooks 中描述的目标状态。当构建成功完成后，我们可以执行 `ansible-container run` 命令来启动容器并使我们的新网页服务上线：
+- en: '[PRE16]'
+  id: totrans-62
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE16]'
+- en: 'When the run playbooks have finished executing, the service containers should
+    be running on the Vagrant VM in developer mode, since the `container.yml` file
+    specifies `dev-overrides` for many of the services. It is important to note that
+    `ansible-container run` will, by default, run the service containers according
+    to any `dev-override` configuration listed in the `container.yml` file. For example,
+    one developer override configured is to not run the NGINX container when running
+    in developer mode. This is accomplished by setting a developer override option
+    for the NGINX container so that it will run `/bin/false` as the initial container
+    command, immediately killing it. Executing the `docker ps -a` command will show
+    that the `postgresql`, `django`, and `gulp` containers are running, with NGINX
+    in a stopped state. Using the developer overrides, NGINX is stopped and `gulp`
+    is responsible for serving up the HTML page:'
+  id: totrans-63
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当运行的 playbooks 执行完毕后，服务容器应当在开发者模式下运行在 Vagrant 虚拟机上，因为 `container.yml` 文件为许多服务指定了
+    `dev-overrides`。需要注意的是，`ansible-container run` 默认会根据 `container.yml` 文件中列出的任何
+    `dev-override` 配置来运行服务容器。例如，其中一个开发者重载配置是当处于开发者模式时不运行 NGINX 容器。这是通过为 NGINX 容器设置开发者重载选项实现的，使其执行
+    `/bin/false` 作为初始容器命令，立即将其终止。执行 `docker ps -a` 命令会显示 `postgresql`、`django` 和 `gulp`
+    容器正在运行，而 NGINX 容器处于停止状态。通过开发者重载，NGINX 被停止，而 `gulp` 负责提供 HTML 页面：
+- en: '[PRE17]'
+  id: totrans-64
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE17]'
+- en: 'Once the containers have started, the `django-gulp-nginx` Container App will
+    be listening on the Vagrant lab VM''s localhost address at port `8080`. We can
+    use the `curl` command to test the application and ensure we are able to get the
+    default Hello World simple HTML page response the service is designed to provide:'
+  id: totrans-65
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦容器启动，`django-gulp-nginx` 容器应用程序将会在 Vagrant 实验室虚拟机的本地地址 `8080` 端口监听。我们可以使用
+    `curl` 命令来测试应用程序，确保我们能够得到该服务设计提供的默认 Hello World 简单 HTML 页面响应：
+- en: '[PRE18]'
+  id: totrans-66
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE18]'
+- en: Development versus production configurations
+  id: totrans-67
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 开发与生产配置
+- en: By default, executing the `ansible-container run` command on a project that
+    specifies developer-overrides for a given service will run the service with the
+    developer overrides active. Often, the developer overrides expose verbose logging
+    or debugging options in an application that a developer would not want a general
+    end user to be exposed to, not to mention that it can be quite resource-intensive
+    to run applications with verbose logging stack tracing running constantly. The
+    `ansible-container run` command has the ability to be run with the `--production`
+    flag to specify when to run services in a mode that mimics a production-style
+    deployment. Using the `--production` flag ignores the `dev_overrides` sections
+    in the `container.yml` file and runs the services as explicitly defined in the
+    `container.yml` file. Now that we have verified that our web service is able to
+    run and function in developer mode, we can try running our service in production
+    mode to mimic a full production deployment on our local workstation.
+  id: totrans-68
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 默认情况下，在为某个服务指定了开发者覆盖配置的项目上执行 `ansible-container run` 命令时，服务会在开发者覆盖配置激活的状态下运行。通常，开发者覆盖配置会暴露应用程序的详细日志或调试选项，而这些选项一般不应让普通终端用户看到，更不用说在日志堆栈追踪始终运行的情况下，运行应用程序会消耗大量资源了。`ansible-container
+    run` 命令可以使用 `--production` 标志来指定何时以模拟生产部署的模式运行服务。使用 `--production` 标志会忽略 `container.yml`
+    文件中的 `dev_overrides` 部分，按文件中明确指定的方式运行服务。现在我们已经验证了网页服务能够在开发模式下运行并正常工作，我们可以尝试在生产模式下运行该服务，以模拟在本地工作站上的完整生产部署。
+- en: 'First, we will need to run `ansible-container stop` in order to stop all running
+    container instances in developer mode:'
+  id: totrans-69
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 首先，我们需要运行 `ansible-container stop` 以停止所有以开发模式运行的容器实例：
+- en: '[PRE19]'
+  id: totrans-70
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE19]'
+- en: 'Next, let''s re-run the `ansible-container run` command, this time providing
+    the `--production` flag to indicate that we wish to ignore the developer overrides
+    and run this service in production mode:'
+  id: totrans-71
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来，让我们重新运行 `ansible-container run` 命令，这次添加 `--production` 标志，表示我们希望忽略开发者的覆盖配置，并以生产模式运行该服务：
+- en: '[PRE20]'
+  id: totrans-72
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE20]'
+- en: 'If we now look at the services running, you will notice that the NGINX server
+    container is now running and acting as the frontend service for the web traffic
+    on port `8080` instead of the Gulp container. Meanwhile, the Gulp container has
+    been started with the default command `/bin/false`, which instantly kills the
+    container. In this example, we have introduced a production configuration that
+    terminates a development HTTP web server, in favor of a production-ready NGINX
+    web server:'
+  id: totrans-73
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果现在查看正在运行的服务，你会注意到 NGINX 服务器容器现在正在运行，并作为网页流量的前端服务在 `8080` 端口上运行，而不再是 Gulp 容器。同时，Gulp
+    容器已经使用默认命令 `/bin/false` 启动，该命令会立即终止容器。在这个例子中，我们引入了一种生产配置，终止了开发环境中的 HTTP 网页服务器，转而使用一个适合生产的
+    NGINX 网页服务器：
+- en: '[PRE21]'
+  id: totrans-74
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE21]'
+- en: 'We can finally test the web service once more to ensure that the service is
+    reachable and running on the Vagrant Lab VM on localhost port `8080`:'
+  id: totrans-75
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以再次测试网页服务，确保该服务可访问并在本地 Vagrant Lab 虚拟机的 `8080` 端口上运行：
+- en: '[PRE22]'
+  id: totrans-76
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE22]'
+- en: Deploying the project to OpenShift
+  id: totrans-77
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 将项目部署到 OpenShift
+- en: So far, we have looked at how to run the demo web application locally using
+    the production and development configurations provided by the `dev_override` syntax.
+    Now that we have an understanding of how the web application functions and leverages
+    other services, we can look at how to deploy this application in a production-grade
+    container orchestration environment such as OpenShift or Kubernetes. In this section
+    of the book, we will deploy this project using the production configuration into
+    the local Minishift cluster we created in [Chapter 6](d3c6ddae-003d-4f20-a3a5-efd018ac61ee.xhtml),
+    *Managing* *Applications with OpenShift*. Prior to starting this example, make
+    sure you have a valid OpenShift credentials file that works with your local cluster,
+    in the `/home/ubuntu/.kube/config` directory. If new OpenShift credentials need
+    to be created, be sure to turn back to [Chapter 7](ef89f30f-00a9-4f4c-93b9-009474fc3022.xhtml),
+    *Deploying Your First Project*, for more details.
+  id: totrans-78
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 到目前为止，我们已经学习了如何使用`dev_override`语法提供的生产和开发配置在本地运行演示Web应用程序。现在，我们已经了解了Web应用程序的功能以及如何利用其他服务，我们可以开始了解如何在生产级容器编排环境中部署该应用程序，例如OpenShift或Kubernetes。在本书的这一部分，我们将使用生产配置将该项目部署到我们在[第六章](d3c6ddae-003d-4f20-a3a5-efd018ac61ee.xhtml)中创建的本地Minishift集群中，*使用OpenShift管理应用程序*。在开始此示例之前，请确保你有一个有效的OpenShift凭证文件，并且它可以与本地集群一起使用，文件位置在`/home/ubuntu/.kube/config`目录。如果需要创建新的OpenShift凭证，请务必返回[第七章](ef89f30f-00a9-4f4c-93b9-009474fc3022.xhtml)，*部署你的第一个项目*，以获取更多详细信息。
+- en: In order to ensure our application can be deployed to OpenShift, we need to
+    modify the container app's `container.yml` file so it points to our Kubernetes
+    configuration file as well as to the Docker Hub registry for pushing our container
+    images.
+  id: totrans-79
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了确保我们的应用程序可以部署到OpenShift，我们需要修改容器应用程序的`container.yml`文件，使其指向我们的Kubernetes配置文件，并指向Docker
+    Hub注册表以便推送我们的容器镜像。
+- en: OpenShift comes with an integrated container registry you can use to push container
+    images to during the `ansible-container deploy` process. However, it requires
+    some additional configuration that is beyond the scope of this book. For now,
+    it will be sufficient to use the Docker Hub registry as we have throughout this
+    book so far.
+  id: totrans-80
+  prefs: []
+  type: TYPE_NORMAL
+  zh: OpenShift自带一个集成的容器注册表，您可以在`ansible-container deploy`过程中用它来推送容器镜像。但是，它需要一些额外的配置，超出了本书的范围。现在，使用我们到目前为止在本书中使用的Docker
+    Hub注册表就足够了。
+- en: 'In the `settings` section of the `container.yml` file, we will add a `k8s_auth`
+    stanza to point to the Kubernetes configuration file the OC generated:'
+  id: totrans-81
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在`container.yml`文件的`settings`部分，我们将添加一个`k8s_auth`段落，指向OC生成的Kubernetes配置文件：
+- en: '[PRE23]'
+  id: totrans-82
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE23]'
+- en: 'Next, in the `registries` section, we will add an entry for the Docker Hub
+    container registry, using our user credentials:'
+  id: totrans-83
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来，在`registries`部分，我们将为Docker Hub容器注册表添加一项条目，使用我们的用户凭证：
+- en: '[PRE24]'
+  id: totrans-84
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE24]'
+- en: 'Now that we have OpenShift and Docker Hub configured in our project, we can
+    use the `ansible-container deploy` command with the `--engine openshift` flag
+    to generate the OpenShift deployment and push the image artifacts to Docker Hub.
+    In order to differentiate the images, we can push them to Docker Hub using the
+    `containerapp` tag. Since we are pushing multiple images to Docker Hub, depending
+    on your internet connection speed, it may take a few minutes for this process
+    to complete:'
+  id: totrans-85
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，我们已经在项目中配置了OpenShift和Docker Hub，我们可以使用`ansible-container deploy`命令并加上`--engine
+    openshift`标志，来生成OpenShift部署并将镜像文件推送到Docker Hub。为了区分这些镜像，我们可以使用`containerapp`标签将它们推送到Docker
+    Hub。由于我们需要推送多个镜像到Docker Hub，具体时间取决于你的网络连接速度，这个过程可能需要几分钟才能完成：
+- en: '[PRE25]'
+  id: totrans-86
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE25]'
+- en: 'Once the deploy process has completed successfully, we can use the `ansible-container
+    run` command with the `--engine openshift` flag to launch our application and
+    run it in our simulated OpenShift production environment. Don''t forget to specify
+    the `--production` flag so that our service gets deployed using the production
+    configuration and not the developer overrides:'
+  id: totrans-87
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦部署过程成功完成，我们可以使用`ansible-container run`命令并加上`--engine openshift`标志，来启动我们的应用程序并在模拟的OpenShift生产环境中运行它。别忘了指定`--production`标志，这样我们的服务将使用生产配置而不是开发者覆盖配置进行部署：
+- en: '[PRE26]'
+  id: totrans-88
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE26]'
+- en: 'Once the process has completed successfully, we can log into the OpenShift
+    web console to validate the service is running as expected. Unless it''s otherwise
+    changed, the Container App was deployed into a new project called `demo`, but
+    will be displayed with the name `Ansible Container Demo` in the web interface,
+    as per our `container.yml` configuration:'
+  id: totrans-89
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦该过程成功完成，我们可以登录到 OpenShift Web 控制台，验证服务是否按预期运行。除非有其他更改，否则容器应用程序已部署到名为 `demo`
+    的新项目中，但在 Web 界面中将显示为 `Ansible Container Demo`，这与我们的 `container.yml` 配置一致：
+- en: '![](img/7264f1dd-2d91-435a-8e7b-e1336f13e59b.png)'
+  id: totrans-90
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/7264f1dd-2d91-435a-8e7b-e1336f13e59b.png)'
+- en: 'Figure 2: The Ansible Container Demo project deployed to OpenShift'
+  id: totrans-91
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 2：部署到 OpenShift 的 Ansible Container Demo 项目
+- en: 'Clicking on the Ansible Container Demo project display name will show you the
+    standard OpenShift dashboard demonstrating the running pods according to the production
+    configuration. You should see the `django`, `ngnix`, and `postgresql` pods running,
+    along with a link to the route created to access the web application in the upper-right
+    corner of the console display:'
+  id: totrans-92
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 点击 Ansible Container Demo 项目的显示名称，将显示标准的 OpenShift 仪表盘，演示根据生产配置运行的 Pods。你应该能看到运行中的
+    `django`、`ngnix` 和 `postgresql` Pods，并且可以在控制台显示的右上角看到访问 Web 应用程序的路由链接：
+- en: '![](img/0c909b54-6e3c-4230-aa07-ec720ef32d8f.png)'
+  id: totrans-93
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/0c909b54-6e3c-4230-aa07-ec720ef32d8f.png)'
+- en: 'Figure 3: Running pods in the demo project'
+  id: totrans-94
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 3：演示项目中的运行中的 Pod
+- en: 'We can test to ensure our application is running by clicking on the `nip.io`
+    route created in OpenShift and ensuring the NGINX web server container is reachable.
+    Clicking on the link should show the simple `Hello you!` Django application in
+    its full glory:'
+  id: totrans-95
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以通过点击在 OpenShift 中创建的 `nip.io` 路由来测试应用程序是否正在运行，并确保 NGINX Web 服务器容器是可以访问的。点击该链接应该会显示完整的简单
+    `Hello you!` Django 应用程序：
+- en: '![](img/5c2bedf4-ada0-487c-80ae-5c36d766c946.png)'
+  id: totrans-96
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/5c2bedf4-ada0-487c-80ae-5c36d766c946.png)'
+- en: 'Figure 4: The Hello World page as viewed running in OpenShift'
+  id: totrans-97
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 4：在 OpenShift 中运行的 Hello World 页面
+- en: That looks a lot nicer then the `curl` testing we were running in the local
+    Vagrant lab, don't you think? Congratulations, you have successfully deployed
+    a multi-container application into a simulated production environment!
+  id: totrans-98
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这看起来比我们在本地 Vagrant 实验室中进行的 `curl` 测试要好看多了，不是吗？恭喜你，你已经成功将一个多容器应用程序部署到模拟的生产环境中！
+- en: 'From the OpenShift console, we can validate that the various aspects of our
+    deployment are present and functioning as intended. For example, you can click
+    on the `Storage` link in the left-hand navigation bar to validate that the PVC
+    Postgres data was created and is functional in OpenShift. Clicking on postgres-data
+    will show the details of the PVC object, including the allocated storage (3 GiB),
+    and the access modes configured in the `container.yml` file, `Read-Write-Many`:'
+  id: totrans-99
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 从 OpenShift 控制台中，我们可以验证部署的各个方面是否已存在并按预期功能运行。例如，你可以点击左侧导航栏中的 `Storage` 链接，验证在
+    OpenShift 中是否已创建并功能正常的 PVC Postgres 数据。点击 postgres-data 会显示 PVC 对象的详细信息，包括分配的存储（3
+    GiB）以及在 `container.yml` 文件中配置的访问模式，`Read-Write-Many`：
+- en: '![](img/88cc7495-f897-4295-8133-daa930c8d392.png)'
+  id: totrans-100
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/88cc7495-f897-4295-8133-daa930c8d392.png)'
+- en: 'Figure 5: PostgreSQL PVC'
+  id: totrans-101
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 5：PostgreSQL PVC
+- en: References
+  id: totrans-102
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 参考文献
+- en: '**Ansible django-gulp-nginx project**: [https://github.com/ansible/django-gulp-nginx/](https://github.com/ansible/django-gulp-nginx/)'
+  id: totrans-103
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**Ansible django-gulp-nginx 项目**： [https://github.com/ansible/django-gulp-nginx/](https://github.com/ansible/django-gulp-nginx/)'
+- en: '**Docker networking documentation**: [https://docs.docker.com/engine/userguide/networking/](https://docs.docker.com/engine/userguide/networking/)'
+  id: totrans-104
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**Docker 网络文档**： [https://docs.docker.com/engine/userguide/networking/](https://docs.docker.com/engine/userguide/networking/)'
+- en: Summary
+  id: totrans-105
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 总结
+- en: As we are nearing the end of our journey with Ansible Container, we have covered
+    what is perhaps the final hurdle in our quest to learn about automating containers
+    using the Ansible Container project, working with multi-container projects. Due
+    to the inherent networking functionality available in almost all container runtime
+    environments, such as Docker, Kubernetes, and OpenShift, building streamlined
+    microservice software stacks is a breeze. As we have seen throughout this chapter,
+    microservice containers can easily be connected with Lego-like efficiency to build
+    and deploy robust applications in production.
+  id: totrans-106
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 随着我们即将结束与 Ansible Container 的旅程，我们已经覆盖了在学习使用 Ansible Container 项目自动化容器的过程中，可能是最后一个难关：处理多容器项目。由于几乎所有容器运行时环境（如
+    Docker、Kubernetes 和 OpenShift）都具备固有的网络功能，因此构建简化的微服务软件栈变得轻而易举。正如本章所示，微服务容器可以像拼积木一样高效地连接在一起，从而在生产环境中构建和部署强大的应用程序。
+- en: Throughout this section, we have looked at how container runtime environments
+    establish dependencies on other containers using the container networking fabric,
+    as well as creating link dependencies. We observed how these concepts work together
+    to build a rather complex multi-container application using Gulp, Django, NGINX,
+    and Postgres containers. We tested this stack in developer mode using `dev_overrides`,
+    as well as in production mode according to the project configuration. Finally,
+    we deployed this application into our local OpenShift cluster to simulate a real-world
+    production deployment, complete with container networking and persistent volume
+    claims.
+  id: totrans-107
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这一部分中，我们探讨了容器运行时环境如何通过容器网络架构建立对其他容器的依赖关系，以及如何创建链接依赖。我们观察了这些概念如何协同工作，通过 Gulp、Django、NGINX
+    和 Postgres 容器构建一个相当复杂的多容器应用程序。我们在开发模式下使用`dev_overrides`进行了测试，并根据项目配置在生产模式下进行测试。最后，我们将该应用程序部署到本地
+    OpenShift 集群中，以模拟真实世界的生产部署，完整地包含容器网络和持久化卷声明。
+- en: The final chapter of the book will cover ways in which you can expand your knowledge
+    of Ansible Container and cover some practical tips on how to go forward in your
+    knowledge of Ansible Container, carrying forward the knowledge you have obtained
+    so far in this book.
+  id: totrans-108
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本书的最后一章将介绍你如何扩展对 Ansible Container 的知识，并提供一些关于如何在 Ansible Container 知识上继续深入的实用技巧，帮助你将迄今为止在本书中获得的知识付诸实践。

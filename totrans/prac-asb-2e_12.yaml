@@ -1,0 +1,1256 @@
+- en: '12'
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '12'
+- en: Troubleshooting and Testing Strategies
+  id: totrans-1
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 故障排除和测试策略
+- en: In a similar way to any other kind of code, Ansible code can contain issues
+    and bugs. Ansible tries to make it as safe as possible by checking the task syntax
+    before the task is executed. This check, however, only saves you from a small
+    number of possible types of errors, such as incorrect task parameters, but it
+    will not protect you from others.
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 与其他类型的代码类似，Ansible 代码也可能包含问题和错误。Ansible 尽量通过在任务执行前检查任务语法来确保尽可能安全。然而，这个检查只会避免一些类型的错误，比如不正确的任务参数，但无法防止其他错误。
+- en: It’s also important to remember that, due to its nature, we describe the desired
+    state in Ansible code rather than stating a sequence of steps to obtain the desired
+    state. This difference means that the system is less prone to logical errors.
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 还需要记住，由于其本质，我们在 Ansible 代码中描述的是期望的状态，而不是陈述一系列步骤以达到期望的状态。这一差异意味着系统更不容易出现逻辑错误。
+- en: Nevertheless, a bug in a playbook could mean a potential misconfiguration on
+    all your machines. This should be taken very seriously. It is even more critical
+    when critical parts of the system are changed, such as SSH daemon or `sudo` configuration,
+    since the risk is you locking yourself out of the system.
+  id: totrans-4
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，剧本中的一个错误可能意味着你所有机器上的潜在配置错误。这应当引起高度重视。尤其是在更改系统关键部分时，例如 SSH 守护进程或 `sudo` 配置，因为风险在于你可能会把自己锁出系统。
+- en: 'There are many ways to prevent or mitigate a bug in Ansible playbooks. In this
+    chapter, we will cover the following topics:'
+  id: totrans-5
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有许多方法可以防止或减轻 Ansible 剧本中的错误。在本章中，我们将讨论以下主题：
+- en: Digging into playbook execution problems
+  id: totrans-6
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 深入排查剧本执行问题
+- en: Using host facts to diagnose failures
+  id: totrans-7
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用主机事实来诊断故障
+- en: Testing with a playbook
+  id: totrans-8
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用剧本进行测试
+- en: Using check mode
+  id: totrans-9
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用检查模式
+- en: Solving host connection issues
+  id: totrans-10
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 解决主机连接问题
+- en: Passing working variables via the CLI
+  id: totrans-11
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 通过 CLI 传递有效变量
+- en: Limiting the host’s execution
+  id: totrans-12
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 限制主机的执行
+- en: Flushing the code cache
+  id: totrans-13
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 刷新代码缓存
+- en: Checking for bad syntax
+  id: totrans-14
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 检查语法错误
+- en: Technical requirements
+  id: totrans-15
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 技术要求
+- en: This chapter assumes that you have set up your control host with Ansible, as
+    detailed in [*Chapter 1*](B20846_01.xhtml#_idTextAnchor015), *Getting Started
+    with Ansible*, and are using the most recent version available – the examples
+    in this chapter were tested with Ansible 2.9\. Although we will give specific
+    examples of hostnames in this chapter, you are free to substitute them with your
+    hostnames and/or IP addresses. Details of how to do this will be provided at the
+    appropriate places.
+  id: totrans-16
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章假设你已经根据[*第1章*](B20846_01.xhtml#_idTextAnchor015)《Ansible 入门》的详细步骤设置好了控制主机，并且使用的是最新版本——本章中的示例是在
+    Ansible 2.9 上测试的。虽然本章会给出主机名的具体示例，但你可以根据需要用你自己的主机名和/或 IP 地址替换它们。如何做会在适当的地方提供详细说明。
+- en: The examples in this chapter can be found in this book’s GitHub repository at
+    [https://github.com/PacktPublishing/Practical-Ansible-Second-Edition/tree/main/Chapter%2012](https://github.com/PacktPublishing/Practical-Ansible-Second-Edition/tree/main/Chapter%2012).
+  id: totrans-17
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章中的示例可以在本书的 GitHub 仓库中找到：[https://github.com/PacktPublishing/Practical-Ansible-Second-Edition/tree/main/Chapter%2012](https://github.com/PacktPublishing/Practical-Ansible-Second-Edition/tree/main/Chapter%2012)
+- en: Digging into playbook execution problems
+  id: totrans-18
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 深入排查剧本执行问题
+- en: There are cases where an Ansible execution will interrupt. Many things can cause
+    these situations.
+  id: totrans-19
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有些情况下，Ansible 执行会中断，许多原因可能导致这种情况发生。
+- en: The network is the most frequent cause of problems I’ve found while executing
+    Ansible playbooks. Since the machine issuing the commands and the one performing
+    them are usually linked through the network, a problem in the network will immediately
+    show itself as an Ansible execution problem.
+  id: totrans-20
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 网络是我在执行 Ansible 剧本时发现的最常见问题原因。由于发出命令的机器和执行命令的机器通常通过网络连接，因此网络出现问题时，通常会立即表现为 Ansible
+    执行问题。
+- en: You can tell Ansible to repeat the execution of a task by registering a variable
+    and using the `until` keyword.
+  id: totrans-21
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以通过注册变量并使用 `until` 关键字，告诉 Ansible 重复执行某个任务。
+- en: 'Sometimes, and this is particularly true for some modules, such as `ansible.builtin.shell`
+    or `ansible.builtin.command`, the return code is non-zero, even though the execution
+    was successful. In those cases, you can ignore the error by using the following
+    line in your module:'
+  id: totrans-22
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有时，尤其是对于某些模块（如`ansible.builtin.shell` 或 `ansible.builtin.command`），即使执行成功，返回码也可能非零。在这种情况下，你可以通过在模块中使用以下行来忽略错误：
+- en: '[PRE0]'
+  id: totrans-23
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: 'For instance, if you run the `/bin/false` command, it will always return `1`.
+    To execute this in a playbook so that you can avoid it blocking there, you can
+    write something like the following:'
+  id: totrans-24
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 例如，如果您运行 `/bin/false` 命令，它将始终返回 `1`。为了在 Playbook 中执行该命令并避免它在此处阻塞，您可以编写如下内容：
+- en: '[PRE1]'
+  id: totrans-25
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: As we have seen, `/bin/false` will always return `1` as the return code, but
+    we still managed to proceed with the execution. Be aware that this is a particular
+    case. Often, the best approach is to fix your application so that you follow UNIX
+    standards and return `0` if the application runs appropriately instead of putting
+    a workaround in your playbooks.
+  id: totrans-26
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如我们所见，`/bin/false` 总是返回 `1` 作为返回码，但我们仍然成功地继续执行。请注意，这是一个特殊情况。通常，最好的做法是修复您的应用程序，使其遵循
+    UNIX 标准，在应用程序正常运行时返回 `0`，而不是在 Playbook 中进行变通处理。
+- en: Next, we will talk more about the methods we can use to diagnose Ansible execution
+    problems.
+  id: totrans-27
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来，我们将进一步讨论可以用来诊断 Ansible 执行问题的方法。
+- en: Using host facts to diagnose failures
+  id: totrans-28
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用主机事实来诊断失败
+- en: Some execution failures derive from the state of the target machine. The most
+    common problem of this kind is the case where Ansible expects a file or variable
+    to be present, but it’s not there.
+  id: totrans-29
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一些执行失败是由于目标机器的状态引起的。最常见的此类问题是 Ansible 期望某个文件或变量存在，但实际上它并不存在。
+- en: Sometimes, it can be enough to print the machine facts to find the problem.
+  id: totrans-30
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有时，打印机器事实信息足以找到问题。
+- en: 'To do so, we need to create a simple playbook called `print_facts.yaml`, which
+    contains the following content:'
+  id: totrans-31
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为此，我们需要创建一个名为 `print_facts.yaml` 的简单 Playbook，其中包含以下内容：
+- en: '[PRE2]'
+  id: totrans-32
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: This technique will give you a lot of information about the state of the target
+    machine during Ansible execution.
+  id: totrans-33
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这种技术将在 Ansible 执行期间提供有关目标机器状态的很多信息。
+- en: Testing with a playbook
+  id: totrans-34
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用 Playbook 进行测试
+- en: One of the most complex things in the IT field is not creating software and
+    systems but debugging them when they have problems. Ansible is no exception. No
+    matter how good you are at creating Ansible playbooks, sooner or later, you’ll
+    find yourself debugging a playbook that is not behaving as you thought it would.
+  id: totrans-35
+  prefs: []
+  type: TYPE_NORMAL
+  zh: IT 领域最复杂的事情之一不是创建软件和系统，而是当它们出现问题时进行调试。Ansible 也不例外。无论您在编写 Ansible Playbook 方面多么出色，迟早您会发现自己在调试一个没有按预期执行的
+    Playbook。
+- en: 'The simplest way of performing basic tests is to print out the values of variables
+    during execution. Let’s learn how to do this with Ansible:'
+  id: totrans-36
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 执行基本测试的最简单方法是打印出执行过程中变量的值。让我们学习如何在 Ansible 中实现这一点：
+- en: 'First of all, we need a playbook called `debug.yaml` with the following content:'
+  id: totrans-37
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 首先，我们需要一个名为 `debug.yaml` 的 Playbook，内容如下：
+- en: '[PRE3]'
+  id: totrans-38
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: 'Run it with the following command:'
+  id: totrans-39
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用以下命令运行它：
+- en: '[PRE4]'
+  id: totrans-40
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: 'You will receive an output similar to the following:'
+  id: totrans-41
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 您将收到类似以下的输出：
+- en: '[PRE5]'
+  id: totrans-42
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: '---'
+  id: totrans-43
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '---'
+- en: '- hosts: localhost'
+  id: totrans-44
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '- 主机：localhost'
+- en: 'tasks:'
+  id: totrans-45
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 任务：
+- en: '- ansible.builtin.shell: /usr/bin/uptime'
+  id: totrans-46
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '- ansible.builtin.shell: /usr/bin/uptime'
+- en: 'register: result'
+  id: totrans-47
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 注册：result
+- en: '- ansible.builtin.debug:'
+  id: totrans-48
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '- ansible.builtin.debug:'
+- en: 'var: result'
+  id: totrans-49
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 变量：result
+- en: 'verbosity: 2'
+  id: totrans-50
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 详细程度：2
+- en: '[PRE6]'
+  id: totrans-51
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: TASK [debug] **************************************************************************************
+  id: totrans-52
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 任务 [调试] **************************************************************************************
+- en: 'skipping: [localhost]'
+  id: totrans-53
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 跳过：[localhost]
+- en: '[PRE7]'
+  id: totrans-54
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE7]'
+- en: $ ansible-playbook debug2.yaml -vv
+  id: totrans-55
+  prefs: []
+  type: TYPE_NORMAL
+  zh: $ ansible-playbook debug2.yaml -vv
+- en: '[PRE8]'
+  id: totrans-56
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE8]'
+- en: '---'
+  id: totrans-57
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '---'
+- en: '- hosts: localhost'
+  id: totrans-58
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '- 主机：localhost'
+- en: 'tasks:'
+  id: totrans-59
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 任务：
+- en: '- name: Touch a file'
+  id: totrans-60
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '- 名称：触摸一个文件'
+- en: 'ansible.builtin.file:'
+  id: totrans-61
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'ansible.builtin.file:'
+- en: 'path: /tmp/myfile'
+  id: totrans-62
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 路径：/tmp/myfile
+- en: 'state: touch'
+  id: totrans-63
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 状态：touch
+- en: '[PRE9]'
+  id: totrans-64
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE9]'
+- en: $ ansible-playbook check-mode.yaml --check
+  id: totrans-65
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: $ ansible-playbook check-mode.yaml --check
+- en: '[PRE10]'
+  id: totrans-66
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE10]'
+- en: PLAY [localhost] **********************************************************************************
+  id: totrans-67
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 执行 [localhost] **********************************************************************************
+- en: TASK [Gathering Facts] ****************************************************************************
+  id: totrans-68
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 任务 [收集事实] ****************************************************************************
+- en: 'ok: [localhost]'
+  id: totrans-69
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 成功：[localhost]
+- en: TASK [Touch a file] *******************************************************************************
+  id: totrans-70
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 任务 [触摸一个文件] *******************************************************************************
+- en: 'ok: [localhost]'
+  id: totrans-71
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 成功：[localhost]
+- en: PLAY RECAP ****************************************************************************************
+  id: totrans-72
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 执行回顾 ****************************************************************************************
+- en: /tmp, you won’t find myfile.
+  id: totrans-73
+  prefs: []
+  type: TYPE_NORMAL
+  zh: /tmp，您将找不到 myfile。
+- en: Ansible check mode is usually called a dry run. The idea is that the run won’t
+    change the state of the machine and will only highlight the differences between
+    the current status and the status declared in the Playbook.
+  id: totrans-74
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 的检查模式通常被称为干运行（dry run）。其思想是该运行不会改变机器的状态，仅会突出显示当前状态与 Playbook 中声明的状态之间的差异。
+- en: 'Not all modules support check mode, but all major modules do, and more and
+    more modules are being added at every release. In particular, note that the `ansible.builtin.command`
+    and `ansible.builtin.shell` modules do not support it because the module can’t
+    tell what commands will result in a change, and what won’t. Therefore, these modules
+    will always return changed when they’re run outside of check mode because they
+    assume a change has been made. It is possible to find out whether a specific module
+    supports check mode by looking in the module’s documentation, in the *Attributes*
+    section. A similar feature to check mode is the `--diff` flag. A big difference
+    between those two options is that, while check mode will not make changes to the
+    systems, `--diff` will perform the changes on the system! What the `--diff` flag
+    allows us to do is track what exactly changed during an Ansible execution. So,
+    let’s say we run the same playbook with the following command:'
+  id: totrans-75
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 并不是所有模块都支持检查模式，但所有主要模块都支持，而且每次发布时，越来越多的模块也在添加支持。特别要注意的是，`ansible.builtin.command`
+    和 `ansible.builtin.shell` 模块不支持检查模式，因为这些模块无法判断哪些命令会导致变化，哪些不会。因此，这些模块在非检查模式下运行时，始终会返回已更改，因为它们假定已经发生了变化。要了解特定模块是否支持检查模式，可以查看该模块文档中的
+    *Attributes* 部分。与检查模式类似的功能是 `--diff` 标志。这两者之间的一个重要区别是，虽然检查模式不会对系统进行更改，但 `--diff`
+    会对系统进行更改！`--diff` 标志允许我们跟踪在 Ansible 执行过程中具体发生了哪些变化。所以，假设我们用以下命令运行相同的剧本：
+- en: '[PRE11]'
+  id: totrans-76
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE11]'
+- en: 'This will return something like the following:'
+  id: totrans-77
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这将返回类似以下的内容：
+- en: '[PRE12]'
+  id: totrans-78
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE12]'
+- en: As you can see, the output says `changed`, which means that something was changed
+    (more specifically, the file was created), and in the output, we can see a diff-like
+    output that tells us that the state moved from `absent` to `touch`, which means
+    the file was created. `mtime` and `atime` also changed, but this is probably due
+    to how files are created and checked.
+  id: totrans-79
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，输出显示 `changed`，这意味着发生了变化（更具体地说，文件已创建），在输出中我们可以看到类似 diff 的输出，告诉我们状态从 `absent`
+    变为 `touch`，这意味着文件已创建。`mtime` 和 `atime` 也发生了变化，但这可能是由于文件创建和检查的方式所致。
+- en: Now that you have learned how to use check mode, let’s learn how to solve host
+    connection issues.
+  id: totrans-80
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在你已经学会了如何使用检查模式，让我们学习如何解决主机连接问题。
+- en: Solving host connection issues
+  id: totrans-81
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 解决主机连接问题
+- en: Ansible is often used to manage remote hosts or systems. To do this, Ansible
+    will need to be able to connect to the remote host, and only after that will it
+    be able to issue commands. Sometimes, the problem is that Ansible is unable to
+    connect to the remote host. A typical example of this is when you try to manage
+    a machine that hasn’t booted yet. Being able to quickly recognize these kinds
+    of problems and fix them promptly will help you save a lot of time.
+  id: totrans-82
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 经常用于管理远程主机或系统。为此，Ansible 需要能够连接到远程主机，只有在连接成功后，它才能发出命令。有时，问题在于 Ansible
+    无法连接到远程主机。一个典型的例子是，当你尝试管理一个尚未启动的机器时。能够快速识别这些问题并及时修复，将帮助你节省大量时间。
+- en: 'Follow these steps to get started:'
+  id: totrans-83
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 按照以下步骤开始操作：
+- en: 'Let’s create a playbook called `remote.yaml` with the following content:'
+  id: totrans-84
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 我们创建一个名为 `remote.yaml` 的剧本，内容如下：
+- en: '[PRE13]'
+  id: totrans-85
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE13]'
+- en: '2.  We can try to run the `remote.yaml` playbook against a non-existent FQDN,
+    as follows:'
+  id: totrans-86
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 2. 我们可以尝试对一个不存在的 FQDN 运行 `remote.yaml` 剧本，如下所示：
+- en: '[PRE14]'
+  id: totrans-87
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE14]'
+- en: 'In this case, the output will inform us that the SSH service did not reply
+    in time:'
+  id: totrans-88
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这种情况下，输出将告诉我们 SSH 服务没有及时回应：
+- en: '[PRE15]'
+  id: totrans-89
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE15]'
+- en: In this case, the host did reply, but we don’t have enough access to be able
+    to SSH into it.
+  id: totrans-90
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这种情况下，主机确实有回应，但我们没有足够的权限进行 SSH 连接。
+- en: 'SSH connections usually fail for one of two reasons:'
+  id: totrans-91
+  prefs: []
+  type: TYPE_NORMAL
+  zh: SSH 连接失败通常有两个原因：
+- en: The SSH client is unable to establish a connection with the SSH server
+  id: totrans-92
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: SSH 客户端无法与 SSH 服务器建立连接
+- en: The SSH server refuses the credentials provided by the SSH client
+  id: totrans-93
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: SSH 服务器拒绝了 SSH 客户端提供的凭证
+- en: 'Due to OpenSSH’s very high stability and backward compatibility, when the first
+    issue occurs, it’s very probable that the IP address or the port is wrong, so
+    the TCP connection isn’t feasible. Very rarely, this kind of error occurs in SSH-specific
+    problems. Usually, double-checking the IP and the hostname (if it’s DNS, check
+    that it resolves to the right IP) solves the problem. To investigate this further,
+    you can try performing an SSH connection from the same machine to check whether
+    there are problems. For instance, I would do this like so:'
+  id: totrans-94
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于OpenSSH的高度稳定性和向后兼容性，当第一个问题发生时，很可能是IP地址或端口错误，因此TCP连接不可行。这种错误在SSH特定的问题中很少发生。通常，重新检查IP地址和主机名（如果是DNS，检查它是否解析为正确的IP）就能解决问题。为了进一步调查，你可以尝试从同一台机器上进行SSH连接，以检查是否有问题。例如，我会这样做：
+- en: '[PRE16]'
+  id: totrans-95
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE16]'
+- en: I’ve taken the hostname from the error itself to ensure that I’m simulating
+    exactly what Ansible is doing. I’m doing this to ensure that I can see all possible
+    logging messages that SSH can give me to troubleshoot the problem.
+  id: totrans-96
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我从错误中获取了主机名，以确保我正在模拟Ansible的实际操作。我这样做是为了确保我能看到SSH可能提供的所有日志信息，以便排查问题。
+- en: 'The second problem might be a little bit more complex to debug since it can
+    happen for multiple reasons. One of those is that you are trying to connect to
+    the wrong host and you don’t have the credentials for that machine. Another common
+    case is that the username is wrong. To debug it, you can take the `user@host`
+    address that is shown in the error (in my case, `fale@host.example.com`) and use
+    the same command you used previously:'
+  id: totrans-97
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 第二个问题可能会稍微复杂一些，因为它可能由多种原因引起。其中一种原因是你尝试连接到错误的主机，并且你没有该机器的凭证。另一个常见的情况是用户名错误。要进行调试，你可以使用错误中显示的`user@host`地址（在我的情况下是`fale@host.example.com`），并使用之前使用的相同命令：
+- en: '[PRE17]'
+  id: totrans-98
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE17]'
+- en: This should raise the same error that Ansible reported to you but with much
+    more detail.
+  id: totrans-99
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这应该会引发与Ansible报告给你的相同的错误，只不过会包含更多细节。
+- en: Now that you have learned how to solve host connection issues, let’s learn how
+    to pass working variables via the CLI.
+  id: totrans-100
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在你已经学会了如何解决主机连接问题，让我们来学习如何通过CLI传递工作变量。
+- en: Passing working variables via the CLI
+  id: totrans-101
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通过CLI传递工作变量
+- en: 'One thing that can help during debugging, and definitely helps for code reusability,
+    is passing variables to playbooks via the command line. Every time your application
+    – either an Ansible playbook or any kind of application – receives input from
+    a third party (a human, in this case), it should ensure that the value is reasonable.
+    An example of this would be to check that the variable has been set and therefore
+    is not an empty string. This is a security golden rule, but it should also be
+    applied when the user is trusted since the user might mistype the variable’s name.
+    The application should identify this and protect the whole system by protecting
+    itself. Follow these steps:'
+  id: totrans-102
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在调试过程中，有一件事可以帮助你，且对于代码的可重用性非常有帮助，那就是通过命令行向剧本传递变量。每当你的应用程序——无论是Ansible剧本还是任何其他应用程序——接收到来自第三方（在这里是人类）的输入时，应该确保该值是合理的。一个例子就是检查变量是否已设置，并因此不为空字符串。这是一个安全黄金法则，但即使在信任用户的情况下也应应用，因为用户可能会打错变量的名称。应用程序应该识别这一点，并通过保护自身来保护整个系统。请按照以下步骤操作：
+- en: 'The first thing we want to have is a simple playbook that prints the content
+    of a variable. Let’s create a playbook called `printvar.yaml` that contains the
+    following content:'
+  id: totrans-103
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 我们首先需要的是一个简单的剧本，它打印出变量的内容。让我们创建一个名为`printvar.yaml`的剧本，包含以下内容：
+- en: '[PRE18]'
+  id: totrans-104
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE18]'
+- en: '2.  Now that we have an Ansible playbook that allows us to see whether a variable
+    has been set to what we were expecting, let’s run it with `variable`, which is
+    declared in the execution statement:'
+  id: totrans-105
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 现在我们有了一个Ansible剧本，它可以帮助我们查看一个变量是否已被设置为我们期望的值，让我们用在执行语句中声明的`variable`来运行它：
+- en: '[PRE19]'
+  id: totrans-106
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE19]'
+- en: 'By running this, we will receive an output similar to the following:'
+  id: totrans-107
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 运行此命令后，我们将得到类似于以下的输出：
+- en: '[PRE20]'
+  id: totrans-108
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE20]'
+- en: 'Ansible allows variables to be set in various modes and with different priorities.
+    More specifically, you can set them with the following:'
+  id: totrans-109
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible允许以不同的方式和优先级设置变量。更具体地说，你可以通过以下方式设置它们：
+- en: System configuration settings in `/etc/ansible/ansible.cfg` (lowest priority)
+  id: totrans-110
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`/etc/ansible/ansible.cfg`中的系统配置设置（优先级最低）'
+- en: User configuration settings in `~/.ansible.cfg`
+  id: totrans-111
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`~/.ansible.cfg`中的用户配置设置'
+- en: Project configuration in `ansible.cfg` in the current directory
+  id: totrans-112
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 当前目录中的`ansible.cfg`项目配置
+- en: The `ANSIBLE_CONFIG` environment variable
+  id: totrans-113
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ANSIBLE_CONFIG`环境变量'
+- en: Command-line options
+  id: totrans-114
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 命令行选项
+- en: Role defaults
+  id: totrans-115
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 角色默认值
+- en: Inventory files or the `vars` script group
+  id: totrans-116
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 库存文件或 `vars` 脚本组
+- en: The `group_vars/all` inventory
+  id: totrans-117
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`group_vars/all` 库存'
+- en: The `group_vars/all` playbook
+  id: totrans-118
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`group_vars/all` 剧本'
+- en: The `group_vars/*` inventory
+  id: totrans-119
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`group_vars/*` 库存'
+- en: The `group_vars/*` playbook
+  id: totrans-120
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`group_vars/*` 剧本'
+- en: Inventory files or the `vars` script host
+  id: totrans-121
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 库存文件或 `vars` 脚本主机
+- en: The `host_vars/*` inventory
+  id: totrans-122
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`host_vars/*` 库存'
+- en: The `host_vars/*` playbook
+  id: totrans-123
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`host_vars/*` 剧本'
+- en: Host facts/cached `set_facts`
+  id: totrans-124
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 主机事实/缓存的 `set_facts`
+- en: Play `vars`
+  id: totrans-125
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 剧本 `vars`
+- en: Play `vars_prompt`
+  id: totrans-126
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 剧本 `vars_prompt`
+- en: Play `vars_files`
+  id: totrans-127
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 剧本 `vars_files`
+- en: The `vars` role (defined in `role/vars/main.yml`)
+  id: totrans-128
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`vars` 角色（定义在 `role/vars/main.yml`）'
+- en: The `vars` block (only for tasks in the block)
+  id: totrans-129
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`vars` 块（仅适用于该块中的任务）'
+- en: The `vars` task (only for the task)
+  id: totrans-130
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`vars` 任务（仅适用于该任务）'
+- en: '`include_vars`'
+  id: totrans-131
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`include_vars`'
+- en: '`set_facts`/registered vars'
+  id: totrans-132
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`set_facts`/注册的变量'
+- en: Role (and `include_role`) params
+  id: totrans-133
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 角色（以及 `include_role`）参数
+- en: '`include` params'
+  id: totrans-134
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`include` 参数'
+- en: Command-line extra `vars` (highest priority)
+  id: totrans-135
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 命令行额外的 `vars`（优先级最高）
+- en: As you can see, the last option (and the highest priority of them all) is using
+    `--extra-vars` (or `-e`) in the execution command.
+  id: totrans-136
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如你所看到的，最后一个选项（所有选项中优先级最高的）是使用执行命令中的 `--extra-vars`（或 `-e`）。
+- en: Now that you have learned how to pass working variables via the CLI, let’s learn
+    how to limit the host’s execution.
+  id: totrans-137
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在你已经学习了如何通过 CLI 传递工作变量，接下来我们来学习如何限制主机的执行。
+- en: Limiting the host’s execution
+  id: totrans-138
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 限制主机的执行
+- en: 'While testing a playbook, it might make sense to test on a restricted number
+    of machines; for instance, just one. Let’s get started:'
+  id: totrans-139
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在测试剧本时，可能只需要在有限数量的机器上进行测试；例如，只有一台。让我们开始吧：
+- en: 'To use the limitation of target hosts on Ansible, we will need a playbook.
+    Create a playbook called `helloworld.yaml` that contains the following content:'
+  id: totrans-140
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 要使用 Ansible 上的目标主机限制，我们需要一个剧本。创建一个名为 `helloworld.yaml` 的剧本，内容如下：
+- en: '[PRE21]'
+  id: totrans-141
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE21]'
+- en: '2.  We also need to create an inventory with at least two hosts. In my case,
+    I created a file called `inventory` that contains the following content:'
+  id: totrans-142
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 2. 我们还需要创建一个至少包含两个主机的库存。在我的例子中，我创建了一个名为`inventory`的文件，其中包含以下内容：
+- en: '[PRE22]'
+  id: totrans-143
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE22]'
+- en: 'Let’s run the playbook in the usual way with the following command:'
+  id: totrans-144
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们以常规方式运行剧本，使用以下命令：
+- en: '[PRE23]'
+  id: totrans-145
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE23]'
+- en: 'By doing this, we will receive the following output:'
+  id: totrans-146
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通过这样做，我们将收到以下输出：
+- en: '[PRE24]'
+  id: totrans-147
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE24]'
+- en: $ ansible-playbook -i inventory helloworld.yaml --limit=host3.example.com
+  id: totrans-148
+  prefs: []
+  type: TYPE_NORMAL
+  zh: $ ansible-playbook -i inventory helloworld.yaml --limit=host3.example.com
+- en: '[PRE25]'
+  id: totrans-149
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE25]'
+- en: PLAY [all] ****************************************************************************************
+  id: totrans-150
+  prefs: []
+  type: TYPE_NORMAL
+  zh: PLAY [所有] ****************************************************************************************
+- en: TASK [Gathering Facts] ****************************************************************************
+  id: totrans-151
+  prefs: []
+  type: TYPE_NORMAL
+  zh: TASK [收集事实] ****************************************************************************
+- en: 'ok: [host3.example.com]'
+  id: totrans-152
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'ok: [host3.example.com]'
+- en: TASK [debug] **************************************************************************************
+  id: totrans-153
+  prefs: []
+  type: TYPE_NORMAL
+  zh: TASK [调试] **************************************************************************************
+- en: 'ok: [host3.example.com] => {'
+  id: totrans-154
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'ok: [host3.example.com] => {'
+- en: '"msg": "Hello, World!"'
+  id: totrans-155
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '"msg": "Hello, World!"'
+- en: '}'
+  id: totrans-156
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '}'
+- en: PLAY RECAP ****************************************************************************************
+  id: totrans-157
+  prefs: []
+  type: TYPE_NORMAL
+  zh: PLAY RECAP ****************************************************************************************
+- en: --limit keyword, we can force Ansible to ignore all the hosts that are outside
+    what is specified in the limit parameter.
+  id: totrans-158
+  prefs: []
+  type: TYPE_NORMAL
+  zh: --limit 关键字，我们可以强制 Ansible 忽略超出限制参数指定的主机。
+- en: 'It’s possible to specify multiple hosts as a list or with patterns, so both
+    of the following commands will execute the playbook against `host2.example.com`
+    and `host3.example.com`:'
+  id: totrans-159
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 可以指定多个主机作为列表或使用模式，因此以下两个命令都将对 `host2.example.com` 和 `host3.example.com` 执行剧本：
+- en: '[PRE26]'
+  id: totrans-160
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE26]'
+- en: 'The limit will not override the inventory but will add restrictions to it.
+    So, let’s say we limit to a host that is not part of the inventory, as follows:'
+  id: totrans-161
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 限制不会覆盖库存，而是对其添加限制。假设我们限制为不属于库存的主机，如下所示：
+- en: '[PRE27]'
+  id: totrans-162
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE27]'
+- en: 'Here, we will receive the following error, and nothing will be done:'
+  id: totrans-163
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这里，我们将收到以下错误，什么也不会做：
+- en: '[PRE28]'
+  id: totrans-164
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE28]'
+- en: Now that you have learned how to limit the host’s execution, let’s learn how
+    to flush the code cache.
+  id: totrans-165
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在你已经学习了如何限制主机的执行，接下来我们来学习如何刷新代码缓存。
+- en: Flushing the code cache
+  id: totrans-166
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 刷新代码缓存
+- en: Everywhere in IT, caches are used to speed up operations, and Ansible is no
+    exception.
+  id: totrans-167
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 IT 领域，各种操作中都使用缓存来加速操作，Ansible 也不例外。
+- en: Usually, caches are good, and for this reason, they are heavily used ubiquitously.
+    However, they might create some problems if they cache a value that should not
+    have been cached or if they are not flushed, even if the value has changed.
+  id: totrans-168
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通常，缓存是有益的，因此它们在各个地方被广泛使用。然而，如果缓存了不应该被缓存的值，或者它们没有被刷新，即使值已经发生了变化，也可能会引发一些问题。
+- en: 'Flushing caches in Ansible is very straightforward, and it’s enough to run
+    `ansible-playbook`, which we are already running, with the addition of the `--flush-cache`
+    option, as follows:'
+  id: totrans-169
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在Ansible中刷新缓存非常简单，只需运行`ansible-playbook`，并添加`--flush-cache`选项，如下所示：
+- en: '[PRE29]'
+  id: totrans-170
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE29]'
+- en: Ansible can use multiple cache plugins to save host variables, as well as execution
+    variables. Sometimes, those variables might be left behind and influence the following
+    executions. When Ansible finds a variable that should be set in the step it just
+    started, Ansible might assume that the step has already been completed, and therefore
+    pick up that old variable as if it has just been created. By using the `--flush-cache`
+    option, we can avoid this since it will ensure that Ansible flushes the Ansible
+    facts cache during its execution.
+  id: totrans-171
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible可以使用多个缓存插件来保存主机变量和执行变量。有时，这些变量可能会被留下并影响后续的执行。当Ansible发现应该在刚刚启动的步骤中设置的变量时，可能会假设该步骤已经完成，因此将旧变量作为刚刚创建的变量。通过使用`--flush-cache`选项，我们可以避免这种情况，因为它会确保在执行期间刷新Ansible事实缓存。
+- en: Now that you have learned how to flush the code cache, let’s learn how to check
+    for bad syntax.
+  id: totrans-172
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在您已经学会了如何清除代码缓存，让我们学习如何检查错误语法。
+- en: Checking for bad syntax
+  id: totrans-173
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 检查错误语法
+- en: 'Defining whether a file has the right syntax or not is fairly easy for a machine,
+    but this might be more complex for humans. This does not mean that machines can
+    fix the code for you, but they can quickly identify whether a problem is present
+    or not. To use Ansible’s built-in syntax checker, we need a playbook with a syntax
+    error. Let’s get started:'
+  id: totrans-174
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于机器来说，定义文件是否具有正确的语法非常容易，但对于人类来说可能更复杂。这并不意味着机器可以为您修复代码，但它们可以快速识别问题是否存在。要使用Ansible的内置语法检查器，我们需要一个带有语法错误的playbook。让我们开始吧：
+- en: 'Let’s create a `syntaxcheck.yaml` file with the following content:'
+  id: totrans-175
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 让我们创建一个名为`syntaxcheck.yaml`的文件，其中包含以下内容：
+- en: '[PRE30]'
+  id: totrans-176
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE30]'
+- en: '2.  Now, we can use the `--``syntax-check` command:'
+  id: totrans-177
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 2.现在，我们可以使用`--``syntax-check`命令：
+- en: '[PRE31]'
+  id: totrans-178
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE31]'
+- en: 'By doing this, we will receive the following output:'
+  id: totrans-179
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通过这样做，我们将收到以下输出：
+- en: '[PRE32]'
+  id: totrans-180
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE32]'
+- en: 'We can now proceed to fix the indentation problem on line 4:'
+  id: totrans-181
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在我们可以继续修复第4行的缩进问题：
+- en: '[PRE33]'
+  id: totrans-182
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE33]'
+- en: 'When we recheck the syntax, we will see that it now returns no errors:'
+  id: totrans-183
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当我们重新检查语法时，我们将看到它现在没有返回错误：
+- en: '[PRE34]'
+  id: totrans-184
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE34]'
+- en: When the syntax check doesn’t find any errors, the output will resemble the
+    previous one, where it listed the files that were analyzed without listing any
+    errors.
+  id: totrans-185
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当语法检查未发现任何错误时，输出将类似于先前的输出，其中列出了已分析文件而未列出任何错误。
+- en: Since Ansible knows all the supported options in all the supported modules,
+    it can quickly read your code and validate whether the YAML you provided contains
+    all the required fields and that it does not contain any unsupported fields.
+  id: totrans-186
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于Ansible了解所有支持模块中的所有支持选项，它可以快速读取您的代码并验证您提供的YAML是否包含所有必需字段，并且不包含任何不受支持的字段。
+- en: Summary
+  id: totrans-187
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 摘要
+- en: In this chapter, you learned about the various options that Ansible provides
+    so that you can look for problems in your Ansible code. More specifically, you
+    learned how to use host facts to diagnose failures, how to include testing within
+    a playbook, how to use check mode, how to solve host connection issues, how to
+    pass variables from the CLI, how to limit the execution to a subset of hosts,
+    how to flush the code cache, and how to check for bad syntax.
+  id: totrans-188
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，您学习了Ansible提供的各种选项，以便查找Ansible代码中的问题。更具体地说，您学习了如何使用主机事实来诊断故障，如何在playbook中包含测试，如何使用检查模式，如何解决主机连接问题，如何从CLI传递变量，如何限制执行到主机子集，如何刷新代码缓存以及如何检查错误语法。
+- en: In the next chapter, you will learn how to get started with Ansible Automation
+    Controller.
+  id: totrans-189
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一章中，您将学习如何开始使用Ansible自动化控制器。
+- en: Questions
+  id: totrans-190
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 问题
+- en: 'Answer the following questions to test your knowledge of this chapter:'
+  id: totrans-191
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 回答以下问题来测试您对本章的了解：
+- en: 'True or False: The `ansible.builtin.debug` module allows you to print the value
+    of a variable or a fixed string during Ansible’s execution.'
+  id: totrans-192
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 真或假：`ansible.builtin.debug`模块允许您在Ansible执行期间打印变量值或固定字符串。
+- en: 'True'
+  id: totrans-193
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 'True'
+- en: 'False'
+  id: totrans-194
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 'False'
+- en: Which keyword allows Ansible to force limit the host’s execution?
+  id: totrans-195
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 哪个关键字允许Ansible强制限制主机的执行？
+- en: '`--``limit`'
+  id: totrans-196
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: '`--``limit`'
+- en: '`--``max`'
+  id: totrans-197
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: '`--``max`'
+- en: '`--``restrict`'
+  id: totrans-198
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: '`--``restrict`'
+- en: '`--``force`'
+  id: totrans-199
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: '`--``force`'
+- en: '`--``except`'
+  id: totrans-200
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: '`--``except`'
+- en: Further reading
+  id: totrans-201
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 进一步阅读
+- en: Ansible’s official documentation about error handling can be found at [https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_error_handling.xhtml](https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_error_handling.xhtml).
+  id: totrans-202
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible的官方文档关于错误处理的内容可以在[https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_error_handling.xhtml](https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_error_handling.xhtml)找到。
+- en: '[PRE35]'
+  id: totrans-203
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE35]'
+- en: '[PRE36]'
+  id: totrans-204
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE36]'

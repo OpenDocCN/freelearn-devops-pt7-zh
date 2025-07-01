@@ -1,0 +1,4296 @@
+- en: Chapter 11. Useful Recipes
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 第 11 章：实用的配方
+- en: 'In this chapter, we will cover:'
+  id: totrans-1
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们将涵盖：
+- en: Writing a service in JIRA
+  id: totrans-2
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在 JIRA 中编写服务
+- en: Writing scheduled tasks in JIRA
+  id: totrans-3
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在 JIRA 中编写定时任务
+- en: Writing listeners in JIRA
+  id: totrans-4
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在 JIRA 中编写监听器
+- en: Customizing e-mail content
+  id: totrans-5
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 自定义电子邮件内容
+- en: Redirecting to different page in webwork actions
+  id: totrans-6
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在 Webwork 动作中重定向到不同的页面
+- en: Adding custom behavior for user details
+  id: totrans-7
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 为用户详情添加自定义行为
+- en: Deploying a servlet in JIRA
+  id: totrans-8
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在 JIRA 中部署 Servlet
+- en: Adding shared parameters to Servlet Context
+  id: totrans-9
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 向 Servlet 上下文添加共享参数
+- en: Writing a ServletContextListener interface
+  id: totrans-10
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 编写 ServletContextListener 接口
+- en: Using filters to intercept queries in JIRA
+  id: totrans-11
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用过滤器拦截 JIRA 中的查询
+- en: Adding and importing components in JIRA
+  id: totrans-12
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在 JIRA 中添加和导入组件
+- en: Adding new module types to JIRA
+  id: totrans-13
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 向 JIRA 添加新模块类型
+- en: Enabling access logs in JIRA
+  id: totrans-14
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 启用 JIRA 的访问日志
+- en: Enabling SQL logging in JIRA
+  id: totrans-15
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 启用 JIRA 的 SQL 日志
+- en: Overriding JIRA's default components in plugins
+  id: totrans-16
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在插件中覆盖 JIRA 的默认组件
+- en: Creating issues and comments from e-mail
+  id: totrans-17
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 从电子邮件创建问题和评论
+- en: Internationalization in webwork plugins
+  id: totrans-18
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Webwork 插件中的国际化
+- en: Sharing common libraries across v2 plugins
+  id: totrans-19
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在 v2 插件之间共享公共库
+- en: Operations via direct HTML links
+  id: totrans-20
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 通过直接 HTML 链接操作
+- en: Introduction
+  id: totrans-21
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 介绍
+- en: So far, we have grouped the recipes under common themes as different chapters
+    in this book. We have seen all the important themes but we still are left with
+    some useful recipes and a handful of plugin modules that are not covered in the
+    previous chapters.
+  id: totrans-22
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 到目前为止，我们已经将这些方法按照常见主题分组为本书中的不同章节。我们已经看到所有重要的主题，但仍然有一些有用的方法和一些插件模块未在前几章中涵盖。
+- en: In this chapter, we will look at some of those powerful plugin points and useful
+    tricks in JIRA that are not covered in the earlier chapters. Not all of these
+    recipes are related, but they are all useful in its own ways.
+  id: totrans-23
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们将介绍一些在前几章中未涉及的 JIRA 强大的插件点和实用技巧。这些方法并非都相关，但它们各自以不同方式都有用。
+- en: Writing a service in JIRA
+  id: totrans-24
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 在 JIRA 中编写服务
+- en: A service that runs at regular intervals is a much wanted feature in any web
+    application. It is more so if it is the one that can be managed with user-configured
+    parameters and without having to reboot, and so on. JIRA offers a mechanism to
+    add new services on to it that run at regular intervals after every start-up.
+    It lets us do things related to JIRA and things independent of it. It lets us
+    integrate with third-party applications. It lets us do wonders!
+  id: totrans-25
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一个按时运行的服务是任何 Web 应用程序中非常需要的功能。如果它能通过用户配置的参数进行管理，而且无需重启等操作，那就更为重要。JIRA 提供了一种机制，可以在每次启动后向其添加按时运行的新服务。它允许我们做与
+    JIRA 相关的事情，也允许我们做与 JIRA 无关的事情。它让我们与第三方应用集成，做出奇迹！
+- en: There are built-in services in JIRA. Export Service, POP Service, Mail Service,
+    and so on, to name a few. In this recipe, we are going to see how we can add a
+    custom service on to JIRA.
+  id: totrans-26
+  prefs: []
+  type: TYPE_NORMAL
+  zh: JIRA 中有内置的服务，例如导出服务、POP 服务、邮件服务等。在这个方法中，我们将看到如何在 JIRA 上添加一个自定义服务。
+- en: Getting ready
+  id: totrans-27
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 准备工作
+- en: Create a skeleton plugin using Atlassian Plugin SDK. Note that the `atlassian-plugin.xml`
+    file can be removed as it is not used in a service.
+  id: totrans-28
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用 Atlassian 插件 SDK 创建一个骨架插件。请注意，可以删除 `atlassian-plugin.xml` 文件，因为它在服务中并未使用。
+- en: How to do it...
+  id: totrans-29
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何实现…
+- en: 'As opposed to the other JIRA plug-in modules, services don''t need a plugin
+    descriptor. Instead, it uses a configuration XML. It is typically a JAR file with
+    the related classes, files and a configuration XML. Following are the steps to
+    write a simple service that just prints something onto the server console:'
+  id: totrans-30
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 与其他 JIRA 插件模块不同，服务不需要插件描述符。它使用的是配置 XML。它通常是一个包含相关类、文件和配置 XML 的 JAR 文件。以下是编写一个简单服务的步骤，该服务仅将内容打印到服务器控制台：
+- en: 'Write the configuration XML. This is the most important part of a service.
+    The following is a simple configuration XML:'
+  id: totrans-31
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 编写配置 XML。这是服务中最重要的部分。以下是一个简单的配置 XML：
+- en: '[PRE0]'
+  id: totrans-32
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: This is a simple configuration XML that doesn't take any properties. It has
+    a root element and a unique ID both of which can be custom names of your pick.
+    The root element we have is `someservice` and the ID is `jtricksserviceid`. The
+    description, as the name suggests, is just a short description of the service.
+    `properties` tag holds the different properties you want to associate with the
+    service. These properties will be entered by the user while configuring the service.
+    We will see more on that later.
+  id: totrans-33
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 这是一个简单的配置 XML 文件，不包含任何属性。它有一个根元素和一个唯一的 ID，两个都可以使用你选择的自定义名称。我们这里的根元素是 `someservice`，ID
+    是 `jtricksserviceid`。描述如其名所示，只是服务的简短描述。`properties` 标签包含你希望与服务关联的不同属性。这些属性将在配置服务时由用户输入。稍后我们会更详细地讲解。
+- en: Put the XML file under `src/main/resources/com/jtricks/services`.
+  id: totrans-34
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 将 XML 文件放到 `src/main/resources/com/jtricks/services` 目录下。
+- en: 'Create the service class. The class clan be put under any package structure
+    as it will be referenced with the fully qualified name when it is added in JIRA.
+    The class should extend `AbstractService`, which implements `JTricksService`:'
+  id: totrans-35
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建服务类。该类可以放在任何包结构下，因为它在添加到 JIRA 时将通过完全限定名引用。该类应继承 `AbstractService`，该类实现了 `JTricksService`：
+- en: '[PRE1]'
+  id: totrans-36
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: 'Implement the mandatory methods in the service class. The following are the
+    only ones that you need to implement:'
+  id: totrans-37
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在服务类中实现必需的方法。以下是你需要实现的唯一方法：
+- en: '[PRE2]'
+  id: totrans-38
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: Here `run` is the key method that is executed when the service runs at regular
+    intervals.
+  id: totrans-39
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 这里的 `run` 是在服务按时运行时执行的关键方法。
+- en: The other key mandatory method is `getObjectConfiguration()`. We get the configurations
+    from the XML we have written earlier (in *Step* *1*) in this method. All we need
+    to do here is to call the parent class' `getObjectConfiguration` method by passing
+    three arguments. The first argument is a unique **ID** (which need not be same
+    as the ID in the XML file). This ID is used as a key while saving the configurations
+    internally. The second one is the **path** to the configuration XML file we wrote
+    earlier, and the third argument is a **Map** using which you can add user parameters
+    on to the object configuration.
+  id: totrans-40
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 另一个关键的必需方法是 `getObjectConfiguration()`。我们将在此方法中获取我们之前编写的 XML 文件的配置（见 *步骤* *1*）。在这里我们所需要做的就是调用父类的
+    `getObjectConfiguration` 方法，并传入三个参数。第一个参数是一个唯一的 **ID**（不需要与 XML 文件中的 ID 相同）。此
+    ID 在内部保存配置时用作键。第二个参数是我们之前编写的配置 XML 文件的 **路径**，第三个参数是一个 **Map**，你可以使用它将用户参数添加到对象配置中。
+- en: Note
+  id: totrans-41
+  prefs:
+  - PREF_IND
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: The third argument is mostly null in case of services as these user parameters
+    are not used anywhere. It is meaningful in other places of JIRA, such as portlets,
+    though not in the case of services.
+  id: totrans-42
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 对于服务而言，第三个参数通常为 null，因为这些用户参数不会在任何地方使用。它在 JIRA 的其他地方有意义，比如 portlets，但在服务中并不适用。
+- en: Compile these two files in to a JAR and drop it under `WEB-INF/lib`.
+  id: totrans-43
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 将这两个文件编译成 JAR 文件并放到 `WEB-INF/lib` 目录下。
+- en: Restart JIRA.
+  id: totrans-44
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 重启 JIRA。
+- en: 'Now the service is ready. We can go to **Administration** | **System** | **Services**
+    and add the new service with the appropriate delay. While adding the service,
+    we need to use the fully qualified name of the service class. More about registering
+    a service can be found at: [http://confluence.atlassian.com/display/JIRA/Services#Services-RegisteringaService](http://confluence.atlassian.com/display/JIRA/Services#Services-RegisteringaService)
+    and is outside the scope of the book.'
+  id: totrans-45
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在服务已经准备好。我们可以去 **管理** | **系统** | **服务** 并添加新的服务，同时设置适当的延迟。在添加服务时，我们需要使用服务类的完全限定名。有关注册服务的更多信息，请参阅：[http://confluence.atlassian.com/display/JIRA/Services#Services-RegisteringaService](http://confluence.atlassian.com/display/JIRA/Services#Services-RegisteringaService)，这部分内容超出了本书的范围。
+- en: See also
+  id: totrans-46
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 参见
+- en: '*Adding* *configurable* *parameters* *to* *a* *service*'
+  id: totrans-47
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*向* *服务* *添加* *可配置* *参数*'
+- en: Adding configurable parameters to a service
+  id: totrans-48
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 向服务中添加可配置的参数
+- en: For a simple service as the one we just wrote, there is only one parameter that
+    can be configured. It is the delay at which the service runs! What if we need
+    to add more parameters? Let's say we want to add the tutorial name in the service
+    which can be changed later if needed.
+  id: totrans-49
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于我们刚写的简单服务，只有一个可以配置的参数，那就是服务运行的延迟！如果我们需要添加更多参数怎么办？假设我们想要在服务中添加教程名称，后续如果需要可以更改它。
+- en: How to do it…
+  id: totrans-50
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何做…
+- en: 'Following are the steps:'
+  id: totrans-51
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是步骤：
+- en: 'Modify the service configuration XML to include the configurable properties:'
+  id: totrans-52
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 修改服务配置 XML 文件以包含可配置的属性：
+- en: '[PRE3]'
+  id: totrans-53
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: 'Here, we have added a string property with the key: `Tutorial`.'
+  id: totrans-54
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在这里，我们添加了一个字符串属性，键名是：`Tutorial`。
+- en: Override the `init()` method in the service class to retrieve the new property.
+  id: totrans-55
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在服务类中重写 `init()` 方法以检索新属性。
+- en: '[PRE4]'
+  id: totrans-56
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: Here, we retrieve the property `Tutorial` from the `PropertySet` in the `init`
+    method.
+  id: totrans-57
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在这里，我们在 `init` 方法中从 `PropertySet` 中检索 `Tutorial` 属性。
+- en: 'Use the property as appropriately in the `run()` method. Here, let us just
+    print the tutorial name:'
+  id: totrans-58
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在 `run()` 方法中适当地使用该属性。这里，我们仅打印教程名称：
+- en: '[PRE5]'
+  id: totrans-59
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: How it works...
+  id: totrans-60
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 它是如何工作的…
+- en: The `init` method will be called whenever the service is configured or re-configured
+    and the property values we entered on the JIRA Admin GUI are retrieved in this
+    method for use in the `run()` method.
+  id: totrans-61
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 每当服务被配置或重新配置时，`init` 方法将被调用，我们在 JIRA 管理界面输入的属性值将在此方法中被检索，用于 `run()` 方法中。
+- en: We can also optionally override the destroy method to do anything we want before
+    the service is removed!
+  id: totrans-62
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们还可以选择性地重写 destroy 方法，在服务被移除之前执行任何操作！
+- en: Once the service is deployed and added in the GUI, it prints **Running** **the**
+    **JTricks** **service** **Tutorial?** **I** **don't** **like** **tutorials!**
+    as the tutorial property is not configured yet.
+  id: totrans-63
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦服务被部署并添加到 GUI 中，它会打印出 **运行** **JTricks** **服务** **教程？** **我** **不** **喜欢**
+    **教程！** 因为教程属性尚未配置。
+- en: '![How it works...](img/1803-11-01.jpg)'
+  id: totrans-64
+  prefs: []
+  type: TYPE_IMG
+  zh: '![它是如何工作的...](img/1803-11-01.jpg)'
+- en: 'Go to the **Administration** | **System** | **Services** area, edit the service
+    to enter a value under **The** **tutorial** **you** **like** field. Assuming you
+    entered **JTricks** **Tutorials**, you will see some output as shown below:'
+  id: totrans-65
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 前往 **管理** | **系统** | **服务** 区域，编辑服务并在 **你** **喜欢的** **教程** 字段中输入一个值。假设你输入了 **JTricks**
+    **教程**，你将看到如下输出：
+- en: '![How it works...](img/1803-11-02.jpg)'
+  id: totrans-66
+  prefs: []
+  type: TYPE_IMG
+  zh: '![它是如何工作的...](img/1803-11-02.jpg)'
+- en: See also
+  id: totrans-67
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 参见
+- en: '*Writing* *a* *service* *in* *JIRA*'
+  id: totrans-68
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*编写* *一个* *JIRA* *中的* *服务*'
+- en: Writing scheduled tasks in JIRA
+  id: totrans-69
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 在 JIRA 中编写计划任务
+- en: Have you ever thought of running scheduled tasks within JIRA? Why do we need
+    scheduled tasks when we have the JIRA Services? We have seen how to write a service
+    in the previous recipe. But in spite of all the advantages we discussed so far,
+    these services have a disadvantage. It always starts when JIRA is restarted and
+    runs at regular intervals after that. So, if you have a service that does some
+    heavy memory-intensive operation and if you restart JIRA in the middle of the
+    day, you will suddenly find your instance's performance compromised! If it is
+    scheduled to run every 24 hours, you will find the same service running in the
+    middle of the day from then on until the next restart.
+  id: totrans-70
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你是否曾经想过在 JIRA 中运行计划任务？当我们有了 JIRA 服务时，为什么还需要计划任务？我们在前面的配方中已经看到如何编写一个服务。但尽管我们已经讨论了这些服务的诸多优点，它们也有一个缺点。每次
+    JIRA 重启时，它都会启动并在之后按规律间隔运行。因此，如果你有一个执行大量内存密集型操作的服务，并且你在一天中的某个时间重启了 JIRA，你会突然发现实例的性能受到影响！如果它被设置为每
+    24 小时运行一次，你将会发现这个服务从那时起到下次重启前会在白天中运行。
+- en: Scheduled tasks in JIRA are a good way to make sure all such operations happen
+    at quite times, midnight, for example. In this chapter, we will write a simple
+    scheduled task and see how easy that can be!
+  id: totrans-71
+  prefs: []
+  type: TYPE_NORMAL
+  zh: JIRA 中的计划任务是确保所有此类操作在较为空闲的时段进行的好方法，例如在午夜。在本章中，我们将编写一个简单的计划任务，看看它是多么容易！
+- en: How to do it...
+  id: totrans-72
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何实现…
+- en: 'Let us write a simple scheduled task that prints a line in the console. Following
+    are the steps:'
+  id: totrans-73
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们编写一个简单的计划任务，在控制台中打印一行。以下是步骤：
+- en: Write a Java class that implements the `Quartz` `job` interface. JIRA internally
+    uses Quartz for scheduling its tasks and so Quartz comes bundled within JIRA.
+  id: totrans-74
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 编写一个实现 `Quartz` `job` 接口的 Java 类。JIRA 内部使用 Quartz 来调度任务，因此 Quartz 被捆绑在 JIRA
+    中。
+- en: '[PRE6]'
+  id: totrans-75
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: 'Implement the `execute` method. This is the method that gets executed every
+    time the job runs. Whatever we do in this method can be as simple as a one liner
+    or as complex as initiating a nuclear explosion! Our scheduled job just prints
+    a line to the console and hence the Java class that we write is as simple as follows:'
+  id: totrans-76
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 实现 `execute` 方法。这个方法每次作业运行时都会被执行。我们在此方法中做的任何事情，可以像一行代码一样简单，也可以像启动核爆一样复杂！我们的计划任务只是打印一行到控制台，因此我们编写的
+    Java 类如下所示：
+- en: '[PRE7]'
+  id: totrans-77
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE7]'
+- en: Package the class in a JAR file and deploy it under `WEB-INF/lib` folder.
+  id: totrans-78
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 将类打包成 JAR 文件并部署到 `WEB-INF/lib` 文件夹下。
+- en: 'Modify the `scheduler-config.xml` file under `WEB-INF/classes` folder to let
+    JIRA know of our new scheduled task. JIRA stores all the information about scheduled
+    tasks in this file:'
+  id: totrans-79
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 修改 `WEB-INF/classes` 文件夹中的 `scheduler-config.xml` 文件，以让 JIRA 知道我们的新计划任务。JIRA
+    将所有关于计划任务的信息存储在此文件中：
+- en: 'Define a job under the `<job>` tag as shown:'
+  id: totrans-80
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在 `<job>` 标签下定义一个作业，如下所示：
+- en: '[PRE8]'
+  id: totrans-81
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE8]'
+- en: 'Add a trigger that runs the `JTricksJob`. This is where we define the `cron`
+    expression to run the job at defined timings:'
+  id: totrans-82
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 添加一个触发器来运行`JTricksJob`。在这里，我们定义`cron`表达式来在指定的时间运行任务：
+- en: '[PRE9]'
+  id: totrans-83
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE9]'
+- en: 'The previous trigger schedules the job to run every two minutes. More details
+    about writing a `cron` expression can be found at: [http://www.quartz-scheduler.org/docs/tutorial/TutorialLesson06.html](http://www.quartz-scheduler.org/docs/tutorial/TutorialLesson06.html).'
+  id: totrans-84
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 上一个触发器将任务安排为每两分钟运行一次。关于编写`cron`表达式的更多详细信息可以参见：[http://www.quartz-scheduler.org/docs/tutorial/TutorialLesson06.html](http://www.quartz-scheduler.org/docs/tutorial/TutorialLesson06.html)。
+- en: Restart JIRA.
+  id: totrans-85
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 重启 JIRA。
+- en: How it works...
+  id: totrans-86
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 工作原理...
+- en: 'Once JIRA is restarted, the new job can be seen at the scheduler details page
+    under **Administration** | **System** | **Scheduler** **Details**. We can also
+    verify the next fire time for the task on the same page, as shown in the following
+    screenshot:'
+  id: totrans-87
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦 JIRA 重启，新的任务可以在**管理** | **系统** | **调度器** **详细信息**页面下看到。我们还可以在同一页面验证任务的下一次触发时间，如下图所示：
+- en: '![How it works...](img/1803-11-03.jpg)'
+  id: totrans-88
+  prefs: []
+  type: TYPE_IMG
+  zh: '![工作原理...](img/1803-11-03.jpg)'
+- en: And when the job runs, you will see the following printed in the console!
+  id: totrans-89
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当任务运行时，您将在控制台看到以下内容！
+- en: '![How it works...](img/1803-11-04.jpg)'
+  id: totrans-90
+  prefs: []
+  type: TYPE_IMG
+  zh: '![工作原理...](img/1803-11-04.jpg)'
+- en: Writing listeners in JIRA
+  id: totrans-91
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 在 JIRA 中编写监听器
+- en: '**Listeners** are very powerful features in JIRA. JIRA has a mechanism of throwing
+    events whenever something happens on an issue, such as when creating an issue,
+    updating an issue, progressing on the workflows, or in similar events. Using listeners,
+    we can capture these events and do special things based on our requirements.'
+  id: totrans-92
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**监听器**是 JIRA 中非常强大的功能。JIRA 有一个机制，当某些操作发生在问题上时，就会抛出事件，例如创建问题、更新问题、工作流进展等类似事件。通过使用监听器，我们可以捕捉这些事件，并根据我们的需求执行特定的操作。'
+- en: There are two different ways using which listeners can be implemented in JIRA.
+    The old way of doing it is to extend the `AbstractIssueEventListener` class which
+    in turn implements the `IssueEventListener` interface. The `AbstractIssueEventListener`
+    class captures the event, identifies its type, and delegates the event to the
+    appropriate method where it is handled. To write a new listener, all we need to
+    do is to extend the `AbstractIssueEventListener` class and override the methods
+    of interest!
+  id: totrans-93
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 实现监听器在 JIRA 中有两种不同的方法。旧的方法是扩展`AbstractIssueEventListener`类，该类又实现了`IssueEventListener`接口。`AbstractIssueEventListener`类捕获事件，识别其类型，并将事件委派给适当的方法进行处理。要编写新的监听器，我们需要做的就是扩展`AbstractIssueEventListener`类，并重写我们感兴趣的方法！
+- en: The new way of doing it is to use the `atlassian-event` library. Here, we register
+    the listener in the plugin descriptor and implement the listener with the help
+    of `@EventListener` annotation.
+  id: totrans-94
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 新的做法是使用`atlassian-event`库。在这里，我们在插件描述符中注册监听器，并借助`@EventListener`注解实现监听器。
+- en: Both ways are supported in JIRA now, though they have their own advantages and
+    disadvantages. For example, it is possible to add properties for a listener in
+    the old way. Adding properties is not supported in the new way but then the new
+    way doesn't need any configuration as it is registered automatically. The new
+    way, on the other hand, can be written as a fully fledged v2.0 plugin.
+  id: totrans-95
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 目前，JIRA 支持两种方式，尽管它们各自有优缺点。例如，旧方法可以为监听器添加属性，而新方法不支持添加属性，但新方法不需要任何配置，因为它会自动注册。另一方面，新方法可以作为一个完全成熟的
+    v2.0 插件来编写。
+- en: In this recipe, we will see how to write listeners in both the ways.
+  id: totrans-96
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本教程中，我们将看到如何使用这两种方法编写监听器。
+- en: Getting ready
+  id: totrans-97
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 准备工作
+- en: Create a skeleton plugin using Atlassian Plugin SDK.
+  id: totrans-98
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用 Atlassian Plugin SDK 创建一个骨架插件。
+- en: How to do it...
+  id: totrans-99
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: 'Writing a listener in the old way, by extending `AbstractIssueEventListener`,
+    is done as follows:'
+  id: totrans-100
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通过扩展`AbstractIssueEventListener`来编写旧方法中的监听器，如下所示：
+- en: Create a listener class that extends the `AbstractIssueEventListener` class.
+  id: totrans-101
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建一个继承`AbstractIssueEventListener`类的监听器类。
+- en: '[PRE10]'
+  id: totrans-102
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE10]'
+- en: Define the properties for the listener. This is an optional step, needed only
+    if you need to define properties for the listener, which can then be used during
+    execution. An example could be to enter the mail server details, if we have a
+    listener that sends custom e-mail using a specific mail server when an event is
+    fired.
+  id: totrans-103
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 定义监听器的属性。这是一个可选步骤，只有当您需要为监听器定义属性时才需要，这些属性可以在执行过程中使用。一个示例是输入邮件服务器的详细信息，如果我们有一个监听器，当事件被触发时，它会使用特定的邮件服务器发送自定义电子邮件。
+- en: Override the `getAcceptedParams` method to return a String array of properties
+    to be defined.
+  id: totrans-104
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 重写`getAcceptedParams`方法，返回要定义的属性的字符串数组。
+- en: '[PRE11]'
+  id: totrans-105
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE11]'
+- en: Here, we define a property named `prop1`.
+  id: totrans-106
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在这里，我们定义了一个名为`prop1`的属性。
+- en: Override the `init` method and retrieve the property value entered by the user.
+  id: totrans-107
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 重写`init`方法，并检索用户输入的属性值。
+- en: '[PRE12]'
+  id: totrans-108
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE12]'
+- en: The `init` method is invoked whenever a listener is configured or re-configured.
+    Here, we just retrieve the property value and assigns it to a class variable for
+    future use.
+  id: totrans-109
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 每当配置或重新配置监听器时，`init`方法都会被调用。在这里，我们只是检索属性值并将其分配给类变量以供将来使用。
+- en: Override the appropriate listener methods. For example, an issue created event
+    can be captured by overriding `issueCreated` method as shown next.
+  id: totrans-110
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 重写适当的监听器方法。例如，可以通过重写`issueCreated`方法来捕获问题创建事件，如下所示。
+- en: '[PRE13]'
+  id: totrans-111
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE13]'
+- en: Here, we just retrieve the issue that triggered the event—the issue that is
+    newly created in this case—and just prints the details along with the listener
+    property. We can write even more complex methods in this method. It is also possible
+    to retrieve other things from the event like the change log details if there are
+    any changes involved, for example, in case of `issueUpdated` event or when entering
+    the comment using a transition.
+  id: totrans-112
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 这里，我们只是获取触发事件的问题——在这种情况下是新创建的问题——并打印出相关细节以及监听器属性。我们还可以在此方法中编写更复杂的方法。如果事件涉及更改，例如`issueUpdated`事件或在使用过渡时输入评论时，还可以从事件中获取其他内容，如更改日志详情。
+- en: Note
+  id: totrans-113
+  prefs:
+  - PREF_IND
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: 'Note that only a handful of events can be listened to like this and there are
+    events like `project` `creation`, which do not throw an event at all! In such
+    cases, you might want to extend the respective action and throw a custom event
+    if needed. All the available events can be found at: [http://docs.atlassian.com/jira/latest/com/atlassian/jira/event/issue/IssueEventListener.html](http://docs.atlassian.com/jira/latest/com/atlassian/jira/event/issue/IssueEventListener.html).'
+  id: totrans-114
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 请注意，只有少数几个事件可以以这种方式进行监听，有些事件，比如`project` `creation`，根本不会触发事件！在这种情况下，您可能需要扩展相应的操作，并在需要时抛出自定义事件。所有可用事件可以在以下网址找到：[http://docs.atlassian.com/jira/latest/com/atlassian/jira/event/issue/IssueEventListener.html](http://docs.atlassian.com/jira/latest/com/atlassian/jira/event/issue/IssueEventListener.html)。
+- en: 'An important method that is worth mentioning here is the `customEvent` method,
+    which is invoked whenever a custom event is triggered. This happens for all the
+    custom events configured by the user as mentioned in the next recipe. We can capture
+    them as shown next:'
+  id: totrans-115
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 这里值得提到的一个重要方法是`customEvent`方法，每当触发自定义事件时，该方法都会被调用。这适用于用户配置的所有自定义事件，如下一个例子所述。我们可以按如下方式捕获它们：
+- en: '[PRE14]'
+  id: totrans-116
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE14]'
+- en: Here, 10033 is the ID of the new event.
+  id: totrans-117
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 这里，10033是新事件的ID。
+- en: Package the class into a JAR file and deploy it under the `jira-home/plugins/installed-plugins`
+    folder.
+  id: totrans-118
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 将类打包成 JAR 文件，并部署到`jira-home/plugins/installed-plugins`文件夹下。
+- en: Restart JIRA
+  id: totrans-119
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 重启 JIRA
+- en: Configure the listener by going to **Administration** | **System** | **Listeners**.
+  id: totrans-120
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 通过转到**管理** | **系统** | **监听器**来配置监听器。
+- en: Enter name and the fully qualified class name and click on **Add**.
+  id: totrans-121
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 输入名称和完整限定类名，然后点击**添加**。
+- en: Edit the listener to add properties if there are any!
+  id: totrans-122
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 编辑监听器，添加属性（如果有的话）！
+- en: 'A listener created in the new way, that is, using `@EventListener` annotation
+    is written as follows:'
+  id: totrans-123
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以新方式创建的监听器，即使用`@EventListener`注解，写法如下：
+- en: Register the listener in `atlassian-plugin.xml`.
+  id: totrans-124
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在`atlassian-plugin.xml`中注册监听器。
+- en: '[PRE15]'
+  id: totrans-125
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE15]'
+- en: Here the `class` attribute holds the fully qualified name of the listener class
+    that we are going to write.
+  id: totrans-126
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 这里，`class`属性保存的是我们将要编写的监听器类的完整限定名。
+- en: Import the `EventPublisher` component using `component-import` plugin module.
+  id: totrans-127
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用`component-import`插件模块导入`EventPublisher`组件。
+- en: '[PRE16]'
+  id: totrans-128
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE16]'
+- en: 'Write the listener class:'
+  id: totrans-129
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 编写监听器类：
+- en: 'Inject the `EventPublisher` component into the class and use the `register`
+    method to self register as shown next:'
+  id: totrans-130
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 将`EventPublisher`组件注入类中，并使用`register`方法进行自注册，如下所示：
+- en: '[PRE17]'
+  id: totrans-131
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE17]'
+- en: 'Create methods to handle the events using `@EventListener` as shown in the
+    following code:'
+  id: totrans-132
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建方法来处理事件，使用`@EventListener`，如下代码所示：
+- en: '[PRE18]'
+  id: totrans-133
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE18]'
+- en: Note that the annotation can be used with any number of public methods in the
+    class and all of them will be invoked when an event is fired in JIRA.
+  id: totrans-134
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 请注意，该注解可以与类中的任意数量的公共方法一起使用，并且在 JIRA 中触发事件时，所有这些方法都会被调用。
+- en: Handle the events appropriately.
+  id: totrans-135
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 适当处理事件。
+- en: '[PRE19]'
+  id: totrans-136
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE19]'
+- en: Here, as we can see, the event ID is checked and then handled as appropriate.
+    First, we handled the issue created event and then the custom event.
+  id: totrans-137
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 如我们所见，事件ID会被检查并适当处理。首先，我们处理了问题创建事件，然后是自定义事件。
+- en: Package the plugin and deploy it under the `jira-home/plugins/installed-plugins`
+    folder.
+  id: totrans-138
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 打包插件并将其部署到`jira-home/plugins/installed-plugins`文件夹中。
+- en: How it works...
+  id: totrans-139
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 工作原理...
+- en: 'In both the cases, the listener works exactly the same way once configured.
+    Note that the configuration is applicable only for the old way and when done the
+    listener can be seen under **Administration** | **System** | **Listeners** as
+    follows:'
+  id: totrans-140
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这两种情况下，配置完成后，监听器的工作方式完全相同。请注意，配置仅适用于旧的方式，配置完成后，监听器可以在**管理** | **系统** | **监听器**下看到，如下所示：
+- en: '![How it works...](img/1803-11-05.jpg)'
+  id: totrans-141
+  prefs: []
+  type: TYPE_IMG
+  zh: '![工作原理...](img/1803-11-05.jpg)'
+- en: Note that there is the property **prop** **1** configured in the listener.
+  id: totrans-142
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请注意，监听器中配置了属性**prop** **1**。
+- en: When the event is fired in JIRA, listeners capture them and the appropriate
+    methods are invoked. The old one will print the issue key along with the property
+    name. The new one works the same way, except that there is no property value.
+  id: totrans-143
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当事件在 JIRA 中触发时，监听器捕获事件并调用适当的方法。旧的方法会打印问题关键字和属性名称。新方法也以相同的方式工作，唯一不同的是没有属性值。
+- en: '![How it works...](img/1803-11-06.jpg)'
+  id: totrans-144
+  prefs: []
+  type: TYPE_IMG
+  zh: '![工作原理...](img/1803-11-06.jpg)'
+- en: It is possible to add properties to the listener even in the new way but that
+    needs a separate configuration screen to capture and maintain the properties.
+  id: totrans-145
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 即使是采用新的方式，也可以向监听器添加属性，但这需要一个单独的配置屏幕来捕获和维护这些属性。
+- en: There's more...
+  id: totrans-146
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 还有更多...
+- en: It is possible that the plugin maybe disabled and re-enabled by the Administrators
+    while the service is still running. The constructor is invoked when the listener
+    is initially loaded at JIRA startup but we might want to handle the enabling or
+    disabling of plugins separately as they are not captured in the constructor.
+  id: totrans-147
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 插件可能会在服务仍然运行时被管理员禁用和重新启用。构造函数在监听器初次加载时会在 JIRA 启动时调用，但我们可能希望单独处理插件的启用或禁用，因为这些操作不会在构造函数中捕获。
+- en: Handling, enabling, and disabling of plugins
+  id: totrans-148
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 插件的处理、启用和禁用
+- en: 'Atlassian plugins are implemented as Spring dynamic modules, and the `atlassian-plugin.xml`
+    is transformed into a Spring XML bean configuration before it is actually loaded
+    by the product. In case of listeners, Event Listener will become a Spring bean
+    and hence we can apply the Spring interfaces—`InitializingBean` and `DisposableBean`—to
+    capture the creation and destruction of the bean. In our case, the code is modified
+    as follows:'
+  id: totrans-149
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Atlassian 插件作为 Spring 动态模块实现，`atlassian-plugin.xml` 在加载之前会被转换为 Spring XML bean
+    配置。对于监听器，事件监听器将变成 Spring bean，因此我们可以应用 Spring 接口——`InitializingBean` 和 `DisposableBean`——来捕获
+    bean 的创建和销毁。在我们的案例中，代码修改如下：
+- en: '[PRE20]'
+  id: totrans-150
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE20]'
+- en: As you can see, the registering and un-registering happens in methods `afterPropertiesSet`
+    and `destroy` events respectively. These methods are invoked during the creation/destruction
+    of the bean and that effectively handles enabling/disabling of the plugin.
+  id: totrans-151
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如您所见，注册和注销分别发生在方法`afterPropertiesSet`和`destroy`事件中。这些方法在 bean 的创建/销毁过程中被调用，从而有效地处理插件的启用/禁用。
+- en: 'Don''t forget to add the `spring-beans` JAR in the project build path in this
+    case to avoid compilation issues! Alternatively, the following dependency can
+    be added in the `pom.xml`:'
+  id: totrans-152
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 别忘了在项目构建路径中添加`spring-beans` JAR，以避免编译问题！另外，也可以在`pom.xml`中添加以下依赖项：
+- en: '[PRE21]'
+  id: totrans-153
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE21]'
+- en: Customizing e-mail content
+  id: totrans-154
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 自定义电子邮件内容
+- en: We have already seen how JIRA throws various events when something happens and
+    how we can handle these events to things ourselves. One such handling of these
+    events includes sending e-mail notifications to users based on the notification
+    schemes that are setup in JIRA. But what if we don't like the default content
+    of JIRA notifications? What if we just want a different wording or maybe even
+    amend the e-mail content?
+  id: totrans-155
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们已经看到，当某些事情发生时，JIRA 如何触发各种事件，以及我们如何处理这些事件以执行自定义操作。处理这些事件的一种方式是根据 JIRA 中设置的通知方案向用户发送电子邮件通知。但如果我们不喜欢
+    JIRA 通知的默认内容呢？如果我们只是想更改措辞，甚至修改电子邮件内容呢？
+- en: In this recipe, we will see how we can customize the e-mail content that is
+    sent as a notification when an event is thrown in JIRA.
+  id: totrans-156
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本示例中，我们将展示如何自定义在 JIRA 中触发事件时发送的电子邮件通知内容。
+- en: How to do it...
+  id: totrans-157
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何实现...
+- en: JIRA has a set of e-mail templates written using velocity that is rendered when
+    a notification is sent. For each event, a template is configured within JIRA and
+    that template is used when the event is thrown. We can either create new templates
+    and edit the events to use these new templates or modify the existing templates
+    and leave the events as they are!
+  id: totrans-158
+  prefs: []
+  type: TYPE_NORMAL
+  zh: JIRA有一套使用Velocity编写的电子邮件模板，当通知发送时会被渲染。对于每个事件，JIRA中都有一个配置的模板，当事件触发时会使用该模板。我们可以创建新的模板并编辑事件以使用这些新模板，或者修改现有模板并保持事件不变！
+- en: 'In both the cases, the steps are pretty much similar and are as follows:'
+  id: totrans-159
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这两种情况下，步骤基本相似，如下所示：
+- en: Identify the event for which the notification needs to be changed. The event
+    could be an existing JIRA event such as `Issue` `Created` and `Issue` `Updated`
+    or the custom event that the JIRA administrator has created.
+  id: totrans-160
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 找到需要更改通知的事件。该事件可以是现有的JIRA事件，如`Issue` `Created`和`Issue` `Updated`，也可以是JIRA管理员创建的自定义事件。
+- en: Find the template mapped to the event.
+  id: totrans-161
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 查找与事件映射的模板。
+- en: For each event, be it system-based or custom, there is a template associated
+    to it. We cannot change the templates associated with a system event. For example,
+    an `Issue` `Updated` event is associated with `Issue` `Updated` template. We can,
+    however, choose any template for the custom events we have added.
+  id: totrans-162
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 对于每个事件，无论是系统事件还是自定义事件，都有一个关联的模板。我们无法更改与系统事件关联的模板。例如，`Issue` `Updated`事件关联的是`Issue`
+    `Updated`模板。然而，我们可以为自己添加的自定义事件选择任何模板。
+- en: 'The e-mail template mapping for the chosen template can be found at `atlassian-jira/WEB-INF/classes/email-template-id-mappings.xml`.
+    In this file, we can find many templates associated to each event. For example,
+    `Issue` `Updated` event has the following entry:'
+  id: totrans-163
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 选择的模板的电子邮件模板映射可以在`atlassian-jira/WEB-INF/classes/email-template-id-mappings.xml`中找到。在该文件中，我们可以找到与每个事件相关的多个模板。例如，`Issue`
+    `Updated`事件有如下条目：
+- en: '[PRE22]'
+  id: totrans-164
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE22]'
+- en: 'Here, we can add new mappings if we are adding new templates as follows:'
+  id: totrans-165
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在这里，如果我们要添加新模板，可以按如下方式添加新的映射：
+- en: '[PRE23]'
+  id: totrans-166
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE23]'
+- en: Make sure the `id` we use here is unique in the file.
+  id: totrans-167
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 确保我们在这里使用的`id`在文件中是唯一的。
+- en: Identify the template to be edited if we are customizing an existing template
+    or add a new template with the name mentioned in the `email-template-id-mappings.xml`
+    file.
+  id: totrans-168
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如果我们要自定义现有模板或添加一个新模板，首先需要在`email-template-id-mappings.xml`文件中找到要编辑的模板，或者按照文件中提到的名称添加新模板。
+- en: Email templates are stored under two different locations within JIRA one for
+    HTML mails and another for Text mails. The templates for those can be found at
+    `WEB-INF/classes/templates/email/html and WEB-INF/classes/templates/email/text
+    respectively`. In addition to these, the subject of the e-mail can be found under
+    `WEB-INF/classes/templates/email/subject`.
+  id: totrans-169
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 电子邮件模板存储在JIRA的两个不同位置，一个用于HTML邮件，另一个用于文本邮件。它们的模板可以分别在`WEB-INF/classes/templates/email/html`和`WEB-INF/classes/templates/email/text`找到。此外，电子邮件的主题可以在`WEB-INF/classes/templates/email/subject`中找到。
+- en: Note that the name of the template is the same in all the three places. In our
+    example, the name of the template being edited is `issueupdated.vm` and hence
+    if we need to only modify the subject, we just need to modify the `WEB-INF/classes/templates/email/subject/issueupdated.vm`
+    file. Similarly, HTML or text content can be edited at `WEB-INF/classes/templates/email/html/issueupdated.vm`
+    or `WEB-INF/classes/templates/email/text/issueupdated.vm` respectively.
+  id: totrans-170
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 请注意，模板的名称在所有三个位置都是相同的。在我们的示例中，要编辑的模板名称是`issueupdated.vm`，因此如果我们仅需要修改主题，只需修改`WEB-INF/classes/templates/email/subject/issueupdated.vm`文件。同样，HTML或文本内容可以分别在`WEB-INF/classes/templates/email/html/issueupdated.vm`或`WEB-INF/classes/templates/email/text/issueupdated.vm`中进行编辑。
+- en: If we are adding the template, `demoevent.vm` in our case, we need to create
+    three templates one for each subject, HTML body and text body, all with the same
+    name put under the respective folders.
+  id: totrans-171
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 如果我们要添加模板，例如在我们的例子中是`demoevent.vm`，我们需要创建三个模板，每个模板分别用于主题、HTML正文和文本正文，并将它们放入相应的文件夹中。
+- en: Restart JIRA after editing the templates appropriately.
+  id: totrans-172
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 编辑完模板后，重新启动JIRA。
+- en: How it works...
+  id: totrans-173
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 它是如何工作的...
+- en: After, a template is newly added and JIRA is restarted, we can associate it
+    with the custom events we have created. When the notification is sent, JIRA will
+    use the updated or newly added templates to render the e-mail content.
+  id: totrans-174
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在添加新模板并重启JIRA后，我们可以将其与我们创建的自定义事件关联。当通知发送时，JIRA将使用更新或新添加的模板来呈现电子邮件内容。
+- en: There's more...
+  id: totrans-175
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 还有更多...
+- en: It is possible to add more information about an issue, such as custom fields
+    in the notification e-mails by editing the relevant velocity templates.
+  id: totrans-176
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通过编辑相关的Velocity模板，您可以在通知电子邮件中添加有关问题的更多信息，如自定义字段。
+- en: Advanced Customization—adding custom field information
+  id: totrans-177
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 高级自定义——添加自定义字段信息
+- en: 'All the VM templates have got the `$issue` object in the velocity context along
+    with other variables that are elaborated at: [http://confluence.atlassian.com/display/JIRADEV/Velocity+Context+for+Email+Templates](http://confluence.atlassian.com/display/JIRADEV/Velocity+Context+for+Email+Templates).
+    It is fairly easy to use this to retrieve the contents on an issue while generating
+    the e-mail content.'
+  id: totrans-178
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 所有的VM模板在Velocity上下文中都包含了`$issue`对象，以及其他在以下地址详细说明的变量：[http://confluence.atlassian.com/display/JIRADEV/Velocity+Context+for+Email+Templates](http://confluence.atlassian.com/display/JIRADEV/Velocity+Context+for+Email+Templates)。在生成电子邮件内容时，使用它来检索问题的内容非常容易。
+- en: 'For example, `$issue.summary` will retrieve the issue summary and you can see
+    it in the e-mail subject rendered using `WEB-INF/classes/templates/email/subject/issueupdated.vm`.
+    Similarly, other information on the issue can be easily accessed. For example,
+    custom field details can be accessed as follows:'
+  id: totrans-179
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 例如，`$issue.summary`将检索问题摘要，您可以在通过`WEB-INF/classes/templates/email/subject/issueupdated.vm`渲染的电子邮件主题中看到它。类似地，其他问题信息也可以轻松访问。例如，自定义字段的详细信息可以通过以下方式访问：
+- en: '[PRE24]'
+  id: totrans-180
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE24]'
+- en: Here, `10010` is the unique ID for the custom field.
+  id: totrans-181
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这里的`10010`是自定义字段的唯一ID。
+- en: 'You can see various other examples of formatting at: [http://confluence.atlassian.com/display/JIRADEV/Adding+Custom+Fields+to+Email](http://confluence.atlassian.com/display/JIRADEV/Adding+Custom+Fields+to+Email).'
+  id: totrans-182
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 您可以在以下地址查看其他格式化的示例：[http://confluence.atlassian.com/display/JIRADEV/Adding+Custom+Fields+to+Email](http://confluence.atlassian.com/display/JIRADEV/Adding+Custom+Fields+to+Email)。
+- en: Redirecting to different page in webwork actions
+  id: totrans-183
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 在Webwork操作中重定向到不同的页面
+- en: This recipe covers a very simple concept in JIRA web actions. While writing
+    plugins, we often come across scenarios where we need to navigate to a new page
+    such as a Dashboard or to browse a new project or view another issue after the
+    action is executed. `JiraWebActionSupport` provides a simple method for doing
+    this, which we will see in this recipe.
+  id: totrans-184
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本食谱涵盖了JIRA Web操作中一个非常简单的概念。在编写插件时，我们经常会遇到需要在执行操作后导航到新页面的场景，例如仪表板、浏览新项目或查看其他问题。`JiraWebActionSupport`提供了一种简单的方法来实现这一点，我们将在本食谱中看到这一点。
+- en: How to do it...
+  id: totrans-185
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: What if we want to navigate to the Dashboard instead of rendering a success
+    view when an action is executed? What if we can't directly link it from the JSP
+    page or the velocity template because we want to perform something in the action
+    class before we redirect?
+  id: totrans-186
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果我们希望在执行操作时导航到仪表板，而不是渲染成功视图该怎么办？如果我们无法直接从JSP页面或Velocity模板中链接它，因为我们想在重定向之前在操作类中执行某些操作该怎么办？
+- en: All you need here is to return `getRedirect(URL)` in the action class's `doExecute`
+    method (or the appropriate method)! This method will redirect to the specified
+    location when the action method is successfully finished. If there are any errors,
+    it will go to the error page as the `getRedirect()` method returns `Action.ERROR`
+    in that case.
+  id: totrans-187
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 您需要做的就是在操作类的`doExecute`方法（或适当的方法）中返回`getRedirect(URL)`！当操作方法成功完成时，这个方法会重定向到指定位置。如果出现任何错误，它将跳转到错误页面，因为`getRedirect()`方法在这种情况下返回`Action.ERROR`。
+- en: You can force redirect to the URL even if there are errors by using `forceRedirect(URL)`
+    instead of `getRedirect()` method. It doesn't clear the return URL and will always
+    go to the redirect URL.
+  id: totrans-188
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 即使存在错误，您也可以通过使用`forceRedirect(URL)`方法而不是`getRedirect()`方法强制重定向到指定URL。它不会清除返回的URL，始终会跳转到重定向URL。
+- en: 'For example, if we need to return to Dashboard when SUCCESS, we can do it as
+    follows:'
+  id: totrans-189
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 例如，如果我们在成功时需要返回到仪表板，我们可以这样做：
+- en: '[PRE25]'
+  id: totrans-190
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE25]'
+- en: Replacing `getRedirect` with `forceRedirect` will take the user to Dashboard
+    irrespective of the result.
+  id: totrans-191
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 将`getRedirect`替换为`forceRedirect`将使用户无论结果如何都跳转到仪表板。
+- en: Adding custom behavior for user details
+  id: totrans-192
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 为用户详情添加自定义行为
+- en: 'In JIRA, you can see that the user details are formatted with the full name
+    and a link to the users'' profile within the application. For example, when the
+    issues are displayed in the issue navigator, the assignee and reporter are displayed
+    as follows:'
+  id: totrans-193
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在JIRA中，您可以看到用户详情是通过全名和指向用户在应用程序中个人资料的链接来格式化的。例如，当问题在问题导航器中显示时，指派人和报告人会显示如下：
+- en: '![Adding custom behavior for user details](img/1803-11-07.jpg)'
+  id: totrans-194
+  prefs: []
+  type: TYPE_IMG
+  zh: '![为用户详情添加自定义行为](img/1803-11-07.jpg)'
+- en: But what if we want to change how the user details are displayed? Say, if we
+    want to display the user avatar alongside? Or, if we want to display their usernames
+    with an external link, like a link to their Twitter profile?
+  id: totrans-195
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 但是，如果我们想改变用户详细信息的显示方式呢？比如，如果我们想展示用户头像？或者，如果我们想通过外部链接展示他们的用户名，例如指向他们Twitter个人资料的链接？
+- en: JIRA provides the User Format plugin module to serve this purpose. Using this
+    module, we can define different formats in which the user will be displayed and
+    use them within the existing JIRA displays or within out-custom plugins.
+  id: totrans-196
+  prefs: []
+  type: TYPE_NORMAL
+  zh: JIRA提供了用户格式插件模块来实现此目的。使用此模块，我们可以定义不同的格式，在这些格式中，用户将以特定的方式显示，并可在现有的JIRA展示或我们自定义的插件中使用它们。
+- en: Getting ready
+  id: totrans-197
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 准备工作
+- en: Create a skeleton plugin using the Atlassian Plugin SDK.
+  id: totrans-198
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用Atlassian插件SDK创建一个骨架插件。
+- en: How to do it...
+  id: totrans-199
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何实现...
+- en: 'In this recipe, let us try to create a new user profile that will display the
+    username (instead of full name) with a link to their twitter profile to add some
+    spice! The following are the steps to do it:'
+  id: totrans-200
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本教程中，让我们尝试创建一个新的用户配置文件，将显示用户名（而不是全名）并提供指向他们Twitter个人资料的链接，增加一些趣味！以下是实现步骤：
+- en: 'Add the user-profile module in to the `atlassian-plugin.xml`:'
+  id: totrans-201
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 将用户配置文件模块添加到`atlassian-plugin.xml`：
+- en: '[PRE26]'
+  id: totrans-202
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE26]'
+- en: As with other plugin modules, user profile module also has a unique **key**.
+    It then points to the **class** that will be used by the user formatter, `TwitterUserFormat`
+    in this case.
+  id: totrans-203
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 与其他插件模块一样，用户配置文件模块也有一个唯一的**key**。然后，它指向将由用户格式化程序使用的**class**，在此情况下是`TwitterUserFormat`。
+- en: 'The `type` element holds the unique profile type name that will be used while
+    formatting the user. Following are the types existing in JIRA by default as on
+    4.4 version: `profileLink`, `fullName`, `profileLinkSearcher`, `profileLinkExternal`,
+    `profileLinkActionHeader`, `fullProfile`.'
+  id: totrans-204
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`type`元素包含将在格式化用户时使用的唯一配置文件类型名称。以下是JIRA 4.4版本中默认存在的类型：`profileLink`、`fullName`、`profileLinkSearcher`、`profileLinkExternal`、`profileLinkActionHeader`、`fullProfile`。'
+- en: The `resource` element points to the velocity template to be used for rendering
+    the view, `twitterLink.vm` in this case.
+  id: totrans-205
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`resource`元素指向用于渲染视图的velocity模板，在此情况下是`twitterLink.vm`。'
+- en: Create the formatter class in the previous step. The class should implement
+    the `UserFormat` interface.
+  id: totrans-206
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在上一步中创建格式化器类。该类应实现`UserFormat`接口。
+- en: '[PRE27]'
+  id: totrans-207
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE27]'
+- en: Here, we inject `UserFormatModuleDescriptor` into the class as it will be used
+    in rendering the velocity template, as shown in the next step.
+  id: totrans-208
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在这里，我们将`UserFormatModuleDescriptor`注入类中，因为它将在渲染velocity模板时使用，正如下一步所示。
+- en: Implement the required methods. We will have to implement the two overridden
+    **format** methods.
+  id: totrans-209
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 实现所需的方法。我们需要实现两个重写的**format**方法。
+- en: The first method takes a `username` and `id` where the `username` is the name
+    of the user, which can also be *null*, and `id` is an extra argument that can
+    be used to pass an extra context to the renderer. Ideally, an implementation might
+    include this ID in the rendered output such that it can be used for test assertions.
+    An example of how the ID is used can be found in displaying the assignee in the
+    column view (`/WEB-INF/classes/templates/jira/issue/field/assignee-columnview.vm`)
+    where the ID is assignee.
+  id: totrans-210
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 第一个方法接受`username`和`id`，其中`username`是用户的名字，它也可以是*null*，而`id`是一个额外的参数，可以用来向渲染器传递额外的上下文。理想情况下，某个实现可能会在渲染的输出中包含该ID，以便可以用于测试断言。ID的使用示例如显示分配人（`/WEB-INF/classes/templates/jira/issue/field/assignee-columnview.vm`）中，ID是分配人。
+- en: 'We are not going to use ID in the example, but the method is implemented as
+    follows:'
+  id: totrans-211
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 我们在示例中不使用ID，但该方法实现如下：
+- en: '[PRE28]'
+  id: totrans-212
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE28]'
+- en: 'where the `getInitialParams` just populates the `params` map with the username
+    as shown:'
+  id: totrans-213
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`getInitialParams`仅用用户名填充`params`映射，如下所示：'
+- en: '[PRE29]'
+  id: totrans-214
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE29]'
+- en: We can populate the map with as many things as needed if we want to render the
+    user details in some other way!
+  id: totrans-215
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 如果我们希望以其他方式渲染用户详细信息，我们可以根据需要在映射中填充任意数量的内容！
+- en: 'The second method takes `username`, `id`, and a `map` pre-populated with extra
+    values to add more to the context! The method is implemented as follows:'
+  id: totrans-216
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 第二个方法接受`username`、`id`和一个预先填充了额外值的`map`，用于向上下文添加更多内容！该方法实现如下：
+- en: '[PRE30]'
+  id: totrans-217
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE30]'
+- en: The only difference is that the extra context is also populated into `params`
+    map.
+  id: totrans-218
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 唯一的区别是，额外的上下文也被填充到`params`映射中。
+- en: In both cases, the `moduleDescriptor` renders the velocity template, defined
+    by the name `VIEW_TEMPLATE` or "view".
+  id: totrans-219
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在这两种情况下，`moduleDescriptor`将渲染velocity模板，该模板由`VIEW_TEMPLATE`或“view”名称定义。
+- en: 'Write the velocity template that uses the context populated in `params` map
+    in the previous step to display the user information:'
+  id: totrans-220
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 编写 velocity 模板，使用上一步中 `params` 映射中填充的上下文来显示用户信息：
+- en: '[PRE31]'
+  id: totrans-221
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE31]'
+- en: In our example, we just display the username as it is with a link `http://twitter.com/#!/${username}`
+    that will point to the twitter account with that username. Note that the `quote`
+    variable is assigned a double quotation mark inside a single quotation mark. Single
+    quotation here is the velocity syntax and double quotation is the value. It is
+    used to construct the URL where encoded name, href value, and so on are placed
+    between quotes!
+  id: totrans-222
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在我们的示例中，我们只显示用户名，并提供一个链接 `http://twitter.com/#!/${username}`，该链接指向拥有该用户名的 Twitter
+    账户。注意，`quote` 变量在单引号内赋值为双引号。单引号是 velocity 语法，而双引号是值。它用于构建 URL，其中编码的名称、href 值等都放在引号之间！
+- en: Don't forget to handle the scenario when the user is null. In our case, we just
+    display the name as Anonymous when the user is null.
+  id: totrans-223
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 别忘了处理用户为 null 的情况。在我们的示例中，当用户为 null 时，我们只显示“匿名”作为名称。
+- en: Package the plugin and deploy it.
+  id: totrans-224
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 打包插件并部署。
+- en: How it works...
+  id: totrans-225
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 工作原理...
+- en: 'Once the plugin is deployed, the new user profile, `twitterLink` in this case,
+    can be used in various places in JIRA where appropriate. For example, the `assignee-columnview.vm`
+    can be modified to include `twitterLink` profile instead of the default `profileLink`
+    as follows:'
+  id: totrans-226
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 插件部署后，新的用户资料（在此例中为 `twitterLink`）可以在 JIRA 中的各个适当位置使用。例如，`assignee-columnview.vm`
+    可以修改为包含 `twitterLink` 资料，而不是默认的 `profileLink`，如下所示：
+- en: '[PRE32]'
+  id: totrans-227
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE32]'
+- en: 'When you do that, the assignee column in issue navigator will appear as follows
+    with a link to the user''s Twitter account:'
+  id: totrans-228
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当你这样做时，问题导航器中的指派人列将显示如下，并包含指向用户 Twitter 账户的链接：
+- en: '![How it works...](img/1803-11-08.jpg)'
+  id: totrans-229
+  prefs: []
+  type: TYPE_IMG
+  zh: '![工作原理...](img/1803-11-08.jpg)'
+- en: 'We can also use the new profile in the plugins to render user details just
+    by invoking the `formatUser` as follows:'
+  id: totrans-230
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们还可以在插件中使用新的资料，通过调用 `formatUser` 来呈现用户详细信息，如下所示：
+- en: '[PRE33]'
+  id: totrans-231
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE33]'
+- en: 'Or:'
+  id: totrans-232
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 或：
+- en: '[PRE34]'
+  id: totrans-233
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE34]'
+- en: Deploying a servlet in JIRA
+  id: totrans-234
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 在 JIRA 中部署 servlet
+- en: We all know how useful a servlet is! JIRA provides an easy way to deploy a JAVA
+    servlet with the help of the Servlet Plugin module. In this recipe, we will see
+    how to write a simple servlet and access it in JIRA.
+  id: totrans-235
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们都知道 servlet 有多么有用！JIRA 提供了一种简便的方式，通过 Servlet 插件模块来部署 JAVA servlet。在本教程中，我们将看到如何编写一个简单的
+    servlet 并在 JIRA 中访问它。
+- en: Getting ready
+  id: totrans-236
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 准备工作
+- en: Create a skeleton plugin using the Atlassian Plugin SDK.
+  id: totrans-237
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用 Atlassian Plugin SDK 创建一个插件骨架。
+- en: How to do it...
+  id: totrans-238
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何做...
+- en: 'The following are the steps to deploy a JAVA servlet in JIRA:'
+  id: totrans-239
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是在 JIRA 中部署 JAVA servlet 的步骤：
+- en: 'Include the servlet plugin module in the `atlassian-plugin.xml`. The Servlet
+    plugin module allows the following set of attributes:'
+  id: totrans-240
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 将 servlet 插件模块包含在 `atlassian-plugin.xml` 中。Servlet 插件模块支持以下一组属性：
+- en: '`class`: It is the servlet Java class and it must be a subclass of `javax.servlet.http.HttpServlet`.
+    This attribute is mandatory.'
+  id: totrans-241
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: '`class`: 它是 servlet 的 Java 类，必须是 `javax.servlet.http.HttpServlet` 的子类。此属性是必需的。'
+- en: '`disabled`: It indicates whether the plugin module should be disabled or enabled
+    by default. By default, the module is enabled.'
+  id: totrans-242
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: '`disabled`: 它表示插件模块是否默认禁用或启用。默认情况下，模块是启用的。'
+- en: '`i18n-name-key`: The localization key for the human-readable name of the plugin
+    module.'
+  id: totrans-243
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: '`i18n-name-key`: 插件模块人类可读名称的本地化键。'
+- en: '`key`: It represents the unique key for the plugin module. This attribute is
+    mandatory.'
+  id: totrans-244
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: '`key`: 它表示插件模块的唯一键。此属性是必需的。'
+- en: '`name`: It is the human-readable name of the servlet.'
+  id: totrans-245
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: '`name`: 它是 servlet 的人类可读名称。'
+- en: '`system`: It indicates whether this plugin module is a system plugin module
+    or not. Only available for non-OSGi plugins.'
+  id: totrans-246
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: '`system`: 它表示该插件模块是否为系统插件模块。仅适用于非 OSGi 插件。'
+- en: 'The following are the child elements supported:'
+  id: totrans-247
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 以下是支持的子元素：
+- en: '`description`: The description of the plugin module.'
+  id: totrans-248
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: '`description`: 插件模块的描述。'
+- en: '`init-param`: Initialization parameters for the servlet, specified using `param-name`
+    and `param-value` subelements, just as in `web.xml`. This element and its child
+    elements may be repeated.'
+  id: totrans-249
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: '`init-param`: servlet 的初始化参数，通过 `param-name` 和 `param-value` 子元素指定，方式与 `web.xml`
+    相同。此元素及其子元素可以重复。'
+- en: '`resource`: Resources for this plugin module. This element may be repeated.'
+  id: totrans-250
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: '`resource`: 此插件模块的资源。该元素可以重复。'
+- en: '`url-pattern`: The pattern of the URL to match. This element is mandatory and
+    may be repeated.'
+  id: totrans-251
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: '`url-pattern`: 要匹配的 URL 模式。此元素是必需的，并且可以重复。'
+- en: 'In our example, let us use only the mandatory fields and some example init-`params`
+    as shown:'
+  id: totrans-252
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在我们的示例中，我们只使用必填字段和一些示例的 init-`params`，如下所示：
+- en: '[PRE35]'
+  id: totrans-253
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE35]'
+- en: 'Here `JTricksServlet` is the servlet class where as `/myWebsite` is the URL
+    pattern. We are also passing a couple of `init` params: `siteName` and `siteAddress`.'
+  id: totrans-254
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 这里 `JTricksServlet` 是 servlet 类，而 `/myWebsite` 是 URL 模式。我们还传递了一些 `init` 参数：`siteName`
+    和 `siteAddress`。
+- en: Create a `servlet` class. The class must extend `javax.servlet.http.HttpServlet`.
+  id: totrans-255
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建一个 `servlet` 类。该类必须继承 `javax.servlet.http.HttpServlet`。
+- en: '[PRE36]'
+  id: totrans-256
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE36]'
+- en: 'Implement the necessary methods:'
+  id: totrans-257
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 实现必要的方法：
+- en: 'We can retrieve the `init` params in the `init` method as shown next:'
+  id: totrans-258
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 我们可以在 `init` 方法中检索 `init` 参数，如下所示：
+- en: '[PRE37]'
+  id: totrans-259
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE37]'
+- en: The `init()` method is invoked every time the servlet is initialized and this
+    happens when the servlet is first accessed. `init()` method is also invoked when
+    the servlet is first accessed after the plugin module is disabled and enabled
+    back.
+  id: totrans-260
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 每次初始化 servlet 时都会调用 `init()` 方法，这发生在 servlet 第一次被访问时。当插件模块被禁用并重新启用时，`init()`
+    方法也会在 servlet 第一次被访问时被调用。
+- en: As you can see, the `init` params we defined in the servlet plugin module can
+    be accessed here from the `ServletConfig`. Here, we also initialize the `JiraAuthenticationContext`
+    so that we can use it to retrieve the logged-in user details in the servlet. Similarly,
+    we can initialize any JIRA components here.
+  id: totrans-261
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 如您所见，我们在 servlet 插件模块中定义的 `init` 参数可以从 `ServletConfig` 中访问。此处，我们还初始化了 `JiraAuthenticationContext`，以便可以用它在
+    servlet 中检索当前登录用户的详细信息。类似地，我们也可以在这里初始化任何 JIRA 组件。
+- en: Implement the `doGet()` and/or `doPost()` methods to do what needs to be implemented.
+    For the example, we will just use the `init` params to create a simple HTML page
+    and print a line to the console.
+  id: totrans-262
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 实现 `doGet()` 和/或 `doPost()` 方法，执行所需的功能。对于本示例，我们将仅使用 `init` 参数创建一个简单的 HTML 页面，并将一行输出到控制台。
+- en: '[PRE38]'
+  id: totrans-263
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE38]'
+- en: The `authenticationContext` retrieves the current username as mentioned earlier.
+    From JIRA 4.3, `getLoggedInUser()` method is used to retrieve the current user
+    and `getDisplayName()` gets the user's full name.
+  id: totrans-264
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`authenticationContext` 如前所述检索当前用户名。从 JIRA 4.3 开始，`getLoggedInUser()` 方法用于检索当前用户，`getDisplayName()`
+    获取用户的全名。'
+- en: Package the plugin and deploy it.
+  id: totrans-265
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 打包插件并部署。
+- en: How it works...
+  id: totrans-266
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何工作...
+- en: 'Once deployed, the servlet will be accessible at the URL: `http://yourserver/jira/plugins/servlet/${urlPattern}`.
+    In our case, the URL is `http://yourserver/jira/plugins/servlet/myWebsite`.'
+  id: totrans-267
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦部署，servlet 将可以通过以下 URL 访问：`http://yourserver/jira/plugins/servlet/${urlPattern}`。在我们的例子中，URL
+    是 `http://yourserver/jira/plugins/servlet/myWebsite`。
+- en: 'When the servlet is accessed at `/plugins/servlet/myWebsite`, the output is
+    as shown in the following screenshot:'
+  id: totrans-268
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当 servlet 在 `/plugins/servlet/myWebsite` 被访问时，输出如以下截图所示：
+- en: '![How it works...](img/1803-11-09.jpg)'
+  id: totrans-269
+  prefs: []
+  type: TYPE_IMG
+  zh: '![如何工作...](img/1803-11-09.jpg)'
+- en: Adding shared parameters to Servlet Context
+  id: totrans-270
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 向 Servlet 上下文添加共享参数
+- en: In the previous recipe, we saw how to deploy a servlet and how to make use of
+    the init params. What if we have a set of servlets or servlet filters or context
+    listeners that make use of the same parameters? Do we really need to initialize
+    them in all the plugin modules?
+  id: totrans-271
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在上一个示例中，我们展示了如何部署一个 servlet 并如何使用 `init` 参数。如果我们有一组 servlets、servlet filters
+    或 context listeners 使用相同的参数，是否真的需要在所有插件模块中初始化它们？
+- en: In this recipe, we will see how we can use the Servlet Context Parameter plugin
+    module to share parameters across servlets, filters, and listeners.
+  id: totrans-272
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这个示例中，我们将展示如何使用 Servlet 上下文参数插件模块在多个 servlets、filters 和 listeners 之间共享参数。
+- en: Getting ready
+  id: totrans-273
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 准备工作
+- en: Create a skeleton plugin using the Atlassian Plugin SDK.
+  id: totrans-274
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用 Atlassian 插件 SDK 创建一个骨架插件。
+- en: How to do it...
+  id: totrans-275
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 操作步骤...
+- en: All we need to do is to define the shared parameters to add a `servlet-context-param`
+    module for each shared parameter in the `atlassian-plugin.xml`.
+  id: totrans-276
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们需要做的就是定义共享参数，为每个共享参数在 `atlassian-plugin.xml` 中添加一个 `servlet-context-param`
+    模块。
+- en: 'For example, a parameter with key `sharedText` can be defined as follows:'
+  id: totrans-277
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 例如，可以如下定义一个键为 `sharedText` 的参数：
+- en: '[PRE39]'
+  id: totrans-278
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE39]'
+- en: Make sure the module has a unique key. Here, the parameter name is `sharedText`
+    and it has a value **This** **is** **a** **shared** **Text**. Once the plugin
+    is packaged and deployed, the parameter **sharedText** is available across servlets,
+    filters, and listeners.
+  id: totrans-279
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 确保模块具有唯一的键。这里，参数名称是 `sharedText`，其值为 **This** **is** **a** **shared** **Text**。一旦插件被打包并部署，参数
+    **sharedText** 将在 servlets、filters 和 listeners 之间共享。
+- en: 'In a servlet, we can access the parameter in the `init` method as follows:'
+  id: totrans-280
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 servlet 中，我们可以在 `init` 方法中如下访问该参数：
+- en: '[PRE40]'
+  id: totrans-281
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE40]'
+- en: How it works...
+  id: totrans-282
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何工作...
+- en: Once the shared text is retrieved, we can use it anywhere like while constructing
+    the HTML
+  id: totrans-283
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦获取到共享文本，我们可以在任何地方使用它，比如在构建 HTML 时。
+- en: '[PRE41]'
+  id: totrans-284
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE41]'
+- en: 'The servlet will be now printing that as well, as shown in the following screenshot:'
+  id: totrans-285
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，servlet 也将打印出来，如下图所示：
+- en: '![How it works...](img/1803-11-10.jpg)'
+  id: totrans-286
+  prefs: []
+  type: TYPE_IMG
+  zh: '![它是如何工作的...](img/1803-11-10.jpg)'
+- en: Writing a Servlet Context Listener
+  id: totrans-287
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 编写 Servlet 上下文监听器
+- en: We have seen how to write servlets. How about writing a context listener for
+    the same? This will come in handy if you want to integrate with frameworks that
+    use context listeners for initialization.
+  id: totrans-288
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们已经了解了如何编写 servlets。那么，如何为相同的应用编写一个上下文监听器呢？如果你想与使用上下文监听器进行初始化的框架集成，这会非常有用。
+- en: Getting ready
+  id: totrans-289
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 准备就绪
+- en: Create a skeleton plugin using the Atlassian Plugin SDK.
+  id: totrans-290
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用 Atlassian Plugin SDK 创建一个骨架插件。
+- en: How to do it...
+  id: totrans-291
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何实现...
+- en: 'Following are the steps to write a simple context listener:'
+  id: totrans-292
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是编写简单上下文监听器的步骤：
+- en: Include the `servlet-context-listener` module in the `atlassian-plugin.xml`.
+  id: totrans-293
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在 `atlassian-plugin.xml` 中包含 `servlet-context-listener` 模块。
+- en: '[PRE42]'
+  id: totrans-294
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE42]'
+- en: Here, we have a unique module key and a class that is the servlet context listener's
+    Java class.
+  id: totrans-295
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在这里，我们有一个独特的模块键和一个类，该类是 servlet 上下文监听器的 Java 类。
+- en: 'Write the servlet context listener''s class. The class must `javax.servlet.ServletContextListener`:'
+  id: totrans-296
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 编写 servlet 上下文监听器的类。该类必须实现 `javax.servlet.ServletContextListener`：
+- en: '[PRE43]'
+  id: totrans-297
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE43]'
+- en: 'Implement the context listener methods as appropriate. For example, we just
+    print some statements to the console:'
+  id: totrans-298
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 根据需要实现上下文监听器方法。例如，我们只是将一些语句打印到控制台：
+- en: '[PRE44]'
+  id: totrans-299
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE44]'
+- en: The details of the context that is initialized or destroyed can be found from
+    the `ServletContextEvent` object.
+  id: totrans-300
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 可以从 `ServletContextEvent` 对象中找到已初始化或销毁的上下文的详细信息。
+- en: Package the plugin and deploy it.
+  id: totrans-301
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 打包插件并部署。
+- en: How it works...
+  id: totrans-302
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 它是如何工作的...
+- en: The `contextInitialized` method is not invoked at application startup. Instead,
+    it is invoked the first time a servlet or filter in the plugin is accessed after
+    each time it is enabled.
+  id: totrans-303
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`contextInitialized` 方法不会在应用程序启动时调用。相反，每次启用插件后，只有当访问插件中的 servlet 或过滤器时，它才会第一次被调用。'
+- en: '![How it works...](img/1803-11-11.jpg)'
+  id: totrans-304
+  prefs: []
+  type: TYPE_IMG
+  zh: '![它是如何工作的...](img/1803-11-11.jpg)'
+- en: Similarly the `contextDestroyed` method is invoked every time the plugin module
+    containing a servlet or filter is disabled.
+  id: totrans-305
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 类似地，`contextDestroyed` 方法会在每次禁用包含 servlet 或过滤器的插件模块时被调用。
+- en: Using filters to intercept queries in JIRA
+  id: totrans-306
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用过滤器拦截 JIRA 查询
+- en: Servlet filters provide a powerful mechanism to intercept queries and do wise
+    things such as profiling, monitoring, content generation, and so on. It works
+    exactly like any normal Java servlet filter and JIRA provides the **Servlet**
+    **Filter** **Plugin** **Module** to add them using plugins. In this recipe, we
+    will learn about how to use filter to intercept certain queries to JIRA and how
+    we can utilize them!
+  id: totrans-307
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Servlet 过滤器提供了一个强大的机制，可以拦截查询并执行一些智能操作，如分析、监控、内容生成等。它的工作原理与任何正常的 Java servlet
+    过滤器一样，JIRA 提供了 **Servlet** **Filter** **Plugin** **Module** 来通过插件添加它们。在这个教程中，我们将学习如何使用过滤器拦截某些
+    JIRA 查询以及如何利用它们！
+- en: As with other servlet plugin modules, a `servlet-filter` `plugin` module also
+    has a unique `key` and a `class` associated with it. The `name` attribute holds
+    the human-readable name of the filter and `weight` indicates the order in which
+    the filter will be placed in the filter chain. The higher the weight, the lower
+    the filter's position.
+  id: totrans-308
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 与其他 servlet 插件模块一样，`servlet-filter` `plugin` 模块也有一个唯一的 `key` 和一个与之关联的 `class`。`name`
+    属性保存过滤器的可读名称，`weight` 指示过滤器在过滤器链中的顺序。权重越高，过滤器的位置越低。
+- en: 'There is another important attribute `location` that denotes the position of
+    the filter in the application''s filter chain. Following are the four possible
+    values for the location:'
+  id: totrans-309
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 另一个重要的属性是 `location`，它表示过滤器在应用程序过滤器链中的位置。以下是位置的四个可能值：
+- en: '`after-encoding`: Very top of the filter chain in the application, but after
+    any filters which ensure the integrity of the request.'
+  id: totrans-310
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`after-encoding`：在应用程序中过滤器链的最顶部，但在任何确保请求完整性的过滤器之后。'
+- en: '`before-login`: Before the filter that logs in the user.'
+  id: totrans-311
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`before-login`：在进行用户登录的过滤器之前。'
+- en: '`before-decoration`: Before the filter which does Sitemesh decoration of the
+    response.'
+  id: totrans-312
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`before-decoration`：在进行 Sitemesh 装饰响应的过滤器之前。'
+- en: '`before-dispatch`: At the end of the filter chain, before any servlet or filter
+    which handles the request by default.'
+  id: totrans-313
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`before-dispatch`：在过滤器链的末端，在任何默认处理请求的 servlet 或过滤器之前。'
+- en: The `weight` attribute is used in conjunction with `location`. If two filters
+    have the same location, then they are ordered based on the weight attribute.
+  id: totrans-314
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`weight` 属性与 `location` 一起使用。如果两个过滤器具有相同的位置，则根据 `weight` 属性的值对它们进行排序。'
+- en: '`init-param` as usual takes the initialisation parameters for the filter.'
+  id: totrans-315
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`init-param`像往常一样用于接收过滤器的初始化参数。'
+- en: '`url-pattern` defines the pattern of the URL to match. This element can be
+    repeated and the filter will be invoked for all the URLs matching any of the patterns
+    specified. Unlike a servlet URL, the `url-pattern` here matches `${baseUrl}/${url-pattern}`.
+    The pattern can use wild chars `*` or `?`, the former matching zero or many characters,
+    including directory slashes and the latter matching zero or one character.'
+  id: totrans-316
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`url-pattern`定义了匹配的URL模式。此元素可以重复，过滤器将对所有与指定模式匹配的URL进行调用。与servlet URL不同，`url-pattern`在此处匹配`${baseUrl}/${url-pattern}`。该模式可以使用通配符`*`或`?`，前者匹配零个或多个字符，包括目录斜杠，后者匹配零个或一个字符。'
+- en: '`dispatcher` is another element that determines when the filter is invoked.
+    You can include multiple dispatcher elements with values `REQUEST`, `INCLUDE`,
+    `FORWARD`, or `ERROR`. If not present, the filter will be invoked in all cases.'
+  id: totrans-317
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`dispatcher`是另一个确定何时调用过滤器的元素。你可以包含多个调度程序元素，值为`REQUEST`、`INCLUDE`、`FORWARD`或`ERROR`。如果没有指定，过滤器将在所有情况下调用。'
+- en: Getting ready
+  id: totrans-318
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 准备工作
+- en: Create an skeleton plugin using the Atlassian Plugin SDK.
+  id: totrans-319
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用Atlassian插件SDK创建一个骨架插件。
+- en: How to do it...
+  id: totrans-320
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: Let us try to intercept all the issue views, which has the URLs of the format
+    `${baseUrl}/browse/*-*` and log them. The following are the step-by-step procedure
+    to write a filter and implement the given logic.
+  id: totrans-321
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们尝试拦截所有问题视图，其URL格式为`${baseUrl}/browse/*-*`并记录它们。以下是编写过滤器并实现给定逻辑的逐步过程。
+- en: Add the **Servlet** **Filter** plugin module into `atlassian-plugin.xml`.
+  id: totrans-322
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 将**Servlet** **Filter**插件模块添加到`atlassian-plugin.xml`中。
+- en: '[PRE45]'
+  id: totrans-323
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE45]'
+- en: Here `JTricksServletFilter` is the filter class and we have added the filter
+    before dispatch. In our example, `url-pattern` will be `/browse/*-*` as the URL
+    to browse an issue is of the form `${baseUrl}/browse/*-*.` We can use different
+    URL patterns as required in our context.
+  id: totrans-324
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 这里`JTricksServletFilter`是过滤器类，我们在分发之前添加了该过滤器。在我们的示例中，`url-pattern`将是`/browse/*-*`，因为浏览问题的URL是`${baseUrl}/browse/*-*`格式。我们可以根据需要在我们的上下文中使用不同的URL模式。
+- en: 'Create the `Filter` class. The class should implement `javax.servlet.Filter`:'
+  id: totrans-325
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建`Filter`类。该类应实现`javax.servlet.Filter`：
+- en: '[PRE46]'
+  id: totrans-326
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE46]'
+- en: 'Implement the appropriate Filter methods:'
+  id: totrans-327
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 实现适当的过滤器方法：
+- en: '[PRE47]'
+  id: totrans-328
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE47]'
+- en: Here, the `init` method is invoked when the filter is initialized, that is,
+    the first time it is accessed after the plugin is enabled. In this method, we
+    can retrieve the `init-param` instances defined or parameters defined using Servlet
+    Context Parameter plugin module. In the previous code snippet, use `getLoggedInUser()`
+    to retrieve logged user from JIRA 4.3+ and use `getDisplayName()` to retrieve
+    the user's full name in that case.
+  id: totrans-329
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 这里，`init`方法在初始化过滤器时调用，即插件启用后第一次访问时。在此方法中，我们可以检索定义的`init-param`实例或通过Servlet Context
+    Parameter插件模块定义的参数。在之前的代码片段中，使用`getLoggedInUser()`来检索JIRA 4.3+中的已登录用户，并使用`getDisplayName()`来检索该用户的全名。
+- en: The `destroy` method is invoked whenever a filter is destroyed.
+  id: totrans-330
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`destroy`方法在每次销毁过滤器时调用。'
+- en: The `doFilter` is the method which is invoked every time the URL matches the
+    `url-pattern`. Here, we are just printing the IP address and user details requesting
+    the **View** **Issue** page and logs the time but we can do many things like logging,
+    using the data for profiling or monitoring, so on and so forth.
+  id: totrans-331
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`doFilter`是每次URL与`url-pattern`匹配时调用的方法。在这里，我们只是打印请求**查看问题**页面的IP地址和用户详细信息，并记录时间，但我们可以做很多事情，比如记录日志、使用数据进行分析或监控等等。'
+- en: Package the plugin and deploy it.
+  id: totrans-332
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 打包插件并部署。
+- en: How it works...
+  id: totrans-333
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 工作原理...
+- en: Whenever the URL in JIRA matches the `url-pattern`, the respective filter is
+    invoked. This can be of huge help when you want to do specific things when a particular
+    operation in JIRA is performed, or if you want to monitor who is doing what and
+    when, or something else based on a specific URL.
+  id: totrans-334
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 每当JIRA中的URL与`url-pattern`匹配时，相关过滤器会被调用。当你希望在JIRA执行特定操作时做一些特定的事情，或者想要监控谁在做什么以及何时做某事，或者基于特定URL执行其他操作时，这将非常有帮助。
+- en: '![How it works...](img/1803-11-12.jpg)'
+  id: totrans-335
+  prefs: []
+  type: TYPE_IMG
+  zh: '![工作原理...](img/1803-11-12.jpg)'
+- en: With our code in the example, the details are printed, as shown in the previous
+    screenshot, whenever an issue is viewed.
+  id: totrans-336
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在我们的示例代码中，每当查看问题时，都会打印详细信息，如前面的截图所示。
+- en: Adding and importing components in JIRA
+  id: totrans-337
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 在JIRA中添加和导入组件
+- en: JIRA has a component system that has so many Service classes and Manager classes
+    that are registered in PicoContainer and are available for use by the core classes
+    and plugins alike. It makes sense sometimes to add custom components to that component
+    system that can then be used with the other modules in the same plugin or shared
+    by other plugins.
+  id: totrans-338
+  prefs: []
+  type: TYPE_NORMAL
+  zh: JIRA有一个组件系统，包含许多注册在PicoContainer中的服务类和管理类，它们可以被核心类和插件使用。有时候，将自定义组件添加到这个组件系统中是有意义的，这样可以在同一个插件中的其他模块中使用，或者与其他插件共享。
+- en: In this recipe, we will see how we can add a new component in JIRA and how we
+    can consume that from within the plugin and from a separate plugin.
+  id: totrans-339
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本食谱中，我们将看到如何在JIRA中添加一个新组件，以及如何在插件内和从单独插件中使用它。
+- en: Getting ready
+  id: totrans-340
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 准备工作
+- en: Create a Skeleton plugin using Atlassian Plugin SDK. For the example, we will
+    use the `RedirectAction` webwork module used in the previous recipe.
+  id: totrans-341
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用Atlassian插件SDK创建一个骨架插件。对于本示例，我们将使用在之前食谱中使用的`RedirectAction` webwork模块。
+- en: How to do it...
+  id: totrans-342
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: 'First, let us see how we can define a component and use them in the different
+    modules within the same plugin. In our example, we will define a sample component
+    and use the methods exposed by it in the `RedirectAction`. Following are the steps:'
+  id: totrans-343
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 首先，让我们看看如何定义一个组件并在同一个插件中的不同模块中使用它。在我们的示例中，我们将定义一个示例组件，并在`RedirectAction`中使用它暴露的方法。以下是步骤：
+- en: 'Create an interface with the required method definitions. The component will
+    expose these methods when used elsewhere:'
+  id: totrans-344
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建一个具有所需方法定义的接口。组件在其他地方使用时将暴露这些方法：
+- en: '[PRE48]'
+  id: totrans-345
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE48]'
+- en: Create the implementation class and implement the methods.
+  id: totrans-346
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建实现类并实现方法。
+- en: '[PRE49]'
+  id: totrans-347
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE49]'
+- en: In the implementation class, we can inject the JIRA components as usual and
+    use them for various things. Here, we inject `JiraAuthenticationContext` to retrieve
+    the current user details just to print a personalized message!
+  id: totrans-348
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在实现类中，我们可以像往常一样注入JIRA组件，并将其用于各种操作。在这里，我们注入`JiraAuthenticationContext`来获取当前用户的详细信息，仅仅为了打印一条个性化消息！
+- en: Declare the component in the `atlassian-plugin.xml` file using the Component
+    Plugin module.
+  id: totrans-349
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用组件插件模块在`atlassian-plugin.xml`文件中声明该组件。
+- en: '[PRE50]'
+  id: totrans-350
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE50]'
+- en: Here, the component module has a unique key and a class attribute that points
+    to the Implementation class. The element interface points to the component interface
+    we created in *Step* *1*.
+  id: totrans-351
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在这里，组件模块有一个唯一的键和一个指向实现类的类属性。元素接口指向我们在*步骤* *1*中创建的组件接口。
+- en: 'Our component is now ready and available to use within the other plugin modules.
+    For example, we can use this component in the RedirectAction class we saw earlier,
+    as follows:'
+  id: totrans-352
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们的组件现在已经准备好，并可以在其他插件模块中使用。例如，我们可以像之前看到的那样，在`RedirectAction`类中使用这个组件，具体如下：
+- en: '[PRE51]'
+  id: totrans-353
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE51]'
+- en: Here, the component is injected in the constructor as we normally do with a
+    JIRA component (remember the `JiraAuthenticationContext` in the component itself!)
+    and invoke the exposed method, `doSomething` in this case, where appropriate.
+  id: totrans-354
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这里，组件通过构造函数注入，就像我们通常对待JIRA组件一样（记住组件本身中的`JiraAuthenticationContext`！），并在适当的地方调用暴露的方法，在此示例中是`doSomething`。
+- en: '**Exposing components to other plugins**'
+  id: totrans-355
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: '**将组件暴露给其他插件**'
+- en: When we create the components as discussed earlier, they remain private and
+    are available only within the plugin even though we can expose these components
+    to other plugins.
+  id: totrans-356
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当我们像之前讨论的那样创建组件时，它们保持私有，仅在插件内可用，尽管我们可以将这些组件暴露给其他插件。
+- en: 'The following are the two things you need to do to expose a component:'
+  id: totrans-357
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是暴露组件所需的两个步骤：
+- en: Declare the component as public.
+  id: totrans-358
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 将组件声明为公共组件。
+- en: Export the packages required for the plugin so that they are available to the
+    other plugins.
+  id: totrans-359
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 导出插件所需的包，以便它们可以被其他插件使用。
+- en: 'The following are the steps in detail to do the same:'
+  id: totrans-360
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是详细步骤：
+- en: Create the interface and implementation class as before.
+  id: totrans-361
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 像之前一样创建接口和实现类。
+- en: 'Declare the component in the `atlassian-plugin.xml` using the Component Plugin
+    module as a public component. For this, we use the public attribute on the component
+    module, as shown in the following code:'
+  id: totrans-362
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用组件插件模块在`atlassian-plugin.xml`中声明该组件为公共组件。为此，我们在组件模块中使用`public`属性，如下所示：
+- en: '[PRE52]'
+  id: totrans-363
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE52]'
+- en: 'Export the packages using `bundle-instructions` element under `plugin-info`
+    in `atlassian-plugin.xml`. This is done as follows:'
+  id: totrans-364
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用`atlassian-plugin.xml`中`plugin-info`下的`bundle-instructions`元素导出包。操作如下：
+- en: '[PRE53]'
+  id: totrans-365
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE53]'
+- en: 'Note that the `Export-Package` element exports `com.jtricks.provider` package
+    that holds the interface and implementation class. More about bundle instructions
+    can be found at: [http://confluence.atlassian.com/display/PLUGINFRAMEWORK/Creating+your+Plugin+Descriptor#CreatingyourPluginDescriptor-{{bundleinstructions}}element](http://confluence.atlassian.com/display/PLUGINFRAMEWORK/Creating+your+Plugin+Descriptor#CreatingyourPluginDescriptor-{{bundleinstructions}}element).'
+  id: totrans-366
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请注意，`Export-Package` 元素导出了 `com.jtricks.provider` 包，该包包含接口和实现类。有关捆绑包指令的更多信息，请参见：[http://confluence.atlassian.com/display/PLUGINFRAMEWORK/Creating+your+Plugin+Descriptor#CreatingyourPluginDescriptor-{{bundleinstructions}}element](http://confluence.atlassian.com/display/PLUGINFRAMEWORK/Creating+your+Plugin+Descriptor#CreatingyourPluginDescriptor-{{bundleinstructions}}element)。
+- en: With that, the component is now ready and available to other plugins.
+  id: totrans-367
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这样，组件现在已经准备好并可供其他插件使用。
+- en: Importing public components
+  id: totrans-368
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 导入公共组件
+- en: 'In order to use the public components in other plugins, we will have to first
+    import them using the `component-import` plugin module. The module is entered
+    in `atlassian-plugin.xml` as follows:'
+  id: totrans-369
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了在其他插件中使用公共组件，我们需要首先使用 `component-import` 插件模块导入它们。该模块在 `atlassian-plugin.xml`
+    中的配置如下：
+- en: '[PRE54]'
+  id: totrans-370
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE54]'
+- en: Now, the component is available as if it is created within the plugin itself.
+    The `RedirectAction` class will look exactly the same in the new plugin as well
+    if we want to use the component there.
+  id: totrans-371
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，组件就像是在插件内部创建的一样可用。如果我们希望在新插件中使用该组件，`RedirectAction` 类也将与原插件中的完全相同。
+- en: Using service properties in components
+  id: totrans-372
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 在组件中使用服务属性
+- en: 'It is also possible to define a Map of properties for a public component which
+    can then be used while importing the components with other plugins. It uses the
+    `service-properties` element to define the properties which has child elements
+    named entry and have key & value attributes. For example, a dictionary service
+    can have the service properties defined with the language as key, as shown in
+    the following code snippet:'
+  id: totrans-373
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 也可以为公共组件定义一个属性映射表，然后在与其他插件一起导入组件时使用。它使用 `service-properties` 元素来定义这些属性，该元素包含名为
+    entry 的子元素，并具有 key 和 value 属性。例如，字典服务可以定义带有语言作为键的服务属性，如以下代码片段所示：
+- en: '[PRE55]'
+  id: totrans-374
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE55]'
+- en: 'It is now possible to use the `filter` attribute on the `component-import`
+    module to import component only if the service matches the filter. For example,
+    the dictionary service that has English as the language can be imported as follows:'
+  id: totrans-375
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在可以在 `component-import` 模块上使用 `filter` 属性，只在服务匹配过滤器时导入组件。例如，具有英语语言的字典服务可以如下导入：
+- en: '[PRE56]'
+  id: totrans-376
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE56]'
+- en: How it works...
+  id: totrans-377
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 它是如何工作的...
+- en: When a component is installed, it generates the `atlassian-plugins-spring.xml`.
+    Spring Framework configuration file, transforming Component Plugin modules into
+    Spring bean definitions. The generated file is stored in a temporary plugin JAR
+    file and installed into the framework. If the `public` attribute is set to 'true',
+    the component will be turned into an OSGi service under the covers, using **Spring**
+    **Dynamic** modules to manage its lifecycle.
+  id: totrans-378
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当一个组件被安装时，它会生成 `atlassian-plugins-spring.xml` Spring 框架配置文件，将组件插件模块转换为 Spring
+    bean 定义。生成的文件存储在临时插件 JAR 文件中并安装到框架中。如果将 `public` 属性设置为 'true'，该组件将在后台转化为 OSGi
+    服务，使用 **Spring** **Dynamic** 模块来管理其生命周期。
+- en: Component imports also generate the `atlassian-plugins-spring.xml` Spring Framework
+    configuration file and transforms the Import Plugin Module to OSGi service references
+    using Spring Dynamic modules. The imported component will have its bean name set
+    to the component import key.
+  id: totrans-379
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 组件导入还会生成 `atlassian-plugins-spring.xml` Spring 框架配置文件，并使用 Spring 动态模块将导入的插件模块转换为
+    OSGi 服务引用。导入的组件将其 bean 名称设置为组件导入键。
+- en: In both cases, it is possible to write our your own Spring configuration file,
+    stored under the folder META-INF/spring in the plugin JAR.
+  id: totrans-380
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这两种情况下，都可以编写自己的 Spring 配置文件，并将其存储在插件 JAR 文件中的 META-INF/spring 文件夹下。
+- en: Note
+  id: totrans-381
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: 'More details about Component Plugin module and Component Import plugin module
+    can be found in the Atlassian documentation at: [http://confluence.atlassian.com/display/PLUGINFRAMEWORK/Component+Plugin+Module](http://confluence.atlassian.com/display/PLUGINFRAMEWORK/Component+Plugin+Module)
+    and [http://confluence.atlassian.com/display/JIRADEV/Component+Import+Plugin+Module](http://confluence.atlassian.com/display/JIRADEV/Component+Import+Plugin+Module)
+    respectively.'
+  id: totrans-382
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有关组件插件模块和组件导入插件模块的更多详细信息，请参阅 Atlassian 文档：[http://confluence.atlassian.com/display/PLUGINFRAMEWORK/Component+Plugin+Module](http://confluence.atlassian.com/display/PLUGINFRAMEWORK/Component+Plugin+Module)
+    和 [http://confluence.atlassian.com/display/JIRADEV/Component+Import+Plugin+Module](http://confluence.atlassian.com/display/JIRADEV/Component+Import+Plugin+Module)。
+- en: Adding new module types to JIRA
+  id: totrans-383
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 向 JIRA 添加新模块类型
+- en: So far, we have seen a lot of useful plugin module types in JIRA. Custom field
+    module type, webwork module type, servlet module type, and so on. But is it possible
+    to add a custom module type in JIRA, one that can then be used to create different
+    modules?
+  id: totrans-384
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 到目前为止，我们在 JIRA 中看到过许多有用的插件模块类型。自定义字段模块类型、webwork 模块类型、servlet 模块类型等等。那么，是否可以在
+    JIRA 中添加一个自定义模块类型，以便之后用于创建不同的模块呢？
+- en: JIRA provides the Module Type plugin module using which we can add new module
+    types dynamically to the plugin framework. In this recipe, we will see how we
+    can add such a new plugin module type and use it to create different modules of
+    that type.
+  id: totrans-385
+  prefs: []
+  type: TYPE_NORMAL
+  zh: JIRA 提供了模块类型插件模块，利用它我们可以动态地向插件框架添加新的模块类型。在本教程中，我们将看到如何添加这种新的插件模块类型并使用它来创建该类型的不同模块。
+- en: Getting ready
+  id: totrans-386
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 准备工作
+- en: Create a Skeleton plugin using Atlassian Plugin SDK.
+  id: totrans-387
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用 Atlassian 插件 SDK 创建一个骨架插件。
+- en: How to do it...
+  id: totrans-388
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: Let us consider the same example Atlassian have used in their online documentation,
+    that is, to create a new dictionary plugin module which can then be used to feed
+    a dictionary service used by other plugins or modules.
+  id: totrans-389
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们考虑 Atlassian 在其在线文档中使用的相同示例，即创建一个新的字典插件模块，然后可以使用该模块为其他插件或模块提供字典服务。
+- en: 'Following are the steps to define a new plugin module type:'
+  id: totrans-390
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是定义新插件模块类型的步骤：
+- en: Add the module type definition in the `atlassin-plugin.xml` file.
+  id: totrans-391
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在`atlassin-plugin.xml`文件中添加模块类型定义。
+- en: '[PRE57]'
+  id: totrans-392
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE57]'
+- en: Here, the key must be unique and will be used as the root element when defining
+    the modules of this type. The class points to the `ModuleDescriptor` class that
+    is instantiated when a new plugin module of this type is found.
+  id: totrans-393
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在这里，键必须是唯一的，并将在定义该类型模块时作为根元素。该类指向`ModuleDescriptor`类，当找到这种类型的新插件模块时，该类会被实例化。
+- en: Other useful attributes of this module type includes `name` that holds a human
+    readable name, `i18n-name-key` to hold the localization key for the human-readable
+    name, `disabled` to indicate if the plugin module is disabled by default or not
+    and `system` to indicate whether this plugin module is a system plugin module
+    or not (available only for non-OSGi). You can also have an optional `description`
+    as a child element.
+  id: totrans-394
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 该模块类型的其他有用属性包括`name`，它保存一个易于理解的名称，`i18n-name-key`用于保存易于理解名称的本地化键，`disabled`指示插件模块是否默认禁用，`system`指示该插件模块是否为系统插件模块（仅适用于非
+    OSGi）。你还可以有一个可选的`description`作为子元素。
+- en: 'Create an interface that can be used in the `ModuleDescriptor` class. This
+    interface will have all the methods needed for the new module. For example, in
+    the dictionary, we need a method to retrieve the definition of a given text and
+    hence we can define the interface as follows:'
+  id: totrans-395
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建一个可以在`ModuleDescriptor`类中使用的接口。这个接口将包含新模块所需的所有方法。例如，在字典中，我们需要一个方法来检索给定文本的定义，因此我们可以将接口定义如下：
+- en: '[PRE58]'
+  id: totrans-396
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE58]'
+- en: The new modules of this particular type will ultimately implement this interface.
+  id: totrans-397
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 这种特定类型的新模块最终将实现此接口。
+- en: Create the module descriptor class. The class must extend the `AbstractModuleDescriptor`
+    class and should use the interface we created as the generic type.
+  id: totrans-398
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建模块描述符类。该类必须继承`AbstractModuleDescriptor`类，并且应该使用我们创建的接口作为泛型类型。
+- en: '[PRE59]'
+  id: totrans-399
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE59]'
+- en: Implement the `getModule` method to create the module.
+  id: totrans-400
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 实现`getModule`方法以创建模块。
+- en: '[PRE60]'
+  id: totrans-401
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE60]'
+- en: Here, we have used the `ModuleFactory` to create a module of this type.
+  id: totrans-402
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在这里，我们使用`ModuleFactory`来创建这种类型的模块。
+- en: 'Define the attributes and elements that will be used in the new module type
+    and retrieve them in the `init` method. For a dictionary, we need at least one
+    attribute, that is the `language`, to differentiate the various dictionary modules.
+    Let us name that attribute as `lang` and retrieve it in the `init` method. The
+    class will now look similar to the following block of code:'
+  id: totrans-403
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 定义将在新模块类型中使用的属性和元素，并在`init`方法中检索它们。对于字典，我们至少需要一个属性，即`language`，以区分各种字典模块。让我们将该属性命名为`lang`并在`init`方法中检索它。现在，该类将类似于以下代码块：
+- en: '[PRE61]'
+  id: totrans-404
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE61]'
+- en: The `init` method takes as argument, `com.atlassian.plugin.Plugin` and `org.dom4j.Element`,
+    the latter holding the module element. We have retrieved the 'lang' attribute
+    here and assigned it to a local variable which has a getter method that can be
+    used to get the language value in other plugins/modules.
+  id: totrans-405
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`init`方法以`com.atlassian.plugin.Plugin`和`org.dom4j.Element`作为参数，后者保存模块元素。在这里，我们已经检索到了''lang''属性，并将其赋值给一个局部变量，该变量有一个getter方法，可以在其他插件/模块中使用来获取语言值。'
+- en: We can have more attributes or child elements as required by the new module
+    type.
+  id: totrans-406
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 我们可以根据新模块类型的要求添加更多属性或子元素。
+- en: With that, the new plugin module is now ready. We can now write new modules
+    of the type dictionary.
+  id: totrans-407
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 有了这个，新的插件模块现在已经准备好了。我们现在可以编写新的字典类型的模块。
+- en: Creating modules using the new module type
+  id: totrans-408
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 使用新模块类型创建模块
+- en: 'The new module types will be as simple as the following:'
+  id: totrans-409
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 新的模块类型将简单到以下程度：
+- en: '[PRE62]'
+  id: totrans-410
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE62]'
+- en: 'Note that the root element is the same as the module types'' key, **dictionary**
+    in this case. Each has its own unique `key` and has the `lang` attribute we defined
+    earlier. Each has a class which will implement the Dictionary interface appropriately.
+    For example:'
+  id: totrans-411
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请注意，根元素与模块类型的键相同，在这种情况下是**dictionary**。每个都有其自己独特的`key`，并具有我们之前定义的`lang`属性。每个都有一个类，该类将适当地实现Dictionary接口。例如：
+- en: '[PRE63]'
+  id: totrans-412
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE63]'
+- en: Using the new modules created
+  id: totrans-413
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 使用创建的新模块
+- en: 'Once the new modules are defined, `myUSEnglishDictionary` and `myUKEnglishDictionary`
+    in our example, we can use these in other plugin modules. For example, if we want
+    to use them in a servlet module to find the definition of JIRA in both the dictionaries,
+    it can be done using the following steps:'
+  id: totrans-414
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦定义了新模块，例如我们的`myUSEnglishDictionary`和`myUKEnglishDictionary`，我们可以在其他插件模块中使用它们。例如，如果我们想要在servlet模块中使用它们来查找JIRA的定义，可以按照以下步骤操作：
+- en: Get all the enabled modules that use the dictionary module descriptor.
+  id: totrans-415
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 获取所有使用字典模块描述符的已启用模块。
+- en: '[PRE64]'
+  id: totrans-416
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE64]'
+- en: 'Here, `pluginAccessor` can be retrieved as follows:'
+  id: totrans-417
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在这里，`pluginAccessor`可以按以下方式检索：
+- en: '[PRE65]'
+  id: totrans-418
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE65]'
+- en: It can also be used to retrieve all the enabled modules that uses the given
+    module descriptor class as shown in the code.
+  id: totrans-419
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 它也可以用来检索所有使用给定模块描述符类的启用模块，如下所示。
+- en: 'For each `DictionaryModuleDescriptor`, `getLanguage()` method will retrieve
+    the value of the `lang` attribute and `getModule()` will retrieve the respective
+    Dictionary implementation class. For example, JIRA definition for `uk-english`
+    can be retrieved as follows:'
+  id: totrans-420
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 对于每个`DictionaryModuleDescriptor`，`getLanguage()`方法将检索`lang`属性的值，而`getModule()`将检索相应的Dictionary实现类。例如，可以按如下方式检索`uk-english`的JIRA定义：
+- en: '[PRE66]'
+  id: totrans-421
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE66]'
+- en: Here, the key that is passed will be `uk-english`.
+  id: totrans-422
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在这里，传递的关键是`uk-english`。
+- en: How it works...
+  id: totrans-423
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 它是如何工作的...
+- en: 'If we use a servlet to display all the definitions of the word JIRA in all
+    the dictionaries deployed, US and UK in our case, it will appear as follows:'
+  id: totrans-424
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果我们使用一个servlet来显示在所有部署的字典中查找JIRA单词的所有定义，我们的例子中包括US和UK，结果将如下所示：
+- en: '![How it works...](img/1803-11-13.jpg)'
+  id: totrans-425
+  prefs: []
+  type: TYPE_IMG
+  zh: '![它是如何工作的...](img/1803-11-13.jpg)'
+- en: Enabling access logs in JIRA
+  id: totrans-426
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 在JIRA中启用访问日志
+- en: Access logs are a good way to find out who is doing what in your JIRA instance.
+    In this recipe, we will see how we can turn on access logging in JIRA.
+  id: totrans-427
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 访问日志是查找JIRA实例中谁在做什么的好方法。在这个示例中，我们将看到如何在JIRA中打开访问日志记录。
+- en: How to do it...
+  id: totrans-428
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何做到这一点...
+- en: As of JIRA 4.1, the list of users who are currently accessing JIRA can be found
+    from **Administration** | **System** | **User** **Sessions** menu. But if you
+    need more detailed information about who is doing what, access logging is the
+    way to go.
+  id: totrans-429
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 自JIRA 4.1以来，可以在**管理** | **系统** | **用户** **会话**菜单中找到当前访问JIRA的用户列表。但是，如果您需要关于谁在做什么的更详细信息，则可以使用访问日志记录。
+- en: 'In JIRA 4.x, enabling access logs can be done via the administration screen
+    by going to **Administration** | **System** | **Logging** **&** **Profiling**
+    as shown in the following screenshot:'
+  id: totrans-430
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在JIRA 4.x中，可以通过转到**管理** | **系统** | **日志记录** **与** **分析**来启用访问日志记录，如下面的截图所示：
+- en: '![How to do it...](img/1803-11-14.jpg)'
+  id: totrans-431
+  prefs: []
+  type: TYPE_IMG
+  zh: '![如何做到这一点...](img/1803-11-14.jpg)'
+- en: We can turn **ON** **HTTP** and **SOAP** access logs separately as shown. There
+    is an additional option to turn ON HTTP dump log and SOAP dump log as well. For
+    HTTP, we can also include images in the HTTP access logs.
+  id: totrans-432
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以分别打开**HTTP**和**SOAP**访问日志，如下所示。还有一个额外的选项可以打开 HTTP dump 日志和 SOAP dump 日志。对于
+    HTTP，我们还可以在 HTTP 访问日志中包含图片。
+- en: All these logs are disabled by default and if enabled via GUI, it will be disabled
+    again on next restart.
+  id: totrans-433
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 所有这些日志默认情况下都是禁用的，如果通过 GUI 启用，将在下次重启时禁用。
+- en: 'In order to enable them permanently, we can switch them ON in the `log4j.properties`
+    file residing under `WEB-INF/classes` folder under the section, **Access** **logs,**
+    as shown next:'
+  id: totrans-434
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了永久启用它们，我们可以在位于 `WEB-INF/classes` 文件夹下的 `log4j.properties` 文件中，在下一节 **Access**
+    **logs** 中打开它们，如下所示：
+- en: '[PRE67]'
+  id: totrans-435
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE67]'
+- en: Enabling Access logs prior to JIRA 4.x
+  id: totrans-436
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 在 JIRA 4.x 之前启用访问日志
+- en: 'Prior to JIRA 4.x, Access logs had only a single entry in the `log4j.properties`
+    file and we could enable it by changing the log level from WARN to INFO as shown
+    next:'
+  id: totrans-437
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 JIRA 4.x 之前，访问日志在 `log4j.properties` 文件中只有一个条目，我们可以通过将日志级别从 WARN 调整为 INFO
+    来启用它，如下所示：
+- en: '[PRE68]'
+  id: totrans-438
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE68]'
+- en: The same option can be enabled from WARN to INFO on the GUI as well but it will
+    be retained only till the next restart just like it is in 4.x.
+  id: totrans-439
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 相同的选项也可以从 GUI 中从 WARN 级别调整到 INFO 级别，但与 4.x 中的情况一样，仅在下次重启前有效。
+- en: How it works...
+  id: totrans-440
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 工作原理是怎样的...
+- en: Once turned ON, the SOAP access logs will be written to `atlassian-jira-soap-access.log`,
+    SOAP dump logs to `atlassian-jira-soap-dump.log`, HTTP access logs to `atlassian-jira-http-access.log`
+    and HTTP dump logs to atlassian`-jira-http-dump.log` files, everything residing
+    under the `logs` folder.
+  id: totrans-441
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦打开，SOAP 访问日志将被写入 `atlassian-jira-soap-access.log` 文件，SOAP dump 日志将被写入 `atlassian-jira-soap-dump.log`
+    文件，HTTP 访问日志将被写入 `atlassian-jira-http-access.log` 文件，而 HTTP dump 日志则被写入 `atlassian-jira-http-dump.log`
+    文件，所有这些文件都位于 `logs` 文件夹下。
+- en: 'You can find detailed information in the access logs, similar to the following:'
+  id: totrans-442
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以在访问日志中找到详细信息，类似于以下内容：
+- en: '[PRE69]'
+  id: totrans-443
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE69]'
+- en: 'It is also possible to change the individual log file''s name or path in the
+    `log4j.properties` by modifying the appropriate properties. For example, the SOAP
+    access log file can be written to `/var/log/soap-access.log` by modifying `log4j.appender.soapaccesslog.File`
+    property as follows:'
+  id: totrans-444
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 还可以通过修改适当的属性在 `log4j.properties` 文件中更改单个日志文件的名称或路径。例如，通过修改 `log4j.appender.soapaccesslog.File`
+    属性，可以将 SOAP 访问日志文件写入 `/var/log/soap-access.log`。
+- en: '[PRE70]'
+  id: totrans-445
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE70]'
+- en: Enabling SQL logging in JIRA
+  id: totrans-446
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 在 JIRA 中启用 SQL 日志
+- en: Similar to access logs, another useful piece of logging, especially when debugging
+    an issue, is SQL logging. In this recipe, we will see how to turn on SQL logging.
+  id: totrans-447
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 与访问日志类似，另一个在调试问题时非常有用的日志片段是 SQL 日志。在这篇文章中，我们将看到如何打开 SQL 日志。
+- en: How to do it...
+  id: totrans-448
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何做...
+- en: 'SQL logging cannot be turned ON from the user interface. Instead, it can be
+    turned ON in the `WEB-INF/classes/log4j.properties` file as we have seen with
+    access logs. In this case, the logging entry to be modified is as follows:'
+  id: totrans-449
+  prefs: []
+  type: TYPE_NORMAL
+  zh: SQL 日志不能从用户界面打开。相反，它可以在 `WEB-INF/classes/log4j.properties` 文件中打开，就像我们在访问日志中看到的那样。在这种情况下，需要修改的日志条目如下所示：
+- en: '[PRE71]'
+  id: totrans-450
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE71]'
+- en: The latter logs the SQL queries executed for Xsrf vulnerability detection.
+  id: totrans-451
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 后者记录了用于 Xsrf 漏洞检测的 SQL 查询。
+- en: How it works...
+  id: totrans-452
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 工作原理是怎样的...
+- en: Once turned **ON**, the SQL logs will be written to `atlassian-jira-sql.log`
+    file under logs folder.
+  id: totrans-453
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦打开，SQL 日志将被写入 `atlassian-jira-sql.log` 文件，位于 logs 文件夹下。
+- en: 'You can find details of numerous SQLs executed as follows:'
+  id: totrans-454
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 您可以找到执行的多个 SQL 的详细信息，如下所示：
+- en: '[PRE72]'
+  id: totrans-455
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE72]'
+- en: 'As in the case of Access logs, the SQL log file path can be changed by modifying
+    `log4j.appender.sqllog.file` property as follows:'
+  id: totrans-456
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 与访问日志类似，可以通过修改 `log4j.appender.sqllog.file` 属性来更改 SQL 日志文件路径。
+- en: '[PRE73]'
+  id: totrans-457
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE73]'
+- en: Overriding JIRA's default components in plugins
+  id: totrans-458
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 覆盖插件中 JIRA 的默认组件
+- en: JIRA uses **PicoContainer** as a central object factory. Picocontainer is responsible
+    for instantiating objects and resolving their constructor dependencies. Within
+    JIRA a lot of Manager, Service, and Utility classes are already registered with
+    Picocontainer. The registration happens in `ComponentRegistrar` class' `registerComponents()`
+    method and these classes can be retrieved via **dependency** **injection** or
+    using `ComponentManager` class' getter methods or the `getComponentInstanceOfType()`
+    method.
+  id: totrans-459
+  prefs: []
+  type: TYPE_NORMAL
+  zh: JIRA 使用 **PicoContainer** 作为中央对象工厂。Picocontainer 负责实例化对象并解析它们的构造函数依赖关系。在 JIRA
+    中，许多 Manager、Service 和 Utility 类已经在 Picocontainer 中注册。注册发生在 `ComponentRegistrar`
+    类的 `registerComponents()` 方法中，可以通过 **依赖注入** 或使用 `ComponentManager` 类的 getter 方法或
+    `getComponentInstanceOfType()` 方法来检索这些类。
+- en: While it is true that most of the plugins can work with these already-registered
+    components and the new ones created using Component Plugins module, sometimes
+    the need arises to override an existing component registered within JIRA. In this
+    recipe, we will see how to do that.
+  id: totrans-460
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 虽然大多数插件可以与这些已注册的组件以及使用组件插件模块创建的新组件一起工作，但有时需要覆盖 JIRA 中已注册的现有组件。在本节中，我们将学习如何实现这一点。
+- en: Getting ready
+  id: totrans-461
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 准备就绪
+- en: Create a skeleton plugin using Atlassian Plugin SDK. The plugin must be v1.
+  id: totrans-462
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用 Atlassian Plugin SDK 创建一个骨架插件。插件必须是 v1 版本。
+- en: How to do it...
+  id: totrans-463
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何做到...
+- en: 'The overriding of existing components in JIRA is also done using the **Component**
+    **Plugins** module. But you must note that the plugin must be v1 and should be
+    deployed under `WEB-INF/lib` folder for the overriding to work. Following are
+    the simple, yet powerful, steps:'
+  id: totrans-464
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 JIRA 中覆盖现有组件也可以通过 **组件** **插件** 模块来实现。但需要注意的是，插件必须是 v1 版本，并且应部署在 `WEB-INF/lib`
+    文件夹下才能生效。以下是简单但强大的步骤：
+- en: Identify the component that we need to extend and find out the interface associated
+    with it. For example, let us try to override the default JIRA `SubTaskManager`.
+    The interface in this case will be `com.atlassian.jira.config.SubTaskManager`.
+  id: totrans-465
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 确定我们需要扩展的组件，并找出与之关联的接口。例如，假设我们要覆盖默认的 JIRA `SubTaskManager`。在这种情况下，接口将是 `com.atlassian.jira.config.SubTaskManager`。
+- en: 'Add a component plugin module in the `atlassian-plugin.xml` with the interface
+    in *Step 1*:'
+  id: totrans-466
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在 `atlassian-plugin.xml` 中添加一个组件插件模块，接口参考 *步骤 1*：
+- en: '[PRE74]'
+  id: totrans-467
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE74]'
+- en: As usual, the component module has a unique **key** and an optional **name**.
+    Here, the class points to the new component's implementation class.
+  id: totrans-468
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 和往常一样，组件模块有一个唯一的 **key** 和一个可选的 **name**。在这里，类指向新组件的实现类。
+- en: Create the implementation class used in the component plugin module, `com.jtricks.MySubtaskManager`
+    in this case.
+  id: totrans-469
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建组件插件模块中使用的实现类，在本例中是 `com.jtricks.MySubtaskManager`。
+- en: We will need to implement all the methods in the SubTaskManager interface but
+    it is entirely up to us how to implement them. It will be a lot easier if we just
+    need to manipulate only a few methods in them because in that case we can choose
+    to extend the default implementation class in JIRA and override only the methods
+    we are interested in!
+  id: totrans-470
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 我们需要实现 SubTaskManager 接口中的所有方法，但如何实现完全由我们决定。如果我们只需要操作其中少数几个方法，这会更容易，因为在这种情况下，我们可以选择扩展
+    JIRA 的默认实现类，并只重写我们感兴趣的方法！
+- en: 'For simplicity, let us assume we need to only modify the `createSubTaskIssueLink`
+    operation in `SubTaskManager` to do some extra bit. For this, we can create the
+    `MySubtaskManager` by extending `com.atlassian.jira.config.DefaultSubTaskManager`,
+    the default implementation class in JIRA, and override the `createSubTaskIssueLink`
+    method:'
+  id: totrans-471
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 为了简单起见，假设我们只需要修改 `SubTaskManager` 中的 `createSubTaskIssueLink` 操作，做一些额外的操作。为此，我们可以通过继承
+    JIRA 默认实现类 `com.atlassian.jira.config.DefaultSubTaskManager` 来创建 `MySubtaskManager`，并重写
+    `createSubTaskIssueLink` 方法：
+- en: '[PRE75]'
+  id: totrans-472
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE75]'
+- en: In our example, let us just print a line to the logs but we can do harder things
+    here!
+  id: totrans-473
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在我们的示例中，假设我们只是将一行输出到日志，但在这里我们可以做更复杂的操作！
+- en: Package the plugin and deploy it under `WEB-INF/lib`.
+  id: totrans-474
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 将插件打包并部署到 `WEB-INF/lib` 下。
+- en: How it works...
+  id: totrans-475
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 它是如何工作的...
+- en: When JIRA is started, all the default components that are registered with **PicoContainer**
+    are loaded first. But when the plugins are loaded, if there is a component module
+    that uses the same interface and a different implementation class; this class
+    will be registered for that interface. In our example, `MySubtaskManager` is registered
+    instead of `DefaultSubTaskManager` class.
+  id: totrans-476
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当 JIRA 启动时，所有与 **PicoContainer** 注册的默认组件会首先加载。但当插件加载时，如果存在使用相同接口且实现类不同的组件模块，那么该类将会为该接口注册。在我们的示例中，`MySubtaskManager`
+    将替代 `DefaultSubTaskManager` 类。
+- en: Tip
+  id: totrans-477
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 提示
+- en: This method fails in case of some Manager classes, possibly because of the order
+    in which the classes are loaded. You might want to see the next section in such
+    scenarios!
+  id: totrans-478
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果是某些 Manager 类，这种方法可能会失败，可能是因为类加载的顺序问题。在这种情况下，您可能需要查看下一个部分！
+- en: 'After overriding `SubTaskManager` as discussed before, we will see the message
+    printed into the server logs every time a subtask is created, as shown in the
+    following screenshot:'
+  id: totrans-479
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如前所述，在重写 `SubTaskManager` 后，每当创建子任务时，我们将在服务器日志中看到打印的消息，如下图所示：
+- en: '![How it works...](img/1803-11-15.jpg)'
+  id: totrans-480
+  prefs: []
+  type: TYPE_IMG
+  zh: '![它是如何工作的...](img/1803-11-15.jpg)'
+- en: There's more...
+  id: totrans-481
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 还有更多...
+- en: While overriding a component, using the **Component** **Plugins** module is
+    the recommended way, the same thing can be done in a couple of other ways.
+  id: totrans-482
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在重写组件时，推荐使用 **Component** **Plugins** 模块，但也可以通过其他几种方式来实现相同的功能。
+- en: Overriding by modifying JIRA code
+  id: totrans-483
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 通过修改 JIRA 代码进行重写
+- en: For people who have modified the JIRA Source distribution, overriding the component
+    can be done in a single line. After creating the new component—implementing the
+    interface that we want to override—we can modify the `registerComponents` method
+    in `com.atlassian.jira.ContainerRegistrar` class to include the new class instead
+    of the default class.
+  id: totrans-484
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于修改了 JIRA 源分发版的人，重写组件可以通过一行代码完成。在创建了新的组件—实现我们希望重写的接口之后—我们可以修改 `com.atlassian.jira.ContainerRegistrar`
+    类中的 `registerComponents` 方法，将新类替代默认类。
+- en: 'For example, `SubTaskManager` can be overridden by replacing:'
+  id: totrans-485
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 例如，`SubTaskManager`可以通过替换以下内容进行重写：
+- en: '[PRE76]'
+  id: totrans-486
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE76]'
+- en: 'With:'
+  id: totrans-487
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用：
+- en: '[PRE77]'
+  id: totrans-488
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE77]'
+- en: Note that components can either by `INTERNAL` meaning that they will be available
+    only to JIRA itself or `PROVIDED` in which case they will also be available to
+    `plugins2` plugins.
+  id: totrans-489
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请注意，组件可以是 `INTERNAL`，意味着它们仅对 JIRA 本身可用，或 `PROVIDED`，在这种情况下，它们也会对 `plugins2`
+    插件可用。
+- en: Overriding by extending PicoContainer
+  id: totrans-490
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 通过扩展 PicoContainer 进行重写
+- en: 'Prior to JIRA 4.3, there was a provision in JIRA to extend the PicoContainer
+    and register the custom components in the extended PicoContainer. The following
+    is how it was done:'
+  id: totrans-491
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 JIRA 4.3 之前，JIRA 提供了一个扩展 PicoContainer 并在扩展后的 PicoContainer 中注册自定义组件的功能。以下是实现方式：
+- en: Create a new `PicoContainer` class that implements `ContainerProvider` interface.
+  id: totrans-492
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建一个实现了 `ContainerProvider` 接口的新 `PicoContainer` 类。
+- en: '[PRE78]'
+  id: totrans-493
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE78]'
+- en: 'Implement the `getContainer` method that builds a container from the parent
+    and includes the new registrations. For our earlier example, the class will look
+    similar to the following block of code:'
+  id: totrans-494
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 实现 `getContainer` 方法，从父容器构建一个新的容器，并包含新的注册。以我们之前的例子，该类将类似于以下代码块：
+- en: '[PRE79]'
+  id: totrans-495
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE79]'
+- en: Here, `MySubtaskManager` will be created exactly the same way.
+  id: totrans-496
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在这里，`MySubtaskManager` 将以完全相同的方式创建。
+- en: Register the new container provider in the `jira-application.properties` file,
+    residing at `atlassian-jira/WEB-INF/classes` folder, using the key `jira.extension.container.provider`.
+  id: totrans-497
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在 `jira-application.properties` 文件中注册新的容器提供者，该文件位于 `atlassian-jira/WEB-INF/classes`
+    文件夹中，使用的键为 `jira.extension.container.provider`。
+- en: '[PRE80]'
+  id: totrans-498
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE80]'
+- en: Deploy the JAR file with the new container class and component class under `WEB-INF/lib`
+    folder and restart JIRA.
+  id: totrans-499
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 将包含新容器类和组件类的 JAR 文件部署到 `WEB-INF/lib` 文件夹下，并重启 JIRA。
+- en: 'This works in JIRA 4.3 as well though deprecated. From 4.4, it still works
+    but the `jira.extension.container.provider` property must be added in `jpm.xml`
+    file instead of `jira-application.properties`. The property will be added as follows:'
+  id: totrans-500
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 JIRA 4.3 中此方法也有效，但已被弃用。从 4.4 开始，尽管仍然有效，但必须将 `jira.extension.container.provider`
+    属性添加到 `jpm.xml` 文件中，而不是 `jira-application.properties` 文件中。该属性将以如下方式添加：
+- en: '[PRE81]'
+  id: totrans-501
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE81]'
+- en: Creating issues and comments from e-mail
+  id: totrans-502
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 从电子邮件创建问题和评论
+- en: It is possible to automatically create issues or comments in JIRA based on incoming
+    e-mail messages. This feature is very useful in scenarios such as helpdesks where
+    the users normally send an e-mail to a designated e-mail address and the support
+    team works on issues raised such as this one!
+  id: totrans-503
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 可以基于接收到的电子邮件消息自动在 JIRA 中创建问题或评论。此功能在帮助台等场景中非常有用，用户通常向指定的电子邮件地址发送电子邮件，支持团队则处理此类问题！
+- en: Once configured correctly, any new e-mail that comes in will create a corresponding
+    issue in JIRA and the replies to the e-mail notifications on that issue will be
+    created as comments on that issue. It is also possible to attach documents on
+    the issue by attaching them on the e-mail provided attachments that are enabled
+    in JIRA. If external user management is not enabled, it is still possible to create
+    a user account—if they don't already have an account.
+  id: totrans-504
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦正确配置，任何新接收到的电子邮件将会在 JIRA 中创建一个相应的问题，且对该问题的电子邮件通知回复将会作为评论创建在该问题上。也可以通过在 JIRA
+    启用的电子邮件附件功能，将文档附加到该问题上。如果没有启用外部用户管理，仍然可以创建用户账户—如果他们尚未拥有账户的话。
+- en: In this recipe, we will see how we can configure JIRA to enable this feature.
+  id: totrans-505
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本教程中，我们将展示如何配置 JIRA 以启用此功能。
+- en: How to do it...
+  id: totrans-506
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: The following are the steps to enable issue creation from e-mail.
+  id: totrans-507
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是启用从电子邮件创建问题的步骤。
+- en: Create an e-mail account on the server—typically, one e-mail account for each
+    JIRA project. This mailbox should be accessible via POP, IMAP, or on the local
+    file system. JIRA will periodically scan this mailbox and create issues or comments
+    based on the e-mail.
+  id: totrans-508
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在服务器上创建一个电子邮件帐户——通常，每个JIRA项目一个电子邮件帐户。这个邮箱应该通过POP、IMAP或本地文件系统可访问。JIRA将定期扫描此邮箱，并根据电子邮件创建问题或评论。
+- en: Navigate to JIRA's **Administration** | **Global** **Settings** | **Mail** **Servers**
+  id: totrans-509
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 导航到JIRA的**管理** | **全局** **设置** | **邮件** **服务器**
+- en: Click on **Configure new POP / IMAP mail server** link.
+  id: totrans-510
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击**配置新的POP / IMAP邮件服务器**链接。
+- en: Enter the details for the POP or IMAP mail server created in *Step* *1* and
+    click on **Add**.
+  id: totrans-511
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 输入在*步骤* *1*中创建的POP或IMAP邮件服务器的详细信息，然后点击**添加**。
+- en: Verify the details on the **Mail** **Servers** page and modify if needed.
+  id: totrans-512
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 验证**邮件** **服务器**页面上的详细信息，并在需要时进行修改。
+- en: Navigate to JIRA **Administration** | **System** | **Services**.
+  id: totrans-513
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 导航到JIRA **管理** | **系统** | **服务**。
+- en: 'Add a new service with the following details:'
+  id: totrans-514
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 添加一个新的服务，提供以下详细信息：
+- en: '**Name**: Name of the service'
+  id: totrans-515
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: '**名称**：服务的名称'
+- en: '**Class**: Pick one from the list of Built-in services. `com.atlassian.jira.service.services.pop.PopService`
+    for example.'
+  id: totrans-516
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: '**类**：从内置服务列表中选择一个。例如，`com.atlassian.jira.service.services.pop.PopService`。'
+- en: '**Delay**: Choose a delay for the service to run and scan the mails.'
+  id: totrans-517
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: '**延迟**：选择服务运行并扫描邮件的延迟时间。'
+- en: 'Adding the service will take you to the **Edit** **Service** page. Populate
+    the details as follows and update:'
+  id: totrans-518
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 添加服务将带您到**编辑** **服务**页面。按照以下方式填写详细信息并更新：
+- en: '**Handler** : Select **Create** **Or** **Comment** **Handler** from the drop
+    down box'
+  id: totrans-519
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: '**处理程序**：从下拉框中选择**创建** **或** **评论** **处理程序**。'
+- en: '**Handler** **Parameters**: This is the most important part where we specify
+    the parameters that will be used while creating the issue. Following are the list
+    of important parameters:'
+  id: totrans-520
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: '**处理程序** **参数**：这是最重要的部分，我们在此指定在创建问题时将使用的参数。以下是重要参数的列表：'
+- en: '`project`: Key of the project where the issue should be created'
+  id: totrans-521
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`project`: 应该创建问题的项目的关键字。'
+- en: '`issuetype`: Unique ID of the `issuetype`. For example, if we want the issue
+    to be created as a Bug, provide `issuetype` as 1.'
+  id: totrans-522
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`issuetype`: `issuetype`的唯一ID。例如，如果我们希望创建一个Bug类型的问题，请将`issuetype`设置为1。'
+- en: '`createusers`: if set to true, accounts will be created for new senders.'
+  id: totrans-523
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`createusers`: 如果设置为true，将为新发送者创建帐户。'
+- en: '`reporterusername`: Can be used to create issue with the specified reporter
+    when the sender does not match with an existing user.'
+  id: totrans-524
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`reporterusername`: 当发送者与现有用户不匹配时，可以用于创建带有指定报告人的问题。'
+- en: '`notifyusers`: Only used if `createusers` is true. Indicates whether users
+    should get a mail notification for the new accounts created.'
+  id: totrans-525
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`notifyusers`: 仅在`createusers`为真时使用。指示是否应向新创建的帐户的用户发送邮件通知。'
+- en: '`ccassignee`: If set, the new issue will be assigned to a matching user in
+    To field or in Cc field if no one matches in To field.'
+  id: totrans-526
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ccassignee`: 如果设置，则新问题将分配给“收件人”字段或“抄送”字段中匹配的用户（如果“收件人”字段没有匹配的用户）。'
+- en: '`bulk`: Determines how to handle "bulk" e-mails. Values possible are:'
+  id: totrans-527
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`bulk`: 确定如何处理“批量”电子邮件。可能的值有：'
+- en: '`ignore`: Ignore the e-mail and do nothing.'
+  id: totrans-528
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ignore`: 忽略电子邮件并不执行任何操作。'
+- en: '`forward`: Forward the e-mail to the address set in the "Forward Email" text
+    field.'
+  id: totrans-529
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`forward`: 将电子邮件转发到“转发电子邮件”文本框中设置的地址。'
+- en: '`delete`: Delete the e-mail permanently.'
+  id: totrans-530
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`delete`: 永久删除电子邮件。'
+- en: '`catchemail`: If added, JIRA will process only e-mails sent to this address.
+    It is used when there are multiple aliases for the same e-mail inbox.'
+  id: totrans-531
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`catchemail`: 如果添加，JIRA将只处理发送到此地址的电子邮件。它在同一邮箱有多个别名时使用。'
+- en: '`stripquotes`: If enabled, it strips previous messages from replies.'
+  id: totrans-532
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`stripquotes`: 如果启用，它将从回复中删除之前的消息。'
+- en: 'Forward e-mail: Error notifications and un-handled e-mails (used in conjunction
+    with bulk forward handle parameter) will be forwarded to this address.'
+  id: totrans-533
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 转发电子邮件：错误通知和未处理的电子邮件（与批量转发处理参数一起使用）将被转发到此地址。
+- en: 'Uses SSL: Select SSL if used.'
+  id: totrans-534
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用SSL：如果使用SSL，请选择SSL。
+- en: 'Server: Select the e-mail server for this service. It will be the one we added
+    in *Step* *2* to *Step* *4*.'
+  id: totrans-535
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 服务器：选择此服务的电子邮件服务器。它将是我们在*步骤* *2*到*步骤* *4*中添加的服务器。
+- en: 'Port: It is the port to connect to. Leave blank if default.'
+  id: totrans-536
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 端口：连接的端口。如果使用默认端口，请留空。
+- en: JIRA is now configured to receive mails to the newly added mailbox.
+  id: totrans-537
+  prefs: []
+  type: TYPE_NORMAL
+  zh: JIRA现在已配置为接收发送到新添加的邮箱的邮件。
+- en: How it works...
+  id: totrans-538
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 它是如何工作的...
+- en: The service we have setup here scans the mailbox every **n** minutes as configured
+    in the delay and picks up the new incoming messages. When a new message is received,
+    JIRA scans through the subject to see if there are any mentions of an already
+    existing issue. If there is one, the e-mail is added as a comment on the mentioned
+    issue with the e-mail body as the comment text. If there is no mention of an issue
+    in the subject, JIRA still checks whether the e-mail is a reply to another e-mail
+    that already created an issue or not. If so, the e-mail body is again added as
+    a comment on that issue. This is done by checking the `in-reply-to` header in
+    the e-mail.
+  id: totrans-539
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们在这里设置的服务每**n**分钟扫描一次邮箱（按照延迟配置），并获取新的来信。当接收到新邮件时，JIRA 会扫描主题，看是否提到了已存在的问题。如果有提到，电子邮件会作为评论添加到提到的问题上，电子邮件正文作为评论内容。如果主题中没有提到问题，JIRA
+    仍会检查电子邮件是否是对已创建问题的另一个电子邮件的回复。如果是，那么电子邮件正文会作为评论再次添加到该问题上。这是通过检查电子邮件中的 `in-reply-to`
+    标头来完成的。
+- en: If JIRA still couldn't find any matching issues, a new issue is created in the
+    project and of type configured in the handle parameters. The e-mail subject will
+    become the issue, summary and e-mail body, the description.
+  id: totrans-540
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果 JIRA 仍然找不到任何匹配的问题，则会在项目中创建一个新的问题，并且类型由处理参数中的配置决定。电子邮件的主题将成为问题的摘要，电子邮件正文将成为描述。
+- en: Any attachments on an e-mail, new, or replies, will be added as attachments
+    on the issue.
+  id: totrans-541
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 电子邮件中的任何附件，无论是新的还是回复的，都将作为附件添加到问题中。
+- en: More information about the creation of issues and comments from an e-mail can
+    be found at [http://confluence.atlassian.com/display/JIRA/Creating+Issues+and+Comments+from+Email](http://confluence.atlassian.com/display/JIRA/Creating+Issues+and+Comments+from+Email).
+  id: totrans-542
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 关于从电子邮件创建问题和评论的更多信息，请参见[http://confluence.atlassian.com/display/JIRA/Creating+Issues+and+Comments+from+Email](http://confluence.atlassian.com/display/JIRA/Creating+Issues+and+Comments+from+Email)。
+- en: It is also worth checking the plugin exchange for plugins with extended mail
+    handlers that are capable of adding more details on the issue while creation like
+    custom field values. Some of them have far better filtering mechanisms as well.
+  id: totrans-543
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 同时，也值得检查插件交换平台，寻找具有扩展邮件处理功能的插件，这些插件能够在创建问题时添加更多的细节，例如自定义字段值。其中一些插件还拥有更好的过滤机制。
+- en: Internationalization in webwork plugins
+  id: totrans-544
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: webwork 插件中的国际化
+- en: We have seen in the earlier chapters how to write webwork plugins to create
+    new or extended JIRA actions. In this recipe, we will see how we can personalize
+    the messages in these plugins using **internationalization** and **localization**.
+  id: totrans-545
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们在前面的章节中已经看到如何编写 webwork 插件来创建新的或扩展的 JIRA 操作。在这个食谱中，我们将看到如何通过**国际化**和**本地化**个性化这些插件中的消息。
+- en: 'As Wikipedia puts it:'
+  id: totrans-546
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如 Wikipedia 所说：
+- en: '"Internationalization and localization are means of adapting computer software
+    to different languages, regional differences and technical requirements of a target
+    market. Internationalization is the process of designing a software application
+    so that it can be adapted to various languages and regions without engineering
+    changes. Localization is the process of adapting internationalized software for
+    a specific region or language by adding locale-specific components and translating
+    text."'
+  id: totrans-547
+  prefs:
+  - PREF_BQ
+  type: TYPE_NORMAL
+  zh: “国际化和本地化是将计算机软件适应不同语言、地区差异和目标市场技术要求的手段。国际化是设计软件应用程序的过程，使其能够在不进行工程更改的情况下适应各种语言和地区。本地化是将国际化软件适应特定地区或语言的过程，方法是添加地区特定的组件并翻译文本。”
+- en: The terms internationalization and localization are abbreviated to **i18n**
+    where **18** stands for the number of letters between the first **i** and last
+    **n** in internationalization!
+  id: totrans-548
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 国际化和本地化的术语缩写为**i18n**，其中**18**代表国际化中从第一个**i**到最后一个**n**之间的字母数！
+- en: How to do it...
+  id: totrans-549
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: 'Internationalization in a webwork plugin is achieved with the help of a resource
+    bundle with the same name as the action that it is associated with. Following
+    are the steps to enable it in a JIRA webwork plugin:'
+  id: totrans-550
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 webwork 插件中实现国际化是通过一个与其关联的操作同名的资源包来实现的。以下是在 JIRA webwork 插件中启用国际化的步骤：
+- en: Create a `properties` file with the same name as that of the action class under
+    the same package structure under `src/main/resources` folder in the plugin.
+  id: totrans-551
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在插件的 `src/main/resources` 文件夹下，在与操作类同名的包结构中创建一个 `properties` 文件。
+- en: For example, if we consider the `RedirectAction` example in the previous recipes,
+    the property file will be `RedirectAction.propertie`s residing under `src/main/resources/com/jtricks`
+    folder.
+  id: totrans-552
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 例如，如果我们考虑前面示例中的 `RedirectAction`，属性文件将是 `RedirectAction.propertie`s，位于 `src/main/resources/com/jtricks`
+    文件夹下。
+- en: 'Add the key value pair of properties that needs to be used in action as follows:'
+  id: totrans-553
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 添加在 action 中需要使用的属性的键值对，如下所示：
+- en: '[PRE82]'
+  id: totrans-554
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE82]'
+- en: Here, `good.bye` is the key that will be used and will be same across all language
+    `properties` files. The value here "Good Bye" will be used for the default locale
+    but will have the equivalent translations in the other language property files.
+  id: totrans-555
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 这里，`good.bye` 是将被使用的键，且会在所有语言的 `properties` 文件中保持一致。这里的值 "Good Bye" 将用于默认地区，但在其他语言的属性文件中将有相应的翻译。
+- en: 'Create `properties` files in the same folder for other required languages in
+    the following format: `${actionName}_${languageCode}_${countryCode}.properties`.
+    For example, if we need to personalize the above action for UK and US and French
+    users, following will be the property filenames:'
+  id: totrans-556
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在同一文件夹中为其他所需语言创建 `properties` 文件，格式为：`${actionName}_${languageCode}_${countryCode}.properties`。例如，如果我们需要为英国、美国和法国用户定制上述动作，属性文件名将如下：
+- en: '[PRE83]'
+  id: totrans-557
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE83]'
+- en: Add the property `good.bye` in each of the property files with the appropriate
+    translation as the values. For example, a property with value `Good` `Bye` in
+    the English property file will have value `revoir` in French!
+  id: totrans-558
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在每个属性文件中添加 `good.bye` 属性，并为其设置适当的翻译值。例如，英文属性文件中的 `Good` `Bye` 属性值将会在法语文件中显示为
+    `revoir`！
+- en: '[PRE84]'
+  id: totrans-559
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE84]'
+- en: In the action class, use `getText(key)` method to retrieve the appropriate message.
+    Keep in mind that the action `class` extends the `JiraWebActionSupport` class
+    which implements the getText method!
+  id: totrans-560
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在 action 类中，使用 `getText(key)` 方法来获取相应的消息。请记住，action `class` 扩展了实现了 getText 方法的
+    `JiraWebActionSupport` 类！
+- en: 'For example, the value `Good` `Bye` can be printed to users in different locales
+    in their own language as follows:'
+  id: totrans-561
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 例如，值 `Good` `Bye` 可以根据不同地区的用户语言显示如下：
+- en: '[PRE85]'
+  id: totrans-562
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE85]'
+- en: 'This magic however is broken in v2 plugins and there is already an issue reported
+    with Atlassian at [https://jira.atlassian.com/browse/JRA-23720](https://jira.atlassian.com/browse/JRA-23720).
+    The workaround is to override the `getTexts` method as follows in the action class:'
+  id: totrans-563
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，这一魔法在 v2 插件中被打破，且 Atlassian 已经在 [https://jira.atlassian.com/browse/JRA-23720](https://jira.atlassian.com/browse/JRA-23720)
+    上报告了一个问题。解决方法是在 action 类中覆盖 `getTexts` 方法，如下所示：
+- en: '[PRE86]'
+  id: totrans-564
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE86]'
+- en: Here we get the `ResourceBundle` using the class loader of the action class
+    and that fixes the above issue in v2 plugins!
+  id: totrans-565
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这里，我们通过 action 类的类加载器获取 `ResourceBundle`，这解决了 v2 插件中的上述问题！
+- en: 'Before we wind up, if you need to get the `i18N` texts in the velocity templates,
+    following are the steps:'
+  id: totrans-566
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在结束之前，如果你需要在 velocity 模板中获取 `i18N` 文本，以下是步骤：
+- en: Add the property files as before.
+  id: totrans-567
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 按照之前的方式添加属性文件。
+- en: 'Add the resource entry in the `atlassian-plugin.xml` as follows:'
+  id: totrans-568
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如下所示，在 `atlassian-plugin.xml` 中添加资源条目：
+- en: '[PRE87]'
+  id: totrans-569
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE87]'
+- en: Here, the resource points to the property file with the package and name (omitting
+    the country or language code).
+  id: totrans-570
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在这里，资源指向的是属性文件，并包含包名和文件名（省略国家或语言代码）。
+- en: 'Use `$i18n` object to retrieve the property values as follows:'
+  id: totrans-571
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用 `$i18n` 对象来检索属性值，如下所示：
+- en: '[PRE88]'
+  id: totrans-572
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE88]'
+- en: Sharing common libraries across v2 plugins
+  id: totrans-573
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 在 v2 插件中共享公共库
+- en: We have already explored creating both v1 and v2 plugins throughout this book.
+    One major difference between v1 and v2 plugins is that the v1 plugins has got
+    access to all the libraries and classes available in the application class path
+    whereas v2 plugins can't access them.
+  id: totrans-574
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本书已经介绍了如何创建 v1 和 v2 插件。v1 和 v2 插件之间的一个主要区别是，v1 插件可以访问应用程序类路径中所有可用的库和类，而 v2 插件无法访问它们。
+- en: For example, the v1 plugins can access some common utility classes by dropping
+    the JAR file with those classes in the `WEB-INF/lib` or adding those classes under
+    `WB-INF/classes`. But that won't work with v2 plugins as they need the JAR files
+    embedded with them under `MET-INF/lib` or the classes embedded in them. How will
+    we handle this scenario when there is a utility class that we need to share across
+    a few v2 plugins? Should we embed the class in all the plugins? The answer is
+    no, and in this recipe, we will see how we can share those utility classes across
+    v2 plugins by creating an OSGi bundle.
+  id: totrans-575
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 例如，v1 插件可以通过将包含这些类的 JAR 文件放入 `WEB-INF/lib` 或将这些类添加到 `WEB-INF/classes` 下，来访问一些通用的工具类。但对于
+    v2 插件来说，这种方式行不通，因为它们需要将 JAR 文件嵌入到 `MET-INF/lib` 中，或者将类直接嵌入其中。那么，当我们需要在几个 v2 插件之间共享一个工具类时，该如何处理呢？我们是否应该将类嵌入到所有插件中？答案是否定的，在本教程中，我们将学习如何通过创建一个
+    OSGi 包来在 v2 插件之间共享这些工具类。
+- en: Getting ready
+  id: totrans-576
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 准备工作
+- en: Create a skeleton plugin using Atlassian Plugin SDK.
+  id: totrans-577
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用 Atlassian 插件 SDK 创建一个骨架插件。
+- en: How to do it...
+  id: totrans-578
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: 'Let us assume we have a Number utility class that does summation and multiplication
+    of integer numbers. What should we do if we want to make this class available
+    in all the v2 plugins? The following are the steps:'
+  id: totrans-579
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 假设我们有一个数字工具类，用于整数的加法和乘法。如果我们想让这个类在所有 v2 插件中可用，应该怎么做？以下是步骤：
+- en: 'Create the Utility class under the correct package:'
+  id: totrans-580
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在正确的包下创建工具类：
+- en: '[PRE89]'
+  id: totrans-581
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE89]'
+- en: Export the classes that needs to be shared so that it is visible to other v2
+    plugins. This step is very important.
+  id: totrans-582
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 导出需要共享的类，使其对其他 v2 插件可见。这一步非常重要。
+- en: Even though it is a simple utility class, we need the atlassian-plugin.xml for
+    this step. We can use the `bundle-instructions` under `plugin-info` element in
+    the `atlassian-plugin.xml` for exporting selected packages to other plugins/bundles.
+  id: totrans-583
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 即使它是一个简单的工具类，我们仍然需要 atlassian-plugin.xml 来完成这一步。我们可以在 `atlassian-plugin.xml`
+    的 `plugin-info` 元素下使用 `bundle-instructions` 来将选定的包导出到其他插件/包中。
+- en: The bundle-instructions element allows child elements.
+  id: totrans-584
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`bundle-instructions` 元素允许子元素。'
+- en: '**Export** **-** **Package**: To export selected packages from the plugin to
+    be shared across other plugins'
+  id: totrans-585
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '**导出** **-** **包**：将选定的包从插件导出，以便在其他插件之间共享。'
+- en: '**Import** **-** **Package**: Tom import only selected packages into a plugin.
+    By default it imports all the exported packages from other plugins.'
+  id: totrans-586
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '**导入** **-** **包**：Tom 只将选定的包导入到插件中。默认情况下，它会导入来自其他插件的所有已导出的包。'
+- en: 'In this case, we need to modify the atlassian-plugin.xml to export our utility
+    class and this can be done as follows:'
+  id: totrans-587
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在这种情况下，我们需要修改 atlassian-plugin.xml 以导出我们的工具类，具体操作如下：
+- en: '[PRE90]'
+  id: totrans-588
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE90]'
+- en: It is possible to export only selected versions and choose not to export certain
+    packages. More details on this can be found at [http://www.aqute.biz/Bnd/Bnd](http://www.aqute.biz/Bnd/Bnd).
+  id: totrans-589
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 可以选择只导出特定版本，并选择不导出某些包。更多细节可以参考 [http://www.aqute.biz/Bnd/Bnd](http://www.aqute.biz/Bnd/Bnd)。
+- en: Optionally, we can use the **Import-Package** element to import the above exported
+    package. By default, it will anyways be imported and hence this step can be omitted.
+    However it will be useful when you want to import only selected packages or make
+    the import mandatory etc. Again, the details can be found in the above link.
+  id: totrans-590
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 可选地，我们可以使用 **Import-Package** 元素来导入上述已导出的包。默认情况下，它会被导入，因此这一步可以省略。不过，当你只想导入特定的包或使导入变为强制性时，这个步骤会很有用。更多详情可以参考上述链接。
+- en: Package the plugin and deploy it as a v2 plugin.
+  id: totrans-591
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 打包插件并将其作为 v2 插件部署。
+- en: Now the utility class is available to all the other v2 plugins. When developing,
+    the other plugins should have this class in the classpath which can be achieved
+    by adding the above plugin as a dependency in the `pom.xml` with scope as provided.
+  id: totrans-592
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在该工具类可以被所有其他 v2 插件访问。在开发时，其他插件应将此类包含在类路径中，这可以通过在 `pom.xml` 中将上述插件作为依赖项并设置作用域为
+    provided 来实现。
+- en: '[PRE91]'
+  id: totrans-593
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE91]'
+- en: 'When we do that, the above method, add, can be invoked as if the class is within
+    the same plugin. For example, the `RedirectAction` class may have the method as
+    follows:'
+  id: totrans-594
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当我们这样做时，上述方法 `add` 可以像类在同一插件中一样被调用。例如，`RedirectAction` 类可能有如下方法：
+- en: '[PRE92]'
+  id: totrans-595
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE92]'
+- en: Operations using direct HTML links
+  id: totrans-596
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用直接 HTML 链接的操作
+- en: It probably make sense to wind up this book by giving a little tip on how we
+    can do powerful operations in JIRA by a simple click on a link, either from your
+    e-mail or a from a web form or from within JIRA itself!
+  id: totrans-597
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 可能有必要通过一个小提示结束本书，告诉大家如何通过简单地点击一个链接在 JIRA 中执行强大的操作，无论是从你的电子邮件、Web 表单还是 JIRA 本身！
+- en: Almost all the actions can be encoded into a single URL provided we have the
+    right parameters to invoke those actions. Make no mistake, it has its own disadvantages
+    because it will override all the pre-processing, validations, and so on, in place
+    in some cases.
+  id: totrans-598
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 几乎所有的操作都可以编码成单个URL，只要我们拥有正确的参数来触发这些操作。别搞错了，这也有它的缺点，因为在某些情况下，它会覆盖所有的预处理、验证等操作。
+- en: 'The URL that performs the action is constructed in the following manner:'
+  id: totrans-599
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 执行操作的URL构造方式如下：
+- en: '`${baseUrl}/secure/${action}?${arguments}`'
+  id: totrans-600
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`${baseUrl}/secure/${action}?${arguments}`'
+- en: where `baseUrl` is the JIRA base url, `action` is the webwork action to be executed
+    and `arguments` is the URL encoded arguments needed for the action. The arguments
+    are constructed as key value pairs separated by `&`. Each key value pair will
+    be of the form `key=value` and must comply with HTML link syntax—that is, all
+    characters must be escaped. Let us see in detail.
+  id: totrans-601
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 其中，`baseUrl`是JIRA的基本URL，`action`是要执行的WebWork操作，`arguments`是该操作所需的URL编码参数。参数由`&`分隔的键值对构成。每个键值对的格式为`key=value`，并且必须遵循HTML链接语法——即所有字符必须转义。让我们详细看看。
+- en: How to do it...
+  id: totrans-602
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: Let us consider a simple example to start with, i.e. creating issues. Creating
+    an issue has four stages.
+  id: totrans-603
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们从一个简单的例子开始，即创建问题。创建问题有四个阶段。
+- en: Going to initial create screen
+  id: totrans-604
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 进入初始创建屏幕
+- en: Selecting the project and `issuetype` and clicking on **Next**
+  id: totrans-605
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 选择项目和`issuetype`并点击**下一步**
+- en: Entering all the details on the issue
+  id: totrans-606
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 输入所有问题的详细信息
+- en: Clicking on **Submit** with details
+  id: totrans-607
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 点击**提交**并填写详细信息
+- en: We can execute each of these in single steps provided we know the details in
+    advance. For the example, let us take `http://localhost:8080/` as the base URL
+    for the JIRA instance.
+  id: totrans-608
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以在了解详细信息的前提下，逐步执行每个操作。以此为例，我们将`http://localhost:8080/`作为JIRA实例的基本URL。
+- en: 'Going to initial create issue screen can be done via the URL:'
+  id: totrans-609
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 进入初始创建问题屏幕可以通过以下URL完成：
+- en: '`http://localhost:8080/secure/CreateIssue!default.jspa`'
+  id: totrans-610
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`http://localhost:8080/secure/CreateIssue!default.jspa`'
+- en: 'Note that the recent `project` and `issuetype` are pre-selected when you access
+    this link because that is the JIRA default behavior. But what if we want to pre-select
+    some other project? All we need is to add the parameters `pid` in the URL as follows:'
+  id: totrans-611
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 请注意，最近的`project`和`issuetype`在访问此链接时会被预选中，因为这是JIRA的默认行为。但如果我们想要预选某个其他项目呢？我们只需在URL中添加`pid`参数，如下所示：
+- en: '`http://localhost:8080/secure/CreateIssue!default.jspa?pid=10100`'
+  id: totrans-612
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`http://localhost:8080/secure/CreateIssue!default.jspa?pid=10100`'
+- en: If we need to go to the second step directly by selecting the project and issuetype,
+    just add the `issuetype` parameter as well into the URL separated by `&`.
+  id: totrans-613
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如果我们需要直接进入第二步，通过选择项目和问题类型，只需在URL中添加`issuetype`参数，并用`&`分隔。
+- en: '`http://localhost:8080/secure/CreateIssue!default.jspa?pid=10100&issuetype=1`'
+  id: totrans-614
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`http://localhost:8080/secure/CreateIssue!default.jspa?pid=10100&issuetype=1`'
+- en: If we need to pre-populate create issue dialogue in one click, enter all the
+    details in the URL as shown with the action name as `CreateIssueDetails!init.jspa`
+  id: totrans-615
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如果我们需要通过单击预填充创建问题对话框，请按如下所示在URL中输入所有详细信息，操作名称为`CreateIssueDetails!init.jspa`
+- en: '`http://localhost:8080/secure/CreateIssueDetails!init.jspa?pid=10100&issuetype=1&priority=1&summary=Emergency+Bug&reporter=jobinkk`'
+  id: totrans-616
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`http://localhost:8080/secure/CreateIssueDetails!init.jspa?pid=10100&issuetype=1&priority=1&summary=Emergency+Bug&reporter=jobinkk`'
+- en: Note that all the mandatory fields should be populated to avoid validation errors.
+    The above example also shows how the URL is encoded to comply with HTML syntax
+    by replacing space in the summary with a +. i.e. Emergency Bug is written as Emergency+Bug
+    which can also be written as Emergency%20Bug.
+  id: totrans-617
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 请注意，所有必填字段都应填写，以避免验证错误。上述示例还展示了如何对URL进行编码，以符合HTML语法，将摘要中的空格替换为+。即，Emergency
+    Bug写作Emergency+Bug，也可以写作Emergency%20Bug。
+- en: And if we want to create the issue in one click with the details above, use
+    `CreateIssueDetails` action instead of `CreateIssueDetails!init`
+  id: totrans-618
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如果我们希望通过单击立即创建问题并填写上述详细信息，可以使用`CreateIssueDetails`操作，而不是`CreateIssueDetails!init`
+- en: '`http://localhost:8080/secure/CreateIssueDetails.jspa?pid=10100&issuetype=1&priority=1&summary=Emergency+Bug&reporter=jobinkk`'
+  id: totrans-619
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`http://localhost:8080/secure/CreateIssueDetails.jspa?pid=10100&issuetype=1&priority=1&summary=Emergency+Bug&reporter=jobinkk`'
+- en: Hopefully that gives as idea about how the operation can be executed via direct
+    links. Make sure the user is logged or Anonymous issue creation is turned on when
+    the above link are clicked.
+  id: totrans-620
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 希望这能给我们一个关于如何通过直接链接执行操作的思路。在点击上述链接时，确保用户已登录或启用了匿名问题创建。
+- en: But how do we find out what is the action class involved or what are the parameters
+    to be passed?
+  id: totrans-621
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 那么，如何找出涉及的操作类或需要传递的参数呢？
+- en: 'This you can do easily from the browser URL if the request uses GET method.
+    Create an issue with project and `issuetype` selected (case 2 above) is an example
+    as shown next:'
+  id: totrans-622
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果请求使用 GET 方法，你可以轻松地从浏览器 URL 中完成此操作。以选择了项目和 `issuetype` 创建问题（上述案例 2）为例，如下所示：
+- en: '![How to do it...](img/1803-11-16.jpg)'
+  id: totrans-623
+  prefs: []
+  type: TYPE_IMG
+  zh: '![如何操作...](img/1803-11-16.jpg)'
+- en: 'When the request is **POST** as in case 4, we can find out the action name
+    from the URL but the parameters needs to be worked out from what is posted when
+    the action is executed. There are multiple ways to do it and an easy way out of
+    them will be to use the browser capabilities. For example, using **Firebug** with
+    Mozilla Firefox will get you the parameters posted when an action is executed
+    as shown below:'
+  id: totrans-624
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当请求为**POST**，如案例 4 所示，我们可以从 URL 中找出操作名称，但需要通过执行操作时提交的内容来确定参数。实现这一点有多种方式，其中一个简单的方法是使用浏览器功能。例如，使用**Firebug**与
+    Mozilla Firefox 可以获取执行操作时提交的参数，如下所示：
+- en: '![How to do it...](img/1803-11-17.jpg)'
+  id: totrans-625
+  prefs: []
+  type: TYPE_IMG
+  zh: '![如何操作...](img/1803-11-17.jpg)'
+- en: Here we can see the parameters pid, issuetype, priority, summary and reporter
+    getting submitted in the **POST** section. Also, we can see the action name. Once
+    you get the list of parameters, we can user them in the URL with appropriate values
+    separated by & as we saw in *Step* *4*.
+  id: totrans-626
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这里，我们可以看到**POST**部分提交的参数：pid、issuetype、priority、summary 和 reporter。此外，我们还可以看到操作名称。一旦获得了参数列表，我们就可以在
+    URL 中使用它们，并用适当的值通过 & 符号分隔，正如我们在*步骤* *4* 中看到的那样。
+- en: 'This technique opens up lot of possibilities. For example, we can easily automate
+    the submission of these URLs that we have constructed using command-line tools
+    like `wget` or `curl`. Read about these more at: [http://confluence.atlassian.com/display/JIRA/Creating+Issues+via+direct+HTML+links](http://confluence.atlassian.com/display/JIRA/Creating+Issues+via+direct+HTML+links)
+    And: [http://confluence.atlassian.com/display/JIRACOM/Automating+JIRA+operations+via+wget](http://confluence.atlassian.com/display/JIRACOM/Automating+JIRA+operations+via+wget).'
+  id: totrans-627
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这种技术带来了很多可能性。例如，我们可以轻松地使用命令行工具如 `wget` 或 `curl` 自动化提交这些我们构建的 URL。更多信息请参考：[http://confluence.atlassian.com/display/JIRA/Creating+Issues+via+direct+HTML+links](http://confluence.atlassian.com/display/JIRA/Creating+Issues+via+direct+HTML+links)
+    和：[http://confluence.atlassian.com/display/JIRACOM/Automating+JIRA+operations+via+wget](http://confluence.atlassian.com/display/JIRACOM/Automating+JIRA+operations+via+wget)。

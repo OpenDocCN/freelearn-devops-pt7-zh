@@ -1,0 +1,1150 @@
+- en: Working with Ansible Container
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用 Ansible Container
+- en: As we saw in [Chapter 1](61a61ca8-60d4-48a0-8987-6f719d6a2c36.xhtml), *Building
+    Containers with Docker*, containerization is changing the way critical IT infrastructure
+    is maintained and deployed. As DevOps methodologies and mindsets evolve across
+    organizations, the lines between development and operations roles are becoming
+    blurred. While tools such as Docker continue to grow and evolve, tools need to
+    be developed to leverage the ever-increasing need to scale and deploy containerized
+    applications.
+  id: totrans-1
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如我们在[第1章](61a61ca8-60d4-48a0-8987-6f719d6a2c36.xhtml)*《使用 Docker 构建容器》*中所见，容器化正在改变关键
+    IT 基础设施的维护和部署方式。随着 DevOps 方法论和思维方式在各组织中不断发展，开发与运维角色之间的界限越来越模糊。尽管 Docker 等工具持续发展和进化，但仍然需要开发新的工具，以应对不断增长的容器化应用部署和扩展需求。
+- en: Ansible is a unique framework for automation, as we saw in [Chapter 1](61a61ca8-60d4-48a0-8987-6f719d6a2c36.xhtml)*,
+    Building Containers with Docker, *as it relies on an agent-less architecture,
+    bringing servers and virtualized applications into the desired state from a centralized
+    location over the SSH protocol. Compared to the other core automation tools discussed,
+    Ansible brings a different approach from other configuration management tools,
+    such as Chef and Puppet, which rely on agents and centralized servers to store
+    and maintain configuration states.
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 是一个独特的自动化框架，正如我们在[第1章](61a61ca8-60d4-48a0-8987-6f719d6a2c36.xhtml)*《使用
+    Docker 构建容器》*中所见，它依赖于无代理架构，通过 SSH 协议从集中位置将服务器和虚拟化应用程序带入所需状态。与其他核心自动化工具相比，Ansible
+    提供了一种不同的方法，它与其他配置管理工具（如 Chef 和 Puppet）有所不同，后者依赖于代理和集中式服务器来存储和维护配置状态。
+- en: The Ansible Container project was launched to address the need to bring critical
+    configuration management techniques to the currently manual process of building
+    and deploying Docker container images with the standard Docker toolchain. Currently,
+    Docker and Docker tools are built with an emphasis on deploying containers to
+    Docker native environments using Swarm and Docker Compose. Ansible Container is
+    a wrapper around many of the standard Docker tools, and provides the functionality
+    to deploy your projects to various cloud providers, Kubernetes, and OpenShift.
+    At the time of writing other container orchestration tools such as Docker Swarm
+    and Apache Mesos are not currently supported. If Dockerfiles are akin to shell
+    scripts during the era of monolithic application deployments, then Ansible Container
+    is a solution for bringing automation and repeatability to the container ecosystem.
+    As Ansible Core uses playbooks and SSH as an interface for bringing about desired
+    states, Ansible Container can use your same playbooks and native container APIs
+    to build and deploy containers.
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible Container 项目旨在解决将关键的配置管理技术引入当前手动构建和部署 Docker 容器镜像的过程中的需求。当前，Docker 和
+    Docker 工具更侧重于使用 Swarm 和 Docker Compose 部署容器到 Docker 原生环境中。Ansible Container 是许多标准
+    Docker 工具的封装器，提供了将项目部署到各种云提供商、Kubernetes 和 OpenShift 的功能。撰写本文时，其他容器编排工具，如 Docker
+    Swarm 和 Apache Mesos，尚不被支持。如果说 Dockerfile 在单体应用部署时代类似于 Shell 脚本，那么 Ansible Container
+    就是将自动化和可重复性带入容器生态系统的解决方案。由于 Ansible Core 使用 playbook 和 SSH 作为接口来实现期望的状态，Ansible
+    Container 可以使用相同的 playbook 和原生容器 API 来构建和部署容器。
+- en: If you or your organization is already using Ansible roles for customized deployments
+    of applications and services, these same roles can be leveraged to turn these
+    applications and services into containers, helping to streamline your container
+    build pipeline. When making the leap from bare-metal and virtualized deployments,
+    you can be confident that your customized configurations and settings will be
+    preserved when building your containers.
+  id: totrans-4
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你或你的组织已经在使用 Ansible 角色来定制化部署应用程序和服务，那么这些相同的角色可以被用来将这些应用程序和服务转化为容器，帮助简化你的容器构建流程。在从裸机和虚拟化部署转向容器化时，你可以放心，定制的配置和设置将在构建容器时得到保留。
+- en: 'In this chapter we will learn:'
+  id: totrans-5
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章我们将学习：
+- en: An introduction to Ansible Container and the microservice architecture
+  id: totrans-6
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Ansible Container 和微服务架构简介
+- en: A quick introduction to Docker Compose
+  id: totrans-7
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Docker Compose 快速入门
+- en: Ansible Container workflow
+  id: totrans-8
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Ansible Container 工作流
+- en: Ansible Container quick start
+  id: totrans-9
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Ansible Container 快速入门
+- en: An introduction to Ansible Container and the microservice architecture
+  id: totrans-10
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Ansible Container 和微服务架构简介
+- en: 'While using Ansible Container has a great number of benefits in reusing existing
+    Ansible artifacts, modules, and playbooks, careful consideration has to be given
+    to any changes required in porting over your existing services. Ansible gives
+    you a large amount of freedom in the way you write playbooks and roles to suite
+    the uniqueness of your organization''s architecture and resource constraints.
+    A typical web application, for example, may have three distinct layers of functionality:
+    a web server, which provides your end users with a website; a database for storing
+    data; and a cache, providing the web server with commonly accessed data from the
+    database. Depending on the architecture and any resource constraints, these services
+    might be implemented in any number of ways. You may have your web server, caching
+    layer, and database on three separate and distinct clusters of servers. You could
+    opt to deploy the web server and caching layer on the same cluster, and the database
+    on a secondary cluster. Or all three layers might be deployed on the same bare-metal
+    or virtualized server cluster, with a load balancer providing redundancy as necessary.
+    Your infrastructure is a unique snowflake that Ansible gives you the freedom to
+    write and deploy playbook roles in almost any configuration that fits your needs.'
+  id: totrans-11
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 虽然使用 Ansible Container 在重用现有 Ansible 工件、模块和剧本方面具有大量的优势，但必须仔细考虑将现有服务移植过来所需的任何更改。Ansible
+    给予您在编写剧本和角色时极大的自由度，以适应您组织架构和资源限制的独特性。例如，一个典型的网页应用程序可能具有三层不同的功能：一个网页服务器，为您的最终用户提供网站；一个数据库用于存储数据；以及一个缓存，提供从数据库中常访问的数据给网页服务器。根据架构和资源限制，这些服务可能以多种方式实现。您可能将网页服务器、缓存层和数据库部署在三组独立的服务器集群上。您也可以选择将网页服务器和缓存层部署在同一集群上，而数据库则部署在第二集群上。或者，所有三层可能部署在同一裸机或虚拟化的服务器集群上，并由负载均衡器在必要时提供冗余。您的基础设施是一个独特的“雪花”，Ansible
+    让您可以自由地编写并以几乎任何适合您需求的配置部署剧本角色。
+- en: '*Microservice architecture* is a term used to describe the independent and
+    modular breakout of application services to distinct and deployable units. In
+    the world of containers, you want each of your containers to conform to the microservice
+    architecture, creating each service as a separate container that can be deployed
+    and scaled independently of the other services. While it is possible to deploy
+    multiple services in the same container, it is generally a bad idea, as each service
+    adds layers to your containers, creating unnecessary overhead when building and
+    deploying new containers.'
+  id: totrans-12
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '*微服务架构* 是用来描述将应用服务独立且模块化地拆分为独立且可部署单元的术语。在容器的世界里，您希望每个容器都符合微服务架构，将每个服务作为一个独立的容器进行创建，这样可以独立于其他服务进行部署和扩展。虽然在同一个容器中部署多个服务是可能的，但通常这是一个不好的做法，因为每增加一个服务，容器就会增加额外的层，导致构建和部署新容器时产生不必要的开销。'
+- en: In the preceding example, each of the core services (web server, cache, and
+    database) will be a separate microservice you want to isolate and encapsulate
+    into containers. Having the flexibility to dynamically deploy more cache or database
+    containers on demand creates a huge advantage if your web application goes into
+    production and you realize that the projected traffic is much higher than originally
+    anticipated and database queries are becoming a bottleneck. Having a microservice-oriented
+    design to your containers will allow your infrastructure to be simplified, more
+    easily deployed, and more quickly scaled to meet the needs of demanding users.
+  id: totrans-13
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在前面的示例中，每个核心服务（网页服务器、缓存和数据库）都将是一个独立的微服务，您希望将其隔离并封装到容器中。如果您的网页应用程序进入生产环境后，您发现预计的流量比原先预期的要高得多，且数据库查询成为瓶颈，那么根据需求动态部署更多的缓存或数据库容器将带来巨大的优势。采用以微服务为导向的容器设计将使您的基础设施更加简化、易于部署，并且能够更快地扩展，以满足需求较大的用户。
+- en: The key takes-away when thinking about porting existing Ansible roles into Ansible
+    Container projects is to think through how tightly integrated your roles currently
+    are. Ideally, Ansible roles should be able to be standalone, with little to no
+    reliance on other environmental characteristics. Isn't this starting to sound
+    a lot like the containerized microservices we described before? This is what makes
+    Ansible Container a unique platform among other configuration management tools.
+    Ansible primitives are already designed to fit nicely into a containerized ecosystem.
+    Even if you are not currently using Ansible as your configuration management tool,
+    Ansible Container is still a fantastic tool for building, maintaining, and deploying
+    containers, from development all the way through to production.
+  id: totrans-14
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在考虑将现有的 Ansible 角色迁移到 Ansible Container 项目时，关键是要考虑你的角色目前有多紧密集成。理想情况下，Ansible
+    角色应该能够独立运行，几乎不依赖于其他环境特性。是不是感觉这听起来像我们之前描述的容器化微服务？这正是 Ansible Container 在其他配置管理工具中独树一帜的原因。Ansible
+    的原语已经设计得很好地适应容器化生态系统。即使你当前没有使用 Ansible 作为你的配置管理工具，Ansible Container 仍然是一个非常出色的工具，适用于从开发到生产的整个容器构建、维护和部署过程。
+- en: A quick introduction to Docker Compose
+  id: totrans-15
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Docker Compose 简介
+- en: Docker Compose is one of the Docker workflow tools that allow you to easily
+    build and run multiple containers at once. It is important to have a basic understanding
+    of how Docker Compose works before we start working with Ansible Container since
+    a lot of Ansible Container's core functionality is wrapped around Docker Compose.
+  id: totrans-16
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Docker Compose 是 Docker 工作流工具之一，允许你轻松地同时构建和运行多个容器。在开始使用 Ansible Container 之前，了解
+    Docker Compose 的基本原理非常重要，因为 Ansible Container 的许多核心功能都围绕 Docker Compose 构建。
+- en: In the previous chapter, I illustrated an example in which three Apache web
+    server containers were created to demonstrate running multiple containers simultaneously
+    leveraging the same container base image. With Docker Compose, instead of providing
+    three separate docker `run` commands, one can simply provide a `YAML` definition
+    file that describes the containers you want to run, any docker `run` parameters
+    you want the containers to run with (ports, volumes, and so on), and any links
+    or dependencies you want to create for the containers prior to running them. When
+    Docker Compose is executed, it will automatically try to bring up the containers
+    described in the `YAML` file. If the images are not yet cached locally, it will
+    try to download them from the internet or will build the container images if the
+    Dockerfiles are provided. Let's do a quick exercise to get a feel for how Docker
+    Compose works.
+  id: totrans-17
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在上一章中，我举了一个例子，展示了如何创建三个 Apache Web 服务器容器，以演示如何利用相同的容器基础镜像同时运行多个容器。使用 Docker
+    Compose，你可以通过提供一个 `YAML` 定义文件来描述你想要运行的容器、容器运行时所需的任何 docker `run` 参数（如端口、卷等）以及运行容器之前要创建的任何链接或依赖，而无需提供三个单独的
+    docker `run` 命令。当执行 Docker Compose 时，它将自动尝试启动 `YAML` 文件中描述的容器。如果镜像尚未在本地缓存，它将尝试从互联网上下载，或者如果提供了
+    Dockerfile，它将构建容器镜像。让我们做一个快速练习，了解 Docker Compose 的工作原理。
+- en: If you are not using the provided Vagrant lab environment, as discussed in [Chapter
+    1](61a61ca8-60d4-48a0-8987-6f719d6a2c36.xhtml)*,* *Building Containers with Docker,*
+    you will first need to download Docker Compose using the following command. The
+    steps provided assume you have Docker Engine already installed and running on
+    a Linux or macOS machine. Make sure you install Docker Compose with the same version
+    number as the Docker Engine you already have running to ensure maximum compatibility.
+    Execute the following commands to download the Docker Compose executable and copy
+    it to `/usr/local/bin` with `execute` privileges.
+  id: totrans-18
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你没有使用提供的 Vagrant 实验环境，如在[第 1 章](61a61ca8-60d4-48a0-8987-6f719d6a2c36.xhtml)
+    *构建 Docker 容器* 中讨论的那样，你需要首先使用以下命令下载 Docker Compose。所提供的步骤假设你已经在 Linux 或 macOS
+    机器上安装并运行了 Docker Engine。确保安装与现有 Docker Engine 版本相同的 Docker Compose，以确保最大兼容性。执行以下命令下载
+    Docker Compose 可执行文件，并将其复制到 `/usr/local/bin` 目录，并赋予 `execute` 权限。
+- en: '[PRE0]'
+  id: totrans-19
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: The most up-to-date installation documentation can be found at [https://docs.docker.com/compose/install](https://docs.docker.com/compose/install).
+  id: totrans-20
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最新的安装文档可以在 [https://docs.docker.com/compose/install](https://docs.docker.com/compose/install)
+    找到。
+- en: 'By default, Docker Compose looks for a file in your current working directory
+    called `docker-compose.yml`. I have provided a sample `docker-compose.yml` file
+    as an example. On your workstation, create a directory called `docker-compose`
+    and create a blank `docker-compose.yml` file in that directory. Paste in the following
+    content:'
+  id: totrans-21
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 默认情况下，Docker Compose 会在您当前工作目录中查找名为 `docker-compose.yml` 的文件。我提供了一个示例 `docker-compose.yml`
+    文件作为参考。在您的工作站上，创建一个名为 `docker-compose` 的目录，并在该目录下创建一个空白的 `docker-compose.yml`
+    文件。然后粘贴以下内容：
+- en: '[PRE1]'
+  id: totrans-22
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: 'Let''s look at this file line by line:'
+  id: totrans-23
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们逐行分析这个文件：
+- en: '`version`: This line indicates which version of the Docker Compose API to use.
+    In this case, we are using version 2\. At the time of writing, there is also version
+    3 of the API, which provides some new features. For our purposes, however, we
+    are content to use version 2\. The version parameter usually starts a Docker Compose
+    file and has no indentation.'
+  id: totrans-24
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`version`：这一行表示要使用哪个版本的 Docker Compose API。在本例中，我们使用的是版本 2。写作时，API 还有版本 3，提供了一些新特性。然而，对于我们的目的，使用版本
+    2 就足够了。`version` 参数通常是 Docker Compose 文件的开头，并且没有缩进。'
+- en: '`services`: The `services` line starts the section of your `docker-compose.yml`
+    file that lists each service container you are going to create. In this particular
+    Docker Compose file, we are going to create a service called `Cache_Server`, which
+    spins up a single `memcached` container. Each service you specify should be indented
+    two spaces under the `services` declarative. It should also be noted that the
+    service names are user-defined and are used to generate the container name. When
+    creating multi-container Docker Compose files, Docker provides simple DNS resolution
+    between containers, based on the service names. More on this in [Chapter 8](f734178a-8a55-4fc5-9961-13e8182fdda7.xhtml),* Building
+    and Deploying Multi-Container Projects.*'
+  id: totrans-25
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`services`：`services` 行启动了您的 `docker-compose.yml` 文件中列出要创建的每个服务容器的部分。在这个特定的
+    Docker Compose 文件中，我们将创建一个名为 `Cache_Server` 的服务，它启动一个 `memcached` 容器。您指定的每个服务都应该在
+    `services` 声明下缩进两个空格。还应注意，服务名称是用户定义的，并用于生成容器名称。在创建多容器的 Docker Compose 文件时，Docker
+    提供了基于服务名称的简单 DNS 解析。更多内容请参考[第 8 章](f734178a-8a55-4fc5-9961-13e8182fdda7.xhtml)，*构建和部署多容器项目*。'
+- en: '`image`: `image` is used to specify the container image you want your container
+    to be based on. For this example, we are using the official `memcached` image
+    from Docker Hub, specifying version 1.4.36\. We could also have used the latest
+    keyword in place of the version number if we had wanted to always have the latest
+    version of the image.'
+  id: totrans-26
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`image`：`image` 用于指定您希望容器基于的容器镜像。在本例中，我们使用的是来自 Docker Hub 的官方 `memcached` 镜像，指定版本为
+    1.4.36。如果我们希望始终使用最新版本的镜像，也可以使用 `latest` 关键字来代替版本号。'
+- en: '`ports`: The `ports` parameter indicate which ports on the host you want to
+    be forwarded to the container. In this case, we will forward port `11211` to the
+    exposed container port `11211`. Similar to `docker run`, ports must be specified
+    in the format `host:container`. This is a `YAML` list, so each port must be indented
+    and prefixed with a hyphen (`-`).'
+  id: totrans-27
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ports`：`ports` 参数指示要转发到容器的主机端口。在本例中，我们将端口 `11211` 转发到暴露的容器端口 `11211`。类似于 `docker
+    run`，端口必须按 `host:container` 的格式指定。这是一个 `YAML` 列表，因此每个端口必须缩进并以连字符（`-`）作为前缀。'
+- en: '`volumes`: This parameter specifies any directories or storage volumes on the
+    Docker host you would like to make accessible to the container. This is useful
+    if there is data in the container you may want to back up, export, or otherwise
+    share with the container. This volume mounting merely serves as an example of
+    the syntax. Similar to the `ports` parameter, `volumes` takes a list in the form
+    of `hostDirectory:containerDirectory`.'
+  id: totrans-28
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`volumes`：该参数指定您希望使 Docker 主机上的任何目录或存储卷可供容器访问。如果容器中有您可能想要备份、导出或以其他方式与容器共享的数据，这将非常有用。这个卷挂载仅作为语法示例。与
+    `ports` 参数类似，`volumes` 以 `hostDirectory:containerDirectory` 的格式接收一个列表。'
+- en: 'To start our container using Docker Compose, you simply execute the command `docker-compose
+    up`. This will, by default, start all of the containers in the Docker Compose
+    file one by one, unless container dependencies are specified. Containers started
+    using `docker-compose` will be started in `attached` mode, meaning that the container
+    process will run, taking over the Terminal you are using. Similar to `docker run`,
+    we can supply the `-d` flag to run the containers in `detached` mode, so we can
+    run some validations in the same Terminal:'
+  id: totrans-29
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要使用Docker Compose启动我们的容器，只需执行命令`docker-compose up`。默认情况下，这将按顺序启动Docker Compose文件中的所有容器，除非指定了容器依赖。使用`docker-compose`启动的容器将以`attached`模式启动，这意味着容器进程会运行，并接管您使用的终端。与`docker
+    run`类似，我们可以提供`-d`标志，以`detached`模式运行容器，这样我们就可以在同一个终端中进行一些验证：
+- en: '[PRE2]'
+  id: totrans-30
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: You will observe that, similarly to `docker run`, Docker Compose automatically
+    determines that the container image is not present on the Docker host and successfully
+    downloads the image and corresponding layers from the internet.
+  id: totrans-31
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 您将看到，类似于`docker run`，Docker Compose会自动判断Docker主机上没有容器镜像，并成功从互联网下载镜像及相应的层。
+- en: '[PRE3]'
+  id: totrans-32
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: 'Running `docker ps -a` will reveal that Docker Compose was able to successfully
+    create the running container with the properly exposed ports and volume mounts
+    listed in our `docker-compose.yml` file:'
+  id: totrans-33
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 运行`docker ps -a`将显示Docker Compose成功创建了具有正确暴露端口和挂载卷的运行容器，这些信息列在我们的`docker-compose.yml`文件中：
+- en: '[PRE4]'
+  id: totrans-34
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: 'We can use `telnet` to ensure the `memcached` application is functioning and
+    forwarded through the host networking. Using `telnet`, we can store and retrieve
+    data from `Memcached` directly:'
+  id: totrans-35
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以使用`telnet`来确保`memcached`应用程序正常运行，并通过主机网络进行转发。使用`telnet`，我们可以直接从`Memcached`存储和检索数据：
+- en: '[PRE5]'
+  id: totrans-36
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: Running the `stats slabs` command lets us know that `memcached` has been deployed
+    and is functioning as expected.
+  id: totrans-37
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 运行`stats slabs`命令可以让我们知道`memcached`已经部署并按预期运行。
+- en: Now that we have had a brief introduction to Docker and Docker Compose, we have
+    acquired the basic skills needed to start working with Ansible Container.
+  id: totrans-38
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们对Docker和Docker Compose有了简要的介绍，已经掌握了开始使用Ansible Container所需的基本技能。
+- en: Ansible Container workflow
+  id: totrans-39
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Ansible Container工作流
+- en: 'Similar to other orchestration and automation tools, Ansible Container contains
+    a set of utilities that constitute a containerized workflow. Using Ansible Container,
+    you can create, build, run, and deploy containers, from development all the way
+    through to production, using the suite of tools included with Ansible Container
+    out of the box. Ansible Core''s *batteries-included* methodology carries over
+    to Ansible Container to provide developers and system administrators with a complete
+    containerized workflow solution. The following is an overview of the primary Ansible
+    Container functions and how they correspond to the typical lifecycle of a containerized
+    application:'
+  id: totrans-40
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 与其他编排和自动化工具类似，Ansible Container包含一组构成容器化工作流的实用工具。使用Ansible Container，您可以创建、构建、运行和部署容器，从开发到生产，利用Ansible
+    Container自带的工具套件。Ansible Core的*开箱即用*方法论也被应用到Ansible Container中，为开发人员和系统管理员提供完整的容器化工作流解决方案。以下是Ansible
+    Container的主要功能概述，以及它们如何与容器化应用程序的典型生命周期相对应：
+- en: '`ansible-container init`: Used to initially start an Ansible Container project.
+    `init` builds and creates the directory scaffolding and base files that are required
+    to start an Ansible Container project.'
+  id: totrans-41
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible-container init`：用于初始化启动一个Ansible Container项目。`init`会构建并创建启动Ansible
+    Container项目所需的目录框架和基础文件。'
+- en: '`ansible-container build`: Similar to what the name suggests, `build` will
+    parse the primary files in your project and attempt to build the containers described.
+    Ansible Container is able to do this by first creating what is known as a `conductor`
+    container. The `conductor` container is a master container that is created during
+    the build phase of your project and contains a running copy of Ansible. Once the
+    other containers launch, the `conductor` container is responsible for running
+    the Ansible roles and playbooks against them to bring the containers into the
+    desired state.'
+  id: totrans-42
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible-container build`：顾名思义，`build`将解析项目中的主要文件，并尝试构建描述的容器。Ansible Container通过首先创建一个被称为`conductor`容器来实现这一点。`conductor`容器是在项目的构建阶段创建的主容器，里面运行着Ansible的副本。一旦其他容器启动，`conductor`容器负责对它们运行Ansible角色和剧本，以使容器进入预期状态。'
+- en: '`ansible-container run`: `run` works in a very similar way to `docker run`
+    in the respect that, when executed, `run` takes the built containers and attempts
+    to run them in the container engine on the host. By default, the `run` command
+    takes into consideration any development options listed in the `container.yml`
+    file, unless the `-- production` flag is passed in at runtime.'
+  id: totrans-43
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible-container run`：`run`的工作方式与`docker run`非常相似，执行时，`run`会将构建好的容器尝试在主机的容器引擎中运行。默认情况下，`run`命令会考虑在`container.yml`文件中列出的任何开发选项，除非在运行时传入`--
+    production`标志。'
+- en: '`ansible-container destroy`: Stops any running containers and also removes
+    any built image files. This command is useful when testing an end-to-end deployment
+    from scratch.'
+  id: totrans-44
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible-container destroy`：停止所有运行中的容器，并移除已构建的镜像文件。此命令在从头测试端到端部署时非常有用。'
+- en: '`ansible-container push`: This command pushes the container images you built
+    with Ansible Container to a container registry of your choice, such as Docker
+    Hub, Quay, or GCR. This command is similar to `docker push`.'
+  id: totrans-45
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible-container push`：此命令将你用 Ansible Container 构建的容器镜像推送到你选择的容器注册表中，如 Docker
+    Hub、Quay 或 GCR。此命令类似于`docker push`。'
+- en: '`ansible-container deploy`: `deploy` (formerly `ShipIt`) takes your current
+    project and generates a customized Ansible playbook and role to deploy your container
+    to a cloud service provider. At the time of writing, `deploy` supports only OpenShift
+    and Kubernetes. Running this playbook using the `ansible-playbook` command, will
+    deploy your containers to the specified provider.'
+  id: totrans-46
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible-container deploy`：`deploy`（以前叫做`ShipIt`）会生成一个自定义的 Ansible playbook
+    和角色，将你的容器部署到云服务提供商。写这篇文章时，`deploy`仅支持 OpenShift 和 Kubernetes。使用`ansible-playbook`命令运行这个
+    playbook，将把容器部署到指定的提供商。'
+- en: As you can see, Ansible Container comes prebuilt with an end-to-end lifecycle
+    management system that allows you to manage containers from development through
+    to production. Ansible Container leverages the powerful and customizable Ansible
+    configuration management system to allow containers to be created and deployed
+    similarly to bare-metal or virtual nodes.
+  id: totrans-47
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，Ansible Container 自带一个端到端生命周期管理系统，允许你从开发到生产管理容器。Ansible Container 利用强大且可定制的
+    Ansible 配置管理系统，使容器的创建和部署类似于裸金属或虚拟节点。
+- en: All Ansible Container subcommands can be found by running `ansible-container
+    --help`.
+  id: totrans-48
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 所有 Ansible Container 的子命令可以通过运行`ansible-container --help`来查看。
+- en: Ansible Container quick-start
+  id: totrans-49
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Ansible Container 快速入门
+- en: 'This portion of the chapter is going to focus on getting started with Ansible
+    Container, initializing a base project, and recreating the `memcached` example
+    from earlier. If you are not following along with the Vagrant lab provided on
+    GitHub, the first step is to install Ansible Container using the `python-pip`
+    package manager. The following steps will install Ansible Container with support
+    for Docker on a Debian-based distribution of Linux:'
+  id: totrans-50
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章的这一部分将重点介绍如何开始使用 Ansible Container，初始化一个基础项目，并重新创建之前的`memcached`示例。如果你没有跟随
+    GitHub 上提供的 Vagrant 实验，第一步是使用`python-pip`包管理器安装 Ansible Container。以下步骤将介绍如何在基于
+    Debian 的 Linux 发行版上安装支持 Docker 的 Ansible Container：
+- en: '[PRE6]'
+  id: totrans-51
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: Ansible Container init
+  id: totrans-52
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Ansible Container 初始化
+- en: 'You should now have Ansible Container installed and ready to run in your environment.
+    The first command that''s required to start a new Ansible Container project is
+    the `ansible-container init` command. After logging in to your vagrant VM, create
+    an empty directory in the `/vagrant` directory and type:'
+  id: totrans-53
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，你应该已经在你的环境中安装并准备好运行 Ansible Container。启动一个新的 Ansible Container 项目所需的第一个命令是`ansible-container
+    init`。登录到你的 Vagrant 虚拟机后，在`/vagrant`目录下创建一个空目录并输入：
+- en: '[PRE7]'
+  id: totrans-54
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE7]'
+- en: It is important to note that the final lab exercise can be found in the official
+    book GitHub repository, in the directory: `AnsibleContainer/demo`.
+  id: totrans-55
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 需要注意的是，最终的实验练习可以在官方书籍的 GitHub 仓库中找到，目录路径为：`AnsibleContainer/demo`。
+- en: When Ansible Container has successfully created a new project, it will return
+    the response `Ansible Container initialized`.
+  id: totrans-56
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当 Ansible Container 成功创建新项目时，它将返回响应`Ansible Container initialized`。
+- en: 'As discussed previously, `init` creates the basic directory structure and layout
+    required to start building Ansible Container projects. Navigating to that directory
+    and looking at the directory listing will give you an idea of what an Ansible
+    Container project looks like:'
+  id: totrans-57
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如前所述，`init`命令创建了构建 Ansible Container 项目所需的基本目录结构和布局。导航到该目录并查看目录列表，可以让你了解 Ansible
+    Container 项目的样子：
+- en: '[PRE8]'
+  id: totrans-58
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE8]'
+- en: 'Let''s look at these files individually to understand their purpose in an Ansible
+    Container project:'
+  id: totrans-59
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们逐一查看这些文件，以便了解它们在Ansible Container项目中的作用：
+- en: '`ansible.cfg`: The primary configuration file for the Ansible engine. Any settings
+    you want the Ansible `conductor` container to leverage will go in this file. If
+    you''re familiar with using Ansible for configuration management tasks, you will
+    already have a basic familiarity with the `ansible.cfg` file. For the most part,
+    you can safely leave this file alone, unless there is a specific way Ansible needs
+    to run during the container build process. More information about Ansible configuration
+    options can be found in the Ansible documentation at [https://docs.ansible.com.](https://docs.ansible.com)'
+  id: totrans-60
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible.cfg`：Ansible引擎的主要配置文件。任何希望Ansible `conductor`容器利用的设置都应该放在此文件中。如果你已经熟悉使用Ansible进行配置管理任务，那么你应该对`ansible.cfg`文件有所了解。大多数情况下，除非在容器构建过程中需要以特定方式运行Ansible，否则可以安全地忽略此文件。有关Ansible配置选项的更多信息，可以参考Ansible文档：[https://docs.ansible.com.](https://docs.ansible.com)'
+- en: '`ansible-requirements.txt`: The `ansible-requirements.txt` file is used to
+    specify any Python pip dependencies that your playbooks may need to run successfully.
+    Ansible Engine is built on a series of modules that perform the tasks described
+    in the playbooks. Any additional Python packages that are required to run the
+    Ansible roles are listed in this file.'
+  id: totrans-61
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible-requirements.txt`：`ansible-requirements.txt`文件用于指定你的剧本成功运行所需的任何Python
+    pip依赖项。Ansible引擎是由一系列模块构建的，这些模块执行剧本中描述的任务。任何运行Ansible角色所需的额外Python包都列在此文件中。'
+- en: '`container.yml`: Describes the state of your containers, including base images,
+    exposed ports, and volume mounts. The syntax for `container.yml` is similar to
+    the Docker Compose format, with a few differences we will look at throughout this
+    book.'
+  id: totrans-62
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`container.yml`：描述容器的状态，包括基础镜像、暴露的端口和卷挂载。`container.yml`的语法类似于Docker Compose格式，但有一些差异，我们将在本书中逐步介绍。'
+- en: '`meta.yml`: The `meta.yml` file includes any metadata about your container
+    project, including the name of the author, version information, software licensing
+    details, and tags. This information makes it easy for other users to find your
+    project should you choose to share it on Ansible Galaxy.'
+  id: totrans-63
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`meta.yml`：`meta.yml`文件包含有关容器项目的元数据，包括作者名称、版本信息、软件许可详情和标签等。这些信息使得其他用户在你选择将项目分享到Ansible
+    Galaxy时，能够轻松找到你的项目。'
+- en: '`requirements.yml`: Defines any Ansible Galaxy roles and version information
+    your container project will use. In this file, you can describe the exact roles
+    and role versions your project requires. Ansible Container will download these
+    roles from Ansible Galaxy prior to building your container project. By specifying
+    your roles in the `requirements.yml` file, you can be sure that your projects
+    consistently use the same roles to build the base container images. It is important
+    to keep in mind the distinction between `ansible-requirements.yml` and `requirements.yml`.
+    `requirements.yml` is used to manage the Ansible roles your project depends on,
+    whereas `ansible-requirements.yml` is used to manage the Python pip packages those
+    roles may require.'
+  id: totrans-64
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`requirements.yml`：定义容器项目将使用的任何Ansible Galaxy角色和版本信息。在此文件中，你可以描述项目所需的具体角色和角色版本。Ansible
+    Container将在构建容器项目之前从Ansible Galaxy下载这些角色。通过在`requirements.yml`文件中指定角色，可以确保项目始终使用相同的角色来构建基础容器镜像。需要注意的是，`ansible-requirements.yml`与`requirements.yml`之间的区别。`requirements.yml`用于管理项目所依赖的Ansible角色，而`ansible-requirements.yml`用于管理这些角色可能需要的Python
+    pip包。'
+- en: 'Now that we have a feel for what an Ansible Container project looks like, we
+    can dive in and start experimenting with creating a simple Ansible Container project.
+    Remember our Docker Compose project we created earlier? Let''s use that as a starting
+    point and port this project to Ansible Container by editing the `container.yml`
+    file. In a text editor, open the `container.yml` file. By default `container.yml`
+    comes with a prepopulated structure, which in many ways resembles a Docker Compose
+    file. Your `container.yml` file should resemble the following. To conserve space,
+    I have removed many of the comments and example data:'
+  id: totrans-65
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经了解了Ansible Container项目的基本结构，接下来可以深入探索并开始创建一个简单的Ansible Container项目。还记得我们之前创建的Docker
+    Compose项目吗？我们可以以此为起点，通过编辑`container.yml`文件将该项目迁移到Ansible Container。在文本编辑器中打开`container.yml`文件。默认情况下，`container.yml`文件带有预填充的结构，这在很多方面类似于Docker
+    Compose文件。你的`container.yml`文件应该类似于以下内容。为了节省空间，我已经删除了许多注释和示例数据：
+- en: '[PRE9]'
+  id: totrans-66
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE9]'
+- en: 'Each of these sections has a particular purpose for structuring your Ansible
+    Container project. It is important to understand what each of these `YAML` definitions
+    is used to describe. The comments that come in the file by default show examples
+    of the various settings each of these sections uses. The following is a list of
+    the key sections of the `container.yml` file and how to use these sections in
+    your Ansible Container project:'
+  id: totrans-67
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 每个部分都有其特定目的，用于构建你的 Ansible Container 项目。理解每个 `YAML` 定义的作用非常重要。文件中默认的注释提供了各个部分所使用的设置示例。以下是
+    `container.yml` 文件的关键部分及如何在 Ansible Container 项目中使用这些部分的列表：
+- en: '`version`: The `version` section signifies which version of the Docker Compose
+    API to use. As we discussed before, Ansible Container is a wrapper around many
+    of the Docker Compose services. Here, we can specify which version of the Docker
+    Compose API we want our containers to use.'
+  id: totrans-68
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`version`：`version` 部分标明了使用哪个版本的 Docker Compose API。如前所述，Ansible Container
+    是许多 Docker Compose 服务的封装器。在这里，我们可以指定要使用哪个版本的 Docker Compose API 来运行我们的容器。'
+- en: '`settings`: The `settings` section is used to specify additional integrations
+    or modify any default behaviors of our Ansible Container project. By default,
+    there is one setting enabled.'
+  id: totrans-69
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`settings`：`settings` 部分用于指定附加集成或修改我们 Ansible Container 项目的任何默认行为。默认情况下，有一个设置已启用。'
+- en: '`conductor_base`:  This indicates which base image we want our project to use.
+    The `conductor` container is responsible for creating a Python environment used
+    for running Ansible playbooks and roles. The `conductor` image will connect to
+    the other containers that it creates, providing access to its own Python environment
+    during the build process. Therefore, it is very important to use the same base
+    container operating system as the container images you plan on building. This
+    will ensure complete compatibility in terms of Python and Ansible. Think of the
+    conductor image as a container that works in a similar way to the Ansible controller
+    node in a standard Ansible implementation. This container will reach out to the
+    other nodes (containers), leveraging the Docker API directly to bring our other
+    containers into the desired state. Once we are done building our containers, the
+    `conductor` container deletes itself by default, unless you instruct Ansible Container
+    to retain the conductor image for debugging purposes. As well as specifying our
+    conductor image, we can also specify other integrations in the settings section,
+    such as Kubernetes credentials or OpenShift endpoints. We will dig deeper into
+    these in later chapters.'
+  id: totrans-70
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`conductor_base`：这表示我们希望项目使用哪个基础镜像。`conductor` 容器负责创建用于运行 Ansible playbooks
+    和 roles 的 Python 环境。`conductor` 镜像将连接到它创建的其他容器，在构建过程中提供访问其自身 Python 环境的权限。因此，使用与计划构建的容器镜像相同的基础容器操作系统非常重要，这样可以确保
+    Python 和 Ansible 方面的完全兼容性。可以把 conductor 镜像看作是一个类似于标准 Ansible 实现中 Ansible 控制节点的容器。这个容器将通过
+    Docker API 直接与其他节点（容器）进行交互，以将其他容器带入期望的状态。构建完容器后，`conductor` 容器会默认自我删除，除非你指示 Ansible
+    Container 保留该镜像以便进行调试。除了指定我们的 conductor 镜像外，我们还可以在设置部分指定其他集成项，如 Kubernetes 凭证或
+    OpenShift 端点。我们将在后续章节中深入探讨这些内容。'
+- en: '`services`: The `services` section is almost identical to the `services` section
+    in our Docker Compose file. In this section, we will provide our `YAML` definitions,
+    which describe the running state of our containers: which base image we will use,
+    the container name, exposed ports, volumes, and more. Each container described
+    in the services section is a *node* that will be configured by our conductor image
+    running Ansible. By default the `services` section is disabled with two curly
+    braces next to the `YAML` definition: `{}`. Before adding container definitions,
+    delete the curly braces so that Ansible Container can access the child data.'
+  id: totrans-71
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`services`：`services` 部分几乎与我们 Docker Compose 文件中的 `services` 部分相同。在该部分中，我们将提供
+    `YAML` 定义，描述容器的运行状态：我们将使用的基础镜像、容器名称、暴露的端口、卷等。`services` 部分中描述的每个容器都是一个由我们的 conductor
+    镜像通过 Ansible 配置的 *节点*。默认情况下，`services` 部分被禁用，`YAML` 定义旁边有两个大括号：`{}`。在添加容器定义之前，删除大括号，以便
+    Ansible Container 可以访问子数据。'
+- en: '`registries`: The final section of our `container.yml` file is the `registries`
+    section. It is here that you can specify container registries, from which Ansible
+    container will pull images. By default, Ansible Container uses Docker Hub, but
+    you may also specify other registries, such as Quay, `gcr.io`, or locally hosted
+    container registries. This section is also used in conjunction with the `ansible-container`
+    push command to push your built containers to the registry service of your choice.'
+  id: totrans-72
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`registries`：我们 `container.yml` 文件的最后一部分是 `registries` 部分。在这里，您可以指定容器注册表，Ansible
+    Container 将从中拉取镜像。默认情况下，Ansible Container 使用 Docker Hub，但您也可以指定其他注册表，例如 Quay、`gcr.io`
+    或本地托管的容器注册表。此部分还与 `ansible-container` push 命令一起使用，将您构建的容器推送到您选择的注册表服务。'
+- en: Ansible Container build
+  id: totrans-73
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Ansible Container 构建
+- en: 'The second part of our Ansible Container workflow is the build process. Now
+    that we have our first project initialized, we can explore how the `ansible-container
+    build` function works even though we do not have any services or roles defined.
+    From the `demo` directory, run the `ansible-container build` command. You should
+    see output similar to the following:'
+  id: totrans-74
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们的 Ansible Container 工作流的第二部分是构建过程。现在我们已经初始化了第一个项目，即使没有定义任何服务或角色，我们仍然可以探索 `ansible-container
+    build` 功能的工作原理。从 `demo` 目录中运行 `ansible-container build` 命令。您应该会看到类似于以下的输出：
+- en: '[PRE10]'
+  id: totrans-75
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE10]'
+- en: 'Running Ansible Container build for the first time on your local workstation
+    might take a few minutes to complete, as it needs to build the `conductor` container
+    before it can start. Keeping in mind that the conductor container is responsible
+    for connecting to the service containers using the Docker API and executing Ansible
+    playbooks and roles on them. Since this is a basic example of the `ansible-container
+    build` command, there are no Ansible playbooks to run on the containers we are
+    creating. Later in the book we will write our own roles to really explore how
+    the conductor container functions. The below illustration demonstrates the how
+    the conductor container connects to the service containers:'
+  id: totrans-76
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本地工作站上第一次运行 Ansible Container 构建可能需要几分钟时间才能完成，因为在开始之前需要先构建 `conductor` 容器。需要记住的是，`conductor`
+    容器负责通过 Docker API 连接到服务容器，并在其上执行 Ansible 剧本和角色。由于这是一个基本的 `ansible-container build`
+    命令示例，所以我们正在创建的容器上没有要运行的 Ansible 剧本。稍后在书中，我们将编写自己的角色，真正探讨 `conductor` 容器的功能。下图演示了
+    `conductor` 容器如何连接到服务容器：
+- en: '![](img/9fa32db1-533e-4304-b32b-d598665972b4.png)'
+  id: totrans-77
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/9fa32db1-533e-4304-b32b-d598665972b4.png)'
+- en: 'Figure 1: Conductor container bringing the service containers into the desired
+    state'
+  id: totrans-78
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 1：Conductor 容器将服务容器带入所需状态
+- en: However, in this example, Ansible Container will first connects to the Docker
+    API on the localhost to determine the build context, download the required image
+    dependencies, and execute the build of the `conductor` container. You can see
+    in the preceding output that our `conductor` container was successfully built
+    for our project, `demo`. It also lists the return code, which confirms that our
+    image was successfully built, as well as an internal conductor ID, which Ansible
+    Container generates.
+  id: totrans-79
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，在此示例中，Ansible Container 将首先连接到本地主机上的 Docker API 以确定构建上下文，下载所需的镜像依赖项，并执行 `conductor`
+    容器的构建。您可以从前面的输出中看到，我们的 `conductor` 容器已成功为我们的项目 `demo` 构建。它还列出了返回码，确认我们的镜像已成功构建，以及一个内部的
+    conductor ID，这是 Ansible Container 生成的。
+- en: If we execute the command `docker ps -a`, we will see that no containers are
+    currently running or exited. This is expected since we have not yet defined any
+    containers in the `services `section of our `container.yml` file. You may also
+    see that, since we did not pass in any arguments or configuration to instruct
+    Ansible Container to save our `conductor` container, Ansible Container deleted
+    the conductor after it had finished running.
+  id: totrans-80
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果我们执行命令 `docker ps -a`，我们会看到当前没有正在运行或退出的容器。这是预期的，因为我们还没有在 `container.yml` 文件的
+    `services` 部分定义任何容器。您还会看到，由于我们没有传递任何参数或配置来指示 Ansible Container 保存我们的 `conductor`
+    容器，Ansible Container 在运行完成后删除了该容器。
+- en: '[PRE11]'
+  id: totrans-81
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE11]'
+- en: However, if we take a look at our `docker images` output, you will find that
+    the `conductor` image we built is cached, as well as the base image used to create
+    it. Note that the conductor image is prefixed with `demo-*`. Ansible Container
+    automatically names container images based on the `project-service` nomenclature.
+    This ensures that, if you are building and running multiple container projects
+    at once, it is easy to tell which containers belong to which projects.
+  id: totrans-82
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，如果我们查看 `docker images` 输出，你会发现我们构建的 `conductor` 镜像被缓存了，以及用于创建它的基础镜像。请注意，指挥官镜像的前缀是
+    `demo-*`。Ansible Container 会根据 `project-service` 命名规则自动命名容器镜像。这确保了，如果你同时构建和运行多个容器项目，能够轻松辨别哪个容器属于哪个项目。
+- en: In this case, our project is called, `demo `and the service we are building
+    is `conductor`.
+  id: totrans-83
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这种情况下，我们的项目名为 `demo`，而我们正在构建的服务是 `conductor`。
+- en: '[PRE12]'
+  id: totrans-84
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE12]'
+- en: 'We can also build our project by passing in the `--save-conductor-container`
+    flag to keep our `conductor` container after the `ansible-container build` process
+    finishes. This is useful for debugging failed builds by having the ability to
+    view our containers from the context that Ansible is running from. Let''s try
+    rebuilding our `demo` project, this time saving the `conductor` container:'
+  id: totrans-85
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们还可以通过传递 `--save-conductor-container` 标志来构建我们的项目，以在 `ansible-container build`
+    过程结束后保留我们的 `conductor` 容器。这对于调试失败的构建非常有用，因为它让我们能够从 Ansible 运行的上下文中查看容器。让我们尝试重新构建
+    `demo` 项目，这次保存 `conductor` 容器：
+- en: '[PRE13]'
+  id: totrans-86
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE13]'
+- en: 'This time, you will see the output reflect a slight difference: `Conductor
+    terminated. Preserving as requested`, in addition to the output we observed earlier.
+    This indicates that, while the conductor has stopped due to it having finished
+    its job, the container, `demo_conductor`, remains for us to look at with `docker
+    ps -a`:'
+  id: totrans-87
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这一次，你会看到输出显示出一个细微的差异：`Conductor terminated. Preserving as requested`，除此之外还有我们之前观察到的输出。这表示，尽管指挥官由于完成任务而停止了，但容器
+    `demo_conductor` 仍然存在，可以通过 `docker ps -a` 查看：
+- en: '[PRE14]'
+  id: totrans-88
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE14]'
+- en: With a firm understanding of how the Ansible Container build process works,
+    as well as how Ansible Container builds the conductor image, we can use this knowledge
+    to recreate the Docker Compose project we introduced at the beginning of this
+    chapter. We can use Ansible Container to spin up the `memcached` server container
+    we created before.
+  id: totrans-89
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通过深入理解 Ansible Container 构建过程的工作原理，以及 Ansible Container 如何构建指挥官镜像，我们可以利用这些知识重新创建本章开始时介绍的
+    Docker Compose 项目。我们可以使用 Ansible Container 启动之前创建的 `memcached` 服务器容器。
+- en: 'In your text editor, open the `conductor.yml` document we looked at earlier.
+    Delete the curly braces after our `services: {}` declaration, and add the following
+    beneath it, indented two spaces as per the `YAML` syntax:'
+  id: totrans-90
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '在文本编辑器中，打开我们之前查看过的 `conductor.yml` 文档。删除 `services: {}` 声明后的花括号，并按照 `YAML`
+    语法在其下方添加以下内容，缩进两个空格：'
+- en: '[PRE15]'
+  id: totrans-91
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE15]'
+- en: You can see that the syntax we are using to specify our service is remarkably
+    similar to the Docker Compose syntax we created earlier. For the purposes of this
+    demonstration, we are going to use the same parameters for `ports` and `volume` that
+    we used with Docker Compose earlier, so that the reader may easily see the slight
+    differences in the syntax. You will note that the `container.yml` syntax and Docker
+    Compose syntax have many similarities, but the primary differences allow Ansible
+    Container to be more flexible with how container services are built and deployed.
+  id: totrans-92
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以看到，我们用于指定服务的语法与之前创建的 Docker Compose 语法非常相似。为了演示的目的，我们将使用与之前 Docker Compose
+    相同的 `ports` 和 `volume` 参数，这样读者可以轻松看到语法中的细微差别。你会注意到，`container.yml` 语法和 Docker
+    Compose 语法有许多相似之处，但主要的区别在于，Ansible Container 允许在构建和部署容器服务时更具灵活性。
+- en: 'Save and close the file. If you execute the `ansible-container build` command
+    again, you should see the following output:'
+  id: totrans-93
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 保存并关闭文件。如果你再次执行 `ansible-container build` 命令，你应该会看到以下输出：
+- en: '[PRE16]'
+  id: totrans-94
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE16]'
+- en: After Ansible Container has built our conductor image, we can observe from this
+    output that Ansible Container now recognizes that we have a service called `AC_Cache_Server`
+    enabled and it is attempting to build it. However, we do not have any Ansible
+    roles associated with this service, so it returns the message `Nothing to do`.
+    This would usually be the step in the process during which our playbooks would
+    be executed to build the services we are creating. Since we do not have any roles
+    defined, Ansible Container is going to skip this step and terminate the `conductor`
+    container as usual.
+  id: totrans-95
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 Ansible Container 构建了我们的 conductor 镜像后，我们可以从输出中观察到，Ansible Container 现在识别出我们启用了名为`AC_Cache_Server`的服务，并且它正在尝试构建该服务。然而，我们并没有为此服务定义任何
+    Ansible 角色，因此它返回了消息`Nothing to do`。通常情况下，这将是执行我们的 playbook 以构建我们创建的服务的步骤。由于我们没有定义任何角色，Ansible
+    Container 将跳过此步骤，并像往常一样终止`conductor`容器。
+- en: Ansible Container run
+  id: totrans-96
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Ansible Container 运行
+- en: 'Now that we have a service defined, we can use the `ansible-container run`
+    command to start our service. The run command quickly generates a small Ansible
+    playbook that is responsible for starting the containers specified in the `container.yml`
+    file. This playbook leverages the `docker_service` Ansible module for starting,
+    stopping, restarting, and destroying containers. The `docker_service` module is
+    also useful for interfacing with the Docker daemon installed on the host OS to
+    pull and delete images from the Docker image cache. While it''s not super important
+    to understand the implementation details behind the module at this point, it is
+    helpful to understand how Ansible Container is working behind the scenes to run
+    containers. Executing the `ansible-container run` command will display the stages
+    of the playbook run, as well as `play recap`, similar to the following output:'
+  id: totrans-97
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经定义了一个服务，可以使用`ansible-container run`命令来启动该服务。该命令快速生成一个小型的 Ansible playbook，负责启动`container.yml`文件中指定的容器。这个
+    playbook 利用了 `docker_service` Ansible 模块来启动、停止、重启和销毁容器。`docker_service` 模块还可用于与主机操作系统上安装的
+    Docker 守护进程进行交互，拉取和删除 Docker 镜像缓存中的镜像。虽然目前理解该模块的实现细节并不是特别重要，但了解 Ansible Container
+    如何在幕后运行容器是很有帮助的。执行 `ansible-container run` 命令将显示 playbook 执行的各个阶段，以及 `play recap`，其输出类似于以下内容：
+- en: '[PRE17]'
+  id: totrans-98
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE17]'
+- en: 'As you can see by reading through the playbook run output, you can easily follow
+    the key highlights of our project as we bring it into a running state:'
+  id: totrans-99
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如您通过阅读 playbook 运行的输出可以看到的，您可以轻松地跟踪我们项目的关键亮点，随着我们将其带入运行状态：
+- en: Our project cannot find the `memcached` image we specified, so Ansible Container
+    pulls it from the default repository (Docker Hub)
+  id: totrans-100
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 我们的项目无法找到我们指定的`memcached`镜像，因此 Ansible Container 从默认仓库（Docker Hub）中拉取它。
+- en: A single change has been made on our host to bring our container into a running
+    state
+  id: totrans-101
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 我们的主机上做出了一个更改，以使容器进入运行状态。
+- en: None of our plays failed; one task succeeded (bringing up our container), and
+    this successful task made a change on our host in order to bring up the container
+  id: totrans-102
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 我们的任何操作都没有失败；有一个任务成功了（启动我们的容器），而这个成功的任务在我们的主机上进行了更改，以便启动容器。
+- en: The conductor service was terminated
+  id: totrans-103
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: conductor 服务已终止。
+- en: Understanding the highlights from the Ansible Container playbook is critical
+    to seeing how Ansible orchestration deploys and maintains our applications. As
+    we discussed previously, the Ansible team works very hard to ensure that Ansible
+    playbook execution is very simple to understand and easy to debug. By displaying
+    all of the steps required to bring up container projects, it is very easy to debug
+    failures and see potential areas for improvement as we move forward into developing
+    more complex projects. The playbook that was just executed is generated on-the-fly
+    when `ansible-container run` is executed, and is located in the `ansible-deployment`
+    directory. Leveraging Ansible Container to run projects takes away much of the
+    complexity of deploying and maintaining projects since all of the deployment complexity
+    is abstracted away. From the perspective of the user, you are concerned with ensuring
+    the containers run and are built properly. Ansible Container becomes an end-to-end
+    lifecycle management tool that enables containers to be built consistently and
+    to run in an expected state every time. As we will see later in the book, having
+    Ansible Container streamline the deployment complexity is especially useful in
+    environments that leverage Kubernetes or OpenShift.
+  id: totrans-104
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 理解 Ansible Container 剧本中的亮点对于理解 Ansible 编排如何部署和维护我们的应用程序至关重要。正如我们之前讨论的那样，Ansible
+    团队非常努力地确保 Ansible 剧本的执行非常简单易懂，并且容易调试。通过展示启动容器项目所需的所有步骤，调试失败问题非常容易，也能看到潜在的改进点，帮助我们在开发更复杂项目时不断前进。刚刚执行的剧本是在执行
+    `ansible-container run` 时动态生成的，位于 `ansible-deployment` 目录中。利用 Ansible Container
+    运行项目，消除了部署和维护项目的许多复杂性，因为所有部署的复杂性都被抽象化。从用户的角度来看，你关注的是确保容器能够正常运行并正确构建。Ansible Container
+    成为一个端到端的生命周期管理工具，使得容器能够始终如一地构建，并每次都在预期的状态下运行。正如我们将在本书后面看到的那样，借助 Ansible Container
+    简化部署的复杂性，在使用 Kubernetes 或 OpenShift 的环境中尤为有用。
+- en: 'Now that our container run has completed, let''s take a look to see what containers
+    are running on our host using the `docker ps -a` command:'
+  id: totrans-105
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们的容器运行已经完成，让我们使用 `docker ps -a` 命令查看一下主机上正在运行哪些容器：
+- en: '[PRE18]'
+  id: totrans-106
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE18]'
+- en: As expected, it is easy to see that our `memcached` container (version 1.4.36)
+    is in a running state. Also, note that the `conductor` container is not running
+    or showing up in our `docker ps` output. Ansible Container only runs the containers
+    defined in the `container.yml` file as the *desired state*, unless you choose
+    to keep the `conductor` container for debugging purposes. The name of the container,
+    as we specified in our `container.yml` file, is `demo_AC_Cache_Server_1`. You
+    may ask yourself why this is the case, as we observed when we created the `container.yml`
+    file that we had specifically named our container `AC_Cache_Server`. One of the
+    great features of Ansible Container is that it understands that, as developers,
+    we might be running and testing multiple versions of our projects at once on the
+    same host or group of hosts. By default, when Ansible Container starts containers,
+    it automatically appends the name of our project (`demo` in this case) to the
+    front of the name of the running container, and a number indicating the instance
+    ID of the running container.
+  id: totrans-107
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如预期的那样，很容易看到我们的 `memcached` 容器（版本 1.4.36）处于运行状态。同时，注意到 `conductor` 容器没有在我们的
+    `docker ps` 输出中显示出来。Ansible Container 仅运行在 `container.yml` 文件中定义的容器作为*期望状态*，除非你选择保留
+    `conductor` 容器用于调试目的。正如我们在 `container.yml` 文件中指定的那样，容器的名称是 `demo_AC_Cache_Server_1`。你可能会问，为什么会这样？因为我们在创建
+    `container.yml` 文件时明确地将容器命名为 `AC_Cache_Server`。Ansible Container 的一个重要特点是它能够理解，作为开发者，我们可能会在同一台主机或一组主机上同时运行和测试多个版本的项目。默认情况下，当
+    Ansible Container 启动容器时，它会自动将我们的项目名称（在本例中是 `demo`）附加到正在运行的容器名称的前面，并加上一个表示实例 ID
+    的数字。
+- en: In this case, since we have one instance of this container running, Ansible
+    Container automatically appended `demo_` and `_1` to the beginning and end of
+    our container name so that it would not conflict if we were testing multiple versions
+    of this container on the same host.
+  id: totrans-108
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这种情况下，由于我们已经有一个容器实例在运行，Ansible Container 自动将 `demo_` 和 `_1` 分别附加到容器名称的开头和结尾，这样可以避免如果我们在同一主机上测试多个版本的容器时发生冲突。
+- en: 'Since we are recreating the exercise we started at the beginning of the chapter
+    on this host, let''s run the same `telnet` test using the `stats slabs` command
+    we executed earlier to see if our `memcached` container is running and responding
+    as expected:'
+  id: totrans-109
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于我们正在重新创建章节开始时在此主机上的练习，让我们使用之前执行过的`telnet`命令来测试`stats slabs`，以查看我们的`memcached`容器是否正常运行并按预期响应：
+- en: '[PRE19]'
+  id: totrans-110
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE19]'
+- en: It appears that our containerized service is running and properly accepting
+    requests, listening on the network interfaces of our Docker host. Keep in mind,
+    we specified in our `container.yml` file that our localhost port (`11211`) should
+    be forwarded to the container's listening port (also `11211`).
+  id: totrans-111
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 看起来我们的容器化服务正在运行，并且正确地接受请求，监听Docker主机的网络接口。请记住，我们在`container.yml`文件中指定了本地主机端口（`11211`）应该转发到容器的监听端口（也是`11211`）。
+- en: 'Let''s take a quick peek at the image cache on the Docker host. We can do this
+    by executing the `docker images` command:'
+  id: totrans-112
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们快速查看Docker主机上的镜像缓存。我们可以通过执行`docker images`命令来完成：
+- en: '[PRE20]'
+  id: totrans-113
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE20]'
+- en: 'Based on this output, we can understand more clearly how Ansible Container
+    is working on the backend. In order to bring up our `demo` project, Ansible Container
+    had to leverage three images: `CentOS 7`, `memcached`, and `demo-conductor`. The
+    container image named `demo-conductor` is the conductor image that was created
+    during the build process. To build the conductor image, Ansible Container had
+    to download and cache the `CentOS 7` base image also seen in this output. Finally,
+    `memcached` is the container that Ansible had to pull from the image repository,
+    as it was specified in the `services` section of our `container.yml` file. The
+    reader may also note that the conductor image is prefaced with the name of our
+    project `demo`, similarly to the running state of our service container in the
+    preceding output. This is again to avoid name conflicts and to have the flexibility
+    to run multiple container projects at once on the same host.'
+  id: totrans-114
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 根据这个输出，我们可以更清楚地了解Ansible Container在后台是如何工作的。为了启动我们的`demo`项目，Ansible Container不得不利用三个镜像：`CentOS
+    7`、`memcached`和`demo-conductor`。名为`demo-conductor`的容器镜像是构建过程中创建的指挥镜像。为了构建指挥镜像，Ansible
+    Container不得不下载并缓存这个输出中看到的`CentOS 7`基础镜像。最后，`memcached`是Ansible需要从镜像库拉取的容器，因为它在我们的`container.yml`文件的`services`部分中被指定。读者还可能注意到，指挥镜像的名称以我们的项目名`demo`为前缀，这与前面输出中的服务容器运行状态类似。这是为了避免名称冲突，并且能够在同一主机上同时运行多个容器项目。
+- en: Ansible Container destroy
+  id: totrans-115
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Ansible Container销毁
+- en: Once you have finished experimenting with the `demo` project, we can use the
+    `ansible-container destroy` command to stop all running instances of our container
+    and remove all traces of it from our system. `destroy` is useful for cleaning
+    up existing deployments and testing our containers by rebuilding them from scratch.
+    To destroy a container, simply run `ansible-container destroy` in your project
+    directory.
+  id: totrans-116
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 完成`demo`项目的实验后，我们可以使用`ansible-container destroy`命令停止所有正在运行的容器实例，并从系统中移除它的所有痕迹。`destroy`对于清理现有部署以及通过从头重建容器来测试我们的容器非常有用。要销毁容器，只需在项目目录中运行`ansible-container
+    destroy`命令。
+- en: '[PRE21]'
+  id: totrans-117
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE21]'
+- en: 'Similar to the `run` command seen earlier, destroy executes the same playbook
+    that was autogenerated by the `run` process. However, this time, it stops and
+    deletes the containers specified in the `container.yml` file. You may find that
+    the `docker ps -a` output now displays no running containers on our host:'
+  id: totrans-118
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 类似于之前看到的`run`命令，`destroy`执行的是由`run`过程自动生成的相同的剧本。然而，这次，它会停止并删除`container.yml`文件中指定的容器。你可能会发现，运行`docker
+    ps -a`命令后，我们主机上不再显示任何正在运行的容器：
+- en: 'Similarly, the `destroy` function has wiped out the `conductor` container image,
+    as well as the service container images on the Docker host. We can validate this
+    with the `docker images` command:'
+  id: totrans-119
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 同样，`destroy`功能已经清除了`conductor`容器镜像以及Docker主机上的服务容器镜像。我们可以通过`docker images`命令来验证这一点：
+- en: '[PRE22]'
+  id: totrans-120
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE22]'
+- en: Note that the only container left on the system is the base `CentOS` container.
+    This can be manually deleted but, by default, Ansible Container leaves this on
+    the system to speed up the process of destroying and rebuilding projects.
+  id: totrans-121
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请注意，系统上唯一剩下的容器是基础`CentOS`容器。它可以手动删除，但默认情况下，Ansible Container会将其保留在系统中，以加快销毁和重建项目的过程。
+- en: Summary
+  id: totrans-122
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 摘要
+- en: Over the course of this chapter, we have learned some fundamental concepts about
+    how Ansible Container works, how it leverages the Docker Compose APIs, as well
+    as basic lifecycle management tools built-in to Ansible Container, including `init`,
+    `build`, `run`, and `destroy`. Having a firm grasp and understanding of what these
+    features do and how they work is foundational when it comes to going forward and
+    digging deeper into more complex projects we will create in Ansible Container.
+    Although this example is included in the official Git repository of the book,
+    feel free to recreate and tweak these examples to experiment further with how
+    Ansible Container works. In the next chapter, we will learn how to use Ansible
+    Container with existing roles, leveraging those roles to create reusable container
+    artifacts.
+  id: totrans-123
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们学习了一些关于 Ansible Container 如何工作的基本概念，了解了它如何利用 Docker Compose API，以及 Ansible
+    Container 内置的一些基本生命周期管理工具，包括 `init`、`build`、`run` 和 `destroy`。深入掌握这些功能的作用和工作原理，对于今后深入探讨我们将在
+    Ansible Container 中创建的更复杂项目具有基础性意义。虽然这个示例包含在本书的官方 Git 仓库中，但你可以随意重新创建并调整这些示例，以进一步实验
+    Ansible Container 的工作方式。在下一章，我们将学习如何将 Ansible Container 与现有角色结合使用，利用这些角色创建可复用的容器工件。

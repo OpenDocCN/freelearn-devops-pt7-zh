@@ -1,0 +1,504 @@
+- en: Chapter 9. Customizing Gitolite
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 第9章 定制 Gitolite
+- en: It must be clear by this time that Gitolite is a pretty powerful tool for managing
+    Git repositories on a server. The most powerful tools, however, allow the administrator
+    to add features that are unique to their site, and thus cannot be expected to
+    be added to the product itself. For example, consider Git itself, its *hooks*
+    mechanism (see `man githooks` for details) contains several predefined hooks,
+    which the user can install on their repositories to customize Git's behavior at
+    various points in the lifecycle of a commit, a rebase, a push, and so on. In fact,
+    Gitolite's ability to perform branch level access control (as opposed to merely
+    repository level access control) is *entirely* done by using Git's `update` hook.
+  id: totrans-1
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 到目前为止，很明显 Gitolite 是一个管理服务器上 Git 仓库的强大工具。然而，最强大的工具允许管理员添加适合其站点独特需求的功能，因此不能期望将其添加到产品本身。例如，考虑
+    Git 本身，其 *hooks* 机制（详见 `man githooks`）包含了几个预定义的 hooks，用户可以在其仓库上安装这些 hooks 来定制
+    Git 在提交、变基、推送等生命周期的各个点上的行为。实际上，Gitolite 之所以能够执行分支级别的访问控制（而不仅仅是仓库级别的访问控制），完全是通过使用
+    Git 的 `update` hook 实现的。
+- en: Core and non-core Gitolite
+  id: totrans-2
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 核心与非核心 Gitolite
+- en: Gitolite goes a little further than merely allowing you to customize it for
+    your location-specific needs. Gitolite actually *ships* with customizations already
+    in place for several optional features. Some of these customizations are enabled
+    by default, while others are disabled, though requiring only a quick edit of `$HOME/.gitolite.rc`
+    to enable them.
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Gitolite 比仅仅允许您根据特定位置的需求定制它要进一步。实际上，Gitolite *已经* 配备了几个可选功能的定制。其中一些定制已启用，默认情况下启用，而其他一些则被禁用，尽管只需快速编辑
+    `$HOME/.gitolite.rc` 即可启用它们。
+- en: 'As a result, Gitolite makes a distinction between **core** and **non-core**
+    Gitolite code. If you happened to look into the Gitolite source tree (under `src`
+    if you cloned the Gitolite source code), you will notice several directories at
+    the top level, and a couple of files. Of these, gitolite considers the following
+    directories to contain non-core code: `commands`, `syntactic-sugar`, `triggers`,
+    `lib/Gitolite/Triggers`, and `VREF`. Everything else is considered *core*.'
+  id: totrans-4
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 因此，Gitolite 将 **核心** 和 **非核心** Gitolite 代码区分开来。如果你查看过 Gitolite 源代码树（如果你克隆了 Gitolite
+    源代码，则位于 `src` 目录下），你会注意到顶层有几个目录和一些文件。在这些目录中，Gitolite 认为以下目录包含非核心代码：`commands`、`syntactic-sugar`、`triggers`、`lib/Gitolite/Triggers`
+    和 `VREF`。其他所有内容都被视为 *核心*。
+- en: Making this distinction also helps in deciding whether a new feature is to be
+    added or not. If the feature requires change to core Gitolite, a lot more careful
+    consideration and thought will go into it, and even then it will only happen if
+    the change is really needed by several users. In practice, however, Gitolite's
+    customization feature is so powerful that it has become increasingly rare that
+    any change to core Gitolite is required.
+  id: totrans-5
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这种区分还有助于决定是否添加新功能。如果该功能需要更改核心 Gitolite，将需要更加仔细地考虑和思考，即使如此，只有在确实需要该变更的多个用户时才会发生。然而，实际上，Gitolite
+    的定制功能如此强大，以至于几乎不需要对核心 Gitolite 进行任何更改。
+- en: Types of non-core code and examples
+  id: totrans-6
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 非核心代码的类型和示例
+- en: Gitolite allows four types of customizations you can develop for your site.
+    This might sound somewhat intimidating, but in practice most people use only two
+    of them. We'll describe each of them now.
+  id: totrans-7
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Gitolite 允许为您的站点开发四种类型的定制。这可能听起来有些吓人，但实际上大多数人只使用其中的两种。我们现在将逐一描述它们。
+- en: Commands
+  id: totrans-8
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: Commands
+- en: Gitolite allows remote users to run some specific commands on the server, in
+    the form `ssh git@host command-name`. Commands need to be enabled before they
+    can be used remotely; see the section on making changes to the `rc` file in [Chapter
+    8](ch08.html "Chapter 8. Allowing Users to Create Repos"), *Allowing Users to
+    Create Repos*. One way to look at this is to view it as giving users a very restricted
+    shell to use, which allows only specific commands to be executed.
+  id: totrans-9
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Gitolite 允许远程用户在服务器上运行特定的命令，格式为 `ssh git@host command-name`。命令在远程使用前需要启用；请参阅
+    [第8章](ch08.html "第8章 允许用户创建仓库") 中关于对 `rc` 文件进行更改的部分，*允许用户创建仓库*。有一种看法是将其视为为用户提供一个非常受限制的
+    shell，只允许执行特定的命令。
+- en: We've already encountered some Gitolite commands, the `perms` and `D` commands
+    in [Chapter 8](ch08.html "Chapter 8. Allowing Users to Create Repos"), *Allowing
+    Users to Create Repos*, for instance, and `info` and `help` in earlier chapters.
+    Gitolite ships with more than twenty commands, although only five are enabled
+    for remote use by default. A few more are listed in `$HOME/.gitolite.rc`, but
+    left disabled by being commented out. It only takes a removal of the comment marker
+    in the line to enable them.
+  id: totrans-10
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们已经在[第 8 章](ch08.html "第 8 章：允许用户创建仓库")中遇到过一些 Gitolite 命令，比如 `perms` 和 `D`
+    命令，以及之前章节中的 `info` 和 `help`。Gitolite 一共提供了二十多个命令，虽然默认情况下，只有五个命令可以用于远程调用。更多命令列出了在
+    `$HOME/.gitolite.rc` 中，但由于被注释掉，因此默认是禁用的。只需删除该行的注释标记即可启用它们。
+- en: 'Many of the commands that Gitolite comes with, however, are not meant for remote
+    use at all and thus, they are not listed (even in commented out form) in `$HOME/.gitolite.rc`.
+    These commands are meant as helpers to server-side scripts or other non-core programs.
+    One of the most convenient of these is the `access` command, which has the following
+    help message:'
+  id: totrans-11
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，Gitolite 自带的许多命令并不适用于远程使用，因此它们不会出现在 `$HOME/.gitolite.rc` 中（即便是注释掉的形式也没有）。这些命令是作为服务器端脚本或其他非核心程序的辅助工具使用的。最方便的这些命令之一是
+    `access` 命令，其帮助信息如下：
+- en: '[PRE0]'
+  id: totrans-12
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: As you can see, this is of great use in rolling your own code, where you would
+    like to check a user's access rights to a repository or several repositories.
+  id: totrans-13
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如你所看到的，这在编写自己的代码时非常有用，尤其是在你需要检查用户对一个或多个仓库的访问权限时。
+- en: Running `gitolite help` on the server will list all available commands; just
+    as running `ssh git@host help` will list all commands available *remotely*. In
+    addition, Gitolite comes with several commands that are implemented internally
+    in Gitolite. They are, in effect, part of the "core". Run `gitolite -h` to get
+    a list of them with brief descriptions.
+  id: totrans-14
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在服务器上运行 `gitolite help` 将列出所有可用的命令；而运行 `ssh git@host help` 将列出所有 *远程* 可用的命令。此外，Gitolite
+    还自带了几个命令，它们是 Gitolite 内部实现的，实际上是 "核心" 的一部分。运行 `gitolite -h` 可以获取这些命令的列表及简要描述。
+- en: All Gitolite commands respond with a usage message when invoked with a single
+    argument of `-h`. If you write your own commands, it would be a good idea to adhere
+    to this convention.
+  id: totrans-15
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 所有 Gitolite 命令在使用 `-h` 单一参数调用时都会返回用法信息。如果你编写自己的命令，遵循这一约定是个好主意。
+- en: 'Here''s a list of some of the existing commands in Gitolite with a brief description
+    of each:'
+  id: totrans-16
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是 Gitolite 中一些现有命令的列表，并附带简要描述：
+- en: '`access`: This prints or tests access rights on a repository for a user. This
+    is useful when you write your own commands. See the description of the `fork`
+    command below for one example.'
+  id: totrans-17
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`access`：此命令打印或测试用户在仓库上的访问权限。当你编写自己的命令时，这非常有用。请参阅下面 `fork` 命令的描述，了解一个例子。'
+- en: '`D`: This lets a user delete a repository that they created (see [Chapter 8](ch08.html
+    "Chapter 8. Allowing Users to Create Repos"), *Allowing Users to Create Repos*).'
+  id: totrans-18
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`D`：此命令允许用户删除他们创建的仓库（参见[第 8 章](ch08.html "第 8 章：允许用户创建仓库")，*允许用户创建仓库*）。'
+- en: '`desc`: This shows or sets a description for a user-created repository.'
+  id: totrans-19
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`desc`：此命令显示或设置用户创建的仓库的描述。'
+- en: '`fork`: This forks a repo on the server. This takes a repository and creates
+    a new one with the same content. It checks to make sure the reader has read access
+    to the source repository, and is allowed to create the destination repository
+    (see [Chapter 8](ch08.html "Chapter 8. Allowing Users to Create Repos"), *Allowing
+    Users to Create Repos*). This command uses the `-l` option to `git clone`, so
+    it runs really fast. (Without this command, the alternative would be for the user
+    to clone the source repository, and then use that to create and push to the destination
+    repository. For large repositories, this could take a while).'
+  id: totrans-20
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`fork`：此命令会在服务器上创建一个仓库的分支。它会复制一个仓库并创建一个新的仓库，内容相同。它会检查确保读取者对源仓库有读取权限，并且允许创建目标仓库（参见[第
+    8 章](ch08.html "第 8 章：允许用户创建仓库")，*允许用户创建仓库*）。此命令使用 `-l` 选项调用 `git clone`，因此运行非常快速。（如果没有此命令，用户的替代做法是先克隆源仓库，再用该仓库来创建并推送目标仓库。对于大型仓库，这可能需要花费较长时间。）'
+- en: '`git-config`: This prints (or tests existence of) ''config'' values in the
+    repo.'
+  id: totrans-21
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`git-config`：此命令打印（或测试是否存在）仓库中的 "config" 配置项。'
+- en: '`help`: This prints a list of all the available commands.'
+  id: totrans-22
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`help`：此命令会打印出所有可用命令的列表。'
+- en: '`info`: This prints your username, the git/gitolite version numbers, and any
+    repositories you have access to.'
+  id: totrans-23
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`info`：此命令打印你的用户名、git/gitolite 的版本号，以及你可以访问的所有仓库。'
+- en: '`perms`: This lists or sets permissions for a user-created repository.'
+  id: totrans-24
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`perms`：列出或设置用户创建的仓库的权限。'
+- en: In a subsequent section, we will see how to create your own commands.
+  id: totrans-25
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在后续部分中，我们将看到如何创建你自己的命令。
+- en: Syntactic sugar
+  id: totrans-26
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 语法糖
+- en: Syntactic sugar scripts are a form of customization that most people will rarely,
+    if ever, have to write, or even encounter. They are useful for situations where
+    the administrator would like some additional, purely syntax-related feature added
+    to Gitolite's access control language. In such situations, a syntactic sugar helper
+    script can be written that changes what the administrator writes into something
+    Gitolite can parse.
+  id: totrans-27
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 语法糖脚本是一种定制方式，大多数人很少、甚至从未需要编写或遇到它们。它们在管理员希望在 Gitolite 的访问控制语言中添加一些额外的、纯粹与语法相关的功能时非常有用。在这种情况下，可以编写一个语法糖助手脚本，将管理员编写的内容转换为
+    Gitolite 可解析的格式。
+- en: Gitolite ships with a few syntactic sugar helper scripts. For example, one is
+    to allow C-style continuation lines in Gitolite's `conf` file, since normally
+    Gitolite does not allow that. Another is to provide a simple macro facility.
+  id: totrans-28
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Gitolite 附带了一些语法糖助手脚本。例如，其中一个是允许在 Gitolite 的 `conf` 文件中使用 C 风格的续行符，因为 Gitolite
+    通常不允许这样做。另一个是提供简单的宏功能。
+- en: Triggers
+  id: totrans-29
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 触发器
+- en: Arguably, the most powerful of Gitolite's customization features is the trigger
+    feature. Gitolite triggers are the equivalent of Git's hooks. Just as Git provides
+    hooks that run at various points (for example, `pre-commit`, `pre-receive`, and
+    `post-receive`, to name a few), similarly Gitolite's triggers also run at specific
+    points in the lifecycle of a Gitolite managed push or fetch.
+  id: totrans-30
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 可以说，Gitolite 最强大的定制功能是触发器功能。Gitolite 触发器相当于 Git 的钩子。正如 Git 提供了在各个点运行的钩子（例如，`pre-commit`、`pre-receive`
+    和 `post-receive` 等），类似地，Gitolite 的触发器也会在 Gitolite 管理的推送或获取的生命周期中的特定点运行。
+- en: There is a difference between Git hooks and Gitolite trigger programs though.
+    Git defines several hooks and requires that your hook code be named exactly one
+    of those (for example, `post-receive` or `update`). Gitolite on the other hand
+    allows you to define a list of trigger programs, which it will invoke in sequence
+    when the trigger point is reached. It is only the name of the trigger point that
+    is fixed. This also means, of course, that your programs can be called whatever
+    you like.
+  id: totrans-31
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，Git 钩子和 Gitolite 触发程序之间是有区别的。Git 定义了几个钩子，并要求你的钩子代码必须精确命名为其中之一（例如，`post-receive`
+    或 `update`）。而 Gitolite 则允许你定义一组触发程序，当触发点到达时，它会按顺序调用这些程序。只有触发点的名称是固定的。当然，这也意味着，你的程序可以使用任何你喜欢的名称。
+- en: The important trigger points, from a customization point of view, are `INPUT`
+    , `POST_CREATE`, and `POST_COMPILE`, although there are several other trigger
+    points supported.
+  id: totrans-32
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 从定制角度来看，重要的触发点是 `INPUT`、`POST_CREATE` 和 `POST_COMPILE`，尽管还支持多个其他触发点。
+- en: The purpose of an `INPUT` trigger is to manipulate the input arguments or the
+    environment in some way. Since a child program cannot affect the parent's environment,
+    `INPUT` triggers need to be written in Perl and installed as modules in `lib/Gitolite/Triggers`
+    (as opposed to being plain programs in any language, that are installed in the
+    `triggers` directory). Examples of features using the `INPUT` trigger are giving
+    some users full shell access and allowing repositories to have aliases.
+  id: totrans-33
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`INPUT` 触发器的目的是以某种方式操作输入参数或环境。由于子程序无法影响父程序的环境，`INPUT` 触发器需要用 Perl 编写，并作为模块安装在
+    `lib/Gitolite/Triggers` 中（与任何语言编写的普通程序不同，后者是安装在 `triggers` 目录中的）。使用 `INPUT` 触发器的功能示例包括为某些用户提供完全的
+    shell 访问权限，以及允许仓库具有别名。'
+- en: Tip
+  id: totrans-34
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 提示
+- en: This chapter will contain references to many non-core features that are out
+    of scope for this book. Please refer to Gitolite's online documentation for details.
+  id: totrans-35
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章将提及许多本书范围之外的非核心特性。请参阅 Gitolite 的在线文档获取详细信息。
+- en: The `POST_CREATE` trigger point is useful to run any housekeeping or reporting
+    tasks that need to be performed after a new repository is created. For example,
+    Gitolite uses this trigger point to run code that updates the access lists for
+    gitweb and git-daemon whenever a user creates a *wild* repository.
+  id: totrans-36
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`POST_CREATE` 触发点用于在新仓库创建后执行任何需要完成的整理或报告任务。例如，Gitolite 使用这个触发点来运行代码，在用户创建*野性*仓库时更新
+    gitweb 和 git-daemon 的访问列表。'
+- en: The `POST_COMPILE` trigger point helps you perform additional tasks when the
+    gitolite-admin repository is pushed. This trigger point is associated with the
+    maximum number of programs shipped with Gitolite. Most of them have to do with
+    with ssh keys, or updating access lists for gitweb and git-daemon.
+  id: totrans-37
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`POST_COMPILE`触发点帮助您在推送`gitolite-admin`存储库时执行附加任务。此触发点与Gitolite一起提供的程序数量最多相关联。其中大多数与ssh密钥有关，或者更新gitweb和git-daemon的访问列表。'
+- en: Virtual refs
+  id: totrans-38
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 虚拟引用
+- en: The final type of non-core customization available is Gitolite's ability to
+    make access decisions based on what Gitolite calls virtual refs. The scripts that
+    do this are called `VREFs`; they are complex and important enough to have the
+    next chapter be devoted entirely to them.
+  id: totrans-39
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 可用的最后一种非核心定制类型是Gitolite根据Gitolite称为虚拟引用的东西做出访问决策的能力。执行此操作的脚本称为`VREFs`；它们复杂且重要到足以使下一章完全专门介绍它们。
+- en: Writing your own non-core code
+  id: totrans-40
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 编写您自己的非核心代码
+- en: It's reasonably easy to write your own code to add features that are specific
+    to your site. For example, suppose we want an e-mail to be sent to the administrator
+    every time a developer creates a *wild repositor*y. We will assume that the standard
+    Unix utilities exist and are available. In particular, we will assume the Unix
+    mail command is available. This command takes the message from standard input,
+    and the subject and recipient data from command-line arguments, and sends the
+    e-mail, thus suits our purposes very well.
+  id: totrans-41
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 编写您自己的代码来添加特定于您站点的功能相当容易。例如，假设我们希望每次开发人员创建一个*wild repository*时都向管理员发送电子邮件。我们假设标准的Unix实用程序存在且可用。特别是，我们假设Unix邮件命令可用。此命令从标准输入获取消息，并从命令行参数获取主题和收件人数据，然后发送邮件，因此非常适合我们的目的。
+- en: Since this is an action that needs to run when a repository is created, it needs
+    to be added to the `POST_CREATE` trigger list. According to the Gitolite documentation,
+    when a wild repository is created, each program in the `POST_CREATE` trigger list
+    is called with the second argument being the name of the repository that was just
+    created, while the third argument is the name of the user who created it. (If
+    this is empty, this is not a wild repository creation but a normal repository
+    creation; that is, by the administrator adding the repository to the Gitolite
+    `conf` file and pushing the change.)
+  id: totrans-42
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于这是需要在创建存储库时运行的操作，因此需要将其添加到`POST_CREATE`触发器列表中。根据Gitolite文档，当创建一个wild repository时，每个`POST_CREATE`触发器列表中的程序都将被调用，第二个参数是刚刚创建的存储库的名称，而第三个参数是创建它的用户的名称。（如果为空，则这不是一个wild
+    repository的创建，而是通过管理员将存储库添加到Gitolite `conf`文件并推送更改。）
+- en: 'As a result, this code could be as simple as follows:'
+  id: totrans-43
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 因此，这段代码可以简化为以下形式：
+- en: '[PRE1]'
+  id: totrans-44
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: Now we've written this code, we need to put it somewhere that Gitolite will
+    find it and use it at the right time.
+  id: totrans-45
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经编写了这段代码，我们需要将其放在Gitolite可以找到并在正确时间使用它的地方。
+- en: We decide to create a new directory called `$HOME/local` to hold all our local
+    customizations. In this directory, we add a subdirectory called `triggers`, and
+    into this we place this script, naming it `new-repo-alert`. (Don't forget to `chmod
+    +x` the script!)
+  id: totrans-46
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们决定创建一个名为`$HOME/local`的新目录，用于保存所有我们的本地定制。在此目录中，我们添加一个名为`triggers`的子目录，并在其中放置此脚本，命名为`new-repo-alert`。（不要忘记对脚本执行`chmod
+    +x`！）
+- en: Now, we edit Gitolite's `rc` file`($HOME/.gitolite.rc`). In this file, we find
+    a line that defines the `LOCAL_CODE` variable commented out but conveniently pointing
+    to precisely where we chose to place our customizations, so we simply uncomment
+    it.
+  id: totrans-47
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，我们编辑Gitolite的`rc`文件`($HOME/.gitolite.rc)`。在这个文件中，我们找到一行注释掉的定义`LOCAL_CODE`变量的行，但恰好指向我们选择放置自定义的地方，所以我们只需取消注释。
+- en: 'We then add the following lines of code immediately after the `LOCAL_CODE`
+    variable:'
+  id: totrans-48
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后我们在`LOCAL_CODE`变量之后立即添加以下代码行：
+- en: '[PRE2]'
+  id: totrans-49
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: Did you note the trailing comma after the closing bracket? And that's really
+    all you need to do. From now on, any time a user creates a new "wild" repository;
+    the `new-repo-alert` script will be executed.
+  id: totrans-50
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 您是否注意到在右括号后的尾随逗号？这就是您需要做的全部。从现在开始，每当用户创建一个新的“wild”存储库时，将执行`new-repo-alert`脚本。
+- en: As a second example, we will create a small command. The example we use will
+    allow a user to check the size of a repository using the `git count-objects` command.
+    Our command will default to running it with the `-v` option because that is the
+    most generic and useful.
+  id: totrans-51
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 第二个例子，我们将创建一个小命令。我们使用的例子将允许用户使用`git count-objects`命令检查存储库的大小。我们的命令将默认使用`-v`选项运行，因为这是最通用和有用的。
+- en: 'To do that, create a directory called `$HOME/local/commands`, and put a script
+    called `count-objects` in that directory. Make sure the script is executable (`chmod
+    +x`). The code for the script is as follows:'
+  id: totrans-52
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为此，创建一个名为`$HOME/local/commands`的目录，并在该目录下放置一个名为`count-objects`的脚本。确保脚本是可执行的（`chmod
+    +x`）。该脚本的代码如下：
+- en: '[PRE3]'
+  id: totrans-53
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: The interesting part of this code is not the actual `count-objects` command.
+    The most generic, and thus most usable for your needs, is the `gitolite access`
+    command, whose usage message we have already seen in an earlier section. Here,
+    we are using it to ensure that the user running the command has at least got write
+    access to the repository in question before allowing the command to run.
+  id: totrans-54
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这段代码的有趣之处不在于实际的`count-objects`命令。最通用的，也最符合你需求的命令是`gitolite access`命令，其使用信息我们在前面的章节中已经看到过。在这里，我们使用它来确保执行该命令的用户至少拥有目标仓库的写权限，然后再允许命令运行。
+- en: Finally, add this command to the list of commands in `rc` file's `ENABLE` list,
+    preferably in the `COMMANDS` section.
+  id: totrans-55
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后，将此命令添加到`rc`文件的`ENABLE`命令列表中，最好放在`COMMANDS`部分。
+- en: Tip
+  id: totrans-56
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 提示
+- en: Note that `count-objects` is a harmless command, so it may not need to be protected.
+    However, if you then stretch the use case a little and allow the user to start
+    a `git gc` operation, or even a `git fsck`, you need to be more careful. Some
+    of those commands don't deal well with being run too many times or simultaneously
+    by multiple people. Ensure your command does some rate limiting or serializing.
+  id: totrans-57
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请注意，`count-objects`是一个无害的命令，因此可能不需要保护。然而，如果你稍微扩展使用场景，允许用户启动`git gc`操作，甚至是`git
+    fsck`，你就需要更加小心了。这些命令中的一些在被多次执行或被多个人同时执行时，处理起来可能不太好。确保你的命令做一些速率限制或序列化。
+- en: Other commands require arguments to be supplied. If your script takes arguments
+    from the user, be sure to sanitize them before running the command. You can undermine
+    all of Gitolite's access control with one carelessly written command!
+  id: totrans-58
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 其他命令需要提供参数。如果你的脚本接受用户的参数，一定要在执行命令前对其进行清洗。一个写得不小心的命令可能会破坏Gitolite的所有访问控制！
+- en: As you can see from these two examples, the most important aspect of adding
+    a new feature to your site is to decide when and how the feature should be invoked—should
+    it be a user command, or a trigger that runs at specific points, or perhaps a
+    `VREF` that can influence the outcome of the overall command, and so on. In some
+    cases, it could even be a combination, for instance, a command and a VREF working
+    together. As an extreme example, Gitolite's mirroring feature, which is written
+    entirely as non-core code, is implemented as one command, and one Perl module
+    is added to each of the `INPUT, PRE_GIT`, and `POST_GIT` trigger lists.
+  id: totrans-59
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 从这两个例子中可以看出，向你的网站添加新功能最重要的方面是决定何时以及如何调用该功能——它应该是用户命令，还是一个在特定时刻触发的操作，或许是一个能影响整体命令结果的`VREF`，等等。在某些情况下，它甚至可能是一个组合，例如，一个命令和一个VREF一起工作。极端的例子是，Gitolite的镜像功能完全作为非核心代码编写，它作为一个命令实现，并且一个Perl模块被添加到`INPUT`、`PRE_GIT`和`POST_GIT`触发器列表中。
+- en: Summary
+  id: totrans-60
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 摘要
+- en: In this chapter, we have seen an introduction to how Gitolite can be customized
+    or new features can be added that are specific to your site. This is a fairly
+    complex topic, but if you get your hands dirty and start writing programs, you
+    will soon get very comfortable with the idea, as well as get a very good feel
+    for how powerful the feature actually is.
+  id: totrans-61
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们了解了如何定制Gitolite或向其添加特定于你站点的新功能。这是一个相当复杂的话题，但如果你动手实践，开始编写程序，你很快就会对这一概念感到得心应手，并且对这个功能的强大之处有非常好的体会。
+- en: The next chapter will focus on `VREF`, a powerful feature for even more fine-grained
+    access control, as well as access control based on factors other than what Gitolite
+    normally uses.
+  id: totrans-62
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 下一章将重点讲解`VREF`，这是一个强大的功能，能够实现更细粒度的访问控制，以及基于除Gitolite通常使用的因素外的访问控制。

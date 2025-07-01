@@ -1,0 +1,3305 @@
+- en: Chapter 9. Remote Access to JIRA
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 第9章 远程访问 JIRA
+- en: 'In this chapter, we will cover:'
+  id: totrans-1
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章内容包括：
+- en: Creating a SOAP client
+  id: totrans-2
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 创建一个 SOAP 客户端
+- en: Creating an issue via SOAP
+  id: totrans-3
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 通过 SOAP 创建问题
+- en: Working with custom fields and SOAP
+  id: totrans-4
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用自定义字段和 SOAP
+- en: Attachments and SOAP
+  id: totrans-5
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 附件和 SOAP
+- en: Work logs and time tracking via SOAP
+  id: totrans-6
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 通过 SOAP 进行工作日志和时间跟踪
+- en: Commenting on an issue via SOAP
+  id: totrans-7
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 通过 SOAP 评论问题
+- en: User and Group Management via SOAP
+  id: totrans-8
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 通过 SOAP 进行用户和组管理
+- en: Progressing an issue in workflow using SOAP
+  id: totrans-9
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用 SOAP 在工作流中推进问题
+- en: Managing versions via SOAP
+  id: totrans-10
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 通过 SOAP 管理版本
+- en: Administration methods in SOAP API
+  id: totrans-11
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: SOAP API 中的管理方法
+- en: Deploy a SOAP service in JIRA
+  id: totrans-12
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在 JIRA 中部署 SOAP 服务
+- en: Deploy a XML-RPC service within JIRA
+  id: totrans-13
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在 JIRA 中部署 XML-RPC 服务
+- en: Writing a Java XML-RPC client
+  id: totrans-14
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 编写 Java XML-RPC 客户端
+- en: Exposing services and data entities as REST APIs
+  id: totrans-15
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 将服务和数据实体暴露为 REST API
+- en: Writing Java client for REST API
+  id: totrans-16
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 为 REST API 编写 Java 客户端
+- en: Introduction
+  id: totrans-17
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 介绍
+- en: We have seen various ways to enhance the JIRA functionality in the previous
+    chapters, but how do we communicate with JIRA from another application? What are
+    the various methods of integrating third-party applications with JIRA? Or in simple
+    words, how does JIRA expose its functionalities to the outside world?
+  id: totrans-18
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们在前面的章节中看到了多种方式来增强 JIRA 的功能，但如何从另一个应用程序与 JIRA 通信呢？有哪些不同的方法可以将第三方应用程序集成到 JIRA
+    中？或者换句话说，JIRA 是如何将其功能暴露给外部世界的？
+- en: JIRA exposes its functionalities via **REST**, **SOAP**, or **XML/RPC** interfaces.
+    Only a handful of the full JIRA functionality is exposed via these interfaces
+    but JIRA also lets us extend these interfaces. In this chapter, we will learn
+    how to communicate with JIRA using these interfaces and add more methods into
+    these interfaces by developing plugins. The focus of this chapter is more on SOAP
+    with examples for other interfaces as well. The core principle for all the interfaces
+    is the same.
+  id: totrans-19
+  prefs: []
+  type: TYPE_NORMAL
+  zh: JIRA 通过 **REST**、**SOAP** 或 **XML/RPC** 接口暴露其功能。通过这些接口暴露的 JIRA 完整功能有限，但 JIRA
+    也允许我们扩展这些接口。在本章中，我们将学习如何通过这些接口与 JIRA 通信，并通过开发插件将更多方法添加到这些接口中。本章的重点是 SOAP，同时也会提供其他接口的示例。这些接口的核心原理是相同的。
+- en: There are quite a lot of methods in SOAP, most of which can be understood well
+    from the API at [http://docs.atlassian.com/software/jira/docs/api/rpc-jira-plugin/latest/com/atlassian/jira/rpc/soap/JiraSoapService.html](http://docs.atlassian.com/software/jira/docs/api/rpc-jira-plugin/latest/com/atlassian/jira/rpc/soap/JiraSoapService.html).
+    But there are some methods that need better understanding and those are the ones
+    we will concentrate on in this chapter leaving the rest to the readers.
+  id: totrans-20
+  prefs: []
+  type: TYPE_NORMAL
+  zh: SOAP 中有很多方法，大多数方法可以从 API 中很好地理解，API 地址为 [http://docs.atlassian.com/software/jira/docs/api/rpc-jira-plugin/latest/com/atlassian/jira/rpc/soap/JiraSoapService.html](http://docs.atlassian.com/software/jira/docs/api/rpc-jira-plugin/latest/com/atlassian/jira/rpc/soap/JiraSoapService.html)。但有一些方法需要更好的理解，这些方法将在本章中重点讲解，其他的留给读者自行研究。
+- en: 'SOAP is usually the most preferred method of remote access but Atlassian is
+    slowly moving towards REST as the preferred mode. A more detailed explanation
+    of these interfaces can be found at: [http://confluence.atlassian.com/display/JIRADEV/JIRA+RPC+Services](http://confluence.atlassian.com/display/JIRADEV/JIRA+RPC+Services).'
+  id: totrans-21
+  prefs: []
+  type: TYPE_NORMAL
+  zh: SOAP 通常是最受欢迎的远程访问方法，但 Atlassian 正在慢慢转向 REST 作为首选模式。有关这些接口的更详细解释可以在以下网址找到：[http://confluence.atlassian.com/display/JIRADEV/JIRA+RPC+Services](http://confluence.atlassian.com/display/JIRADEV/JIRA+RPC+Services)。
+- en: Creating a SOAP client
+  id: totrans-22
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 创建一个 SOAP 客户端
+- en: As mentioned previously, SOAP is currently the preferred mode of remote access
+    in JIRA though Atlassian is slowly moving towards REST. SOAP has the most number
+    of methods compared to REST or XML/RPC and is probably used the most in the plugins
+    that we find around us. In this recipe, we will start with the basics and see
+    how we can write a simple SOAP client.
+  id: totrans-23
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如前所述，SOAP 目前是 JIRA 首选的远程访问模式，尽管 Atlassian 正在慢慢转向 REST。与 REST 或 XML/RPC 相比，SOAP
+    提供了最多的方法，可能在我们周围的插件中使用最广泛。在本食谱中，我们将从基础开始，看看如何编写一个简单的 SOAP 客户端。
+- en: Getting ready
+  id: totrans-24
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 准备工作
+- en: Install Maven2 and configure a Java development environment. Make sure the RPC
+    plugin is enabled in JIRA and the **Accept** **remote** **API** **calls** option
+    is turned ON at **Administration** | **Global** **Settings** | **General** **Configuration**.
+  id: totrans-25
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 安装 Maven2 并配置 Java 开发环境。确保在 JIRA 中启用了 RPC 插件，并且在 **Administration** | **Global**
+    **Settings** | **General** **Configuration** 中启用了 **Accept** **remote** **API**
+    **calls** 选项。
+- en: How to do it...
+  id: totrans-26
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何操作…
+- en: 'The following are the steps to create a JIRA SOAP client:'
+  id: totrans-27
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是创建 JIRA SOAP 客户端的步骤：
+- en: 'Download the latest demo SOAP client distribution from the Atlassian public
+    repository at: [http://svn.atlassian.com/svn/public/atlassian/rpc-jira-plugin/tags/](http://svn.atlassian.com/svn/public/atlassian/rpc-jira-plugin/tags/).
+    This contains a Maven 2 project configured to use Apache Axis, and a sample Java
+    SOAP client, which creates test issues at [http://jira.atlassian.com](http://jira.atlassian.com).'
+  id: totrans-28
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 从 Atlassian 公共仓库下载最新的示例 SOAP 客户端分发包，链接为：[http://svn.atlassian.com/svn/public/atlassian/rpc-jira-plugin/tags/](http://svn.atlassian.com/svn/public/atlassian/rpc-jira-plugin/tags/)。它包含一个配置使用
+    Apache Axis 的 Maven 2 项目，以及一个示例 Java SOAP 客户端，该客户端在 [http://jira.atlassian.com](http://jira.atlassian.com)
+    创建测试问题。
+- en: Modify the `jira.soapclient.jiraurl` property in the `pom.xml` to point to your
+    JIRA instance, the instance you want to connect to. By default, it points to [http://jira.atlassian.com](http://jira.atlassian.com).
+  id: totrans-29
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 修改 `pom.xml` 中的 `jira.soapclient.jiraurl` 属性，指向你想要连接的 JIRA 实例。默认情况下，它指向 [http://jira.atlassian.com](http://jira.atlassian.com)。
+- en: 'Download the WSDL file of the instance you want to connect to. You can find
+    the WSDL file under the `/src/main/wsdl` location. If it is not there, or if you
+    want to download the WSDL afresh, run the following command:'
+  id: totrans-30
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 下载你想要连接的实例的 WSDL 文件。你可以在 `/src/main/wsdl` 位置找到 WSDL 文件。如果没有该文件，或者你想重新下载 WSDL，可以运行以下命令：
+- en: '[PRE0]'
+  id: totrans-31
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: This will download the WSDL from the configured JIRA instance (as in *Step*
+    *2*) to `/src/main/wsdl/`. Skip the `jira.soapclient.jiraurl` property to download
+    the Atlassian JIRA WSDL.
+  id: totrans-32
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 这将从配置的 JIRA 实例（如*步骤* *2*所示）下载 WSDL 到 `/src/main/wsdl/`。跳过 `jira.soapclient.jiraurl`
+    属性以下载 Atlassian JIRA 的 WSDL。
+- en: 'Create the client JAR. We can do this by running the following command to generate
+    the sources from the WSDL and create the SOAP client:'
+  id: totrans-33
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建客户端 JAR。我们可以通过运行以下命令从 WSDL 生成源代码并创建 SOAP 客户端：
+- en: '[PRE1]'
+  id: totrans-34
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: This will generate a JAR file with all the necessary classes required. There
+    is a second JAR file created with the dependencies (such as the axis) embedded
+    in it. The latter will do a world of good if you are executing it from an environment
+    without axis and other dependencies already configured in it.
+  id: totrans-35
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 这将生成一个 JAR 文件，包含所有必需的类。还会创建一个包含依赖项（例如 Axis）的第二个 JAR 文件。如果你在没有配置 Axis 和其他依赖项的环境中执行，这个
+    JAR 文件会非常有用。
+- en: 'Write the client program. Let us go with the simplest approach in this recipe,
+    that is, to create a simple standalone Java class in Eclipse. Start by creating
+    an Eclipse project by running the following command:'
+  id: totrans-36
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 编写客户端程序。让我们按照本教程中的最简单方法进行，也就是在 Eclipse 中创建一个简单的独立 Java 类。首先，通过运行以下命令创建一个 Eclipse
+    项目：
+- en: '[PRE2]'
+  id: totrans-37
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: Note
+  id: totrans-38
+  prefs:
+  - PREF_IND
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: You can alternatively try other IDEs or even run from the command prompt, whichever
+    is convenient. Make sure you add the client JAR created in *Step* *4* in the classpath.
+    All set to write a simple program that just logs into our JIRA instance. From
+    now on, it is just another web service invocation as detailed in the following
+    steps.
+  id: totrans-39
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 你也可以尝试其他 IDE，或者直接从命令提示符运行，选择你方便的方式。确保将*步骤* *4*中创建的客户端 JAR 添加到类路径中。现在可以编写一个简单的程序，直接登录到我们的
+    JIRA 实例。从现在开始，这只是另一种 Web 服务调用，按照接下来的步骤进行。
+- en: Create the standalone Java class.
+  id: totrans-40
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建独立的 Java 类。
+- en: 'Get the SOAP service locator:'
+  id: totrans-41
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 获取 SOAP 服务定位器：
+- en: '[PRE3]'
+  id: totrans-42
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: 'Get the SOAP service instance from the locator by passing the URL of your JIRA
+    instance:'
+  id: totrans-43
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 从定位器获取 SOAP 服务实例，方法是传递你的 JIRA 实例的 URL：
+- en: '[PRE4]'
+  id: totrans-44
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: 'Start accessing the methods using the SOAP service instance. For example, the
+    log in can be done as follows:'
+  id: totrans-45
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 开始使用 SOAP 服务实例访问方法。例如，登录操作可以如下进行：
+- en: '[PRE5]'
+  id: totrans-46
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: The token retrieved here is used for all the other operations instead of logging
+    in every time. You can see the token as the first argument in all other operations.
+  id: totrans-47
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 这里获取的令牌将用于所有其他操作，而不需要每次登录。你可以将令牌视为所有其他操作的第一个参数。
+- en: With that, our SOAP Client is ready. Let us just try getting an issue using
+    the key and print its key and ID to prove that this stuff works!
+  id: totrans-48
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 到此为止，我们的 SOAP 客户端已经准备好。让我们尝试使用问题的关键字获取一个问题，并打印它的关键字和 ID，证明这个功能是有效的！
+- en: '[PRE6]'
+  id: totrans-49
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: You will find the output printed with the issue key and ID.
+  id: totrans-50
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 你将看到输出中打印出问题的关键字和 ID。
+- en: Hopefully, this gives you a fair idea to get started with your first SOAP client!
+    There is a lot more you can do with the SOAP client some of which we will see
+    in the coming recipes.
+  id: totrans-51
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 希望这能给你一个大致的了解，帮助你开始使用第一个 SOAP 客户端！你可以用 SOAP 客户端做更多事情，我们将在接下来的教程中看到其中的一些。
+- en: Creating an issue via SOAP
+  id: totrans-52
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 通过 SOAP 创建问题
+- en: In the previous recipe, we have seen how to create a SOAP client. We also saw
+    how to use the client to connect to the JIRA instance and perform the operations,
+    by taking 'browsing an issue' as an example. In this recipe, we will see how to
+    create an issue using SOAP API.
+  id: totrans-53
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在前面的教程中，我们已经看到如何创建一个 SOAP 客户端。我们还看到了如何使用客户端连接到 JIRA 实例并执行操作，以“浏览问题”为例。在本教程中，我们将看到如何使用
+    SOAP API 创建一个问题。
+- en: Getting ready
+  id: totrans-54
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 准备工作
+- en: Create a JIRA SOAP client as mentioned in the previous recipe.
+  id: totrans-55
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 创建一个 JIRA SOAP 客户端，如前面的教程中所提到的。
+- en: How to do it...
+  id: totrans-56
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何操作……
+- en: 'Following are the steps to create an issue with the standard fields populated
+    on it:'
+  id: totrans-57
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是创建一个已填充标准字段的问题的步骤：
+- en: 'As mentioned in the previous recipe, get the JIRA SOAP service stub and log
+    in to the box:'
+  id: totrans-58
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如前面的教程所提到的，获取 JIRA SOAP 服务存根并登录到系统：
+- en: '[PRE7]'
+  id: totrans-59
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE7]'
+- en: 'Create an instance of `RemoteIssue`:'
+  id: totrans-60
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建 `RemoteIssue` 的实例：
+- en: '[PRE8]'
+  id: totrans-61
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE8]'
+- en: 'Populate the standard fields on the `RemoteIssue` as appropriate:'
+  id: totrans-62
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 根据需要填充 `RemoteIssue` 上的标准字段：
+- en: '[PRE9]'
+  id: totrans-63
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE9]'
+- en: Make sure the `PROJECT_KEY`, `ISSUE_TYPE_ID`, `PRIORITY_ID` , and so on, are
+    all valid values in your JIRA instance. `ISSUE_TYPE_ID` and `PRIORITY_ID` are
+    IDs and not the name of the issue type and priority.
+  id: totrans-64
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 确保 `PROJECT_KEY`、`ISSUE_TYPE_ID`、`PRIORITY_ID` 等都是你 JIRA 实例中的有效值。`ISSUE_TYPE_ID`
+    和 `PRIORITY_ID` 是 ID，而不是问题类型和优先级的名称。
+- en: 'Set the components on the issue. An issue can have multiple components and
+    hence we need to set an array of `RemoteComponent` objects as shown in the following
+    block of code:'
+  id: totrans-65
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在问题上设置组件。一个问题可以有多个组件，因此我们需要设置一个 `RemoteComponent` 对象的数组，如以下代码块所示：
+- en: '[PRE10]'
+  id: totrans-66
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE10]'
+- en: 'We can have as many components as we want, provided the `id` instances are
+    valid component IDs in the project we are creating the issue. Here, `id` is the
+    unique ID you will find for the component when we browse a component, as shown
+    in the following screenshot:'
+  id: totrans-67
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 我们可以拥有任意数量的组件，只要 `id` 实例是我们在创建问题时所在项目中的有效组件 ID。这里，`id` 是你在浏览组件时找到的唯一 ID，如下图所示：
+- en: '![How to do it...](img/1803-09-01.jpg)'
+  id: totrans-68
+  prefs:
+  - PREF_IND
+  type: TYPE_IMG
+  zh: '![如何操作...](img/1803-09-01.jpg)'
+- en: 'Set the **Fix** **for** **Versions** or **Affected** **Versions** similar to
+    how we set the components:'
+  id: totrans-69
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 设置 **Fix** **for** **Versions** 或 **Affected** **Versions**，类似于我们设置组件的方式：
+- en: '[PRE11]'
+  id: totrans-70
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE11]'
+- en: Again, `VERSION_ID` the unique ID of the version and can be found while browsing
+    the version as we did with components.
+  id: totrans-71
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 再次提醒，`VERSION_ID` 是版本的唯一标识符，可以在浏览版本时找到，就像我们在处理组件时所做的那样。
+- en: Invoke the create issue operation on the soap client by passing the authentication
+    token and the `RemoteIssue` object we constructed.
+  id: totrans-72
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在 SOAP 客户端上调用创建问题操作，传递身份验证令牌和我们构建的 `RemoteIssue` 对象。
+- en: '[PRE12]'
+  id: totrans-73
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE12]'
+- en: 'The issue should now be created and its details like the ID are available on
+    the returned `RemoteIssue` object, which can be printed as follows:'
+  id: totrans-74
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 问题现在应该已经创建，并且其细节（如 ID）可以通过返回的 `RemoteIssue` 对象获取，可以按如下方式打印：
+- en: '[PRE13]'
+  id: totrans-75
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE13]'
+- en: How it works...
+  id: totrans-76
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 它是如何工作的……
+- en: This is just a classic example of invoking a web service from a Java application
+    using Axis2\. Once the Java client is written as explained before, we can run
+    the same and the issue will be created in the instance we have referenced in the
+    client.
+  id: totrans-77
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这只是一个经典示例，演示了如何使用 Axis2 从 Java 应用程序调用 Web 服务。一旦按照前面的说明编写了 Java 客户端，我们就可以运行它，问题将在我们在客户端中引用的实例中创建。
+- en: Following is a screenshot of an issue created in the TEST project at [http://jira.atlassian.com](http://jira.atlassian.com).
+  id: totrans-78
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是一个在 TEST 项目中创建的问题的截图，链接为 [http://jira.atlassian.com](http://jira.atlassian.com)。
+- en: '![How it works...](img/1803-09-02.jpg)'
+  id: totrans-79
+  prefs: []
+  type: TYPE_IMG
+  zh: '![它是如何工作的...](img/1803-09-02.jpg)'
+- en: As you can see, the issue gets populated with all the fields we have set on
+    the `RemoteIssue` object.
+  id: totrans-80
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，问题已经填充了我们在 `RemoteIssue` 对象上设置的所有字段。
+- en: Working with custom fields and SOAP
+  id: totrans-81
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用自定义字段和 SOAP
+- en: We have seen how to create an issue with its standard fields. In this recipe,
+    we will deal with custom fields—**create**, **update,** and **read** their values.
+  id: totrans-82
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们已经了解了如何创建一个带有标准字段的问题。在本教程中，我们将处理自定义字段——**创建**、**更新**和**读取**它们的值。
+- en: Getting ready
+  id: totrans-83
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 准备工作
+- en: As in the previous recipe, create a JIRA SOAP client.
+  id: totrans-84
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如前面的教程所示，创建一个 JIRA SOAP 客户端。
+- en: How to do it...
+  id: totrans-85
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何操作……
+- en: As mentioned earlier, we will see the creation, updating, and browsing of custom
+    field values separately in this recipe.
+  id: totrans-86
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如前所述，在本教程中，我们将分别讨论自定义字段值的创建、更新和浏览。
+- en: Creating an issue with custom field values
+  id: totrans-87
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 使用自定义字段值创建问题
+- en: Creating an issue with custom fields is pretty similar to creating issues with
+    components or versions. All the custom fields are set on the issue using a single
+    method `setCustomFieldValues`, which takes an array of `RemoteCustomFieldValue`
+    objects.
+  id: totrans-88
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 创建带有自定义字段的问题与创建带有组件或版本的问题非常相似。所有自定义字段都通过一个方法`setCustomFieldValues`设置，该方法接受一个`RemoteCustomFieldValue`对象的数组。
+- en: 'The following steps explain how it''s done:'
+  id: totrans-89
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下步骤解释了操作过程：
+- en: Identify the custom fields that need to be set on the issue and find their IDs.
+    The ID of a custom field is of the form `customfield_[id]` where `[id]` is the
+    database ID of the custom field. This ID can be determined from the database,
+    or by editing a custom field in the admin interface, and copying its ID from the
+    URL, as shown in the following screenshot:![Creating an issue with custom field
+    values](img/1803-09-03.jpg)
+  id: totrans-90
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 确定需要在问题上设置的自定义字段并找到它们的ID。自定义字段的ID形式为`customfield_[id]`，其中`[id]`是自定义字段的数据库ID。可以从数据库中确定该ID，或者通过在管理界面中编辑自定义字段，复制其ID（从URL中提取）来获取ID，如下图所示：![创建带有自定义字段值的问题](img/1803-09-03.jpg)
+- en: 'Create a `RemoteCustomFieldValue` for each of the custom fields identified.
+    `RemoteCustomFieldValue` can be created as follows:'
+  id: totrans-91
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 为每个识别出的自定义字段创建一个`RemoteCustomFieldValue`。`RemoteCustomFieldValue`可以按如下方式创建：
+- en: '[PRE14]'
+  id: totrans-92
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE14]'
+- en: The values that we pass—`CUSTOM_FIELD_VALUE1`, `CUSTOM_FIELD_VALUE2`, and so
+    on—should be valid for the field or else will result in validation errors in the
+    server. For single-value custom fields, the array will consist only of a single
+    value. The second attribute takes a `parentKey` value that is used only for multidimensional
+    fields such as Cascading select lists. For single-value and multi-value fields
+    like select lists, multi select, and so on, the `parentKey` will be an empty string.
+  id: totrans-93
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 我们传递的值——`CUSTOM_FIELD_VALUE1`、`CUSTOM_FIELD_VALUE2`，依此类推——应该是该字段的有效值，否则会导致服务器上的验证错误。对于单值自定义字段，数组中将仅包含一个值。第二个属性接受一个`parentKey`值，仅用于多维字段，如级联选择列表。对于单值和多值字段（如选择列表、多选等），`parentKey`将是一个空字符串。
+- en: 'For example, `RemoteCustomFieldValue` is constructed for a cascading select
+    as follows:'
+  id: totrans-94
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 例如，`RemoteCustomFieldValue`用于构建级联选择如下：
+- en: '[PRE15]'
+  id: totrans-95
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE15]'
+- en: 'The parent key will be used to construct the full key of the custom field.
+    For example, a cascading select will have the full custom field key as `customfield_10061:1`
+    where `customfield_10061` is the key of the parent and `:1` indicates the first
+    child. In fact, the following two represent the same thing:'
+  id: totrans-96
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 父键将用于构建自定义字段的完整键。例如，一个级联选择将具有完整的自定义字段键，如`customfield_10061:1`，其中`customfield_10061`是父字段的键，`:1`表示第一个子字段。事实上，以下两个表示的是同一件事：
+- en: '[PRE16]'
+  id: totrans-97
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE16]'
+- en: Set the array of all the custom field values on the issue.
+  id: totrans-98
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 设置所有自定义字段值的数组到问题中。
+- en: '[PRE17]'
+  id: totrans-99
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE17]'
+- en: 'Create the issue as usual:'
+  id: totrans-100
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 像往常一样创建问题：
+- en: '[PRE18]'
+  id: totrans-101
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE18]'
+- en: Updating custom fields on an issue
+  id: totrans-102
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 更新问题上的自定义字段
+- en: 'Updating a custom field is much similar. However in the `updateIssue` method,
+    it takes an array of `RemoteFieldValue` which could be a standard field or a custom
+    field. In the case of a custom field, we should set the ID of the custom field
+    (full ID if it''s a multidimensional field as `RemoteFieldValue` doesn''t take
+    a parent key!) and an array of String values as shown next:'
+  id: totrans-103
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 更新自定义字段非常相似。然而，在`updateIssue`方法中，它接受一个`RemoteFieldValue`的数组，这些字段可以是标准字段或自定义字段。在自定义字段的情况下，我们应设置自定义字段的ID（如果是多维字段，则为完整ID，因为`RemoteFieldValue`不接受父键！）以及字符串值的数组，如下所示：
+- en: '[PRE19]'
+  id: totrans-104
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE19]'
+- en: 'The issue can now be updated as follows:'
+  id: totrans-105
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在可以按如下方式更新问题：
+- en: '[PRE20]'
+  id: totrans-106
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE20]'
+- en: Here, `ISSUE_KEY` is the key of the issue to be updated.
+  id: totrans-107
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这里，`ISSUE_KEY`是要更新的问题的键。
+- en: Note that the same `updateIssue()` method is used for updating standard fields
+    as well but the only difference is that the `key` used in `RemoteFieldValue` will
+    be the key of the standard field. The key of the standard field can be found from
+    the `IssueFieldConstants` class.
+  id: totrans-108
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请注意，`updateIssue()`方法也用于更新标准字段，但唯一的区别是，`RemoteFieldValue`中使用的`key`将是标准字段的键。标准字段的键可以从`IssueFieldConstants`类中找到。
+- en: Browsing custom fields on an issue
+  id: totrans-109
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 浏览问题上的自定义字段
+- en: 'Custom fields on an issue can be retrieved using the `getCustomFieldValues`
+    method on `RemoteIssue`. It can then be printed as follows:'
+  id: totrans-110
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 可以通过在`RemoteIssue`上使用`getCustomFieldValues`方法来检索问题上的自定义字段。然后可以按如下方式打印：
+- en: '[PRE21]'
+  id: totrans-111
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE21]'
+- en: Here, `remoteCustomFieldValue.getValues()` returns an array of String representation
+    of the custom field value.
+  id: totrans-112
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这里，`remoteCustomFieldValue.getValues()`返回自定义字段值的字符串表示数组。
+- en: Attachments and SOAP
+  id: totrans-113
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 附件和SOAP
+- en: In this recipe, we will see how to add attachments on an issue via SOAP and
+    browse existing attachments.
+  id: totrans-114
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本例中，我们将看到如何通过SOAP向问题添加附件并浏览现有的附件。
+- en: Getting ready
+  id: totrans-115
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 准备工作
+- en: As in the previous recipes, create a JIRA SOAP client. Also, make sure attachments
+    are enabled on the JIRA instance.
+  id: totrans-116
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如同之前的示例，创建一个JIRA SOAP客户端。同时，确保在JIRA实例中启用了附件功能。
+- en: How to do it...
+  id: totrans-117
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: Since JIRA4, attachments are added into an issue using `addBase64EncodedAttachmentsToIssue`
+    method where as pre JIRA4 `addAttachmentsToIssue` method was used. The latter
+    is still available though it is deprecated. There is also a known issue with the
+    latter where it fails on large attachments.
+  id: totrans-118
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 自JIRA4以来，附件是通过`addBase64EncodedAttachmentsToIssue`方法添加到问题中的，而JIRA4之前使用的是`addAttachmentsToIssue`方法。后者仍然可用，但已被弃用。此外，后者存在一个已知问题，在处理大型附件时会失败。
+- en: 'Following are the steps to add attachments on an issue using `addBase64EncodedAttachmentsToIssue`
+    method:'
+  id: totrans-119
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是使用`addBase64EncodedAttachmentsToIssue`方法向问题添加附件的步骤：
+- en: Create a File object using the path of the file to be uploaded. The file should
+    be accessible via a valid URL.
+  id: totrans-120
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用要上传的文件路径创建一个File对象。文件应通过有效的URL访问。
+- en: '[PRE22]'
+  id: totrans-121
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE22]'
+- en: The path should be valid in the context.
+  id: totrans-122
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 路径应该在上下文中是有效的。
+- en: 'Read the contents of file into a Byte array:'
+  id: totrans-123
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 将文件内容读取到字节数组中：
+- en: '[PRE23]'
+  id: totrans-124
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE23]'
+- en: Create an encoded String from the Byte array using the `BASE64Encoder`.
+  id: totrans-125
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用`BASE64Encoder`从字节数组创建一个编码字符串。
+- en: '[PRE24]'
+  id: totrans-126
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE24]'
+- en: 'Do *Step* *1* to *Step* *3* for all the attachments that need to be uploaded
+    and create a String array of the all the encoded data. In our case, we have only
+    one:'
+  id: totrans-127
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 对于所有需要上传的附件，执行*步骤* *1*到*步骤* *3*，并创建一个包含所有编码数据的字符串数组。在我们的例子中，我们只有一个：
+- en: '[PRE25]'
+  id: totrans-128
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE25]'
+- en: Use the `encodedData` in the `addBase64EncodedAttachmentsToIssue` method.
+  id: totrans-129
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在`addBase64EncodedAttachmentsToIssue`方法中使用`encodedData`。
+- en: '[PRE26]'
+  id: totrans-130
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE26]'
+- en: where ISSUE_KEY is the key of the issue where the files are attached and the
+    String array (third argument) holds the names using which the attachments will
+    be stored on issue.
+  id: totrans-131
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 其中ISSUE_KEY是附件所在问题的关键字，字符串数组（第三个参数）包含将用于存储附件名称的字符串。
+- en: 'The `addAttachmentsToIssue` method will also work and is similar to the one
+    mentioned earlier, except that we don''t encode the data. Instead of sending the
+    files as a String array of encoded data, this method needs sending the files as
+    an array of Byte arrays. Following are the steps:'
+  id: totrans-132
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`addAttachmentsToIssue`方法也可以使用，类似于前面提到的方法，除了我们不对数据进行编码。与将文件作为编码数据的字符串数组发送不同，这个方法需要将文件作为字节数组的数组发送。以下是步骤：'
+- en: 'Read the file into a Byte array as before:'
+  id: totrans-133
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 像之前一样将文件读取到字节数组中：
+- en: '[PRE27]'
+  id: totrans-134
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE27]'
+- en: 'Create an array of these Byte arrays and add the read files into it:'
+  id: totrans-135
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建这些字节数组的数组，并将读取的文件添加到其中：
+- en: '[PRE28]'
+  id: totrans-136
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE28]'
+- en: You can read as many files as you want and each will be read as a Byte array
+    and will be added into files array.
+  id: totrans-137
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 你可以读取任意数量的文件，每个文件将作为字节数组读取，并添加到文件数组中。
+- en: 'Invoke the `addAttachmentsToIssue` method:'
+  id: totrans-138
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 调用`addAttachmentsToIssue`方法：
+- en: '[PRE29]'
+  id: totrans-139
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE29]'
+- en: 'Browsing the attachments on an issue can be done using the `getAttachmentsFromIssue`
+    method. It returns an array of `RemoteAttachment` objects from which the details,
+    such as `name`, `id`, and so on, can be retrieved. We can then construct the URL
+    to the attachment using the information retrieved. Following are the steps:'
+  id: totrans-140
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 浏览问题上的附件可以通过`getAttachmentsFromIssue`方法完成。它返回一个`RemoteAttachment`对象数组，从中可以提取附件的详细信息，如`name`、`id`等。然后，我们可以使用获取的信息构建附件的URL。以下是步骤：
+- en: 'Get the array of `RemoteAttachment` objects:'
+  id: totrans-141
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 获取`RemoteAttachment`对象的数组：
+- en: '[PRE30]'
+  id: totrans-142
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE30]'
+- en: Here, `ISSUE_KEY` is the key of the issue we are browsing.
+  id: totrans-143
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 这里，`ISSUE_KEY`是我们正在浏览的课题的关键字。
+- en: Information about the attachment can be read from the `RemoteAttachment` object
+  id: totrans-144
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 可以从`RemoteAttachment`对象中读取附件的信息。
+- en: '[PRE31]'
+  id: totrans-145
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE31]'
+- en: 'The URL of the attachment on the JIRA instance can be constructed as follows:'
+  id: totrans-146
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 可以按照以下方式构建JIRA实例中附件的URL：
+- en: '[PRE32]'
+  id: totrans-147
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE32]'
+- en: Here, `BASE_URL` is the JIRA's base URL including context path.
+  id: totrans-148
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 这里，`BASE_URL`是JIRA的基础URL，包括上下文路径。
+- en: Worklogs and time tracking via SOAP
+  id: totrans-149
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 通过SOAP进行工作日志和时间追踪
+- en: Time tracking in JIRA is a great feature that allows the users to track the
+    time they spent on a particular issue. It lets the users to log the work as and
+    when they spend time on an issue and JIRA will keep track of the original estimated
+    time, actual time spent, and the remaining time. It also lets the users to adjust
+    the remaining time to be spent on the issue, if needed!
+  id: totrans-150
+  prefs: []
+  type: TYPE_NORMAL
+  zh: JIRA中的时间追踪是一个很棒的功能，它允许用户追踪他们在特定问题上花费的时间。它让用户可以在花费时间时记录工作，JIRA会追踪原定估计时间、实际花费时间和剩余时间。如果需要，用户还可以调整剩余的时间！
+- en: While JIRA has a great user interface to let users log the work they are doing
+    there at times, like when integrating with the third-party products, it is necessary
+    to log the work using SOAP. In this recipe, we will see logging work using the
+    SOAP API.
+  id: totrans-151
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 虽然JIRA提供了一个很好的用户界面让用户记录他们正在进行的工作，但有时，比如与第三方产品集成时，使用SOAP记录工作是必要的。在这个教程中，我们将展示如何使用SOAP
+    API记录工作。
+- en: Getting ready...
+  id: totrans-152
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 准备工作中…
+- en: As shown in the previous recipes, create a JIRA SOAP client. Also, make sure
+    that time tracking is enabled on the JIRA instance.
+  id: totrans-153
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如前面教程所示，创建一个JIRA SOAP客户端。同时，确保在JIRA实例中启用了时间追踪功能。
+- en: How to do it...
+  id: totrans-154
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何操作…
+- en: 'There are different methods available to log work on an issue depending on
+    what we need to with the remaining estimate on the issue. In all the cases, we
+    need to create a `RemoteWorklog` object that holds the details of the work we
+    are logging. The following are the steps:'
+  id: totrans-155
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 根据我们需要如何处理问题上的剩余估算，有不同的方法可供选择来记录工作。在所有情况下，我们都需要创建一个`RemoteWorklog`对象来保存我们记录的工作详情。以下是步骤：
+- en: 'Create the `RemoteWorklog` object with the details as required:'
+  id: totrans-156
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建一个包含所需详情的`RemoteWorklog`对象：
+- en: '[PRE33]'
+  id: totrans-157
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE33]'
+- en: Note that the `setStartDate()` method takes a `Calendar` object as opposed to
+    the `Date` object mentioned in the Javadocs.
+  id: totrans-158
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 注意，`setStartDate()`方法接收的是`Calendar`对象，而不是Javadocs中提到的`Date`对象。
+- en: 'Use the appropriate method to add the previous worklog. For example, if you
+    want to automatically adjust the remaining estimate on the issue, we can use the
+    `addWorklogAndAutoAdjustRemainingEstimatenethod`:'
+  id: totrans-159
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用适当的方法来添加之前的工作日志。例如，如果你想自动调整问题上的剩余估算，可以使用`addWorklogAndAutoAdjustRemainingEstimate`方法：
+- en: '[PRE34]'
+  id: totrans-160
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE34]'
+- en: 'If you want to retain the remaining estimate, use `addWorklogAndRetainRemainingEstimate`:'
+  id: totrans-161
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如果你想保留剩余估算，可以使用`addWorklogAndRetainRemainingEstimate`：
+- en: '[PRE35]'
+  id: totrans-162
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE35]'
+- en: If you want to add a new remaining estimate, use `addWorklogWithNewRemainingEstimate`.
+  id: totrans-163
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如果你想添加一个新的剩余估算，可以使用`addWorklogWithNewRemainingEstimate`。
+- en: '[PRE36]'
+  id: totrans-164
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE36]'
+- en: This will add the work done as `1d` `3h` and will reset the remaining estimate
+    to `1d` (1 day) no matter how much the original estimate was.
+  id: totrans-165
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 这将会把工作日志添加为`1d` `3h`，并将剩余估算重置为`1d`（1天），无论原来的估算是多少。
+- en: How it works...
+  id: totrans-166
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何操作…
+- en: In the first step, we used the setter methods to populate the fields. As you
+    might have guessed, the most important field is `timeSpent` which specifies a
+    time duration in JIRA duration format, representing the time spent working on
+    the worklog. In our example, we have used `1d 3h` which is translated to 1 day
+    and 3 hours.
+  id: totrans-167
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在第一步中，我们使用了设置方法来填充字段。正如你可能已经猜到的，最重要的字段是`timeSpent`，它指定了一个JIRA时长格式的时间段，表示在工作日志上花费的时间。在我们的例子中，我们使用了`1d
+    3h`，即表示1天3小时。
+- en: As in the previous code, we can also specify a `startDate` for the logged work,
+    `groupLevel,` or `roleId`, which are used to restrict the visibility of the logged
+    work and add a comment. Note that the ID shouldn't be set on the object as it
+    will be automatically generated when the worklog is added on the issue. Also,
+    the visibility can be set only for a group or for a role, not for both.
+  id: totrans-168
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如同之前的代码一样，我们还可以为记录的工作指定`startDate`、`groupLevel`或`roleId`，这些用于限制记录工作可见性并添加评论。注意，不应在对象上设置ID，因为当工作日志添加到问题上时，ID将自动生成。此外，可见性只能为一个组或角色设置，而不能同时为两者设置。
+- en: There's more...
+  id: totrans-169
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 还有更多…
+- en: 'Updating and deleting worklogs works in the same way using the following methods:'
+  id: totrans-170
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 更新和删除工作日志的操作方式相同，可以使用以下方法：
+- en: '`updateWorklogAndAutoAdjustRemainingEstimate`'
+  id: totrans-171
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`updateWorklogAndAutoAdjustRemainingEstimate`'
+- en: '`updateWorklogAndRetainRemainingEstimate`'
+  id: totrans-172
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`updateWorklogAndRetainRemainingEstimate`'
+- en: '`updateWorklogWithNewRemainingEstimate`'
+  id: totrans-173
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`updateWorklogWithNewRemainingEstimate`'
+- en: '`deleteWorklogAndAutoAdjustRemainingEstimate`'
+  id: totrans-174
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`deleteWorklogAndAutoAdjustRemainingEstimate`'
+- en: '`deleteWorklogAndRetainRemainingEstimate`'
+  id: totrans-175
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`deleteWorklogAndRetainRemainingEstimate`'
+- en: '`updateWorklogWithNewRemainingEstimate`'
+  id: totrans-176
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`updateWorklogWithNewRemainingEstimate`'
+- en: 'The following is an example for an update and a delete call:'
+  id: totrans-177
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是更新和删除调用的示例：
+- en: '[PRE37]'
+  id: totrans-178
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE37]'
+- en: All the existing worklogs on an issue can be browsed using `getWorklogs` method
+    that returns an array of `RemoteWorklog` objects.
+  id: totrans-179
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 可以使用`getWorklogs`方法浏览问题上所有现有的工作日志，该方法返回一个`RemoteWorklog`对象的数组。
+- en: Commenting on an issue via SOAP
+  id: totrans-180
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 通过SOAP在问题上评论
+- en: In this recipe, we will see how to manage comments on an issue.
+  id: totrans-181
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这个教程中，我们将看到如何管理问题上的评论。
+- en: Getting ready
+  id: totrans-182
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 准备工作
+- en: Create a JIRA SOAP client as mentioned in the first recipe.
+  id: totrans-183
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 按照第一个教程中提到的方法，创建一个JIRA SOAP客户端。
+- en: How to do it...
+  id: totrans-184
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何操作…
+- en: 'Adding a comment on an issue using SOAP can be done as follows:'
+  id: totrans-185
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用SOAP在问题上添加评论的方法如下：
+- en: Create a `RemoteCommentobject` and set the necessary fields using the setter
+    methods.
+  id: totrans-186
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建一个`RemoteCommentobject`并使用setter方法设置必要的字段。
+- en: '[PRE38]'
+  id: totrans-187
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE38]'
+- en: Note that the ID shouldn't be set on the object as it will be generated automatically
+    when the comment is created on the issue. Also, the visibility can be set only
+    for a group or for a role, not for both at the same time.
+  id: totrans-188
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 请注意，ID不应在对象上设置，因为它将在评论创建时自动生成。同时，可见性只能针对组或角色设置，不能同时针对两者设置。
+- en: 'Add the comment to the issue:'
+  id: totrans-189
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 将评论添加到问题中：
+- en: '[PRE39]'
+  id: totrans-190
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE39]'
+- en: Comments on an issue can be retrieved using the `getComments` method, which
+    returns an array of `RemoteComment` objects.
+  id: totrans-191
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 可以通过`getComments`方法获取问题的评论，该方法返回一个`RemoteComment`对象的数组。
+- en: '[PRE40]'
+  id: totrans-192
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE40]'
+- en: 'A comment can be edited using the `editComment` operation but we should check
+    if we have the edit permission or not by using the `hasPermissionToEditComment`
+    method as shown next:'
+  id: totrans-193
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 评论可以使用`editComment`操作进行编辑，但我们应先通过使用`hasPermissionToEditComment`方法检查是否具有编辑权限，如下所示：
+- en: '[PRE41]'
+  id: totrans-194
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE41]'
+- en: Deleting a comment is not exposed via SOAP yet!
+  id: totrans-195
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 删除评论尚未通过SOAP暴露！
+- en: User and group management via SOAP
+  id: totrans-196
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 通过SOAP进行用户和组管理
+- en: Let us now have a look at the user and group management using SOAP. This is
+    really useful when the users and groups need to be managed from a third-party
+    application.
+  id: totrans-197
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在让我们看看如何使用SOAP进行用户和组管理。当需要从第三方应用程序管理用户和组时，这非常有用。
+- en: Getting ready
+  id: totrans-198
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 准备工作
+- en: Create a SOAP client as mentioned in the previous recipes.
+  id: totrans-199
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 创建一个如前所述的SOAP客户端。
+- en: How to do it...
+  id: totrans-200
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: 'Creating a group and user are pretty straightforward. The following is how
+    we do it once the client is created:'
+  id: totrans-201
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 创建组和用户非常简单。以下是客户端创建后的操作方式：
+- en: '[PRE42]'
+  id: totrans-202
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE42]'
+- en: Here, the first snippet creates a group with name `jtricks-test-group`. The
+    third argument is a `RemoteUser` who can be added to the group as the first user
+    when the group is created. We can leave it as null if the group has to be created
+    empty.
+  id: totrans-203
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这里，第一个代码片段创建了一个名为`jtricks-test-group`的组。第三个参数是一个`RemoteUser`，当组创建时，可以将其作为第一个用户添加到该组。如果组需要为空创建，则可以将其设置为null。
+- en: The second snippet creates a user with the relevant details, such as `Name`,
+    `Password`, `Full` `Name`, and `Email`.
+  id: totrans-204
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 第二个代码片段创建了一个用户，并提供了相关的详细信息，例如`Name`（名称）、`Password`（密码）、`Full Name`（全名）和`Email`（电子邮件）。
+- en: 'A user can be added to a group as follows:'
+  id: totrans-205
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 可以通过以下方式将用户添加到组中：
+- en: '[PRE43]'
+  id: totrans-206
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE43]'
+- en: Here, group and user are `RemoteGroup` and `RemoteUser` objects respectively.
+  id: totrans-207
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这里，组和用户分别是`RemoteGroup`和`RemoteUser`对象。
+- en: 'An existing user or group can be retrieved as follows:'
+  id: totrans-208
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 可以通过以下方式获取现有的用户或组：
+- en: '[PRE44]'
+  id: totrans-209
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE44]'
+- en: 'The users in a group can be retrieved from the `RemoteGroup` object as shown
+    next:'
+  id: totrans-210
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 可以从`RemoteGroup`对象中获取组中的用户，如下所示：
+- en: '[PRE45]'
+  id: totrans-211
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE45]'
+- en: 'Deleting a user or group is also straightforward as shown next:'
+  id: totrans-212
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 删除用户或组也很简单，如下所示：
+- en: '[PRE46]'
+  id: totrans-213
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE46]'
+- en: Here, `swapGroup` identifies the group to change the comment and work log visibility
+    to.
+  id: totrans-214
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这里，`swapGroup`标识了要更改评论和工作日志可见性的组。
+- en: Progressing an issue in workflow using SOAP
+  id: totrans-215
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用SOAP推进问题的工作流
+- en: This is something everyone wants to do when JIRA is integrated with third-party
+    applications. The status of an issue needs to be changed for various use cases
+    and the right way to do this is to progress the issue through its workflow.
+  id: totrans-216
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这是每个人在将 JIRA 与第三方应用程序集成时都希望实现的目标。为了满足不同的使用场景，问题的状态需要进行更改，正确的做法是通过工作流推进问题。
+- en: Progressing will move the issue to the appropriate statuses and will fire the
+    appropriate post functions and events. In this recipe, we will see how to do the
+    same.
+  id: totrans-217
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 推进操作将把问题移动到适当的状态，并触发相应的后置函数和事件。在本教程中，我们将学习如何执行相同的操作。
+- en: Getting ready
+  id: totrans-218
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 准备工作
+- en: As usual, create a SOAP client if you have not already done so.
+  id: totrans-219
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果尚未创建SOAP客户端，请照常创建一个。
+- en: How to do it...
+  id: totrans-220
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: 'JIRA exposes the method, `progressWorkflowAction` to progress an issue through
+    its workflow. The following are the steps to do it:'
+  id: totrans-221
+  prefs: []
+  type: TYPE_NORMAL
+  zh: JIRA暴露了`progressWorkflowAction`方法，用于通过工作流推进问题。以下是操作步骤：
+- en: Identify the ID of the action that we should execute from the current state.
+    For every issue status, there is a step associated with it and there are zero
+    or more transitions to the other steps in the workflow.
+  id: totrans-222
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 确定我们应该从当前状态执行的动作ID。对于每个问题状态，都有一个与之相关的步骤，并且可以有零个或多个过渡到工作流中的其他步骤。
+- en: 'The action ID can be identified from the workflow screen within brackets alongside
+    the transition name, as shown in the following screenshot:'
+  id: totrans-223
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 动作ID可以从工作流屏幕中识别，在方括号内与过渡名称一起显示，如下图所示：
+- en: '![How to do it...](img/1803-09-04.jpg)'
+  id: totrans-224
+  prefs:
+  - PREF_IND
+  type: TYPE_IMG
+  zh: '![如何操作...](img/1803-09-04.jpg)'
+- en: The previous screenshot shows the JIRA default workflow and the action ID for
+    **Resolve** **Issue** from **Open** status is **5**. Note that the same action
+    from different states can have a different ID if they are not sharing the common
+    actions. So, it is important that we identify the action ID before proceeding
+    to *Step* *2*.
+  id: totrans-225
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 上一张截图显示了JIRA的默认工作流，**解决** **问题**操作的ID是**5**，它是从**打开**状态发起的。请注意，如果不同状态中的操作没有共享相同的操作，那么相同的操作可能有不同的ID。因此，在进行*步骤*
+    *2*之前，识别操作ID是很重要的。
+- en: You might have to store these action IDs on the client side when implementing
+    a full-fledged application as JIRA doesn't expose a method to retrieve action
+    ID based on the current *state*.
+  id: totrans-226
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 当你实现一个完整应用程序时，可能需要在客户端存储这些操作ID，因为JIRA没有暴露基于当前*状态*检索操作ID的方法。
+- en: 'The ID can also be retrieved from the XML by looking up the `action` element:'
+  id: totrans-227
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: ID还可以通过查找XML中的`action`元素来获取：
+- en: '[PRE47]'
+  id: totrans-228
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE47]'
+- en: A workflow can be exported to XML from the **Administration** | **Workflows**
+    screen by clicking on the XML link.
+  id: totrans-229
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 可以通过点击XML链接从**管理** | **工作流**屏幕将工作流导出为XML。
+- en: Identify the set of fields that need to be modified during the transition and
+    create a `RemoteFieldValue` object for each of them. You can only modify those
+    fields that are available on the workflow transition.
+  id: totrans-230
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 确定在过渡过程中需要修改的字段，并为每个字段创建一个`RemoteFieldValue`对象。你只能修改那些在工作流过渡中可用的字段。
+- en: 'In our example, we use the JIRA default workflow''s **Resolve** **Issue** action
+    and it has the **Resolve** **Screen** associated with it. We have the fields **Assignee**
+    and **Resolution** on the screen and hence we can create the `RemoteFieldValue`
+    objects for them as follows:'
+  id: totrans-231
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在我们的示例中，我们使用JIRA默认工作流中的**解决** **问题**操作，它与**解决** **屏幕**相关联。我们在屏幕上有**Assignee**和**Resolution**字段，因此我们可以为它们创建`RemoteFieldValue`对象，如下所示：
+- en: '[PRE48]'
+  id: totrans-232
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE48]'
+- en: The `RemoteFieldValue` takes the ID and an array of String values representing
+    the value we need to set. In our example, the fields are single value fields and
+    hence the array has only a single element. Multidimensional fields such as cascade
+    fields should have the fully qualified ID as we have seen earlier in this chapter
+    while updating custom fields. The full list of standard field IDs can be found
+    at the `IssueFieldConstants` class. Any fields that are not in the transition
+    screen will be ignored.
+  id: totrans-233
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`RemoteFieldValue`接受一个ID和一个字符串数组，表示我们需要设置的值。在我们的示例中，字段是单值字段，因此数组中只有一个元素。多维字段，如级联字段，应该使用我们在本章早些时候更新自定义字段时所看到的完全限定ID。标准字段ID的完整列表可以在`IssueFieldConstants`类中找到。任何不在过渡屏幕中的字段都会被忽略。'
+- en: Execute the `progressWorkflowAction` using these attributes.
+  id: totrans-234
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用这些属性执行`progressWorkflowAction`。
+- en: '[PRE49]'
+  id: totrans-235
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE49]'
+- en: Before we wind up this recipe, the current status on an issue can be found from
+    the `RemoteIssue` object using the `getStatus` method.
+  id: totrans-236
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在结束此配方之前，可以通过`RemoteIssue`对象使用`getStatus`方法找到问题的当前状态。
+- en: '[PRE50]'
+  id: totrans-237
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE50]'
+- en: Managing versions via SOAP
+  id: totrans-238
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 通过SOAP管理版本
+- en: We have seen how to add versions as a fix for versions or affected versions
+    on an issue. But how do we create those versions using SOAP? In this recipe, we
+    will see how to create versions in a project and manage them!
+  id: totrans-239
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们已经看过如何将版本添加为问题的修复版本或受影响版本。但是，如何使用SOAP创建这些版本呢？在这个配方中，我们将学习如何在项目中创建版本并管理它们！
+- en: Getting ready
+  id: totrans-240
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 准备工作
+- en: As usual, create the SOAP client.
+  id: totrans-241
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 和往常一样，创建SOAP客户端。
+- en: How to do it...
+  id: totrans-242
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: 'A new version can be added into a project as follows:'
+  id: totrans-243
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 可以通过以下方式将新版本添加到项目中：
+- en: 'Create a `RemoteVersion` object with the necessary details:'
+  id: totrans-244
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用必要的详细信息创建一个`RemoteVersion`对象：
+- en: '[PRE51]'
+  id: totrans-245
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE51]'
+- en: Here, the `sequence` defines the order in which the version will appear in the
+    version list.
+  id: totrans-246
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 这里，`sequence`定义了版本在版本列表中出现的顺序。
+- en: 'Create the version using `addVersion` method:'
+  id: totrans-247
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用`addVersion`方法创建版本：
+- en: '[PRE52]'
+  id: totrans-248
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE52]'
+- en: where `TST` is the project key in which the new version is created.
+  id: totrans-249
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 其中`TST`是新版本创建所在项目的键。
+- en: Once a version is created, you can release the version using `releaseVersion`
+    method. It takes a `RemoteVersion` as an input and needs the released flag to
+    be set on it.
+  id: totrans-250
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦版本被创建，你可以使用`releaseVersion`方法发布版本。它需要一个`RemoteVersion`作为输入，并且需要设置发布标志。
+- en: '[PRE53]'
+  id: totrans-251
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE53]'
+- en: The same method can be used to `unrelease` a version. All you need to do is
+    to set the `released` flag to `false`!
+  id: totrans-252
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 同样的方法可以用于`unrelease`一个版本。你需要做的就是将`released`标志设置为`false`！
+- en: If the `released` flag is set to `true` and the version is already released,
+    an error is thrown. This is the same case while trying to `unrelease` a version
+    that is not yet released.
+  id: totrans-253
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果`released`标志被设置为`true`且版本已经发布，则会抛出错误。尝试`unrelease`尚未发布的版本时也是相同的情况。
+- en: Archiving a version works similar to releasing a version. Here, the archived
+    flag is passed as an argument instead of setting the released flag. Also, here
+    the version name is used instead of a `RemoteVersion` object.
+  id: totrans-254
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 归档版本的过程与发布版本类似。在这里，传递的是归档标志作为参数，而不是设置发布标志。同时，使用的是版本名称而不是`RemoteVersion`对象。
+- en: '[PRE54]'
+  id: totrans-255
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE54]'
+- en: All the versions in a project can be retrieved using the `getVersions` method,
+    which returns an array of `RemoteVersion` objects.
+  id: totrans-256
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 可以使用`getVersions`方法检索项目中的所有版本，该方法返回一个`RemoteVersion`对象的数组。
+- en: '[PRE55]'
+  id: totrans-257
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE55]'
+- en: Administration methods in SOAP API
+  id: totrans-258
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: SOAP API中的管理方法
+- en: Before we wind up the various useful methods in SOAP API, we can have a look
+    at the administration methods. In this recipe, we will be concentrating on some
+    methods revolving around the creation of projects and permissions. Remaining methods
+    are an easy read once you have a fair idea on the ones we are discussing in this
+    recipe.
+  id: totrans-259
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在我们结束对SOAP API中各种有用方法的讨论之前，可以看看管理方法。在这个示例中，我们将集中讨论一些与创建项目和权限相关的方法。其余方法在我们理解了本示例中的方法后，也能轻松阅读。
+- en: Getting ready
+  id: totrans-260
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 准备工作
+- en: Create the SOAP client as we discussed in the previous recipes.
+  id: totrans-261
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 按照我们在前面示例中讨论的方式创建SOAP客户端。
+- en: How to do it...
+  id: totrans-262
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: We can have a look at the journey of creating a permission scheme, creating
+    a project using it and adding some users into the project roles. Other schemes
+    used during creation of the project like notification scheme and issue security
+    scheme are not supported via SOAP.
+  id: totrans-263
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以看看创建权限方案的过程，使用它创建项目并将一些用户添加到项目角色中。项目创建过程中使用的其他方案，如通知方案和问题安全方案，通过SOAP不支持。
+- en: 'Following are the steps for our journey:'
+  id: totrans-264
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是我们旅程的步骤：
+- en: 'Create the new Permission scheme:'
+  id: totrans-265
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建新的权限方案：
+- en: '[PRE56]'
+  id: totrans-266
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE56]'
+- en: Here, we use the `createPermissionScheme` method to create a new permission
+    scheme by passing the authentication token, a name, and a description. Note that
+    we can instead get an existing permission scheme from the list retrieved using
+    the `getPermissionSchemes` method.
+  id: totrans-267
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在这里，我们使用`createPermissionScheme`方法，通过传递认证令牌、名称和描述来创建一个新的权限方案。请注意，我们也可以通过使用`getPermissionSchemes`方法获取现有的权限方案列表。
+- en: 'Add relevant permissions to the newly created permission scheme using the `addPermissionTo`
+    method. This step is relevant only if we are creating a new permission scheme:'
+  id: totrans-268
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用`addPermissionTo`方法向新创建的权限方案添加相关权限。如果我们正在创建新的权限方案，则此步骤是必要的：
+- en: '[PRE57]'
+  id: totrans-269
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE57]'
+- en: 'Here, `adminPermission` should be a `RemotePermission` which is in the list
+    of `RemotePermission` objects retrieved using `getAllPermissions` method. For
+    example, the **Administer** **Project** permission can be obtained as follows:'
+  id: totrans-270
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在这里，`adminPermission`应该是一个`RemotePermission`对象，位于通过`getAllPermissions`方法检索到的`RemotePermission`对象列表中。例如，**管理**
+    **项目**权限可以通过以下方式获取：
+- en: '[PRE58]'
+  id: totrans-271
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE58]'
+- en: Here, `23L` is the ID of the **Administer** **Project** permission. The IDs
+    of other permissions can be found at `com.atlassian.jira.security.Permissions`
+    class.
+  id: totrans-272
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在这里，`23L`是**管理** **项目**权限的ID。其他权限的ID可以在`com.atlassian.jira.security.Permissions`类中找到。
+- en: 'The final argument to `addPermissionTo` method is a `RemoteEntity`, which can
+    be a `RemoteUser` or a `RemoteGroup` object. We have seen accessing users and
+    groups via SOAP in the previous recipes. In our example, we get a user by name
+    as follows:'
+  id: totrans-273
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`addPermissionTo`方法的最后一个参数是一个`RemoteEntity`，它可以是`RemoteUser`或`RemoteGroup`对象。我们在前面的示例中已经看过如何通过SOAP访问用户和组。在我们的示例中，我们通过如下方式根据名称获取一个用户：'
+- en: '[PRE59]'
+  id: totrans-274
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE59]'
+- en: 'Create the project using `createProject` method:'
+  id: totrans-275
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用`createProject`方法创建项目：
+- en: '[PRE60]'
+  id: totrans-276
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE60]'
+- en: 'The following are the arguments:'
+  id: totrans-277
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 以下是参数：
+- en: '**token - Authentication Token**'
+  id: totrans-278
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '**token - 认证令牌**'
+- en: '**key - Project Key**'
+  id: totrans-279
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '**key - 项目密钥**'
+- en: '**name - Project Name**'
+  id: totrans-280
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '**name - 项目名称**'
+- en: '**description - Project Description**'
+  id: totrans-281
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '**description - 项目描述**'
+- en: '**url - URL of the project**'
+  id: totrans-282
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '**url - 项目的URL**'
+- en: '**lead - Project Lead**'
+  id: totrans-283
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '**lead - 项目负责人**'
+- en: '**permissionScheme - Permission Scheme for the project of type RemotePermissionScheme**'
+  id: totrans-284
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '**permissionScheme - 项目的权限方案，类型为RemotePermissionScheme**'
+- en: '**notificationScheme - Notification Scheme for the project of type RemoteScheme**'
+  id: totrans-285
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '**notificationScheme - 项目的通知方案，类型为RemoteScheme**'
+- en: '**issueSecurityScheme - Issue Security Scheme for the project of type RemoteScheme**'
+  id: totrans-286
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '**issueSecurityScheme - 项目的问题安全方案，类型为RemoteScheme**'
+- en: For the schemes, we use the newly created permissions schemes and leave the
+    other two as null. We can specify a specific notification scheme or issue security
+    scheme with a `RemoteScheme` object created by populating the correct ID of the
+    relevant schemes.
+  id: totrans-287
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 对于这些方案，我们使用新创建的权限方案，并将其他两个方案设置为null。我们可以通过创建一个`RemoteScheme`对象并填入相关方案的正确ID来指定特定的通知方案或问题安全方案。
+- en: 'Add an actor to the newly created Project:'
+  id: totrans-288
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 向新创建的项目添加一个演员：
+- en: '[PRE61]'
+  id: totrans-289
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE61]'
+- en: Here, the `addActorsToProjectRole` method takes an array of actors (only `jobinkk`
+    in this case), the role to which the actor should be added, project we have created,
+    and the type of the actor.
+  id: totrans-290
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 这里，`addActorsToProjectRole`方法接受一个演员数组（在此案例中仅为`jobinkk`），演员要加入的角色，已经创建的项目，以及演员的类型。
+- en: 'The project role can be retrieved using the role ID as shown :'
+  id: totrans-291
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 可以通过如下所示的角色ID来获取项目角色：
+- en: '[PRE62]'
+  id: totrans-292
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE62]'
+- en: The actor type can either be `atlassian-user-role-actor` or `atlassian-group-role-actor`
+    depending on whether the actor we have added in the array is a user or a group.
+  id: totrans-293
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 演员类型可以是`atlassian-user-role-actor`或`atlassian-group-role-actor`，具体取决于我们在数组中添加的演员是用户还是组。
+- en: We should now have the project created with the new permission scheme and with
+    the member(s) we added to the relevant roles.
+  id: totrans-294
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们现在应该已经创建了带有新权限方案的项目，并且我们已将成员添加到相关角色中。
+- en: How it works...
+  id: totrans-295
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 工作原理...
+- en: 'Once the method is executed, we can find the project created as follows:'
+  id: totrans-296
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦方法执行完成，我们可以看到如下创建的项目：
+- en: '![How it works...](img/1803-09-05.jpg)'
+  id: totrans-297
+  prefs: []
+  type: TYPE_IMG
+  zh: '![工作原理...](img/1803-09-05.jpg)'
+- en: 'The new permission scheme is created as shown in the following screenshot:'
+  id: totrans-298
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 新的权限方案会按照下面的截图创建：
+- en: '![How it works...](img/1803-09-06.jpg)'
+  id: totrans-299
+  prefs: []
+  type: TYPE_IMG
+  zh: '![工作原理...](img/1803-09-06.jpg)'
+- en: Here only one permission is added, that is to administer the project. We can
+    add the rest in a similar fashion.
+  id: totrans-300
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这里只添加了一个权限，即管理项目的权限。我们可以以类似的方式添加其他权限。
+- en: 'Similarly, the project members are added as shown in the following screenshot:'
+  id: totrans-301
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 同样，项目成员会按照下面的截图添加：
+- en: '![How it works...](img/1803-09-07.jpg)'
+  id: totrans-302
+  prefs: []
+  type: TYPE_IMG
+  zh: '![工作原理...](img/1803-09-07.jpg)'
+- en: As you can see, the default actors will be part of the membership in addition
+    to the one we have added!
+  id: totrans-303
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，除了我们添加的演员，默认演员也将成为成员的一部分！
+- en: 'There are lot of other useful methods in the SOAP API which can be found at:
+    [http://docs.atlassian.com/software/jira/docs/api/rpc-jira-plugin/latest/com/atlassian/jira/rpc/soap/JiraSoapService.html](http://docs.atlassian.com/software/jira/docs/api/rpc-jira-plugin/latest/com/atlassian/jira/rpc/soap/JiraSoapService.html).'
+  id: totrans-304
+  prefs: []
+  type: TYPE_NORMAL
+  zh: SOAP API中还有很多其他有用的方法，可以在以下网址找到：[http://docs.atlassian.com/software/jira/docs/api/rpc-jira-plugin/latest/com/atlassian/jira/rpc/soap/JiraSoapService.html](http://docs.atlassian.com/software/jira/docs/api/rpc-jira-plugin/latest/com/atlassian/jira/rpc/soap/JiraSoapService.html)。
+- en: Make sure you look at the right Java Docs for your version of JIRA!
+  id: totrans-305
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 确保查看与你的JIRA版本对应的Java文档！
+- en: Deploy a SOAP service in JIRA
+  id: totrans-306
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 在JIRA中部署SOAP服务
+- en: So far we have seen various methods to perform various operations in JIRA via
+    SOAP. But what about operations that are not supported by SOAP? That little something
+    which prevents you from integrating your JIRA with your third-party app? Here
+    is where the **RPC** **Endpoint** **Plugin** **Module** is useful.
+  id: totrans-307
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 到目前为止，我们已经看到了多种通过SOAP在JIRA中执行不同操作的方法。但如果是SOAP不支持的操作怎么办？那种会妨碍你将JIRA与第三方应用程序集成的小问题呢？这时，**RPC**
+    **端点** **插件** **模块**就派上用场了。
+- en: The RPC End Point Plugin module lets us deploy new SOAP and XML-RPC end points
+    within JIRA. The new end points added will not be a part of the existing WSDL.
+    Instead, they are available on a new URL and hence you will have to access both
+    the web services if you want to access the new methods and other existing methods.
+  id: totrans-308
+  prefs: []
+  type: TYPE_NORMAL
+  zh: RPC端点插件模块使我们能够在JIRA中部署新的SOAP和XML-RPC端点。新增的端点不会成为现有WSDL的一部分，而是会在一个新的URL上提供，因此，如果你想访问新方法和其他现有方法，你将需要访问这两个Web服务。
+- en: In this recipe, we will see how to deploy a new SOAP end point to perform a
+    new operation.
+  id: totrans-309
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这个教程中，我们将展示如何部署一个新的SOAP端点来执行一个新的操作。
+- en: Getting ready
+  id: totrans-310
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 准备工作
+- en: Create a skeleton plugin using Atlassian Plugin SDK. As I write this, PRC plugin
+    is still v1, so make sure to create a v1 plugin if [https://jira.atlassian.com/browse/JRA-22596](https://jira.atlassian.com/browse/JRA-22596)
+    isn't resolved yet!
+  id: totrans-311
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用Atlassian Plugin SDK创建一个骨架插件。写这篇文章时，PRC插件仍然是v1，所以如果[https://jira.atlassian.com/browse/JRA-22596](https://jira.atlassian.com/browse/JRA-22596)尚未解决，请确保创建v1插件！
+- en: Also, make sure **Accept** **Remote** **API** **Calls** option is turned on
+    under **Administration** | **General** **Configurations**.
+  id: totrans-312
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 此外，确保在**管理** | **常规配置**下启用了**接受** **远程** **API** **调用**选项。
+- en: How to do it...
+  id: totrans-313
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何做...
+- en: Let us create a SOAP RPC plugin to expose a new method, `getProjectCategories`,
+    that retrieves all the project categories in the JIRA instance This is a simple
+    method but will hopefully help us in covering all the basics of creating a new
+    SOAP RPC end point.
+  id: totrans-314
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们创建一个SOAP RPC插件，暴露一个新方法`getProjectCategories`，该方法用于获取JIRA实例中的所有项目类别。这是一个简单的方法，但希望能帮助我们涵盖创建新的SOAP
+    RPC端点的所有基本知识。
+- en: Add the RPC plugin dependency in the `pom.xml` to get hold of the existing RPC
+    classes. Change the version accordingly.
+  id: totrans-315
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在`pom.xml`中添加RPC插件依赖，以便获取现有的RPC类。根据需要修改版本。
+- en: '[PRE63]'
+  id: totrans-316
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE63]'
+- en: 'This JAR is a part of the JIRA installation. So, if your maven build fails
+    looking for the JAR, just navigate to `WEB-INF/lib` folder and install the JAR
+    into your local maven repository as follows:'
+  id: totrans-317
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 这个JAR是JIRA安装的一部分。所以，如果你的Maven构建在查找JAR时失败，只需导航到`WEB-INF/lib`文件夹，并将JAR安装到本地Maven库中，如下所示：
+- en: '[PRE64]'
+  id: totrans-318
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE64]'
+- en: Declare the new RPC service in the `atlassian-plugin.xml`.
+  id: totrans-319
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在`atlassian-plugin.xml`中声明新的RPC服务。
+- en: '[PRE65]'
+  id: totrans-320
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE65]'
+- en: Here, the SOAP RPC plugin module has a unique `key` and it declares a new `interface`
+    for your SOAP module and an implementation `class` for it. In this case, we have
+    `JTricksSoapService` and `JTricksSoapServiceImpl`. The service path `jtricksservice`
+    defines where in the URL namespace the services will be published and will appear
+    in the URL of the WSDL.
+  id: totrans-321
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在这里，SOAP RPC插件模块有一个独特的`key`，并为你的SOAP模块声明了一个新的`interface`，以及相应的实现`class`。在这种情况下，我们有`JTricksSoapService`和`JTricksSoapServiceImpl`。服务路径`jtricksservice`定义了在URL命名空间中服务将被发布的位置，并会出现在WSDL的URL中。
+- en: 'Create a **Component** **Plugins** module for this new class to avoid the client
+    getting a null pointer exception:'
+  id: totrans-322
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 为这个新类创建一个**Component** **Plugins**模块，以避免客户端出现空指针异常：
+- en: '[PRE66]'
+  id: totrans-323
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE66]'
+- en: 'Declare the new method in the interface as shown:'
+  id: totrans-324
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如下所示，在接口中声明新方法：
+- en: '[PRE67]'
+  id: totrans-325
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE67]'
+- en: As you can see we have added a method `getProjectCategories` that returns an
+    array of `RemoteCategory` objects. We have added a login method as well so that
+    we can test this by accessing just the new WSDL.
+  id: totrans-326
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 如你所见，我们已经添加了一个名为`getProjectCategories`的方法，该方法返回一个`RemoteCategory`对象的数组。我们还添加了一个登录方法，以便通过访问新的WSDL进行测试。
+- en: Create the `RemoteCategory` bean. Make sure the new bean extends `AbstractNamedRemoteEntity`
+    class. The bean should have all the required attributes with getters and setters
+    defined for it. `AbstractNamedRemoteEntity` already exposes the field name and
+    hence will be available for `RemoteCategory`. We will add a new field `description`.
+  id: totrans-327
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建`RemoteCategory` bean。确保新的bean扩展了`AbstractNamedRemoteEntity`类。该bean应包含所有必需的属性，并为其定义getter和setter。`AbstractNamedRemoteEntity`类已经暴露了`name`字段，因此`RemoteCategory`也会拥有它。我们将添加一个新的字段`description`。
+- en: '[PRE68]'
+  id: totrans-328
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE68]'
+- en: As you can see, the constructor takes a `GenericValue` and sets the description
+    from it. In the super class, `AbstractNamedRemoteEntity`, name is set likewise.
+  id: totrans-329
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 如你所见，构造函数接受一个`GenericValue`并从中设置描述。在超类`AbstractNamedRemoteEntity`中，`name`也以类似的方式设置。
+- en: 'Implement the `getProjectCategories` method in the implementation class:'
+  id: totrans-330
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在实现类中实现`getProjectCategories`方法：
+- en: '[PRE69]'
+  id: totrans-331
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE69]'
+- en: Here, all we do is to get the collection of project categories and return an
+    array of `RemoteCategory` objects initialized using the category `GenericValue`
+    objects. Note that the `getProjectCategories()` method is deprecated from JIRA
+    4.4 and it is advised to use `getAllProjectCategories()` method that returns a
+    Collection of `ProjectCategory` objects instead of the `GenericValue`.
+  id: totrans-332
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在这里，我们所做的只是获取项目类别的集合，并返回一个通过类别`GenericValue`对象初始化的`RemoteCategory`对象数组。请注意，从JIRA
+    4.4开始，`getProjectCategories()`方法已经弃用，建议使用返回`ProjectCategory`对象集合的`getAllProjectCategories()`方法，而非`GenericValue`。
+- en: 'If you have noticed, we validate the *token* first before returning the categories.
+    The validation is done as follows:'
+  id: totrans-333
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 如果你注意到的话，我们在返回类别之前首先验证了*token*。验证过程如下：
+- en: '[PRE70]'
+  id: totrans-334
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE70]'
+- en: 'We retrieve the user using the token and throws the appropriate error if the
+    token is not valid. The `ProjectManager` and `TokenManager` classes can be injected
+    in the constructor as shown:'
+  id: totrans-335
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 我们通过令牌获取用户，如果令牌无效，则抛出相应的错误。可以在构造函数中注入`ProjectManager`和`TokenManager`类，如下所示：
+- en: '[PRE71]'
+  id: totrans-336
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE71]'
+- en: Note that from JIRA 4.4, `retrieveUserNoPermissioncheck` method should be used
+    instead of `retrieveUser` as some JIRA instances may want to allow anonymous access.
+    Individual methods will do the permission checks.
+  id: totrans-337
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 请注意，从JIRA 4.4开始，应该使用`retrieveUserNoPermissioncheck`方法而非`retrieveUser`，因为某些JIRA实例可能希望允许匿名访问。各个方法将执行权限检查。
+- en: Implement the `login` method to return the token.
+  id: totrans-338
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 实现`login`方法以返回令牌。
+- en: '[PRE72]'
+  id: totrans-339
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE72]'
+- en: It simply uses `TokenManager` to return a *token* created from the username
+    and password.
+  id: totrans-340
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 它仅使用`TokenManager`返回由用户名和密码创建的*token*。
+- en: Compile the plugin and deploy it. As it is v1, make sure the plugin is dropped
+    into the `WEB-INF/lib` folder.
+  id: totrans-341
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 编译插件并进行部署。由于是v1，请确保插件被放置到`WEB-INF/lib`文件夹中。
+- en: How it works...
+  id: totrans-342
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 它是如何工作的...
+- en: 'Once the plugin is deployed, the new WSDL should be available at: `{your_jira_url}/rpc/soap/jtricksservice?WSDL`.'
+  id: totrans-343
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦插件部署完成，新的WSDL应可以通过以下链接访问：`{your_jira_url}/rpc/soap/jtricksservice?WSDL`。
+- en: '![How it works...](img/1803-09-08.jpg)'
+  id: totrans-344
+  prefs: []
+  type: TYPE_IMG
+  zh: '![工作原理...](img/1803-09-08.jpg)'
+- en: As you can see, the new methods that we exposed via the interface are now visible
+    in the WSDL file at the circled locations in the previous screenshot.
+  id: totrans-345
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，我们通过接口暴露的新方法现在可以在WSDL文件中看到，位于前面截图中圈出的地方。
+- en: Deploy a XML-RPC service within JIRA
+  id: totrans-346
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 在JIRA中部署XML-RPC服务
+- en: In the previous recipe, we have seen how to deploy a SOAP service within JIRA.
+    In this one, we will see how to deploy a XML-RPC service.
+  id: totrans-347
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在前一个示例中，我们已经看到如何在JIRA中部署SOAP服务。在本示例中，我们将看到如何部署XML-RPC服务。
+- en: Getting ready
+  id: totrans-348
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 准备工作
+- en: Create a skeleton plugin using Atlassian Plugin SDK. Here again, we are developing
+    a v1 plugin. So, make sure the `atlassian-plugin.xml` doesn't have the Version
+    2 attribute in it.
+  id: totrans-349
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用Atlassian插件SDK创建一个骨架插件。在这里，我们再次开发的是v1插件。因此，确保`atlassian-plugin.xml`中没有`Version
+    2`属性。
+- en: And yes, make sure **Accept** **Remote** **API** **Calls** option is turned
+    **ON**, as in the previous recipe.
+  id: totrans-350
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 是的，确保**接受** **远程** **API** **调用**选项已**开启**，如前一个示例所示。
+- en: How to do it...
+  id: totrans-351
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: 'As in the case of SOAP plugin, let us expose a new method, `getProjectCategories`,
+    that retrieves all the project categories in the project. The following are the
+    steps:'
+  id: totrans-352
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 与SOAP插件一样，我们将暴露一个新方法`getProjectCategories`，该方法用于检索项目中的所有项目类别。以下是步骤：
+- en: 'Add the RPC plugin dependency in the `pom.xml` to get hold of the existing
+    RPC classes. Change the version accordingly:'
+  id: totrans-353
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在`pom.xml`中添加RPC插件依赖项，以便获取现有的RPC类。相应地更改版本：
+- en: '[PRE73]'
+  id: totrans-354
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE73]'
+- en: 'Declare the new RPC service in the `atlassian-plugin.xml`:'
+  id: totrans-355
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在`atlassian-plugin.xml`中声明新的RPC服务：
+- en: '[PRE74]'
+  id: totrans-356
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE74]'
+- en: Here, we define a class, `XmlRpcServiceImpl` and a `service-path`. The service
+    path, jtricks, is used to access the new methods in place of the default `jira1`
+    path used in accessing the existing methods.
+  id: totrans-357
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在这里，我们定义了一个`XmlRpcServiceImpl`类和一个`service-path`。该服务路径`jtricks`用于访问新的方法，而不是用于访问现有方法的默认`jira1`路径。
+- en: Create an interface for the class, with `XmlRpcServiceImpl` named as `XmlRpcService`
+    and define the new methods in it.
+  id: totrans-358
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 为该类创建一个接口，将`XmlRpcServiceImpl`命名为`XmlRpcService`并在其中定义新方法。
+- en: '[PRE75]'
+  id: totrans-359
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE75]'
+- en: As before, we have a `login` method as well. If you have noticed, the return
+    type of the `getprojectCategories` method is a `Vector` instead of an array of
+    `RemoteCategory` objects.
+  id: totrans-360
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 和之前一样，我们有一个`login`方法。如果你注意到，`getprojectCategories`方法的返回类型是`Vector`，而不是`RemoteCategory`对象的数组。
+- en: All the methods in the RPC interface should return a `Vector` if it is returning
+    a list of objects and a `HashTable` if it is returning a single object (`GenericValue`).
+    The Vector will be made of one or more `Hashtables` each representing a `GenericValue`
+    in the list.
+  id: totrans-361
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: RPC接口中的所有方法，如果返回的是对象列表，应该返回`Vector`；如果返回的是单一对象（`GenericValue`），则应该返回`HashTable`。`Vector`将由一个或多个`Hashtable`组成，每个`Hashtable`代表列表中的一个`GenericValue`。
+- en: 'Define the `RemoteCategory` as defined in the previous recipe. We will create
+    a `Vector` from an array of `RemoteCategory` objects to return the project category
+    details:'
+  id: totrans-362
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 定义`RemoteCategory`，如前一个示例中所定义的那样。我们将从`RemoteCategory`对象的数组创建一个`Vector`，用于返回项目类别的详细信息：
+- en: '[PRE76]'
+  id: totrans-363
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE76]'
+- en: 'Implement the `XmlRpcServiceImpl` class. The `getprojectCategories` method
+    is implemented as follows:'
+  id: totrans-364
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 实现`XmlRpcServiceImpl`类。`getprojectCategories`方法的实现如下：
+- en: '[PRE77]'
+  id: totrans-365
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE77]'
+- en: Here we create an array of `RemoteCategory` objects and then create a Vector
+    from it using the `RpcUtils` utility class. The class, behind the scenes, converts
+    the array of `RemoteCategory` objects into a Vector of `Hashtables`, each `Hashtable`
+    representing a `RemoteCategory`.
+  id: totrans-366
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在这里，我们创建了一个`RemoteCategory`对象的数组，然后使用`RpcUtils`工具类从中创建一个`Vector`。该类在后台将`RemoteCategory`对象的数组转换为一个`Hashtable`的`Vector`，每个`Hashtable`代表一个`RemoteCategory`。
+- en: 'If we want to return a single `RemoteCategory` object instead of an array,
+    we should return it as a `Hashtable` constructed as follows:'
+  id: totrans-367
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 如果我们希望返回单个`RemoteCategory`对象，而不是一个数组，我们应该将其作为一个`Hashtable`返回，构造方法如下：
+- en: '[PRE78]'
+  id: totrans-368
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE78]'
+- en: As mentioned earlier, use the `getAllProjectCategories` method from JIRA4.4\.
+    Implement the `login` and `validateToken` methods, as discussed in the previous
+    recipe.
+  id: totrans-369
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 如前所述，使用JIRA4.4中的`getAllProjectCategories`方法。实现`login`和`validateToken`方法，如前一个示例所讨论的那样。
+- en: Compile the plugin and deploy it. As it is v1, make sure the plugin is dropped
+    into the `WEB-INF/lib` folder.
+  id: totrans-370
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 编译插件并部署它。由于是v1插件，确保插件被放置到`WEB-INF/lib`文件夹中。
+- en: How it works...
+  id: totrans-371
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 工作原理...
+- en: Once the plugin is deployed, the new methods can be accessed using the new service
+    path as `jtricks.getprojectCategories`. More details about how to access an XML-RPC
+    method can be found in the next recipe.
+  id: totrans-372
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 插件部署后，可以使用新的服务路径`jtricks.getprojectCategories`访问新方法。关于如何访问XML-RPC方法的更多细节将在下一个示例中介绍。
+- en: See also
+  id: totrans-373
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 另请参阅
+- en: '*Writing a Java XML-RPC client*'
+  id: totrans-374
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*编写一个 Java XML-RPC 客户端*'
+- en: Writing a Java XML-RPC client
+  id: totrans-375
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 编写一个 Java XML-RPC 客户端
+- en: In the previous recipes, we saw how to create a SOAP client and use it to connect
+    to JIRA from an external third-party application. We have also seen ways of exposing
+    new methods in JIRA through SOAP and XML-RPC interfaces. In this recipe, we will
+    see how to invoke an XML-RPC method from a client application written in Java.
+  id: totrans-376
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在前面的示例中，我们展示了如何创建一个 SOAP 客户端，并使用它从外部第三方应用程序连接到 JIRA。我们还展示了如何通过 SOAP 和 XML-RPC
+    接口在 JIRA 中暴露新方法。在本示例中，我们将展示如何从用 Java 编写的客户端应用程序中调用 XML-RPC 方法。
+- en: 'The Javadocs for XML-RPC client can be found at: [http://docs.atlassian.com/software/jira/docs/api/rpc-jira-plugin/latest/com/atlassian/jira/rpc/xmlrpc/XmlRpcService.html](http://docs.atlassian.com/software/jira/docs/api/rpc-jira-plugin/latest/com/atlassian/jira/rpc/xmlrpc/XmlRpcService.html).'
+  id: totrans-377
+  prefs: []
+  type: TYPE_NORMAL
+  zh: XML-RPC 客户端的 Javadocs 可在以下链接找到：[http://docs.atlassian.com/software/jira/docs/api/rpc-jira-plugin/latest/com/atlassian/jira/rpc/xmlrpc/XmlRpcService.html](http://docs.atlassian.com/software/jira/docs/api/rpc-jira-plugin/latest/com/atlassian/jira/rpc/xmlrpc/XmlRpcService.html)。
+- en: Getting ready
+  id: totrans-378
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 准备工作
+- en: Make sure **Accept** **Remote** **API** **Calls** option is turned **ON** in
+    JIRA under **Administration** **|** **Global** **Settings**.
+  id: totrans-379
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 确保在 JIRA 的**管理**|**全局设置**中，**接受** **远程** **API** **调用**选项已设置为**开启**。
+- en: How to do it...
+  id: totrans-380
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何实现...
+- en: 'Let us try to retrieve the list of projects using XML-RPC service deployed
+    within JIRA. Following are the steps:'
+  id: totrans-381
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们尝试使用 JIRA 中部署的 XML-RPC 服务来检索项目列表。以下是步骤：
+- en: Create a Maven2 project and add the dependency for `Apache2 xml-rpc` libraries.
+  id: totrans-382
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建一个 Maven2 项目并添加`Apache2 xml-rpc`库的依赖。
+- en: '[PRE79]'
+  id: totrans-383
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE79]'
+- en: Note that the version of `xml-rpc` libraries we have used in this recipe is
+    Version 1.1.
+  id: totrans-384
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 请注意，我们在本示例中使用的`xml-rpc`库版本是 1.1 版。
+- en: Create a Java client. In this example, we will create a standalone Java class
+    with all the libraries in the `classpath`.
+  id: totrans-385
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建一个 Java 客户端。在这个示例中，我们将创建一个独立的 Java 类，并将所有库放在`classpath`中。
+- en: 'Instantiate the `XmlRpcClient` object:'
+  id: totrans-386
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 实例化`XmlRpcClient`对象：
+- en: '[PRE80]'
+  id: totrans-387
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE80]'
+- en: 'Here, the `JIRA_URI` is the URI of your JIRA instance, [http://jira.atlassian.com](http://jira.atlassian.com),
+    for example, `RPC_PATH` will be `/rpc/xmlrpc`, which will be the same even for
+    new methods exposed via plugins. In this case, the full path will be: [http://jira.atlassian.com/rpc/xmlrpc](http://jira.atlassian.com/rpc/xmlrpc).'
+  id: totrans-388
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 这里，`JIRA_URI` 是你的 JIRA 实例的 URI，例如 [http://jira.atlassian.com](http://jira.atlassian.com)，`RPC_PATH`
+    将是`/rpc/xmlrpc`，即使是通过插件暴露的新方法，它也将保持不变。在这种情况下，完整路径将是：[http://jira.atlassian.com/rpc/xmlrpc](http://jira.atlassian.com/rpc/xmlrpc)。
+- en: Note that we are using XML-RPC v2 here. Check out the syntax for the version
+    you are using!
+  id: totrans-389
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 请注意，我们在这里使用的是 XML-RPC v2。请查看你所使用版本的语法！
+- en: 'Log in to JIRA by invoking the `login` method as shown:'
+  id: totrans-390
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 通过调用如下面所示的`login`方法登录到 JIRA：
+- en: '[PRE81]'
+  id: totrans-391
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE81]'
+- en: As you can learn from the Javadocs, the method expects a username and password,
+    which are passed into the execute method on the client as a Vector object. The
+    first argument is the method name which is preceded with the namespace under which
+    the methods are exposed. In this case, it is `jira1` and is equivalent to the
+    service path we have seen in the previous recipe. The full method name will hence
+    become `jira1.login`.
+  id: totrans-392
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 正如你从 Javadocs 中可以了解到的，方法需要一个用户名和密码，这些信息作为 Vector 对象传递给客户端的 execute 方法。第一个参数是方法名，前面带有暴露方法的命名空间。在这种情况下，它是`jira1`，相当于我们在前面示例中看到的服务路径。因此，完整的方法名将是`jira1.login`。
+- en: In the case of the `login` method, the return object is an authentication token
+    which is a String object.
+  id: totrans-393
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 对于`login`方法，返回的对象是一个身份验证令牌，它是一个 String 对象。
+- en: 'Retrieve the list projects using the `getProjectsNoSchemes` method:'
+  id: totrans-394
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用`getProjectsNoSchemes`方法检索项目列表：
+- en: '[PRE82]'
+  id: totrans-395
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE82]'
+- en: Here again, we need to send a `Vector` as input along with the method name,
+    in this case, with the authentication token in the `Vector`. If we need to invoke
+    a method that needs a complex object in scenarios like creating an issue, we should
+    create a `HashTable` with the input parameters as key/value pairs and add it into
+    the `Vector`.
+  id: totrans-396
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 这里，我们需要像上面一样，发送一个`Vector`作为输入，并且方法名也在其中。在这种情况下，`Vector`中将包含身份验证令牌。如果需要调用一个方法，该方法需要一个复杂的对象（例如创建问题的场景），我们应当创建一个`HashTable`，将输入参数作为键值对，并将其添加到`Vector`中。
+- en: The return type in this case is type cast into a `List`. This will be a `List`
+    of map objects, each map representing a `RemoteProject` with the details of the
+    project in it as key/value pairs. For example, the name of the project can be
+    accessed from the map using the key name, as shown in the next step.
+  id: totrans-397
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 该返回类型在此情况下被强制转换为`List`。这将是一个`List`类型的map对象，每个map代表一个`RemoteProject`，其中包含项目的详细信息作为键/值对。例如，可以使用键name从map中访问项目名称，如下一步所示。
+- en: Retrieve the details of projects from the list. Details will be the attributes
+    of the project published with the getter/setter methods in the `RemoteProject`
+    object, such as name, lead, and so on.
+  id: totrans-398
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 从列表中获取项目的详细信息。详细信息将是通过`RemoteProject`对象中的getter/setter方法发布的项目属性，如名称、负责人等。
+- en: '[PRE83]'
+  id: totrans-399
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE83]'
+- en: As mentioned in the previous step, the details can be retrieved as key/value
+    pairs from the Map objects representing a project. This same logic applies to
+    all XML-RPC methods where complex objects are retrieved as Maps with key/value
+    pairs in it.
+  id: totrans-400
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 如前所述，详细信息可以作为键/值对从表示项目的Map对象中检索。这个逻辑适用于所有XML-RPC方法，其中复杂对象作为包含键/值对的Map对象进行检索。
+- en: 'Log out from JIRA:'
+  id: totrans-401
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 从JIRA注销：
+- en: '[PRE84]'
+  id: totrans-402
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE84]'
+- en: Here the output is converted to Boolean as the method returns a Boolean.
+  id: totrans-403
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 这里的输出被转换为Boolean类型，因为方法返回一个Boolean值。
+- en: 'If we try to get the list of categories using the new method exposed in the
+    previous recipe, the code will look similar to the following:'
+  id: totrans-404
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如果我们尝试使用前面示例中暴露的新方法来获取类别列表，代码将类似于以下内容：
+- en: '[PRE85]'
+  id: totrans-405
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE85]'
+- en: Note that the method name here is prefixed with jtricks as it is the service
+    path used in the RPC Endpoint Plugin Module. Everything else works the same.
+  id: totrans-406
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 请注意，这里方法名称的前缀是jtricks，因为这是在RPC Endpoint插件模块中使用的服务路径。其他一切工作方式相同。
+- en: Expose services and data entities as REST APIs
+  id: totrans-407
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 将服务和数据实体暴露为REST API
+- en: Now that we have seen how to expose JIRA functionalities via SOAP and XML-RPC
+    interfaces, it is time to move to REST APIs. Similar to the RPC Endpoint Plugin
+    Module Type, JIRA also has a REST Plugin module type using which services or data
+    can be exposed to the outside world.
+  id: totrans-408
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经了解了如何通过SOAP和XML-RPC接口暴露JIRA功能，是时候转向REST API了。与RPC Endpoint插件模块类型类似，JIRA也有一个REST插件模块类型，使用它可以将服务或数据暴露到外部世界。
+- en: In this recipe, we will see how to expose the `getProjectCategories` method
+    we have used as examples in the previous recipes using the REST interface.
+  id: totrans-409
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这个示例中，我们将展示如何通过REST接口暴露我们在前面的示例中使用过的`getProjectCategories`方法。
+- en: Getting ready
+  id: totrans-410
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 准备就绪
+- en: Create a skeleton plugin using Atlassian Plugin SDK. The plugin should be v2
+    for it to work.
+  id: totrans-411
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用Atlassian Plugin SDK创建一个骨架插件。插件应该是v2版本才能正常工作。
+- en: How to do it...
+  id: totrans-412
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: Following is a step-by-step procedure to create a REST plugin to expose the
+    `getProjectCategories` method.
+  id: totrans-413
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是创建一个REST插件以暴露`getProjectCategories`方法的逐步过程。
+- en: 'Add the maven dependencies require for REST to the `pom.xml` file:'
+  id: totrans-414
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 将所需的REST maven依赖项添加到`pom.xml`文件中：
+- en: '[PRE86]'
+  id: totrans-415
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE86]'
+- en: Note that all the dependencies are of scope provided as they are already available
+    in the JIRA runtime.
+  id: totrans-416
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 请注意，所有的依赖项都是提供作用域的，因为它们已经在JIRA运行时中可用。
+- en: Add the REST plugin module into the `atlassian-plugin.xml`.
+  id: totrans-417
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 将REST插件模块添加到`atlassian-plugin.xml`中。
+- en: '[PRE87]'
+  id: totrans-418
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE87]'
+- en: Here, the path and version defines the full path where the resources will be
+    available only after the plugin is deployed. In this case, the full path will
+    become `BASE_URL/rest/jtricks/1.0/` where `BASE_URL` is the JIRA base URL.
+  id: totrans-419
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 这里，路径和版本定义了资源仅在插件部署后才能访问的完整路径。在本例中，完整路径将变为`BASE_URL/rest/jtricks/1.0/`，其中`BASE_URL`是JIRA的基本URL。
+- en: Define the data that will be returned to the client. JAXB Annotations are used
+    to map these objects to XML and JSON formats.
+  id: totrans-420
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 定义将返回给客户端的数据。JAXB注解用于将这些对象映射到XML和JSON格式。
+- en: In our example, the `getCategories` method should return a List of Category
+    objects and hence we need to define a Categories object and a Category object,
+    the former containing a List of the latter. For both the objects, we should use
+    the Annotations.
+  id: totrans-421
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在我们的示例中，`getCategories`方法应返回一个Category对象的列表，因此我们需要定义一个Categories对象和一个Category对象，前者包含后者的列表。对于这两个对象，我们应使用注解。
+- en: 'Define the `Category` object as follows:'
+  id: totrans-422
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 按如下方式定义`Category`对象：
+- en: '[PRE88]'
+  id: totrans-423
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE88]'
+- en: Make sure the annotations are used properly. The `@XmlRootElement` annotation
+    maps a class or an Enum type to an XML element and is used for the categories
+    in this case. `@XmlElement` maps a property or field to an XML Element. Other
+    annotations available are `@XmlAccessorType` and `@XmlAttribute` used for controlling
+    whether fields or properties are serialized by default and mapping a property
+    or field to an XML Attribute respectively.
+  id: totrans-424
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 确保正确使用注解。`@XmlRootElement`注解将一个类或枚举类型映射为XML元素，这里用于`categories`。`@XmlElement`将一个属性或字段映射为XML元素。其他可用的注解包括`@XmlAccessorType`和`@XmlAttribute`，分别用于控制字段或属性是否默认序列化以及将属性或字段映射为XML属性。
+- en: Note
+  id: totrans-425
+  prefs:
+  - PREF_IND
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: 'The details can be read at: [http://jaxb.java.net/nonav/jaxb20-pfd/api/javax/xml/bind/annotation/package-summary.html](http://jaxb.java.net/nonav/jaxb20-pfd/api/javax/xml/bind/annotation/package-summary.html).'
+  id: totrans-426
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 详细信息请参阅：[http://jaxb.java.net/nonav/jaxb20-pfd/api/javax/xml/bind/annotation/package-summary.html](http://jaxb.java.net/nonav/jaxb20-pfd/api/javax/xml/bind/annotation/package-summary.html)。
+- en: Make sure a public non-argument constructor is available so as to render the
+    output properly when accessed via the direct URL. Also, note that only the annotated
+    elements will be exposed via the REST API.
+  id: totrans-427
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 确保提供一个公共的无参构造函数，以便在通过直接URL访问时正确渲染输出。另外，请注意，只有被注解的元素会通过REST API暴露。
+- en: 'Define the `Categories` object:'
+  id: totrans-428
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 定义`Categories`对象：
+- en: '[PRE89]'
+  id: totrans-429
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE89]'
+- en: Same rules apply here as well.
+  id: totrans-430
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 同样的规则也适用于这里。
+- en: Create the `Resource` class. On the package level or the class level or the
+    method level, we can have `@Path` annotations to define the path where the resource
+    should be available. If it is available on all the levels, the final path will
+    be a cumulative output.
+  id: totrans-431
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建`Resource`类。在包级别、类级别或方法级别，我们可以使用`@Path`注解来定义资源可用的路径。如果它在所有级别上都可用，最终的路径将是累积输出。
+- en: 'This means that if you have `@Path("/X")` at package level, `@Path("/Y")` at
+    class level, and `@Path("/Z")` at method level, the resource is accessed at:'
+  id: totrans-432
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 这意味着如果你在包级别有`@Path("/X")`，在类级别有`@Path("/Y")`，在方法级别有`@Path("/Z")`，那么资源将通过以下路径访问：
+- en: '[PRE90]'
+  id: totrans-433
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE90]'
+- en: 'Different methods can have different paths to differentiate between each other.
+    In our example, let us define a path `/categories` at class level:'
+  id: totrans-434
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 不同的方法可以具有不同的路径来区分它们。在我们的示例中，我们在类级别定义路径`/categories`：
+- en: '[PRE91]'
+  id: totrans-435
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE91]'
+- en: 'Write the method to return the `Categories` resource:'
+  id: totrans-436
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 编写方法以返回`Categories`资源：
+- en: '[PRE92]'
+  id: totrans-437
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE92]'
+- en: As you can see, the method doesn't have a `@Path` annotation and hence will
+    be invoked at the URL, `BASE_URL/rest/jtricks/1.0/category`. Here, we normally
+    construct a `Categories` object with a simple bean class and then use the `ResponseBuilder`
+    to create the response.
+  id: totrans-438
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 如你所见，该方法没有`@Path`注解，因此将会在`BASE_URL/rest/jtricks/1.0/category`的URL上被调用。在这里，我们通常使用一个简单的Bean类构建`Categories`对象，然后使用`ResponseBuilder`来创建响应。
+- en: The `@GET` annotation mentioned earlier denotes that the class method will handle
+    requests for a GET HTTP message.
+  id: totrans-439
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 前面提到的`@GET`注解表示类方法将处理GET HTTP请求。
+- en: Note
+  id: totrans-440
+  prefs:
+  - PREF_IND
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: 'Other valid annotations include POST, PUT, DELETE, and so on, and can be viewed
+    in detail at:'
+  id: totrans-441
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 其他有效的注解包括POST、PUT、DELETE等，可以在以下网址查看详细信息：
+- en: '[http://jsr311.java.net/nonav/javadoc/javax/ws/rs/package-summary.html](http://jsr311.java.net/nonav/javadoc/javax/ws/rs/package-summary.html).'
+  id: totrans-442
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '[http://jsr311.java.net/nonav/javadoc/javax/ws/rs/package-summary.html](http://jsr311.java.net/nonav/javadoc/javax/ws/rs/package-summary.html)。'
+- en: '`@AnonymousAllowed` indicates that the method can be called without supplying
+    user credentials. `@Produces` specifies the content types the method may return.
+    The method can return any type if this annotation is absent. In our case, the
+    method must return an XML or JSON object.'
+  id: totrans-443
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`@AnonymousAllowed`表示该方法可以在不提供用户凭据的情况下调用。`@Produces`指定方法可能返回的内容类型。如果没有这个注解，方法可以返回任何类型。在我们的案例中，方法必须返回XML或JSON对象。'
+- en: 'Two other useful annotations are: `@PathParam` and `@QueryParam`. `@PathParam`
+    maps a method variable to an element in the `@Path` whereas `@QueryParam` maps
+    a method variable to a query parameter.'
+  id: totrans-444
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 另外两个有用的注解是：`@PathParam`和`@QueryParam`。`@PathParam`将方法变量映射到`@Path`中的一个元素，而`@QueryParam`将方法变量映射到查询参数。
+- en: 'The following is how we use each of them:'
+  id: totrans-445
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 以下是我们如何使用它们的示例：
+- en: '[PRE93]'
+  id: totrans-446
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE93]'
+- en: 'Following is an example of how `@QueryParam` is used:'
+  id: totrans-447
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 以下是`@QueryParam`使用示例：
+- en: '[PRE94]'
+  id: totrans-448
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE94]'
+- en: 'Here, we take a query parameter named `dummyParam,` which can then be used
+    within our method. The resource will then be accessed as follows: `BASE_URL/rest/jtricks/1.0/category?dummyParam=xyz`.'
+  id: totrans-449
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在这里，我们获取名为`dummyParam`的查询参数，该参数可以在方法中使用。然后，资源将通过以下方式访问：`BASE_URL/rest/jtricks/1.0/category?dummyParam=xyz`。
+- en: In this case, you will see that the value xyz is printed into the console.
+  id: totrans-450
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在这种情况下，你将看到值xyz打印到控制台中。
+- en: '[PRE95]'
+  id: totrans-451
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE95]'
+- en: 'Let us say we want to pass the ID of a category as well in the path and get
+    the details of that `Category` alone; we can use the `PathParam` here as shown
+    earlier. In that case, the URL to this method will be as shown:'
+  id: totrans-452
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 假设我们想在路径中传递一个类别的ID，并仅获取该`Category`的详细信息；我们可以像之前所示那样使用`PathParam`。在这种情况下，指向该方法的URL将如下所示：
+- en: '[PRE96]'
+  id: totrans-453
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE96]'
+- en: Here, 10010 is the category ID passed into the previously described method as
+    id.
+  id: totrans-454
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在这里，10010是之前描述的方法中传递的类别ID。
+- en: When query parameters are used, the resource will not be cached by a proxy or
+    your browser. So if you are passing in an ID to find some information about some
+    sort of entity, then use a path parameter. This information will then be cached.
+  id: totrans-455
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 当使用查询参数时，资源将不会被代理或浏览器缓存。所以，如果你传递一个ID来查找某种实体的信息，那么应该使用路径参数。这样该信息就会被缓存。
+- en: Package the plugin and deploy it.
+  id: totrans-456
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 打包插件并部署它。
+- en: How it works...
+  id: totrans-457
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 它是如何工作的...
+- en: 'If you have deployed the plugin with both the `getCategories()` method and
+    `getCategoryFromId()` method seen earlier, the list of categories can be retrieved
+    at the URL: `BASE_URL/rest/jtricks/1.0/category`, as shown in the following screenshot:'
+  id: totrans-458
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你已经部署了同时包含`getCategories()`方法和之前看到的`getCategoryFromId()`方法的插件，那么可以通过以下URL检索类别列表：`BASE_URL/rest/jtricks/1.0/category`，如下面的截图所示：
+- en: '![How it works...](img/1803-09-09.jpg)'
+  id: totrans-459
+  prefs: []
+  type: TYPE_IMG
+  zh: '![它是如何工作的...](img/1803-09-09.jpg)'
+- en: 'The details of a particular category can be retrieved using the ID in the path,
+    `BASE_URL/rest/jtricks/1.0/category/10001` for example, as shown in the next screenshot:'
+  id: totrans-460
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 可以通过路径中的ID检索特定类别的详细信息，例如`BASE_URL/rest/jtricks/1.0/category/10001`，如下图所示：
+- en: '![How it works...](img/1803-09-10.jpg)'
+  id: totrans-461
+  prefs: []
+  type: TYPE_IMG
+  zh: '![它是如何工作的...](img/1803-09-10.jpg)'
+- en: 'Atlassian has published some guidelines at: [http://confluence.atlassian.com/display/REST/Atlassian+REST+API+Design+Guidelines+version+1](http://confluence.atlassian.com/display/REST/Atlassian+REST+API+Design+Guidelines+version+1),
+    which is a very useful read before developing your production version of REST
+    service plugin. Check out: [http://confluence.atlassian.com/display/REST/REST+API+Developer+Documentation](http://confluence.atlassian.com/display/REST/REST+API+Developer+Documentation)
+    for more details.'
+  id: totrans-462
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Atlassian已发布了一些指南，网址为：[http://confluence.atlassian.com/display/REST/Atlassian+REST+API+Design+Guidelines+version+1](http://confluence.atlassian.com/display/REST/Atlassian+REST+API+Design+Guidelines+version+1)，这是在开发生产版本的REST服务插件之前非常有用的阅读材料。请查看：[http://confluence.atlassian.com/display/REST/REST+API+Developer+Documentation](http://confluence.atlassian.com/display/REST/REST+API+Developer+Documentation)获取更多详细信息。
+- en: Writing Java client for REST API
+  id: totrans-463
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 为REST API编写Java客户端
+- en: In this recipe, we will quickly see how we can create a Java client to communicate
+    with JIRA using the REST APIs.
+  id: totrans-464
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本教程中，我们将快速演示如何使用REST API创建一个Java客户端与JIRA进行通信。
+- en: Getting ready
+  id: totrans-465
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 准备就绪
+- en: Make sure **Accept** **Remote** **API** **Calls** option is turned **ON** in
+    JIRA under **Administration** | **Global** **Settings**.
+  id: totrans-466
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 确保在JIRA的**管理** | **全局设置**中启用了**接受远程API调用**选项。
+- en: How to do it...
+  id: totrans-467
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何做...
+- en: 'In order to connect to JIRA using REST APIs, Atlassian has developed a JIRA
+    REST Java Client Library, called JRJC in short. It provides a thin layer of abstraction
+    on top of the REST API and related HTTP(S) communication and gives a domain object
+    model to represent the JIRA entities, such as issues, priorities, resolutions,
+    statuses, users, and so on. The REST API and the JRJC Library are in alpha phase
+    and are quickly evolving! The status of the library can be viewed at: [https://studio.atlassian.com/wiki/display/JRJC/Home](https://studio.atlassian.com/wiki/display/JRJC/Home).'
+  id: totrans-468
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了使用REST API连接到JIRA，Atlassian开发了一个名为JRJC的JIRA REST Java客户端库。它在REST API及相关的HTTP(S)通信之上提供了一个薄层抽象，并提供了一个域对象模型来表示JIRA实体，例如问题、优先级、解决方案、状态、用户等等。REST
+    API和JRJC库目前处于Alpha阶段，并在快速发展！可以在以下链接查看该库的状态：[https://studio.atlassian.com/wiki/display/JRJC/Home](https://studio.atlassian.com/wiki/display/JRJC/Home)。
+- en: 'We will be using JRJC to connect to our JIRA instance using the standalone
+    Java program. Following are the steps:'
+  id: totrans-469
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将使用JRJC通过独立的Java程序连接到我们的JIRA实例。以下是步骤：
+- en: Create a Maven project and add the JRJC dependency to the `pom.xml` file.
+  id: totrans-470
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建一个Maven项目，并将JRJC依赖项添加到`pom.xml`文件中。
+- en: '[PRE97]'
+  id: totrans-471
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE97]'
+- en: Make sure you use the appropriate version of JRJC. All the versions can be found
+    in the maven repository under [https://maven.atlassian.com/public/com/atlassian/jira/jira-rest-java-client/](https://maven.atlassian.com/public/com/atlassian/jira/jira-rest-java-client/).
+    If you are not using Maven, the full dependencies are listed in the Atlassian
+    documentation at [https://studio.atlassian.com/wiki/display/JRJC/Project+Dependencies](https://studio.atlassian.com/wiki/display/JRJC/Project+Dependencies).
+  id: totrans-472
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 确保使用适当版本的JRJC。所有版本可以在Maven仓库中找到，网址为[https://maven.atlassian.com/public/com/atlassian/jira/jira-rest-java-client/](https://maven.atlassian.com/public/com/atlassian/jira/jira-rest-java-client/)。如果您没有使用Maven，完整的依赖项可以在Atlassian文档中找到，地址为[https://studio.atlassian.com/wiki/display/JRJC/Project+Dependencies](https://studio.atlassian.com/wiki/display/JRJC/Project+Dependencies)。
+- en: Create a Java project by running `maven eclipse:eclipse` if you are using Maven
+    or create the project using your favorite IDE and add all dependencies listed
+    earlier in the class path. Once done, create a standalone Java class.
+  id: totrans-473
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如果您使用Maven，可以通过运行`maven eclipse:eclipse`创建一个Java项目，或者使用您喜欢的IDE创建项目并将前面列出的所有依赖项添加到类路径中。完成后，创建一个独立的Java类。
+- en: Create a connection to the JIRA server
+  id: totrans-474
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建与JIRA服务器的连接
+- en: '[PRE98]'
+  id: totrans-475
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE98]'
+- en: Here, we instantiate the `JerseyJiraRestClientFactory` and use the `createWithBasicHttpAuthentication`
+    method to instantiate the REST client by passing the username and password.
+  id: totrans-476
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在这里，我们实例化了`JerseyJiraRestClientFactory`并使用`createWithBasicHttpAuthentication`方法，通过传入用户名和密码来实例化REST客户端。
+- en: RESTful architecture promotes stateless connection and hence there is no notion
+    of the user session. This means the credentials will be send back and forth in
+    plain text, just encoded with `Base64`, for each request and so it is not safe
+    to use it outside a firewall or company network.
+  id: totrans-477
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: RESTful架构提倡无状态连接，因此没有用户会话的概念。这意味着凭证将以明文形式在每个请求中来回传输，只是经过`Base64`编码，因此在防火墙外或公司网络之外使用时并不安全。
+- en: Initiate the `ProgressMonitor`. All REST remote calls take this as a parameter.
+    As per Atlassian docs, first, it serves as a clear marker of a remote call and
+    second, in the future, they plan to make this interface capable of reporting the
+    progress and cancelling (where possible) the remote requests taking too much time.
+  id: totrans-478
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 启动`ProgressMonitor`。所有的REST远程调用都将其作为参数。根据Atlassian文档，首先，它作为远程调用的明确标记，其次，未来他们计划使该接口能够报告进度，并取消（在可能的情况下）耗时过长的远程请求。
+- en: 'As of now, we initiate it as follows:'
+  id: totrans-479
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 目前，我们可以按如下方式启动它：
+- en: '[PRE99]'
+  id: totrans-480
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE99]'
+- en: 'Retrieve the appropriate client needed for the operation. The `jiraRestClient`
+    exposes a set of clients, such as `IssueRestClient`, `ProjectRestClient`, `SearchClient`,
+    and so on, each one exposing the related set of operations. In this example, we
+    will try to retrieve an issue and hence will go for the `IssueRestClient`:'
+  id: totrans-481
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 获取执行操作所需的适当客户端。`jiraRestClient`暴露了一组客户端，如`IssueRestClient`、`ProjectRestClient`、`SearchClient`等，每个客户端暴露了一组相关的操作。在这个例子中，我们将尝试检索一个问题，因此会使用`IssueRestClient`：
+- en: '[PRE100]'
+  id: totrans-482
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE100]'
+- en: 'Retrieve the issue details and print it. Alternatively, perform the required
+    operation as appropriate:'
+  id: totrans-483
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 检索问题详情并打印。或者，根据需要执行相应的操作：
+- en: '[PRE101]'
+  id: totrans-484
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE101]'
+- en: Here, the issue is `com.atlassian.jira.rest.client.domain.Issue!`
+  id: totrans-485
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 这里，问题是`com.atlassian.jira.rest.client.domain.Issue!`
+- en: Various other operations can be performed on the issue, details of which can
+    be found in the Javadocs at [http://docs.atlassian.com/jira-rest-java-client/0.2.1/apidocs/com/atlassian/jira/rest/client/IssueRestClient.html](http://docs.atlassian.com/jira-rest-java-client/0.2.1/apidocs/com/atlassian/jira/rest/client/IssueRestClient.html).
+  id: totrans-486
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 可以在问题上执行各种其他操作，相关详情可以在Javadocs中找到，网址为[http://docs.atlassian.com/jira-rest-java-client/0.2.1/apidocs/com/atlassian/jira/rest/client/IssueRestClient.html](http://docs.atlassian.com/jira-rest-java-client/0.2.1/apidocs/com/atlassian/jira/rest/client/IssueRestClient.html)。
+- en: 'For example, we can vote on the issue as follows:'
+  id: totrans-487
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 例如，我们可以按如下方式对问题进行投票：
+- en: '[PRE102]'
+  id: totrans-488
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE102]'
+- en: The API for this is available at [http://docs.atlassian.com/jira-rest-java-client/0.2.1/apidocs/com/atlassian/jira/rest/client/IssueRestClient.html](http://docs.atlassian.com/jira-rest-java-client/0.2.1/apidocs/com/atlassian/jira/rest/client/IssueRestClient.html).
+  id: totrans-489
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 该API可以通过[http://docs.atlassian.com/jira-rest-java-client/0.2.1/apidocs/com/atlassian/jira/rest/client/IssueRestClient.html](http://docs.atlassian.com/jira-rest-java-client/0.2.1/apidocs/com/atlassian/jira/rest/client/IssueRestClient.html)获取。
+- en: 'Some operations are a little more complex. For example, in order to progress
+    the issue through its workflow, you will need the appropriate transition ID, the
+    fields needed during the transition, and optionally a comment. We can do it as
+    follows:'
+  id: totrans-490
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有些操作稍微复杂一些。例如，为了将问题推进到工作流中，您需要适当的转换ID、转换过程中所需的字段以及可选的评论。我们可以按如下方式操作：
+- en: Get the available transitions from the issue.
+  id: totrans-491
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 从问题中获取可用的转换。
+- en: '[PRE103]'
+  id: totrans-492
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE103]'
+- en: 'Find the relevant transition by name or ID as follows:'
+  id: totrans-493
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 按照以下方式通过名称或ID找到相关的转换：
+- en: '[PRE104]'
+  id: totrans-494
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE104]'
+- en: 'Create a list of fields needed during the transition. This can be empty if
+    the fields are not mandatory:'
+  id: totrans-495
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建一个在转换过程中需要的字段列表。如果字段不是必需的，这个列表可以为空：
+- en: '[PRE105]'
+  id: totrans-496
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE105]'
+- en: 'Create a `Comment` object if needed:'
+  id: totrans-497
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 如有需要，创建一个`Comment`对象：
+- en: '[PRE106]'
+  id: totrans-498
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE106]'
+- en: 'Transition the issue as follows:'
+  id: totrans-499
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 按照以下方式转换问题：
+- en: '[PRE107]'
+  id: totrans-500
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE107]'
+- en: You will see that the issue is progressed in the workflow by executing the transition
+    we selected.
+  id: totrans-501
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 你将看到通过执行我们选择的转换，问题在工作流中得到了推进。
+- en: Similarly, the various methods can be executed using the appropriate clients.
+    Given the fact that JIRA REST API is evolving so quickly, JRJC has a lot of potential
+    and is worth investing time in.
+  id: totrans-502
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 类似地，可以使用相应的客户端执行各种方法。考虑到JIRA REST API发展得如此迅速，JRJC具有很大的潜力，值得投入时间。

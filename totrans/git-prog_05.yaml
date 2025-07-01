@@ -1,0 +1,1210 @@
+- en: '5'
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '5'
+- en: Rebasing, Amend, and Cherry-Picking
+  id: totrans-1
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 重新基准、修改和樱桃挑选
+- en: If you say "rebasing" to most novice Git programmers, they burst into tears
+    and run screaming from the room. But the truth is that this is only because of
+    how it is explained in so many books and magazines, where rebasing is (correctly
+    but confusingly) shown with diagrams of commits being copied and moved along with
+    dense and technical text.
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你对大多数初学Git的程序员说“重新基准”，他们会立刻泪流满面并尖叫着跑出房间。但事实是，这只是因为在许多书籍和杂志中，重新基准的解释通常非常复杂而且令人困惑，图示中显示了提交被复制并随着密集的技术性文字移动。
+- en: In truth, rebasing is not hard to understand, and it is not hard to do if you
+    understand what it is for. In this chapter, we will review rebasing without fear.
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 事实上，重新基准并不难理解，如果你明白它的用途，它也不难操作。在本章中，我们将无所畏惧地回顾重新基准。
+- en: '**Rebasing** is a command that allows you to take a feature branch and place
+    it on the tip of another branch. We''ll discuss how, and more importantly *why*,
+    you would do this.'
+  id: totrans-4
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**重新基准**是一个命令，它允许你将一个特性分支放置到另一个分支的顶部。我们将讨论如何做，*更重要的是*，为什么要这么做。'
+- en: '**Amending** is a quick command that allows you to modify the most recent commit.
+    You can use this to add a file you forgot to put in the commit or to fix up a
+    botched message.'
+  id: totrans-5
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**修改**是一个快速命令，它允许你修改最近的提交。你可以用它来添加你忘记包含的文件或修正一个写错的提交信息。'
+- en: '**Cherry-picking** is the ability to take one or more commits from a branch
+    and apply them onto the tip of another branch.'
+  id: totrans-6
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**樱桃挑选**是将一个或多个提交从一个分支提取并应用到另一个分支的顶部的能力。'
+- en: Git programmers describe these three commands as **rewriting history** and that
+    is what they all have in common. Each has the ability to change how commits were
+    added to the repository, and thus clean up your list of commits.
+  id: totrans-7
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git程序员将这三个命令描述为**重写历史**，这也是它们的共同点。每个命令都可以改变提交如何添加到版本库，从而清理你的提交列表。
+- en: Rebasing
+  id: totrans-8
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 重新基准
+- en: 'Rebasing is nothing more than taking one branch and adding it to the tip of
+    another, where the tip is simply the last commit in the branch. For example, suppose
+    you have the following structure:'
+  id: totrans-9
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 重新基准无非就是将一个分支添加到另一个分支的顶部，其中顶部只是该分支的最后一个提交。例如，假设你有以下结构：
+- en: '![](img/B17741_05_01.png)'
+  id: totrans-10
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_05_01.png)'
+- en: 'Figure 5.1: Git structure'
+  id: totrans-11
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '图 5.1: Git 结构'
+- en: 'You can''t do a fast forward here, because **Main** has moved on since you
+    branched from it. You can do a true merge, but a true merge adds a commit to your
+    history every time you do one:'
+  id: totrans-12
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你在这里无法进行快进操作，因为自从你从**Main**分支出来后，**Main**已经有了新的进展。你可以做一个真正的合并，但每次进行真正的合并时，它都会在历史记录中增加一个提交：
+- en: '![](img/B17741_05_02.png)'
+  id: totrans-13
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_05_02.png)'
+- en: 'Figure 5.2: True merges'
+  id: totrans-14
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '图 5.2: 真正的合并'
+- en: A rebase solves the same problem, but without adding merges to the commit history.
+  id: totrans-15
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 重新基准解决了相同的问题，但不会在提交历史中添加合并记录。
+- en: Notice that as you review this history, you have to skip over a significant
+    number of commits since they are just merges. Rebase eliminates most of these
+    commits.
+  id: totrans-16
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请注意，在查看这个历史记录时，你必须跳过许多提交，因为它们只是合并。重新基准可以去除大部分这样的提交。
+- en: 'Here comes the important part:'
+  id: totrans-17
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这里是关键部分：
+- en: You merge branch **Feature1** *into* **Main**, but you rebase **Feature1** *onto*
+    **Main**.
+  id: totrans-18
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 你将分支**Feature1** *合并到* **Main**，但是你将**Feature1** *重新基准到* **Main**。
+- en: Returning to our earlier example, if you rebase **Feature1** onto **Main**,
+    it looks like this:![](img/B17741_05_03.png)
+  id: totrans-19
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 回到我们之前的例子，如果你将**Feature1**重新基准到**Main**，它看起来是这样的：![](img/B17741_05_03.png)
+- en: 'Figure 5.3: After the rebase'
+  id: totrans-20
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '图 5.3: 重新基准后的状态'
+- en: There is now a clear path from the first commit of **Main** to the last commit
+    of **Feature1** without leaving anything out. This is most often drawn like this:![](img/B17741_05_04.png)
+  id: totrans-21
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 现在从**Main**的第一次提交到**Feature1**的最后一次提交之间，路径已经清晰可见，且没有遗漏任何内容。它通常是这样画的：![](img/B17741_05_04.png)
+- en: 'Figure 5.4: Another way to look at the commits after rebasing'
+  id: totrans-22
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '图 5.4: 重新基准后查看提交的另一种方式'
+- en: This emphasizes that you have rebased **Feature1** onto the tip of **Main**
+    (the tip is **Main**'s latest commit).
+  id: totrans-23
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 这强调了你已经将**Feature1**重新基准到了**Main**的顶部（顶部是**Main**的最新提交）。
+- en: That is all there is to rebasing. Honest.
+  id: totrans-24
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 就这点，重新基准就这么简单。说真的。
+- en: How Git does it
+  id: totrans-25
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: Git是如何做到的
+- en: Generally, I don't spend time or brain cells on how Git does what it does, but
+    here it is worth noting that to rebase, Git rolls back history to the first **Feature1**
+    commit and then makes a copy and adds it to the tip of **Main**. It then makes
+    a copy of the second **Feature1** commit and puts that on top of the latest commit,
+    and so forth.
+  id: totrans-26
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通常，我不会花时间去思考 Git 是如何执行操作的，但在这里值得注意的是，要进行 Rebase，Git 会回滚历史记录到第一个 **Feature1**
+    提交，然后创建一个副本并将其添加到 **Main** 的顶部。接着，它会复制第二个 **Feature1** 提交，并将其放到最新提交的顶部，依此类推。
+- en: The reason this is important is that a copy is made, and thus will have a different
+    ID. Okay, you are now free to forget all this and treat rebasing as the magic
+    it is.
+  id: totrans-27
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 之所以这样做很重要，是因为会创建一个副本，因此会有一个不同的 ID。好了，现在你可以忘记这一切，把 Rebase 当作它本来的魔力来看待。
+- en: Getting your head around it
+  id: totrans-28
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 理解它
+- en: Rebasing is not hard, as you have seen. But truly grokking what is happening
+    and why it is okay takes anywhere from five minutes to five years. We are taking
+    our feature and putting it on top of Main. Remember that our feature started as
+    a branch off of Main.
+  id: totrans-29
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，Rebase 并不难。但真正理解发生了什么以及为什么它是可以接受的，可能需要从五分钟到五年的时间。我们将我们的功能分支放到了主分支之上。记住，我们的功能分支最初是从主分支派生出来的。
+- en: Now we're incorporating all that is in Main into our feature.
+  id: totrans-30
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们将主分支中的所有内容并入我们的功能分支。
+- en: That is the critical part. Because we do this locally, we are just saying "no
+    matter how much Main has advanced, I will eventually need to merge into it. For
+    now, I'm going to rebase onto Main, making it one long branch, and make sure there
+    are no conflicts."
+  id: totrans-31
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这是关键部分。因为我们是在本地进行操作，所以我们只是说：“无论主分支进展到什么程度，我最终都需要将其合并进来。现在，我将进行 Rebase 到主分支，使其成为一个长分支，并确保没有冲突。”
+- en: Rebase early and rebase often
+  id: totrans-32
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 早点 Rebase，频繁 Rebase
+- en: It is very good practice to rebase frequently, so as to surface any conflicts
+    that might arise. Each time you rebase, you end up with a stack of commits that
+    has all that came before and then your new commits at the tip. If a conflict arises
+    between what you just added and what was there, you will see it immediately and
+    can fix it on the spot.
+  id: totrans-33
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 经常进行 Rebase 是一个非常好的实践，可以及时发现可能出现的冲突。每次进行 Rebase 时，你会得到一个包含所有之前提交的堆栈，然后是你新提交的内容。如果你刚刚添加的内容和之前的内容之间出现冲突，你将立刻看到并可以立即修复它。
+- en: Rebase locally only
+  id: totrans-34
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 仅在本地进行 Rebase
+- en: You rebase *only* on your local machine, and *never* on the shared repository
+    in the cloud (for example, GitHub). This is because rebasing "rewrites history"
+    – remember that it makes copies of Feature1 – and if another programmer is working
+    on that branch, they will not be happy with you if you rebase. This is the kind
+    of "not happy" that can lead to felony charges.
+  id: totrans-35
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你*只*在本地计算机上进行 Rebase，*绝不*在云中的共享仓库（例如 GitHub）上进行 Rebase。这是因为 Rebase 会“重写历史”——记住，它会复制
+    Feature1——如果其他程序员正在处理这个分支，当你进行 Rebase 时，他们会对你不满意。这种“不满意”可能会导致刑事指控。
+- en: Rebasing in practice
+  id: totrans-36
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 实践中的 Rebase
+- en: 'Let''s create a new repository named Rebasing. We''re going to watch Adam as
+    he creates a branch named `Person` by taking the following steps:'
+  id: totrans-37
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们创建一个新的仓库，命名为 Rebasing。我们将观察 Adam 创建一个名为 `Person` 的分支，他将采取以下步骤：
+- en: Go to the main root directory
+  id: totrans-38
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 进入主根目录
+- en: Create a branch named `Person`
+  id: totrans-39
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建一个名为 `Person` 的分支
+- en: Open Visual Studio and create a project named `Person`
+  id: totrans-40
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 打开 Visual Studio 并创建一个名为 `Person` 的项目
+- en: Create a new class named `Person`
+  id: totrans-41
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建一个名为 `Person` 的新类
+- en: Add the `Rebasing` repo to your local repository
+  id: totrans-42
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 将 `Rebasing` 仓库添加到你的本地仓库
+- en: Add the repository and commit it (which will also commit `Person`)
+  id: totrans-43
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 添加仓库并提交（这也会提交 `Person`）
+- en: 'Add an age property to `Person` and commit (but don''t push):'
+  id: totrans-44
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 向 `Person` 添加年龄属性并提交（但不要推送）：
+- en: '[PRE0]'
+  id: totrans-45
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: Add a name property and commit but don't push
+  id: totrans-46
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 添加一个名称属性并提交，但不要推送
+- en: 'After we add a height property, we are in this situation:'
+  id: totrans-47
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在我们添加一个高度属性后，我们就处于这种情况：
+- en: '![](img/B17741_05_05.png)'
+  id: totrans-48
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_05_05.png)'
+- en: 'Figure 5.5: History of commits in Visual Studio'
+  id: totrans-49
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 5.5：在 Visual Studio 中的提交历史
+- en: 'We could push now, but there is more work to be done on the `Person` class.
+    On the other hand, we don''t want main to have moved so far away from us that
+    we''ll have too many conflicts when we are done with person. The answer: rebase.
+    Make sure you are on person, then right-click on main and choose **Rebase ''person''
+    onto ''main''**:'
+  id: totrans-50
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们现在可以推送了，但 `Person` 类上还有更多工作要做。另一方面，我们不希望主分支已发生太大变化，以至于在完成 `Person` 类后会有太多冲突。答案是：Rebase。确保你处于
+    `Person` 分支，然后右击主分支并选择 **将 'person' Rebase 到 'main'**：
+- en: '![](img/B17741_05_06.png)'
+  id: totrans-51
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_05_06.png)'
+- en: 'Figure 5.6: Rebasing in Visual Studio'
+  id: totrans-52
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 5.6：在 Visual Studio 中进行 Rebase
+- en: With that done, we can continue working on the `Person` branch.
+  id: totrans-53
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 完成这个之后，我们可以继续在 `Person` 分支上工作。
+- en: 'Notice that you have only four outgoing commits:'
+  id: totrans-54
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 注意，您只有四个待推送的提交：
+- en: '![](img/B17741_05_07.png)'
+  id: totrans-55
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_05_07.png)'
+- en: 'Figure 5.7: Rebasing does not add a commit'
+  id: totrans-56
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 5.7：Rebase 不会添加提交
+- en: The rebase did not add a commit, and keeps your history clean.
+  id: totrans-57
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这次 rebase 没有添加提交，并保持了您的历史记录的整洁。
+- en: Seeing the rebase at work
+  id: totrans-58
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 看到 rebase 在实际操作中的效果
+- en: 'To see that your rebase did actually rewind the history of your commits and
+    then add each commit back on top of main, go to the command line and issue the
+    command `git log --name-only --oneline`:'
+  id: totrans-59
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了确认您的 rebase 确实回滚了提交历史，并将每个提交重新添加到主分支上，请转到命令行并执行命令 `git log --name-only --oneline`：
+- en: '![](img/B17741_05_08.png)'
+  id: totrans-60
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_05_08.png)'
+- en: 'Figure 5.8: Rebase rewinds history'
+  id: totrans-61
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 5.8：Rebase 回滚历史
+- en: What we see here going from top to bottom is the addition of the final property
+    (height) and then we rebase `Person.cs` and add the name property. Next, we rebase
+    and add the age property. We continue this all the way back until we've rebased
+    all of the files onto the tip of main.
+  id: totrans-62
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 从上到下我们看到的是，首先添加了最后一个属性（height），然后我们对 `Person.cs` 进行 rebase，添加了 name 属性。接着，我们进行
+    rebase 并添加了 age 属性。我们一直这样做，直到所有文件都被 rebase 到主分支的最新版本。
+- en: Conflicts
+  id: totrans-63
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 冲突
+- en: 'When rebasing we may well run into conflicts. You will remember that we have
+    one branch: `Person.` Let''s have a second programmer clone the repository. That
+    second programmer is happily working away in their branch (teacher) when they
+    realize they need person to have a different age. They add this to the file (okay,
+    no one is quite that stupid, but this kind of thing happens in more subtle ways):'
+  id: totrans-64
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 rebase 时我们可能会遇到冲突。您还记得我们有一个分支：`Person`。假设第二个程序员克隆了这个仓库。这个程序员在他们的分支（teacher）上高高兴兴地工作时，意识到他们需要将
+    person 的年龄修改为不同的值。他们向文件中添加了这一变化（好吧，没有人会这么傻，但这种情况在更微妙的情况下确实会发生）：
+- en: '![](img/B17741_05_09.png)'
+  id: totrans-65
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_05_09.png)'
+- en: 'Figure 5.9: Rebasing caused conflicts'
+  id: totrans-66
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 5.9：Rebase 导致了冲突
+- en: Fortunately, Git tells you what to do.
+  id: totrans-67
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 幸运的是，Git 会告诉您该怎么做。
+- en: Remember, you can at any time enter `git rebase --abort` and go back to where
+    you were before you started the rebase.
+  id: totrans-68
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 记住，您可以随时输入 `git rebase --abort`，并返回到开始 rebase 前的状态。
+- en: 'This time, however, we''ll fix the problem by hand. Open the file pointed to
+    `Person.cs`:'
+  id: totrans-69
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 不过，这次我们将手动修复问题。打开指向的文件 `Person.cs`：
+- en: '[PRE1]'
+  id: totrans-70
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: 'The part that looks like this:'
+  id: totrans-71
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 看起来像这样的部分：
+- en: '[PRE2]'
+  id: totrans-72
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: 'is the code in the current revision; the next set of code:'
+  id: totrans-73
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 是当前版本中的代码；接下来的一组代码：
+- en: '[PRE3]'
+  id: totrans-74
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: is coming from the code to be rebased.
+  id: totrans-75
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这些提交来自要进行 rebase 的代码。
+- en: Bleh. What a mess. You can fix this by hand, making the adjustments and then
+    removing the conflict markers, or you can use a tool as mentioned in the previous
+    chapter.
+  id: totrans-76
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 哎呀，真是一团糟。您可以手动修复此问题，进行调整后删除冲突标记，或者使用上一章中提到的工具。
+- en: To fix this, we'll adjust the age in the branch onto which we rebase the patches;
+    i.e. 35 is the authoritative age, therefore the 35 line is the one we want to
+    keep, and we want to remove the rest.
+  id: totrans-77
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了修复这个问题，我们将在我们进行补丁 rebase 的分支上调整年龄；也就是说，35 岁是权威的年龄，因此我们要保留 35 这一行，并删除其他的。
+- en: 'In any case, once you have resolved the conflicts, return to the command line
+    and enter `git rebase --continue`. This will resume the rebase, checking for other
+    conflicts. If there are none, Git will ask you to enter a message and the rebase
+    will be completed:'
+  id: totrans-78
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 无论如何，一旦您解决了冲突，返回到命令行并输入 `git rebase --continue`。这将恢复 rebase，并检查是否有其他冲突。如果没有，Git
+    会要求您输入一条消息，并完成 rebase：
+- en: '[PRE4]'
+  id: totrans-79
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: The key with rebase conflicts is not to panic, but to work your way through
+    them one by one. Take heart, had you not done the rebase, you would have run into
+    these issues and more when trying to merge into main once you were done with your
+    feature branch.
+  id: totrans-80
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 处理 rebase 冲突的关键是不慌张，而是一个一个地解决它们。放心，如果您没有执行 rebase，等到完成功能分支后再尝试合并到主分支时，您会遇到这些问题，甚至更多。
+- en: Amending
+  id: totrans-81
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 修正
+- en: If you check in a change and then realize you've left out a file or have mangled
+    the message, you can use the `amend` command. However, you can only amend the
+    most recent commit.
+  id: totrans-82
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果您提交了更改后才发现漏掉了一个文件或者搞乱了提交信息，您可以使用 `amend` 命令。然而，您只能修改最近的一次提交。
+- en: 'Let''s say we return to person and we add a weight property and then commit
+    it. Before we push it, we realize we left out a change to `Program.cs`:'
+  id: totrans-83
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 假设我们回到 person，并添加一个 weight 属性，然后提交它。在推送之前，我们意识到遗漏了对 `Program.cs` 的更改：
+- en: '[PRE5]'
+  id: totrans-84
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: Since the error was in the most recent commit, we can amend that commit. All
+    we need to do is put the `Program.cs` file into the index and then issue the command
+    `git commit --amend`.
+  id: totrans-85
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于错误发生在最近的提交中，我们可以修改该提交。我们只需要将 `Program.cs` 文件放入索引中，然后执行命令 `git commit --amend`。
+- en: 'Because amend rewrites history, **you must do this only before you push** (that
+    is, while the commit is only in your local repo), for the same reasons as noted
+    above:'
+  id: totrans-86
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于 amend 会重写历史，**你只能在推送之前执行此操作**（也就是说，在提交仅存在于本地仓库时），原因与上面提到的一样：
+- en: '![](img/B17741_05_10.png)'
+  id: totrans-87
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_05_10.png)'
+- en: 'Figure 5.10: Amending (before pushing!)'
+  id: totrans-88
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 5.10：修改（推送前！）
+- en: Let's take this one line at a time from the top. First we notice that one commit
+    is waiting to be pushed. That is the commit we're going to amend.
+  id: totrans-89
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们逐行分析。首先我们注意到有一个提交等待推送。那就是我们要修改的提交。
+- en: On the second line, we add the file we want to amend to the index.
+  id: totrans-90
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在第二行，我们将要修改的文件添加到索引中。
+- en: 'Next, we add the amend command: `git commit --amend`.'
+  id: totrans-91
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来，我们添加 amend 命令：`git commit --amend`。
+- en: 'Git will respond by opening your editor so that you can amend the message (which
+    we see here: `add person and in person add weight`).'
+  id: totrans-92
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git 会响应并打开编辑器，让你修改提交消息（我们在这里看到的消息是：`add person and in person add weight`）。
+- en: Finally, it tells you all the usual information about the commit.
+  id: totrans-93
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后，它会告诉你关于提交的所有常规信息。
+- en: Notice, however, that you still have only one commit waiting to be pushed. The
+    amend did not appear to create a new commit (okay, technically it did, but you
+    can safely ignore that).
+  id: totrans-94
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而请注意，你仍然只有一个提交等待推送。修改似乎并没有创建新的提交（实际上它创建了一个新提交，但你可以安全地忽略它）。
+- en: 'If you use a commit with no file name but with the message flag, you change
+    only the message for that most recent commit. You don''t even need the flag; if
+    there are no new, modified, or deleted files in the index, it will open your editor
+    for you:'
+  id: totrans-95
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你使用没有文件名但带有消息标志的提交，只有该最近的提交消息会被修改。你甚至不需要标志；如果索引中没有新的、修改过的或删除的文件，它会自动打开编辑器供你修改：
+- en: '![](img/B17741_05_11.png)'
+  id: totrans-96
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_05_11.png)'
+- en: 'Figure 5.11: This will cause your editor to open'
+  id: totrans-97
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 5.11：这将导致打开你的编辑器
+- en: 'If you get the history now, with log, you''ll see the amended message:'
+  id: totrans-98
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你现在查看历史记录并使用 log 命令，你会看到修改后的提交消息：
+- en: '![](img/B17741_05_12.png)'
+  id: totrans-99
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_05_12.png)'
+- en: 'Figure 5.12: The message amended in the editor'
+  id: totrans-100
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 5.12：在编辑器中修改的消息
+- en: Amend can save you a lot of work down the road, and it is important to have
+    a well-written message to clarify the purpose of the commit.
+  id: totrans-101
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用 amend 可以节省很多后续的工作，且为提交编写清晰的消息非常重要，以明确提交的目的。
+- en: Cherry-picking
+  id: totrans-102
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Cherry-picking
+- en: 'Sometimes you just need one or a small number of commits from one branch to
+    be added to the tip of another branch. A common case is this: you have a release
+    branch and a feature branch. The release branch is "frozen" but then you need
+    to add a commit from a feature branch to the release branch (possibly a patch
+    to fix a problem). When you cherry-pick, the picked commit goes to the tip of
+    the branch you are cherry-picking onto.'
+  id: totrans-103
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有时你只需要将一个分支中的一个或少量提交添加到另一个分支的顶端。一个常见的情况是：你有一个发布分支和一个功能分支。发布分支已经“冻结”，但你需要将功能分支中的一个提交添加到发布分支（可能是修复问题的补丁）。当你执行
+    cherry-pick 时，被挑选的提交会被添加到你所选的目标分支的顶端。
+- en: 'An illustration will help. Here''s our starting point:'
+  id: totrans-104
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 下面的示例会帮助你理解。我们从这里开始：
+- en: '![](img/B17741_05_13.png)'
+  id: totrans-105
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_05_13.png)'
+- en: 'Figure 5.13: Before cherry-picking'
+  id: totrans-106
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 5.13：Cherry-pick 前
+- en: We discover that we do not want all of **Feature1** on **Main**, but we do want
+    **Feature1B** (it has the fix or feature set we need). To do this at the command
+    line you enter `git cherry-pick a2cb5f3` where `a2cb5f3` is the ID of the feature
+    commit you want to cherry-pick.
+  id: totrans-107
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们发现我们并不想把所有的**Feature1**合并到**Main**，但是我们确实需要**Feature1B**（它包含我们需要的修复或功能集）。要在命令行中执行此操作，你需要输入
+    `git cherry-pick a2cb5f3`，其中 `a2cb5f3` 是你想要 cherry-pick 的功能提交的 ID。
+- en: 'What you end up with looks like this:'
+  id: totrans-108
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最终结果看起来是这样的：
+- en: '![](img/B17741_05_14.png)'
+  id: totrans-109
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_05_14.png)'
+- en: 'Figure 5.14: After the cherry-pick'
+  id: totrans-110
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 5.14：Cherry-pick 后
+- en: Notice that **Feature1B** is now added to the tip of main, but it is also left
+    on the feature branch.
+  id: totrans-111
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请注意，**Feature1B** 现在已添加到主分支的顶端，但它仍然保留在功能分支中。
+- en: Visual Studio cherry-picking
+  id: totrans-112
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: Visual Studio 的 cherry-pick 操作
+- en: 'Visual Studio has terrific support for cherry-picking. Just go to the branch
+    you want and then open the history. Right-click on the commit you want and choose
+    **Cherry-Pick**:'
+  id: totrans-113
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Visual Studio 对 cherry-pick 提供了极好的支持。只需切换到你想要的分支，然后打开历史记录。右键单击你想要的提交，选择 **Cherry-Pick**：
+- en: '![](img/B17741_05_15.png)'
+  id: totrans-114
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_05_15.png)'
+- en: 'Figure 5.15: Cherry-picking in Visual Studio'
+  id: totrans-115
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 5.15：在 Visual Studio 中进行 cherry-pick
+- en: Cherry-picking can be essential when you've branched off your develop branch
+    but create something on a feature branch that you realize you need.
+  id: totrans-116
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当你从开发分支分出，但在功能分支上创建了一个你后来意识到需要的东西时，挑选提交是至关重要的。
+- en: Summary
+  id: totrans-117
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 总结
+- en: 'In this chapter, we looked at a few advanced topics:'
+  id: totrans-118
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们讨论了一些高级话题：
+- en: Rebasing
+  id: totrans-119
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 变基
+- en: Amending
+  id: totrans-120
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 修改
+- en: Cherry-picking
+  id: totrans-121
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 挑选提交
+- en: What all three of these have in common is that they all rewrite history. Rebasing
+    does so by copying all the commits of one branch onto the tip of another. Amending
+    does so by allowing you to add files and/or change the message on a commit. Finally,
+    cherry-picking acts like rebasing, but using just one or a few commits.
+  id: totrans-122
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这三者的共同点是，它们都会重写历史。变基通过将一个分支的所有提交复制到另一个分支的末端来实现这一点。修改提交则允许您添加文件和/或更改提交的信息。最后，挑选提交的行为类似于变基，但只涉及一个或少数几个提交。
+- en: You saw that many of these activities are easier in Visual Studio but that some
+    things you want to do are much clearer at the command line.
+  id: totrans-123
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你看到许多这些操作在 Visual Studio 中更容易，但有些操作在命令行中做起来更加清晰。
+- en: Finally, we explained why you merge *into* main, but you rebase *onto* main.
+  id: totrans-124
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后，我们解释了为什么要合并*到*主分支，但你要*在*主分支上进行变基。
+- en: Challenge
+  id: totrans-125
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 挑战
+- en: 'Create a new repository called Panofy, which supplies MP3 music to its subscribers.
+    There will be three branches: main, which you get when you create the repo, and
+    two feature branches. Demonstrate the following:'
+  id: totrans-126
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 创建一个名为 Panofy 的新仓库，向其订阅者提供 MP3 音乐。将有三个分支：主分支（创建仓库时自动生成的分支）和两个功能分支。展示以下内容：
+- en: Creating the repository
+  id: totrans-127
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 创建仓库
+- en: Two programmers creating feature branches
+  id: totrans-128
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 两个程序员创建功能分支
+- en: Frequent rebasing
+  id: totrans-129
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 频繁地变基
+- en: Amending a commit to add a file
+  id: totrans-130
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 修改提交以添加文件
+- en: Amending a commit to change the message
+  id: totrans-131
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 修改提交以更改信息
+- en: Cherry-picking one commit onto main
+  id: totrans-132
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 将一个提交挑选到主分支
+- en: Answer
+  id: totrans-133
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 答复
+- en: Once again, there are many ways to solve this challenge. Here is how I went
+    about it.
+  id: totrans-134
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 再次提醒，有很多方法可以解决这个挑战。以下是我采取的方式。
+- en: Creating a new repository on GitHub
+  id: totrans-135
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 在 GitHub 上创建新仓库
+- en: 'We''ve seen this before, so I''ll do it quickly. I''ll navigate to [GitHub.com](http://GitHub.com)
+    and fill in the usual form, making this demo program public:'
+  id: totrans-136
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们以前见过这个，因此我将快速操作。我将访问[GitHub.com](http://GitHub.com)，并填写常规表单，使此示例程序公开：
+- en: '![](img/B17741_05_16.png)'
+  id: totrans-137
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_05_16.png)'
+- en: 'Figure 5.16: Creating a new repository'
+  id: totrans-138
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 5.16：创建新仓库
+- en: Once you've created the repository, you and anyone else who wants to develop
+    against it (and has the right permissions) can clone it locally.
+  id: totrans-139
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦创建了仓库，您和其他任何想要基于它进行开发的人（且拥有适当权限）都可以将其克隆到本地。
+- en: Creating two feature branches with fake programmers
+  id: totrans-140
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 创建两个虚拟程序员的功能分支
+- en: 'To do this, I''ll create two directories, and clone to each. My first directory
+    I''ll call `GitHub/DirA` and my second `GitHub/DirB`. I will then clone into each:'
+  id: totrans-141
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为此，我将创建两个目录并分别克隆到每个目录。我将第一个目录命名为`GitHub/DirA`，第二个命名为`GitHub/DirB`。然后我将分别克隆到每个目录：
+- en: '![](img/B17741_05_17.png)'
+  id: totrans-142
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_05_17.png)'
+- en: 'Figure 5.17: Cloning the program to the local repository'
+  id: totrans-143
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 5.17：将程序克隆到本地仓库
+- en: Only Mateo will program in `DirA`, and only Kim will program in `DirB`.
+  id: totrans-144
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 只有 Mateo 会在`DirA`中编程，而只有 Kim 会在`DirB`中编程。
+- en: Create a C# program in both `DirA` and `DirB`. Once done, use `git status` to
+    ensure they are both pointing to main. To be certain, make a small change in `DirA`
+    and make sure it is reflected in `DirB`. It is easy to become confused as to which
+    directory your Visual Studio is pointing to. You can always right-click on the
+    project and choose **Open folder in File Explorer** to double-check.
+  id: totrans-145
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在`DirA`和`DirB`中创建一个 C# 程序。完成后，使用`git status`确保它们都指向主分支。为了确认，您可以在`DirA`中做一个小修改，并确保它在`DirB`中反映出来。由于
+    Visual Studio 可能指向不同的目录，因此很容易混淆。您可以随时右键单击项目并选择**在文件资源管理器中打开文件夹**以进行双重检查。
+- en: 'The steps I''ll take to confirm that both directories have the same main branch
+    are:'
+  id: totrans-146
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我将采取的步骤，以确认两个目录具有相同的主分支如下：
+- en: In branch B I will make a change and push it
+  id: totrans-147
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在分支 B 中，我将做一个修改并推送它
+- en: In branch A I will pull the change to make my local repository
+  id: totrans-148
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在分支 A 中，我将拉取变更以更新本地仓库。
+- en: 'Finally, I will inspect Visual Studio in branch A to prove that it is identical
+    to branch B:'
+  id: totrans-149
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 最后，我将检查分支 A 中的 Visual Studio，以证明它与分支 B 完全相同：
+- en: '![](img/B17741_05_18.png)'
+  id: totrans-150
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_05_18.png)'
+- en: 'Figure 5.18: Cloning to ensure the two repositories are identical'
+  id: totrans-151
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 5.18：克隆以确保两个仓库完全相同
+- en: To keep track of what I'm looking at, I changed the name of the project for
+    B to `PanofyB`. I then pushed that and on A I pulled it, so that both stay in
+    sync.
+  id: totrans-152
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了跟踪我所查看的内容，我将 B 项目的名称更改为`PanofyB`。然后，我将其推送，并在 A 中拉取，以确保两个分支保持同步。
+- en: This approach is fraught with danger, not least of which is that it is easy
+    to overwrite the work of another developer, or to create conflicts. To avoid that,
+    I'll create a branch for each programmer. I'll create a branch called `Calculator`
+    on A and a branch called `Converter` on B.
+  id: totrans-153
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这种方法充满了风险，最重要的一点是容易覆盖其他开发者的工作，或者引发冲突。为了避免这种情况，我将为每个程序员创建一个分支。我将在 A 上创建一个名为 `Calculator`
+    的分支，在 B 上创建一个名为 `Converter` 的分支。
+- en: Frequent rebasing
+  id: totrans-154
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 频繁的 rebase
+- en: Now that we have two branches, and to keep this simple, we'll build a new version
+    of UtilityKnife, this time with small features and frequent merging. Mateo will
+    go first, creating the structure of the calculator, checking it in and you would
+    merge it into main (you would not normally do it this way – you would build a
+    few aspects of the feature, checking it in frequently, and then when you are done
+    merging it, but we need some demo code).
+  id: totrans-155
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们有了两个分支，为了简单起见，我们将构建一个新的 UtilityKnife 版本，这次包含小功能和频繁合并。Mateo 会首先创建计算器的结构并提交，你将把它合并到主分支中（通常情况下不会这样做——你会先构建功能的几个方面，频繁提交，然后在完成时再合并，但我们需要一些演示代码）。
+- en: 'When I first add to `Calculator`, main is identical, so when I rebase, essentially
+    nothing happens:'
+  id: totrans-156
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当我第一次向 `Calculator` 添加内容时，主分支是相同的，所以当我做 rebase 时，实际上什么都不会发生：
+- en: '![](img/B17741_05_19.png)'
+  id: totrans-157
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_05_19.png)'
+- en: 'Figure 5.19: Rebase early and Rebase often'
+  id: totrans-158
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 5.19：尽早进行 rebase，频繁进行 rebase
+- en: 'Let''s do a bit of work on `Calculator` and then get ready to push it. Before
+    we do, however, let''s do a rebase, in case work was done and pushed to main on
+    a different thread:'
+  id: totrans-159
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们在 `Calculator` 上做一点工作，然后准备推送。但在此之前，让我们先做一次 rebase，以防在其他线程上已经有了对主分支的工作并且推送了：
+- en: '![](img/B17741_05_20.png)'
+  id: totrans-160
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_05_20.png)'
+- en: 'Figure 5.20: Pull changes and then get calculator, remembering to rebase onto
+    main'
+  id: totrans-161
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 5.20：拉取更改，然后获取计算器，记得在主分支上做 rebase
+- en: Yes! Even though another thread (in this case converter) is added to main, we
+    were able to rebase calculator's code on top of it. We now know that there will
+    be no conflicts, at least so far in development.
+  id: totrans-162
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 没错！即使另一个线程（在这个例子中是 converter）被添加到主分支，我们仍然能够将计算器的代码 rebase 到它之上。我们现在知道至少在目前的开发阶段不会发生冲突。
+- en: Amending a commit to add a file
+  id: totrans-163
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 修改提交以添加文件
+- en: 'Let''s return to the `Calculator` class. We''ll add a division example using
+    doubles, check it in, and commit it:'
+  id: totrans-164
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们回到 `Calculator` 类。我们将添加一个使用双精度数的除法示例，提交并提交它：
+- en: '![](img/B17741_05_21.png)'
+  id: totrans-165
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_05_21.png)'
+- en: 'Figure 5.21: Using amend to add a file to the most recent commit'
+  id: totrans-166
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 5.21：使用 amend 将文件添加到最近的提交
+- en: 'After we make the commit, we realize that we intended to add a square root
+    method as well:'
+  id: totrans-167
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在我们做出提交后，我们意识到我们还打算添加一个平方根方法：
+- en: '[PRE6]'
+  id: totrans-168
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: We'd rather not create a new commit just for that. What we want to do is amend
+    the most recent commit. We do that with the `--amend` command.
+  id: totrans-169
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们宁愿不为了这个创建一个新的提交。我们要做的是修改最近的提交。我们通过 `--amend` 命令来实现。
+- en: 'To do this, we put the file(s) we want to add into the index and issue the
+    `git commit --amend` command:'
+  id: totrans-170
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了做到这一点，我们将要添加的文件放入索引中，并执行 `git commit --amend` 命令：
+- en: '![](img/B17741_05_22.png)'
+  id: totrans-171
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_05_22.png)'
+- en: 'Figure 5.22: Amending the commit to include the change in Calculator.cs'
+  id: totrans-172
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 5.22：修改提交以包括 Calculator.cs 中的更改
+- en: 'We take the following steps in the code shown above:'
+  id: totrans-173
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们在上面显示的代码中采取以下步骤：
+- en: Call `git status`. Note that we have a modified file, so add it to the index
+    with `git add`.
+  id: totrans-174
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 输入 `git status`。注意我们有一个修改过的文件，因此使用 `git add` 将其添加到索引中。
+- en: Invoke `git commit --amend`, which commits the new code as part of the previous
+    commit.
+  id: totrans-175
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 执行 `git commit --amend`，这会将新代码作为上一个提交的一部分提交。
+- en: The editor will open; put in the new message. Notice that the new message is
+    now displayed (second arrow).
+  id: totrans-176
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 编辑器会打开；输入新的信息。注意，新消息现在已经显示出来（第二个箭头）。
+- en: This allows us to amend the message to something more meaningful. You'll see
+    another way to do this in the chapter on interactive rebasing.
+  id: totrans-177
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这让我们能够将消息修改为更有意义的内容。在关于交互式 rebase 的章节中，你将看到另一种做法。
+- en: Amending a commit to change the message
+  id: totrans-178
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 修改提交以更改消息
+- en: 'If there is nothing new in the index then `git commit --amend` will just give
+    you an opportunity to change the message:'
+  id: totrans-179
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果索引中没有任何新的内容，那么 `git commit --amend` 将只给你一个修改消息的机会：
+- en: '![](img/B17741_05_23.png)'
+  id: totrans-180
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_05_23.png)'
+- en: 'Figure 5.23: Using amend to modify the message of the most recent commit'
+  id: totrans-181
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 5.23：使用 amend 修改最近提交的消息
+- en: We do a `git status` to make sure that nothing is in the index. We then call
+    `git commit --amend` just as we did before, but we add a message (if we didn't
+    add a message our editor would come up). Since there was nothing in the index,
+    Git just changes the messages.
+  id: totrans-182
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们执行`git status`来确保索引中没有任何内容。然后，我们像之前一样调用`git commit --amend`，但我们添加了一条信息（如果没有添加信息，编辑器会自动弹出）。由于索引中没有任何内容，Git只是更改了提交信息。
+- en: Cherry-picking one commit onto main
+  id: totrans-183
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 将一个提交樱桃挑选到主分支
+- en: 'Here is the log for main and for calculator:'
+  id: totrans-184
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这里是主分支和计算器分支的日志：
+- en: '![](img/B17741_05_24.png)'
+  id: totrans-185
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_05_24.png)'
+- en: 'Figure 5.24: Cheryy-pick onto main'
+  id: totrans-186
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图5.24：樱桃挑选到主分支
+- en: We don't want to merge all of calculator into main but we do want to add the
+    multiply and divide commits.
+  id: totrans-187
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们不想将计算器的所有内容合并到主分支，但我们确实希望将乘法和除法的提交合并进来。
+- en: Okay, that is silly, but for a real-world example imagine that main is your
+    release branch, and calculator has an important function that you want to add.
+  id: totrans-188
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 好吧，这有点傻，但为了一个实际的例子，假设主分支是你的发布分支，而计算器分支有一个重要的功能，你希望将它添加进去。
+- en: 'Notice the seven-integer ID next to each commit. To cherry-pick `972d77a` into
+    main, we make sure main is the current branch and then we issue the cherry-pick
+    command with the ID of the commit we want to add:'
+  id: totrans-189
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 注意每个提交旁边的七位数字ID。要将`972d77a`樱桃挑选到主分支，我们确保主分支是当前分支，然后执行樱桃挑选命令，指定我们要添加的提交的ID：
+- en: '![](img/B17741_05_25.png)'
+  id: totrans-190
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_05_25.png)'
+- en: 'Figure 5.25: Issuing the cherry-pick command'
+  id: totrans-191
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图5.25：执行樱桃挑选命令
+- en: 'You have committed `972d77a` into main, and main has one commit to push. Before
+    we push let''s look at those logs again:'
+  id: totrans-192
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你已将`972d77a`提交到主分支，主分支有一个提交待推送。在我们推送之前，让我们再看一下这些日志：
+- en: '![](img/B17741_05_26.png)'
+  id: totrans-193
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_05_26.png)'
+- en: 'Figure 5.26: Examining the log after the cherry-pick'
+  id: totrans-194
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图5.26：查看樱桃挑选后的日志
+- en: 'Three things to notice here:'
+  id: totrans-195
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这里有三点需要注意：
+- en: Main now has the add multiply and divide commit
+  id: totrans-196
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在主分支包含了添加乘法和除法的提交
+- en: Multiply and divide have not been removed from calculator
+  id: totrans-197
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 乘法和除法并没有从计算器中移除
+- en: The ID is different for the two commits, meaning they are separate commits and
+    manipulation of one will not affect the other
+  id: totrans-198
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 这两个提交的ID不同，意味着它们是独立的提交，一个的操作不会影响另一个
+- en: This example answer meets the requirements of creating two feature branches
+    off a new repo, and the "programmers" rebase frequently. We also amended a message
+    (while local) and used cherry-picking to copy one commit onto the main branch.
+  id: totrans-199
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个示例答案符合创建两个功能分支的要求，分支来自一个新的仓库，并且“程序员们”会频繁地进行变基操作。我们还修改了一个信息（在本地），并使用樱桃挑选将一个提交复制到主分支。

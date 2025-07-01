@@ -1,0 +1,2540 @@
+- en: '4'
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '4'
+- en: Deploying to Microsoft Azure
+  id: totrans-1
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 部署到微软 Azure
+- en: In this fourth chapter, we are going to look at getting our project deployed
+    with the first of the two major public cloud providers we are going to cover in
+    this book, **Microsoft Azure**.
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在第四章中，我们将学习如何使用我们将在本书中覆盖的两个主要公共云提供商之一——**微软 Azure**，来部署我们的项目。
+- en: 'We are going to cover the following topics:'
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将涵盖以下主题：
+- en: Introducing Microsoft Azure
+  id: totrans-4
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 介绍微软 Azure
+- en: Preparing our cloud environment for deployment
+  id: totrans-5
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 准备我们的云环境以进行部署
+- en: Producing the low-level design
+  id: totrans-6
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 生成低级设计
+- en: Terraform – writing the code and deploying our infrastructure
+  id: totrans-7
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Terraform – 编写代码并部署我们的基础设施
+- en: Ansible – reviewing the code and deploying our infrastructure
+  id: totrans-8
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Ansible – 审查代码并部署我们的基础设施
+- en: We will delve into the world of Microsoft Azure, beginning with an introduction
+    to the platform, its key features, and the benefits it offers for cloud-based
+    application deployment. We will also explore the different services available
+    within Azure and how they fit into our architectural design for our WordPress
+    workload.
+  id: totrans-9
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将深入了解微软 Azure，首先介绍平台、其关键功能，以及它为基于云的应用程序部署所带来的优势。我们还将探索 Azure 中的不同服务及其如何融入我们为
+    WordPress 工作负载设计的架构中。
+- en: Following this, we will build on our Terraform knowledge and work through the
+    code needed to provision and manage our Azure cloud infrastructure. Lastly, we
+    will explore Ansible, another essential tool for automating infrastructure deployment
+    and configuration management.
+  id: totrans-10
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来，我们将基于 Terraform 知识，学习所需的代码来配置和管理我们的 Azure 云基础设施。最后，我们将探索 Ansible，这是另一个用于自动化基础设施部署和配置管理的关键工具。
+- en: By the end of this chapter, you will have gained an understanding of Microsoft
+    Azure and its various components and be equipped with the skills necessary to
+    deploy and manage your applications on this cloud platform using Terraform and
+    Ansible.
+  id: totrans-11
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 到本章结束时，你将了解微软 Azure 及其各种组件，并掌握使用 Terraform 和 Ansible 在该云平台上部署和管理应用程序所需的技能。
+- en: Technical requirement
+  id: totrans-12
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 技术要求
+- en: Due to the amount of code needed to deploy our project, when it comes to the
+    Terraform and Ansible sections of the chapter, we will not cover every piece of
+    code needed to deploy the project. The code repository accompanying this title
+    will contain the complete executable code.
+  id: totrans-13
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于部署项目所需的代码量较大，关于本章的 Terraform 和 Ansible 部分，我们不会覆盖所有部署项目所需的代码。随本书附带的代码仓库将包含完整的可执行代码。
+- en: Introducing and preparing our cloud environment
+  id: totrans-14
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 引入并准备我们的云环境
+- en: 'In 2008, Microsoft unveiled Windows Azure, a cloud-based data center service
+    that had been in development under the internal project name *Project Red Dog*.
+    This service included five core components:'
+  id: totrans-15
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 2008 年，微软推出了 Windows Azure，这是一项基于云的数据中心服务，开发时的内部项目代号为 *Project Red Dog*。该服务包括五个核心组件：
+- en: '**Microsoft SQL Data Services**, a cloud version of the SQL database, which
+    aimed to simplify hosting'
+  id: totrans-16
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**微软 SQL 数据服务**，SQL 数据库的云版本，旨在简化托管过程。'
+- en: '**Microsoft .NET Services**, a **Platform as a Service** (**PaaS**), allowed
+    developers to deploy their .NET-based applications in a Microsoft-managed runtime'
+  id: totrans-17
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**微软 .NET 服务**，一种**平台即服务**（**PaaS**），允许开发人员将基于 .NET 的应用程序部署到微软管理的运行时环境中。'
+- en: '**Microsoft SharePoint and Dynamics**, **Software as a Service** (**SaaS**)
+    versions of the company’s intranet and customer relationship management products'
+  id: totrans-18
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**微软 SharePoint 和 Dynamics**，公司内部网和客户关系管理产品的**软件即服务**（**SaaS**）版本。'
+- en: '**Windows Azure** is an **Infrastructure-as-a-Service** (**IaaS**) offering
+    that enables users to create virtual machines, storage, and networking services
+    for their compute workloads'
+  id: totrans-19
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**Windows Azure** 是一种**基础设施即服务**（**IaaS**）产品，使用户能够为计算工作负载创建虚拟机、存储和网络服务。'
+- en: All the services provided by Microsoft as part of Windows Azure were built upon
+    the Red Dog operating system, a specialized version of their Windows NT operating
+    system, which had been specifically designed to include a cloud layer to support
+    the delivery of data center services.
+  id: totrans-20
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 微软在 Windows Azure 中提供的所有服务都建立在 Red Dog 操作系统上，这是他们 Windows NT 操作系统的一个专门版本，专门设计了一个云层来支持数据中心服务的交付。
+- en: In 2014, the company decided to rebrand the service as Microsoft Azure; as they
+    added services, it made sense for them to drop the Windows branding, especially
+    as there was a growing number of Linux-based workloads being hosted on the platform.
+    This trend continued over the following years, and by 2020, it was reported that
+    more than half of Azure’s virtual machine cores and a significant proportion of
+    Azure Marketplace images were Linux-based, demonstrating Microsoft’s increasing
+    embrace of Linux and open source technologies as the building blocks for some
+    of their now core services.
+  id: totrans-21
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 2014 年，公司决定将该服务重新命名为 Microsoft Azure；随着他们添加更多服务，取消 Windows 品牌化是有意义的，尤其是因为平台上托管的
+    Linux 工作负载数量不断增加。这个趋势在接下来的几年中持续，到了 2020 年，据报道，超过一半的 Azure 虚拟机核心和大量的 Azure Marketplace
+    镜像是基于 Linux 的，这表明 Microsoft 对 Linux 和开源技术的接受程度越来越高，作为他们一些核心服务的构建基石。
+- en: Now that we have some background knowledge of Microsoft Azure, let’s start preparing
+    the cloud environment for deployment.
+  id: totrans-22
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们对 Microsoft Azure 有了一些背景知识，让我们开始准备部署的云环境。
+- en: Preparing our cloud environment for deployment
+  id: totrans-23
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 为我们的云环境做部署准备
+- en: For the purposes of this chapter, we will run the Terraform and Ansible scripts
+    locally on our own machine – this makes the deployment a little easier as we will
+    be able to piggyback off a signed-in session using the Azure **Command-Line Interface**
+    (**CLI**). For details on how to install this, please see the official documentation
+    at [https://learn.microsoft.com/en-us/cli/azure/install-azure-cli](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli).
+  id: totrans-24
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们将在本地机器上运行 Terraform 和 Ansible 脚本——这样部署就会稍微容易一些，因为我们可以利用已登录的会话使用 Azure
+    **命令行界面**（**CLI**）。有关如何安装的详细信息，请参阅官方文档：[https://learn.microsoft.com/en-us/cli/azure/install-azure-cli](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli)。
+- en: 'Once installed, make sure you are signed into the account where you would like
+    the resources to be deployed; you can do this by running the following command:'
+  id: totrans-25
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 安装完成后，确保您已登录到希望部署资源的帐户；您可以通过运行以下命令来完成此操作：
+- en: '[PRE0]'
+  id: totrans-26
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: 'Then, follow the on-screen prompts; if you are already logged in, then you
+    can double-check the details of your current login by running this command:'
+  id: totrans-27
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后，按照屏幕上的提示操作；如果您已经登录，您可以通过运行以下命令来再次确认当前登录的详细信息：
+- en: '[PRE1]'
+  id: totrans-28
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: Now that we have our environment prepared, we can now look at the services we
+    are going to be deploying.
+  id: totrans-29
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经准备好了环境，接下来可以查看我们将要部署的服务。
+- en: Producing the low-level design
+  id: totrans-30
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 制作低层次设计
+- en: 'Based on the deployment we discussed in [*Chapter 3*](B19537_03.xhtml#_idTextAnchor130),
+    *Planning the Deployment*, we know we are going to need the following resources
+    to run our workload on Microsoft Azure:'
+  id: totrans-31
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 基于我们在[*第 3 章*](B19537_03.xhtml#_idTextAnchor130)中讨论的部署，*部署规划*，我们知道在 Microsoft
+    Azure 上运行工作负载需要以下资源：
+- en: '![Figure 4.1 – An overview of the resources we are going to launch in Azure](img/Figure_4.01_B19537.jpg)'
+  id: totrans-32
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 4.1 – 我们将在 Azure 中启动的资源概览](img/Figure_4.01_B19537.jpg)'
+- en: Figure 4.1 – An overview of the resources we are going to launch in Azure
+  id: totrans-33
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 4.1 – 我们将在 Azure 中启动的资源概览
+- en: 'We will use the following services:'
+  id: totrans-34
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将使用以下服务：
+- en: '**Azure Load Balancer**: This is a TCP load balancer as a service – while I
+    would have preferred to use **Azure Application Gateway** to terminate our HTTP/HTTPS
+    connections, that would have added a little too much complexity to our build for
+    this stage of the book.'
+  id: totrans-35
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**Azure 负载均衡器**：这是一种作为服务提供的 TCP 负载均衡器——虽然我更希望使用 **Azure 应用程序网关** 来终止我们的 HTTP/HTTPS
+    连接，但这会在本书的这个阶段为我们的构建增加一些复杂性。'
+- en: '**Virtual Network**: The core networking service our services will be both
+    deployed into or configured to be accessible from.'
+  id: totrans-36
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**虚拟网络**：我们的服务将被部署到的核心网络服务，或者配置为从中访问。'
+- en: '**Virtual machine**: We will use a single **Linux virtual machine** as our
+    WordPress admin instance – this will be responsible for the initial bootstrapping
+    of the application.'
+  id: totrans-37
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**虚拟机**：我们将使用单个**Linux 虚拟机**作为我们的 WordPress 管理实例——它将负责应用程序的初步引导。'
+- en: '**Virtual Machine Scale Set**: This is similar to the Linux virtual machine,
+    but this service is designed to manage one to many virtual machines from a single
+    resource, allowing us to scale out if needed.'
+  id: totrans-38
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**虚拟机规模集**：这类似于 Linux 虚拟机，但该服务旨在从单一资源管理多个虚拟机，允许我们在需要时进行扩展。'
+- en: '**Azure Storage Account/Azure Files**: Our WordPress files will be stored in
+    an NFS share, which is only accessible to trusted IP addresses within our Virtual
+    Network where our virtual machine and Virtual Machine Scale Set instances are
+    running.'
+  id: totrans-39
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**Azure 存储账户/Azure 文件**：我们的 WordPress 文件将存储在一个 NFS 共享中，该共享只能由我们虚拟网络中的受信 IP
+    地址访问，这些 IP 地址运行着我们的虚拟机和虚拟机规模集实例。'
+- en: '**Azure Database for MySQL - Flexible Server**: Our WordPress installation
+    needs a database server; as we are running in a public cloud, a **Database-as-a-Service**
+    (**DBaaS**) option makes sense. This service will make a MySQL server and database
+    accessible within our Virtual Network.'
+  id: totrans-40
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**Azure Database for MySQL - Flexible Server**：我们的 WordPress 安装需要一个数据库服务器；由于我们运行在公共云中，选择**数据库即服务**（**DBaaS**）是合理的。该服务将使
+    MySQL 服务器和数据库在我们的虚拟网络内可访问。'
+- en: There are also other services such as **Azure Private DNS**, **private endpoints**,
+    **network security groups**, and **public IPs** within the solution to support
+    securely accessing the core services we will launch within the Virtual Network.
+  id: totrans-41
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 解决方案中还包含其他服务，如**Azure 私有 DNS**、**私有终端**、**网络安全组**和**公共 IP**，以支持安全地访问我们将在虚拟网络内启动的核心服务。
+- en: Now that we know the services we are launching, we can dive into writing our
+    code.
+  id: totrans-42
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经知道要启动哪些服务，接下来可以开始编写我们的代码。
+- en: Terraform – writing the code and deploying our infrastructure
+  id: totrans-43
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Terraform – 编写代码并部署我们的基础设施
+- en: 'Now that we know which services we are going to deploy, we can make a start
+    on our Terraform deployment. To make things more manageable, I will split our
+    code into several files; they will be named the following:'
+  id: totrans-44
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 既然我们已经知道要部署哪些服务，我们可以开始进行 Terraform 部署了。为了使事情更易于管理，我会将我们的代码拆分成多个文件，它们将命名为：
+- en: '`001-setup.tf`'
+  id: totrans-45
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`001-setup.tf`'
+- en: '`002-resource-group.tf`'
+  id: totrans-46
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`002-resource-group.tf`'
+- en: '`003-networking.tf`'
+  id: totrans-47
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`003-networking.tf`'
+- en: '`004-storage.tf`'
+  id: totrans-48
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`004-storage.tf`'
+- en: '`005-database.tf`'
+  id: totrans-49
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`005-database.tf`'
+- en: '`006-vm-admin.tf`'
+  id: totrans-50
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`006-vm-admin.tf`'
+- en: '`007-vmss-web.tf`'
+  id: totrans-51
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`007-vmss-web.tf`'
+- en: '`098-outputs.tf`'
+  id: totrans-52
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`098-outputs.tf`'
+- en: '`099-variables.tf`'
+  id: totrans-53
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`099-variables.tf`'
+- en: '`vm-cloud-init-admin.yml.tftpl`'
+  id: totrans-54
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`vm-cloud-init-admin.yml.tftpl`'
+- en: '`vmss-cloud-init-web.tftpl`'
+  id: totrans-55
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`vmss-cloud-init-web.tftpl`'
+- en: I have done this to more logically group all the functions around a certain
+    part of the deployment code together; for example, all of the networking elements
+    can be found in the `003-networking.tf` file and the variables used in the `099-variables.tf`
+    file.
+  id: totrans-56
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我这样做是为了更有逻辑地将与部署代码某一部分相关的所有功能组合在一起；例如，所有网络相关的元素都可以在 `003-networking.tf` 文件中找到，而在
+    `099-variables.tf` 文件中则定义了使用的变量。
+- en: Information
+  id: totrans-57
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 信息
+- en: As mentioned at the start of this chapter, what follows is not 100% of the code
+    contained within each of the files, and I will be referencing blocks out of the
+    `variables` file in line with blocks from other files.
+  id: totrans-58
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如本章开头提到的，接下来展示的并不是每个文件中包含的 100% 代码，我将在文中参考来自 `variables` 文件的代码块，同时也会参考其他文件中的代码块。
+- en: Without further delay, let’s look at the Terraform code, starting with the setup
+    tasks.
+  id: totrans-59
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 不再浪费时间，让我们直接看看 Terraform 代码，首先从设置任务开始。
+- en: Setting up the Terraform environment
+  id: totrans-60
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 设置 Terraform 环境
+- en: 'One of the first things we need to do is set up our Terraform environment for
+    our deployment. To do this, we need to confirm which version of Terraform to use
+    and which providers to download:'
+  id: totrans-61
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们需要做的第一件事是为部署设置 Terraform 环境。为此，我们需要确认使用哪个版本的 Terraform，并下载哪些提供商：
+- en: '[PRE2]'
+  id: totrans-62
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: 'Now, we need to add a configuration block for one of the providers:'
+  id: totrans-63
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，我们需要为其中一个提供商添加配置块：
+- en: '[PRE3]'
+  id: totrans-64
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: While we are not putting any custom configuration in there, it must be present
+    to progress with the deployment.
+  id: totrans-65
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 虽然我们没有在其中进行任何自定义配置，但它必须存在才能继续进行部署。
+- en: Finally, we come to the first task, which uses a module from the **Terraform
+    Registry** to come up with all the Microsoft-defined variations of a region name,
+    full name, short name, and so on.
+  id: totrans-66
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后，我们来到了第一个任务，它使用来自**Terraform 注册表**的模块，来列出 Microsoft 定义的地区名称的所有变体，包括全名、简称等。
+- en: 'To call the module and pass it is the region variable, use the following code:'
+  id: totrans-67
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要调用模块并传递区域变量，请使用以下代码：
+- en: '[PRE4]'
+  id: totrans-68
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: 'The `var.location` variable we use is defined in the `099-variables.tf` file
+    as follows:'
+  id: totrans-69
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们使用的 `var.location` 变量在 `099-variables.tf` 文件中定义如下：
+- en: '[PRE5]'
+  id: totrans-70
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: As you can see, we are setting `default` as `West Europe`; don’t worry, if you
+    don’t want to launch your resources in that region, we will cover overriding the
+    variables when executing the deployment in [*Chapter 6*](B19537_06.xhtml#_idTextAnchor350),
+    *Building upon* *the Foundations*.
+  id: totrans-71
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，我们将 `default` 设置为 `West Europe`；别担心，如果你不想在该地区启动资源，我们将在[第 6 章](B19537_06.xhtml#_idTextAnchor350)中讲解如何覆盖变量来执行部署，*在基础上构建*。
+- en: And that covers the `001-setup.tf` file, now that we have all the basics in
+    place, we can move on to creating the **resource group**.
+  id: totrans-72
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这就涵盖了 `001-setup.tf` 文件，既然我们已经完成了所有基础设置，接下来可以开始创建 **资源组**。
+- en: Creating a resource group
+  id: totrans-73
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 创建资源组
+- en: 'As mentioned in earlier chapters, my day job sees me doing a lot of work in
+    Microsoft Azure, and one of the things I adhere to is the **Cloud Adoption Framework**.
+    This is a sensible documented set of recommendations around deploying resources
+    into Microsoft Azure, which includes a naming scheme. Accordingly, one of the
+    providers we are using helps dynamically create Azure resource names based on
+    the information we pass it; we will use this throughout the deployment, as one
+    of the provider’s goals is to introduce naming consistency for nearly all of the
+    resources we are going to deploy. The code to generate the name of the resource
+    group looks like the following:'
+  id: totrans-74
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如前面章节所提到的，我的日常工作中有很多与 Microsoft Azure 相关的内容，其中一项是我始终遵循的 **云采用框架**。这是一个关于如何在
+    Microsoft Azure 中部署资源的合理文档化推荐集，其中包括命名方案。因此，我们使用的一个提供程序帮助根据我们传递的信息动态创建 Azure 资源名称；在整个部署过程中我们都会使用它，因为该提供程序的目标之一是为我们将要部署的几乎所有资源引入命名一致性。用于生成资源组名称的代码如下：
+- en: '[PRE6]'
+  id: totrans-75
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: 'As you can see, we are passing several bits of information – three variables
+    and dynamically generated bits of information, namely the following two variables:'
+  id: totrans-76
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，我们传递了几项信息——三个变量和动态生成的信息，具体包括以下两个变量：
+- en: '[PRE7]'
+  id: totrans-77
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE7]'
+- en: 'And also, we are using the output Azure Region module, which will provide a
+    short name of whichever region we define in our `variables` file at `099-variables.tf`.
+    This is referenced as follows:'
+  id: totrans-78
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 同时，我们还在使用输出的 Azure 区域模块，该模块会提供我们在 `099-variables.tf` 中定义的区域的短名称。它的引用方式如下：
+- en: '[PRE8]'
+  id: totrans-79
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE8]'
+- en: 'The other important information we are passing is `resource_type`, which in
+    our case, is `azurerm_resource_group`. This will give us an output that looks
+    like the following figure, which we can then pass on to our next resource block:'
+  id: totrans-80
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们传递的另一个重要信息是 `resource_type`，在我们这里是 `azurerm_resource_group`。这将输出如下图所示的结果，然后我们可以将其传递给下一个资源块：
+- en: '![Figure 4.2 – Naming our resource group](img/Figure_4.02_B19537.jpg)'
+  id: totrans-81
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 4.2 – 资源组命名](img/Figure_4.02_B19537.jpg)'
+- en: Figure 4.2 – Naming our resource group
+  id: totrans-82
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 4.2 – 资源组命名
+- en: 'Now that we have the resource name, we can go ahead and define the resource
+    group block:'
+  id: totrans-83
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经有了资源名称，接下来可以定义资源组块：
+- en: '[PRE9]'
+  id: totrans-84
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE9]'
+- en: As you can see, we reference `azurecaf_name.resource_group.result` as the name
+    of the resource, and we also use another variation of the region name by using
+    `module.azure_region.location_cli`, which will output the name as `westeurope`
+    rather than `West Europe` or `euw`.
+  id: totrans-85
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，我们引用 `azurecaf_name.resource_group.result` 作为资源名称，同时通过 `module.azure_region.location_cli`
+    使用区域名称的另一种变体，它会将输出结果显示为 `westeurope`，而不是 `West Europe` 或 `euw`。
+- en: 'The final variable we pass in is for `map` rather than `string`. This looks
+    like the following:'
+  id: totrans-86
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们传递的最后一个变量是 `map` 类型，而非 `string` 类型。它看起来如下：
+- en: '[PRE10]'
+  id: totrans-87
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE10]'
+- en: This is used throughout the deployment and will add three different tags, `project`,
+    `environment`, and `deployed_by`, to each of the resources that use them. This
+    is the simplest form of map we will use and is simply a list of keys and values.
+  id: totrans-88
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这在整个部署过程中都会使用，并且会为每个使用它们的资源添加三个不同的标签，`project`、`environment` 和 `deployed_by`。这是我们使用的最简单的映射形式，仅仅是一个键值对列表。
+- en: Things will get a little more complicated with maps as we move on to the next
+    section, which is *Networking*, as we start to use maps to introduce a little
+    logic into our deployment.
+  id: totrans-89
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 随着我们进入下一部分——*网络*，事情会变得稍微复杂一些，因为我们开始使用映射来为部署引入一些逻辑。
+- en: Networking
+  id: totrans-90
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 网络
+- en: 'As well as naming all of the resources using the `azurecaf_name` provider,
+    we are going to configure and launch the following resources in this section:'
+  id: totrans-91
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 除了使用 `azurecaf_name` 提供程序命名所有资源外，我们还将在这一部分配置并启动以下资源：
+- en: '**Azure Virtual Network**, where we will configure the primary network resource,
+    along with three subnets – which is where things start to get complicated with
+    the maps'
+  id: totrans-92
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**Azure虚拟网络**，在这里我们将配置主要的网络资源，并且设置三个子网——这也是映射变得复杂的地方。'
+- en: '**Azure Load Balancer**, as well as the resource itself, we will configure
+    a public IP address, backend pool, health probe, and two types of rules – load
+    balancing and NAT; there will be more on this later in the section'
+  id: totrans-93
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**Azure负载均衡器**，以及资源本身，我们将配置一个公共IP地址、后端池、健康探针和两种类型的规则——负载均衡和NAT；这一部分稍后会详细介绍。'
+- en: '**The network security group**, with two rules to allow secure access to our
+    services'
+  id: totrans-94
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**网络安全组**，包含两条规则，用于允许安全访问我们的服务'
+- en: Let’s dive into something more exciting and look at the Azure Virtual Network.
+  id: totrans-95
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们深入了解一些更令人兴奋的内容，看看 Azure 虚拟网络。
+- en: The Azure Virtual Network
+  id: totrans-96
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: Azure 虚拟网络
+- en: 'The first part of configuring our underlying network is the Virtual Network
+    resource itself. To do this, there are two main variables we are going to use;
+    the first is straightforward:'
+  id: totrans-97
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 配置我们底层网络的第一部分是虚拟网络资源本身。为此，我们将使用两个主要变量；第一个很简单：
+- en: '[PRE11]'
+  id: totrans-98
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE11]'
+- en: 'As can see, this defines the address space we are going to use for the Virtual
+    Network as a list containing a single value; this is then called in the following
+    block:'
+  id: totrans-99
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，这定义了我们将用于虚拟网络的地址空间，它是一个包含单一值的列表；然后在以下代码块中调用它：
+- en: '[PRE12]'
+  id: totrans-100
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE12]'
+- en: 'Nothing too out of the ordinary on the face of it. To ensure that the Virtual
+    Network is created after the resource group has been created, by passing in the
+    dynamically generated name, the default tags, and the list of address spaces,
+    which in our case only contains a single item, we use the following references:'
+  id: totrans-101
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 表面上没有什么特别的。为了确保虚拟网络在资源组创建之后创建，通过传递动态生成的名称、默认标签和地址空间列表（在我们的例子中仅包含一个项目），我们使用以下引用：
+- en: '`azurerm_resource_group.resource_group.name`'
+  id: totrans-102
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`azurerm_resource_group.resource_group.name`'
+- en: '`azurerm_resource_group.resource_group.location`'
+  id: totrans-103
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`azurerm_resource_group.resource_group.location`'
+- en: 'The second variable is where we define the subnet and is also where things
+    get interesting:'
+  id: totrans-104
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 第二个变量是我们定义子网的地方，也是让事情变得有趣的地方：
+- en: '[PRE13]'
+  id: totrans-105
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE13]'
+- en: 'The preceding code defines what variables are needed for each of the subnets,
+    while the following code sets the default settings that we will use in our deployment,
+    starting with the subnet for the virtual machines:'
+  id: totrans-106
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 上面的代码定义了每个子网所需的变量，而下面的代码设置了我们将在部署中使用的默认设置，从虚拟机的子网开始：
+- en: '[PRE14]'
+  id: totrans-107
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE14]'
+- en: 'The second subnet will be used for the private endpoints we will deploy:'
+  id: totrans-108
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 第二个子网将用于我们将要部署的私有端点：
+- en: '[PRE15]'
+  id: totrans-109
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE15]'
+- en: 'The third and final subnet we are going to need is the one used for the `database`
+    service:'
+  id: totrans-110
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们需要的第三个也是最后一个子网是用于 `database` 服务的：
+- en: '[PRE16]'
+  id: totrans-111
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE16]'
+- en: As you can see, a lot is happening here, so let’s break it down a little.
+  id: totrans-112
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如你所看到的，这里发生了很多事情，让我们稍微分解一下。
+- en: What we are defining here is a map that contains several objects; those objects
+    are strings, a Boolean, a list, and finally, a map made up of a map, which contains
+    a list of strings!
+  id: totrans-113
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们在这里定义的是一个包含多个对象的映射；这些对象是字符串、布尔值、列表，最后是由映射组成的映射，其中包含一个字符串列表！
+- en: 'Let’s start simple and look at how we will name the subnets. To do this, we
+    use a `for_each` loop:'
+  id: totrans-114
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们从简单的开始，看看我们如何为子网命名。为此，我们使用 `for_each` 循环：
+- en: '[PRE17]'
+  id: totrans-115
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE17]'
+- en: 'This takes the `subnet_name` value from each of our three maps and creates
+    three resource names; the following names will be generated:'
+  id: totrans-116
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这会从我们的三个映射中的每一个获取 `subnet_name` 值，并创建三个资源名称；将生成以下名称：
+- en: '`snet-endpoints-iac-wordpress-prod-euw`'
+  id: totrans-117
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`snet-endpoints-iac-wordpress-prod-euw`'
+- en: '`snet-vms-iac-wordpress-prod-euw`'
+  id: totrans-118
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`snet-vms-iac-wordpress-prod-euw`'
+- en: '`snet-database-iac-wordpress-prod-euw`'
+  id: totrans-119
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`snet-database-iac-wordpress-prod-euw`'
+- en: 'We will take a similar approach by using a `for_each` loop to create the subnets,
+    but this time more of the information in the map object. The code block to create
+    the subnets looks like the following:'
+  id: totrans-120
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将采用类似的方法，通过使用 `for_each` 循环来创建子网，但这次会更多地使用映射对象中的信息。创建子网的代码块如下所示：
+- en: '[PRE18]'
+  id: totrans-121
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE18]'
+- en: 'As already mentioned, we use the `for_each` argument to iterate over the elements
+    in the `vnet_subnets` map. We set the `name` property using the results of the
+    `azurecaf_name` loop; each of the three names is referenced using the key, which
+    in the map would be as follows:'
+  id: totrans-122
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如前所述，我们使用 `for_each` 参数来遍历 `vnet_subnets` 映射中的元素。我们使用 `azurecaf_name` 循环的结果设置
+    `name` 属性；每三个名称通过键来引用，在映射中如下所示：
+- en: '`virtual_network_subnets_001`'
+  id: totrans-123
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`virtual_network_subnets_001`'
+- en: '`virtual_network_subnets_002`'
+  id: totrans-124
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`virtual_network_subnets_002`'
+- en: '`virtual_network_subnets_003`'
+  id: totrans-125
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`virtual_network_subnets_003`'
+- en: Although, in this instance, we do not have to hardcode each of these values
+    so we can use `azurecaf_name.virtual_network_subnets[each.key].result`. The `resource_group_name`
+    property is set using the output of `azurerm_resource_group`. The `address_prefixes`
+    property is set to a list containing the `address_prefix` value for the current
+    subnet’s `vnet_subnets` key.
+  id: totrans-126
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 尽管在这个实例中，我们不需要为每个值硬编码，因此我们可以使用 `azurecaf_name.virtual_network_subnets[each.key].result`。`resource_group_name`
+    属性使用 `azurerm_resource_group` 的输出进行设置。`address_prefixes` 属性被设置为一个包含当前子网的 `vnet_subnets`
+    键的 `address_prefix` 值的列表。
+- en: The `service_endpoints` property is set to the corresponding value for the current
+    subnet if it is provided. If the value is not provided, an empty list is used
+    instead.
+  id: totrans-127
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`service_endpoints` 属性会设置为当前子网的对应值（如果提供了该值）。如果未提供该值，则使用空列表。'
+- en: Similarly, the `private_endpoint_network_policies_enabled` property is set to
+    the corresponding value for the current subnet if it is provided. If the value
+    is not provided, an empty list is used instead. Finally, the code includes a nested
+    loop over the `service_delegations` property of the current subnet.
+  id: totrans-128
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 类似地，`private_endpoint_network_policies_enabled` 属性会设置为当前子网的对应值（如果提供了该值）。如果未提供该值，则使用空列表。最后，代码包含对当前子网的
+    `service_delegations` 属性进行的嵌套循环。
+- en: A **dynamic block** is a setting block that is evaluated at runtime, allowing
+    you to add blocks based on the values of input variables and also outputs from
+    other tasks within the Terraform code. Dynamic blocks are helpful when you need
+    to create a variable number of blocks based on data that is known only at runtime.
+  id: totrans-129
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**动态块** 是一个在运行时评估的设置块，允许你根据输入变量的值以及其他任务的输出动态添加块。动态块对于根据运行时才能知道的数据创建可变数量的块非常有帮助。'
+- en: The dynamic block creates a `delegation` block for each element in the `service_delegations`
+    map. The `iterator` argument is set to `item`, representing the current element
+    being processed, and the `content` block creates a `service_delegation` block
+    with the key as the name and the value as the actions.
+  id: totrans-130
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 动态块为 `service_delegations` 映射中的每个元素创建一个 `delegation` 块。`iterator` 参数被设置为 `item`，表示当前正在处理的元素，`content`
+    块创建一个 `service_delegation` 块，其中键为名称，值为动作。
+- en: 'To give you an idea of what this looks like, if we were to manually define
+    the `virtual_network_subnets_002` and `virtual_network_subnets_003` map objects,
+    they would look like the following:'
+  id: totrans-131
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了让你了解这是什么样子的，如果我们手动定义 `virtual_network_subnets_002` 和 `virtual_network_subnets_003`
+    映射对象，它们会像以下这样：
+- en: '[PRE19]'
+  id: totrans-132
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE19]'
+- en: As you can see, while it looks complicated, it is an excellent way of writing
+    less code with hardcoded values, which makes the block easily reusable.
+  id: totrans-133
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，虽然它看起来复杂，但它是一种极好的方式，可以用更少的硬编码值编写代码，这使得该块更容易重用。
+- en: We will reference the output of the `for_each` loops when we add our network
+    security group, and also when we start to attach resources to our subnets when
+    we launch resources and place them in the subnets we have just defined.
+  id: totrans-134
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当我们添加网络安全组时，我们将引用 `for_each` 循环的输出，并且在我们启动资源并将它们放入刚刚定义的子网时，也会开始将资源附加到我们的子网。
+- en: 'The next lot of blocks launch and configure the Azure Load Balancer service;
+    there is not much going on here that we haven’t already covered, but here is a
+    quick overview of each of the blocks:'
+  id: totrans-135
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来的块启动并配置 Azure 负载均衡服务；这里没有太多新的内容，但以下是每个块的简要概述：
+- en: '`"azurerm_public_ip" "load_balancer"` creates a public IP address'
+  id: totrans-136
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`"azurerm_public_ip" "load_balancer"` 创建一个公共 IP 地址'
+- en: '`"azurerm_lb" "load_balancer"` launches the load balancer itself and attaches
+    the public IP address we just launched'
+  id: totrans-137
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`"azurerm_lb" "load_balancer"` 启动负载均衡器本身，并附加我们刚刚启动的公共 IP 地址'
+- en: '`"azurerm_lb_backend_address_pool" "load_balancer"`, creates a backend pool;
+    when we launch our virtual machine and Virtual Machine Scale Set instances, we
+    will attach them to this backend pool'
+  id: totrans-138
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`"azurerm_lb_backend_address_pool" "load_balancer"` 创建一个后端池；当我们启动虚拟机和虚拟机规模集实例时，我们会将它们附加到这个后端池'
+- en: '`"azurerm_lb_probe" "http_load_balancer_probe"` adds a health probe to check
+    that port `80` is open and accessible via a simple TCP test'
+  id: totrans-139
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`"azurerm_lb_probe" "http_load_balancer_probe"` 添加一个健康探针来检查端口 `80` 是否开放，并通过简单的
+    TCP 测试进行检查'
+- en: '`"azurerm_lb_rule" "http_load_balancer_rule"` creates a rule to evenly distribute
+    incoming requests on port `80`, i.e., HTTP requests, across the instances in the
+    backend pool if they are showing as healthy'
+  id: totrans-140
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`"azurerm_lb_rule" "http_load_balancer_rule"` 创建一个规则，均匀分配端口 `80`（即 HTTP 请求）的传入请求到后端池中的实例，前提是它们显示为健康状态'
+- en: '`"azurerm_lb_nat_rule" "sshAccess"` creates a rule that dynamically maps `2222`
+    > `2232` to port `22` on the backend instances, giving us SSH to each of the instances
+    in the backend pool'
+  id: totrans-141
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`"azurerm_lb_nat_rule" "sshAccess"` 创建一个规则，将 `2222` > `2232` 映射到后端实例上的端口 `22`，从而为我们提供
+    SSH 访问后端池中每个实例的权限'
+- en: 'The final few tasks to do with the network are to create and configure a network
+    security group; there is not much going on with the first few tasks:'
+  id: totrans-142
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 网络的最后几个任务是创建并配置网络安全组；前几个任务没什么复杂的内容：
+- en: '`"azurerm_network_security_group" "nsg"` creates the network security group'
+  id: totrans-143
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`"azurerm_network_security_group" "nsg"` 创建了网络安全组'
+- en: '`"azurerm_network_security_rule" "AllowHTTP"` adds a rule to the network security
+    group we just created to allow HTTP access on port `80`; this will be open to
+    everyone'
+  id: totrans-144
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`"azurerm_network_security_rule" "AllowHTTP"` 向我们刚刚创建的网络安全组添加了一条规则，允许通过端口 `80`
+    访问 HTTP；这对所有人开放'
+- en: Next, we need to add a rule to allow SSH access to our hosts, but SSH is not
+    a service that you would want to expose to the whole of the internet – even if
+    we are going to access the instances using a non-standard port (remember we are
+    using a NAT rule on Azure Load Balancer to map ports `2222` > `2232` to port `22`
+    on the instances). So, we are going to use a data source to get the public IP
+    address of the host that is currently running Terraform.
+  id: totrans-145
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来，我们需要添加一条规则来允许 SSH 访问我们的主机，但 SSH 不是您希望暴露给整个互联网的服务——即使我们打算使用非标准端口访问实例（记住我们在
+    Azure 负载均衡器上使用 NAT 规则将端口 `2222` > `2232` 映射到实例的端口 `22`）。因此，我们将使用一个数据源来获取当前运行 Terraform
+    的主机的公共 IP 地址。
+- en: 'The block to get the current IP address uses the HTTP Terraform provider and
+    looks like the following:'
+  id: totrans-146
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 获取当前 IP 地址的代码块使用了 HTTP Terraform 提供程序，格式如下：
+- en: '[PRE20]'
+  id: totrans-147
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE20]'
+- en: As you can see, we are calling the [https://api.ipify.org/?format=json](https://api.ipify.org/?format=json)
+    URL, which returns a blob of JSON containing your current public IP address.
+  id: totrans-148
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如您所见，我们正在调用 [https://api.ipify.org/?format=json](https://api.ipify.org/?format=json)
+    URL，它返回一个包含您当前公共 IP 地址的 JSON Blob。
+- en: 'We can then take this blob and combine this with the `network_trusted_ips`
+    variable, which is empty by default, containing a list of other trusted IP addresses:'
+  id: totrans-149
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后我们可以将这个 Blob 与默认为空的`network_trusted_ips`变量结合起来，该变量包含其他受信任 IP 地址的列表：
+- en: '[PRE21]'
+  id: totrans-150
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE21]'
+- en: 'Now that we have the JSON containing our IP address and an optional list of
+    other IP addresses we want to allow, we can create the rule itself:'
+  id: totrans-151
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们有了包含 IP 地址的 JSON 以及我们想允许的其他 IP 地址的可选列表，我们可以创建规则本身：
+- en: '[PRE22]'
+  id: totrans-152
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE22]'
+- en: As you can see, everything is happening in the `source_address_prefixes` entry;
+    here, we use the built-in `setunion` function, which merges the content of `var.network_trusted_ips`
+    – in our case, an empty list – and the JSON returned in the body of the request
+    we made using the HTTP provider.
+  id: totrans-153
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如您所见，一切都发生在 `source_address_prefixes` 条目中；在这里，我们使用内置的 `setunion` 函数，它合并了 `var.network_trusted_ips`
+    的内容——在我们的案例中是一个空列表——以及我们使用 HTTP 提供程序发出的请求返回的 JSON 响应体中的内容。
+- en: 'I have updated the relevant code slightly to make it a little easier to read:'
+  id: totrans-154
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我稍微更新了一下相关代码，使其更易于阅读：
+- en: '[PRE23]'
+  id: totrans-155
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE23]'
+- en: We are using `var.network_trusted_ips` as it is because that is already defined
+    as a list; however, our IP address isn’t, so we create a list using `[ ]` and
+    then add an inline variable in Terraform; this is defined using `${ something
+    here }`. `something here`, in our case, uses the built-in `jsondecode` function,
+    which takes the body of the response that is held in `data.http.current_ip.response_body`
+    and the value of the `ip` key, which is our public IP address.
+  id: totrans-156
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们使用 `var.network_trusted_ips` 是因为它已经定义为一个列表；然而，我们的 IP 地址还没有，所以我们创建一个使用 `[ ]`
+    的列表，并在 Terraform 中添加一个内联变量；这使用 `${ something here }` 来定义。在我们的例子中，`something here`
+    使用内置的 `jsondecode` 函数，该函数获取 `data.http.current_ip.response_body` 中保存的响应主体，并提取
+    `ip` 键的值，即我们的公共 IP 地址。
+- en: 'Now that we have our network security group, we need to attach it to the subnet,
+    which will host the virtual machine and Virtual Machine Scale Set instances. To
+    do this, we need the ID of the subnet. To make this simple, I have created three
+    variables with the name of the objects of each of the subnet maps:'
+  id: totrans-157
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们有了网络安全组，我们需要将它附加到子网，该子网将托管虚拟机和虚拟机规模集实例。为了做到这一点，我们需要子网的 ID。为了简化，我创建了三个变量，分别是每个子网映射对象的名称：
+- en: '[PRE24]'
+  id: totrans-158
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE24]'
+- en: 'Now that we know the name of the object, which is the key name, we can use
+    this in the block that associates the network security group with the subnet hosting
+    the instances:'
+  id: totrans-159
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们知道了对象的名称，即键名称，我们可以在将网络安全组与托管实例的子网关联的代码块中使用它：
+- en: '[PRE25]'
+  id: totrans-160
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE25]'
+- en: That concludes the network portion of the deployment, and we now have the underlying
+    base to start deploying resources into, starting with storage.
+  id: totrans-161
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这就完成了部署的网络部分，我们现在有了基础来开始部署资源，首先是存储。
+- en: Storage
+  id: totrans-162
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 存储
+- en: 'We need to create a storage account with NFS enabled; most of these tasks are
+    pretty straightforward:'
+  id: totrans-163
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们需要创建一个启用了 NFS 的存储账户；这些任务大多都非常直接：
+- en: '`"azurecaf_name" "sa"` generates the name of the storage account; there is
+    a slight difference in that we are telling it to add a random string – we are
+    doing this because storage account names must be unique across Azure, so if we
+    didn’t add this, the code might error depending on who else has already executed
+    it'
+  id: totrans-164
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`"azurecaf_name" "sa"` 生成存储帐户的名称；有一个小小的区别，就是我们告诉它添加一个随机字符串——我们这么做是因为存储帐户名称必须在
+    Azure 中唯一，所以如果我们不添加这个随机字符串，代码可能会因为已有人执行过相同的操作而报错。'
+- en: '`"azurecaf_name" "sa_endpoint"` takes the previous result and then generates
+    a name for the private endpoint, which will be placed in the Virtual Network'
+  id: totrans-165
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`"azurecaf_name" "sa_endpoint"` 使用之前的结果，然后生成私有端点的名称，私有端点将被放置在虚拟网络中'
+- en: '`"azurerm_storage_account" "sa"` creates the storage account itself'
+  id: totrans-166
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`"azurerm_storage_account" "sa"` 创建存储帐户本身'
+- en: 'We now need to lock the storage account down so that only the three subnets
+    in our Virtual Network and our trusted IP addresses have access – to do this,
+    we use a block that looks like the following:'
+  id: totrans-167
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们现在需要将存储帐户锁定，仅允许我们虚拟网络中的三个子网和受信任的 IP 地址进行访问——为此，我们使用如下的代码块：
+- en: '[PRE26]'
+  id: totrans-168
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE26]'
+- en: As you can see, the IP rules use the same logic we employed when adding our
+    public IP address to the network security group rule to allow us access to the
+    instances using SSH access from a trusted IP address.
+  id: totrans-169
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如您所见，IP 规则使用了我们在将公共 IP 地址添加到网络安全组规则时所采用的相同逻辑，以便通过受信任的 IP 地址使用 SSH 访问实例。
+- en: The part of the block to get the subnet IDs uses a `for` loop to iterate over
+    the `azurerm_subnet.vnet_subnets` list, and for each subnet in the list, it extracts
+    the `id` attribute of the subnet and adds it to the list of `virtual_network_subnet_ids`.
+  id: totrans-170
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 获取子网 ID 的代码块部分使用 `for` 循环遍历 `azurerm_subnet.vnet_subnets` 列表，对于列表中的每个子网，它提取子网的
+    `id` 属性并将其添加到 `virtual_network_subnet_ids` 列表中。
+- en: 'Once we have the network rules in place for the storage account, we can add
+    the NFS share itself:'
+  id: totrans-171
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦我们为存储帐户配置了网络规则，就可以添加 NFS 共享：
+- en: '[PRE27]'
+  id: totrans-172
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE27]'
+- en: As you can see, we are use `depends_on` to ensure that the network rules are
+    configured. We must declare `depends_on` as there is no output we can reference
+    from `"azurerm_storage_account_network_rules" "sa"` when executing `"``azurerm_storage_share"
+    "nfs_share"`.
+  id: totrans-173
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如您所见，我们使用 `depends_on` 来确保网络规则已经配置。我们必须声明 `depends_on`，因为在执行 `"azurerm_storage_share"
+    "nfs_share"` 时，`"azurerm_storage_account_network_rules" "sa"` 并没有输出可以引用。
+- en: Hint
+  id: totrans-174
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 提示
+- en: We will use small number of `depends_on` in the deployment. However, it is considered
+    a best practice to keep its usage to a minimum and let Terraform figure out the
+    dependencies as much as possible, as overuse of `depends_on` can slow down execution.
+  id: totrans-175
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们在部署中会使用少量的 `depends_on`。然而，最佳实践是尽量减少 `depends_on` 的使用，让 Terraform 尽可能自行推断依赖关系，因为过度使用
+    `depends_on` 会降低执行效率。
+- en: The keen-eyed among you may have also noticed that we are doing something different
+    when naming this resource; we use the built-in `replace` function, taking the
+    contents of the `var.name` variable and stripping out any hyphens.
+  id: totrans-176
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 眼尖的朋友可能也注意到了，在命名这个资源时我们做了些不同的事情；我们使用了内置的 `replace` 函数，将 `var.name` 变量中的内容并去除其中的连字符。
+- en: 'The remaining tasks are all pretty basic:'
+  id: totrans-177
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 剩下的任务都比较基础：
+- en: '`"azurerm_private_dns_zone" "storage_share_private_zone"` creates a private
+    DNS zone for `privatelink.file.core.windows.net`'
+  id: totrans-178
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`"azurerm_private_dns_zone" "storage_share_private_zone"` 为 `privatelink.file.core.windows.net`
+    创建一个私有 DNS 区域'
+- en: '`"azurerm_private_dns_zone_virtual_network_link" "storage_share_private_zone"`
+    takes the private DNS zone we created and attaches it to our Virtual Network'
+  id: totrans-179
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`"azurerm_private_dns_zone_virtual_network_link" "storage_share_private_zone"`
+    将我们创建的私有 DNS 区域附加到虚拟网络'
+- en: '`"azurerm_private_endpoint" "storage_share_endpoint"` creates the private endpoint,
+    putting in the subnet defined in the `var.subnet_for_endpoints` variable and registering
+    it with the private DNS zone'
+  id: totrans-180
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`"azurerm_private_endpoint" "storage_share_endpoint"` 创建私有端点，将其放入 `var.subnet_for_endpoints`
+    变量中定义的子网，并将其注册到私有 DNS 区域'
+- en: That concludes the storage; next up, we have the database service.
+  id: totrans-181
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这就是存储部分的结束；接下来是数据库服务。
+- en: Database
+  id: totrans-182
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 数据库
+- en: 'We are now starting to get into the stride of things as we come to launch our
+    database service:'
+  id: totrans-183
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 随着我们开始启动数据库服务，现在已经进入了正轨：
+- en: '`"azurecaf_name" "mysql_flexible_server"` generates the name of the Azure MySQL
+    Flexible Server'
+  id: totrans-184
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`"azurecaf_name" "mysql_flexible_server"` 生成 Azure MySQL 弹性服务器的名称'
+- en: '`"azurecaf_name" "database"` generates the name of the database we will use
+    for WordPress'
+  id: totrans-185
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`"azurecaf_name" "database"` 生成我们将用于 WordPress 的数据库名称'
+- en: '`"azurerm_private_dns_zone" "mysql_flexible_server"` adds the private DNS zone
+    we will use for our Azure MySQL Flexible Server'
+  id: totrans-186
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`"azurerm_private_dns_zone" "mysql_flexible_server"` 添加我们将为 Azure MySQL 灵活服务器使用的私有
+    DNS 区域'
+- en: '`"azurerm_private_dns_zone_virtual_network_link" "mysql_flexible_server"` registers
+    the private DNS with our Virtual Network'
+  id: totrans-187
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`"azurerm_private_dns_zone_virtual_network_link" "mysql_flexible_server"` 将私有
+    DNS 注册到我们的虚拟网络'
+- en: Before we launch the **Azure MySQL Flexible Server**, there is one more thing
+    we need to do, and that is to create a password. Rather than passing this using
+    a variable, we can use the random provider to generate one based on the parameters
+    we provide programmatically.
+  id: totrans-188
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在我们启动**Azure MySQL 灵活服务器**之前，还有一件事需要做，那就是创建密码。与其使用变量传递，不如使用随机提供者，根据我们提供的参数程序化地生成一个密码。
+- en: 'The following block will generate a random password 16 characters long and
+    not use any special characters:'
+  id: totrans-189
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下代码块将生成一个16位的随机密码，并且不使用任何特殊字符：
+- en: '[PRE28]'
+  id: totrans-190
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE28]'
+- en: 'There isn’t too much out of the ordinary with the remaining blocks we use to
+    launch and configure our Azure MySQL Flexible Server instance; what follows is
+    a brief summary of what each of the blocks does:'
+  id: totrans-191
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 剩下的代码块用于启动和配置我们的 Azure MySQL 灵活服务器实例，内容并没有太多不同，下面是每个代码块作用的简要总结：
+- en: '`"azurerm_mysql_flexible_server" "mysql_flexible_server"` launches the flexible
+    server; we use `depends_on` here to ensure that the DNS zone is registered with
+    the Virtual Network; otherwise, we could get an error when it came to creating
+    the resource'
+  id: totrans-192
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`"azurerm_mysql_flexible_server" "mysql_flexible_server"` 启动灵活服务器；我们在这里使用`depends_on`，以确保
+    DNS 区域已经与虚拟网络注册；否则，当创建资源时可能会遇到错误'
+- en: '`"azurerm_mysql_flexible_server_configuration" "require_secure_transport"`
+    changes the Azure MySQL Flexible Server parameter to allow non-TLS connections'
+  id: totrans-193
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`"azurerm_mysql_flexible_server_configuration" "require_secure_transport"`
+    更改 Azure MySQL 灵活服务器参数，允许非 TLS 连接'
+- en: '`"azurerm_mysql_flexible_database" "wordpress_database"` creates a database
+    hosted on the Azure MySQL Flexible Server; once the parameter has been updated,
+    we use `depends_on` to achieve this'
+  id: totrans-194
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`"azurerm_mysql_flexible_database" "wordpress_database"` 在 Azure MySQL 灵活服务器上创建一个数据库；更新参数后，我们使用`depends_on`来实现这一点'
+- en: Now that we have our Azure MySQL Flexible Server instance configured and connected
+    to the Virtual Network, we are ready to launch our admin virtual machine instance.
+  id: totrans-195
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经配置并将 Azure MySQL 灵活服务器实例连接到虚拟网络，我们可以启动管理员虚拟机实例了。
+- en: The admin virtual machine
+  id: totrans-196
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 管理员虚拟机
+- en: 'The admin virtual machine is going to be a single Linux virtual machine instance,
+    which will be used to bootstrap our WordPress installation. Firstly, there are
+    no new techniques used here, so rather than go into detail, here is an overview
+    of what each of the blocks does:'
+  id: totrans-197
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 管理员虚拟机将是一个单独的 Linux 虚拟机实例，用于引导我们的 WordPress 安装。首先，这里没有使用新技术，所以与其详细说明，不如概述一下每个代码块的作用：
+- en: '`"azurecaf_name" "admin_vm"` generates the name of the virtual machine'
+  id: totrans-198
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`"azurecaf_name" "admin_vm"` 生成虚拟机的名称'
+- en: '`"azurecaf_name" "admin_vm_nic"` generates the name of the network interface'
+  id: totrans-199
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`"azurecaf_name" "admin_vm_nic"` 生成网络接口的名称'
+- en: '`"azurerm_network_interface" "admin_vm"` creates the network interface resource,
+    attaching it to the subnet defined in the `var.subnet_for_vms` variable'
+  id: totrans-200
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`"azurerm_network_interface" "admin_vm"` 创建网络接口资源，并将其附加到在`var.subnet_for_vms`变量中定义的子网'
+- en: '`"random_password" "wordpress_admin_password"` generates a random password
+    for the WordPress admin area – this time, using special characters apart from
+    `_%@`'
+  id: totrans-201
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`"random_password" "wordpress_admin_password"` 为 WordPress 管理区域生成一个随机密码——这次，使用了除`_%@`之外的特殊字符'
+- en: '`"random_password" "vm_admin_password"` generates the password for the virtual
+    machine instances; this time, it’s a little more complicated as virtual machines
+    have password strength requirements, so we are going to generate a 16-character
+    password with a minimum of two uppercase and two lowercase letters, two special
+    characters, excluding `!@#$%&`, and also numbers'
+  id: totrans-202
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`"random_password" "vm_admin_password"` 为虚拟机实例生成密码；这次密码稍微复杂一些，因为虚拟机有密码强度要求，所以我们将生成一个16位密码，其中至少包含两个大写字母、两个小写字母、两个特殊字符（不包括`!@#$%&`），还包括数字'
+- en: 'The next task, `"azurerm_linux_virtual_machine" "admin_vm"`, launches the virtual
+    machine itself, and for the most part, there isn’t much interesting going on with
+    it apart from the section where we pass in `user_data`, which is where the `cloud-init`
+    script is generated and passed over to Azure to inject when the virtual machine
+    is launched. This part of the block looks like the following:'
+  id: totrans-203
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 下一个任务，`"azurerm_linux_virtual_machine" "admin_vm"`，启动虚拟机本身，并且除了我们传递 `user_data`
+    的部分之外，大部分内容都没有太多有趣的内容，这是生成 `cloud-init` 脚本并在虚拟机启动时传递到 Azure 的部分。该块的这部分看起来如下：
+- en: '[PRE29]'
+  id: totrans-204
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE29]'
+- en: Let us dig into what is going on here a little bit more. First off, we need
+    to pass the `cloud-init` script as Base64-encoded; luckily, Terraform has the
+    `base64encode` function we can use to do this.
+  id: totrans-205
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们更深入地了解这里发生的事情。首先，我们需要将 `cloud-init` 脚本作为 Base64 编码传递；幸运的是，Terraform 提供了 `base64encode`
+    函数，我们可以用来做这件事。
+- en: Information
+  id: totrans-206
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 信息
+- en: Base64 is a way to encode data into a continuous string of ASCII text; it helps
+    post-multi-line scripts or binary data to APIs. It is not a secure way to encode
+    data since it can be easily decoded and does not provide any form of encryption.
+    If we were to encode `Hello, world!`, it would be encoded as `SGVsbG8sIHdvcmxkIQ==`
+    in Base64\. `==` at the end is added to pad the string and make it a multiple
+    of four characters since Base64 encoding works with blocks of four characters.
+  id: totrans-207
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Base64 是一种将数据编码为连续 ASCII 文本字符串的方法；它有助于将多行脚本或二进制数据发布到 API。它不是一种安全的数据编码方式，因为可以轻松解码，并且不提供任何形式的加密。如果我们要对
+    `Hello, world!` 进行编码，它将被编码为 `SGVsbG8sIHdvcmxkIQ==`。末尾的 `==` 是为了填充字符串，使其成为四个字符的倍数，因为
+    Base64 编码使用四个字符的块。
+- en: 'The next part uses Terraform’s native `templatefile` function to read a file,
+    which in our case, is called `vm-cloud-init-admin.yml.tftpl`. Once that has been
+    defined, we pass a list of variables to use within the template and their values
+    – here we are passing in details of the following:'
+  id: totrans-208
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来的部分使用 Terraform 的本机 `templatefile` 函数读取一个文件，在我们的案例中，文件名为 `vm-cloud-init-admin.yml.tftpl`。一旦定义了这个文件，我们传递一个变量列表，用于在模板中使用的变量及其值
+    - 在这里，我们传递以下细节：
+- en: The Azure MySQL Flexible Server
+  id: totrans-209
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Azure MySQL 弹性服务器
+- en: The Azure Files hosted NFS share
+  id: totrans-210
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Azure Files 托管的 NFS 共享
+- en: The URL, which is made up of the public IP address of Azure Load Balancer
+  id: totrans-211
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: URL 由 Azure 负载均衡器的公共 IP 地址组成
+- en: Our WordPress installation information, which we have defined as variables in
+    our main `variables` file
+  id: totrans-212
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 我们的 WordPress 安装信息，在我们主要的 `variables` 文件中定义为变量
+- en: To save confusion, I am prefixing each of the variables we are passing into
+    the template file with `tmpl`; this is not a requirement, but I find it helpful
+    to distinguish between variables I can use in the main Terraform blocks and ones
+    used within the templates.
+  id: totrans-213
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为避免混淆，我在我们传递到模板文件中的每个变量前面加上了 `tmpl` 前缀；这不是必需的，但我发现这有助于区分我可以在主要 Terraform 块中使用的变量和在模板中使用的变量。
+- en: 'An abridged version of the `cloud-init` template file is given in the following
+    code block; it contains the bits that mount the NFS share:'
+  id: totrans-214
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 下面的代码块给出了 `cloud-init` 模板文件的缩略版本；它包含挂载 NFS 共享的部分：
+- en: '[PRE30]'
+  id: totrans-215
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE30]'
+- en: As you can see, the syntax for referencing the variables is slightly different
+    from the main Terraform blocks, as we do not have to reference them as a variable
+    with `${var.something}` and instead can just use `${something}`.
+  id: totrans-216
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如您所见，引用变量的语法与主要 Terraform 块略有不同，我们不必像 `${var.something}` 那样引用它们，而是可以直接使用 `${something}`
+- en: 'The fully rendered file is then passed to the virtual machine, and the script
+    executes once the virtual machine boots. The full `cloud-init` file performs the
+    following tasks:'
+  id: totrans-217
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 完全渲染的文件然后传递给虚拟机，并且脚本在虚拟机启动时执行。完整的 `cloud-init` 文件执行以下任务：
+- en: Updates all installed packages
+  id: totrans-218
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 更新所有已安装的软件包
+- en: Installs the packages we need to run WordPress – for example, Apache2, PHP,
+    and the NFS and MySQL client software
+  id: totrans-219
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 安装我们运行 WordPress 所需的软件包，例如 Apache2、PHP 以及 NFS 和 MySQL 客户端软件
+- en: Mounts the NFS share and adds a line to `/etc/fstab` so it mounts automatically
+    after the instance reboots
+  id: totrans-220
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 挂载 NFS 共享，并在 `/etc/fstab` 中添加一行，以便在实例重启后自动挂载
+- en: Installs the WordPress command-line client
+  id: totrans-221
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 安装 WordPress 命令行客户端
+- en: Sets up the correct permissions on the folders where we will be installing WordPress
+  id: totrans-222
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 设置我们将安装 WordPress 的文件夹的正确权限
+- en: Downloads the latest version of WordPress
+  id: totrans-223
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 下载最新版本的 WordPress
+- en: Creates a `wp-config.php` file populated with the details of our Azure MySQL
+    Flexible Server
+  id: totrans-224
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 创建一个 `wp-config.php` 文件，填写我们的 Azure MySQL 弹性服务器的详细信息
+- en: Installs WordPress itself using the variables we passed in
+  id: totrans-225
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用我们传入的变量安装 WordPress 本身
+- en: Tweaks the Apache configuration and restarts the service
+  id: totrans-226
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 调整 Apache 配置并重启服务
+- en: Once these steps have been completed, we should have a working WordPress installation.
+  id: totrans-227
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦这些步骤完成，我们应该就能拥有一个正常工作的 WordPress 安装。
+- en: A Web Virtual Machine Scale Set
+  id: totrans-228
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 一个 Web 虚拟机规模集
+- en: Now that we have our admin virtual machine instance bootstrapped, we can launch
+    a Virtual Machine Scale Set to act as web servers. As we already have a WordPress
+    installation running and all the files needed to serve the website on the NFS
+    share, these instances only need to have the basic software stack configured.
+  id: totrans-229
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经启动了管理员虚拟机实例，我们可以启动一个虚拟机规模集来充当 Web 服务器。由于我们已经有了一个运行中的 WordPress 安装，并且所有需要的文件都在
+    NFS 共享中，这些实例只需要配置基本的软件堆栈。
+- en: 'Also, as most of the heavy lifting has already been completed, this should
+    be straightforward:'
+  id: totrans-230
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 此外，由于大部分繁重工作已经完成，这应该是直截了当的：
+- en: '`"azurecaf_name" "web_vmss"` generates the name of the Virtual Machine Scale
+    Set.'
+  id: totrans-231
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`"azurecaf_name" "web_vmss"` 生成虚拟机规模集的名称。'
+- en: '`"azurecaf_name" "web_vmss_nic"` generates the name of the network interface
+    used by the virtual machine scale set.'
+  id: totrans-232
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`"azurecaf_name" "web_vmss_nic"` 生成虚拟机规模集使用的网络接口的名称。'
+- en: '`"azurerm_linux_virtual_machine_scale_set" "web"` creates the virtual machine
+    scale set itself; this is in line with the admin virtual machine we launched,
+    and we are reusing many of the same variables, with the notable addition of `var.number_of_web_servers`,
+    which defines the number of server instances to launch. We are also using a cutdown
+    version of the `cloud-init` script called `vmss-cloud-init-web.tftpl`.'
+  id: totrans-233
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`"azurerm_linux_virtual_machine_scale_set" "web"` 创建了虚拟机规模集本身；这与我们启动的管理员虚拟机一致，我们重新使用了许多相同的变量，值得注意的是添加了
+    `var.number_of_web_servers`，它定义了要启动的服务器实例数量。我们还使用了一个简化版的 `cloud-init` 脚本，名为 `vmss-cloud-init-web.tftpl`。'
+- en: That concludes launching and configuring our Azure resource; there is just a
+    small number of blocks left before we are finished.
+  id: totrans-234
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这就结束了我们对 Azure 资源的启动和配置；在完成之前，只剩下少数几个步骤。
+- en: Output
+  id: totrans-235
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 输出
+- en: 'The final file outputs some helpful information about our deployment. As some
+    of the output includes information, for example, the results of `random_password`,
+    we will need to mark that part of the output as `sensitive`, as we don’t want
+    our randomly generated password to be visible when logging our output, which is
+    being printed to the screen, for example:'
+  id: totrans-236
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最终文件输出了一些关于我们部署的有用信息。由于输出中包含一些信息，例如 `random_password` 的结果，我们需要将这一部分输出标记为 `sensitive`，因为我们不希望随机生成的密码在打印输出时出现在屏幕上。例如：
+- en: '[PRE31]'
+  id: totrans-237
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE31]'
+- en: Now that we have an understanding of what the Terraform code is going to do,
+    we can now run it.
+  id: totrans-238
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经理解了 Terraform 代码将要做什么，我们可以运行它了。
+- en: Deploying the environment
+  id: totrans-239
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 部署环境
+- en: 'To deploy the environment, we simply need to run the following commands:'
+  id: totrans-240
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要部署环境，我们只需运行以下命令：
+- en: '[PRE32]'
+  id: totrans-241
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE32]'
+- en: When you run the `terraform plan` command, it will give you an overview of what
+    resources are going to be deployed, as well as some very basic error-checking
+    to make sure that everything is in order.
+  id: totrans-242
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当你运行 `terraform plan` 命令时，它会概述将要部署的资源，并进行一些非常基本的错误检查，以确保一切都井然有序。
+- en: 'If you have the output of the plan, then you can proceed with the deployment
+    by running the following command:'
+  id: totrans-243
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你已经得到了计划的输出，那么可以通过运行以下命令来继续进行部署：
+- en: '[PRE33]'
+  id: totrans-244
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE33]'
+- en: 'Upon completion, you should see something like the following screen:'
+  id: totrans-245
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 完成后，你应该看到如下的屏幕：
+- en: '![Figure 4.3 – The finished Azure deployment](img/Figure_4.03_B19537.jpg)'
+  id: totrans-246
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 4.3 – 完成的 Azure 部署](img/Figure_4.03_B19537.jpg)'
+- en: Figure 4.3 – The finished Azure deployment
+  id: totrans-247
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 4.3 – 完成的 Azure 部署
+- en: As you can see, the two password outputs have been marked as `sensitive`, but
+    we have the URL of the WordPress installation. Now, let’s dive straight into the
+    WordPress admin portal, open the URL you have been given in your browser, and
+    append `wp-admin` at the end of the URL. For example, for me, the URL was `http://20.23.249.255/wp-admin`.
+  id: totrans-248
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，两个密码输出已被标记为 `sensitive`，但我们有了 WordPress 安装的 URL。现在，让我们直接进入 WordPress 管理门户，打开你在浏览器中得到的
+    URL，并在 URL 后面添加 `wp-admin`。例如，对于我来说，URL 是 `http://20.23.249.255/wp-admin`。
+- en: Note
+  id: totrans-249
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 注意
+- en: All URLs and passwords used in this chapter have long since been terminated
+    and are not valid; please use the details from your own deployment.
+  id: totrans-250
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章中使用的所有 URL 和密码早已失效并且无效；请使用你自己部署的详细信息。
+- en: 'This should give you a login page that looks like the following:'
+  id: totrans-251
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这应该会给你一个登录页面，看起来像下面这样：
+- en: '![Figure 4.4 – The WordPress login screen](img/Figure_4.04_B19537.jpg)'
+  id: totrans-252
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 4.4 – WordPress 登录界面](img/Figure_4.04_B19537.jpg)'
+- en: Figure 4.4 – The WordPress login screen
+  id: totrans-253
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 4.4 – WordPress 登录界面
+- en: We know that the username for WordPress is `admin`, as we have that set as a
+    variable, but how about that password? Well, by default, Terraform will always
+    display `sensitive` when you run the `terraform output` command; however, appending
+    `-json` at the end of that will give you the full output.
+  id: totrans-254
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们知道 WordPress 的用户名是`admin`，因为我们已经将其设置为变量，但密码怎么办呢？好吧，默认情况下，当你运行`terraform output`命令时，Terraform
+    会始终显示`sensitive`；然而，在命令末尾加上`-json`，你就能看到完整的输出。
+- en: 'You can see the output of me running `terraform output -json` in the following
+    screenshot:'
+  id: totrans-255
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以在以下屏幕截图中看到我运行`terraform output -json`命令的输出：
+- en: '![Figure 4.5 – Accessing the passwords](img/Figure_4.05_B19537.jpg)'
+  id: totrans-256
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 4.5 – 访问密码](img/Figure_4.05_B19537.jpg)'
+- en: Figure 4.5 – Accessing the passwords
+  id: totrans-257
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 4.5 – 访问密码
+- en: 'Upon entering the username and password, you should be greeted by the WordPress
+    dashboard:'
+  id: totrans-258
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 输入用户名和密码后，你应该会看到 WordPress 控制面板：
+- en: '![Figure 4.6 – The WordPress dashboard](img/Figure_4.06_B19537.jpg)'
+  id: totrans-259
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 4.6 – WordPress 控制面板](img/Figure_4.06_B19537.jpg)'
+- en: Figure 4.6 – The WordPress dashboard
+  id: totrans-260
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 4.6 – WordPress 控制面板
+- en: You can also go to the Azure portal and check the resources there; you should
+    be able to find them in the `rg-iac-wordpress-prod-euw` resource group (assuming
+    that you have kept the variables at their defaults and have not updated them;
+    if you have, then you will need to find the group that matches your updates).
+  id: totrans-261
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你也可以访问 Azure 门户并查看那里的资源；你应该能够在`rg-iac-wordpress-prod-euw`资源组中找到它们（假设你保持了默认变量并未更新它们；如果你有更新过，那么你需要找到与你的更新匹配的资源组）。
+- en: 'Once you have finished, please don’t forget to run the following command:'
+  id: totrans-262
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 完成后，请不要忘记运行以下命令：
+- en: '[PRE34]'
+  id: totrans-263
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE34]'
+- en: Otherwise, you will incur costs for running resources if you have followed along
+    and launched the environment in your own account.
+  id: totrans-264
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 否则，如果你按照步骤操作并在你自己的账户中启动了环境，你将会产生资源运行的费用。
+- en: Ansible – reviewing the code and deploying our infrastructure
+  id: totrans-265
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Ansible – 审查代码并部署我们的基础设施
+- en: While we have covered Terraform in detail in this chapter, we will only quickly
+    review the Ansible code here as we will go into a lot more detail on an Ansible
+    deployment in the next chapter, [*Chapter 5*](B19537_05.xhtml#_idTextAnchor268),
+    *Deploying to Amazon* *Web Services*.
+  id: totrans-266
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 虽然我们在本章详细讲解了 Terraform，但在这里我们将快速回顾 Ansible 代码，因为我们将在下一章[*第 5 章*](B19537_05.xhtml#_idTextAnchor268)中深入探讨
+    Ansible 部署的更多细节，*部署到亚马逊* *Web 服务*。
+- en: 'Like Terraform, the Ansible code is split into roles; this makes our `site.yml`
+    file look like the following:'
+  id: totrans-267
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 像 Terraform 一样，Ansible 代码也被拆分为多个角色；这使得我们的`site.yml`文件看起来如下所示：
+- en: '[PRE35]'
+  id: totrans-268
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE35]'
+- en: Here, we load two variable files from the `group_vars` folder and calling eight
+    different roles. As we have already discussed, Ansible will execute its tasks
+    in the order we call them, so the ordering of the roles is essential.
+  id: totrans-269
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这里，我们从`group_vars`文件夹加载了两个变量文件，并调用了八个不同的角色。正如我们之前讨论的那样，Ansible 会按我们调用它们的顺序执行任务，因此角色的顺序非常重要。
+- en: Ansible Playbook roles overview
+  id: totrans-270
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: Ansible Playbook 角色概览
+- en: 'Let’s dive straight in and look at the first role that is called in the `site.yml`
+    file. The **randoms** role has a single function: randomly generating all the
+    variables we will need for the deployment. However, this is where we hit our first
+    significant difference between Ansible and Terraform. As Ansible is stateless,
+    once it has generated a random value and the Ansible execution has stopped, it
+    will instantly forget about it. This means that when we next execute our playbook,
+    it will regenerate the random values, which, as we are using them in resource
+    definitions, could cause a new resource to be launched.'
+  id: totrans-271
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们直接深入，查看在`site.yml`文件中首先调用的角色。**randoms** 角色有一个单一的功能：随机生成我们部署所需的所有变量。然而，这也是我们首次遇到
+    Ansible 和 Terraform 之间的一个重要区别。由于 Ansible 是无状态的，一旦生成了随机值并且 Ansible 执行完成，它会立即忘记这些值。这意味着当我们下次执行
+    Playbook 时，它会重新生成随机值，而由于我们在资源定义中使用了这些值，这可能导致新的资源被启动。
+- en: 'What we need to do is create a file that contains all the random values, but
+    if there is already a file there, then continue without updating them – the process
+    we need to follow is visualized in the following workflow:'
+  id: totrans-272
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们需要做的是创建一个包含所有随机值的文件，但如果已经有文件存在，则继续操作而不更新它们——我们需要遵循的流程在以下工作流中进行了可视化：
+- en: '![Figure 4.7 – Do we need to create a secrets.yml variable file?](img/Figure_4.07_B19537.jpg)'
+  id: totrans-273
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图4.7 – 我们需要创建一个secrets.yml变量文件吗？](img/Figure_4.07_B19537.jpg)'
+- en: Figure 4.7 – Do we need to create a secrets.yml variable file?
+  id: totrans-274
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图4.7 – 我们需要创建一个secrets.yml变量文件吗？
+- en: So, what does this look like as Ansible tasks?
+  id: totrans-275
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 那么，作为Ansible任务，这看起来是什么样的？
+- en: '[PRE36]'
+  id: totrans-276
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE36]'
+- en: As you can see, we use the built-in `stat` module to check for the presence
+    of a file in the `group_vars` called `secrets.yml`. We then register the results
+    of this task as a variable called `secrets_file`.
+  id: totrans-277
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，我们使用内置的`stat`模块检查名为`secrets.yml`的文件是否存在于`group_vars`目录中。然后我们将此任务的结果注册为一个名为`secrets_file`的变量。
+- en: 'The contents of the `secrets_file` variable we registered when the `secrets.yml`
+    file doesn’t exist on your filesystem, which it should do, as we are going to
+    create the file shortly, look like the following:'
+  id: totrans-278
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当`secrets.yml`文件在你的文件系统中不存在时，我们注册的`secrets_file`变量的内容如下所示（我们即将创建该文件）：
+- en: '[PRE37]'
+  id: totrans-279
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE37]'
+- en: As you can see, there is a single output called `exists`, which is set to `false`.
+  id: totrans-280
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，输出中有一个名为`exists`的项，值为`false`。
+- en: 'So, our next task will generate the `secrets.yml` file if `exists` is set to
+    `false` and looks like the following:'
+  id: totrans-281
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 所以，我们的下一个任务将在`exists`为`false`时生成`secrets.yml`文件，内容如下所示：
+- en: '[PRE38]'
+  id: totrans-282
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE38]'
+- en: As you can see from the last line, the task will only run when `secrets_file.stat.exists`
+    is equal to `false`; if it returns `true`, then the task will be skipped, as we
+    do not need to generate the `secrets.yml` file again.
+  id: totrans-283
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如最后一行所示，任务只有在`secrets_file.stat.exists`等于`false`时才会执行；如果返回`true`，任务将被跳过，因为我们不需要重新生成`secrets.yml`文件。
+- en: 'The task itself uses the `template` function to take the source template, which
+    looks like the following, process it, and then output the rendered output to `group_vars/secrets.yml`:'
+  id: totrans-284
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 该任务本身使用`template`函数来获取源模板，模板如下所示，处理后将渲染结果输出到`group_vars/secrets.yml`文件：
+- en: '[PRE39]'
+  id: totrans-285
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE39]'
+- en: The template uses the `lookup` function to call the `random_string` module to
+    generate a short random hash for resource names and various passwords.
+  id: totrans-286
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 模板使用`lookup`函数调用`random_string`模块来为资源名称和各种密码生成一个简短的随机哈希值。
+- en: Note
+  id: totrans-287
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 注意
+- en: While this method works for our deployment, you should look at something more
+    secure for a production environment – for example, dynamically loading the secret
+    values from a remote key management store.
+  id: totrans-288
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 虽然这种方法适用于我们的部署，但你应该考虑在生产环境中使用更安全的方法——例如，从远程密钥管理存储动态加载密钥值。
+- en: 'Now that we know the file is there, as we have just generated it, we can load
+    the contents of the file in as variables:'
+  id: totrans-289
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 既然我们已经生成了文件，并且知道文件存在，我们可以将文件内容作为变量加载：
+- en: '[PRE40]'
+  id: totrans-290
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE40]'
+- en: Now that our variables are loaded, we can progress with the rest of the playbook
+    run.
+  id: totrans-291
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们的变量已加载，我们可以继续执行其余的playbook任务。
+- en: The resource group role
+  id: totrans-292
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 资源组角色
+- en: The `azurecaf_name` provider we used in Terraform. Because of this, we have
+    defined all the resource names in the `group_var/azure.yml` file using various
+    variables and hardcoded values.
+  id: totrans-293
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们在Terraform中使用的`azurecaf_name`提供程序。因此，我们在`group_var/azure.yml`文件中使用各种变量和硬编码值定义了所有资源名称。
+- en: The Virtual Network role
+  id: totrans-294
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 虚拟网络角色
+- en: 'There are several tasks in this role, a lot of which use some concepts we have
+    yet to cover but will go into more detail in [*Chapter 5*](B19537_05.xhtml#_idTextAnchor268),
+    *Deploying to Amazon* *Web Services*:'
+  id: totrans-295
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 该角色中有多个任务，许多任务使用了一些我们尚未覆盖的概念，但将在[*第5章*](B19537_05.xhtml#_idTextAnchor268)中详细介绍，*部署到亚马逊*
+    *Web Services*：
+- en: '`azure.azcollection.azure_rm_virtualnetwork` creates the Virtual Network'
+  id: totrans-296
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`azure.azcollection.azure_rm_virtualnetwork`创建虚拟网络'
+- en: '`azure.azcollection.azure_rm_subnet` loops through and creates the subnets
+    that don’t have `database` in the name'
+  id: totrans-297
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`azure.azcollection.azure_rm_subnet`循环遍历并创建名称中不含有`database`的子网'
+- en: '`azure.azcollection.azure_rm_subnet` loops through and creates the subnets
+    that have `database` in the name'
+  id: totrans-298
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`azure.azcollection.azure_rm_subnet`循环遍历并创建名称中含有`database`的子网'
+- en: '`community.general.ipify_facts` gets the current IP address'
+  id: totrans-299
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`community.general.ipify_facts`获取当前IP地址'
+- en: '`ansible.builtin.set_fact` takes the preceding output and registers it as a
+    fact'
+  id: totrans-300
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible.builtin.set_fact`接受前面的输出并将其注册为事实'
+- en: '`ansible.builtin.tempfile` creates an empty temporary file'
+  id: totrans-301
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible.builtin.tempfile`创建一个空的临时文件'
+- en: '`ansible.builtin.template` dynamically generates the network security group
+    tasks from a template file'
+  id: totrans-302
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible.builtin.template`从模板文件动态生成网络安全组任务'
+- en: '`ansible.builtin.include_tasks` loads and executes the network security group
+    tasks we just generated'
+  id: totrans-303
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible.builtin.include_tasks`加载并执行我们刚刚生成的网络安全组任务'
+- en: '`azure.azcollection.azure_rm_publicipaddress` creates a public IP address for
+    use with the load balancer'
+  id: totrans-304
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`azure.azcollection.azure_rm_publicipaddress` 创建一个公共 IP 地址，以供负载均衡器使用'
+- en: '`azure.azcollection.azure_rm_loadbalancer` creates a load balancer'
+  id: totrans-305
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`azure.azcollection.azure_rm_loadbalancer` 创建负载均衡器'
+- en: Now that we have all the underlying networking, we can launch the rest of the
+    resources.
+  id: totrans-306
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经完成了所有基础网络设置，可以启动其余资源了。
+- en: Storage roles
+  id: totrans-307
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 存储角色
+- en: 'The tasks executed by this role are as follows:'
+  id: totrans-308
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 该角色执行的任务如下：
+- en: '`azure.azcollection.azure_rm_resourcegroup_info` gets information on the resource
+    group we have created'
+  id: totrans-309
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`azure.azcollection.azure_rm_resourcegroup_info` 获取我们已创建的资源组信息'
+- en: '`ansible.builtin.set_fact` uses some regular expressions to extract the subscription
+    ID from the resource group ID and set a fact'
+  id: totrans-310
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible.builtin.set_fact` 使用一些正则表达式从资源组 ID 中提取订阅 ID 并设置一个事实'
+- en: '`ansible.builtin.tempfile` generates a temporary file, which will be used for
+    the variables for the storage account rules'
+  id: totrans-311
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible.builtin.tempfile` 生成临时文件，该文件将用于存储帐户规则的变量'
+- en: '`ansible.builtin.template` dynamically generates the variables containing the
+    storage account network rules'
+  id: totrans-312
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible.builtin.template` 动态生成包含存储帐户网络规则的变量'
+- en: '`ansible.builtin.include_vars` loads the variables we just generated'
+  id: totrans-313
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible.builtin.include_vars` 加载我们刚刚生成的变量'
+- en: '`azure.azcollection.azure_rm_storageaccount` creates the storage account'
+  id: totrans-314
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`azure.azcollection.azure_rm_storageaccount` 创建存储帐户'
+- en: '`azure.azcollection.azure_rm_resource` creates the NFS share'
+  id: totrans-315
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`azure.azcollection.azure_rm_resource` 创建 NFS 共享'
+- en: '`azure.azcollection.azure_rm_privatednszone` creates a private DNS zone'
+  id: totrans-316
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`azure.azcollection.azure_rm_privatednszone` 创建私有 DNS 区域'
+- en: '`azure.azcollection.azure_rm_privatednszonelink` links the private DNS zone
+    to our Virtual Network'
+  id: totrans-317
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`azure.azcollection.azure_rm_privatednszonelink` 将私有 DNS 区域连接到我们的虚拟网络'
+- en: '`azure.azcollection.azure_rm_subnet_info` gets information on the endpoint
+    subnet'
+  id: totrans-318
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`azure.azcollection.azure_rm_subnet_info` 获取终端子网信息'
+- en: '`azure.azcollection.azure_rm_storageaccount_info` gets info on the storage
+    account we just created'
+  id: totrans-319
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`azure.azcollection.azure_rm_storageaccount_info` 获取我们刚刚创建的存储帐户信息'
+- en: '`azure.azcollection.azure_rm_privateendpoint` creates a private endpoint using
+    all of the information we have just gathered'
+  id: totrans-320
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`azure.azcollection.azure_rm_privateendpoint` 使用我们刚刚收集的所有信息创建私有终端'
+- en: '`azure.azcollection.azure_rm_privateendpointdnszonegroup` attaches the private
+    endpoint to the private DNS zone'
+  id: totrans-321
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`azure.azcollection.azure_rm_privateendpointdnszonegroup` 将私有终端连接到私有 DNS 区域'
+- en: While that all seems straightforward, the keen-eyed among you may have noticed
+    something which appears a little out of place.
+  id: totrans-322
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 虽然这一切看起来很简单，但眼尖的你可能注意到有些地方似乎不太对劲。
+- en: When it came to creating the NFS share, the task we used was called `azure.azcollection.azure_rm_resource`,
+    even though there is a module called `azure.azcollection.azure_rm_storageshare`;
+    what gives?
+  id: totrans-323
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在创建 NFS 共享时，我们使用的任务是 `azure.azcollection.azure_rm_resource`，尽管有一个名为 `azure.azcollection.azure_rm_storageshare`
+    的模块；这是为什么呢？
+- en: At the time of writing, the `azure.azcollection.azure_rm_storageshare` module
+    does not support the creation of NFS file shares on an Azure Storage account.
+    So instead, we dynamically generate a payload and send it to the Azure Resource
+    Manager REST API to create the resource. We will look at this in a little more
+    detail in the next role.
+  id: totrans-324
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在写作时，`azure.azcollection.azure_rm_storageshare` 模块不支持在 Azure 存储帐户上创建 NFS 文件共享。因此，我们动态生成有效负载并将其发送到
+    Azure 资源管理器 REST API 来创建该资源。我们将在下一个角色中详细介绍这一点。
+- en: The MySQL role
+  id: totrans-325
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: MySQL 角色
+- en: Azure Flexible Server for MySQL is another Azure service that doesn’t have a
+    native Ansible module, so we are going to have to use the REST API to not only
+    create the server but also set the `require_secure_transport` parameter and create
+    our WordPress database.
+  id: totrans-326
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Azure MySQL 弹性服务器是另一项 Azure 服务，尚未拥有原生的 Ansible 模块，因此我们必须使用 REST API 来不仅创建服务器，还要设置
+    `require_secure_transport` 参数并创建我们的 WordPress 数据库。
+- en: 'Before doing any of that, though, we need to create the DNS resources and gather
+    a few bits of information on the networking resources we have already launched;
+    the following tasks do so:'
+  id: totrans-327
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 不过，在做任何事情之前，我们需要创建 DNS 资源并收集一些我们已启动的网络资源信息；以下任务执行了这一操作：
+- en: '`azure.azcollection.azure_rm_privatednszone` creates the private DNS zone for
+    the database'
+  id: totrans-328
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`azure.azcollection.azure_rm_privatednszone` 为数据库创建私有 DNS 区域'
+- en: '`azure.azcollection.azure_rm_privatednszonelink` attaches the DNS zone we just
+    created to the Virtual Network'
+  id: totrans-329
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`azure.azcollection.azure_rm_privatednszonelink` 将我们刚刚创建的 DNS 区域附加到虚拟网络'
+- en: '`azure.azcollection.azure_rm_privatednszone_info` gets information on the private
+    DNS we just created'
+  id: totrans-330
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`azure.azcollection.azure_rm_privatednszone_info` 获取我们刚刚创建的私有 DNS 信息'
+- en: '`azure.azcollection.azure_rm_subnet_info` gets information on the subnet we
+    have created purely for use with the Azure Flexible Server for MySQL'
+  id: totrans-331
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`azure.azcollection.azure_rm_subnet_info` 获取我们为 Azure MySQL 弹性服务器专门创建的子网信息'
+- en: 'We now have all the resources and information we need to create the Azure Flexible
+    Server for MySQL. The task for doing this looks like the following:'
+  id: totrans-332
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们拥有了创建 Azure MySQL 弹性服务器所需的所有资源和信息。完成这项任务的步骤如下：
+- en: '[PRE41]'
+  id: totrans-333
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE41]'
+- en: The first part of the task, from `api_version` down to `body`, is used to construct
+    the URL that we will call. The keys listed under `body` are the parameters and
+    options that will be posted to the API endpoint URL, which we have dynamically
+    created. The URL we will be posting to looks something like `https://management.azure.com/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.DBforMySQL/flexibleServers/{serverName}?api-version=2021-05-01`.
+  id: totrans-334
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 任务的第一部分，从 `api_version` 到 `body`，用于构造我们将调用的 URL。`body` 下列出的键是将被发布到我们动态创建的 API
+    端点 URL 的参数和选项。我们将发布到的 URL 类似于 `https://management.azure.com/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.DBforMySQL/flexibleServers/{serverName}?api-version=2021-05-01`。
+- en: Simple enough, you may think, but there is quite a large piece of logic that
+    Ansible would typically take care of, which we now have to consider for ourselves.
+  id: totrans-335
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 看起来很简单，但实际上有一个较大的逻辑块，通常由 Ansible 处理，而我们现在必须自己考虑。
+- en: 'As Ansible is just posting to the REST API, assuming the request is valid,
+    it will get a `200` response back to say that the request was successful; it doesn’t
+    wait until the resource has been launched before `200` is returned, meaning that
+    Ansible will happily move on to the next task, which will fail in our deployment
+    because we are immediately making changes to the resource, which will have a state
+    of `Creating`. To get around, this we have the following task:'
+  id: totrans-336
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于 Ansible 只是向 REST API 发送请求，只要请求有效，它就会收到 `200` 的响应，表示请求成功；它不会等到资源启动完成才返回 `200`，这意味着
+    Ansible 会迅速进入下一个任务，但在我们的部署中，由于我们立即对资源进行更改，资源的状态会是 `Creating`，从而导致下一个任务失败。为了避免这个问题，我们有如下任务：
+- en: '[PRE42]'
+  id: totrans-337
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE42]'
+- en: 'This task will poll the REST API for information on our server every 15 seconds
+    a maximum of 50 times until the REST API reports that the server `state` is `Ready`,
+    and then it moves on to the next task:'
+  id: totrans-338
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个任务将每 15 秒轮询一次 REST API，最多 50 次，直到 REST API 报告服务器的 `state` 为 `Ready`，然后它将继续执行下一个任务：
+- en: '`azure.azcollection.azure_rm_resource` – now the server is ready, we can update
+    the `require_secure_transport` parameter'
+  id: totrans-339
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`azure.azcollection.azure_rm_resource` ——现在服务器已准备好，我们可以更新 `require_secure_transport`
+    参数'
+- en: '`azure.azcollection.azure_rm_resource` – finally, we can create the WordPress
+    database'
+  id: totrans-340
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`azure.azcollection.azure_rm_resource` ——最后，我们可以创建 WordPress 数据库'
+- en: Now that we have launched and configured the database resources, we can launch
+    some virtual machines – starting with the admin one.
+  id: totrans-341
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经启动并配置了数据库资源，可以启动一些虚拟机——从管理员虚拟机开始。
+- en: The Admin Virtual Machine role
+  id: totrans-342
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 管理员虚拟机角色
+- en: 'Compared to the Azure Flexible Server for MySQL role, this is quite straightforward
+    and uses all Ansible-native Azure modules:'
+  id: totrans-343
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 与 Azure MySQL 弹性服务器角色相比，这个任务相当直接，使用了所有 Ansible 原生的 Azure 模块：
+- en: '`azure.azcollection.azure_rm_networkinterface` creates the network interface
+    for use with the Virtual Machine'
+  id: totrans-344
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`azure.azcollection.azure_rm_networkinterface` 创建用于虚拟机的网络接口'
+- en: '`azure.azcollection.azure_rm_publicipaddress_info` gets information on the
+    public IP address attached to the load balancer we launched – we need this for
+    the `cloud-init` script'
+  id: totrans-345
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`azure.azcollection.azure_rm_publicipaddress_info` 获取附加到我们启动的负载均衡器的公网 IP 地址信息——我们需要此信息来执行
+    `cloud-init` 脚本'
+- en: '`ansible.builtin.tempfile` creates a temporary file, which will store the `cloud-init`
+    script'
+  id: totrans-346
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible.builtin.tempfile` 创建一个临时文件，用于存储 `cloud-init` 脚本'
+- en: '`ansible.builtin.template` generates the `cloud-init` script for the admin
+    server; like our Terraform deployment, this will install the packages and bootstrap
+    WordPress'
+  id: totrans-347
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible.builtin.template` 生成管理员服务器的 `cloud-init` 脚本；像我们的 Terraform 部署一样，这将安装包并引导
+    WordPress'
+- en: '`azure.azcollection.azure_rm_virtualmachine` launches the virtual machine using
+    the resources created and configured previously'
+  id: totrans-348
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`azure.azcollection.azure_rm_virtualmachine` 使用之前创建和配置的资源启动虚拟机'
+- en: Now that we have our admin virtual machine, let’s look at the web servers.
+  id: totrans-349
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经有了管理员虚拟机，让我们来看看 Web 服务器。
+- en: The Web Virtual Machine Scale Set role
+  id: totrans-350
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: Web 虚拟机规模集角色
+- en: 'This role contains three tasks:'
+  id: totrans-351
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 该角色包含三个任务：
+- en: '`ansible.builtin.tempfile` creates a temporary file, which will store the `cloud-init`
+    script'
+  id: totrans-352
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible.builtin.tempfile` 创建临时文件，用于存储 `cloud-init` 脚本'
+- en: '`ansible.builtin.template` generates the `cloud-init` script for the admin
+    server, like our Terraform deployment; this will install the packages and not
+    touch WordPress as it’s already installed on our admin virtual machine'
+  id: totrans-353
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible.builtin.template` 生成用于管理员服务器的 `cloud-init` 脚本，类似于我们的 Terraform 部署；这将安装所需的软件包，但不会触及
+    WordPress，因为它已经安装在我们的管理员虚拟机上。'
+- en: '`azure.azcollection.azure_rm_virtualmachinescaleset` creates the virtual machine
+    scale set'
+  id: totrans-354
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`azure.azcollection.azure_rm_virtualmachinescaleset` 创建虚拟机规模集'
+- en: The output role
+  id: totrans-355
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 输出角色
+- en: This role simply outputs the details we need to access our WordPress installation;
+    unlike Terraform, this information is visible when it runs.
+  id: totrans-356
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个角色仅输出我们需要访问 WordPress 安装的详细信息；与 Terraform 不同，运行时这些信息是可见的。
+- en: This simple role, which just displays some text when running our playbook, is
+    the final role, and we are now ready to run our playbook.
+  id: totrans-357
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个简单的角色在运行我们的 playbook 时只显示一些文本，是最终的角色，我们现在已经准备好运行 playbook。
+- en: Running the Ansible Playbook
+  id: totrans-358
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 运行 Ansible Playbook
+- en: 'Now that we know what everything does, you can run the Ansible Playbook by
+    running the following command:'
+  id: totrans-359
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经了解了每个部分的功能，你可以通过运行以下命令来运行 Ansible Playbook：
+- en: '[PRE43]'
+  id: totrans-360
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE43]'
+- en: 'Once finished, you should see something like the following output:'
+  id: totrans-361
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 完成后，你应该会看到类似以下输出：
+- en: '![Figure 4.8 – The completed playbook run](img/Figure_4.08_B19537.jpg)'
+  id: totrans-362
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 4.8 – 完成的 playbook 执行](img/Figure_4.08_B19537.jpg)'
+- en: Figure 4.8 – The completed playbook run
+  id: totrans-363
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 4.8 – 完成的 playbook 执行
+- en: 'Once you have looked at WordPress and the Azure resource, you can run the following
+    command to remove the resource group and everything contained within it:'
+  id: totrans-364
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦查看了 WordPress 和 Azure 资源，你可以运行以下命令来删除资源组及其中的所有内容：
+- en: '[PRE44]'
+  id: totrans-365
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE44]'
+- en: Remember to make sure that all of the resources have been removed by checking
+    to see whether they are still listed in the Azure portal, as you could incur unexpected
+    costs if the playbook failed for any reason.
+  id: totrans-366
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请记住，通过检查它们是否仍然列在 Azure 门户中，确保所有资源已经被删除，因为如果 playbook 因任何原因失败，可能会产生意外费用。
+- en: Summary
+  id: totrans-367
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 总结
+- en: In this chapter, we did a deep dive into using Terraform to deploy our WordPress
+    environment in Microsoft Azure. We discussed the Terraform providers and worked
+    through the Terraform code before finally executing it.
+  id: totrans-368
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们深入探讨了使用 Terraform 在 Microsoft Azure 部署 WordPress 环境。我们讨论了 Terraform 提供程序并逐步执行了
+    Terraform 代码。
+- en: Also, as part of this walkthrough, we discussed some of the considerations you
+    need to make when looping through resources, when it’s appropriate to use `depends_on`,
+    and how we can use templates to generate content.
+  id: totrans-369
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 此外，在本次演示中，我们讨论了在循环资源时需要考虑的一些事项，何时适合使用 `depends_on`，以及如何使用模板生成内容。
+- en: Next up, we walked through the Ansible code, which deploys the same set of resources.
+    This time, rather than a deep dive, we only went into detail on the Azure-specific
+    details, as we will take a closer look at Ansible in [*Chapter 5*](B19537_05.xhtml#_idTextAnchor268),
+    *Deploying to Amazon* *Web Services*.
+  id: totrans-370
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来，我们讲解了 Ansible 代码，部署相同的资源集。这次，我们没有进行深入探讨，而是详细讨论了 Azure 特定的细节，因为我们将在[*第 5
+    章*](B19537_05.xhtml#_idTextAnchor268)中对 Ansible 进行更深入的分析，*部署到 Amazon* *Web Services*。
+- en: Everything we covered so far should hopefully start to get you thinking about
+    how you can apply some of the subjects we have covered to your own Infrastructure-as-Code
+    deployments and you should already be starting to get a feel for which of the
+    two tools you prefer.
+  id: totrans-371
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 到目前为止我们涵盖的内容，希望能让你开始思考如何将我们讲解的主题应用到你自己的基础设施即代码部署中，并且你应该已经开始对这两种工具的偏好有所感知。
+- en: In the next chapter, we will look at deploying our WordPress installation to
+    Amazon Web Services, as well as doing a deeper dive into Ansible.
+  id: totrans-372
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一章中，我们将讨论如何将我们的 WordPress 安装部署到 Amazon Web Services，并深入了解 Ansible。
+- en: Further reading
+  id: totrans-373
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 进一步阅读
+- en: 'You can find more d[etails on the services and d](https://azure.microsoft.com/)ocumentation
+    we have mentioned in this chapter at the following URLs:'
+  id: totrans-374
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以在以下网址找到我们在本章中提到的服务和文档的更多细节：[链接](https://azure.microsoft.com/)
+- en: 'Microsoft Azure: [https://azure.microsoft.com/](https://azure.microsoft.com/)'
+  id: totrans-375
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Microsoft Azure：[https://azure.microsoft.com/](https://azure.microsoft.com/)
+- en: 'The Azure REST documentation: [https://learn.microsoft.com/en-us/rest/api/azure/](https://learn.microsoft.com/en-us/rest/api/azure/)'
+  id: totrans-376
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Azure REST 文档：[https://learn.microsoft.com/en-us/rest/api/azure/](https://learn.microsoft.com/en-us/rest/api/azure/)
+- en: 'Terraform providers and modules:'
+  id: totrans-377
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Terraform 提供者和模块：
+- en: 'azurerm: [https://registry.terraform.io/providers/hashicorp/azurerm/latest](https://registry.terraform.io/providers/hashicorp/azurerm/latest)'
+  id: totrans-378
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 'azurerm: [https://registry.terraform.io/providers/hashicorp/azurerm/latest](https://registry.terraform.io/providers/hashicorp/azurerm/latest)'
+- en: 'azurecaf: [https://registry.terraform.io/providers/aztfmod/azurecaf/latest](https://registry.terraform.io/providers/aztfmod/azurecaf/latest)'
+  id: totrans-379
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 'azurecaf: [https://registry.terraform.io/providers/aztfmod/azurecaf/latest](https://registry.terraform.io/providers/aztfmod/azurecaf/latest)'
+- en: 'random: [https://registry.terraform.io/providers/hashicorp/random/latest](https://registry.terraform.io/providers/hashicorp/random/latest)'
+  id: totrans-380
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 'random: [https://registry.terraform.io/providers/hashicorp/random/latest](https://registry.terraform.io/providers/hashicorp/random/latest)'
+- en: 'HTTP: [https://registry.terraform.io/providers/hashicorp/http/latest](https://registry.terraform.io/providers/hashicorp/http/latest)'
+  id: totrans-381
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 'HTTP: [https://registry.terraform.io/providers/hashicorp/http/latest](https://registry.terraform.io/providers/hashicorp/http/latest)'
+- en: 'The Claranet Azure Region module: [https://registry.terraform.io/modules/claranet/regions/azurerm/latest](https://registry.terraform.io/modules/claranet/regions/azurerm/latest)'
+  id: totrans-382
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 'Claranet Azure 区域模块: [https://registry.terraform.io/modules/claranet/regions/azurerm/latest](https://registry.terraform.io/modules/claranet/regions/azurerm/latest)'
+- en: 'A reference for Ansible collections is as follows:'
+  id: totrans-383
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 集合的参考如下：
+- en: 'The Azure collection: [https://galaxy.ansible.com/azure/azcollection](https://galaxy.ansible.com/azure/azcollection)'
+  id: totrans-384
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 'Azure 集合: [https://galaxy.ansible.com/azure/azcollection](https://galaxy.ansible.com/azure/azcollection)'

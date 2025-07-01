@@ -1,0 +1,1137 @@
+- en: '12'
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '12  '
+- en: Building Out a VMware Deployment
+  id: totrans-1
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '扩展VMware部署  '
+- en: Now that we know how to launch networking and services in AWS, we will discuss
+    deploying a similar setup in a **VMware** environment and talk through the core
+    VMware modules.
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '现在我们已经了解如何在AWS中启动网络和服务，接下来我们将讨论如何在**VMware**环境中部署类似的设置，并深入探讨核心VMware模块。  '
+- en: 'In this chapter, we will cover the following topics:'
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '本章将涵盖以下主题：  '
+- en: An introduction to VMware
+  id: totrans-4
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 'VMware介绍  '
+- en: The VMware REST modules
+  id: totrans-5
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 'VMware REST模块  '
+- en: Technical requirements
+  id: totrans-6
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '技术要求  '
+- en: This chapter will discuss various components of the VMware family of products
+    and how you can interact with them using Ansible. While there will be example
+    playbook tasks in this chapter, they may need to be more easily transferable to
+    your installation. Because of this, it’s not recommended that you use any examples
+    in this chapter without first reviewing the complete documentation.
+  id: totrans-7
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '本章将讨论VMware产品家族的各种组件，以及如何使用Ansible与它们交互。尽管本章中会有示例的Playbook任务，但这些任务可能需要根据您的安装情况进行调整。因此，不建议在未先审查完整文档的情况下使用本章中的任何示例。  '
+- en: An introduction to VMware
+  id: totrans-8
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 'VMware介绍  '
+- en: With over 25 years of history, VMware has evolved significantly from its origins
+    as a stealth startup. Boasting a revenue of over $13 billion in August 2023, the
+    Vmware product portfolio, which grew to encompass around 30 products, is best
+    known for its hypervisors, and it is a staple in most enterprises, enabling administrators
+    to deploy virtual machines rapidly across various standard x86-based hardware
+    configurations.
+  id: totrans-9
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'VMware拥有超过25年的历史，从一个隐形的初创公司发展到今天，经历了显著的变化。到2023年8月，VMware的收入已超过130亿美元，VMware的产品组合已发展到涵盖大约30种产品，最为人熟知的是其虚拟机监控程序（Hypervisor），并且它是大多数企业的标准配置，使管理员能够在各种基于x86的硬件配置上快速部署虚拟机。  '
+- en: However, recent developments have seen significant changes following Broadcom’s
+    acquisition of Vmware in late 2023.
+  id: totrans-10
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '然而，最近的变化发生在博通于2023年底收购VMware之后，变化十分显著。  '
+- en: This acquisition has dramatically simplified Vmware’s product portfolio, something
+    that was influenced by customer and partner feedback, allowing users of all sizes
+    to derive more value from VMware solutions. Two notable offerings include VMware
+    Cloud Foundation and VMware vSphere Foundation, each with advanced add-on offers.
+  id: totrans-11
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '这次收购极大简化了VMware的产品组合，这是受到客户和合作伙伴反馈的影响，使各种规模的用户都能从VMware解决方案中获得更多价值。两个显著的产品包括VMware
+    Cloud Foundation和VMware vSphere Foundation，每个都有高级附加产品。  '
+- en: The first of the major changes that Broadcom has implemented is transitioning
+    VMware to a subscription-based model. This aligns with the industry standard for
+    cloud consumption and aims to provide continuous innovation, quicker time to value,
+    and predictable investments for customers by phasing out perpetual licenses and
+    replacing them with subscription or term licenses to enable customer and partner
+    success in digital transformations.
+  id: totrans-12
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 博通实施的首项重大变化是将VMware转变为基于订阅的模式。这与云计算消费的行业标准一致，旨在通过逐步淘汰永久许可并用订阅或期限许可证替代，来为客户提供持续的创新、更快的价值实现时间和可预测的投资，从而支持客户和合作伙伴在数字化转型中的成功。
+- en: There are concerns from the wider industry about Broadcom’s post-acquisition
+    strategy for VMware. There’s speculation that Broadcom may focus on retaining
+    only the largest and most profitable VMware customers and partners. This strategy
+    could lead to a restructuring of VMware’s portfolio to better align with Broadcom’s
+    business objectives, potentially including asset disposals and an even more streamlined
+    product range.
+  id: totrans-13
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '在更广泛的行业中，关于博通收购VMware后的战略存在一些担忧。有人猜测博通可能会专注于保留仅有的最大和最盈利的VMware客户和合作伙伴。此策略可能导致VMware产品组合的重组，以更好地与博通的业务目标对接，可能包括资产处置和更简化的产品范围。  '
+- en: At the time of writing (early 2024), the impact of these changes on VMware’s
+    existing customer base and partner ecosystem is still unknown, with further details
+    expected to emerge throughout the year as Broadcom continues to implement its
+    strategic long-term plans for VMware.
+  id: totrans-14
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '在写作时（2024年初），这些变化对VMware现有客户群和合作伙伴生态系统的影响尚不清楚，更多细节预计将在全年逐步浮现，因为博通将继续实施其针对VMware的战略长期计划。  '
+- en: The VMware REST modules
+  id: totrans-15
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 'VMware REST模块  '
+- en: As already mentioned, there were around 30 products in the VMware range, and
+    Ansible had modules that allowed you to interact with many of them.
+  id: totrans-16
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '如前所述，VMware产品系列中大约有30个产品，而Ansible拥有可以与其中许多产品交互的模块。  '
+- en: However, due to product streamlining, we will just concentrate on the `vmware.vmware_rest`
+    namespace modules and won’t be looking at any of the `community.vmware` modules
+    as these will lose all support at some point in 2025.
+  id: totrans-17
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，由于产品简化，我们将集中讨论 `vmware.vmware_rest` 命名空间中的模块，而不会查看 `community.vmware` 中的任何模块，因为这些模块将在
+    2025 年某个时候失去所有支持。
+- en: The difference between the two collections of modules is that, as implied by
+    the name, the `vmware.vmware_rest` modules use the VMware REST API to manage resources,
+    whereas the ones in `community.vmware` use a Python library to interact with the
+    various VMware endpoints to perform tasks.
+  id: totrans-18
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这两组模块的区别在于，正如其名称所示，`vmware.vmware_rest` 模块使用 VMware REST API 来管理资源，而 `community.vmware`
+    中的模块则使用 Python 库与各种 VMware 端点进行交互以执行任务。
+- en: 'The modules in the `vmware.vmware_rest` namespace are split into three areas:'
+  id: totrans-19
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`vmware.vmware_rest` 命名空间中的模块分为三个领域：'
+- en: '**Appliance**: These modules manage your vCenter appliances, which are underlying
+    resources that make up your vCenter deployment'
+  id: totrans-20
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**Appliance**：这些模块管理你的 vCenter Appliance，它们是组成 vCenter 部署的基础资源。'
+- en: '**Content**: The Content Library modules allow you to manage the services for
+    defining and managing the library’s items, subscription, publication, and storage'
+  id: totrans-21
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**Content**：内容库模块允许你管理定义和管理库中项、订阅、发布和存储的服务。'
+- en: '**vCenter**: These modules allow you to manage the workloads, such as virtual
+    machines, running on top of your vCentre deployment'
+  id: totrans-22
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**vCenter**：这些模块允许你管理运行在 vCenter 部署上的工作负载，例如虚拟机。'
+- en: Let’s start by looking at the VMware REST appliance modules.
+  id: totrans-23
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们先来看一下 VMware REST appliance 模块。
+- en: VMware REST appliance modules
+  id: totrans-24
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: VMware REST appliance 模块
+- en: At the time of writing, there are over 60 modules; these are split up into their
+    own clearly labeled areas.
+  id: totrans-25
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在撰写本文时，已有超过 60 个模块；这些模块被划分到各自清晰标记的区域。
+- en: Access modules
+  id: totrans-26
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 访问模块
+- en: 'To start with, we have the access modules:'
+  id: totrans-27
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 首先，我们有访问模块：
+- en: '`appliance_access_consolecli`: This module allows you to enable or disable
+    the console-based controlled CLI (TTY1).'
+  id: totrans-28
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`appliance_access_consolecli`：此模块允许你启用或禁用基于控制台的 CLI（TTY1）。'
+- en: '`appliance_access_consolecli_info`: This module returns the current state of
+    the console-based controlled CLI (TTY1); this will either be enabled or disabled.'
+  id: totrans-29
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`appliance_access_consolecli_info`：这个模块返回基于控制台的 CLI（TTY1）的当前状态；它要么是启用，要么是禁用。'
+- en: '`appliance_access_dcui`: With this module, you can configure the state of the
+    **Direct Console User Interface** (**DCUI** TTY2); again, you only have two options:
+    enabled or disabled.'
+  id: totrans-30
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`appliance_access_dcui`：使用此模块，你可以配置 **Direct Console User Interface**（**DCUI**
+    TTY2）的状态；同样，你只有两个选项：启用或禁用。'
+- en: '`appliance_access_dcui_info`: As you may have already guessed, this module
+    returns either enabled or disabled for the DCUI TTY2 state.'
+  id: totrans-31
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`appliance_access_dcui_info`：正如你可能已经猜到的，这个模块返回 DCUI TTY2 状态的启用或禁用。'
+- en: '`appliance_access_shell`: Again, there isn’t much to this one in that you just
+    change the enabled state of BASH. With this enabled, you will be able to access
+    a BASH shell within the CLI.'
+  id: totrans-32
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`appliance_access_shell`：同样，这个模块的功能很简单，就是改变 BASH 的启用状态。启用后，你可以在 CLI 中访问 BASH
+    shell。'
+- en: '`appliance_access_shell_info`: This module simply returns BASH access; this
+    will either be enabled or disabled.'
+  id: totrans-33
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`appliance_access_shell_info`：此模块仅返回 BASH 访问状态；它要么是启用，要么是禁用。'
+- en: '`appliance_access_ssh`: This module sets the enabled state of the SSH-based
+    controlled CLI.'
+  id: totrans-34
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`appliance_access_ssh`：此模块设置基于 SSH 控制的 CLI 的启用状态。'
+- en: '`appliance_access_ssh_info`: This module returns the enabled state of the SSH-based
+    controlled CLI.'
+  id: totrans-35
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`appliance_access_ssh_info`：这个模块返回基于 SSH 控制的 CLI 的启用状态。'
+- en: 'As already mentioned, each of these modules either allows you to set the state
+    of the access system or returns the currently configured state:'
+  id: totrans-36
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如前所述，这些模块中的每一个要么允许你设置访问系统的状态，要么返回当前配置的状态：
+- en: '[PRE0]'
+  id: totrans-37
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: Each of the non-info modules has a single value of `enabled`, which accepts
+    either `true` or `false`, as demonstrated earlier.
+  id: totrans-38
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 每个非信息类模块都有一个值为 `enabled`，其值可以是 `true` 或 `false`，如前所示。
+- en: Health info modules
+  id: totrans-39
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 健康信息模块
+- en: 'The next grouping of modules only returns information about the health of your
+    system:'
+  id: totrans-40
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 下一个模块组仅返回关于系统健康状态的信息：
+- en: '`appliance_health_applmgmt_info`'
+  id: totrans-41
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`appliance_health_applmgmt_info`'
+- en: '`appliance_health_database_info`'
+  id: totrans-42
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`appliance_health_database_info`'
+- en: '`appliance_health_databasestorage_info`'
+  id: totrans-43
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`appliance_health_databasestorage_info`'
+- en: '`appliance_health_load_info`'
+  id: totrans-44
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`appliance_health_load_info`'
+- en: '`appliance_health_mem_info`'
+  id: totrans-45
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`appliance_health_mem_info`'
+- en: '`appliance_health_softwarepackages_info`'
+  id: totrans-46
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`appliance_health_softwarepackages_info`'
+- en: '`appliance_health_storage_info`'
+  id: totrans-47
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`appliance_health_storage_info`'
+- en: '`appliance_health_swap_info`'
+  id: totrans-48
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`appliance_health_swap_info`'
+- en: '`appliance_health_system_info`'
+  id: totrans-49
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`appliance_health_system_info`'
+- en: 'You would call one of the modules like this:'
+  id: totrans-50
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '您可以像这样调用其中一个模块:'
+- en: '[PRE1]'
+  id: totrans-51
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: This would return the current health of whichever of the services you are querying.
+  id: totrans-52
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这将返回您查询的任何服务的当前健康状态。
+- en: Infraprofile modules
+  id: totrans-53
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: Infraprofile模块
+- en: 'Here, we have just two modules:'
+  id: totrans-54
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '在这里，我们只有两个模块:'
+- en: '`appliance_infraprofile_configs`: This module exports the selected profile'
+  id: totrans-55
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`appliance_infraprofile_configs`: 此模块导出所选配置文件'
+- en: '`appliance_infraprofile_configs_info`: This module lists all the registered
+    profiles'
+  id: totrans-56
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`appliance_infraprofile_configs_info`: 此模块列出所有已注册的配置文件'
+- en: 'The only valid state for the `appliance_infraprofile_configs` module is `export`:'
+  id: totrans-57
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`appliance_infraprofile_configs`模块的唯一有效状态是`export`:'
+- en: '[PRE2]'
+  id: totrans-58
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: Here’s the output is JSON containing the profile for the selected configuration.
+    In the preceding example, this is `ApplianceManagement`.
+  id: totrans-59
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这里的输出是包含所选配置文件的JSON。在上述示例中，这是`ApplianceManagement`。
+- en: Local accounts modules
+  id: totrans-60
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 本地帐户模块
+- en: 'Here, we have three modules:'
+  id: totrans-61
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '在这里，我们有三个模块:'
+- en: '`appliance_localaccounts_globalpolicy`'
+  id: totrans-62
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`appliance_localaccounts_globalpolicy`'
+- en: '`appliance_localaccounts_globalpolicy_info`'
+  id: totrans-63
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`appliance_localaccounts_globalpolicy_info`'
+- en: '`appliance_localaccounts_info`'
+  id: totrans-64
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`appliance_localaccounts_info`'
+- en: These modules allow you to set and query the global policy and return information
+    on all or just one of the local accounts.
+  id: totrans-65
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这些模块允许您设置和查询全局策略，并返回所有或只返回一个本地帐户的信息。
+- en: Monitoring modules
+  id: totrans-66
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 监控模块
+- en: 'While there are only two modules here, they can be powerful when you combine
+    them:'
+  id: totrans-67
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '虽然这里只有两个模块，但是当您组合它们时它们可以非常强大:'
+- en: '`appliance_monitoring_info`: This module returns a list of monitors'
+  id: totrans-68
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`appliance_monitoring_info`: 此模块返回一组监视器'
+- en: '`appliance_monitoring_query`: This module allows you to query the monitors'
+  id: totrans-69
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`appliance_monitoring_query`: 此模块允许您查询监视器'
+- en: 'Here’s an example query:'
+  id: totrans-70
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '这里是一个示例查询:'
+- en: '[PRE3]'
+  id: totrans-71
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: As you can see, with the preceding task, we are querying the total memory in
+    5 minutes, which averages between 9 A.M. and 10 A.M. on January 1, 2024.
+  id: totrans-72
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如您所见，在前述任务中，我们正在查询2024年1月1日上午9点至10点之间的总内存量，耗时5分钟。
+- en: Networking modules
+  id: totrans-73
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 网络模块
+- en: 'This is where things start to get a little more complicated; each of the modules
+    has an *info* equivalent where highlighted:'
+  id: totrans-74
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '这是事情开始变得有点复杂的地方; 每个模块都有一个*info*等效项，其中突出显示:'
+- en: '`appliance_networking` (plus info): This module resets and restarts network
+    configuration on all interfaces. It also renews the DHCP leases for DHCP IP addresses.'
+  id: totrans-75
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`appliance_networking`（以及信息）: 此模块重置和重新启动所有接口的网络配置。它还更新DHCP分配的DHCP IP地址的租约。'
+- en: '`appliance_networking_dns_domains` (plus info): This module is used to manage
+    the DNS search domains.'
+  id: totrans-76
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`appliance_networking_dns_domains`（以及信息）: 此模块用于管理DNS搜索域。'
+- en: '`appliance_networking_dns_hostname` (plus info): This module configures the
+    **fully qualified domain name** (**FQDN**) hostname.'
+  id: totrans-77
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`appliance_networking_dns_hostname`（以及信息）: 此模块配置**完全合格的域名**（**FQDN**）主机名。'
+- en: '`appliance_networking_dns_servers` (plus info): This module can manage the
+    DNS server configuration.'
+  id: totrans-78
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`appliance_networking_dns_servers`（以及信息）: 此模块可以管理DNS服务器配置。'
+- en: '`appliance_networking_firewall_inbound` (plus info): This module sets an ordered
+    list of firewall rules.'
+  id: totrans-79
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`appliance_networking_firewall_inbound`（以及信息）: 此模块设置防火墙规则的有序列表。'
+- en: '`appliance_networking_interfaces_info`: This module fetches information on
+    a single network interface.'
+  id: totrans-80
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`appliance_networking_interfaces_info`: 此模块获取单个网络接口的信息。'
+- en: '`appliance_networking_interfaces_ipv4` (plus info): This module manages the
+    IPv4 network configuration for the named network interface.'
+  id: totrans-81
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`appliance_networking_interfaces_ipv4`（以及信息）: 此模块管理指定网络接口的IPv4网络配置。'
+- en: '`appliance_networking_interfaces_ipv6` (plus info): This module manages the
+    IPv6 network configuration for the named network interface.'
+  id: totrans-82
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`appliance_networking_interfaces_ipv6`（以及信息）: 此模块管理指定网络接口的IPv6网络配置。'
+- en: '`appliance_networking_noproxy` (plus info): This module configures servers
+    for which no proxy configuration should be applied.'
+  id: totrans-83
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`appliance_networking_noproxy`（以及信息）: 此模块配置不应应用代理配置的服务器。'
+- en: '`Appliance_networking_proxy` (plus info): This module configures which proxy
+    server to use for the specified protocol.'
+  id: totrans-84
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`Appliance_networking_proxy`（以及信息）: 此模块配置用于指定协议的代理服务器。'
+- en: The time and date modules
+  id: totrans-85
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 时间和日期模块
+- en: 'The following modules affect the time and date settings in some way:'
+  id: totrans-86
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '下列模块在某种程度上影响时间和日期设置:'
+- en: '`appliance_ntp` (plus info): This module manages the NTP server configuration'
+  id: totrans-87
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`appliance_ntp`（以及信息）: 此模块管理NTP服务器配置。'
+- en: '`appliance_system_time_info`: This module gets the system time'
+  id: totrans-88
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`appliance_system_time_info`: 此模块获取系统时间'
+- en: '`appliance_system_time_timezone` (plus info): This module sets the time zone'
+  id: totrans-89
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`appliance_system_time_timezone`（以及信息）: 此模块设置时区'
+- en: '`appliance_timesync module` (plus info): This module configures time sync mode'
+  id: totrans-90
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`appliance_timesync module`（附加信息）：此模块配置时间同步模式'
+- en: The remaining modules
+  id: totrans-91
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 其余模块
+- en: 'The remaining modules cover appliance configuration and management:'
+  id: totrans-92
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 其余模块涵盖设备配置和管理：
+- en: '`appliance_services` (plus info): You can use this module to restart a given
+    service'
+  id: totrans-93
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`appliance_services`（附加信息）：您可以使用此模块重启给定的服务'
+- en: '`appliance_shutdown` (plus info): This module allows you to cancel a pending
+    shutdown action'
+  id: totrans-94
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`appliance_shutdown`（附加信息）：此模块允许您取消挂起的关机操作'
+- en: '`appliance_system_globalfips` (plus info): Using this module, you can enable
+    or disable Global FIPS mode for the appliance'
+  id: totrans-95
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`appliance_system_globalfips`（附加信息）：使用此模块，您可以启用或禁用设备的全局 FIPS 模式'
+- en: '`appliance_system_storage` (plus info): This module resizes all partitions
+    to 100% of the disk size'
+  id: totrans-96
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`appliance_system_storage`（附加信息）：此模块将所有分区调整为磁盘大小的 100%'
+- en: '`appliance_system_version_info`: This module gets version information'
+  id: totrans-97
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`appliance_system_version_info`：此模块获取版本信息'
+- en: '`appliance_update_info`: This module gets the status of an appliance update'
+  id: totrans-98
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`appliance_update_info`：此模块获取设备更新的状态'
+- en: '`appliance_vmon_service` (plus info): This module lists details of services
+    managed by vmon'
+  id: totrans-99
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`appliance_vmon_service`（附加信息）：此模块列出 vmon 管理的服务的详细信息'
+- en: This concludes the appliance section. Next, we’ll look at content modules.
+  id: totrans-100
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这部分内容到此结束。接下来，我们将查看内容模块。
+- en: VMware REST content modules
+  id: totrans-101
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: VMware REST 内容模块
+- en: 'There are a small number of modules that allow you to manage and gather information
+    on your content libraries:'
+  id: totrans-102
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有少数几个模块允许您管理和收集有关内容库的信息：
+- en: '`content_configuration` (plus info): This module updates the configuration'
+  id: totrans-103
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`content_configuration`（附加信息）：此模块用于更新配置'
+- en: '`content_library_item_info`: This module returns `{@link ItemModel}` when provided
+    with an identifier'
+  id: totrans-104
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`content_library_item_info`：此模块在提供标识符时返回 `{@link ItemModel}`'
+- en: '`content_locallibrary` (plus info): This module creates a new local library'
+  id: totrans-105
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`content_locallibrary`（附加信息）：此模块用于创建一个新的本地库'
+- en: '`content_subscribedlibrary` (plus info): This module creates a new subscription'
+  id: totrans-106
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`content_subscribedlibrary`（附加信息）：此模块用于创建一个新的订阅'
+- en: vCenter modules
+  id: totrans-107
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: vCenter 模块
+- en: This is where the more interesting things happen. Using these modules, you can
+    launch, configure, and manage the entire life cycle of your virtual machines.
+    Before we look at virtual machines, we’ll take a look at some of the supporting
+    vCenter modules.
+  id: totrans-108
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这里，您将看到更有趣的内容。使用这些模块，您可以启动、配置并管理虚拟机的整个生命周期。在查看虚拟机之前，我们将先看看一些支持 vCenter 的模块。
+- en: Supporting vCenter modules
+  id: totrans-109
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 支持的 vCenter 模块
+- en: 'These supporting modules allow you to manage things such as data centers, folders,
+    data stores, and resource pools hosted within your vCenter:'
+  id: totrans-110
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这些支持模块允许您管理托管在 vCenter 中的资源池、数据中心、文件夹和数据存储：
+- en: '`vcenter_cluster_info`: This module retrieves information about the cluster
+    corresponding to `{@``param.name cluster_name}`'
+  id: totrans-111
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`vcenter_cluster_info`：此模块检索与 `{@``param.name cluster_name}` 相对应的集群信息'
+- en: '`vcenter_datacenter` (plus info): This module adds a new data center to your
+    vCenter inventory'
+  id: totrans-112
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`vcenter_datacenter`（附加信息）：此模块向您的 vCenter 库中添加一个新的数据中心'
+- en: '`vcenter_datastore_info`: This module fetches information about the data store
+    using `{@``param.name datastore_name}`'
+  id: totrans-113
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`vcenter_datastore_info`：此模块获取有关数据存储的信息，使用 `{@``param.name datastore_name}`'
+- en: '`vcenter_folder_info`: This module retrieves information on up to 1,000 folders
+    in vCenter matching `{@link FilterSpec}` that the user you are connecting as has
+    permission to see'
+  id: totrans-114
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`vcenter_folder_info`：此模块检索最多 1,000 个文件夹的详细信息，这些文件夹符合 `{@link FilterSpec}`
+    并且当前用户有权限查看'
+- en: '`vcenter_host` (plus info): This module can be used to add a new standalone
+    host to your vCenter'
+  id: totrans-115
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`vcenter_host`（附加信息）：此模块可用于将新的独立主机添加到您的 vCenter'
+- en: '`vcenter_network_info`: This module returns information about the first 1,000
+    visible networks in vCenter matching `{@link FilterSpec}`, depending on your permissions'
+  id: totrans-116
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`vcenter_network_info`：此模块返回关于 vCenter 中前 1,000 个可见网络的信息，具体取决于您的权限，符合 `{@link
+    FilterSpec}`'
+- en: '`vcenter_ovf_libraryitem`: This module is used to create an item in the content
+    library from a virtual machine or virtual appliance'
+  id: totrans-117
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`vcenter_ovf_libraryitem`：此模块用于从虚拟机或虚拟设备创建内容库中的项目'
+- en: '`vcenter_resourcepool` (plus info): This module deploys a resource pool'
+  id: totrans-118
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`vcenter_resourcepool`（附加信息）：此模块用于部署资源池'
+- en: '`vcenter_storage_policies_info`: This module fetches information about the
+    storage policies available in vCenter; it returns a maximum of 1,024 results'
+  id: totrans-119
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`vcenter_storage_policies_info`：此模块获取 vCenter 中可用的存储策略信息；最多返回 1,024 条结果'
+- en: Virtual machine modules
+  id: totrans-120
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 虚拟机模块
+- en: The final group of modules deals with creating and managing virtual machines
+    and their associated resources. Let’s start by looking at the main module, `vcenter_vm`.
+  id: totrans-121
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后一组模块涉及创建和管理虚拟机及其关联资源。我们先来看看主要的模块 `vcenter_vm`。
+- en: 'The `vcenter_vm` module is used to create virtual machines. For example, a
+    basic task would look like this:'
+  id: totrans-122
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`vcenter_vm` 模块用于创建虚拟机。例如，一个基本的任务如下所示：'
+- en: '[PRE4]'
+  id: totrans-123
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: As you can see, we are using a few of the different lookup modules to find the
+    cluster, data store, folder, and resource pool IDs – if we had this information,
+    we could provide the IDs directly.
+  id: totrans-124
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，我们使用了不同的查找模块来查找集群、数据存储、文件夹和资源池的 ID——如果我们有这些信息，可以直接提供这些 ID。
+- en: 'Once the virtual machine has been created, we can use the remaining modules
+    to configure it more or manage its state:'
+  id: totrans-125
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦虚拟机创建完成，我们可以使用其余的模块进一步配置虚拟机或管理其状态：
+- en: '`vcenter_vm_guest_customization`: This module applies guest customization to
+    the virtual machine, such as running a script'
+  id: totrans-126
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`vcenter_vm_guest_customization`：该模块对虚拟机应用客制化设置，例如运行脚本。'
+- en: '`vcenter_vm_guest_filesystem_directories`: Using this module, you can create
+    a directory within the guest host operating system'
+  id: totrans-127
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`vcenter_vm_guest_filesystem_directories`：使用该模块，你可以在虚拟机操作系统中创建一个目录。'
+- en: '`vcenter_vm_guest_identity_info`: This module fetches information about the
+    guest host'
+  id: totrans-128
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`vcenter_vm_guest_identity_info`：该模块获取关于虚拟机的身份信息。'
+- en: '`vcenter_vm_guest_localfilesystem_info`: This module grabs details of the local
+    filesystems in the guest host operating system'
+  id: totrans-129
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`vcenter_vm_guest_localfilesystem_info`：该模块获取虚拟机操作系统中本地文件系统的详细信息。'
+- en: '`vcenter_vm_guest_networking_info`: This module fetches details about the network
+    configuration within the guest host operating system'
+  id: totrans-130
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`vcenter_vm_guest_networking_info`：该模块获取虚拟机操作系统中网络配置的详细信息。'
+- en: '`vcenter_vm_guest_networking_interfaces_info`: This module displays information
+    about the network interfaces in the guest host operating system'
+  id: totrans-131
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`vcenter_vm_guest_networking_interfaces_info`：该模块显示虚拟机操作系统中的网络接口信息。'
+- en: '`vcenter_vm_guest_networking_routes_info`: This module displays information
+    about the network routes from within the guest host operating system'
+  id: totrans-132
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`vcenter_vm_guest_networking_routes_info`：该模块显示虚拟机操作系统中的网络路由信息。'
+- en: '`vcenter_vm_guest_operations_info`: This module grabs information about the
+    guest host operating system’s status'
+  id: totrans-133
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`vcenter_vm_guest_operations_info`：该模块获取关于虚拟机操作系统状态的信息。'
+- en: '`vcenter_vm_guest_power` (plus info): This module requests a soft shutdown,
+    standby (suspend), or soft reboot from within the guest host operating system'
+  id: totrans-134
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`vcenter_vm_guest_power`（附加信息）：该模块请求从虚拟机操作系统内部进行软关机、待机（挂起）或软重启。'
+- en: '`vcenter_vm_hardware`: This module is used to update the hardware settings
+    of the requested virtual machine'
+  id: totrans-135
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`vcenter_vm_hardware`：该模块用于更新所请求虚拟机的硬件设置。'
+- en: '`vcenter_vm_hardware_adapter_sata` (plus info): This module configures a virtual
+    SATA adapter'
+  id: totrans-136
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`vcenter_vm_hardware_adapter_sata`（附加信息）：该模块配置一个虚拟 SATA 适配器。'
+- en: '`vcenter_vm_hardware_adapter_scsi` (plus info): This module adds a virtual
+    SCSI adapter'
+  id: totrans-137
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`vcenter_vm_hardware_adapter_scsi`（附加信息）：该模块添加一个虚拟 SCSI 适配器。'
+- en: '`vcenter_vm_hardware_boot` (plus info): This module is used to manage virtual
+    machine boot-related settings'
+  id: totrans-138
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`vcenter_vm_hardware_boot`（附加信息）：该模块用于管理虚拟机与启动相关的设置。'
+- en: '`vcenter_vm_hardware_boot_device` (plus info): This module can set the virtual
+    devices that will be used as the boot drive for your virtual machine'
+  id: totrans-139
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`vcenter_vm_hardware_boot_device`（附加信息）：该模块可以设置将作为启动驱动器使用的虚拟设备。'
+- en: '`vcenter_vm_hardware_cdrom` (plus info): This module attaches a virtual CD-ROM
+    to your virtual machine'
+  id: totrans-140
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`vcenter_vm_hardware_cdrom`（附加信息）：该模块将一个虚拟 CD-ROM 附加到虚拟机。'
+- en: '`vcenter_vm_hardware_cpu` (plus info): This module manages your virtual machine’s
+    CPU settings'
+  id: totrans-141
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`vcenter_vm_hardware_cpu`（附加信息）：该模块管理虚拟机的 CPU 设置。'
+- en: '`vcenter_vm_hardware_disk` (plus info): This module connects virtual disks
+    to your virtual machine'
+  id: totrans-142
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`vcenter_vm_hardware_disk`（附加信息）：该模块将虚拟磁盘连接到虚拟机。'
+- en: '`vcenter_vm_hardware_ethernet` (plus info): This module connects a virtual
+    Ethernet adapter to your virtual machine'
+  id: totrans-143
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`vcenter_vm_hardware_ethernet`（附加信息）：该模块将虚拟以太网适配器连接到虚拟机。'
+- en: '`vcenter_vm_hardware_floppy` (plus info): This module adds a virtual floppy
+    drive to the virtual machine'
+  id: totrans-144
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`vcenter_vm_hardware_floppy`（附加信息）：该模块向虚拟机添加一个虚拟软盘驱动器。'
+- en: '`vcenter_vm_hardware_info`: This module fetches your virtual machine’s virtual
+    hardware settings information'
+  id: totrans-145
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`vcenter_vm_hardware_info`：该模块获取虚拟机的虚拟硬件设置信息。'
+- en: '`vcenter_vm_hardware_memory` (plus info): This module configures the memory
+    settings'
+  id: totrans-146
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`vcenter_vm_hardware_memory`（附加信息）：该模块配置虚拟机的内存设置。'
+- en: '`vcenter_vm_hardware_parallel` (plus info): This module adds a virtual parallel
+    port'
+  id: totrans-147
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`vcenter_vm_hardware_parallel`（附加信息）：此模块添加虚拟并行端口。'
+- en: '`vcenter_vm_hardware_serial` (plus info): This module adds a virtual serial
+    port'
+  id: totrans-148
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`vcenter_vm_hardware_serial`（附加信息）：此模块添加虚拟串行端口。'
+- en: '`vcenter_vm_info`: This module returns information about your virtual machine'
+  id: totrans-149
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`vcenter_vm_info`：此模块返回关于虚拟机的信息。'
+- en: '`vcenter_vm_libraryitem_info`: This module retrieves information about the
+    library item associated with your virtual machine'
+  id: totrans-150
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`vcenter_vm_libraryitem_info`：此模块检索与你的虚拟机相关联的库项信息。'
+- en: '`vcenter_vm_power` (plus info): This module issues a boot, hard shutdown, hard
+    reset, or hard suspend on a guest – that is, it presses the power button on the
+    front'
+  id: totrans-151
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`vcenter_vm_power`（附加信息）：此模块对虚拟机执行启动、硬关机、硬重置或硬暂停操作——也就是说，它按下虚拟机前面的电源按钮。'
+- en: '`vcenter_vm_storage_policy` (plus info): This module updates the storage policy
+    of your virtual machine’s virtual hard disks'
+  id: totrans-152
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`vcenter_vm_storage_policy`（附加信息）：此模块更新虚拟机虚拟硬盘的存储策略。'
+- en: '`vcenter_vm_storage_policy_compliance`: This module updates and gathers information
+    on your virtual machine’s storage policy compliance'
+  id: totrans-153
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`vcenter_vm_storage_policy_compliance`：此模块更新并收集关于虚拟机存储策略合规性的相关信息。'
+- en: '`vcenter_vm_tools` (plus info): This module is used to manage the configuration
+    of VMware Tools'
+  id: totrans-154
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`vcenter_vm_tools`（附加信息）：此模块用于管理 VMware Tools 的配置。'
+- en: '`vcenter_vm_tools_installer` (plus info): This module attaches the VMware Tools
+    CD installer as a CD-ROM, making it available within the guest host operating
+    system'
+  id: totrans-155
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`vcenter_vm_tools_installer`（附加信息）：此模块将 VMware Tools 安装程序作为 CD-ROM 挂载，使其在虚拟机操作系统中可用。'
+- en: '`vcenter_vmtemplate_libraryitems` (plus info): This module creates and returns
+    information on items in the content library'
+  id: totrans-156
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`vcenter_vmtemplate_libraryitems`（附加信息）：此模块创建并返回内容库中项目信息。'
+- en: As you can see, there is comprehensive support for managing your virtual machine
+    resources using the `vmware.vmware_rest` collection, and what’s better is that
+    the modules are all designed to consume the official REST API, meaning that you
+    can safely mix and match how you manage your resources within VMware, regardless
+    of whether you use the CLI, web interface, or Ansible. Everything is managed via
+    the same REST API.
+  id: totrans-157
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，`vmware.vmware_rest` 集合提供了全面的虚拟机资源管理支持，更棒的是，这些模块都是设计来使用官方 REST API，这意味着无论你是使用命令行界面、Web
+    界面还是 Ansible，你都可以安全地混合搭配管理 VMware 资源的方式。所有内容都是通过相同的 REST API 进行管理。
+- en: Summary
+  id: totrans-158
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 总结
+- en: As you have seen from the very long list of modules, you can do most of the
+    management and configuration tasks you would be doing as a VMware administrator
+    day-to-day using Ansible.
+  id: totrans-159
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，从这一长串模块中，你可以使用 Ansible 完成作为 VMware 管理员每天需要执行的大部分管理和配置任务。
+- en: Add to this the modules we looked at in [*Chapter 8*](B21620_08.xhtml#_idTextAnchor386),
+    *Ansible Network Modules*, for managing network equipment, and modules such as
+    the ones that support hardware such as NetApp storage devices.
+  id: totrans-160
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 再加上我们在[*第8章*](B21620_08.xhtml#_idTextAnchor386)中查看的模块，*Ansible 网络模块*，用于管理网络设备，以及支持如
+    NetApp 存储设备等硬件的模块。
+- en: By doing this, you can build complex playbooks that span the physical devices,
+    VMware elements, and virtual machines running within your on-premises enterprise-level
+    virtualized infrastructure.
+  id: totrans-161
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通过这样做，你可以构建跨越物理设备、VMware 元素和你本地企业级虚拟化基础设施中运行的虚拟机的复杂剧本。
+- en: As mentioned at the start of this chapter, at the time of writing, there is
+    a lot of upheaval at VMware. This chapter has been written to show the art of
+    the possible rather than be a practical hands-on guide for managing your VMware
+    resources using Ansible. For more details on the current state of the `vmware.vmware_rest`
+    collection, go to [https://galaxy.ansible.com/ui/repo/published/vmware/vmware_rest/](https://galaxy.ansible.com/ui/repo/published/vmware/vmware_rest/).
+  id: totrans-162
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如本章开始时提到的，写作时 VMware 正处于动荡之中。本章旨在展示可能的操作方法，而不是为你提供一个实际的 VMware 资源管理实践指南。有关
+    `vmware.vmware_rest` 集合当前状态的更多详情，请访问 [https://galaxy.ansible.com/ui/repo/published/vmware/vmware_rest/](https://galaxy.ansible.com/ui/repo/published/vmware/vmware_rest/)。
+- en: In the next chapter, we will look at how to ensure that our playbooks are following
+    best practices by scanning them for common issues and potential security problems.
+  id: totrans-163
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一章，我们将讨论如何通过扫描常见问题和潜在安全问题，确保我们的剧本遵循最佳实践。
+- en: 'Part 4: Ansible Workflows'
+  id: totrans-164
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 第四部分：Ansible 工作流
+- en: In the final part of this book, you will learn advanced Ansible workflows and
+    best practices, including security practices, playbook scanning, server hardening,
+    CI/CD integration, Ansible AWX, and Red Hat Ansible Automation Platform. By the
+    end, you will be equipped with the knowledge you need to effectively utilize Ansible
+    in real-world scenarios.
+  id: totrans-165
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本书的最后部分，您将学习高级Ansible工作流和最佳实践，包括安全实践、剧本扫描、服务器加固、CI/CD集成、Ansible AWX和Red Hat
+    Ansible自动化平台。最终，您将掌握在实际场景中有效利用Ansible所需的知识。
+- en: 'This part has the following chapters:'
+  id: totrans-166
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本部分包含以下章节：
+- en: '[*Chapter 13*](B21620_13.xhtml#_idTextAnchor566), *Scanning Your Ansible Playbooks*'
+  id: totrans-167
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '[*第13章*](B21620_13.xhtml#_idTextAnchor566)，*扫描您的Ansible剧本*'
+- en: '[*Chapter 14*](B21620_14.xhtml#_idTextAnchor609), *Hardening Your Servers Using
+    Ansible*'
+  id: totrans-168
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '[*第14章*](B21620_14.xhtml#_idTextAnchor609)，*使用Ansible强化您的服务器*'
+- en: '[*Chapter 15*](B21620_15.xhtml#_idTextAnchor641), *Using Ansible with GitHub
+    Actions and Azure DevOps*'
+  id: totrans-169
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '[*第15章*](B21620_15.xhtml#_idTextAnchor641)，*将Ansible与GitHub Actions和Azure DevOps结合使用*'
+- en: '[*Chapter 16*](B21620_16.xhtml#_idTextAnchor716), *Introducing Ansible AWX
+    and Red Hat Ansible Automation Platform*'
+  id: totrans-170
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '[*第16章*](B21620_16.xhtml#_idTextAnchor716)，*介绍Ansible AWX和Red Hat Ansible自动化平台*'
+- en: '[*Chapter 17*](B21620_17.xhtml#_idTextAnchor766), *Next Steps with Ansible*'
+  id: totrans-171
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '[*第17章*](B21620_17.xhtml#_idTextAnchor766)，*与Ansible的下一步*'

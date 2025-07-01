@@ -1,0 +1,2720 @@
+- en: '11'
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '11'
+- en: Container and Cloud Management
+  id: totrans-1
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 容器和云管理
+- en: Ansible is a very flexible automation tool and can be easily used to automate
+    any aspect of your infrastructure. In the last few years, container-based workloads
+    and cloud workloads have become more and more popular, and for this reason, we
+    will look at how you can automate tasks related to those kinds of workloads with
+    Ansible. This chapter will start by designing and building containers with Ansible.
+    We will then look at how to run those containers, and finally, we will look at
+    ways to manage various cloud platforms with Ansible.
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 是一个非常灵活的自动化工具，可以轻松用于自动化基础设施的各个方面。近年来，基于容器的工作负载和云工作负载变得越来越流行，因此，我们将探讨如何使用
+    Ansible 自动化与这些工作负载相关的任务。本章将从使用 Ansible 设计和构建容器开始。接着，我们将探讨如何运行这些容器，最后，我们将探讨如何使用
+    Ansible 管理各种云平台。
+- en: 'Specifically, we will be covering the following topics in this chapter:'
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章将特别涵盖以下主题：
+- en: Automating Docker and Podman with Ansible
+  id: totrans-4
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用 Ansible 自动化 Docker 和 Podman
+- en: Managing Kubernetes with Ansible
+  id: totrans-5
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用 Ansible 管理 Kubernetes
+- en: Exploring container-focused modules
+  id: totrans-6
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 探索以容器为中心的模块
+- en: Automating against Amazon Web Services
+  id: totrans-7
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 针对 Amazon Web Services 进行自动化
+- en: Complementing Google Cloud Platform with automation
+  id: totrans-8
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 通过自动化增强 Google Cloud Platform
+- en: Seamless automation integration with Azure
+  id: totrans-9
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 与 Azure 的无缝自动化集成
+- en: Expanding your environment with Rackspace Cloud
+  id: totrans-10
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用 Rackspace Cloud 扩展你的环境
+- en: Using Ansible to orchestrate OpenStack
+  id: totrans-11
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用 Ansible 编排 OpenStack
+- en: Let’s get started!
+  id: totrans-12
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们开始吧！
+- en: Technical requirements
+  id: totrans-13
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 技术要求
+- en: This chapter assumes that you have set up your control host with Ansible, as
+    detailed in [*Chapter 1*](B20846_01.xhtml#_idTextAnchor015), *Getting Started
+    with Ansible*, and are using the most recent version available – the examples
+    in this chapter were tested with Ansible 2.15\. Although we will give specific
+    examples of hostnames in this chapter, you are free to substitute them with your
+    own hostname and/or IP address. Details of how to do this will be provided in
+    the appropriate places. This chapter also assumes you have access to Docker, Podman,
+    Kubernetes, and the different clouds. Since the majority of processes will be
+    very similar across the different clouds, you will be able to gain the majority
+    of the information even if you will read the whole chapter and just test those
+    playbooks on the couple of environments you have access to.
+  id: totrans-14
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章假设你已经按照[*第 1 章*](B20846_01.xhtml#_idTextAnchor015)《入门 Ansible》中的详细说明设置好了控制主机，并且使用的是最新版本——本章中的示例在
+    Ansible 2.15 下进行了测试。尽管我们在本章中会给出具体的主机名示例，你可以自由替换成你自己的主机名和/或 IP 地址。如何操作的详细信息将在相应位置提供。本章还假设你可以访问
+    Docker、Podman、Kubernetes 以及不同的云平台。由于大多数过程在不同的云平台之间非常相似，因此即使你只在几个你有访问权限的环境中测试这些剧本，你也能获得大部分信息。
+- en: All the examples in this chapter can be found in this book’s GitHub repository
+    at [https://github.com/PacktPublishing/Practical-Ansible-Second-Edition/tree/main/Chapter%2011](https://github.com/PacktPublishing/Practical-Ansible-Second-Edition/tree/main/Chapter%2011).
+  id: totrans-15
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章中的所有示例可以在本书的 GitHub 仓库中找到：[https://github.com/PacktPublishing/Practical-Ansible-Second-Edition/tree/main/Chapter%2011](https://github.com/PacktPublishing/Practical-Ansible-Second-Edition/tree/main/Chapter%2011)。
+- en: Automating Docker and Podman with Ansible
+  id: totrans-16
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用 Ansible 自动化 Docker 和 Podman
+- en: In today’s world, simply being able to run an image is not considered a production-ready
+    setup.
+  id: totrans-17
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在今天的世界中，单纯能够运行一个镜像并不被视为生产就绪的设置。
+- en: To be able to call a deployment **production-ready**, you need to demonstrate
+    that the service your application delivers will run reasonably, even in the case
+    of a single application crash, as well as hardware failure. Often, you’ll have
+    even more reliability constraints from your customer.
+  id: totrans-18
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要想将一个部署称为**生产就绪**，你需要证明你的应用程序所提供的服务能够在单个应用崩溃以及硬件故障的情况下，仍然合理运行。通常，客户还会对可靠性提出更多的要求。
+- en: Luckily, your software is not the only one that has those requirements, so orchestration
+    solutions have been developed for this purpose.
+  id: totrans-19
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 幸运的是，你的软件并不是唯一有这些要求的，因此已经为此目的开发了编排解决方案。
+- en: Today, the most successful one is Kubernetes, due to its various distributions/versions,
+    so we are going to focus on it primarily.
+  id: totrans-20
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 今天，最成功的一个是 Kubernetes，因其各种发行版/版本而被广泛使用，因此我们将主要聚焦于它。
+- en: The idea of Kubernetes is that you inform the Kubernetes control plane that
+    you want *X* number of instances of *Y* application. Kubernetes will count how
+    many instances of *Y* application are running on the Kubernetes Nodes to ensure
+    that the number of instances is *X*. If there are too few instances, Kubernetes
+    will take care of starting more instances. At the same time, if there are too
+    many instances, the exceeding instances will be stopped.
+  id: totrans-21
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Kubernetes 的理念是，您向 Kubernetes 控制平面告知要运行 *X* 个 *Y* 应用程序实例。Kubernetes 会计算在 Kubernetes
+    节点上运行的 *Y* 应用程序实例数量，以确保实例数量为 *X*。如果实例数量不足，Kubernetes 会自动启动更多实例。同时，如果实例数量过多，超出的实例将被停止。
+- en: Since Kubernetes constantly checks that the requested amount of instances is
+    running, in the case of an application failure or a node failure, Kubernetes will
+    start new instances to replace the lost instances.
+  id: totrans-22
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于 Kubernetes 不断检查请求的实例数量是否在运行，一旦应用程序失败或节点失败，Kubernetes 会启动新的实例来替代丢失的实例。
+- en: Due to the complexity of installing and managing Kubernetes, multiple companies
+    have started to sell distributions of Kubernetes that simplify their operations
+    and that they are willing to support.
+  id: totrans-23
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于 Kubernetes 安装和管理的复杂性，许多公司已经开始销售简化操作的 Kubernetes 发行版，并且愿意提供支持。
+- en: Every Kubernetes node runs an instance of a container engine. For this reason,
+    we will start to see how the two most widely used standalone containers engine
+    can be automated.
+  id: totrans-24
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 每个 Kubernetes 节点都运行一个容器引擎实例。因此，我们将开始了解如何自动化两种最广泛使用的独立容器引擎。
+- en: Managing Docker
+  id: totrans-25
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 管理 Docker
+- en: 'Docker is now a very common, ubiquitous tool for development usage and you
+    can leverage Ansible to easily manage your Docker instance. Since we are going
+    to manage a Docker instance, we need to make sure we have one at hand and that
+    the Docker command on our machine is configured correctly. We need to do this
+    to ensure this is enough to run `docker images` on the terminal. Let’s say you
+    get a result similar to the following:'
+  id: totrans-26
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Docker 现在是一个非常常见的、无处不在的开发工具，您可以利用 Ansible 来轻松管理您的 Docker 实例。由于我们要管理一个 Docker
+    实例，我们需要确保手头有一个 Docker 实例，并且机器上的 Docker 命令已正确配置。我们需要做这些来确保能够在终端上运行 `docker images`。假设您得到类似以下的结果：
+- en: '[PRE0]'
+  id: totrans-27
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: This means that everything is working properly. More lines may be provided as
+    output if you have already-cloned images.
+  id: totrans-28
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这意味着一切正常。如果您已经克隆了镜像，可能会有更多的输出行。
+- en: 'On the other hand, let’s say it returns something like this:'
+  id: totrans-29
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 另一方面，假设它返回类似这样的内容：
+- en: '[PRE1]'
+  id: totrans-30
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: This means that we don’t have a Docker daemon running or that our Docker console
+    has been configured incorrectly.
+  id: totrans-31
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这意味着我们没有运行 Docker 守护进程，或者我们的 Docker 控制台配置不正确。
+- en: 'Also, it’s important to ensure that you have the `docker` Python module installed
+    since Ansible tries to use it to communicate with the Docker daemon. Let’s take
+    a look:'
+  id: totrans-32
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 同时，确保安装了 `docker` Python 模块也很重要，因为 Ansible 会尝试使用它与 Docker 守护进程通信。让我们来看一下：
+- en: 'First of all, we need to create a playbook called `start-docker-container.yaml`
+    that contains the following code:'
+  id: totrans-33
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 首先，我们需要创建一个名为 `start-docker-container.yaml` 的 playbook，包含以下代码：
+- en: '[PRE2]'
+  id: totrans-34
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: 'Now that we have the Ansible playbook, we just need to execute it:'
+  id: totrans-35
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在我们有了 Ansible playbook，只需要执行它：
+- en: '[PRE3]'
+  id: totrans-36
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: 'As you may expect, it will give you an output similar to the following:'
+  id: totrans-37
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如你所预期的，它会给出类似于以下的输出：
+- en: '[PRE4]'
+  id: totrans-38
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: 'We can now check that our command executed properly, as follows:'
+  id: totrans-39
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在我们可以检查我们的命令是否正确执行，如下所示：
+- en: '[PRE5]'
+  id: totrans-40
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: 'This will show the container that was run:'
+  id: totrans-41
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这将显示已运行的容器：
+- en: '[PRE6]'
+  id: totrans-42
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: This proves that a container was executed.
+  id: totrans-43
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这证明了一个容器已经被执行。
+- en: 'To check that the `echo` command was executed, we can run the following code:'
+  id: totrans-44
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 为了检查 `echo` 命令是否已执行，我们可以运行以下代码：
+- en: '[PRE7]'
+  id: totrans-45
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE7]'
+- en: 'This will return the following output:'
+  id: totrans-46
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这将返回以下输出：
+- en: '[PRE8]'
+  id: totrans-47
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE8]'
+- en: 'bash: podman: command not found'
+  id: totrans-48
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'bash: podman: command not found'
+- en: '[PRE9]'
+  id: totrans-49
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE9]'
+- en: '---'
+  id: totrans-50
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '---'
+- en: '- hosts: localhost'
+  id: totrans-51
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '- hosts: localhost'
+- en: 'tasks:'
+  id: totrans-52
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'tasks:'
+- en: '- name: Start a container with a command'
+  id: totrans-53
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '- name: 使用命令启动容器'
+- en: 'containers.podman.podman_container:'
+  id: totrans-54
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'containers.podman.podman_container:'
+- en: 'name: test-container'
+  id: totrans-55
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'name: test-container'
+- en: 'image: alpine'
+  id: totrans-56
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'image: alpine'
+- en: 'command:'
+  id: totrans-57
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'command:'
+- en: '- echo'
+  id: totrans-58
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '- echo'
+- en: '- "Hello, World!"'
+  id: totrans-59
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '- "Hello, World!"'
+- en: '[PRE10]'
+  id: totrans-60
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE10]'
+- en: $ ansible-playbook start-podman-container.yaml
+  id: totrans-61
+  prefs: []
+  type: TYPE_NORMAL
+  zh: $ ansible-playbook start-podman-container.yaml
+- en: '[PRE11]'
+  id: totrans-62
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE11]'
+- en: PLAY [localhost] *******************************************************************************************************************************************************************************
+  id: totrans-63
+  prefs: []
+  type: TYPE_NORMAL
+  zh: PLAY [localhost] *******************************************************************************************************************************************************************************
+- en: TASK [Gathering Facts] *************************************************************************************************************************************************************************
+  id: totrans-64
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 任务 [收集信息] *************************************************************************************************************************************************************************
+- en: 'ok: [localhost]'
+  id: totrans-65
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '成功: [localhost]'
+- en: TASK [Start a container with a command] ********************************************************************************************************************************************************
+  id: totrans-66
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 任务 [启动一个容器并执行命令] ********************************************************************************************************************************************************
+- en: 'changed: [localhost]'
+  id: totrans-67
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '已更改: [localhost]'
+- en: PLAY RECAP *************************************************************************************************************************************************************************************
+  id: totrans-68
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 执行总结 *************************************************************************************************************************************************************************************
+- en: 'localhost                  : ok=2    changed=1    unreachable=0    failed=0
+        skipped=0    rescued=0    ignored=0'
+  id: totrans-69
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'localhost                  : ok=2    已更改=1    无法访问=0    失败=0     跳过=0    恢复=0    忽略=0'
+- en: '[PRE12]'
+  id: totrans-70
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE12]'
+- en: $ podman container list -a
+  id: totrans-71
+  prefs: []
+  type: TYPE_NORMAL
+  zh: $ podman 容器列表 -a
+- en: '[PRE13]'
+  id: totrans-72
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE13]'
+- en: CONTAINER ID  IMAGE                                                 COMMAND               CREATED        STATUS                    PORTS
+           NAMES96531f2f960e  docker.io/library/alpine:latest                        echo
+    Hello, World...  2 minutes ago  Exited (0) 2 minutes ago              test-container
+  id: totrans-73
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 容器 ID  镜像                                                 命令               创建时间        状态                    端口
+           名称96531f2f960e  docker.io/library/alpine:latest                        echo
+    Hello, World...  2 分钟前  已退出 (0) 2 分钟前              test-container
+- en: '[PRE14]'
+  id: totrans-74
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE14]'
+- en: $ ansible-galaxy collection install kubernetes.core
+  id: totrans-75
+  prefs: []
+  type: TYPE_NORMAL
+  zh: $ ansible-galaxy 集合 安装 kubernetes.core
+- en: '[PRE15]'
+  id: totrans-76
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE15]'
+- en: '---'
+  id: totrans-77
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '---'
+- en: '- hosts: localhost'
+  id: totrans-78
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '- 主机: localhost'
+- en: 'tasks:'
+  id: totrans-79
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '任务:'
+- en: '- name: Get information from K8s'
+  id: totrans-80
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '- 名称: 从 K8s 获取信息'
+- en: 'kubernetes.core.k8s_info:'
+  id: totrans-81
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'kubernetes.core.k8s_info:'
+- en: 'api_version: v1'
+  id: totrans-82
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'api_version: v1'
+- en: 'kind: Namespace'
+  id: totrans-83
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '类型: 命名空间'
+- en: 'register: ns'
+  id: totrans-84
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '注册: ns'
+- en: '- name: Print info'
+  id: totrans-85
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '- 名称: 打印信息'
+- en: 'ansible.builtin.debug:'
+  id: totrans-86
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'ansible.builtin.debug:'
+- en: 'var: ns'
+  id: totrans-87
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '变量: ns'
+- en: '[PRE16]'
+  id: totrans-88
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE16]'
+- en: $ ansible-playbook k8s-ns-show.yaml
+  id: totrans-89
+  prefs: []
+  type: TYPE_NORMAL
+  zh: $ ansible-playbook k8s-ns-show.yaml
+- en: '[PRE17]'
+  id: totrans-90
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE17]'
+- en: '---'
+  id: totrans-91
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '---'
+- en: '- hosts: localhost'
+  id: totrans-92
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '- 主机: localhost'
+- en: 'tasks:'
+  id: totrans-93
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '任务:'
+- en: '- name: Ensure the myns namespace exists'
+  id: totrans-94
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '- 名称: 确保 myns 命名空间存在'
+- en: 'kubernetes.core.k8s:'
+  id: totrans-95
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'kubernetes.core.k8s:'
+- en: 'api_version: v1'
+  id: totrans-96
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'api_version: v1'
+- en: 'kind: Namespace'
+  id: totrans-97
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '类型: 命名空间'
+- en: 'name: myns'
+  id: totrans-98
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '名称: myns'
+- en: 'state: present'
+  id: totrans-99
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '状态: 存在'
+- en: '[PRE18]'
+  id: totrans-100
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE18]'
+- en: $ kubectl get ns
+  id: totrans-101
+  prefs: []
+  type: TYPE_NORMAL
+  zh: $ kubectl 获取 ns
+- en: NAME STATUS AGE
+  id: totrans-102
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 名称 状态 年龄
+- en: default Active 69m
+  id: totrans-103
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 默认 活跃 69分钟
+- en: kube-node-lease Active 69m
+  id: totrans-104
+  prefs: []
+  type: TYPE_NORMAL
+  zh: kube-node-lease 活跃 69分钟
+- en: kube-public Active 69m
+  id: totrans-105
+  prefs: []
+  type: TYPE_NORMAL
+  zh: kube-public 活跃 69分钟
+- en: kube-system Active 69m
+  id: totrans-106
+  prefs: []
+  type: TYPE_NORMAL
+  zh: kube-system 活跃 69分钟
+- en: '[PRE19]'
+  id: totrans-107
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE19]'
+- en: $ ansible-playbook k8s-ns.yaml
+  id: totrans-108
+  prefs: []
+  type: TYPE_NORMAL
+  zh: $ ansible-playbook k8s-ns.yaml
+- en: '[PRE20]'
+  id: totrans-109
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE20]'
+- en: PLAY [localhost] *******************************************************************
+  id: totrans-110
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 执行 [localhost] *******************************************************************
+- en: TASK [Gathering Facts] *************************************************************
+  id: totrans-111
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 任务 [收集信息] *************************************************************
+- en: 'ok: [localhost]'
+  id: totrans-112
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '成功: [localhost]'
+- en: TASK [Ensure the myns namespace exists] ********************************************
+  id: totrans-113
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 任务 [确保 myns 命名空间存在] ********************************************
+- en: 'changed: [localhost]'
+  id: totrans-114
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '已更改: [localhost]'
+- en: PLAY RECAP *************************************************************************
+  id: totrans-115
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 执行总结 *************************************************************************
+- en: 'localhost : ok=2 changed=1 unreachable=0 failed=0 skipped=0 rescued=0 ignored=0'
+  id: totrans-116
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'localhost : 成功=2 已更改=1 无法访问=0 失败=0 跳过=0 恢复=0 忽略=0'
+- en: '[PRE21]'
+  id: totrans-117
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE21]'
+- en: $ kubectl get ns
+  id: totrans-118
+  prefs: []
+  type: TYPE_NORMAL
+  zh: $ kubectl 获取 ns
+- en: NAME STATUS AGE
+  id: totrans-119
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 名称 状态 年龄
+- en: default Active 74m
+  id: totrans-120
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 默认 活跃 74分钟
+- en: kube-node-lease Active 74m
+  id: totrans-121
+  prefs: []
+  type: TYPE_NORMAL
+  zh: kube-node-lease 活跃 74分钟
+- en: kube-public Active 74m
+  id: totrans-122
+  prefs: []
+  type: TYPE_NORMAL
+  zh: kube-public 活跃 74分钟
+- en: kube-system Active 74m
+  id: totrans-123
+  prefs: []
+  type: TYPE_NORMAL
+  zh: kube-system 活跃 74分钟
+- en: myns Active 22s
+  id: totrans-124
+  prefs: []
+  type: TYPE_NORMAL
+  zh: myns 活跃 22秒
+- en: '[PRE22]'
+  id: totrans-125
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE22]'
+- en: '---'
+  id: totrans-126
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '---'
+- en: '- hosts: localhost'
+  id: totrans-127
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '- 主机: localhost'
+- en: 'tasks:'
+  id: totrans-128
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '任务:'
+- en: '- name: Ensure the Service mysvc is present'
+  id: totrans-129
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '- 名称: 确保服务 mysvc 存在'
+- en: 'kubernetes.core.k8s:'
+  id: totrans-130
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'kubernetes.core.k8s:'
+- en: 'state: present'
+  id: totrans-131
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '状态: 存在'
+- en: 'definition:'
+  id: totrans-132
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '定义:'
+- en: 'apiVersion: v1'
+  id: totrans-133
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'apiVersion: v1'
+- en: 'kind: Service'
+  id: totrans-134
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '类型: 服务'
+- en: 'metadata:'
+  id: totrans-135
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '元数据:'
+- en: 'name: mysvc'
+  id: totrans-136
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '名称: mysvc'
+- en: 'namespace: myns'
+  id: totrans-137
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '命名空间: myns'
+- en: 'spec:'
+  id: totrans-138
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '规格:'
+- en: 'selector:'
+  id: totrans-139
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '选择器:'
+- en: 'app: myapp'
+  id: totrans-140
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '应用: myapp'
+- en: 'service: mysvc'
+  id: totrans-141
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '服务: mysvc'
+- en: 'ports:'
+  id: totrans-142
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '端口:'
+- en: '- protocol: TCP'
+  id: totrans-143
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '- 协议: TCP'
+- en: 'targetPort: 800'
+  id: totrans-144
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '目标端口: 800'
+- en: 'name: port-80-tcp'
+  id: totrans-145
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '名称: port-80-tcp'
+- en: 'port: 80'
+  id: totrans-146
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '端口: 80'
+- en: '[PRE23]'
+  id: totrans-147
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE23]'
+- en: $ kubectl get svc
+  id: totrans-148
+  prefs: []
+  type: TYPE_NORMAL
+  zh: $ kubectl 获取 svc
+- en: No resources found in myns namespace.
+  id: totrans-149
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 myns 命名空间中未找到资源。
+- en: '[PRE24]'
+  id: totrans-150
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE24]'
+- en: $ ansible-playbook k8s-svc.yaml
+  id: totrans-151
+  prefs: []
+  type: TYPE_NORMAL
+  zh: $ ansible-playbook k8s-svc.yaml
+- en: '[PRE25]'
+  id: totrans-152
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE25]'
+- en: PLAY [localhost] *******************************************************************
+  id: totrans-153
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 执行 [localhost] *******************************************************************
+- en: TASK [Gathering Facts] *************************************************************
+  id: totrans-154
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 任务 [收集信息] *************************************************************
+- en: 'ok: [localhost]'
+  id: totrans-155
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '成功: [localhost]'
+- en: TASK [Ensure the myns namespace exists] ********************************************
+  id: totrans-156
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 任务 [确保 myns 命名空间存在] ********************************************
+- en: 'changed: [localhost]'
+  id: totrans-157
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '已更改: [localhost]'
+- en: PLAY RECAP *************************************************************************
+  id: totrans-158
+  prefs: []
+  type: TYPE_NORMAL
+  zh: PLAY RECAP *************************************************************************
+- en: 'localhost : ok=2 changed=1 unreachable=0 failed=0 skipped=0 rescued=0 ignored=0'
+  id: totrans-159
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'localhost : ok=2 changed=1 unreachable=0 failed=0 skipped=0 rescued=0 ignored=0'
+- en: '[PRE26]'
+  id: totrans-160
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE26]'
+- en: $ kubectl get svc
+  id: totrans-161
+  prefs: []
+  type: TYPE_NORMAL
+  zh: $ kubectl get svc
+- en: NAME TYPE CLUSTER-IP EXTERNAL-IP PORT(S) AGE
+  id: totrans-162
+  prefs: []
+  type: TYPE_NORMAL
+  zh: NAME TYPE CLUSTER-IP EXTERNAL-IP PORT(S) AGE
+- en: mysvc ClusterIP 10.0.0.84 <none> 80/TCP 10s
+  id: totrans-163
+  prefs: []
+  type: TYPE_NORMAL
+  zh: mysvc ClusterIP 10.0.0.84 <none> 80/TCP 10s
+- en: '[PRE27]'
+  id: totrans-164
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE27]'
+- en: $ pip install boto3
+  id: totrans-165
+  prefs: []
+  type: TYPE_NORMAL
+  zh: $ pip install boto3
+- en: '[PRE28]'
+  id: totrans-166
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE28]'
+- en: $ ansible-galaxy collection install community.aws amazon.aws
+  id: totrans-167
+  prefs: []
+  type: TYPE_NORMAL
+  zh: $ ansible-galaxy collection install community.aws amazon.aws
+- en: '[PRE29]'
+  id: totrans-168
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE29]'
+- en: '[default]'
+  id: totrans-169
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '[default]'
+- en: aws_access_key_id = [YOUR_KEY_HERE]
+  id: totrans-170
+  prefs: []
+  type: TYPE_NORMAL
+  zh: aws_access_key_id = [YOUR_KEY_HERE]
+- en: aws_secret_access_key = [YOUR_SECRET_ACCESS_KEY_HERE]
+  id: totrans-171
+  prefs: []
+  type: TYPE_NORMAL
+  zh: aws_secret_access_key = [YOUR_SECRET_ACCESS_KEY_HERE]
+- en: '[PRE30]'
+  id: totrans-172
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE30]'
+- en: '---'
+  id: totrans-173
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '---'
+- en: '- hosts: localhost'
+  id: totrans-174
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '- hosts: localhost'
+- en: 'tasks:'
+  id: totrans-175
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'tasks:'
+- en: '- name: Ensure key pair is present'
+  id: totrans-176
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '- name: 确保密钥对存在'
+- en: 'amazon.aws.ec2_key:'
+  id: totrans-177
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'amazon.aws.ec2_key:'
+- en: 'name: fale'
+  id: totrans-178
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'name: fale'
+- en: 'key_material: "{{ lookup(''file'', ''~/.ssh/fale.pub'') }}"'
+  id: totrans-179
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'key_material: "{{ lookup(''file'', ''~/.ssh/fale.pub'') }}"'
+- en: '- name: Gather information of the EC2 VPC net in eu-west-1'
+  id: totrans-180
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '- name: 收集 eu-west-1 区域 EC2 VPC 网络的信息'
+- en: 'amazon.aws.ec2_vpc_net_info:'
+  id: totrans-181
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'amazon.aws.ec2_vpc_net_info:'
+- en: 'region: eu-west-1'
+  id: totrans-182
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'region: eu-west-1'
+- en: 'register: aws_simple_net'
+  id: totrans-183
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'register: aws_simple_net'
+- en: '- name: Gather information of the EC2 VPC subnet in eu-west-1'
+  id: totrans-184
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '- name: 收集 eu-west-1 区域 EC2 VPC 子网的信息'
+- en: 'amazon.aws.ec2_vpc_subnet_info:'
+  id: totrans-185
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'amazon.aws.ec2_vpc_subnet_info:'
+- en: 'region: eu-west-1'
+  id: totrans-186
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'region: eu-west-1'
+- en: 'filters:'
+  id: totrans-187
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'filters:'
+- en: 'vpc-id: ''{{ aws_simple_net.vpcs.0.id }}'''
+  id: totrans-188
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'vpc-id: ''{{ aws_simple_net.vpcs.0.id }}'''
+- en: 'register: aws_simple_subnet'
+  id: totrans-189
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'register: aws_simple_subnet'
+- en: '- name: Ensure wssg Security Group is present'
+  id: totrans-190
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '- name: 确保 wssg 安全组存在'
+- en: 'amazon.aws.ec2_security_group:'
+  id: totrans-191
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'amazon.aws.ec2_security_group:'
+- en: 'name: wssg'
+  id: totrans-192
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'name: wssg'
+- en: 'description: Web Security Group'
+  id: totrans-193
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'description: Web 安全组'
+- en: 'region: eu-west-1'
+  id: totrans-194
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'region: eu-west-1'
+- en: 'vpc_id: ''{{ aws_simple_net.vpcs.0.id }}'''
+  id: totrans-195
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'vpc_id: ''{{ aws_simple_net.vpcs.0.id }}'''
+- en: 'rules:'
+  id: totrans-196
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'rules:'
+- en: '- proto: tcp'
+  id: totrans-197
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '- proto: tcp'
+- en: 'from_port: 22'
+  id: totrans-198
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'from_port: 22'
+- en: 'to_port: 22'
+  id: totrans-199
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'to_port: 22'
+- en: 'cidr_ip: 0.0.0.0/0'
+  id: totrans-200
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'cidr_ip: 0.0.0.0/0'
+- en: '- proto: tcp'
+  id: totrans-201
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '- proto: tcp'
+- en: 'from_port: 80'
+  id: totrans-202
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'from_port: 80'
+- en: 'to_port: 80'
+  id: totrans-203
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'to_port: 80'
+- en: 'cidr_ip: 0.0.0.0/0'
+  id: totrans-204
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'cidr_ip: 0.0.0.0/0'
+- en: '- proto: tcp'
+  id: totrans-205
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '- proto: tcp'
+- en: 'from_port: 443'
+  id: totrans-206
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'from_port: 443'
+- en: 'to_port: 443'
+  id: totrans-207
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'to_port: 443'
+- en: 'cidr_ip: 0.0.0.0/0'
+  id: totrans-208
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'cidr_ip: 0.0.0.0/0'
+- en: 'rules_egress:'
+  id: totrans-209
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'rules_egress:'
+- en: '- proto: all'
+  id: totrans-210
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '- proto: all'
+- en: 'cidr_ip: 0.0.0.0/0'
+  id: totrans-211
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'cidr_ip: 0.0.0.0/0'
+- en: 'register: aws_simple_wssg'
+  id: totrans-212
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'register: aws_simple_wssg'
+- en: '- name: Setup instance'
+  id: totrans-213
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '- name: 设置实例'
+- en: 'amazon.aws.ec2_instance:'
+  id: totrans-214
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'amazon.aws.ec2_instance:'
+- en: 'assign_public_ip: true'
+  id: totrans-215
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'assign_public_ip: true'
+- en: 'image: ami-3548444c'
+  id: totrans-216
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'image: ami-3548444c'
+- en: 'region: eu-west-1'
+  id: totrans-217
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'region: eu-west-1'
+- en: 'exact_count: 1'
+  id: totrans-218
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'exact_count: 1'
+- en: 'key_name: fale'
+  id: totrans-219
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'key_name: fale'
+- en: 'count_tag:'
+  id: totrans-220
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'count_tag:'
+- en: 'Name: ws01.ansible2cookbook.com'
+  id: totrans-221
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'Name: ws01.ansible2cookbook.com'
+- en: 'instance_tags:'
+  id: totrans-222
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'instance_tags:'
+- en: 'Name: ws01.ansible2cookbook.com'
+  id: totrans-223
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'Name: ws01.ansible2cookbook.com'
+- en: 'instance_type: t2.micro'
+  id: totrans-224
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'instance_type: t2.micro'
+- en: 'group_id: ''{{ aws_simple_wssg.group_id }}'''
+  id: totrans-225
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'group_id: ''{{ aws_simple_wssg.group_id }}'''
+- en: 'vpc_subnet_id: ''{{ aws_simple_subnet.subnets.0.id }}'''
+  id: totrans-226
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'vpc_subnet_id: ''{{ aws_simple_subnet.subnets.0.id }}'''
+- en: 'volumes:'
+  id: totrans-227
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'volumes:'
+- en: '- device_name: /dev/sda1'
+  id: totrans-228
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '- device_name: /dev/sda1'
+- en: 'volume_type: gp2'
+  id: totrans-229
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'volume_type: gp2'
+- en: 'volume_size: 10'
+  id: totrans-230
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'volume_size: 10'
+- en: 'delete_on_termination: True'
+  id: totrans-231
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'delete_on_termination: True'
+- en: '[PRE31]'
+  id: totrans-232
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE31]'
+- en: $ ansible-playbook aws.yaml
+  id: totrans-233
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: $ ansible-playbook aws.yaml
+- en: '[PRE32]'
+  id: totrans-234
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE32]'
+- en: PLAY [localhost] **********************************************************************************
+  id: totrans-235
+  prefs: []
+  type: TYPE_NORMAL
+  zh: PLAY [localhost] **********************************************************************************
+- en: TASK [Gathering Facts] ****************************************************************************
+  id: totrans-236
+  prefs: []
+  type: TYPE_NORMAL
+  zh: TASK [Gathering Facts] ****************************************************************************
+- en: 'ok: [localhost]'
+  id: totrans-237
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'ok: [localhost]'
+- en: TASK [Ensure key pair is present] *****************************************************************
+  id: totrans-238
+  prefs: []
+  type: TYPE_NORMAL
+  zh: TASK [Ensure key pair is present] *****************************************************************
+- en: 'ok: [localhost]'
+  id: totrans-239
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'ok: [localhost]'
+- en: TASK [Gather information of the EC2 VPC net in eu-west-1] *****************************************
+  id: totrans-240
+  prefs: []
+  type: TYPE_NORMAL
+  zh: TASK [Gather information of the EC2 VPC net in eu-west-1] *****************************************
+- en: 'ok: [localhost]'
+  id: totrans-241
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'ok: [localhost]'
+- en: TASK [Gather information of the EC2 VPC subnet in eu-west-1] **************************************
+  id: totrans-242
+  prefs: []
+  type: TYPE_NORMAL
+  zh: TASK [Gather information of the EC2 VPC subnet in eu-west-1] **************************************
+- en: 'ok: [localhost]'
+  id: totrans-243
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'ok: [localhost]'
+- en: TASK [Ensure wssg Security Group is present] ******************************************************
+  id: totrans-244
+  prefs: []
+  type: TYPE_NORMAL
+  zh: TASK [Ensure wssg Security Group is present] ******************************************************
+- en: 'ok: [localhost]'
+  id: totrans-245
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'ok: [localhost]'
+- en: TASK [Setup instance] *****************************************************************************
+  id: totrans-246
+  prefs: []
+  type: TYPE_NORMAL
+  zh: TASK [Setup instance] *****************************************************************************
+- en: 'changed: [localhost]'
+  id: totrans-247
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'changed: [localhost]'
+- en: PLAY RECAP ****************************************************************************************
+  id: totrans-248
+  prefs: []
+  type: TYPE_NORMAL
+  zh: PLAY RECAP ****************************************************************************************
+- en: 'localhost : ok=6 changed=1 unreachable=0 failed=0 skipped=0 rescued=0 ignored=0'
+  id: totrans-249
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'localhost : ok=6 changed=1 unreachable=0 failed=0 skipped=0 rescued=0 ignored=0'
+- en: '[PRE33]'
+  id: totrans-250
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE33]'
+- en: $ pip install requests google-auth
+  id: totrans-251
+  prefs: []
+  type: TYPE_NORMAL
+  zh: $ pip install requests google-auth
+- en: '[PRE34]'
+  id: totrans-252
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE34]'
+- en: $ ansible-galaxy collection install google.cloud
+  id: totrans-253
+  prefs: []
+  type: TYPE_NORMAL
+  zh: $ ansible-galaxy collection install google.cloud
+- en: '[PRE35]'
+  id: totrans-254
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE35]'
+- en: '---'
+  id: totrans-255
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '---'
+- en: '- hosts: localhost'
+  id: totrans-256
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '- hosts: localhost'
+- en: 'tasks:'
+  id: totrans-257
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'tasks:'
+- en: '- name: create a instance'
+  id: totrans-258
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '- name: 创建实例'
+- en: 'google.cloud.gcp_compute_instance:'
+  id: totrans-259
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'google.cloud.gcp_compute_instance:'
+- en: 'name: TestMachine'
+  id: totrans-260
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '名称: TestMachine'
+- en: 'machine_type: n1-standard-1'
+  id: totrans-261
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '机器类型: n1-standard-1'
+- en: 'disks:'
+  id: totrans-262
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '磁盘:'
+- en: '- auto_delete: ''true'''
+  id: totrans-263
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '- 自动删除: ''true'''
+- en: 'boot: ''true'''
+  id: totrans-264
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '启动: ''true'''
+- en: 'initialize_params:'
+  id: totrans-265
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '初始化参数:'
+- en: 'source_image: family/centos-stream-9'
+  id: totrans-266
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '源镜像: family/centos-stream-9'
+- en: 'disk_size_gb: 10'
+  id: totrans-267
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 磁盘大小（GB）：10
+- en: 'zone: eu-west1-c'
+  id: totrans-268
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '区域: eu-west1-c'
+- en: 'auth_kind: serviceaccount'
+  id: totrans-269
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '认证类型: serviceaccount'
+- en: 'service_account_file: "~/sa.json"'
+  id: totrans-270
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '服务账户文件: "~/sa.json"'
+- en: 'state: present'
+  id: totrans-271
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '状态: 存在'
+- en: '[PRE36]'
+  id: totrans-272
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE36]'
+- en: $ ansible-playbook gce.yaml
+  id: totrans-273
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: $ ansible-playbook gce.yaml
+- en: '[PRE37]'
+  id: totrans-274
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE37]'
+- en: PLAY [localhost] **********************************************************************************
+  id: totrans-275
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 执行 [localhost] **********************************************************************************
+- en: TASK [Gathering Facts] ****************************************************************************
+  id: totrans-276
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 任务 [收集事实] ****************************************************************************
+- en: 'ok: [localhost]'
+  id: totrans-277
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'ok: [localhost]'
+- en: TASK [create a instance] **************************************************************************
+  id: totrans-278
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 任务 [创建实例] **************************************************************************
+- en: 'changed: [localhost]'
+  id: totrans-279
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '更改: [localhost]'
+- en: PLAY RECAP ****************************************************************************************
+  id: totrans-280
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 执行总结 ****************************************************************************************
+- en: 'localhost : ok=2 changed=1 unreachable=0 failed=0 skipped=0 rescued=0 ignored=0'
+  id: totrans-281
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'localhost : ok=2 changed=1 unreachable=0 failed=0 skipped=0 rescued=0 ignored=0'
+- en: '[PRE38]'
+  id: totrans-282
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE38]'
+- en: $ pip install -r ~/.ansible/collections/ansible_collections/azure/azcollection/requirements-azure.txt
+  id: totrans-283
+  prefs: []
+  type: TYPE_NORMAL
+  zh: $ pip install -r ~/.ansible/collections/ansible_collections/azure/azcollection/requirements-azure.txt
+- en: '[PRE39]'
+  id: totrans-284
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE39]'
+- en: $ ansible-galaxy collection install azure.azcollection
+  id: totrans-285
+  prefs: []
+  type: TYPE_NORMAL
+  zh: $ ansible-galaxy collection install azure.azcollection
+- en: '[PRE40]'
+  id: totrans-286
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE40]'
+- en: '[default]'
+  id: totrans-287
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '[default]'
+- en: subscription_id = [YOUR_SUBSCIRPTION_ID_HERE]
+  id: totrans-288
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 订阅 ID = [YOUR_SUBSCIRPTION_ID_HERE]
+- en: client_id = [YOUR_CLIENT_ID_HERE]
+  id: totrans-289
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 客户端 ID = [YOUR_CLIENT_ID_HERE]
+- en: secret = [YOUR_SECRET_HERE]
+  id: totrans-290
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 密钥 = [YOUR_SECRET_HERE]
+- en: tenant = [YOUR_TENANT_HERE]
+  id: totrans-291
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 租户 = [YOUR_TENANT_HERE]
+- en: '[PRE41]'
+  id: totrans-292
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE41]'
+- en: '[default]'
+  id: totrans-293
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '[default]'
+- en: ad_user = [YOUR_AD_USER_HERE]
+  id: totrans-294
+  prefs: []
+  type: TYPE_NORMAL
+  zh: ad_user = [YOUR_AD_USER_HERE]
+- en: password = [YOUR_AD_PASSWORD_HERE]
+  id: totrans-295
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 密码 = [YOUR_AD_PASSWORD_HERE]
+- en: '[PRE42]'
+  id: totrans-296
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE42]'
+- en: '[default]'
+  id: totrans-297
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '[default]'
+- en: ad_user = [YOUR_AD_USER_HERE]
+  id: totrans-298
+  prefs: []
+  type: TYPE_NORMAL
+  zh: ad_user = [YOUR_AD_USER_HERE]
+- en: password = [YOUR_AD_PASSWORD_HERE]
+  id: totrans-299
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 密码 = [YOUR_AD_PASSWORD_HERE]
+- en: client_id = [YOUR_CLIENT_ID_HERE]
+  id: totrans-300
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 客户端 ID = [YOUR_CLIENT_ID_HERE]
+- en: tenant = [YOUR_TENANT_HERE]
+  id: totrans-301
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 租户 = [YOUR_TENANT_HERE]
+- en: adfs_authority_url = [YOUR_ADFS_AUTHORITY_URL_HERE]
+  id: totrans-302
+  prefs: []
+  type: TYPE_NORMAL
+  zh: adfs_authority_url = [YOUR_ADFS_AUTHORITY_URL_HERE]
+- en: '[PRE43]'
+  id: totrans-303
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE43]'
+- en: '---'
+  id: totrans-304
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '---'
+- en: '- hosts: localhost'
+  id: totrans-305
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '- 主机: localhost'
+- en: 'tasks:'
+  id: totrans-306
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '任务:'
+- en: '- name: Ensure the Storage Account is present'
+  id: totrans-307
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '- 名称: 确保存储帐户存在'
+- en: 'azure.azcollection.azure_rm_storageaccount:'
+  id: totrans-308
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'azure.azcollection.azure_rm_storageaccount:'
+- en: 'resource_group: Testing'
+  id: totrans-309
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '资源组: 测试'
+- en: 'name: mysa'
+  id: totrans-310
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '名称: mysa'
+- en: 'account_type: Standard_LRS'
+  id: totrans-311
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '账户类型: Standard_LRS'
+- en: '- name: Ensure the Virtual Network is present'
+  id: totrans-312
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '- 名称: 确保虚拟网络存在'
+- en: 'azure.azcollection.azure_rm_virtualnetwork:'
+  id: totrans-313
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'azure.azcollection.azure_rm_virtualnetwork:'
+- en: 'resource_group: Testing'
+  id: totrans-314
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '资源组: 测试'
+- en: 'name: myvn'
+  id: totrans-315
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '名称: myvn'
+- en: 'address_prefixes: "10.10.0.0/16"'
+  id: totrans-316
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '地址前缀: "10.10.0.0/16"'
+- en: '- name: Ensure the Subnet is present'
+  id: totrans-317
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '- 名称: 确保子网存在'
+- en: 'azure.azcollection.azure_rm_subnet:'
+  id: totrans-318
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'azure.azcollection.azure_rm_subnet:'
+- en: 'resource_group: Testing'
+  id: totrans-319
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '资源组: 测试'
+- en: 'name: mysn'
+  id: totrans-320
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '名称: mysn'
+- en: 'address_prefix: "10.10.0.0/24"'
+  id: totrans-321
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '地址前缀: "10.10.0.0/24"'
+- en: 'virtual_network: myvn'
+  id: totrans-322
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '虚拟网络: myvn'
+- en: '- name: Ensure that the Public IP is set'
+  id: totrans-323
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '- 名称: 确保设置了公共 IP'
+- en: 'azure.azcollection.azure_rm_publicipaddress:'
+  id: totrans-324
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'azure.azcollection.azure_rm_publicipaddress:'
+- en: 'resource_group: Testing'
+  id: totrans-325
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '资源组: 测试'
+- en: 'allocation_method: Static'
+  id: totrans-326
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '分配方法: 静态'
+- en: 'name: myip'
+  id: totrans-327
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '名称: myip'
+- en: '- name: Ensure a Security Group allowing SSH is present'
+  id: totrans-328
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '- 名称: 确保存在允许 SSH 的安全组'
+- en: 'azure.azcollection.azure_rm_securitygroup:'
+  id: totrans-329
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'azure.azcollection.azure_rm_securitygroup:'
+- en: 'resource_group: Testing'
+  id: totrans-330
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '资源组: 测试'
+- en: 'name: mysg'
+  id: totrans-331
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '名称: mysg'
+- en: 'rules:'
+  id: totrans-332
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '规则:'
+- en: '- name: SSH'
+  id: totrans-333
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '- 名称: SSH'
+- en: 'protocol: Tcp'
+  id: totrans-334
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '协议: Tcp'
+- en: 'destination_port_range: 22'
+  id: totrans-335
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '目标端口范围: 22'
+- en: 'access: Allow'
+  id: totrans-336
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '访问: 允许'
+- en: 'priority: 101'
+  id: totrans-337
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '优先级: 101'
+- en: 'direction: Inbound'
+  id: totrans-338
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '方向: 入站'
+- en: '- name: Ensure the NIC is present'
+  id: totrans-339
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '- 名称: 确保 NIC 存在'
+- en: 'azure.azcollection.azure_rm_networkinterface:'
+  id: totrans-340
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'azure.azcollection.azure_rm_networkinterface:'
+- en: 'resource_group: Testing'
+  id: totrans-341
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '资源组: 测试'
+- en: 'name: mynic'
+  id: totrans-342
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '名称: mynic'
+- en: 'virtual_network: myvn'
+  id: totrans-343
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '虚拟网络: myvn'
+- en: 'subnet: mysn'
+  id: totrans-344
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '子网: mysn'
+- en: 'public_ip_name: myip'
+  id: totrans-345
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '公共 IP 名称: myip'
+- en: 'security_group: mysg'
+  id: totrans-346
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '安全组: mysg'
+- en: '- name: Ensure the Virtual Machine is present'
+  id: totrans-347
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '- 名称: 确保虚拟机存在'
+- en: 'azure.azcollection.azure_rm_virtualmachine:'
+  id: totrans-348
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'azure.azcollection.azure_rm_virtualmachine:'
+- en: 'resource_group: Testing'
+  id: totrans-349
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '资源组: 测试'
+- en: 'name: myvm01'
+  id: totrans-350
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '名称: myvm01'
+- en: 'vm_size: Standard_D1'
+  id: totrans-351
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '虚拟机大小: Standard_D1'
+- en: 'storage_account: mysa'
+  id: totrans-352
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '存储账户: mysa'
+- en: 'storage_container: myvm01'
+  id: totrans-353
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '存储容器: myvm01'
+- en: 'storage_blob: myvm01.vhd'
+  id: totrans-354
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 存储Blob：myvm01.vhd
+- en: 'admin_username: admin'
+  id: totrans-355
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '管理员用户名: admin'
+- en: 'admin_password: Password!'
+  id: totrans-356
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '管理员密码: Password!'
+- en: 'network_interfaces: mynic'
+  id: totrans-357
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '网络接口: mynic'
+- en: 'image:'
+  id: totrans-358
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '镜像:'
+- en: 'offer: CentOS'
+  id: totrans-359
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '提供商: CentOS'
+- en: 'publisher: OpenLogic'
+  id: totrans-360
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '发布者: OpenLogic'
+- en: 'sku: ''8.4'''
+  id: totrans-361
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'SKU: ''8.4'''
+- en: 'version: latest'
+  id: totrans-362
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '版本: 最新'
+- en: '[PRE44]'
+  id: totrans-363
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE44]'
+- en: $ ansible-playbook azure.yaml
+  id: totrans-364
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: $ ansible-playbook azure.yaml
+- en: '[PRE45]'
+  id: totrans-365
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE45]'
+- en: PLAY [localhost] **********************************************************************************
+  id: totrans-366
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 执行 [localhost] **********************************************************************************
+- en: TASK [Gathering Facts] ****************************************************************************
+  id: totrans-367
+  prefs: []
+  type: TYPE_NORMAL
+  zh: TASK [收集事实] ****************************************************************************
+- en: 'ok: [localhost]'
+  id: totrans-368
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'ok: [localhost]'
+- en: TASK [Ensure the Storage Account is present] ******************************************************
+  id: totrans-369
+  prefs: []
+  type: TYPE_NORMAL
+  zh: TASK [确保存储账户存在] ******************************************************
+- en: 'changed: [localhost]'
+  id: totrans-370
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'changed: [localhost]'
+- en: TASK [Ensure the Virtual Network is present] ******************************************************
+  id: totrans-371
+  prefs: []
+  type: TYPE_NORMAL
+  zh: TASK [确保虚拟网络存在] ******************************************************
+- en: 'changed: [localhost]'
+  id: totrans-372
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'changed: [localhost]'
+- en: TASK [Ensure the Subnet is present] ***************************************************************
+  id: totrans-373
+  prefs: []
+  type: TYPE_NORMAL
+  zh: TASK [确保子网存在] ***************************************************************
+- en: 'changed: [localhost]'
+  id: totrans-374
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'changed: [localhost]'
+- en: TASK [Ensure that the Public IP is set] ***********************************************************
+  id: totrans-375
+  prefs: []
+  type: TYPE_NORMAL
+  zh: TASK [确保公共IP已设置] ***********************************************************
+- en: 'changed: [localhost]'
+  id: totrans-376
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'changed: [localhost]'
+- en: TASK [Ensure a Security Group allowing SSH is present] ********************************************
+  id: totrans-377
+  prefs: []
+  type: TYPE_NORMAL
+  zh: TASK [确保存在允许SSH的安全组] ********************************************
+- en: 'changed: [localhost]'
+  id: totrans-378
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'changed: [localhost]'
+- en: TASK [Ensure the NIC is present] ******************************************************************
+  id: totrans-379
+  prefs: []
+  type: TYPE_NORMAL
+  zh: TASK [确保NIC存在] ******************************************************************
+- en: 'changed: [localhost]'
+  id: totrans-380
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'changed: [localhost]'
+- en: TASK [Ensure the Virtual Machine is present] ******************************************************
+  id: totrans-381
+  prefs: []
+  type: TYPE_NORMAL
+  zh: TASK [确保虚拟机存在] ******************************************************
+- en: 'changed: [localhost]'
+  id: totrans-382
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'changed: [localhost]'
+- en: PLAY RECAP ****************************************************************************************
+  id: totrans-383
+  prefs: []
+  type: TYPE_NORMAL
+  zh: PLAY RECAP ****************************************************************************************
+- en: 'localhost : ok=8 changed=7 unreachable=0 failed=0 skipped=0 rescued=0 ignored=0'
+  id: totrans-384
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'localhost : ok=8 changed=7 unreachable=0 failed=0 skipped=0 rescued=0 ignored=0'
+- en: '[PRE46]'
+  id: totrans-385
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE46]'
+- en: $ pip install openstacksdk
+  id: totrans-386
+  prefs: []
+  type: TYPE_NORMAL
+  zh: $ pip install openstacksdk
+- en: '[PRE47]'
+  id: totrans-387
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE47]'
+- en: $ ansible-galaxy collection install openstack.cloud
+  id: totrans-388
+  prefs: []
+  type: TYPE_NORMAL
+  zh: $ ansible-galaxy collection install openstack.cloud
+- en: '[PRE48]'
+  id: totrans-389
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE48]'
+- en: 'clouds:'
+  id: totrans-390
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'clouds:'
+- en: 'test_cloud:'
+  id: totrans-391
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'test_cloud:'
+- en: 'region_name: MyRegion'
+  id: totrans-392
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'region_name: MyRegion'
+- en: 'auth:'
+  id: totrans-393
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'auth:'
+- en: 'auth_url: http://[YOUR_AUTH_URL_HERE]:5000/v2.0/'
+  id: totrans-394
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'auth_url: http://[YOUR_AUTH_URL_HERE]:5000/v2.0/'
+- en: 'username: [YOUR_USERNAME_HERE]'
+  id: totrans-395
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'username: [YOUR_USERNAME_HERE]'
+- en: 'password: [YOUR_PASSWORD_HERE]'
+  id: totrans-396
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'password: [YOUR_PASSWORD_HERE]'
+- en: 'project_name: myProject'
+  id: totrans-397
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'project_name: myProject'
+- en: '[PRE49]'
+  id: totrans-398
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE49]'
+- en: '---'
+  id: totrans-399
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '---'
+- en: '- hosts: localhost'
+  id: totrans-400
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '- hosts: localhost'
+- en: 'tasks:'
+  id: totrans-401
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'tasks:'
+- en: '- name: Ensure the SSH key is present on OpenStack'
+  id: totrans-402
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '- name: 确保SSH密钥在OpenStack中存在'
+- en: 'openstack.cloud.keypair:'
+  id: totrans-403
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'openstack.cloud.keypair:'
+- en: 'state: present'
+  id: totrans-404
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'state: present'
+- en: 'name: ansible_key'
+  id: totrans-405
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'name: ansible_key'
+- en: 'public_key_file: "{{ ''~'' | expanduser }}/.ssh/id_rsa.pub"'
+  id: totrans-406
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'public_key_file: "{{ ''~'' | expanduser }}/.ssh/id_rsa.pub"'
+- en: '- name: Ensure we have a CentOS image'
+  id: totrans-407
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '- name: 确保我们有CentOS镜像'
+- en: 'ansible.builtin.get_url:'
+  id: totrans-408
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'ansible.builtin.get_url:'
+- en: 'url: http://cloud.centos.org/centos/9-stream/x86_64/images/CentOS-Stream-GenericCloud-9-20230424.0.x86_64.qcow2'
+  id: totrans-409
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'url: http://cloud.centos.org/centos/9-stream/x86_64/images/CentOS-Stream-GenericCloud-9-20230424.0.x86_64.qcow2'
+- en: 'dest: /tmp/CentOS-Stream-GenericCloud-9-20230424.0.x86_64.qcow2'
+  id: totrans-410
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'dest: /tmp/CentOS-Stream-GenericCloud-9-20230424.0.x86_64.qcow2'
+- en: '- name: Ensure the CentOS image is in OpenStack'
+  id: totrans-411
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '- name: 确保CentOS镜像在OpenStack中'
+- en: 'openstack.cloud.image:'
+  id: totrans-412
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'openstack.cloud.image:'
+- en: 'name: centos'
+  id: totrans-413
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'name: centos'
+- en: 'container_format: bare'
+  id: totrans-414
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'container_format: bare'
+- en: 'disk_format: qcow2'
+  id: totrans-415
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'disk_format: qcow2'
+- en: 'state: present'
+  id: totrans-416
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'state: present'
+- en: 'filename: /tmp/CentOS-Stream-GenericCloud-9-20230424.0.x86_64.qcow2'
+  id: totrans-417
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'filename: /tmp/CentOS-Stream-GenericCloud-9-20230424.0.x86_64.qcow2'
+- en: '- name: Ensure the Network is present'
+  id: totrans-418
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '- name: 确保网络存在'
+- en: 'openstack.cloud.network:'
+  id: totrans-419
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'openstack.cloud.network:'
+- en: 'state: present'
+  id: totrans-420
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'state: present'
+- en: 'name: mynet'
+  id: totrans-421
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'name: mynet'
+- en: 'external: False'
+  id: totrans-422
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'external: False'
+- en: 'shared: False'
+  id: totrans-423
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'shared: False'
+- en: 'register: net_out'
+  id: totrans-424
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'register: net_out'
+- en: '- name: Ensure the Subnetwork is present'
+  id: totrans-425
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '- name: 确保子网络存在'
+- en: 'openstack.cloud.subnet:'
+  id: totrans-426
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'openstack.cloud.subnet:'
+- en: 'state: present'
+  id: totrans-427
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'state: present'
+- en: 'network_name: "{{ net_out.id }}"'
+  id: totrans-428
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'network_name: "{{ net_out.id }}"'
+- en: 'name: mysubnet'
+  id: totrans-429
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'name: mysubnet'
+- en: 'ip_version: 4'
+  id: totrans-430
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'ip_version: 4'
+- en: 'cidr: 192.168.0.0/24'
+  id: totrans-431
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'cidr: 192.168.0.0/24'
+- en: 'gateway_ip: 192.168.0.1'
+  id: totrans-432
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'gateway_ip: 192.168.0.1'
+- en: 'enable_dhcp: yes'
+  id: totrans-433
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'enable_dhcp: yes'
+- en: 'dns_nameservers:'
+  id: totrans-434
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'dns_nameservers:'
+- en: '- 8.8.8.8'
+  id: totrans-435
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '- 8.8.8.8'
+- en: '- name: Ensure the Router is present'
+  id: totrans-436
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '- name: 确保路由器存在'
+- en: 'openstack.cloud.router:'
+  id: totrans-437
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'openstack.cloud.router:'
+- en: 'state: present'
+  id: totrans-438
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'state: present'
+- en: 'name: myrouter'
+  id: totrans-439
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'name: myrouter'
+- en: 'network: nova'
+  id: totrans-440
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'network: nova'
+- en: 'external_fixed_ips:'
+  id: totrans-441
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'external_fixed_ips:'
+- en: '- subnet: nova'
+  id: totrans-442
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '- subnet: nova'
+- en: 'interfaces:'
+  id: totrans-443
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'interfaces:'
+- en: '- mysubnet'
+  id: totrans-444
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '- mysubnet'
+- en: '- name: Ensure the Security Group is present'
+  id: totrans-445
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '- name: 确保安全组存在'
+- en: 'openstack.cloud.security_group:'
+  id: totrans-446
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'openstack.cloud.security_group:'
+- en: 'state: present'
+  id: totrans-447
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'state: present'
+- en: 'name: mysg'
+  id: totrans-448
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'name: mysg'
+- en: '- name: Ensure the Security Group allows ICMP traffic'
+  id: totrans-449
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '- name: 确保安全组允许ICMP流量'
+- en: 'openstack.cloud.security_group_rule:'
+  id: totrans-450
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'openstack.cloud.security_group_rule:'
+- en: 'security_group: mysg'
+  id: totrans-451
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'security_group: mysg'
+- en: 'protocol: icmp'
+  id: totrans-452
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'protocol: icmp'
+- en: 'remote_ip_prefix: 0.0.0.0/0'
+  id: totrans-453
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'remote_ip_prefix: 0.0.0.0/0'
+- en: '- name: Ensure the Security Group allows SSH traffic'
+  id: totrans-454
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '- name: 确保安全组允许SSH流量'
+- en: 'openstack.cloud.security_group_rule:'
+  id: totrans-455
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'openstack.cloud.security_group_rule:'
+- en: 'security_group: mysg'
+  id: totrans-456
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'security_group: mysg'
+- en: 'protocol: tcp'
+  id: totrans-457
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'protocol: tcp'
+- en: 'port_range_min: 22'
+  id: totrans-458
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'port_range_min: 22'
+- en: 'port_range_max: 22'
+  id: totrans-459
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'port_range_max: 22'
+- en: 'remote_ip_prefix: 0.0.0.0/0'
+  id: totrans-460
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'remote_ip_prefix: 0.0.0.0/0'
+- en: '- name: Ensure the Instance exists'
+  id: totrans-461
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '- name: 确保实例存在'
+- en: 'openstack.cloud.server:'
+  id: totrans-462
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'openstack.cloud.server:'
+- en: 'state: present'
+  id: totrans-463
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'state: present'
+- en: 'name: myInstance'
+  id: totrans-464
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'name: myInstance'
+- en: 'image: centos'
+  id: totrans-465
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'image: centos'
+- en: 'flavor: m1.small'
+  id: totrans-466
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'flavor: m1.small'
+- en: 'security_groups: mysg'
+  id: totrans-467
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'security_groups: mysg'
+- en: 'key_name: ansible_key'
+  id: totrans-468
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'key_name: ansible_key'
+- en: 'nics:'
+  id: totrans-469
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'nics:'
+- en: '- net-id: "{{ net_out.id }}"'
+  id: totrans-470
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '- net-id: "{{ net_out.id }}"'
+- en: '[PRE50]'
+  id: totrans-471
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE50]'
+- en: $ ansible-playbook openstack.yaml
+  id: totrans-472
+  prefs: []
+  type: TYPE_NORMAL
+  zh: $ ansible-playbook openstack.yaml
+- en: '[PRE51]'
+  id: totrans-473
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE51]'
+- en: PLAY [localhost] **********************************************************************************
+  id: totrans-474
+  prefs: []
+  type: TYPE_NORMAL
+  zh: PLAY [localhost] **********************************************************************************
+- en: TASK [Gathering Facts] ****************************************************************************
+  id: totrans-475
+  prefs: []
+  type: TYPE_NORMAL
+  zh: TASK [收集事实] ****************************************************************************
+- en: 'ok: [localhost]'
+  id: totrans-476
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'ok: [localhost]'
+- en: TASK [Ensure the SSH key is present on OpenStack] *************************************************
+  id: totrans-477
+  prefs: []
+  type: TYPE_NORMAL
+  zh: TASK [确保 SSH 密钥在 OpenStack 上存在] *************************************************
+- en: 'changed: [localhost]'
+  id: totrans-478
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'changed: [localhost]'
+- en: TASK [Ensure we have a CentOS image] **************************************************************
+  id: totrans-479
+  prefs: []
+  type: TYPE_NORMAL
+  zh: TASK [确保我们有一个 CentOS 镜像] **************************************************************
+- en: 'changed: [localhost]'
+  id: totrans-480
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'changed: [localhost]'
+- en: TASK [Ensure the CentOS image is in OpenStack] ****************************************************
+  id: totrans-481
+  prefs: []
+  type: TYPE_NORMAL
+  zh: TASK [确保 CentOS 镜像在 OpenStack 中] ****************************************************
+- en: 'changed: [localhost]'
+  id: totrans-482
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'changed: [localhost]'
+- en: TASK [Ensure the Network is present] **************************************************************
+  id: totrans-483
+  prefs: []
+  type: TYPE_NORMAL
+  zh: TASK [确保网络存在] **************************************************************
+- en: 'changed: [localhost]'
+  id: totrans-484
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'changed: [localhost]'
+- en: TASK [Ensure the Subnetwork is present] ***********************************************************
+  id: totrans-485
+  prefs: []
+  type: TYPE_NORMAL
+  zh: TASK [确保子网络存在] ***********************************************************
+- en: 'changed: [localhost]'
+  id: totrans-486
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'changed: [localhost]'
+- en: TASK [Ensure the Router is present] ***************************************************************
+  id: totrans-487
+  prefs: []
+  type: TYPE_NORMAL
+  zh: TASK [确保路由器存在] ***************************************************************
+- en: 'changed: [localhost]'
+  id: totrans-488
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'changed: [localhost]'
+- en: TASK [Ensure the Security Group is present] *******************************************************
+  id: totrans-489
+  prefs: []
+  type: TYPE_NORMAL
+  zh: TASK [确保安全组存在] *******************************************************
+- en: 'changed: [localhost]'
+  id: totrans-490
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'changed: [localhost]'
+- en: TASK [Ensure the Security Group allows ICMP traffic] **********************************************
+  id: totrans-491
+  prefs: []
+  type: TYPE_NORMAL
+  zh: TASK [确保安全组允许 ICMP 流量] **********************************************
+- en: 'changed: [localhost]'
+  id: totrans-492
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'changed: [localhost]'
+- en: TASK [Ensure the Security Group allows SSH traffic] ***********************************************
+  id: totrans-493
+  prefs: []
+  type: TYPE_NORMAL
+  zh: TASK [确保安全组允许 SSH 流量] ***********************************************
+- en: 'changed: [localhost]'
+  id: totrans-494
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'changed: [localhost]'
+- en: TASK [Ensure the Instance exists] *****************************************************************
+  id: totrans-495
+  prefs: []
+  type: TYPE_NORMAL
+  zh: TASK [确保实例存在] *****************************************************************
+- en: 'changed: [localhost]'
+  id: totrans-496
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'changed: [localhost]'
+- en: PLAY RECAP ****************************************************************************************
+  id: totrans-497
+  prefs: []
+  type: TYPE_NORMAL
+  zh: PLAY RECAP ****************************************************************************************
+- en: 'localhost : ok=11 changed=10 unreachable=0 failed=0 skipped=0 rescued=0 ignored=0'
+  id: totrans-498
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'localhost : ok=11 changed=10 unreachable=0 failed=0 skipped=0 rescued=0 ignored=0'
+- en: '[PRE52]'
+  id: totrans-499
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE52]'

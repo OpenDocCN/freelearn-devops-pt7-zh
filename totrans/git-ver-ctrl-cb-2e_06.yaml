@@ -1,0 +1,929 @@
+- en: Extracting Data from the Repository
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 从仓库中提取数据
+- en: 'In this chapter, we will cover the following recipes:'
+  id: totrans-1
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章将介绍以下内容：
+- en: Extracting the top contributor
+  id: totrans-2
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 提取顶级贡献者
+- en: Finding bottlenecks in the source tree
+  id: totrans-3
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 查找源代码树中的瓶颈
+- en: Grepping the commit messages
+  id: totrans-4
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用`grep`查找提交信息
+- en: The contents of the releases
+  id: totrans-5
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 发布内容
+- en: Finding what has been achieved in the repository in the last period
+  id: totrans-6
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 查找最近一段时间内仓库中的成就
+- en: Introduction
+  id: totrans-7
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 介绍
+- en: Whether you work in big or small organizations, safeguarding and maintaining
+    data is always important and it keeps track of a fair amount of information for
+    you; it is just a matter of extracting the data. Some of the data is included
+    in the system by you or any other developer when the commit message is filled
+    in with the proper information – for instance, details of the bug you are fixing
+    from the bug tracking system.
+  id: totrans-8
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 无论你在大公司还是小公司工作，保护和维护数据始终非常重要，它会为你追踪大量信息；这只是一个提取数据的问题。部分数据是你或其他开发者在填写提交信息时自动加入到系统中的——例如，修复的bug的详细信息来自于bug跟踪系统。
+- en: The data is not only valid for management but can also be used to add more time
+    to refactor the C files, where almost all bugs are fixed.
+  id: totrans-9
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这些数据不仅对管理有用，还可以用于增加更多时间来重构C文件，在这些文件中几乎所有的bug都已修复。
+- en: Extracting the top contributor
+  id: totrans-10
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 提取顶级贡献者
+- en: Git has a few built-in stats you can get instantaneously. The `git log` command
+    has different options, such as `--numstat`, that will show the number of files
+    added and lines deleted for each file since each commit. However, for finding
+    the top committer in the repository, we can just use the `git shortlog` command.
+  id: totrans-11
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git提供了一些内置的统计数据，你可以即时获取。`git log`命令有不同的选项，比如`--numstat`，它将显示自每次提交以来每个文件的添加行数和删除行数。然而，要在仓库中找到顶级提交者，我们只需使用`git
+    shortlog`命令。
+- en: Getting ready
+  id: totrans-12
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 准备工作
+- en: For all the examples throughout the book, we are using the `jgit` repository;
+    you can either clone it or go to one of the clones you might already have.
+  id: totrans-13
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本书中的所有示例中，我们使用的是`jgit`仓库；你可以选择克隆它，或者使用你可能已经拥有的克隆之一。
+- en: 'Clone the `jgit` repository as follows:'
+  id: totrans-14
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如下克隆`jgit`仓库：
+- en: '[PRE0]'
+  id: totrans-15
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: How to do it...
+  id: totrans-16
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: 'The `shortlog` Git command is very simple and does not have a lot of options
+    or flags to use with it. It can show the log but in a boiled-down version, and
+    then it can summarize it for us as follows:'
+  id: totrans-17
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`shortlog` Git命令非常简单，没有太多可用的选项或标志。它可以显示日志，但以精简版显示，然后可以按如下方式总结给我们：'
+- en: 'Start by showing the last five commits with `shortlog`. We can use `-5` to
+    limit the amount of output:'
+  id: totrans-18
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 开始时，用`shortlog`显示最后五次提交。我们可以使用`-5`来限制输出量：
+- en: '[PRE1]'
+  id: totrans-19
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: 'As you can see, the output is very different from the `git log` output. You
+    can try it for yourself with `git log -5`. The numbers in parentheses are the
+    number of commits by that committer. Beneath the name and number are the commit
+    titles of the commits. Note that no commit hashes are shown. To find the top committer
+    with just those five commits is easy, but when you try running `git shortlog`
+    without `-5`, it is hard to find that person. To sort and find the top committer,
+    we can use the `-n` or `--numbered` option to sort the output; the top committer
+    is on top:'
+  id: totrans-20
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如你所见，输出结果与`git log`的输出非常不同。你可以自己尝试运行`git log -5`。括号中的数字是该提交者的提交次数。在名字和数字下面是提交的标题。请注意，没有显示提交的哈希值。仅凭这五次提交找出顶级提交者很容易，但如果你尝试运行不带`-5`的`git
+    shortlog`，就很难找到这个人。为了排序并找到顶级提交者，我们可以使用`-n`或`--numbered`选项来排序输出；顶级提交者会排在最上面：
+- en: '[PRE2]'
+  id: totrans-21
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: 'As you can see, the output is nicely sorted. If we don''t care about the commit
+    subjects, we can use `-s` or `--summary` to only show the commit count for each
+    developer as follows:'
+  id: totrans-22
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如你所见，输出结果已很好地排序。如果我们不关心提交的主题，可以使用`-s`或`--summary`来仅显示每个开发者的提交计数，如下所示：
+- en: '[PRE3]'
+  id: totrans-23
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: 'Finally, we have what we want, except that we don''t have the email addresses
+    of the committers; this option is also available with `-e` or `--email`. This
+    will also show the email addresses of the committers in the list. This time, we
+    will try it on the entire repository. Currently, we have only listed it for the
+    HEAD commit. To list it for the repository, we need to add `--all` at the end
+    of the command so as to execute the command for all branches as follows:'
+  id: totrans-24
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 最后，我们得到了我们想要的，除了我们没有提交者的电子邮件地址；这个选项也可以使用`-e`或`--email`。这将显示提交者的电子邮件地址。这一次，我们将尝试在整个仓库上运行。当前，我们只列出了HEAD提交的信息。为了列出整个仓库的信息，我们需要在命令的末尾添加`--all`，以便对所有分支执行命令，如下所示：
+- en: '[PRE4]'
+  id: totrans-25
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: 'So, this is the list now; we know who contributed with the most commits, but
+    this picture can be a little skewed, as the top committer may just happen to be
+    the creator of the project and may not actively contribute to the repository.
+    So, to list the top committers for the last six months, we can add `--since="6
+    months ago"` to the `git shortlog` command as follows:'
+  id: totrans-26
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 所以，现在这是列表；我们知道谁提交了最多的代码，但这个图像可能有些偏差，因为最大的提交者可能恰好是项目的创建者，可能并没有积极地参与仓库的贡献。因此，要列出过去六个月的主要提交者，我们可以在
+    `git shortlog` 命令中添加 `--since="6 months ago"`，如下所示：
+- en: '[PRE5]'
+  id: totrans-27
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: As you can see, the picture has changed since the start of the repository.
+  id: totrans-28
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如你所见，自从仓库开始以来，图片已经发生了变化。
+- en: You can use *"n weeks ago"*, *"n days ago"*, *"n months ago"*, *" n hours ago"*,
+    and so on for specifying time periods. You can also use specific dates, such as
+    `"1 october 2013"`.
+  id: totrans-29
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以使用 *"n 周前"*, *"n 天前"*, *"n 个月前"*, *"n 小时前"* 等来指定时间段。你也可以使用具体日期，如 `"2013年10月1日"`。
+- en: 'You can also list the top committer for a specific month using the `--until`
+    option, where you can specify the date you wish to list the commit until. This
+    can be done as follows:'
+  id: totrans-30
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你还可以使用 `--until` 选项列出某个月份的主要提交者，你可以指定希望列出提交记录的截止日期。可以按如下方式执行：
+- en: '[PRE6]'
+  id: totrans-31
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: As you can see, we get another list, and it seems like Matthias is the main
+    contributor, at least compared to the initial result. These types of data can
+    also be used to visualize the shift of responsibility in a repository by collecting
+    the data for each month since the repository's initialization.
+  id: totrans-32
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如你所见，我们得到了一份新的列表，看来 Matthias 是主要贡献者，至少相比于初步结果来说。通过收集自仓库初始化以来每个月的数据，这类信息还可以用来可视化仓库中责任的转变。
+- en: There's more...
+  id: totrans-33
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 还有更多……
+- en: 'While working with code, it is often useful to know who to go to when you need
+    to perform a fix in the software, especially in an area where you are inexperienced.
+    So, it would be nice to figure out who is the code owner of the file or the files
+    you are changing. The obvious reason is to get some input on the code, but also
+    to know who to go to for a code review. You can again use `git shortlog` to figure
+    this out. You can use the command on the files as well:'
+  id: totrans-34
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在处理代码时，通常很有用的一点是知道在你需要修复软件中的问题时，应该找谁，尤其是在你不熟悉的领域。所以，找出你正在修改的文件或文件的代码负责人是很有帮助的。显而易见的原因是为了获取代码方面的输入，同时也知道应该找谁进行代码审查。你同样可以使用
+    `git shortlog` 来搞清楚这一点。你也可以在文件上使用这个命令：
+- en: 'To do this, we simply add the file to the end of the `git shortlog` command:'
+  id: totrans-35
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 为此，我们只需将文件添加到 `git shortlog` 命令的末尾：
+- en: '[PRE7]'
+  id: totrans-36
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE7]'
+- en: 'As for `pom.xml`, we also have a top committer. As all the options you have
+    for `git log` are available for `shortlog`, we can also do this on a directory
+    as follows:'
+  id: totrans-37
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 至于 `pom.xml`，我们也有一个主要提交者。由于 `git log` 的所有选项也可以用于 `shortlog`，我们同样可以对一个目录使用它，如下所示：
+- en: '[PRE8]'
+  id: totrans-38
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE8]'
+- en: As you can see, it is fairly simple to get some indication of who to go to for
+    the different files or directories in Git.
+  id: totrans-39
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如你所见，要知道在 Git 中哪些文件或目录该找谁是相当简单的。
+- en: Finding bottlenecks in the source tree
+  id: totrans-40
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 在源代码树中查找瓶颈
+- en: Often, the development teams know where the bottleneck in the source tree is,
+    but it can be challenging to convince the management that you need resources to
+    rewrite some code. However, with Git, it is fairly simple to extract that type
+    of data from the repository.
+  id: totrans-41
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通常，开发团队知道源代码树中的瓶颈在哪里，但说服管理层需要资源来重写部分代码可能是一个挑战。然而，使用 Git，提取此类数据相对简单。
+- en: Getting ready
+  id: totrans-42
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 准备工作
+- en: 'Start by checking out the stable-3.1 release as follows:'
+  id: totrans-43
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 先通过以下方式查看 stable-3.1 版本：
+- en: '[PRE9]'
+  id: totrans-44
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE9]'
+- en: How to do it...
+  id: totrans-45
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 如何做……
+- en: 'We want to start by listing some stats for one commit, and then we can extend
+    the examples to larger chunks of commits:'
+  id: totrans-46
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们希望从列出某个提交的统计信息开始，然后可以将示例扩展到更大范围的提交：
+- en: 'The first option we will be using is `--dirstat` for `git log` as follows:'
+  id: totrans-47
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 我们将使用的第一个选项是 `git log` 的 `--dirstat`，如下所示：
+- en: '[PRE10]'
+  id: totrans-48
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE10]'
+- en: 'The `--dirstat` option shows which directories have changed in the commit and
+    how much they have changed compared to each other. The default setting is to count
+    the number of lines added to or removed from the commit. So, rearranging the code
+    potentially does not count for any change, as the line count might be the same.
+    You can compensate for this slightly by using `--dirstat=lines`. This option will
+    look at each file line by line and see whether they have changed compared to the
+    previous version as follows:'
+  id: totrans-49
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: '`--dirstat`选项显示了在提交中哪些目录发生了变化，并且这些变化与其他目录相比有多少。默认设置是计算在提交中添加或删除的行数。因此，代码的重新排列可能不会算作任何变化，因为行数可能是相同的。你可以通过使用`--dirstat=lines`来稍微补偿这一点。这个选项会逐行查看每个文件，查看它们与之前的版本相比是否发生了变化，如下所示：'
+- en: '[PRE11]'
+  id: totrans-50
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE11]'
+- en: 'This also gives a slightly different result. If you would like to limit the
+    output to only show directories with a certain percentage or higher, we can limit
+    the output as follows:'
+  id: totrans-51
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 这也会产生略微不同的结果。如果你想限制输出仅显示某个百分比以上的目录，我们可以按如下方式限制输出：
+- en: '[PRE12]'
+  id: totrans-52
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE12]'
+- en: 'By adding `10` to the `--dirstat=lines` command, we are asking Git to only
+    show the directories that have 10 percent or higher changes; you can use any number
+    you like here. By default, Git does not count the changes in the subdirectories,
+    but only the files in the directory. So, in the following diagram, only changes
+    in **File A1** are counted as changes; for the **Dir A1** directory and the **File
+    B1** file, it is counted as a change in **Dir A2**:'
+  id: totrans-53
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 通过在`--dirstat=lines`命令中添加`10`，我们要求Git只显示发生了10%或更多变化的目录；你可以根据需要使用任何数字。默认情况下，Git不统计子目录中的变化，只统计目录中的文件变化。因此，在下图中，只有**文件A1**的变化被算作变化；对于**目录A1**和**文件B1**，它们的变化被算作**目录A2**的变化：
+- en: '![](img/31fd16f6-6591-4ea4-b2bc-252f7dd058f3.png)'
+  id: totrans-54
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/31fd16f6-6591-4ea4-b2bc-252f7dd058f3.png)'
+- en: To cumulate this, we can add `cumulative` to the `--dirstat=lines,10` command,
+    and this will cumulate the changes and calculate a percentage.
+  id: totrans-55
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 为了累积这些数据，我们可以在`--dirstat=lines,10`命令中添加`cumulative`，这将累积所有变化并计算出百分比。
+- en: 'Be aware that the percentage can go beyond 100 due to the way it is calculated:'
+  id: totrans-56
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 请注意，由于计算方式的不同，百分比可能会超过100：
+- en: '[PRE13]'
+  id: totrans-57
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE13]'
+- en: 'As you can see, the output is slightly different from what we have seen earlier.
+    By using `git log --dirstat`, you can get some information about what goes on
+    in the repository. Obviously, you can also do this for all the commits between
+    two releases or two commit hashes. Let''s try this, but instead of using `git
+    log`, we will be using `git diff`, as Git will show the accumulated `diff` between
+    the two releases, and `git log` will show `dirstat` for each commit between the
+    releases:'
+  id: totrans-58
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如你所见，输出与我们之前看到的稍有不同。通过使用`git log --dirstat`，你可以获得一些关于仓库的情况显现出来的信息。显然，你也可以在两个版本之间或两个提交哈希之间做这件事。让我们尝试一下，但这次我们不使用`git
+    log`，而是使用`git diff`，因为Git会显示两个版本之间的累积`diff`，而`git log`会显示两个版本之间每个提交的`dirstat`：
+- en: '[PRE14]'
+  id: totrans-59
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE14]'
+- en: 'So, between the `origin/stable-3.1` and `origin/stable-3.2` branches, we can
+    see which directories have the highest percentage of changes. We can then dig
+    a little deeper using `--stat` or `--numstat` for the directory, and again use
+    `git diff`. We will also use `--relative="org.eclipse.jgit.test/tst/org/eclipse/"`,
+    which will show the relative path of the files from `org.eclipse.jgit.test/tst/org/eclipse/`.
+    This will look better on the console. Feel free to try this without using the
+    following option:'
+  id: totrans-60
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 所以，在`origin/stable-3.1`和`origin/stable-3.2`分支之间，我们可以看到哪些目录的变化百分比最高。然后，我们可以通过`--stat`或`--numstat`进一步深入查看该目录，并再次使用`git
+    diff`。我们还会使用`--relative="org.eclipse.jgit.test/tst/org/eclipse/"`，这将显示相对于`org.eclipse.jgit.test/tst/org/eclipse/`的文件路径，这样在控制台上显示会更清晰。你可以尝试在不使用以下选项的情况下进行此操作：
+- en: '[PRE15]'
+  id: totrans-61
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE15]'
+- en: The first number is the number of lines added, and the second number is the
+    lines removed from the files between the two branches.
+  id: totrans-62
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 第一个数字是添加的行数，第二个数字是两分支之间删除的行数。
+- en: There's more...
+  id: totrans-63
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 还有更多...
+- en: We have used `git log`, `git diff`, and `git shortlog` to find information about
+    the repository, but there are so many options for those commands on how to find
+    bottlenecks in the source code.
+  id: totrans-64
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们已经使用了`git log`、`git diff`和`git shortlog`来查找关于仓库的信息，但这些命令有许多选项可以帮助我们找到源代码中的瓶颈。
+- en: 'If we want to find the files with the most commits, and these are not necessarily
+    the files with the most line additions or deletions, we can use `git log`:'
+  id: totrans-65
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果我们想找到提交次数最多的文件，而这些文件不一定是行数增加或删除最多的文件，我们可以使用`git log`：
+- en: We can use `git log` between the `origin/stable-3.1` and `origin/stable-3.2`
+    branches and list all the files changed in each commit.
+  id: totrans-66
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 我们可以在 `origin/stable-3.1` 和 `origin/stable-3.2` 分支之间使用 `git log`，列出每次提交中更改的所有文件。
+- en: 'Then, we just need to sort and accumulate the result with some Bash tools as
+    follows:'
+  id: totrans-67
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 然后，我们只需要使用一些 Bash 工具对结果进行排序和统计，如下所示：
+- en: '[PRE16]'
+  id: totrans-68
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE16]'
+- en: 'First, we are just executing the command without the use of the Bash tools.
+    You can see from the extensive output that you only see file names and nothing
+    else. This is due to the options used. The `--format=format:` option tells Git
+    to not display any commit-message-related information, and `--name-only` tells
+    Git to list the files for each commit. Now, all we have to do is count them:'
+  id: totrans-69
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 首先，我们只是执行命令，而没有使用 Bash 工具。从大量输出中可以看到，你只会看到文件名，其他什么都看不见。这是由于所使用的选项。`--format=format:`
+    选项告诉 Git 不显示任何与提交信息相关的信息，而 `--name-only` 则告诉 Git 只列出每次提交的文件。现在，我们要做的就是统计它们：
+- en: '[PRE17]'
+  id: totrans-70
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE17]'
+- en: 'Now, we have a list of the top ten files between the two releases, but before
+    we proceed further, let''s just go through what we did. We got the list of files,
+    and we used `sed ''/^$/d''` to remove empty lines from the output. After this,
+    we used `sort` to sort the list of files. Then, we used `uniq -c`, which counts
+    the occurrences of each item in the files and adds the number from the output.
+    Finally, we sorted in reverse order using `sort -r` and displayed only the top
+    ten results using `head 10`. To proceed from here, we should list all the commits
+    between the branches that are changing the top file as follows:'
+  id: totrans-71
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在，我们有了两个版本之间前十个文件的列表，但在进一步操作之前，我们先回顾一下我们所做的。我们获取了文件列表，使用 `sed '/^$/d'` 移除了输出中的空行。之后，我们用
+    `sort` 对文件列表进行了排序。接着，我们使用 `uniq -c`，它会统计每个文件出现的次数，并将数量加到输出中。最后，我们使用 `sort -r`
+    进行倒序排序，并使用 `head 10` 只显示前十个结果。从这里开始，我们应该列出两个分支之间所有更改了最上面文件的提交，方法如下：
+- en: '[PRE18]'
+  id: totrans-72
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE18]'
+- en: By adding the file to the end of the `git log` command, we will see the commits
+    between the two branches. Now, all we have to do is to grep commits that have
+    the bug, so we can tell our manager the number of bugs we fixed in this file.
+  id: totrans-73
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 通过将文件添加到 `git log` 命令的末尾，我们将看到两个分支之间的提交。现在，我们要做的就是 grep 出有错误的提交，这样我们就可以告诉我们的经理我们在这个文件中修复了多少个错误。
+- en: Grepping the commit messages
+  id: totrans-74
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Grep 提交信息
+- en: Now we know how to list and sort files that we make frequent changes to and
+    vice versa, but we are also interested in finding out the bugs that we are fixing,
+    the features that we are implementing, and perhaps who is signing the code. All
+    this information is usually available in the commit message. Some companies have
+    a policy that you need to have a referral to a bug, a feature, or some other reference
+    in the commit message. By having this information in the commit message, it is
+    a lot easier to produce a nice release note as well.
+  id: totrans-75
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们知道如何列出和排序我们频繁更改的文件，反之亦然，但我们也感兴趣的是找出我们修复的错误，正在实现的功能，甚至可能是谁签署了代码。所有这些信息通常都在提交信息中。有些公司有政策，要求你在提交信息中提到一个错误、一个功能或其他引用。通过在提交信息中包含这些信息，生成漂亮的发布说明也会变得容易得多。
+- en: Getting ready
+  id: totrans-76
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 准备好
+- en: As we will mostly be grepping the Git database in these examples, we really
+    don't need to check something out or be at a specific commit for this example.
+    So, if you are still lurking around in the `chapter6` folder, we can continue.
+  id: totrans-77
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于在这些例子中我们大部分时间都在 grep Git 数据库，我们其实不需要检出任何东西或处于某个特定的提交。所以，如果你仍然在 `chapter6`
+    文件夹中，我们可以继续。
+- en: How to do it...
+  id: totrans-78
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: 'Let''s see how many commits in the repository are referring to a bug:'
+  id: totrans-79
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们看看仓库中有多少提交提到了一个错误：
+- en: 'First of all, we need to know the pattern for bugs referred to in the commit
+    messages. I did this by looking in the commits, and the pattern for `jgit` is
+    to use `Bug: 6 digits`; so, to find all of these commits, we use the `--grep`
+    option for `git log`, and we can grep for `"[Bb][Uu][gG]: [0-9]+"`:'
+  id: totrans-80
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: '首先，我们需要知道提交信息中提到的错误的模式。我通过查看提交信息找到了 `jgit` 的模式是使用 `Bug: 6位数字`；因此，要找到所有这些提交，我们使用
+    `git log` 的 `--grep` 选项，并可以通过 `"[Bb][Uu][gG]: [0-9]+"` 来 grep：'
+- en: '[PRE19]'
+  id: totrans-81
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE19]'
+- en: 'You should get a lot of commits as output, but you should notice that all the
+    commits have a referral to a bug ID. So what was the grep doing? The `^[Bb][Uu][gG]:`
+    part matches any combination of lowercase and uppercase bugs. The `^` character
+    means from the beginning of the line. The `:` character is matching `:`. Then,
+    we have `[0-9]+`, which will match any number between zero and nine, and the `+`
+    part means one or more occurrences. But enough with regular expressions for grep.
+    We have a lot of output (which is valuable), but for now, we just want to count
+    the commits. We can do this by piping it to `wc -l` (word count `-l` is to count
+    the lines):'
+  id: totrans-82
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 你应该会看到大量的提交作为输出，但你需要注意的是，所有提交都包含一个指向 bug ID 的引用。那么，grep 做了什么呢？`^[Bb][Uu][gG]:`
+    部分匹配任何大小写组合的 bug。`^` 字符表示从行首开始。`:` 字符匹配冒号。接着是 `[0-9]+`，它将匹配从零到九的任何数字，`+` 部分表示一个或多个出现。但是正则表达式的内容就到此为止。我们得到了很多输出（这很有价值），但现在我们只想统计提交次数。我们可以通过将其传递给
+    `wc -l` 来做到这一点（`wc -l` 用于统计行数）：
+- en: '[PRE20]'
+  id: totrans-83
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE20]'
+- en: 'Before piping it to `wc`, remember to use `--oneline` to limit the output to
+    one line for each commit. As you can see, when I was writing this, `jgit` has
+    reference to `366` bugs that have all been fixed and released into the repository.
+    If you are used to using regular expressions in another scripting or programming
+    language, you will see that using `--grep` does not support everything. You can
+    enable a more extensive regular expression support using the `--extended-regexp`
+    option for `git log`; however, the pattern still has to be used with `--grep` as
+    follows:'
+  id: totrans-84
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在将其传递给 `wc` 之前，记得使用 `--oneline` 限制每个提交的输出为一行。如你所见，当我写这篇文章时，`jgit` 参考了 `366`
+    个 bug，这些 bug 都已经被修复并发布到仓库中。如果你习惯于在其他脚本或编程语言中使用正则表达式，你会发现 `--grep` 并不支持所有内容。你可以通过使用
+    `git log` 的 `--extended-regexp` 选项来启用更广泛的正则表达式支持；然而，模式仍然需要与 `--grep` 一起使用，如下所示：
+- en: '[PRE21]'
+  id: totrans-85
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE21]'
+- en: 'We have used it in the preceding example, and you can see that we are getting
+    the same commits. I have used a slightly different expression, and have now added
+    `{6}` instead of `+`; the `{6}` searches for six occurrences of the associated
+    pattern. In our case, it is six digits as it is next to the `[0-9]` pattern. We
+    can verify by counting the lines or commits again with `wc -l` as follows:'
+  id: totrans-86
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 我们在前面的示例中使用了它，你可以看到我们得到了相同的提交。我使用了稍微不同的表达式，并且现在将 `{6}` 替代了 `+`；`{6}` 搜索与模式关联的六个出现。在我们的案例中，它是六个数字，因为它紧邻
+    `[0-9]` 模式。我们可以通过重新计算行数或提交次数来验证，如下所示，使用 `wc -l`：
+- en: '[PRE22]'
+  id: totrans-87
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE22]'
+- en: 'We get the same number. To shrink the regular expression even more, we can
+    use `--regexp-ignore-case`, which will ignore the case for the pattern:'
+  id: totrans-88
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 我们得到相同的数字。为了进一步缩小正则表达式，我们可以使用 `--regexp-ignore-case`，它将忽略模式的大小写：
+- en: '[PRE23]'
+  id: totrans-89
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE23]'
+- en: Now we have the exact same output, and we no longer have `[bB][uU][Gg]` but
+    just `bug`.
+  id: totrans-90
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在我们得到了完全相同的输出，且不再有 `[bB][uU][Gg]`，而只有 `bug`。
+- en: Now you know how to grep the commit messages for information, and you can grep
+    for anything in the commit message and list all the commits where the regular
+    expression matches.
+  id: totrans-91
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在你知道如何使用 grep 搜索提交消息中的信息，你可以在提交消息中搜索任何内容，并列出所有匹配正则表达式的提交。
+- en: The contents of the releases
+  id: totrans-92
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 发布内容
+- en: While extracting information from Git, one of the natural things to do is to
+    generate release notes. To generate a release note, you need all the valid information
+    from the repository between this release and the previous release.
+  id: totrans-93
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在从 Git 提取信息时，生成发布说明是其中一个常见的操作。要生成发布说明，你需要获取从此版本到上一个版本之间的所有有效信息。
+- en: We can utilize some of the methods we have used earlier to generate the data
+    we want.
+  id: totrans-94
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以利用之前使用过的一些方法来生成我们想要的数据。
+- en: How to do it...
+  id: totrans-95
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: 'We start by listing the commits between two tags, `v2.3.1.201302201838-r` and
+    `v3.0.0.201305080800-m7`, and then we build on that information:'
+  id: totrans-96
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们首先列出两个标签之间的提交，`v2.3.1.201302201838-r` 和 `v3.0.0.201305080800-m7`，然后基于这些信息进行构建：
+- en: 'By using `git log` with `v3.0.0.201305080800-m7.. v3.0.0.201305080800-m7`,
+    we will get the commits between the tags:'
+  id: totrans-97
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用 `git log` 和 `v3.0.0.201305080800-m7.. v3.0.0.201305080800-m7`，我们将获得标签之间的提交：
+- en: '[PRE24]'
+  id: totrans-98
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE24]'
+- en: 'As we have a lot of commits between these two tags, let''s count them using
+    `wc -l`:'
+  id: totrans-99
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 由于这两个标签之间有很多提交，让我们使用 `wc -l` 来统计它们：
+- en: '[PRE25]'
+  id: totrans-100
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE25]'
+- en: 'There are `211` commits between the tags. Now, we will show the most modified
+    files between the releases:'
+  id: totrans-101
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在这两个标签之间有 `211` 次提交。现在，我们将展示发布版本之间最常修改的文件：
+- en: '[PRE26]'
+  id: totrans-102
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE26]'
+- en: 'This information is useful as we now have an overview of where the majority
+    of the changes are. Then, we can find the commit that refers to bugs so we can
+    list the bug IDs:'
+  id: totrans-103
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 这些信息非常有用，因为我们现在有了对大多数更改所在位置的概览。然后，我们可以找到与 bug 相关的提交，这样我们就可以列出 bug ID：
+- en: '[PRE27]'
+  id: totrans-104
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE27]'
+- en: So, what we have here is a nice list of the bugs being fixed and their corresponding
+    commit hashes.
+  id: totrans-105
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 所以，现在我们得到的是一个包含修复的 bug 和对应提交哈希值的不错列表。
+- en: How it works...
+  id: totrans-106
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 它是如何工作的...
+- en: 'We are using some Bash tools to get this list of fixed bugs. I will briefly
+    explain what they are doing in this section:'
+  id: totrans-107
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们正在使用一些 Bash 工具来获取已修复 bug 的列表。我将在本节简要解释它们的作用：
+- en: 'The `xargs -n1 git log -1` part will execute `git log -1` on each commit coming
+    from the first `git log` command, `git log --format=format:%h --regexp-ignore-case
+    --extended-regexp --grep="bug: [0-9]{6}" v2.3.1.201302201838-r..v3.0.0.201305080800-m7`.'
+  id: totrans-108
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`xargs -n1 git log -1` 部分将在从第一个 `git log` 命令来的每个提交上执行 `git log -1`，命令为 `git
+    log --format=format:%h --regexp-ignore-case --extended-regexp --grep="bug: [0-9]{6}"
+    v2.3.1.201302201838-r..v3.0.0.201305080800-m7`。'
+- en: The `grep --ignore-case -E "commit [0-9a-f]{40}|bug:"` part will ignore the
+    case in the regular expression and `-E` will enable an extended regular expression.
+    You might see that a lot of these options for the tool grep are the same options
+    we have for git log. The regular expression is matching commit and 40 characters
+    with the `[0-9a-f]` range or bug. The `|` character means or. Remember we are
+    in the output from `git log -1`.
+  id: totrans-109
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`grep --ignore-case -E "commit [0-9a-f]{40}|bug:"` 部分将忽略正则表达式中的大小写，`-E` 将启用扩展正则表达式。你可能会发现，很多这些
+    `grep` 工具的选项和我们在 `git log` 中使用的选项是一样的。这个正则表达式匹配的是提交和由 `[0-9a-f]` 范围表示的40个字符，或者是
+    bug。`|` 字符表示或。记住，我们现在处于 `git log -1` 的输出中。'
+- en: All of this information we have extracted is the basis for a good, solid release
+    note, with information on what has changed from one release to another.
+  id: totrans-110
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们提取的所有这些信息是编写良好、扎实的发布说明的基础，包含了从一个版本到另一个版本的更改内容。
+- en: The next natural step would be to look into the bug tracking system and also
+    list the titles for each error being fixed in the commits. However, that is not
+    something we will go through here as it all depends on the system you are using.
+  id: totrans-111
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来的自然步骤是查看 bug 跟踪系统，并列出每个错误在提交中被修复的标题。然而，这不是我们在这里讨论的内容，因为它完全取决于你使用的系统。
+- en: Finding what has been achieved in the repository in the last period
+  id: totrans-112
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 查找在最近一段时间内在仓库中完成的工作
+- en: Sometimes it's useful to be able to extract what has been achieved in a specific
+    range of time. Let's see how `git log` numerous arguments can help with this task.
+  id: totrans-113
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有时，能够提取在特定时间范围内完成的工作是非常有用的。让我们看看 `git log` 的多个参数如何帮助完成这个任务。
+- en: How to do it...
+  id: totrans-114
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: 'Let''s say we want to know everything that has been done in the last 30 days
+    in the `jgit` repository that we have been analyzing so far:'
+  id: totrans-115
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 假设我们想知道在过去30天内，在我们分析的 `jgit` 仓库中完成的所有工作：
+- en: '[PRE28]'
+  id: totrans-116
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE28]'
+- en: Here, we use `--all` in order to see the commits in all the branches and not
+    only the current one. We also use `--since` as illustrated previously during this
+    chapter.
+  id: totrans-117
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这里，我们使用 `--all` 来查看所有分支中的提交，而不仅仅是当前分支。我们还使用了如本章前面所示的 `--since`。
+- en: 'Now, let''s only show the commits by `David Pursehouse`:'
+  id: totrans-118
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在，让我们只显示 `David Pursehouse` 的提交：
+- en: '[PRE29]'
+  id: totrans-119
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE29]'
+- en: We used `--author` to specify the desired commit author and `--oneline` to condense
+    the output to a more manageable format.
+  id: totrans-120
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们使用了 `--author` 来指定所需的提交作者，使用 `--oneline` 来将输出缩减为更易于管理的格式。
+- en: 'If you''re looking for your own commits you can pass your name to `--author`,
+    but if you are writing a script or an alias and you want it to be portable, you
+    can, at least on Linux and macOS, use a subshell to retrieve the information automatically:
+    `--author=$(git config user.name)`.'
+  id: totrans-121
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你在寻找自己的提交，可以将你的名字传递给 `--author`，但是如果你在编写脚本或别名并希望它具有可移植性，至少在 Linux 和 macOS
+    上，你可以使用子进程来自动检索信息：`--author=$(git config user.name)`。
+- en: 'It looks like some merge commits are present. These are not really useful to
+    describe the activity of the last month, so let''s get rid of those with `--no-merges`:'
+  id: totrans-122
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 看起来存在一些合并提交。这些提交并不是描述上个月活动的有用信息，因此我们可以通过 `--no-merges` 来去除它们：
+- en: '[PRE30]'
+  id: totrans-123
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE30]'
+- en: We finally have the information we need. This simple example also shows the
+    importance of good commit messages as they will make the history managed by Git
+    so much more useful and valuable!
+  id: totrans-124
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们终于得到了所需的信息。这个简单的示例还展示了良好提交信息的重要性，因为它们会让 Git 管理的历史变得更加有用和有价值！
+- en: How it works...
+  id: totrans-125
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 它是如何工作的...
+- en: In this example, we didn't have to jump through hoops to get the result we needed;
+    we simply used the power of the log command and its options. As a matter of fact, `git
+    log` has almost 200 different arguments, and its help document, reachable with
+    `git log --help`, is composed of more than 11,000 words! Now you know what to
+    do during your next long flight without internet access!
+  id: totrans-126
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这个例子中，我们不需要做复杂的操作就能得到所需的结果；我们只是利用了`git log`命令及其选项的强大功能。事实上，`git log`有将近200个不同的参数，并且它的帮助文档，通过`git
+    log --help`访问，包含了超过11,000个单词！现在你知道下一次没有网络连接的长途飞行时该做什么了！
+- en: There's more...
+  id: totrans-127
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 还有更多…
+- en: 'What about across repositories? The previous approach can, of course, be scaled
+    with some scripting in order to repeat the operation on a list of repositories,
+    but a better and simpler option is available as a third-party application that
+    leverages the same `git log` capabilities we have been exploring thus far: `git-standup`.'
+  id: totrans-128
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 那么，跨仓库的情况呢？当然，前面的做法可以通过一些脚本进行扩展，从而在一系列仓库上重复操作，但有一个更好且更简单的选项可用，它作为一个第三方应用程序，利用了我们到目前为止探索的相同`git
+    log`功能：`git-standup`。
+- en: 'It can easily be installed with a `curl` command:'
+  id: totrans-129
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 它可以通过`curl`命令轻松安装：
+- en: '[PRE31]'
+  id: totrans-130
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE31]'
+- en: Its source code is available on `https://github.com/kamranahmedse/git-standup`
+    and it features several options that will make daily or weekly team meetings much
+    easier to prepare.
+  id: totrans-131
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 它的源代码可以在`https://github.com/kamranahmedse/git-standup`找到，且具有多个选项，可以使日常或每周的团队会议准备工作变得更加轻松。
+- en: '`git-standup` is also able to operate on a single repository, and when applied
+    to the previous example, its output looks like this:'
+  id: totrans-132
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`git-standup`也可以在单个仓库上运行，当应用到之前的例子时，它的输出如下：'
+- en: '[PRE32]'
+  id: totrans-133
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE32]'

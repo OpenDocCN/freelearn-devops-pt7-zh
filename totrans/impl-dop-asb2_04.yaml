@@ -1,0 +1,1476 @@
+- en: Playbooks and Inventory Files
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Playbook 和清单文件
+- en: As we discovered in the previous chapters, Ansible offers unique, easy-to-comprehend
+    implementations for creating automation, implementing Configuration Management
+    solutions, maintaining infrastructure, and scaling out automation. Automation
+    and Configuration Management implementations are developed and maintained using
+    Ansible playbooks (as we discussed in the previous chapter), whereas infrastructure
+    inventory is managed through one or many Ansible inventory hosts file. A playbook
+    in Ansible is really quite simple to understand; it's simply a set of tasks to
+    execute that are ordered in a structured format. These two very easy-to-understand
+    concepts have helped pave the way and made Ansible as popular and robust as it
+    is today.
+  id: totrans-1
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如我们在前几章中发现的，Ansible 提供了独特、易于理解的自动化创建实现，实施配置管理解决方案，维护基础设施以及扩展自动化。自动化和配置管理实现是通过
+    Ansible playbook 开发和维护的（如我们在前一章中讨论的），而基础设施清单则通过一个或多个 Ansible 清单主机文件进行管理。Ansible
+    中的 playbook 实际上很容易理解；它只是一组按结构化格式排列的任务。這两个非常容易理解的概念帮助铺平了道路，使 Ansible 如此流行和强大。
+- en: The concept of an Ansible playbook is an easy one to grasp and understand. The
+    same can be said for the the implementation of Ansible inventory files. Playbook's
+    and roles in Ansible make up the bulk of the automation we will be developing
+    throughout this book and are a core construct of the Ansible implementation. This
+    chapter however will focus on Playbook's and Inventory files specifically. Inventory
+    files exist to help us maintain the infrastructure we will target via a playbook
+    and allow us to group similar devices and infrastructure when targeting remote
+    hosts. These two constructs combined provide a highly scalable automation solution
+    that can be used to maintain one machine or 10,000.
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible playbook 的概念是一个容易理解和掌握的概念。同样，Ansible 清单文件的实现也可以这样说。Ansible 中的 playbook
+    和角色构成了我们在本书中开发的自动化的主体部分，并且是 Ansible 实现的核心构件。然而，本章将特别关注 Playbook 和清单文件。清单文件用于帮助我们维护通过
+    playbook 进行目标定位的基础设施，并允许我们在针对远程主机时对相似的设备和基础设施进行分组。这两个构件结合提供了一个高度可扩展的自动化解决方案，可以用来维护一台机器或
+    10,000 台机器。
+- en: 'In this chapter, we will discuss and learn all about Ansible playbook''s and
+    Inventory solutions, and learn how to develop, maintain, and expand an Ansible
+    footprint within an organization. The learning areas we are going to cover will
+    include the following topics:'
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们将讨论并学习有关 Ansible playbook 和清单解决方案的所有内容，并学习如何在组织中开发、维护和扩展 Ansible 足迹。我们将要覆盖的学习领域包括以下主题：
+- en: Ansible Playbook Constructs
+  id: totrans-4
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Ansible Playbook 构件
+- en: Ansible Play's and Task's
+  id: totrans-5
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Ansible Play 和 Task
+- en: Variables and Variable Files
+  id: totrans-6
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 变量和变量文件
+- en: Hosts and Inventory
+  id: totrans-7
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 主机和清单
+- en: Targeting Infrastructure
+  id: totrans-8
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 目标基础设施
+- en: Ansible Modules
+  id: totrans-9
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Ansible 模块
+- en: As we progress through this chapter, we will try to gain a clear understanding
+    of how Ansible playbooks are created and how to create automation that is fault
+    tolerant, robust, and easy to maintain.
+  id: totrans-10
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章的学习过程中，我们将努力清楚地理解如何创建 Ansible playbooks，并且如何创建容错性强、健壮且易于维护的自动化。
+- en: Ansible Playbook Constructs
+  id: totrans-11
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Ansible Playbook 构件
+- en: The Ansible playbook is at the heart of the Ansible Configuration Management
+    and Automation System. Each playbook is made up of one or more plays. The concept
+    of a playbook was derived from sporting references, where a coach would create
+    a set of plays off the field and execute them during a game. The creators of Ansible
+    leveraged this idea to create and successfully deliver an easy-to-use automation
+    and Configuration Management solution. Playbook's are developed using YAML (more
+    about this in the next section), and optionally Jinja2 for more comprehensive
+    automation implementations.
+  id: totrans-12
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible playbook 是 Ansible 配置管理和自动化系统的核心。每个 playbook 由一个或多个 play 组成。playbook
+    的概念来源于体育术语，其中教练会在场外创建一组战术，并在比赛中执行它们。Ansible 的创作者借用了这一概念，创造并成功交付了一个易于使用的自动化和配置管理解决方案。Playbook
+    是使用 YAML 开发的（更多内容将在下一节讨论），并可以选择使用 Jinja2 进行更全面的自动化实现。
+- en: 'Ansible playbook comprise a few specific structural and formatting elements,
+    namely the following:'
+  id: totrans-13
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible playbook 包含几个特定的结构和格式元素，具体如下：
+- en: YAML syntax (the language Ansible leverages for automation)
+  id: totrans-14
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: YAML 语法（Ansible 用于自动化的语言）
+- en: Jinja2 (optional)
+  id: totrans-15
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Jinja2（可选）
+- en: The hosts section (which defines the host groups to target during execution)
+  id: totrans-16
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 主机部分（定义在执行期间要定位的主机组）
+- en: One or many configuration overrides (this section allows playbook developers
+    to override configuration options or set specific playbook flags)
+  id: totrans-17
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 一个或多个配置覆盖（此部分允许 playbook 开发人员覆盖配置选项或设置特定的 playbook 标志）
+- en: The vars section (optional)
+  id: totrans-18
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: vars 部分（可选）
+- en: Plays with tasks inside them
+  id: totrans-19
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 包含任务的剧本
+- en: In addition to these elements, YAML (and by nature Ansible) supports commenting
+    within the YAML file. Comments are simply notation documentation that has no programmatic
+    meaning but is useful for developers and playbook authors to keep notes within
+    the playbook directly. Comments in YAML are initiated with the `#` operator, and
+    everything on that line after the `#` is ignored by YAML and Ansible.
+  id: totrans-20
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 除了这些元素，YAML（以及本质上 Ansible）还支持在 YAML 文件中添加注释。注释仅仅是没有程序意义的标注文档，但对于开发人员和 playbook
+    作者来说，它有助于直接在 playbook 中留下笔记。YAML 中的注释以 `#` 操作符开始，`#` 后面的一切内容都会被 YAML 和 Ansible
+    忽略。
+- en: Let's spend a few minutes looking at the hosts, vars, and play sections of an
+    Ansible playbook and learn how we can leverage them to create effective and maintainable
+    automation.
+  id: totrans-21
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们花几分钟来看看 Ansible playbook 中的 hosts、vars 和 play 部分，并了解如何利用它们创建有效且易于维护的自动化脚本。
+- en: The programming languages that make up a playbook
+  id: totrans-22
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 组成 playbook 的编程语言
+- en: In the Ansible world, playbook's are developed using YAML and Jinja. **YAML**
+    stands for **YAML Ain't Another Markup Language**, and Jinja2 is its own independent
+    name. Of the two, YAML is the primary language whereas Jinja is supplementary.
+  id: totrans-23
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 Ansible 的世界里，playbook 是通过 YAML 和 Jinja 开发的。**YAML** 代表 **YAML Ain't Another
+    Markup Language**，而 Jinja2 是其独立的名称。在这两者中，YAML 是主要语言，而 Jinja 是补充语言。
+- en: YAML
+  id: totrans-24
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: YAML
+- en: 'As mentioned earlier, YAML™ is the primary language used to create playbooks.
+    But what exactly is YAML? Here is what [http://yaml.org/](http://yaml.org/) has
+    to say on the subject:'
+  id: totrans-25
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如前所述，YAML™ 是创建 playbook 时使用的主要语言。那么，YAML 究竟是什么呢？以下是 [http://yaml.org/](http://yaml.org/)
+    对此的解释：
+- en: '"YAML (rhymes with "camel") is a human-friendly, cross language, Unicode based
+    data serialization language designed around the common native data types of agile
+    programming languages. It is broadly useful for programming needs ranging from
+    configuration files to internet messaging to object persistence to data auditing.
+    Together with the Unicode standard for characters ([http://unicode.org/](http://unicode.org/)),
+    this specification provides all the information necessary to understand YAML version
+    1.2 and to create programs that process YAML information."'
+  id: totrans-26
+  prefs: []
+  type: TYPE_NORMAL
+  zh: “YAML（与‘camel’押韵）是一种人类友好的、跨语言的、基于 Unicode 的数据序列化语言，旨在围绕敏捷编程语言的常见本地数据类型设计。它广泛应用于从配置文件到互联网消息传递，从对象持久化到数据审计的各种编程需求。与
+    Unicode 字符集标准（[http://unicode.org/](http://unicode.org/)）一起，这一规范提供了理解 YAML 版本
+    1.2 所需的所有信息，并能创建处理 YAML 信息的程序。”
+- en: As described in the excerpt, YAML is designed to be human-friendly. This means
+    that while it can contain data and basic logic (typically provided by Jinja2),
+    it emphasizes the concept of readability and convention over complexity and features.
+    Additional information on YAML can be found at [http://www.yaml.org](http://www.yaml.org).
+  id: totrans-27
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如摘录中所描述的，YAML 被设计为人类友好的。这意味着虽然它可以包含数据和基本逻辑（通常由 Jinja2 提供），但它更强调可读性和约定而非复杂性和功能。有关
+    YAML 的更多信息，请访问 [http://www.yaml.org](http://www.yaml.org)。
+- en: 'YAML uses tab-indented formatting and key/value pair dictionaries to express
+    the data that is inside a given YAML file. This makes it parseable for Ansible
+    and makes it easy to read at the same time. YAML''s unique yet simplistic structure
+    provides Ansible playbook developers with a guess-free way of developing playbooks
+    and ensuring that they will be executable through Ansible. While YAML''s structure
+    is easy to read, sometimes it''s tabbing can trip some users up. Let''s take a
+    look at a couple of simple examples of YAML files and see what the basic data
+    structure looks like:'
+  id: totrans-28
+  prefs: []
+  type: TYPE_NORMAL
+  zh: YAML 使用制表符缩进格式和键/值对字典来表示 YAML 文件中的数据。这使得它不仅能够被 Ansible 解析，而且同时易于阅读。YAML 独特而简洁的结构为
+    Ansible playbook 开发人员提供了一种无需猜测的方式来开发 playbook，并确保它们可以通过 Ansible 执行。虽然 YAML 的结构易于阅读，但有时其制表符缩进可能会让一些用户困惑。让我们来看几个简单的
+    YAML 文件示例，看看基本的数据结构是什么样的：
+- en: '[PRE0]'
+  id: totrans-29
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: From the previous example, we can easily see the content is simply a list of
+    planets, species, and greetings. Are we saying that all YAML really is is an easy-to-read
+    way of managing lists? In a way, yes. Let's explore this idea further.
+  id: totrans-30
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 从前面的示例中，我们可以轻松看到，内容仅仅是一个行星、物种和问候语的列表。我们是否在说 YAML 其实只是一个易于阅读的管理列表的方式？从某种程度上来说，是的。让我们进一步探讨这个想法。
+- en: Basic data in YAML is structured into key/value pairs; the information is organized
+    by indentation. For programmers, this is nothing surprising, but for a novice
+    this may sound confusing. A basic key/value-paired data structure is similar to
+    a list of items. In a key/value data structure, there are two intrinsically linked
+    data items. A **key** is essentially a pointer, which references the value. The
+    **value** can be raw data (a simple bit of text) or even another set of key/value
+    pairs. This makes managing lists of key/value pairs very easy. The indentation
+    in YAML syntax makes organizing the data it represents easy to read. It ensures
+    that nothing is garbled or badly formatted and the information is easily identifiable
+    and legible.
+  id: totrans-31
+  prefs: []
+  type: TYPE_NORMAL
+  zh: YAML 中的基本数据结构是由键/值对组成的；信息是通过缩进进行组织的。对于程序员来说，这并不令人惊讶，但对于初学者来说，可能会有些困惑。基本的键/值对数据结构类似于一个项目列表。在键/值数据结构中，有两个本质上相关联的数据项。**键**本质上是一个指针，用来引用值。**值**可以是原始数据（例如简单的文本），甚至可以是另一个键/值对集合。这使得管理键/值对列表变得非常简单。YAML
+    语法中的缩进使得组织它所代表的数据变得易于阅读。它确保没有信息混乱或格式错误，信息也易于识别和阅读。
+- en: As we can see from the previous YAML example, YAML is a well-formatted (tab-enforced)
+    language. Tabs in YAML are a bit of a misnomer, as you can't actually use the
+    Tab key. Use spaces instead. Tabs are forbidden in YAML because different text
+    editors provide different implementations of tabbing and the implementations are
+    not consistent.
+  id: totrans-32
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 从前面的 YAML 示例中我们可以看到，YAML 是一种格式良好的（以 Tab 键缩进的）语言。YAML 中的 Tab 键其实是个误称，因为你不能真正使用
+    Tab 键。应该使用空格代替。YAML 中禁止使用 Tab 键，因为不同的文本编辑器对 Tab 的实现方式不同，而且实现并不一致。
+- en: Jinja2 – a brief introduction
+  id: totrans-33
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Jinja2 – 简要介绍
+- en: 'Jinja on the other hand is a bit more feature rich than YAML. It has been integrated
+    into Ansible''s runtime engine and provides a bit of the more scripting language-like
+    features that developers are used to. Its syntax fits nicely into YAML (as described
+    previously) and allows the developer to use things such as conditionals, loops,
+    variable substitution, and environment variable retrieval. Further information
+    related to jinja2 and its syntax can be found at [http://jinja.pocoo.org/docs/2.9/](http://jinja.pocoo.org/docs/2.9/).
+    Let''s take a quick look at some basic Jinja syntax:'
+  id: totrans-34
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 另一方面，Jinja 比 YAML 功能更强大。它已经集成到 Ansible 的运行时引擎中，并提供了一些类似脚本语言的功能，这些是开发者常用的。它的语法很好地融入了
+    YAML（如前所述），并允许开发者使用条件语句、循环、变量替换和环境变量获取等功能。关于 jinja2 及其语法的更多信息可以在[http://jinja.pocoo.org/docs/2.9/](http://jinja.pocoo.org/docs/2.9/)找到。让我们快速浏览一下基本的
+    Jinja 语法：
+- en: '[PRE1]'
+  id: totrans-35
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: 'This code doesn''t look very useful at first, but once we put it in context,
+    it becomes much more valuable. Let''s take a peek at how Jinja fits in with YAML:'
+  id: totrans-36
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这段代码乍一看似乎没有什么用，但当我们将其放入上下文中时，它变得更有价值。让我们来看看 Jinja 如何与 YAML 配合使用：
+- en: '[PRE2]'
+  id: totrans-37
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: This simple example of an Ansible playbook with YAML and Jinja combined provides
+    a way for us to use the contents of a system environment variable within our playbook.
+    We will go into this type of implementation in much more detail later within this
+    book, but for now, we at least can see one structured example of how Jinja can
+    be leveraged within a YAML file.
+  id: totrans-38
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个简单的 Ansible playbook 示例结合了 YAML 和 Jinja，提供了一种在 playbook 中使用系统环境变量内容的方式。我们将在本书后面更详细地讨论这种实现方式，但现在，至少可以看到一个结构化的示例，展示了如何在
+    YAML 文件中使用 Jinja。
+- en: Jinja offers many more solutions and manipulations of an Ansible playbook, which
+    we will discuss in [Chapter 6](af2931a0-b22f-4501-8d98-fb54e3d081f9.xhtml), *Jinja
+    in Ansible*. This introduction is simply to provide you with an understanding
+    of how YAML and Jinja can coexist.
+  id: totrans-39
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Jinja 提供了更多的解决方案和 Ansible playbook 操作，我们将在[第六章](af2931a0-b22f-4501-8d98-fb54e3d081f9.xhtml)中讨论，*Ansible
+    中的 Jinja*。这段介绍仅仅是为了帮助你理解 YAML 和 Jinja 如何共存。
+- en: Constructing an Ansible playbook
+  id: totrans-40
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 构建 Ansible playbook
+- en: 'YAML''s unique and well-formatted syntax provides a highly structured yet human-readable
+    format for expressing data. More specifically, YAML''s data structure is expressed
+    in lists, with each list item containing key/value pairs (or dictionaries). At
+    the beginning of each YAML file, YAML optionally supports a `---` initiator (to
+    notate the beginning of the YAML file), and conversely, at the end of each, YAML
+    supports a `...` terminator, which (as you may have guessed) indicates the end
+    of a YAML file. Let''s take a look at a very simple playbook as an example:'
+  id: totrans-41
+  prefs: []
+  type: TYPE_NORMAL
+  zh: YAML 独特且格式良好的语法提供了一种高度结构化但易于人类阅读的格式，用于表达数据。更具体地说，YAML 的数据结构通过列表来表示，每个列表项包含键/值对（或字典）。在每个
+    YAML 文件的开头，YAML 可选地支持一个 `---` 起始符（用于标记 YAML 文件的开始），而在每个文件的结尾，YAML 支持一个 `...` 终止符，这（正如你可能猜到的）表示
+    YAML 文件的结束。我们来看看一个非常简单的 playbook 示例：
+- en: '[PRE3]'
+  id: totrans-42
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: Now that we have seen an example of an Ansible playbook, let's look at the possible
+    available sections within a playbook, and see what each does.
+  id: totrans-43
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经看到一个 Ansible playbook 的示例，接下来让我们看看 playbook 中可能存在的部分，并了解每个部分的作用。
+- en: Hosts
+  id: totrans-44
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 主机
+- en: The hosts section is where we can target groups of inventory. The inventory
+    in Ansible represents one or many devices that Ansible can connect to and run
+    automation against.
+  id: totrans-45
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 主机部分是我们可以针对一组库存目标的地方。Ansible 中的库存代表一个或多个设备，Ansible 可以连接到这些设备并执行自动化任务。
+- en: Variables (vars/vars_files)
+  id: totrans-46
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 变量（vars/vars_files）
+- en: The `vars` and `vars_file` sections of an Ansible playbook contain a set of
+    variable data that can be used later in the playbook. This information is known
+    as **facts**. The variable concept in Ansible is identical in nature to computer
+    programming variables but with different scopes, depending on where it's defined.
+  id: totrans-47
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible playbook 中的 `vars` 和 `vars_file` 部分包含一组变量数据，可以在后续的 playbook 中使用。这些信息被称为
+    **facts**。Ansible 中的变量概念与计算机编程中的变量相似，但根据定义的位置具有不同的作用域。
+- en: Tasks/plays
+  id: totrans-48
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Tasks/plays
+- en: The aim of Ansible plays is to connect one or more groups of hosts to a set
+    of roles, represented by things, which Ansible calls tasks. At its most basic
+    definition, an Ansible task is nothing more than a callout to an Ansible module.
+  id: totrans-49
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible plays 的目标是将一个或多个主机组与一组角色连接起来，角色由 Ansible 称为任务的事物表示。从最基本的定义来看，Ansible
+    task 只是调用 Ansible 模块的一种方式。
+- en: Great; we now have a basic understanding of the sections that make up a playbook,
+    but we really don't know how to effectively use them to create a playbook or how
+    to target a specific set of servers or infrastructure.
+  id: totrans-50
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 很好；我们现在对构成 playbook 的各个部分有了基本的理解，但我们还不清楚如何有效地使用它们来创建 playbook，也不清楚如何针对特定的服务器或基础设施进行操作。
+- en: Ansible Play's and Task's
+  id: totrans-51
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Ansible 的 Plays 和 Tasks
+- en: As we have already discovered, within the heart of the Ansible configuration
+    and Automation System is the the playbook. The most important element of the playbook
+    is the idea of plays and tasks. Plays represent a categorization of a collection
+    of Ansible tasks, whereas tasks are individual automation steps that make up the
+    play.
+  id: totrans-52
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如我们已经发现的，Ansible 配置和自动化系统的核心是 playbook。playbook 中最重要的元素是 plays 和 tasks 的概念。Plays
+    代表对一组 Ansible 任务的分类，而 tasks 是构成 play 的单个自动化步骤。
+- en: Consider plays as the overarching grouping and tasks as the items that reside
+    within a given play. For example, you may have a database play, a web server play,
+    or even a load balancer play. In this section, we will discover how plays and
+    tasks work in the Ansible world.
+  id: totrans-53
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 可以将 plays 看作是一个总的分组，而 tasks 是位于某个 play 内的具体项。例如，你可能有一个数据库 play，一个 Web 服务器 play，甚至还有一个负载均衡器
+    play。在本节中，我们将探索 Ansible 中 plays 和 tasks 是如何工作的。
+- en: Ansible plays
+  id: totrans-54
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Ansible plays
+- en: Ansible plays are named after sports plays. In YAML, plays are represented via
+    one or more tasks sections within a playbook. The plays section (or sections)
+    of an Ansible playbook represents the heart of the Ansible automation engine.
+    In Ansible, each task has a name (a user-friendly description of the action to
+    be executed) and a set of parameters that define how the system should execute,
+    report on, or handle the aftermath of the execution. Let's take a look at a couple
+    of ways in which we can implement Ansible plays within a given playbook.
+  id: totrans-55
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible plays 以体育比赛中的 plays 命名。在 YAML 中，plays 通过 playbook 中的一个或多个 tasks 部分表示。Ansible
+    playbook 中的 plays 部分（或多个部分）代表了 Ansible 自动化引擎的核心。在 Ansible 中，每个 task 都有一个名称（即用户友好的描述，说明要执行的动作）和一组参数，这些参数定义了系统如何执行、报告或处理执行后的结果。让我们来看看如何在给定的
+    playbook 中实现 Ansible plays 的几种方式。
+- en: 'The example provided next provides us with a glimpse into an Ansible playbook
+    with a single play:'
+  id: totrans-56
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来的示例为我们展示了一个包含单个 play 的 Ansible playbook：
+- en: '[PRE4]'
+  id: totrans-57
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: 'Looks pretty basic, right? Plays can have one or more tasks underneath them.
+    They are pretty easy to read and very easy to write. However, a playbook does
+    not need to be isolated into a single play. For example, we could just as easily
+    do something like the following:'
+  id: totrans-58
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 看起来很基础，对吧？Play 可以包含一个或多个任务。这些任务非常容易阅读，也很容易编写。然而，playbook 不必被孤立为一个单独的 play。例如，我们也可以像下面这样做：
+- en: '[PRE5]'
+  id: totrans-59
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: This second example is also human-readable but has two specific plays defined
+    within. The first play handles the installation of nginx, whereas the second play
+    handles the installation of the MySQL server. By using multiple plays in a single
+    playbook, we can group automation into a single playbook yet segregate the actual
+    tasks. Neat, huh? Now that we have a good understanding of what an Ansible play
+    is, let's take a look at Ansible tasks.
+  id: totrans-60
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 第二个示例也是可读的，但其中定义了两个特定的任务。第一个任务处理 nginx 的安装，而第二个任务处理 MySQL 服务器的安装。通过在一个 playbook
+    中使用多个任务，我们可以将自动化任务集中在一个 playbook 中，同时又能将实际的任务区分开来。很整洁，对吧？现在我们已经对 Ansible 的 play
+    有了充分的理解，接下来我们来看看 Ansible 任务。
+- en: Ansible tasks
+  id: totrans-61
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Ansible 任务
+- en: 'In the previous section, we talked primarily about Ansible plays. Underneath
+    a given play is a set of Ansible tasks. Ansible tasks can perform numerous actions
+    on a local or target system. This includes installing packages (such as `apt`,
+    `yum`, and `opencsw`), copying files, starting services, and much, much more.
+    Ansible tasks make up the glue that binds automation and human-readable actions.
+    Let''s take a look at the elements of the Ansible tasks section and see how to
+    write them:'
+  id: totrans-62
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在前一部分，我们主要讨论了 Ansible 的 plays。在给定的 play 下，是一组 Ansible 任务。Ansible 任务可以对本地或目标系统执行许多操作。这包括安装软件包（如
+    `apt`、`yum` 和 `opencsw`）、复制文件、启动服务等。Ansible 任务构成了将自动化和人类可读操作联系起来的“胶水”。让我们看看 Ansible
+    任务部分的元素，并学习如何编写它们：
+- en: '[PRE6]'
+  id: totrans-63
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: 'This snippet is pretty simplistic; there is a single play (notated by tasks:)
+    and a single task underneath the play. Within the task itself, the name parameter
+    has (in plain English) a description of what we are trying to accomplish when
+    this task is executed. The `<API>` tag on the next line (below the `name` definition)
+    will simply be the Ansible module we are invoking. After the module `name`, there
+    is a set of parameters that are passed to the module that specify more granularly
+    the details about the module we are invoking. So to have a better real-world example,
+    let''s take a look at the following code excerpt:'
+  id: totrans-64
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '这个代码片段相当简洁；它有一个单一的任务（由 tasks: 注明）和一个任务。任务本身的 `name` 参数用简单的英语描述了当这个任务执行时我们试图完成的目标。在
+    `name` 定义下方的 `<API>` 标签将会是我们调用的 Ansible 模块。在模块 `name` 之后，还有一组参数会被传递给该模块，这些参数更细致地指定了我们正在调用的模块的细节。所以，为了有一个更贴近实际的示例，让我们看看以下的代码片段：'
+- en: '[PRE7]'
+  id: totrans-65
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE7]'
+- en: The aforementioned play simply tells Ansible to install the nginx web server
+    on an Ubuntu-based system. We know this because the module the task is calling
+    is `apt` and the parameters instruct Ansible to ensure the package (`pkg`) `nginx`
+    is in the state installed. Additionally, prior to installing the package, we have
+    also instructed the `apt` module to update its local cache. Simple, right?
+  id: totrans-66
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 上述的 play 只是告诉 Ansible 在基于 Ubuntu 的系统上安装 nginx web 服务器。我们知道这一点是因为任务调用的模块是 `apt`，而参数指示
+    Ansible 确保软件包（`pkg`）`nginx` 已经安装。此外，在安装软件包之前，我们还指示 `apt` 模块更新其本地缓存。简单吧？
+- en: One of the nicest things about Ansible is its ability to skip over tasks that
+    will not effect change on a given system. For example, if the package `nginx`
+    is already installed, Ansible will skip the step entirely as it is smart enough
+    to know that the `nginx` package already exists on the system.
+  id: totrans-67
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 的一个优点是它能够跳过那些不会对系统产生变化的任务。例如，如果 `nginx` 软件包已经安装，Ansible 会完全跳过该步骤，因为它足够智能，知道系统上已经存在
+    `nginx` 软件包。
+- en: So now that we know the basic structures of an Ansible playbook, we will want
+    to know how to extend our playbooks to handle more complex parameters within our
+    tasks. The next step in this learning process is understanding multiline parameters.
+    Let's proceed.
+  id: totrans-68
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经了解了 Ansible playbook 的基本结构，我们需要了解如何扩展我们的 playbook，以处理任务中的更复杂参数。学习过程中的下一步是理解多行参数。让我们继续。
+- en: Multiline task parameters
+  id: totrans-69
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 多行任务参数
+- en: 'Some Ansible tasks can have a bunch of parameters (so much so that the simplicity
+    and readability of the task become ambiguous). The YAML implementation has also
+    matured in such a way as to support parameters across multiple lines for better
+    readability. This is specifically a *scalar folded approach* that is available
+    within the YAML language directly. Let''s take a look at an example provided by
+    the YAML creators to understand how line folding works in YAML:'
+  id: totrans-70
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一些 Ansible 任务可能会有大量参数（以至于任务的简洁性和可读性变得模糊）。YAML 实现也已成熟，支持跨多行的参数，以提高可读性。这特别是 *标量折叠方法*，是
+    YAML 语言中直接支持的。让我们看看 YAML 创建者提供的一个示例，了解 YAML 中行折叠的工作原理：
+- en: '[PRE8]'
+  id: totrans-71
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE8]'
+- en: 'So in the context of Ansible playbook''s we can use the scalar folded approach
+    to perform multiline playbook tasks. As a result, we can reformat a task as follows:'
+  id: totrans-72
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 因此，在 Ansible 剧本的上下文中，我们可以使用标量折叠方法来执行多行剧本任务。因此，我们可以将任务重新格式化如下：
+- en: '[PRE9]'
+  id: totrans-73
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE9]'
+- en: Multiline implementations of Ansible tasks are based on preference and formatting.
+    So in some cases you may have a playbook task that is really long and in that
+    case you would want to consider using a multiline task. On the converse, shorter
+    playbook tasks would probably not need such an implementation. Again its simply
+    a matter of readability and preference.
+  id: totrans-74
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 任务的多行实现基于个人偏好和格式化。因此，在某些情况下，您可能会有一个非常长的剧本任务，这时候您可能会考虑使用多行任务。反之，较短的剧本任务可能就不需要这样实现了。同样，这完全是为了可读性和个人偏好。
+- en: Now that we have a good idea of how to better organize our playbook data structures,
+    let's look at variables and how those fit into our playbook creation process.
+  id: totrans-75
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经对如何更好地组织我们的剧本数据结构有了一个清晰的认识，接下来让我们看看变量以及它们如何融入我们的剧本创建过程中。
+- en: Variables and Variable Files
+  id: totrans-76
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 变量和变量文件
+- en: 'Variables are a critical part of any scripting or development language, and
+    Ansible is no different. Variables act as named placeholders for data elements,
+    important information, numerical values, and more. Ansible provides a `vars` section
+    and a `vars_files` section, which are optionally included in a playbook. Variables
+    defined here are playbook-centric and can be used within the playbook. These sections
+    of the playbook allow us to define variables in two unique ways. Let''s look at
+    an example to better understand how variables are defined:'
+  id: totrans-77
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 变量是任何脚本或开发语言中的关键组成部分，Ansible 也不例外。变量充当数据元素、重要信息、数值等的命名占位符。Ansible 提供了 `vars`
+    部分和 `vars_files` 部分，它们是可选的，可以包含在剧本中。在这里定义的变量是以剧本为中心的，可以在剧本内使用。剧本的这些部分允许我们以两种独特的方式来定义变量。让我们通过一个示例更好地理解变量是如何定义的：
+- en: '[PRE10]'
+  id: totrans-78
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE10]'
+- en: As we can see from the example, we can be rather creative when defining variables
+    that Ansible can use in its playbook. Variables can be specified via the `vars`
+    section, the `vars_files` section, or even via the command line through the `ExtraVars`
+    parameter. Let's take a look at the key/value implementation of variables as well
+    as a `vars_file` implementation and discover how these can be leveraged to provide
+    reusable data to our Ansible playbooks.
+  id: totrans-79
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如我们从示例中看到的，我们在定义 Ansible 可以在剧本中使用的变量时，可以相当富有创意。变量可以通过 `vars` 部分、`vars_files`
+    部分，甚至通过命令行中的 `ExtraVars` 参数来指定。让我们来看一下变量的键/值实现，以及 `vars_file` 实现，探索如何利用这些方法为我们的
+    Ansible 剧本提供可重用的数据。
+- en: Basic variable syntax
+  id: totrans-80
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 基本的变量语法
+- en: The most obvious solution for managing variables within Ansible is to leverage
+    the key/value vars section in the beginning of an Ansible playbook, which allows
+    us to define a set of simple key/value datasets that we can make available to
+    the remaining tasks in our playbook.
+  id: totrans-81
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 管理 Ansible 中的变量最直接的解决方案是利用 Ansible 剧本开始部分的键/值 `vars` 部分，这样我们可以定义一组简单的键/值数据集，并使其对剧本中的其他任务可用。
+- en: The `vars` section in an Ansible playbook provides us with an easy location
+    from where we can create a list of globally available Ansible variables. Ansible
+    reads this `vars` section and its associated key/value based variables during
+    the initialization of a playbook (specifically, during the facts-gathering phase).
+    Each data item retrieved during this phase is known as a **fact**. The variables
+    can then be used elsewhere in the playbook.
+  id: totrans-82
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 剧本中的`vars`部分为我们提供了一个简单的位置，在这里我们可以创建一个全局可用的 Ansible 变量列表。在剧本初始化期间（具体来说是在事实收集阶段），Ansible
+    会读取 `vars` 部分及其相关的键/值变量。在这一阶段收集的每一项数据被称为**事实**。然后，这些变量可以在剧本的其他地方使用。
+- en: 'Let''s look at a few examples of key/value variable sets in Ansible and how
+    to use them in a playbook:'
+  id: totrans-83
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们看几个Ansible中键/值变量集的示例，并了解如何在剧本中使用它们：
+- en: '[PRE11]'
+  id: totrans-84
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE11]'
+- en: 'The example shows how to create and use a simple `$myvar` variable and use
+    it in a playbook play. Next, let''s look at a slightly different implementation
+    of Ansible variables (at the task level). Consider the following playbook fragment:'
+  id: totrans-85
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个示例展示了如何创建和使用一个简单的`$myvar`变量，并将其用于剧本的任务中。接下来，让我们看看一个稍微不同的Ansible变量实现（在任务级别）。考虑以下剧本片段：
+- en: '[PRE12]'
+  id: totrans-86
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE12]'
+- en: In the example, we have illustrated a simple iterative loop of sorts to copy
+    the files `foo` and `bar` into the specified destination. Now that we have a good
+    idea of basic Ansible variables, let's take a look at some more scalable ways
+    to manage Ansible variable data.
+  id: totrans-87
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这个示例中，我们展示了一个简单的迭代循环，用于将`foo`和`bar`文件复制到指定的目标位置。现在我们已经对基本的Ansible变量有了大致了解，让我们看看一些更具可扩展性的方式来管理Ansible变量数据。
+- en: Variable files
+  id: totrans-88
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 变量文件
+- en: As we just discussed, Ansible has the `vars` section within a playbook. This
+    is perfectly sufficient for a limited number of data points. However, if the amount
+    of information is expected to grow or pertain to various environments, the `vars`
+    section can get highly unwieldy if not managed carefully. Instead of using the
+    vars section for managing data, we can use a `vars` file (or many `vars` files).
+    A `vars` file represents a way to encapsulate a set of data points into an external
+    file on the Ansible control server's disk. We then specify the `vars` file in
+    our Ansible playbook, and Ansible will load it at the appropriate time.
+  id: totrans-89
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如我们刚才讨论的，Ansible在剧本中有`vars`部分。对于有限的数据点来说，这完全足够。然而，如果信息量预计会增加或涉及不同的环境，那么如果不仔细管理，`vars`部分可能会变得非常难以处理。我们可以用`vars`文件（或多个`vars`文件）代替`vars`部分来管理数据。`vars`文件是将一组数据点封装到Ansible控制服务器磁盘上的外部文件中的一种方式。然后，我们在Ansible剧本中指定`vars`文件，Ansible将在适当的时候加载它。
+- en: 'When using a `vars` file, it''s important to note that we can include the `vars`
+    file in our playbook in a couple of possible locations: a `vars_file` section
+    or within an Ansible task (task-specific scoped). The examples provided next will
+    help better illustrate this.'
+  id: totrans-90
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用`vars`文件时，需要注意我们可以在剧本中的几个位置包含`vars`文件：一个`vars_file`部分，或者在Ansible任务中（任务特定范围）。接下来的示例将有助于更好地说明这一点。
+- en: 'Let''s look at an example of the `vars` files in action. The following example
+    shows the contents of a simple `vars` file:'
+  id: totrans-91
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们看一个`vars`文件实际应用的示例。以下示例展示了一个简单`vars`文件的内容：
+- en: '[PRE13]'
+  id: totrans-92
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE13]'
+- en: 'As we can see from the content of the `vars` file, it''s nothing more than
+    a YAML file. Who would have guessed? The neat thing here really isn''t its content
+    but rather the construction. But before we move on to any really neat things,
+    let''s take a look at how to reference the file and data within via a playbook.
+    The corresponding playbook for the previous `vars` file is as follows:'
+  id: totrans-93
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如我们从`vars`文件的内容中看到的，它不过是一个YAML文件。谁能想到呢？这里真正有趣的并不是它的内容，而是它的构建方式。但在我们继续深入研究一些有趣的内容之前，让我们看看如何通过剧本引用文件和其中的数据。与之前的`vars`文件对应的剧本如下：
+- en: '[PRE14]'
+  id: totrans-94
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE14]'
+- en: So based on the content of this playbook, we can see that it simply has an added
+    `vars_file` section, which is loaded during startup.
+  id: totrans-95
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 从这个剧本的内容来看，我们可以看到它仅仅添加了一个`vars_file`部分，该部分在启动时加载。
+- en: 'These two file examples are very simple in nature. Let''s look at another way
+    of loading a variables file based on the context of the aforementioned examples.
+    Here is an alternate playbook:'
+  id: totrans-96
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这两个文件示例本质上非常简单。让我们看看如何根据前面提到的示例的上下文加载变量文件的另一种方式。这里是一个替代的剧本：
+- en: '[PRE15]'
+  id: totrans-97
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE15]'
+- en: So we can see based on this code provided that we can scope a `vars` file to
+    a specific task as well. This can be very handy for altering certain data points
+    in a task based on specific criteria (per environment or per host).
+  id: totrans-98
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 所以，我们可以从提供的代码中看到，我们也可以将`vars`文件限定于特定的任务。这在根据特定条件（每个环境或每个主机）修改任务中的某些数据点时非常有用。
+- en: 'Now that we have a good idea of how `vars` files work, let''s take a look at
+    one more example of how a `vars` file might be leveraged:'
+  id: totrans-99
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经对`vars`文件的工作原理有了一个大致了解，让我们再看一个如何利用`vars`文件的示例：
+- en: '[PRE16]'
+  id: totrans-100
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE16]'
+- en: 'Can you guess what this will do yet? Let''s take a look at how we might execute
+    this playbook from the command line for a hint:'
+  id: totrans-101
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你能猜到这会做什么吗？让我们看看如何从命令行执行这个剧本来获得线索：
+- en: '[PRE17]'
+  id: totrans-102
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE17]'
+- en: Okay so let's understand how this works. Basically, the command specifies a
+    variable of `env_vars=dev`, and this makes the playbook then load a `vars` file
+    it thinks should be located at `/opt/varsfiles/dev.yml`. So we can set specific
+    variable data for different environments (dev, QA, and so on) and reuse our playbooks.
+    Nice, right?
+  id: totrans-103
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 好的，我们来理解一下这个是如何工作的。基本上，这个命令指定了一个变量`env_vars=dev`，这会让playbook加载一个它认为应该位于`/opt/varsfiles/dev.yml`的`vars`文件。因此，我们可以为不同的环境（如开发、QA等）设置特定的变量数据，并重用我们的playbook。很棒，对吧？
+- en: Hosts and Inventory
+  id: totrans-104
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 主机和库存
+- en: Ansible offers an inventory system that helps administrators manage the devices
+    they intend to target via Ansible playbook execution or ad hoc command execution.
+    The inventory system allows the administrator to identify inventory items (devices)
+    and group them according to their needs. These inventory items are maintained
+    via Ansible inventory files, which can then be targeted directly via the command
+    line.
+  id: totrans-105
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible提供了一个库存系统，帮助管理员管理他们通过Ansible playbook执行或临时命令执行所针对的设备。这个库存系统允许管理员识别库存项（设备），并根据需要对其进行分组。这些库存项通过Ansible库存文件进行维护，然后可以通过命令行直接指定。
+- en: 'Out-of-the-box, Ansible offers a default inventory file, which is typically
+    located in the `/etc/ansible/hosts` file location. If one inventory file is not
+    enough to effectively manage your inventory, additional inventory files can be
+    created and stored either in the same location or in a location of your choosing.
+    When calling the `ansible-playbook` command to invoke Ansible and execute either
+    an ad hoc command or trigger a `playbook run`, Ansible has the `-i` option to
+    allow alternate inventory files to be specified directly on the command line.
+    The following is a set of examples that illustrate targeting inventory files from
+    the command line:'
+  id: totrans-106
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 默认情况下，Ansible提供了一个默认的库存文件，通常位于`/etc/ansible/hosts`文件位置。如果一个库存文件不足以有效管理你的库存，可以创建额外的库存文件，并将其存储在相同的位置或你选择的位置。调用`ansible-playbook`命令来触发Ansible并执行临时命令或触发`playbook
+    run`时，Ansible提供了`-i`选项，可以让你直接在命令行中指定备用的库存文件。以下是一些示例，展示如何通过命令行指定库存文件：
+- en: '[PRE18]'
+  id: totrans-107
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE18]'
+- en: Now that we have a good idea of how to specify alternate inventory files via
+    the command line, let's take a look at some ways in which we can leverage an Ansible
+    inventory file.
+  id: totrans-108
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经大致了解了如何通过命令行指定备用的库存文件，接下来我们来看一下如何利用Ansible库存文件的一些方法。
+- en: Targeting Infrastructure
+  id: totrans-109
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 定向到基础设施
+- en: 'When creating automation that is aimed at targeting one or multiple devices,
+    we need a way to instruct Ansible which hosts to target and which playbooks should
+    target which hosts. In order for Ansible to maintain an orderly congregation of
+    hostnames, IP addresses, and domain names, the creators of Ansible have provided
+    an Ansible inventory hosts file and the ability to group and target groups of
+    hosts via Ansible playbooks. Ansible host are generally defined within the Ansible
+    inventory `hosts` file, which is traditionally located at the following file location
+    on the Ansible control server:'
+  id: totrans-110
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在创建旨在针对一个或多个设备的自动化时，我们需要一种方法来指示Ansible应该针对哪些主机以及哪些playbook应该针对哪些主机。为了让Ansible维护主机名、IP地址和域名的有序集合，Ansible的创建者提供了Ansible库存主机文件，并通过Ansible
+    playbook提供分组和定向主机组的功能。Ansible主机通常在Ansible库存`hosts`文件中定义，该文件传统上位于Ansible控制服务器的以下文件位置：
+- en: '[PRE19]'
+  id: totrans-111
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE19]'
+- en: 'As we mentioned in the previous chapter, the Ansible `hosts` file allows the
+    Ansible developer to maintain a list or set of groups of devices that Ansible
+    can target via playbooks. The way we instruct Ansible to target specific groups
+    of hosts is through the `hosts` line entry within a given Ansible playbook. Let''s
+    consider the following hosts groups and Ansible playbook examples:'
+  id: totrans-112
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如我们在上一章中提到的，Ansible的`hosts`文件允许Ansible开发者维护一个设备的列表或一组设备组，Ansible可以通过playbooks来访问这些设备。我们指示Ansible针对特定主机组的方式是通过Ansible
+    playbook中的`hosts`行条目。让我们考虑以下主机组和Ansible playbook示例：
+- en: 'Ansible hosts file example (**`/etc/ansible/hosts`**):'
+  id: totrans-113
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible hosts文件示例（**`/etc/ansible/hosts`**）：
+- en: '[PRE20]'
+  id: totrans-114
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE20]'
+- en: 'Targeting the `WEB` hosts group via an Ansible playbook (`playbook.yml`):'
+  id: totrans-115
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通过Ansible playbook（`playbook.yml`）定向到`WEB`主机组：
+- en: '[PRE21]'
+  id: totrans-116
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE21]'
+- en: 'To execute the previous example, simply change into the directory that contains
+    the `playbook.yml` file and execute the following command:'
+  id: totrans-117
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要执行前面的示例，只需切换到包含`playbook.yml`文件的目录并执行以下命令：
+- en: '[PRE22]'
+  id: totrans-118
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE22]'
+- en: 'It is important to understand that Ansible doesn''t necessarily need to target
+    an inventory group via the hosts line entry in a playbook. It can also target
+    multiple groups, single hosts, wild cards, and more. Let''s take a look at some
+    examples of other ways in which we can input the data within the `hosts` section:'
+  id: totrans-119
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 了解Ansible不一定需要通过剧本中的hosts行条目来定位一个库存组这一点非常重要。它还可以定位多个组、单个主机、通配符等等。让我们看一些其他方式的例子，了解我们如何在`hosts`部分输入数据：
+- en: '[PRE23]'
+  id: totrans-120
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE23]'
+- en: 'In addition to these examples of loose host line values, the `hosts` section
+    can also contain groupings such as these:'
+  id: totrans-121
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 除了这些松散的主机行值示例外，`hosts`部分还可以包含像这样的分组：
+- en: '[PRE24]'
+  id: totrans-122
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE24]'
+- en: 'In addition to these examples, the `hosts` section can also leverage Ansible
+    variables to target specific hosts. An example of this type of implementation
+    is provided next:'
+  id: totrans-123
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 除了这些示例外，`hosts`部分还可以利用Ansible变量来定位特定主机。下文提供了这种类型实现的示例：
+- en: '[PRE25]'
+  id: totrans-124
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE25]'
+- en: 'Once the playbook reflects the `$myhosts` variable, we can set that variable
+    with something like the example provided next:'
+  id: totrans-125
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦剧本反映了`$myhosts`变量，我们可以使用类似下面提供的示例来设置该变量：
+- en: '[PRE26]'
+  id: totrans-126
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE26]'
+- en: Based on this command, we can see that the we are able to target the production
+    group (defined in the previous `hosts` file).
+  id: totrans-127
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 根据这个命令，我们可以看到我们能够定位到生产组（在之前的`hosts`文件中定义的组）。
+- en: Ansible Modules
+  id: totrans-128
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Ansible模块
+- en: Ansible provides a very robust set of tools that can aid immensely in operational
+    implementations. Common operational implementations include managing the configuration
+    of a given system (ensuring that packages are installed, files are present, directory
+    structures exist, and so on), provisioning a given system to meet a set of prerequisites,
+    and more. As we discovered earlier, playbooks and their tasks help us achieve
+    these goals by executing a set of automations against a given system.
+  id: totrans-129
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible提供了一套非常强大的工具，可以极大地帮助操作实施。常见的操作实施包括管理给定系统的配置（确保软件包已安装、文件存在、目录结构存在等），为给定系统提供满足一组前提条件的资源等。如我们之前所发现，剧本及其任务通过对给定系统执行一系列自动化操作，帮助我们实现这些目标。
+- en: While the knowledge we have gained can give us the basics we need to implement
+    simple automations, we have really just barely scratched the surface of how Ansible
+    works. Ansible integrates with hundreds of system-level tasks and thousands of
+    external third-party solutions and can be leveraged in ways we haven't even begun
+    to fathom. Let's peel back the layers a bit and see how we can leverage Ansible
+    for basic Configuration Management.
+  id: totrans-130
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 虽然我们获得的知识可以为我们提供实施简单自动化所需的基础，但我们实际上只是略微触及了Ansible工作的表面。Ansible与数百个系统级任务以及成千上万的外部第三方解决方案集成，可以以我们尚未完全理解的方式加以利用。让我们揭开这些层次，看看如何利用Ansible进行基本的配置管理。
+- en: Ansible provides the bulk of its task functionality through Ansible modules.
+    Ansible modules are essentially standalone interfaces that integrate Ansible with
+    an OS or another technology. For example, Ansible has a module that integrates
+    Ansible playbook automation with JIRA. So the JIRA module provides a direct link
+    between the functionality available via the JIRA API and the automation formatting
+    that makes up an Ansible playbook task.
+  id: totrans-131
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible通过Ansible模块提供了大部分任务功能。Ansible模块本质上是独立的接口，将Ansible与操作系统或其他技术集成。例如，Ansible有一个模块，可以将Ansible剧本自动化与JIRA集成。因此，JIRA模块提供了JIRA
+    API可用功能与构成Ansible剧本任务的自动化格式之间的直接链接。
+- en: 'The Ansible implementation has three different module types. These module types
+    are Core, Curated, Community, and Custom. Each of these modules have their own
+    specific function and role within the Ansible solution. Let''s take a minute to
+    look at what the Ansible documentation has to say about these different module
+    types:'
+  id: totrans-132
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible的实现有三种不同的模块类型。这些模块类型包括核心模块、策划模块、社区模块和自定义模块。每种模块都有其特定的功能和角色，在Ansible解决方案中扮演着不同的角色。让我们花点时间来看一下Ansible文档对这些不同模块类型的说明：
+- en: '**Core**: These are modules that the core Ansible team maintains and will always
+    ship with ansible itself. They will also receive slightly higher priority for
+    all requests. Non-core modules are still fully usable.'
+  id: totrans-133
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**核心模块**：这些是由Ansible核心团队维护的模块，始终与Ansible一起发布。它们还会对所有请求赋予略高的优先级。非核心模块仍然是完全可用的。'
+- en: '**Curated**: Some examples of curated modules are submitted by other companies
+    or maintained by the community. Maintainers of these types of modules must watch
+    for any issues reported or pull requests raised against the module.'
+  id: totrans-134
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**精心策划**：一些精心策划的模块示例由其他公司提交或由社区维护。这些类型模块的维护者必须关注任何报告的问题或针对该模块提出的拉取请求。'
+- en: Core committers will review all modules becoming curated. Core committers will
+    review proposed changes to existing curated modules once the community maintainers
+    of the module have approved the changes. Core committers will also ensure that
+    any issues that arise due to Ansible engine changes will be remediated. Also,
+    it is strongly recommended (but not presently required) for these types of modules
+    to have unit tests.
+  id: totrans-135
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 核心提交者将审查所有被精心策划的模块。核心提交者将在模块的社区维护者批准更改后，审查对现有精心策划模块的修改。核心提交者还将确保解决由于 Ansible
+    引擎更改而产生的任何问题。此外，强烈建议（但目前不是必需的）这些类型的模块具有单元测试。
+- en: These modules are currently shipped with Ansible, but might be shipped separately
+    in the future.
+  id: totrans-136
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这些模块目前与 Ansible 一起提供，但未来可能会单独发布。
+- en: '**Community**: These modules are not supported by core committers or by companies/partners
+    associated to the module. They are maintained by the community.'
+  id: totrans-137
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**社区**：这些模块不由核心提交者或与模块相关的公司/合作伙伴提供支持。它们由社区维护。'
+- en: They are still fully usable, but the response rate to issues is purely up to
+    the community. Best effort support will be provided but is not covered under any
+    support contracts.
+  id: totrans-138
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 它们仍然完全可用，但对问题的响应速度完全取决于社区。将提供最佳努力支持，但不包括在任何支持合同下。
+- en: These modules are currently shipped with Ansible, but will most likely be shipped
+    separately in the future.
+  id: totrans-139
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这些模块目前与 Ansible 一起提供，但未来很可能会单独发布。
+- en: In this section we are going to look at the core module solution and try to
+    understand how it functions and the capabilities that it provides.
+  id: totrans-140
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本节中，我们将了解核心模块解决方案，并尝试理解它的功能及其提供的能力。
+- en: 'At the time of writing, there are 1,021 unique Ansible modules available and
+    provided by Ansible''s out-of-the-box solution. This means that Ansible has the
+    potential to integrate very tightly with any number of operating systems, tools,
+    and open source software. To better illustrate this, let''s take a quick look
+    at just the categories of the Ansible modules provided at the official documentation
+    ([http://docs.ansible.com/ansible/modules_by_category.html](http://docs.ansible.com/ansible/modules_by_category.html)):'
+  id: totrans-141
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在撰写本文时，Ansible 提供了 1,021 个独特的模块，并由 Ansible 的开箱即用解决方案提供。这意味着 Ansible 有潜力与任何数量的操作系统、工具和开源软件进行紧密集成。为了更好地说明这一点，让我们快速查看一下官方文档中提供的
+    Ansible 模块类别（[http://docs.ansible.com/ansible/modules_by_category.html](http://docs.ansible.com/ansible/modules_by_category.html)）：
+- en: Cloud modules
+  id: totrans-142
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 云模块
+- en: Clustering modules
+  id: totrans-143
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 集群模块
+- en: Commands modules
+  id: totrans-144
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 命令模块
+- en: Crypto modules
+  id: totrans-145
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 加密模块
+- en: Database modules
+  id: totrans-146
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 数据库模块
+- en: Files modules
+  id: totrans-147
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 文件模块
+- en: Identity modules
+  id: totrans-148
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 身份模块
+- en: Inventory modules
+  id: totrans-149
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 清单模块
+- en: Messaging modules
+  id: totrans-150
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 消息模块
+- en: Monitoring modules
+  id: totrans-151
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 监控模块
+- en: Network modules
+  id: totrans-152
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 网络模块
+- en: Notification modules
+  id: totrans-153
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 通知模块
+- en: Packaging modules
+  id: totrans-154
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 包管理模块
+- en: Remote management modules
+  id: totrans-155
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 远程管理模块
+- en: Source control modules
+  id: totrans-156
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 源控制模块
+- en: Storage modules
+  id: totrans-157
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 存储模块
+- en: System modules
+  id: totrans-158
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 系统模块
+- en: Utilities modules
+  id: totrans-159
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 工具模块
+- en: Web infrastructure modules
+  id: totrans-160
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 网络基础设施模块
+- en: Windows modules
+  id: totrans-161
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Windows模块
+- en: As we can see from the list, Ansible's integration is highly robust. Let's explore
+    some of the more common modules and see how we can use them within our playbook
+    tasks.
+  id: totrans-162
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 从列表中可以看出，Ansible 的集成非常强大。让我们探索一些常见的模块，看看如何在我们的 playbook 任务中使用它们。
+- en: Managing packages in Ansible
+  id: totrans-163
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 在 Ansible 中管理软件包
+- en: Ansible integrates very tightly with a number of Linux flavors. This integration
+    enables Ansible playbooks to maintain packages on target systems in a succinct
+    and structured manner. From `yum` to `apt` and `opencws`, the package-management
+    solution provided by the Ansible developers is robust and feature-rich. In this
+    section, we will understand the fundamentals of package management through Ansible
+    playbooks.
+  id: totrans-164
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 与多个 Linux 发行版的集成非常紧密。这种集成使得 Ansible playbook 可以以简洁和结构化的方式在目标系统上维护软件包。从
+    `yum` 到 `apt` 再到 `opencws`，Ansible 开发者提供的软件包管理解决方案是强大且功能丰富的。在本节中，我们将通过 Ansible
+    playbook 来理解软件包管理的基础。
+- en: Yum
+  id: totrans-165
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Yum
+- en: 'Ansible provides a complete yum module, which effectively integrates it with
+    common RHEL implementations of the yum repository system. Through Ansible''s yum
+    interface, it is possible to perform almost all yum-related operations. Some examples
+    of Ansibe''s yum capabilities include:'
+  id: totrans-166
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 提供了一个完整的 yum 模块，能够有效地将其与常见的 RHEL yum 仓库系统集成。通过 Ansible 的 yum 接口，几乎可以执行所有与
+    yum 相关的操作。以下是一些 Ansible 在 yum 方面的能力示例：
+- en: Installing packages
+  id: totrans-167
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 安装软件包
+- en: Removing packages
+  id: totrans-168
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 移除软件包
+- en: Adding repositories
+  id: totrans-169
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 添加仓库
+- en: Managing GPG checks
+  id: totrans-170
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 管理 GPG 检查
+- en: Listing packages
+  id: totrans-171
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 列出软件包
+- en: 'Now that we have a good idea of Ansible''s yum ninja skills, let''s take a
+    look at some basic examples of how to perform operations with yum:'
+  id: totrans-172
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经对 Ansible 的 yum 操作有了较好的了解，接下来让我们看看如何使用 yum 执行一些基本操作的示例：
+- en: '[PRE27]'
+  id: totrans-173
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE27]'
+- en: The apt-get and dpkg
+  id: totrans-174
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: apt-get 和 dpkg
+- en: 'Ansible''s integration with `apt-get` is equally as tight as Ansible''s integration
+    with yum. The `apt-get` package, for those who are not familiar with it, is a
+    package-management solution leveraged by Debian-based operating systems. The implementation
+    of `apt-get` actuality sits on top of another solution called `dpkg`, and Ansible
+    provides modules that support both. In this specific section, we will discuss
+    apt-get specifically. In order to better understand the architecture that we are
+    referencing, an illustration is provided next:'
+  id: totrans-175
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 与`apt-get`的集成与 Ansible 与 yum 的集成同样紧密。对于不熟悉的用户，`apt-get`是一个由基于 Debian
+    的操作系统使用的软件包管理解决方案。`apt-get`的实现实际上是基于另一个名为`dpkg`的解决方案，而 Ansible 提供了支持这两者的模块。在本节中，我们将专门讨论
+    apt-get。为了更好地理解我们所提到的架构，接下来提供了一个示意图：
+- en: '![](img/be077343-54d0-4b60-827d-6f344a4b7ca3.png)'
+  id: totrans-176
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/be077343-54d0-4b60-827d-6f344a4b7ca3.png)'
+- en: 'Now that we have a good understanding of how `apt-get` works, let''s take a
+    look at some examples of how Ansible integrates with this specific package manager:'
+  id: totrans-177
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经很好地理解了`apt-get`的工作原理，接下来我们来看看一些 Ansible 如何与这个特定的软件包管理器集成的示例：
+- en: '[PRE28]'
+  id: totrans-178
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE28]'
+- en: 'In addition to `yum` and `apt` integration, Ansible actually integrates very
+    well with a number of additional package-management solutions for other Linux
+    distributions. Each of these (like the previous two) is supported through an Ansible
+    module. The modules for these other flavors of Linux are crafted in such a way
+    so as to provide as robust an integration as possible. For a complete module list
+    of supported package-management solutions, the following link should provide a
+    comprehensive guide:'
+  id: totrans-179
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 除了与`yum`和`apt`的集成外，Ansible 还与许多其他 Linux 发行版的软件包管理解决方案集成得非常好。这些（如前两个）都通过 Ansible
+    模块得到支持。这些其他 Linux 版本的模块被设计得尽可能提供强大的集成支持。要查看完整的软件包管理解决方案模块列表，以下链接提供了全面的指南：
+- en: '[http://docs.ansible.com/ansible/list_of_packaging_modules.html](http://docs.ansible.com/ansible/list_of_packaging_modules.html).'
+  id: totrans-180
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '[http://docs.ansible.com/ansible/list_of_packaging_modules.html](http://docs.ansible.com/ansible/list_of_packaging_modules.html)。'
+- en: Managing users in Ansible
+  id: totrans-181
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 在 Ansible 中管理用户
+- en: 'Managing users within an Ansible playbook need not be a daunting task. Ansible''s
+    `user` module set provides tight integration with the Ansible core and the system-level
+    users solution. The Ansible user module provides us with the ability to manage
+    users and user attributes via YAML. As a result, operations such as add, remove,
+    and update are usually quite easy to implement. Let''s take a look at how to perform
+    some basic user operations using Ansible in conjunction with the users module:'
+  id: totrans-182
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 Ansible 剧本中管理用户不必是一个令人生畏的任务。Ansible 的`user`模块集与 Ansible 核心和系统级用户解决方案紧密集成。Ansible
+    用户模块使我们能够通过 YAML 管理用户及其属性。因此，像添加、删除和更新等操作通常都很容易实现。让我们来看看如何使用 Ansible 配合用户模块执行一些基本的用户操作：
+- en: '[PRE29]'
+  id: totrans-183
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE29]'
+- en: For a complete list of parameters that can be passed through the Ansible users
+    module, refer to the official documentation on the users module located at [http://docs.ansible.com/ansible/user_module.html](http://docs.ansible.com/ansible/user_module.html).
+  id: totrans-184
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要查看可以通过 Ansible 用户模块传递的所有参数，请参考官方文档中关于用户模块的部分：[http://docs.ansible.com/ansible/user_module.html](http://docs.ansible.com/ansible/user_module.html)。
+- en: File and directory management in Ansible
+  id: totrans-185
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 在 Ansible 中进行文件和目录管理
+- en: Ansible's file module provides integration between Ansible playbooks and the
+    filesystem itself. This enables us to perform directory operations and basic file
+    operations via an Ansible playbook task. In addition to basic **create**, **remove**,
+    **update**, and **delete** (**CRUD**) operations, we can also set permissions,
+    change owners, set group owners, operate on recursive folder trees, and more.
+  id: totrans-186
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 的文件模块提供了 Ansible playbook 与文件系统之间的集成。这使得我们能够通过 Ansible playbook 任务执行目录操作和基本的文件操作。除了基本的
+    **创建**、**删除**、**更新** 和 **删除**（**CRUD**）操作外，我们还可以设置权限、更改所有者、设置组所有者、对递归文件夹树进行操作等。
+- en: 'Let''s take a look at some examples of basic file and directory management
+    operations using the `file` module:'
+  id: totrans-187
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们通过 `file` 模块来看一些基本的文件和目录管理操作示例：
+- en: '[PRE30]'
+  id: totrans-188
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE30]'
+- en: These examples provide just a glimpse into file management and Ansible's file
+    module. For a complete list of available options, consult the Ansible documentation
+    located at [http://docs.ansible.com/ansible/file_module.html](http://docs.ansible.com/ansible/file_module.html).
+  id: totrans-189
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这些示例仅提供了文件管理和 Ansible 的文件模块的一个初步了解。有关可用选项的完整列表，请参考 Ansible 文档，网址为 [http://docs.ansible.com/ansible/file_module.html](http://docs.ansible.com/ansible/file_module.html)。
+- en: Managing services in Ansible
+  id: totrans-190
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 在 Ansible 中管理服务
+- en: 'Managing services using Ansible is a breeze. Service management can be a complex
+    operation and is usually highly dependent on the OS and system type. However,
+    with Ansible''s service module, we can easily stop, start, and restart services.
+    This integration provides a high level of reliability and abstracts the fundamental
+    OS-level operations that must be performed. Let''s take a look at the Ansible
+    `service` module and see its capabilities:'
+  id: totrans-191
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用 Ansible 管理服务非常简单。服务管理可能是一个复杂的操作，通常高度依赖于操作系统和系统类型。然而，通过 Ansible 的服务模块，我们可以轻松地停止、启动和重启服务。这种集成提供了很高的可靠性，并且抽象了必须执行的基础操作系统级别操作。让我们来看看
+    Ansible 的 `service` 模块及其功能：
+- en: '[PRE31]'
+  id: totrans-192
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE31]'
+- en: These examples provide us with some insight into Ansible's service control solution
+    and how to manage services using Ansible playbooks. Now that we have a grasp on
+    that, let's take a look at how to transfer files using Ansible.
+  id: totrans-193
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这些示例为我们提供了 Ansible 服务控制解决方案的一些见解，以及如何使用 Ansible playbooks 管理服务。现在我们已经掌握了这一点，让我们来看看如何使用
+    Ansible 传输文件。
+- en: Transferring files in Ansible
+  id: totrans-194
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 在 Ansible 中传输文件
+- en: 'Transferring files from the local Ansible control server to a set of target
+    machines is critical for software deployment implementations. Ansible provides
+    a very handy `copy` module that can help us accomplish exactly this. The `copy`
+    module provides a number of handy property knobs, which can further our goal by
+    allowing us to set file permissions, change ownership, decrypt the file, create
+    backups, and more. Let''s take a look at how to deliver files from the local Ansible
+    control server over to target machines using the `copy` module:'
+  id: totrans-195
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 将文件从本地 Ansible 控制服务器传输到一组目标机器，对于软件部署实现至关重要。Ansible 提供了一个非常方便的 `copy` 模块，帮助我们完成这一操作。`copy`
+    模块提供了许多实用的属性设置，可以通过允许我们设置文件权限、更改所有权、解密文件、创建备份等，进一步实现我们的目标。让我们来看看如何使用 `copy` 模块将文件从本地
+    Ansible 控制服务器传输到目标机器：
+- en: '[PRE32]'
+  id: totrans-196
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE32]'
+- en: Now that we have a good idea of how Ansible modules work and some implementation
+    details, let's look at how to expand our knowledge and capabilities in developing
+    robust and easy to maintain playbooks.
+  id: totrans-197
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们对 Ansible 模块的工作原理和一些实现细节有了很好的理解，接下来让我们看看如何扩展我们的知识和能力，开发出健壮且易于维护的 playbooks。
+- en: Summary
+  id: totrans-198
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 总结
+- en: 'This was quite a chapter. And we are nearing the halfway point in our journey
+    through this book. In this chapter, we learned the basic constructs of Ansible
+    playbook files, what YAML is, and the basic idea of how Jinja is incorporated
+    as well. In addition to understanding the basic constructs, we learned how to
+    create Ansible playbook YAML files, how to create and manage inventory files,
+    and so much more. This chapter was quite a ride: acquiring knowledge and implementing
+    it.'
+  id: totrans-199
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这一章内容丰富，我们的书籍之旅也接近一半了。在本章中，我们了解了 Ansible playbook 文件的基本构造，YAML 是什么，以及 Jinja
+    是如何融入其中的。除了了解基本构造外，我们还学习了如何创建 Ansible playbook YAML 文件，如何创建和管理库存文件，以及更多内容。这一章真是精彩：获得知识并付诸实践。
+- en: In the next chapter, we will look at playbook syntax. This includes roles, includes,
+    playbook directory structures, and loops and blocks. Consider the next chapter
+    to be progression from of this chapter. Let's get started on it then, shall we?
+  id: totrans-200
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一章，我们将介绍 playbook 的语法。这包括角色、包含项、playbook 目录结构以及循环和块。可以将下一章视为本章的进阶内容。那么，我们开始吧，怎么样？

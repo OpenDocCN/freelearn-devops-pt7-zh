@@ -1,0 +1,1196 @@
+- en: '14'
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '14'
+- en: Execution Environments
+  id: totrans-1
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 执行环境
+- en: We have seen how Ansible Automation Controller enables you to scale your automation
+    by leveraging an easy-to-use web interface, RBAC, and logging to allow other people
+    to use the automation in a way that conforms to your company’s rules.
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们已经看到，Ansible 自动化控制器通过利用易于使用的 web 界面、RBAC 和日志记录，使你能够扩展自动化，并允许其他人以符合公司规定的方式使用自动化。
+- en: 'In this chapter, we will discuss execution environments, a feature of Ansible
+    that was released a few years ago, but it is critical to create automation that
+    lasts. More specifically, we’re going to cover the following main topics:'
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们将讨论执行环境，这是 Ansible 几年前发布的一项功能，但它对于创建持久的自动化至关重要。更具体地说，我们将涵盖以下主要内容：
+- en: The importance of execution environments
+  id: totrans-4
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 执行环境的重要性
+- en: Building an execution environment
+  id: totrans-5
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 构建执行环境
+- en: Running playbooks in an execution environment
+  id: totrans-6
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在执行环境中运行 playbook
+- en: Uploading execution environments to a container registry
+  id: totrans-7
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 将执行环境上传到容器注册表
+- en: Using execution environments in the automation controller
+  id: totrans-8
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在自动化控制器中使用执行环境
+- en: Technical requirements
+  id: totrans-9
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 技术要求
+- en: To follow this chapter’s examples, you will need `ansible-builder` version 3.0
+    or later.
+  id: totrans-10
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了跟随本章的示例，你需要 `ansible-builder` 版本 3.0 或更高版本。
+- en: Ansible Builder requires Python 3.8 or higher, which you probably have already
+    installed on your system.
+  id: totrans-11
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible Builder 需要 Python 3.8 或更高版本，你的系统可能已经安装了它。
+- en: 'The easiest way to install `ansible-builder` is to use PyPi:'
+  id: totrans-12
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 安装 `ansible-builder` 的最简单方法是使用 PyPi：
+- en: '[PRE0]'
+  id: totrans-13
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: The importance of execution environments
+  id: totrans-14
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 执行环境的重要性
+- en: The first question you might have is, why do we need an execution environment
+    in the first place?
+  id: totrans-15
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可能会问的第一个问题是，为什么我们一开始就需要执行环境？
+- en: 'There are three reasons why execution environments can simplify your life:'
+  id: totrans-16
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 执行环境能够简化你生活的原因有三：
+- en: They allow better scalability by being distributed to multiple machines
+  id: totrans-17
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 它们通过分发到多台机器来实现更好的可扩展性
+- en: They allow you to freeze all dependencies to specific versions so that you can
+    run the same playbook in five years, with the certainty that it will run exactly
+    as you expect
+  id: totrans-18
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 它们允许你将所有依赖项固定到特定版本，这样你就可以确保在五年后运行相同的 playbook，并且它会如你所预期的那样运行。
+- en: They allow you to use different ones for different playbooks so that you can
+    decide when to upgrade each playbook runtime, independently from the others
+  id: totrans-19
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 它们允许你为不同的 playbook 使用不同的环境，这样你可以独立决定何时升级每个 playbook 的运行时，而不影响其他的 playbook
+- en: So, how do execution environments achieve all this? They do so by leveraging
+    containers. In fact, execution environments are containers that contain at least
+    the Ansible runner and the required libraries to run. In addition, execution environments
+    might also include an Ansible collection and many other components that are needed
+    to run your automation.
+  id: totrans-20
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 那么，执行环境是如何实现这一切的呢？它们通过利用容器来实现。实际上，执行环境就是容器，至少包含了 Ansible 运行器和运行所需的库。此外，执行环境可能还包含
+    Ansible 集合以及运行自动化所需的其他组件。
+- en: Now that we have understood the importance of execution environments, let’s
+    look at how to build your first execution environment.
+  id: totrans-21
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经理解了执行环境的重要性，接下来让我们看看如何构建你的第一个执行环境。
+- en: Building an execution environment
+  id: totrans-22
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 构建执行环境
+- en: 'To create an execution environment, we will need a definition file. There are
+    three versions of the definition file, and based on the version of `ansible-builder`,
+    some versions might not be available to you. Let’s be more specific:'
+  id: totrans-23
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要创建执行环境，我们需要一个定义文件。定义文件有三个版本，根据 `ansible-builder` 的版本，有些版本可能无法使用。让我们具体说明一下：
+- en: '`ansible-builder` versions'
+  id: totrans-24
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible-builder` 版本'
+- en: '`ansible-builder` versions 1.2 and higher'
+  id: totrans-25
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible-builder` 版本 1.2 及更高版本'
+- en: '`ansible-builder` versions 3.0 and higher'
+  id: totrans-26
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible-builder` 版本 3.0 及更高版本'
+- en: Since version 3 of the definition is the easiest to learn and use, all examples
+    will use this version.
+  id: totrans-27
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于版本 3 的定义是最容易学习和使用的，因此所有示例都将使用此版本。
+- en: We will start with a minimal example and then build on it.
+  id: totrans-28
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将从一个最小的示例开始，然后逐步构建。
+- en: Creating a minimal execution environment
+  id: totrans-29
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 创建最小执行环境
+- en: To create an execution environment, we need to create a YAML file. By default,
+    `ansible-builder` will be looking for the file named `execution-environment.yml`.
+    Although different names can be used and `ansible-builder` can be informed using
+    the `-f FILENAME` flag, we will stick with the default name in this book.
+  id: totrans-30
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要创建执行环境，我们需要创建一个YAML文件。默认情况下，`ansible-builder`会查找名为`execution-environment.yml`的文件。虽然可以使用不同的名称，并且可以通过`-f
+    FILENAME`标志告知`ansible-builder`，但在本书中我们将坚持使用默认名称。
+- en: 'We will, therefore, create the `minimal/execution-environment.yml` file with
+    the following content:'
+  id: totrans-31
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 因此，我们将创建`minimal/execution-environment.yml`文件，内容如下：
+- en: '[PRE1]'
+  id: totrans-32
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: Before running it, I want to go through it so that it is clear what every line
+    does.
+  id: totrans-33
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在运行之前，我想先梳理一下，确保每一行的作用都清楚。
+- en: The first line is the YAML file starter (`---`).
+  id: totrans-34
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 第一行是YAML文件的起始符号（`---`）。
+- en: 'The second line (`version: 3`) declares that the file is written following
+    the third version of the execution environment definition file. This is important
+    to specify because if it is absent, the default is version 1, which is very different
+    from version 3.'
+  id: totrans-35
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '第二行（`version: 3`）声明该文件是按照执行环境定义文件的第三个版本编写的。明确指定这一点非常重要，因为如果没有指定，默认值是版本1，而版本1与版本3有很大不同。'
+- en: We then see the `images` block. In this block, we can define the `base_image`,
+    using the `name` key to indicate the full container name and tag. Both the container’s
+    name and tag are required. In our case, we will use CentOS Stream 9 as a base
+    image.
+  id: totrans-36
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来我们看到`images`块。在这个块中，我们可以定义`base_image`，使用`name`键来表示完整的容器名称和标签。容器的名称和标签都是必需的。在我们的例子中，我们将使用CentOS
+    Stream 9作为基础镜像。
+- en: Lastly, we find the `dependencies` block. This block allows us to define what
+    `ansible-builder` should add to the image. Even though we will see that we can
+    use this section for much more than what we used it for in this example, we always
+    need to define `ansible_core` and `ansible_runner`.
+  id: totrans-37
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后，我们找到了`dependencies`块。这个块允许我们定义`ansible-builder`应该添加到镜像中的内容。尽管我们会看到可以使用这个部分做更多的事情，但在这个示例中，我们总是需要定义`ansible_core`和`ansible_runner`。
+- en: 'We are now ready to enter the `minimal` folder and run `ansible-builder` to
+    build the image:'
+  id: totrans-38
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们准备进入`minimal`文件夹并运行`ansible-builder`来构建镜像：
+- en: '[PRE2]'
+  id: totrans-39
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: 'We expect the following result if everything went as expected:'
+  id: totrans-40
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果一切顺利，我们预计会得到以下结果：
+- en: '[PRE3]'
+  id: totrans-41
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: Congratulations! You have just built your first Ansible execution environment!
+  id: totrans-42
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 恭喜你！你刚刚构建了第一个Ansible执行环境！
+- en: Before starting to use the execution environment, we will see how to build more
+    complex execution environments.
+  id: totrans-43
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在开始使用执行环境之前，我们将了解如何构建更复杂的执行环境。
+- en: Creating an execution environment with a specific Python interpreter
+  id: totrans-44
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 使用特定的Python解释器创建执行环境
+- en: We have seen how to create an execution environment based on CentOS Stream 9
+    with just Ansible and Ansible Runner.
+  id: totrans-45
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们已经看过如何基于CentOS Stream 9创建一个只包含Ansible和Ansible Runner的执行环境。
+- en: As you surely know by now, Ansible is written in Python, as are the majority
+    of Ansible modules. In our previous example, the default Python was installed
+    (3.9), which is great for the majority of cases. However, some modules or libraries
+    might require a specific version of Python, so in those cases, we will need to
+    instruct `ansible-builder` to install the Python version we want forcefully.
+  id: totrans-46
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所知，Ansible是用Python编写的，绝大多数Ansible模块也是如此。在我们之前的例子中，默认安装了Python（3.9），这对于大多数情况来说已经足够好了。然而，一些模块或库可能需要特定版本的Python，因此在这种情况下，我们需要指示`ansible-builder`强制安装我们想要的Python版本。
+- en: 'To do so, we can create the `python/execution-environment.yml` file with the
+    following content:'
+  id: totrans-47
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为此，我们可以创建`python/execution-environment.yml`文件，内容如下：
+- en: '[PRE4]'
+  id: totrans-48
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: As you can see, we added a `python_interpreter` directive in the `dependencies`
+    section, and we specified that we want the `python3.11` package installed from
+    the system’s package manager (`dnf`, in our case). We also specified what the
+    path of the installed binary will be to ensure that Ansible will use this version
+    and not other versions that might be present in the image.
+  id: totrans-49
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，我们在`dependencies`部分添加了`python_interpreter`指令，并指定要从系统的包管理器（在我们的案例中是`dnf`）安装`python3.11`包。我们还指定了安装后的二进制文件路径，以确保Ansible使用这个版本，而不是镜像中可能存在的其他版本。
+- en: 'We are now ready to enter the `python` folder and run `ansible-builder` to
+    build the image:'
+  id: totrans-50
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们准备进入`python`文件夹并运行`ansible-builder`来构建镜像：
+- en: '[PRE5]'
+  id: totrans-51
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: 'We expect the following result if everything went as expected:'
+  id: totrans-52
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果一切顺利，我们预计会得到以下结果：
+- en: '[PRE6]'
+  id: totrans-53
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: Congratulations! You have just created your first execution environment with
+    Python 3.11! Let’s now explore how we can add additional dependencies.
+  id: totrans-54
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 恭喜！你刚刚创建了第一个带有 Python 3.11 的执行环境！现在，让我们探索一下如何添加额外的依赖项。
+- en: Creating an execution environment with additional dependencies
+  id: totrans-55
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 创建带有额外依赖项的执行环境
+- en: There are many different ways to add a dependency on a regular system. In the
+    same way, we will be able to add different kinds of dependencies in execution
+    environments.
+  id: totrans-56
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在常规系统中有很多不同的方式来添加依赖项。同样，我们也可以在执行环境中添加不同类型的依赖项。
+- en: 'The three ways we can install dependencies in the execution environments are
+    as follows:'
+  id: totrans-57
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以在执行环境中安装依赖项的三种方式如下：
+- en: '`python`: This option allows you to install Python dependencies from PyPi'
+  id: totrans-58
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`python`：此选项允许你从 PyPi 安装 Python 依赖项'
+- en: '`system`: This option allows you to install dependencies from an operating
+    system'
+  id: totrans-59
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`system`：此选项允许你从操作系统安装依赖项'
+- en: '`galaxy`: This option allows you to install Ansible dependency from Ansible
+    Galaxy'
+  id: totrans-60
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`galaxy`：此选项允许你从 Ansible Galaxy 安装 Ansible 依赖项'
+- en: Although it is possible to pass dependencies files, it is usually preferable
+    to put them directly inline so that the whole description of the execution environment
+    is in a single file and is easier to follow.
+  id: totrans-61
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 尽管可以传递依赖项文件，但通常建议将它们直接内联，以便整个执行环境的描述都在一个文件中，便于查看。
+- en: 'Let’s suppose we want to create an execution environment that has a couple
+    of collections (`ansible.utils` and `community.windows`) and the `ping` command.
+    In this case, we can create a `dependencies/execution-environment.yml` file with
+    the following content:'
+  id: totrans-62
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 假设我们想要创建一个包含两个集合（`ansible.utils` 和 `community.windows`）以及 `ping` 命令的执行环境。在这种情况下，我们可以创建一个名为
+    `dependencies/execution-environment.yml` 的文件，内容如下：
+- en: '[PRE7]'
+  id: totrans-63
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE7]'
+- en: 'As you can see, we added the following:'
+  id: totrans-64
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，我们添加了以下内容：
+- en: The Python `pywinrm` package, which is required by `community.windows`
+  id: totrans-65
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Python `pywinrm` 包，这是 `community.windows` 所需的
+- en: The `iputils` package via RPM, which provides the `ping` command
+  id: totrans-66
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 通过 RPM 安装的 `iputils` 包，它提供了 `ping` 命令
+- en: The `community.windows` collection that we wanted
+  id: totrans-67
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 我们想要的 `community.windows` 集合
+- en: The `ansible.utils` collection that we wanted
+  id: totrans-68
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 我们想要的 `ansible.utils` 集合
+- en: 'We can now proceed to enter the `dependencies` folder and build the execution
+    environments as we did previously:'
+  id: totrans-69
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，我们可以进入 `dependencies` 文件夹，并像之前一样构建执行环境：
+- en: '[PRE8]'
+  id: totrans-70
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE8]'
+- en: 'We expect the following result if everything went as expected:'
+  id: totrans-71
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果一切顺利，我们预期得到以下结果：
+- en: '[PRE9]'
+  id: totrans-72
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE9]'
+- en: You have now built an execution environment that can be used for more complex
+    playbooks!
+  id: totrans-73
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在你已经构建了一个可以用于更复杂剧本的执行环境！
+- en: Our exploration of the execution environments descriptor file ends here, but
+    you can refer to the official documentation to discover all available options.
+  id: totrans-74
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们对执行环境描述符文件的探索到此为止，但你可以参考官方文档以发现所有可用选项。
+- en: Running playbooks in an execution environment
+  id: totrans-75
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 在执行环境中运行剧本
+- en: Now that we have explored how to create execution environments, we can start
+    using them. The first thing we will do is check the Ansible and Python versions.
+  id: totrans-76
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 既然我们已经探索了如何创建执行环境，现在我们可以开始使用它们。我们将做的第一件事是检查 Ansible 和 Python 版本。
+- en: To execute commands and Playbooks in execution environments, we can use `ansible-navigator`.
+    To install it, we can execute `$ pip` `install ansible-navigator`.
+  id: totrans-77
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要在执行环境中执行命令和剧本，我们可以使用 `ansible-navigator`。要安装它，我们可以执行 `$ pip` `install ansible-navigator`。
+- en: 'The equivalent of the `ansible --version` command in the `minimal-ee` is the
+    following:'
+  id: totrans-78
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`minimal-ee` 中 `ansible --version` 命令的等效命令如下：'
+- en: '[PRE10]'
+  id: totrans-79
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE10]'
+- en: 'As you can see, the biggest difference is the addition of `--eei minimal-ee`,
+    which tells `ansible-navigator` which execution environment image to use, and
+    running it will return the following:'
+  id: totrans-80
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，最大的区别是添加了 `--eei minimal-ee`，它告诉 `ansible-navigator` 使用哪个执行环境镜像，运行后将返回以下结果：
+- en: '[PRE11]'
+  id: totrans-81
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE11]'
+- en: 'Now, we can run the same command for the Python execution environment:'
+  id: totrans-82
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，我们可以对 Python 执行环境运行相同的命令：
+- en: '[PRE12]'
+  id: totrans-83
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE12]'
+- en: 'This will result in the following:'
+  id: totrans-84
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这将产生以下结果：
+- en: '[PRE13]'
+  id: totrans-85
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE13]'
+- en: As you can see, the Ansible version is the same, since we required the same
+    version while creating the two images. Conversely, the Python version differs,
+    since in the Python execution environment, we force version 3.11, while in the
+    minimal one, we used the default one (3.9).
+  id: totrans-86
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，Ansible 版本是相同的，因为在创建这两个镜像时我们要求使用相同的版本。相反，Python 版本有所不同，因为在 Python 执行环境中，我们强制使用版本
+    3.11，而在最小化环境中，我们使用了默认版本（3.9）。
+- en: 'Similarly, we can execute Ansible playbooks as well. Firstly, we will need
+    a playbook, and for this example, we will create a very simple ping one:'
+  id: totrans-87
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 同样，我们也可以执行 Ansible playbooks。首先，我们需要一个 playbook，在这个例子中，我们将创建一个非常简单的 ping 示例：
+- en: '[PRE14]'
+  id: totrans-88
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE14]'
+- en: 'We will also need a straightforward `inventory` file with just `localhost`:'
+  id: totrans-89
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们还需要一个非常简单的`inventory`文件，内容只有`localhost`：
+- en: '[PRE15]'
+  id: totrans-90
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE15]'
+- en: 'We can now proceed with the execution command:'
+  id: totrans-91
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们可以继续执行命令：
+- en: '[PRE16]'
+  id: totrans-92
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE16]'
+- en: 'As you have probably already predicted, the result is very similar to what
+    we would have if the command was executed outside execution environments:'
+  id: totrans-93
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你可能已经预测到的，结果与如果在执行环境外部运行命令时的结果非常相似：
+- en: '[PRE17]'
+  id: totrans-94
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE17]'
+- en: Although it is possible to use execution environments in this way, they are
+    usually uploaded to a container registry and used from AWX or Ansible Controller.
+  id: totrans-95
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 虽然可以以这种方式使用执行环境，但它们通常会被上传到容器注册表，并从 AWX 或 Ansible 控制器中使用。
+- en: In the next section, we will see how to upload those execution environments
+    to a container registry.
+  id: totrans-96
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一节中，我们将看到如何将这些执行环境上传到容器注册表。
+- en: Uploading execution environments to a container registry
+  id: totrans-97
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 上传执行环境到容器注册表
+- en: As discussed, execution environments are packaged in the container image format
+    to allow more flexibility. This means that we can upload an execution environment
+    to any container registry. In enterprise settings, Ansible Automation Hub is usually
+    used, since it is a tool very similar to Ansible Galaxy that can be installed
+    in the private company network, and it hosts Ansible collections and execution
+    environments. Companies often prefer Ansible Automation Hub, since it integrates
+    a lot of nice features, such as synchronization with Ansible Galaxy. If you have
+    an Ansible Automation Hub available, you can use it to follow the following steps.
+    Otherwise, you can use any other container registry.
+  id: totrans-98
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如前所述，执行环境以容器镜像格式打包，以提供更大的灵活性。这意味着我们可以将执行环境上传到任何容器注册表。在企业环境中，通常使用 Ansible 自动化中心，因为它是一个类似于
+    Ansible Galaxy 的工具，可以安装在私有公司网络中，并托管 Ansible 集合和执行环境。公司通常更倾向于使用 Ansible 自动化中心，因为它集成了许多不错的功能，如与
+    Ansible Galaxy 的同步。如果你有可用的 Ansible 自动化中心，可以使用它来执行以下步骤。否则，你可以使用任何其他容器注册表。
+- en: I will use `quay.io`, but the same steps apply to any other container registry.
+  id: totrans-99
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我将使用`quay.io`，但相同的步骤适用于任何其他容器注册表。
+- en: Ensure your Podman is properly logged into your container registry of choice.
+    You can use `podman login` to perform the login if you are not logged in yet.
+  id: totrans-100
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 确保你的 Podman 已经正确登录到你选择的容器注册表。如果你还没有登录，可以使用`podman login`命令进行登录。
+- en: 'The first thing to do is to find the image ID of the image we want to push.
+    To do so, we can run this:'
+  id: totrans-101
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 首先要做的是找到我们想要推送的镜像的镜像 ID。为此，我们可以运行以下命令：
+- en: '[PRE18]'
+  id: totrans-102
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE18]'
+- en: 'The output will be something like the following:'
+  id: totrans-103
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 输出结果将类似于以下内容：
+- en: '[PRE19]'
+  id: totrans-104
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE19]'
+- en: 'The third column is the image ID, so we can instruct Podman to push it to our
+    container registry:'
+  id: totrans-105
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 第三列是镜像 ID，因此我们可以指示 Podman 将其推送到我们的容器注册表：
+- en: '[PRE20]'
+  id: totrans-106
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE20]'
+- en: Once the execution has finished, you can go to the container registry and check
+    that the image arrived as expected.
+  id: totrans-107
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦执行完成，你可以进入容器注册表，检查镜像是否按预期到达。
+- en: We are now ready to use this execution environment image in our AWX or Ansible
+    Automation Controller.
+  id: totrans-108
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们现在准备好在 AWX 或 Ansible 自动化控制器中使用这个执行环境镜像了。
+- en: Using execution environments in Ansible Automation Controller
+  id: totrans-109
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 在 Ansible 自动化控制器中使用执行环境
+- en: Using Ansible execution environments in Ansible Automation Controller is very
+    straightforward, since it always uses an execution environment while executing
+    Playbooks. The only difference is whether it is the default execution environment
+    or the one that you built and specified.
+  id: totrans-110
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 Ansible 自动化控制器中使用 Ansible 执行环境非常简单，因为在执行 Playbooks 时它始终使用执行环境。唯一的区别是它是默认的执行环境还是你构建并指定的执行环境。
+- en: 'The first thing we will need to do is add a new execution environment to Ansible
+    Automation Controller or AWX. To do so, you need to go to execution environments
+    in the navigation bar in the **Administration** section, and then click on the
+    **Add** button. You can now fill in the name and the image URL and select **Always
+    pull container before running.** as the **Pull** option, as follows:'
+  id: totrans-111
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们首先需要做的事情是将新的执行环境添加到 Ansible 自动化控制器或 AWX。为此，你需要在**管理**部分的导航栏中进入执行环境，然后点击**添加**按钮。现在，你可以填写名称和镜像
+    URL，并选择**在运行前始终拉取容器**作为**拉取**选项，如下所示：
+- en: '![Figure 14.1 – Creating a new execution environment window](img/B20846_14_001.jpg)'
+  id: totrans-112
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 14.1 – 创建新执行环境窗口](img/B20846_14_001.jpg)'
+- en: Figure 14.1 – Creating a new execution environment window
+  id: totrans-113
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 14.1 – 创建一个新的执行环境窗口
+- en: 'After saving the execution environment by pressing **Save**, you can go to
+    **Templates** in the navigation bar under **Resources** and create a new job template,
+    or modify the one you already have. Once you are on the **Job Template** edit
+    or create page, you can set the execution environment as follows:'
+  id: totrans-114
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在按下**保存**后保存执行环境，您可以转到**资源**下的导航栏中的**模板**，并创建一个新的作业模板，或者修改已有的模板。一旦进入**作业模板**编辑或创建页面，您可以按如下方式设置执行环境：
+- en: '![Figure 14.2 – The field to choose an execution environment in the job template](img/B20846_14_002.jpg)'
+  id: totrans-115
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 14.2 – 在作业模板中选择执行环境的字段](img/B20846_14_002.jpg)'
+- en: Figure 14.2 – The field to choose an execution environment in the job template
+  id: totrans-116
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 14.2 – 在作业模板中选择执行环境的字段
+- en: You can now save the job template and execute it. This time, it was executed
+    in the execution environment we created!
+  id: totrans-117
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在您可以保存作业模板并执行它。这次，它是在我们创建的执行环境中执行的！
+- en: Summary
+  id: totrans-118
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 总结
+- en: We started this chapter by seeing why execution environments can help you to
+    create a more resilient automation solution in your environment. We then moved
+    on to a more practical section in which you created multiple execution environments,
+    firstly a minimal one, then one with a customized version of Python, and finally,
+    one with some collections and other dependencies embedded. We then used those
+    execution environments locally using `ansible-navigator`. We then uploaded them
+    to a container registry and used them from Ansible Automation Controller or AWX.
+  id: totrans-119
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们在本章开头讨论了为什么执行环境有助于您在环境中创建更具韧性的自动化解决方案。然后，我们进入了一个更实际的部分，在其中创建了多个执行环境，首先是一个最小化的执行环境，然后是一个定制版本的
+    Python 环境，最后是一个嵌入了多个集合和其他依赖项的环境。接着，我们使用 `ansible-navigator` 在本地使用这些执行环境。随后，我们将它们上传到容器注册表，并通过
+    Ansible 自动化控制器或 AWX 使用它们。
+- en: We have now reached the end of this book, since this is the last chapter, and
+    I would like to thank you for reading the entire book. I hope that it has taught
+    you what you initially hoped to learn about Ansible, and more!
+  id: totrans-120
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们现在已到达本书的结尾，因为这是最后一章，我想感谢您阅读完整本书。希望它能教会您最初希望了解的有关 Ansible 的知识，以及更多！
+- en: Questions
+  id: totrans-121
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 问题
+- en: 'Ansible uses the standard container image format for execution environments:'
+  id: totrans-122
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: Ansible 使用标准容器镜像格式作为执行环境：
+- en: 'True'
+  id: totrans-123
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 正确
+- en: 'False'
+  id: totrans-124
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 错误
+- en: Which of the following is an advantage of Ansible execution environments?
+  id: totrans-125
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 以下哪项是 Ansible 执行环境的优点？
+- en: They run Ansible playbooks without Ansible
+  id: totrans-126
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 它们在没有 Ansible 的情况下运行 Ansible 剧本
+- en: They guarantee the exact versions of Ansible, the dependencies, and the collections
+    on every run
+  id: totrans-127
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 它们保证每次运行时 Ansible、依赖项和集合的精确版本
+- en: They increase performance
+  id: totrans-128
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 它们提高了性能
+- en: What is the latest execution environment definition version?
+  id: totrans-129
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 最新的执行环境定义版本是什么？
+- en: '1'
+  id: totrans-130
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: '1'
+- en: '2'
+  id: totrans-131
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: '2'
+- en: '3'
+  id: totrans-132
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: '3'
+- en: '4'
+  id: totrans-133
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: '4'
+- en: Further reading
+  id: totrans-134
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 进一步阅读
+- en: 'Ansible Builder documentation: [https://ansible.readthedocs.io/projects/builder/en/stable/usage/](https://ansible.readthedocs.io/projects/builder/en/stable/usage/%0D)'
+  id: totrans-135
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Ansible Builder 文档： [https://ansible.readthedocs.io/projects/builder/en/stable/usage/](https://ansible.readthedocs.io/projects/builder/en/stable/usage/%0D)
+- en: 'Ansible Navigator documentation: [https://ansible.readthedocs.io/projects/navigator/](https://ansible.readthedocs.io/projects/navigator/%0D)'
+  id: totrans-136
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Ansible Navigator 文档： [https://ansible.readthedocs.io/projects/navigator/](https://ansible.readthedocs.io/projects/navigator/%0D)
+- en: 'Execution environment version 3 specification: [https://ansible.readthedocs.io/projects/builder/en/stable/definition/#version-3-format](https://ansible.readthedocs.io/projects/builder/en/stable/definition/#version-3-format)'
+  id: totrans-137
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 执行环境版本 3 规范： [https://ansible.readthedocs.io/projects/builder/en/stable/definition/#version-3-format](https://ansible.readthedocs.io/projects/builder/en/stable/definition/#version-3-format)
+- en: Assessments
+  id: totrans-138
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 评估
+- en: '[*Chapter 1*](B20846_01.xhtml#_idTextAnchor015)'
+  id: totrans-139
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '[*第 1 章*](B20846_01.xhtml#_idTextAnchor015)'
+- en: A, B
+  id: totrans-140
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: A, B
+- en: C
+  id: totrans-141
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: C
+- en: A
+  id: totrans-142
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: A
+- en: '[*Chapter 2*](B20846_02.xhtml#_idTextAnchor099)'
+  id: totrans-143
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '[*第 2 章*](B20846_02.xhtml#_idTextAnchor099)'
+- en: C
+  id: totrans-144
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: C
+- en: B
+  id: totrans-145
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: B
+- en: A
+  id: totrans-146
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: A
+- en: '[*Chapter 3*](B20846_03.xhtml#_idTextAnchor158)'
+  id: totrans-147
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '[*第 3 章*](B20846_03.xhtml#_idTextAnchor158)'
+- en: E
+  id: totrans-148
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: E
+- en: C
+  id: totrans-149
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: C
+- en: A
+  id: totrans-150
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: A
+- en: '[*Chapter 4*](B20846_04.xhtml#_idTextAnchor207)'
+  id: totrans-151
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '[*第 4 章*](B20846_04.xhtml#_idTextAnchor207)'
+- en: C
+  id: totrans-152
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: C
+- en: A
+  id: totrans-153
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: A
+- en: B
+  id: totrans-154
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: B
+- en: '[*Chapter 5*](B20846_05.xhtml#_idTextAnchor279)'
+  id: totrans-155
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '[*第 5 章*](B20846_05.xhtml#_idTextAnchor279)'
+- en: D
+  id: totrans-156
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: D
+- en: E
+  id: totrans-157
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: E
+- en: A
+  id: totrans-158
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: A
+- en: '[*Chapter 6*](B20846_06.xhtml#_idTextAnchor318)'
+  id: totrans-159
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '[*第 6 章*](B20846_06.xhtml#_idTextAnchor318)'
+- en: B
+  id: totrans-160
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: B
+- en: C
+  id: totrans-161
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: C
+- en: A
+  id: totrans-162
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: A
+- en: '[*Chapter 7*](B20846_07.xhtml#_idTextAnchor343)'
+  id: totrans-163
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '[*第 7 章*](B20846_07.xhtml#_idTextAnchor343)'
+- en: D
+  id: totrans-164
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: D
+- en: A
+  id: totrans-165
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: A
+- en: A
+  id: totrans-166
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: A
+- en: '[*Chapter 8*](B20846_08.xhtml#_idTextAnchor347)'
+  id: totrans-167
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '[*第 8 章*](B20846_08.xhtml#_idTextAnchor347)'
+- en: D
+  id: totrans-168
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: D
+- en: A
+  id: totrans-169
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: A
+- en: B
+  id: totrans-170
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: B
+- en: '[*Chapter 9*](B20846_09.xhtml#_idTextAnchor378)'
+  id: totrans-171
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '[*第 9 章*](B20846_09.xhtml#_idTextAnchor378)'
+- en: C
+  id: totrans-172
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: C
+- en: A
+  id: totrans-173
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: A
+- en: A
+  id: totrans-174
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: A
+- en: '[*Chapter 10*](B20846_10.xhtml#_idTextAnchor423)'
+  id: totrans-175
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '[*第 10 章*](B20846_10.xhtml#_idTextAnchor423)'
+- en: D
+  id: totrans-176
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: D
+- en: A
+  id: totrans-177
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: A
+- en: A
+  id: totrans-178
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: A
+- en: '[*Chapter 11*](B20846_11.xhtml#_idTextAnchor456)'
+  id: totrans-179
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '[*第11章*](B20846_11.xhtml#_idTextAnchor456)'
+- en: D
+  id: totrans-180
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: D
+- en: B
+  id: totrans-181
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: B
+- en: A
+  id: totrans-182
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: A
+- en: B
+  id: totrans-183
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: B
+- en: '[*Chapter 12*](B20846_12.xhtml#_idTextAnchor523)'
+  id: totrans-184
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '[*第12章*](B20846_12.xhtml#_idTextAnchor523)'
+- en: A
+  id: totrans-185
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: A
+- en: A
+  id: totrans-186
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: A
+- en: '[*Chapter 13*](B20846_13.xhtml#_idTextAnchor562)'
+  id: totrans-187
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '[*第13章*](B20846_13.xhtml#_idTextAnchor562)'
+- en: A,B,C,E
+  id: totrans-188
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: A,B,C,E
+- en: A
+  id: totrans-189
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: A
+- en: '[*Chapter 14*](B20846_14.xhtml#_idTextAnchor592)'
+  id: totrans-190
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '[*第14章*](B20846_14.xhtml#_idTextAnchor592)'
+- en: A
+  id: totrans-191
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: A
+- en: B
+  id: totrans-192
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: B
+- en: C
+  id: totrans-193
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: C

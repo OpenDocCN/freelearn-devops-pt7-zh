@@ -1,0 +1,1493 @@
+- en: '*Chapter 4*: Sending Automated Notifications'
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '*第4章*：发送自动化通知'
+- en: Sending the right notification at the right time, with relevant contextual information,
+    is important. It ensures that the desired action is taken by the recipient of
+    the notification.
+  id: totrans-1
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在合适的时间发送正确的通知，并附带相关的上下文信息，这是非常重要的。这样可以确保通知的接收者采取期望的行动。
+- en: Jira has always had the ability to send email notifications to users when changes
+    to issues are made. However, these are, by necessity, very generalized. They do
+    not contain relevant contextual information and are exceedingly difficult to customize.
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Jira 一直有能力在问题发生变化时向用户发送电子邮件通知。然而，这些通知通常是非常通用的。它们不包含相关的上下文信息，而且定制起来非常困难。
+- en: Automation rules allow us to overcome some of this limitation by enabling us
+    to send custom notifications based on any rule condition we require, and not only
+    via email; we also have the ability to send notifications to mobile phones via
+    SMS and to chat applications such as **Slack** and **Microsoft Teams**.
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 自动化规则让我们能够克服一些限制，通过基于我们要求的任何规则条件发送自定义通知，而且不仅仅是通过电子邮件；我们还可以通过 SMS 向手机发送通知，并向
+    **Slack** 和 **Microsoft Teams** 等聊天应用发送通知。
+- en: This chapter will introduce you to the notification capabilities in automation
+    rules and show you how to send custom email notifications to users, groups, or
+    indeed any valid email address. We'll also learn how to send messages to Slack
+    channels and to Microsoft Teams channels. Finally, we'll learn how to use **Twilio**
+    to send text messages via SMS to mobile devices.
+  id: totrans-4
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章将向你介绍自动化规则中的通知功能，并展示如何向用户、组或任何有效的电子邮件地址发送自定义电子邮件通知。我们还将学习如何向 Slack 渠道和 Microsoft
+    Teams 渠道发送消息。最后，我们将学习如何使用 **Twilio** 通过 SMS 向移动设备发送文本消息。
+- en: 'In this chapter, we will cover the following topics:'
+  id: totrans-5
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们将涵盖以下主题：
+- en: Sending email notifications using automation
+  id: totrans-6
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用自动化发送电子邮件通知
+- en: How to send notifications to Slack
+  id: totrans-7
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 如何向 Slack 发送通知
+- en: How to send notifications to Microsoft Teams
+  id: totrans-8
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 如何向 Microsoft Teams 发送通知
+- en: Sending SMS notifications with Twilio
+  id: totrans-9
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用 Twilio 发送 SMS 通知
+- en: Technical requirements
+  id: totrans-10
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 技术要求
+- en: 'The requirements for this chapter are as follows:'
+  id: totrans-11
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章的要求如下：
+- en: '**Jira Cloud environment**: If you don''t already have access to Jira, you
+    can create a free Jira Cloud account at [https://www.atlassian.com/software/jira/free](https://www.atlassian.com/software/jira/free)
+    and ensure that you have both Jira Software and Jira Service Management selected;
+    or'
+  id: totrans-12
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**Jira Cloud 环境**：如果你还没有 Jira 账户，可以在[https://www.atlassian.com/software/jira/free](https://www.atlassian.com/software/jira/free)创建一个免费的
+    Jira Cloud 账户，并确保选择了 Jira Software 和 Jira Service Management；或者'
+- en: '**Jira Server environment**: If you are using Jira Server (available from [https://www.atlassian.com/software/jira/download](https://www.atlassian.com/software/jira/download)),
+    ensure that you have licenses for both Jira Software and Jira Service Management.
+    In addition, you will also need to ensure that you install the *Automation for
+    Jira* app from the Atlassian Marketplace.'
+  id: totrans-13
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**Jira Server 环境**：如果你使用的是 Jira Server（可从[https://www.atlassian.com/software/jira/download](https://www.atlassian.com/software/jira/download)下载），请确保你拥有
+    Jira Software 和 Jira Service Management 的许可证。此外，你还需要确保从 Atlassian Marketplace
+    安装了 *Automation for Jira* 应用。'
+- en: In both instances, you will need to have at least Project Administrator access
+    to a Jira project.
+  id: totrans-14
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这两种情况下，你需要至少具有 Jira 项目的项目管理员访问权限。
+- en: 'You will also need access to any of the following tools:'
+  id: totrans-15
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你还需要访问以下任意工具：
+- en: '**Slack**: If you don''t already have access to Slack, you can sign up for
+    an account at [https://www.slack.com](https://www.slack.com).'
+  id: totrans-16
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**Slack**：如果你还没有访问 Slack 的权限，可以在[https://www.slack.com](https://www.slack.com)注册一个账户。'
+- en: '**Microsoft Teams**: You can sign up for a Teams account at [https://teams.microsoft.com](https://teams.microsoft.com)
+    if you don''t already have one.'
+  id: totrans-17
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**Microsoft Teams**：如果你还没有Teams账户，可以在[https://teams.microsoft.com](https://teams.microsoft.com)注册一个。'
+- en: '**Twilio**: Sign up at [https://www.twilio.com](https://www.twilio.com) if
+    you need an account.'
+  id: totrans-18
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**Twilio**：如果你需要账户，可以在[https://www.twilio.com](https://www.twilio.com)注册。'
+- en: You can download the latest code samples for this chapter from this book's official
+    GitHub repository at [https://github.com/PacktPublishing/Automate-Everyday-Tasks-in-Jira](https://github.com/PacktPublishing/Automate-Everyday-Tasks-in-Jira).
+  id: totrans-19
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以从本书的官方 GitHub 仓库下载本章的最新代码示例，网址是[https://github.com/PacktPublishing/Automate-Everyday-Tasks-in-Jira](https://github.com/PacktPublishing/Automate-Everyday-Tasks-in-Jira)。
+- en: 'The Code in Action videos for this chapter are available at: [https://bit.ly/2Y9p0cR](https://bit.ly/2Y9p0cR)'
+  id: totrans-20
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章的《行动中的代码》视频可通过以下链接查看：[https://bit.ly/2Y9p0cR](https://bit.ly/2Y9p0cR)
+- en: Sending email notifications using automation
+  id: totrans-21
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用自动化发送电子邮件通知
+- en: Jira has always had the ability to send notifications to users via email when
+    certain events take place, for example, when an issue has been updated or a comment
+    has been added. You can also send emails to various users containing the results
+    of saved filters on a scheduled basis and with Jira Service Management, you can
+    create custom templates for sending notifications to customers via email in place
+    of the standard event notifications.
+  id: totrans-22
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Jira 一直以来都有通过电子邮件向用户发送通知的能力，例如在问题更新或评论添加时。你还可以定期向不同用户发送包含已保存筛选器结果的电子邮件，并且在 Jira
+    Service Management 中，你可以创建自定义模板，通过电子邮件向客户发送通知，取代标准的事件通知。
+- en: With the **Send email** action available to automation rules, we are able to
+    extend this capability and send customized email notifications to any email address,
+    user field, or group of users whenever the rule is activated.
+  id: totrans-23
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通过自动化规则中的**发送电子邮件**操作，我们能够扩展这一能力，在规则被激活时向任何电子邮件地址、用户字段或用户组发送自定义电子邮件通知。
+- en: In this section, we'll look at how to introduce custom email notifications in
+    automation rules and how these notifications can provide more specific context
+    to the user.
+  id: totrans-24
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本节中，我们将探讨如何在自动化规则中引入自定义电子邮件通知，以及这些通知如何为用户提供更具体的上下文。
+- en: Tip
+  id: totrans-25
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 提示
+- en: You should always take care when creating custom email notifications in an automation
+    rule. Make sure that you do not end up spamming the user with multiple notifications
+    for the same event.
+  id: totrans-26
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 创建自动化规则中的自定义电子邮件通知时，你应该始终小心。确保不要因为同一事件而向用户发送多次通知，避免造成垃圾邮件。
+- en: Before we look at how to use email notifications in a rule, let's take a quick
+    look at the **Send email** action itself.
+  id: totrans-27
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在我们查看如何在规则中使用电子邮件通知之前，让我们快速看一下**发送电子邮件**操作本身。
+- en: 'The following screenshot shows the fields available in the **Send email** action:'
+  id: totrans-28
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下截图展示了**发送电子邮件**操作中的可用字段：
+- en: '![Figure 4.1 – The Send email action'
+  id: totrans-29
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '![图4.1 – 发送电子邮件操作'
+- en: '](img/Figure_4.1_B16551.jpg)'
+  id: totrans-30
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '](img/Figure_4.1_B16551.jpg)'
+- en: Figure 4.1 – The Send email action
+  id: totrans-31
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图4.1 – 发送电子邮件操作
+- en: 'Let''s take a quick look at each of the fields available in the **Send email**
+    action:'
+  id: totrans-32
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们快速看一下**发送电子邮件**操作中的每个可用字段：
+- en: The **To** field is where we configure the email recipients. This can be in
+    the form of one or more email addresses, or you can use the drop-down menu to
+    select one or more Jira users or user groups. You can also use smart values and
+    smart value functions to extract email addresses from issue fields.
+  id: totrans-33
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: '**收件人**字段是我们配置电子邮件收件人的地方。可以是一个或多个电子邮件地址，或者你可以使用下拉菜单选择一个或多个 Jira 用户或用户组。你还可以使用智能值和智能值函数从问题字段中提取电子邮件地址。'
+- en: You can additionally set the email **CC** and **BCC** fields in the same manner
+    by clicking on the corresponding links under the **To** field to reveal the relevant
+    input field.
+  id: totrans-34
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 你还可以通过点击**收件人**字段下方的相应链接，按照相同的方式设置**抄送**和**密送**字段，以显示相关的输入字段。
+- en: The **Subject** field is where we configure the email notification subject.
+    You can use smart values and smart value functions in this field to reference
+    data from any issue field.
+  id: totrans-35
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: '**主题**字段是我们配置电子邮件通知主题的地方。你可以在此字段中使用智能值和智能值函数来引用任何问题字段的数据。'
+- en: The **Content** field is where you supply the email message itself. You can
+    use HTML tags to format the message and you can also use smart values and smart
+    value functions to reference and manipulate any data from the issue that triggered
+    the automation rule.
+  id: totrans-36
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: '**内容**字段是你提供电子邮件消息的地方。你可以使用 HTML 标签来格式化消息，还可以使用智能值和智能值函数来引用和操作触发自动化规则的任何数据。'
+- en: Under the **More options** disclosure, you will find the **From** field. This
+    field is only applicable to Jira Server and Data Center. It is not editable in
+    Jira Cloud.
+  id: totrans-37
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在**更多选项**展开部分，你会找到**发件人**字段。该字段仅适用于 Jira Server 和 Data Center，在 Jira Cloud 中不可编辑。
+- en: If you are using Jira Server or Data Center, you should ensure that the email
+    address you enter here uses a valid sender domain as many SMTP servers are configured
+    to only accept outgoing mail from valid domains in order to prevent themselves
+    from being used as spam relays.
+  id: totrans-38
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 如果你使用的是 Jira Server 或 Data Center，应该确保你在此处输入的电子邮件地址使用有效的发件人域名，因为许多 SMTP 服务器配置为仅接受来自有效域的外发邮件，以防止它们被用作垃圾邮件中继。
+- en: The **From name** field is the human-readable sender name that will appear in
+    the email notification. In Jira Cloud, this will default to *Jira automation*,
+    and in Jira Server and Data Center, it will not be present.
+  id: totrans-39
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: '**发件人名称** 字段是邮件通知中显示的可读发件人名称。在 Jira Cloud 中，默认值为 *Jira 自动化*，而在 Jira Server
+    和 Data Center 中，该字段不会出现。'
+- en: Optionally, if you want users to be able to reply to the email and potentially
+    capture the reply as a comment against the issue, you can use the **Reply to**
+    field to enter the email address you have configured in the **Incoming Email**
+    system configuration for Software and Core projects, or, for Service Management
+    projects, in the project's **Email requests** setting.
+  id: totrans-40
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 可选地，如果你希望用户能够回复邮件，并可能将回复作为对问题的评论，你可以使用 **回复至** 字段，输入你在 **接收邮件** 系统配置中为软件和核心项目配置的邮箱地址，或者对于服务管理项目，在项目的
+    **邮件请求** 设置中进行配置。
+- en: You should also ensure that the issue key is present in the **Subject** line
+    if you make use of the **Reply to** feature.
+  id: totrans-41
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 如果你使用 **回复至** 功能，还应该确保问题键出现在 **主题** 行中。
+- en: The **Send as** field allows you to select whether this notification will be
+    sent as plain text or HTML. If the email notification is being sent to another
+    application, you will probably want to set this to plain text.
+  id: totrans-42
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: '**发送方式** 字段允许你选择该通知是以纯文本还是 HTML 格式发送。如果邮件通知是发送到其他应用程序，建议将其设置为纯文本。'
+- en: Leaving the `<br>)` in the message body for each new line when the **Send as**
+    field is set to **HTML**. While convenient, it has the ability to play havoc with
+    your HTML formatting if you forget to take this into consideration.
+  id: totrans-43
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在 **发送方式** 字段设置为 **HTML** 时，每当新的一行出现时，要在消息正文中保留 `<br>)`。虽然这很方便，但如果忘记考虑这一点，可能会破坏你的
+    HTML 格式。
+- en: Important note
+  id: totrans-44
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 重要提示
+- en: If you are using Jira Server or Jira Data Center, you (or a Jira administrator)
+    need to have configured an outgoing SMTP mail server in the **Jira Administration**
+    | **System** | **Outgoing Mail** settings. Without a configured outgoing mail
+    server, rules with email notifications will still execute successfully, however,
+    no emails will actually be sent.
+  id: totrans-45
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 如果你使用的是 Jira Server 或 Jira Data Center，你（或 Jira 管理员）需要在 **Jira 管理** | **系统**
+    | **外发邮件** 设置中配置一个外发 SMTP 邮件服务器。如果没有配置外发邮件服务器，带有邮件通知的规则仍然会成功执行，但实际上不会发送任何邮件。
+- en: Let's take a look at a rule that makes use of email notifications.
+  id: totrans-46
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们来看一个使用邮件通知的规则。
+- en: Creating a rule to notify customers when a new version is released
+  id: totrans-47
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 创建一个规则，用于在发布新版本时通知客户
+- en: In this example, we want to be able to notify customers when a new software
+    version is released and list the items that were fixed or added in the newly released
+    version.
+  id: totrans-48
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这个示例中，我们希望能够在发布新软件版本时通知客户，并列出在新发布的版本中修复或添加的项。
+- en: All the customers for this example belong to a user group called *Customers*.
+    This will allow us to add any new customers to the group and not have to modify
+    the automation rule for each new customer.
+  id: totrans-49
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 所有的客户都属于一个名为 *客户* 的用户组。这样我们就可以将任何新客户添加到该组中，而无需为每个新客户修改自动化规则。
+- en: Due to the differences in the way automation rules handle multiple issues in
+    Jira Cloud and Jira Server, we'll present this rule twice in order to highlight
+    the differences between the two environments.
+  id: totrans-50
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于 Jira Cloud 和 Jira Server 在处理多个问题时的自动化规则有所不同，我们将分别展示该规则，以突出这两个环境之间的差异。
+- en: Using Jira Cloud to notify customers when a new version is released
+  id: totrans-51
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 使用 Jira Cloud 通知客户当新版本发布时
+- en: In Jira Cloud, we need to make use of the **Lookup issues** action, which will
+    allow us to iterate up to 100 issues in a single operation.
+  id: totrans-52
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 Jira Cloud 中，我们需要使用 **查找问题** 动作，这将允许我们在一次操作中迭代最多 100 个问题。
+- en: 'Let''s see how to build this rule using Jira Cloud:'
+  id: totrans-53
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们看看如何使用 Jira Cloud 构建这个规则：
+- en: In your Jira Software project, navigate to **Project settings**, click on the
+    **Automation** link in the project settings menu, and then click **Create rule**.
+  id: totrans-54
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在你的 Jira Software 项目中，导航到 **项目设置**，点击项目设置菜单中的 **自动化** 链接，然后点击 **创建规则**。
+- en: Select the **Version released** trigger and click **Save**.
+  id: totrans-55
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 选择 **版本发布** 触发器并点击 **保存**。
+- en: Next, select **New action** and then select the **Lookup issues** action.
+  id: totrans-56
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 接下来，选择 **新建动作**，然后选择 **查找问题** 动作。
+- en: 'Add the following query to the **JQL** field and click **Save**:'
+  id: totrans-57
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 将以下查询添加到 **JQL** 字段并点击 **保存**：
+- en: '[PRE0]'
+  id: totrans-58
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: As you can see, we are using a smart value to reference the version name in
+    this JQL query and so we cannot validate the query.
+  id: totrans-59
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 如你所见，我们在这个 JQL 查询中使用了智能值来引用版本名称，因此我们无法验证查询。
+- en: Then, select `Customers`
+  id: totrans-60
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 然后，选择`客户`
+- en: '`{{version.project.key}} version {{version.name}} is released!`'
+  id: totrans-61
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`{{version.project.key}} 版本 {{version.name}} 已发布！`'
+- en: '**Content**:'
+  id: totrans-62
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '**内容**：'
+- en: '[PRE1]'
+  id: totrans-63
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: Next, expand the **More options** disclosure and uncheck the **Convert line
+    breaks to HTML line breaks** option, as we have included explicit HTML line breaks
+    in the content field, and then click **Save**.
+  id: totrans-64
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 接下来，展开**更多选项**设置，取消勾选**将换行符转换为HTML换行符**选项，因为我们在内容字段中已包含显式的HTML换行符，然后点击**保存**。
+- en: 'Your rule should look similar to the following screenshot:'
+  id: totrans-65
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 你的规则应类似于以下屏幕截图：
+- en: '![Figure 4.2 – Sending an email notification in Jira Cloud'
+  id: totrans-66
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '![图 4.2 – 在Jira Cloud中发送电子邮件通知'
+- en: '](img/Figure_4.2_B16551.jpg)'
+  id: totrans-67
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '](img/Figure_4.2_B16551.jpg)'
+- en: Figure 4.2 – Sending an email notification in Jira Cloud
+  id: totrans-68
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 图 4.2 – 在Jira Cloud中发送电子邮件通知
+- en: Finally, name your rule `Version released customer notification` and click **Turn
+    it on** to save and enable the rule.
+  id: totrans-69
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 最后，给你的规则命名为`版本发布客户通知`，并点击**启用**以保存并启用该规则。
+- en: Now that we've learned how to send an email notification in Jira Cloud using
+    the **Lookup issues** action, let's see how we need to adjust this rule to work
+    in Jira Server.
+  id: totrans-70
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经学习了如何在Jira Cloud中使用**查找问题**操作发送电子邮件通知，接下来让我们看看如何调整此规则以便在Jira Server中使用。
+- en: Using Jira Server to notify customers when a new version is released
+  id: totrans-71
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 使用Jira Server通知客户新版本发布时
+- en: Automation rules in Jira Server do not have the **Lookup issues** action. Instead,
+    we can choose to process issues in certain triggers and branch rules in bulk.
+  id: totrans-72
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Jira Server中的自动化规则没有**查找问题**操作。相反，我们可以选择在某些触发器和分支规则中批量处理问题。
+- en: 'Let''s see how to replicate the version-released rule in Jira Server:'
+  id: totrans-73
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们看看如何在Jira Server中复制版本发布规则：
+- en: In your Jira Software project, navigate to **Project settings**, click on the
+    **Project automation** link in the project settings menu, and then click **Create
+    rule**.
+  id: totrans-74
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在你的Jira软件项目中，导航到**项目设置**，点击项目设置菜单中的**项目自动化**链接，然后点击**创建规则**。
+- en: Select the **Version released** trigger and click **Save**.
+  id: totrans-75
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 选择**版本发布**触发器并点击**保存**。
+- en: Next, select **Branch rule/related issues** and select **Issues fixed in version**
+    in the **Type of related issues** field.
+  id: totrans-76
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 接下来，选择**分支规则/相关问题**，在**相关问题类型**字段中选择**版本中修复的问题**。
+- en: Expand the **More options** disclosure and ensure the **Process all issues produced
+    by this trigger in bulk** option is checked and click **Save**.
+  id: totrans-77
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 展开**更多选项**设置，确保勾选**批量处理此触发器产生的所有问题**选项，然后点击**保存**。
+- en: Now, select `Customers`
+  id: totrans-78
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在，选择`客户`
+- en: '`{{version.project.key}} version {{version.name}} is released!`'
+  id: totrans-79
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`{{version.project.key}} 版本 {{version.name}} 已发布！`'
+- en: '**Content**:'
+  id: totrans-80
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '**内容**：'
+- en: '[PRE2]'
+  id: totrans-81
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: Next, expand the **More options** disclosure and uncheck the **Convert line
+    breaks to HTML line breaks** option as we have included explicit HTML line breaks
+    in the content field, and then click **Save**.
+  id: totrans-82
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 接下来，展开**更多选项**设置，取消勾选**将换行符转换为HTML换行符**选项，因为我们在内容字段中已包含显式的HTML换行符，然后点击**保存**。
+- en: 'Your rule should look similar to the following screenshot:'
+  id: totrans-83
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 你的规则应类似于以下屏幕截图：
+- en: '![Figure 4.3 – Sending an email notification in Jira Server'
+  id: totrans-84
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '![图 4.3 – 在Jira Server中发送电子邮件通知'
+- en: '](img/Figure_4.3_B16551.jpg)'
+  id: totrans-85
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '](img/Figure_4.3_B16551.jpg)'
+- en: Figure 4.3 – Sending an email notification in Jira Server
+  id: totrans-86
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 图 4.3 – 在Jira Server中发送电子邮件通知
+- en: Finally, name your rule `Version released customer notification` and click **Turn
+    it on** to save and enable the rule.
+  id: totrans-87
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 最后，给你的规则命名为`版本发布客户通知`，并点击**启用**以保存并启用该规则。
+- en: In this section, we have learned how to use the **Send email** action to send
+    custom notifications to users from automation rules.
+  id: totrans-88
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本节中，我们已经学习了如何使用**发送电子邮件**操作通过自动化规则向用户发送自定义通知。
+- en: In the next section, we'll look at how we can integrate Slack notifications
+    within our automation rules.
+  id: totrans-89
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一节中，我们将看看如何在我们的自动化规则中集成Slack通知。
+- en: How to send notifications to Slack
+  id: totrans-90
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 如何向Slack发送通知
+- en: Slack is a popular workspace communications tool that allows users to chat in
+    so-called channels or via direct messages with one another.
+  id: totrans-91
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Slack是一个流行的工作空间通信工具，允许用户在所谓的频道中或通过直接消息互相聊天。
+- en: One of the actions we have available to our automation rules is the **Send Slack
+    message** action, which gives us the ability to send messages to Slack channels
+    or to an individual user.
+  id: totrans-92
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可用于自动化规则的一个操作是**发送Slack消息**操作，它使我们能够向Slack频道或个人用户发送消息。
+- en: In this section, we'll learn how we can integrate with Slack to send notifications
+    from automation rules.
+  id: totrans-93
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本节中，我们将学习如何与Slack集成，从自动化规则中发送通知。
+- en: Integrating with Slack
+  id: totrans-94
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 与Slack集成
+- en: Before we get to sending a Slack notification from an automation rule, we first
+    need to set up an incoming webhook in Slack to be able to receive the messages
+    from Jira.
+  id: totrans-95
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在我们开始通过自动化规则发送 Slack 通知之前，我们首先需要在 Slack 中设置传入 Webhook，以便能够接收来自 Jira 的消息。
+- en: There are two ways we can achieve this. The first is by creating a custom app
+    in Slack and configuring it with an incoming webhook and then selecting the channel
+    that will receive the notifications.
+  id: totrans-96
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以通过两种方式来实现这一点。第一种是通过在 Slack 中创建一个自定义应用并配置一个传入 Webhook，然后选择将接收通知的频道。
+- en: The second and simplest way to integrate Slack with automation rules is to create
+    a legacy incoming webhook, which also allows the configured channel to be overridden.
+  id: totrans-97
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 将 Slack 与自动化规则集成的第二种且最简单的方式是创建一个传统的传入 Webhook，它还允许覆盖配置的频道。
+- en: Important note
+  id: totrans-98
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 重要提示
+- en: If you use the custom app method of creating incoming webhooks in Slack, you
+    will need to create a webhook for each channel you need to send a notification
+    to as this method does not allow you to override the default channel that you
+    selected when creating the webhook. It is better to use the *legacy webhook* method
+    instead, which we'll cover in this section.
+  id: totrans-99
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果您使用 Slack 自定义应用方法创建传入 Webhook，您需要为每个需要发送通知的频道创建一个 Webhook，因为此方法不允许覆盖您创建 Webhook
+    时选择的默认频道。更好的方法是使用*传统的 Webhook*，我们将在本节中介绍它。
+- en: 'Let''s take a look at how to establish an incoming webhook in Slack using the
+    legacy incoming webhook option, which we''ll then use in an automation rule to
+    post a message to the **#general** channel in Slack:'
+  id: totrans-100
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们来看看如何使用传统的传入 Webhook 选项在 Slack 中建立一个传入 Webhook，然后在自动化规则中使用它将消息发布到 Slack 中的**#general**频道：
+- en: 'Navigate to the following URL in your browser: [https://my.slack.com/services/new/incoming-webhook/](https://my.slack.com/services/new/incoming-webhook/).'
+  id: totrans-101
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在浏览器中导航至以下网址：[https://my.slack.com/services/new/incoming-webhook/](https://my.slack.com/services/new/incoming-webhook/)。
+- en: 'You should be presented with a screen similar to the following screenshot,
+    after being asked to log in if required:'
+  id: totrans-102
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在要求登录后，您应该看到一个与以下截图相似的屏幕：
+- en: '![Figure 4.4 – Adding an incoming webhook to Slack'
+  id: totrans-103
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '![图 4.4 – 将传入的 Webhook 添加到 Slack'
+- en: '](img/Figure_4.4_B16551.jpg)'
+  id: totrans-104
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '](img/Figure_4.4_B16551.jpg)'
+- en: Figure 4.4 – Adding an incoming webhook to Slack
+  id: totrans-105
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 图 4.4 – 将传入的 Webhook 添加到 Slack
+- en: In the **Post to Channel** field, select the **#general** channel and click
+    the **Add Incoming WebHooks integration** button.
+  id: totrans-106
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在**发布到频道**字段中，选择**#general**频道并点击**添加传入 WebHooks 集成**按钮。
+- en: In the following screen, you will be presented with your new **webhook URL**.
+    You can also use this page to customize the icon, label, and username that will
+    be used for this integration. For now, make a note of the **webhook URL** that
+    was generated as we'll need it to complete the setup of the automation rule later.
+  id: totrans-107
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在以下屏幕中，您将看到您的新**Webhook URL**。您还可以使用此页面自定义集成时使用的图标、标签和用户名。现在，记录下生成的**Webhook
+    URL**，因为稍后我们将需要它来完成自动化规则的设置。
+- en: Now that we've set up Slack to receive incoming messages via a webhook, let's
+    set up an automation rule to make use of this integration.
+  id: totrans-108
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已设置 Slack 通过 Webhook 接收传入消息，接下来我们需要设置一个自动化规则来利用这个集成。
+- en: Creating a rule to notify open issues in a sprint
+  id: totrans-109
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 创建一个规则来通知 Sprint 中的未解决问题
+- en: 'In this example, we want to send a notification to the development team''s
+    **#sprint-update** channel in Slack on a daily basis, listing the issues still
+    outstanding for the current sprint:'
+  id: totrans-110
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本示例中，我们希望每天将开发团队的**#sprint-update**频道中的当前 Sprint 仍未解决的问题发送到 Slack：
+- en: In your Jira Software project, navigate to **Project settings**, click on the
+    **Automation** link in the project settings menu, and then click **Create rule**.
+  id: totrans-111
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在您的 Jira 软件项目中，导航至**项目设置**，点击项目设置菜单中的**自动化**链接，然后点击**创建规则**。
+- en: Select the `1 Days` in the **Run this rule every** field and click **Save**.
+  id: totrans-112
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在**每隔此规则运行**字段中选择`1天`，然后点击**保存**。
+- en: Next, select **New action** and then select the **Lookup issues** action.
+  id: totrans-113
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 接下来，选择**新建操作**，然后选择**查找问题**操作。
+- en: 'Enter the following query in the **JQL** field and click **Save**:'
+  id: totrans-114
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在**JQL**字段中输入以下查询并点击**保存**：
+- en: '[PRE3]'
+  id: totrans-115
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: Then, select `#sprint-updates`
+  id: totrans-116
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 然后，选择`#sprint-updates`
+- en: 'The automation rule should look similar to the following screenshot:'
+  id: totrans-117
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 自动化规则应该类似于以下截图：
+- en: '![Figure 4.5 – Sending a Slack message'
+  id: totrans-118
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '![图 4.5 – 发送 Slack 消息'
+- en: '](img/Figure_4.5_B16551.jpg)'
+  id: totrans-119
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '](img/Figure_4.5_B16551.jpg)'
+- en: Figure 4.5 – Sending a Slack message
+  id: totrans-120
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 图 4.5 – 发送 Slack 消息
+- en: Finally, name the rule `Open issues in sprint notification` and click **Turn
+    it on** to save and enable the rule.
+  id: totrans-121
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 最后，给规则命名为 `在冲刺中打开问题通知`，并点击 **开启** 以保存并启用规则。
+- en: 'Now that you''ve set up the automation rule, every day around the time you
+    created the rule, you should receive a notification in the Slack channel you configured
+    that should look similar to the following screenshot:'
+  id: totrans-122
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在你已经设置好了自动化规则，每天在你创建规则的时间，应该会在你配置的 Slack 频道中收到类似下面截图的通知：
+- en: '![Figure 4.6 – Receiving a notification in a Slack channel'
+  id: totrans-123
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '![图 4.6 – 在 Slack 频道接收通知'
+- en: '](img/Figure_4.6_B16551.jpg)'
+  id: totrans-124
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '](img/Figure_4.6_B16551.jpg)'
+- en: Figure 4.6 – Receiving a notification in a Slack channel
+  id: totrans-125
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 4.6 – 在 Slack 频道接收通知
+- en: Tip
+  id: totrans-126
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 提示
+- en: To create this rule in Jira Server, instead of the **Lookup issues** action,
+    you will need to enter the JQL query in the trigger configuration, expand the
+    **More options** disclosure, and ensure that the **Process all issues produced
+    by this trigger in bulk** option is selected.
+  id: totrans-127
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 Jira Server 中创建这个规则时，你需要在触发器配置中输入 JQL 查询，而不是使用 **查找问题** 动作，展开 **更多选项**，并确保选中
+    **批量处理触发器产生的所有问题** 选项。
+- en: In this section, we have learned how to integrate Slack notifications in automation
+    rules and how to send notifications to Slack channels. In the next section, we'll
+    explore how to integrate with Microsoft Teams to send notifications to a Teams
+    channel in a similar manner to Slack.
+  id: totrans-128
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本节中，我们学习了如何将 Slack 通知集成到自动化规则中，并如何向 Slack 频道发送通知。在接下来的章节中，我们将探讨如何与 Microsoft
+    Teams 集成，以类似于 Slack 的方式向 Teams 频道发送通知。
+- en: How to send notifications to Microsoft Teams
+  id: totrans-129
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 如何向 Microsoft Teams 发送通知
+- en: Microsoft Teams is a collaboration platform from Microsoft and part of the Microsoft
+    365 offering. As with Slack, it allows teams to collaborate in channels or via
+    direct messages with other individuals.
+  id: totrans-130
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Microsoft Teams 是微软的协作平台，属于 Microsoft 365 套件的一部分。与 Slack 类似，它允许团队通过频道或直接消息与其他人进行协作。
+- en: As we saw in the previous section, automation provides a **Send Microsoft Teams
+    message** action that allows us to send messages to a Microsoft Teams channel.
+  id: totrans-131
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如我们在上一节中看到的，自动化提供了 **发送 Microsoft Teams 消息** 动作，允许我们向 Microsoft Teams 频道发送消息。
+- en: In this section, we will learn how to integrate with Microsoft Teams to send
+    notifications to channels using automation rules.
+  id: totrans-132
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本节中，我们将学习如何与 Microsoft Teams 集成，通过自动化规则向频道发送通知。
+- en: Integrating with Microsoft Teams
+  id: totrans-133
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 与 Microsoft Teams 集成
+- en: The first thing we need to do before we can use Microsoft Teams in automation
+    rules is to set up an incoming webhook so that our rule can send messages to a
+    channel in Teams.
+  id: totrans-134
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在我们能够在自动化规则中使用 Microsoft Teams 之前，首先需要设置传入 Webhook，这样我们的规则才能向 Teams 频道发送消息。
+- en: In Microsoft Teams, we need to add the Incoming Webhook connector to our team
+    before we can send messages to a channel from an automation rule.
+  id: totrans-135
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 Microsoft Teams 中，我们需要将传入 Webhook 连接器添加到团队中，才能通过自动化规则向频道发送消息。
+- en: 'Let''s look at how we can configure a team and channel in Microsoft Teams using
+    the *Incoming Webhook connector*:'
+  id: totrans-136
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们来看一下如何使用 *传入 Webhook 连接器* 在 Microsoft Teams 中配置团队和频道：
+- en: Open your Microsoft Teams app and open the Teams app store from the sidebar.
+  id: totrans-137
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 打开你的 Microsoft Teams 应用，并从侧边栏打开 Teams 应用商店。
+- en: Select **Connectors** from the menu and then find the **Incoming Webhook** connector.
+  id: totrans-138
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 从菜单中选择 **连接器**，然后找到 **传入 Webhook** 连接器。
+- en: In the pop-up window, click on **Add to a team**, and then select the team and
+    channel you want to add the connector to and click **Set up a connector**.
+  id: totrans-139
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在弹出的窗口中，点击 **添加到团队**，然后选择你想要添加连接器的团队和频道，并点击 **设置连接器**。
+- en: In the following screen, provide a name for your incoming webhook such as *Jira
+    Notifications*, upload a new image if you like, and click on **Create**.
+  id: totrans-140
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在下一个界面中，给你的传入 Webhook 连接器命名，例如 *Jira 通知*，如果需要，可以上传新的图片，并点击 **创建**。
+- en: 'The following screenshot shows the URL for your new Incoming Webhook connector
+    that you will need to copy so that you can use it when configuring your automation
+    rule:'
+  id: totrans-141
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 下图显示了你新建的传入 Webhook 连接器的 URL，你需要复制它，以便在配置自动化规则时使用：
+- en: '![Figure 4.7 – Setting up a Microsoft Teams Incoming Webhook connector'
+  id: totrans-142
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '![图 4.7 – 设置 Microsoft Teams 传入 Webhook 连接器'
+- en: '](img/Figure_4.7_B16551.jpg)'
+  id: totrans-143
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '](img/Figure_4.7_B16551.jpg)'
+- en: Figure 4.7 – Setting up a Microsoft Teams Incoming Webhook connector
+  id: totrans-144
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 4.7 – 设置 Microsoft Teams 传入 Webhook 连接器
+- en: Now that we've set up our Incoming Webhook connector in Microsoft Teams, we
+    are ready to use it in an automation rule to send notifications to our configured
+    channel.
+  id: totrans-145
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经在 Microsoft Teams 中设置了传入 Webhook 连接器，可以在自动化规则中使用它来向我们配置的渠道发送通知。
+- en: Creating a rule to notify a Microsoft Teams channel when a high-priority issue
+    is raised
+  id: totrans-146
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 创建规则以便在高优先级问题被提出时通知 Microsoft Teams 渠道。
+- en: 'In this example, we''ll use an automation rule to watch for issues raised with
+    a high or highest priority alert and then send a notification to the team channel
+    using *Microsoft Teams*:'
+  id: totrans-147
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本示例中，我们将使用自动化规则监控提出的高优先级或最高优先级警报问题，并通过*Microsoft Teams*将通知发送到团队渠道：
+- en: In your Jira Service Management project, navigate to **Project settings**, click
+    on the **Automation** link in the project settings menu, and then click **Create
+    rule**.
+  id: totrans-148
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在你的 Jira 服务管理项目中，导航到**项目设置**，点击项目设置菜单中的**自动化**链接，然后点击**创建规则**。
+- en: Next, select the **Issue created** trigger and click **Save**.
+  id: totrans-149
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 接下来，选择**问题已创建**触发器并点击**保存**。
+- en: Then, select **New** **condition** followed by the **Issue** fields condition.
+  id: totrans-150
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 然后，选择**新建** **条件**，接着选择**问题**字段条件。
+- en: Complete the fields as follows and click `Priority`
+  id: totrans-151
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 按照以下步骤完成字段设置，并点击`Priority`。
+- en: '`is one of`'
+  id: totrans-152
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`是其中之一`'
+- en: '`Highest, High`'
+  id: totrans-153
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`Highest, High`'
+- en: Next, select **New action** followed by the **Send Microsoft Teams message**
+    action.
+  id: totrans-154
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 接下来，选择**新建操作**，然后选择**发送 Microsoft Teams 消息**操作。
+- en: Complete the action fields as follows and click `High Priority Ticket`.
+  id: totrans-155
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 按照以下步骤完成操作字段设置，并点击`High Priority Ticket`。
+- en: '**Message**:'
+  id: totrans-156
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '**消息**：'
+- en: '[PRE4]'
+  id: totrans-157
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: Tip
+  id: totrans-158
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 提示
+- en: If you leave the **Include issue summary in message** option checked, the notification
+    in Microsoft Teams will include the issue status, issue type, and assignee in
+    the message, as well as a **View in Jira** button that will open the Jira ticket
+    in your web browser when clicked.
+  id: totrans-159
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 如果勾选了**在消息中包含问题摘要**选项，Microsoft Teams 中的通知将包括问题状态、问题类型和指派人信息，以及一个**在 Jira 中查看**按钮，点击后将打开
+    Jira 工单的网页。
+- en: 'Your rule should look similar to the following screenshot:'
+  id: totrans-160
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 你的规则应与以下截图类似：
+- en: '![Figure 4.8 – Sending a message with Microsoft Teams'
+  id: totrans-161
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '![图 4.8 – 使用 Microsoft Teams 发送消息'
+- en: '](img/Figure_4.8_B16551.jpg)'
+  id: totrans-162
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '](img/Figure_4.8_B16551.jpg)'
+- en: Figure 4.8 – Sending a message with Microsoft Teams
+  id: totrans-163
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 图 4.8 – 使用 Microsoft Teams 发送消息
+- en: Finally, name the rule `High priority issue notification` and click **Turn it
+    on** to save and enable the rule.
+  id: totrans-164
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 最后，将规则命名为`高优先级问题通知`，点击**启用**以保存并启用该规则。
+- en: 'Creating a new high or highest priority issue in your Service Management project
+    will cause a notification similar to the following screenshot to be sent to your
+    configured Microsoft Teams channel:'
+  id: totrans-165
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在你的服务管理项目中创建一个新的高优先级或最高优先级问题时，将向你配置的 Microsoft Teams 渠道发送类似于以下截图的通知：
+- en: '![Figure 4.9 – Receiving a notification in a Microsoft Teams channel'
+  id: totrans-166
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '![图 4.9 – 在 Microsoft Teams 渠道接收通知'
+- en: '](img/Figure_4.9_B16551.jpg)'
+  id: totrans-167
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '](img/Figure_4.9_B16551.jpg)'
+- en: Figure 4.9 – Receiving a notification in a Microsoft Teams channel
+  id: totrans-168
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 4.9 – 在 Microsoft Teams 渠道接收通知
+- en: In this section, we have learned how to set up an Incoming Webhook connector
+    in Microsoft Teams and how to use it in an automation rule to send notifications
+    to the team channel that was configured in the connector.
+  id: totrans-169
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这一部分，我们学习了如何在 Microsoft Teams 中设置传入 Webhook 连接器，并如何在自动化规则中使用它向配置的团队渠道发送通知。
+- en: In the next section, we'll look at how to send SMS notifications to mobile phones
+    using *Twilio*.
+  id: totrans-170
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一部分，我们将讨论如何使用*Twilio*向手机发送短信通知。
+- en: Sending SMS notifications with Twilio
+  id: totrans-171
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用 Twilio 发送短信通知
+- en: '**Twilio** is a communications platform offered as a cloud-based service that
+    allows developers to integrate voice, video, and text communications into their
+    applications using a **REST API**.'
+  id: totrans-172
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**Twilio** 是一个提供云服务的通信平台，允许开发者通过**REST API**将语音、视频和文本通信集成到他们的应用程序中。'
+- en: Using the **Send Twilio notification** action in our automation rules allows
+    us to make use of the Twilio platform to send SMS messages to mobile phones.
+  id: totrans-173
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在我们的自动化规则中使用**发送 Twilio 通知**操作，可以利用 Twilio 平台向手机发送短信。
+- en: In practice, you would usually have a dedicated on-call tool integrated with
+    Jira that has the capability to contact the correct team member using a customizable
+    schedule via various methods, including via mobile phone text message (SMS). However,
+    the **Send Twilio notification** action will allow you to build a simple on-call
+    schedule using *automation rules*.
+  id: totrans-174
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在实际操作中，您通常会使用集成了Jira的专用值班工具，该工具能够通过各种方式，包括通过手机短信，使用可自定义计划联系正确的团队成员。然而，**发送Twilio通知**操作将允许您使用*自动化规则*构建一个简单的值班计划。
+- en: In this section, we will learn how to integrate with Twilio to send notifications
+    as SMS messages using automation rules.
+  id: totrans-175
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本节中，我们将学习如何通过自动化规则集成Twilio，以便将通知作为短信消息发送。
+- en: Integrating with Twilio
+  id: totrans-176
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 与Twilio集成
+- en: Integrating with Twilio is a relatively straightforward process. You will need
+    a Twilio account and a telephone number from which your SMS messages will be sent.
+  id: totrans-177
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 与Twilio集成是一个相对简单的过程。您需要一个Twilio账号和一个从中发送SMS消息的电话号码。
+- en: Important note
+  id: totrans-178
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 重要提示
+- en: Twilio accounts are free to set up and you can get a trial number free of charge.
+    However, you will be charged for every SMS message you send through the platform
+    and you will need to pay for a phone number in your country of choice.
+  id: totrans-179
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Twilio账户免费设置，并且您可以免费获得试用号码。但是，您将需要支付通过平台发送的每条SMS消息的费用，并且您需要为您选择的国家购买电话号码。
+- en: 'Let''s take a look at how we can get set up with Twilio so that we can send
+    SMS messages from our automation rules:'
+  id: totrans-180
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们看看如何设置Twilio，以便我们可以从我们的自动化规则发送短信消息：
+- en: Navigate to [https://www.twilio.com](https://www.twilio.com) and sign up for
+    an account or log in to your existing account.
+  id: totrans-181
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 导航至[https://www.twilio.com](https://www.twilio.com)，注册一个账号或者登录您现有的账号。
+- en: If you don't already have a phone number, click on the **Get a Trial Number**
+    button on your project dashboard.
+  id: totrans-182
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如果您还没有电话号码，请在项目仪表板上点击**获取试用号码**按钮。
+- en: 'Once you have a phone number, your Twilio dashboard should look similar to
+    the following screenshot:'
+  id: totrans-183
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 一旦您有了电话号码，您的Twilio仪表板应该看起来类似以下的截图：
+- en: '![Figure 4.10 – Setting up a Twilio account'
+  id: totrans-184
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '![图 4.10 – 设置Twilio账号'
+- en: '](img/Figure_4.10_B16551.jpg)'
+  id: totrans-185
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '](img/Figure_4.10_B16551.jpg)'
+- en: Figure 4.10 – Setting up a Twilio account
+  id: totrans-186
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 图 4.10 – 设置Twilio账号
+- en: You will need to copy your **TRIAL NUMBER, ACCOUNT SID, and AUTH TOKEN** information
+    from your Twilio dashboard when we come to configure the automation rule. To copy
+    your **ACCOUNT SID** and **AUTH TOKEN** fields, you can click on the icon at the
+    right of the respective field.
+  id: totrans-187
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 当我们配置自动化规则时，您需要从Twilio仪表板复制您的**试用号码、账户SID和授权令牌**信息。要复制您的**账户SID**和**授权令牌**字段，您可以点击各字段右侧的图标。
+- en: Now that we have a Twilio account and phone number, we can create an automation
+    rule to send SMS messages to a mobile phone.
+  id: totrans-188
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们有了Twilio账号和电话号码，我们可以创建一个自动化规则来发送短信到手机上。
+- en: Creating a rule to send an after-hours notification via SMS message
+  id: totrans-189
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 创建一个规则以通过短信消息发送工作时间外通知
+- en: In this example, for any incidents with a priority of highest or high and raised
+    before 8 a.m. or after 6 p.m., we will send an SMS notification using *Twilio*
+    to a mobile number.
+  id: totrans-190
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这个例子中，对于任何优先级为最高或高，并且在早上8点之前或下午6点之后提出的事件，我们将使用*Twilio*向手机发送短信通知。
+- en: To keep things simple, we will assume that there is a single mobile device that
+    is in the possession of the team member who is on-call after hours.
+  id: totrans-191
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了简单起见，我们假设有一个单独的移动设备，由负责在工作时间外值班的团队成员使用。
+- en: 'Let''s create the rule to send an SMS message:'
+  id: totrans-192
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们创建一个发送短信消息的规则：
+- en: In your Jira Service Management project, navigate to **Project settings**, click
+    on the **Automation** link in the **Project Settings** menu, and then click **Create
+    rule**.
+  id: totrans-193
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在您的Jira服务管理项目中，导航至**项目设置**，点击**自动化**链接在**项目设置**菜单中，然后点击**创建规则**。
+- en: Next, select the **Issue created** trigger and click **Save**.
+  id: totrans-194
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 接下来，选择**问题创建**触发器并点击**保存**。
+- en: Then, select `Issue Type`
+  id: totrans-195
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 然后，选择`问题类型`
+- en: '`equals`'
+  id: totrans-196
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`等于`'
+- en: '`Incident`'
+  id: totrans-197
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`事故`'
+- en: Now click **Save** so we can add our next condition.
+  id: totrans-198
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在点击**保存**，这样我们就可以添加我们的下一个条件。
+- en: Select `Priority`
+  id: totrans-199
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 选择`优先级`
+- en: '`is one of`'
+  id: totrans-200
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`是其中之一`'
+- en: '`Highest, High`'
+  id: totrans-201
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`最高，高`'
+- en: Click **Save** so that we can move on to our final condition.
+  id: totrans-202
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 点击**保存**，这样我们就可以继续我们的最后一个条件。
+- en: 'Now select **New Condition** followed by **JQL condition** and enter the following
+    **JQL** query and click **Save**:'
+  id: totrans-203
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 然后选择**新条件**，然后选择**JQL条件**，输入以下**JQL**查询并点击**保存**：
+- en: '[PRE5]'
+  id: totrans-204
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: Next, select **New action** and then the **Send Twilio notification** action.
+  id: totrans-205
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 接下来，选择**新操作**，然后选择**发送Twilio通知**操作。
+- en: 'Complete the fields as follows and click **Save**:'
+  id: totrans-206
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 按如下方式填写字段，然后点击 **保存**：
+- en: '**Account SID**: Copy the account SID from your Twilio dashboard.'
+  id: totrans-207
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '**Account SID**：从你的 Twilio 仪表板复制账户 SID。'
+- en: '**Auth token**: Copy the auth token from your Twilio dashboard.'
+  id: totrans-208
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '**Auth token**：从你的 Twilio 仪表板复制认证令牌。'
+- en: '**From**: Copy the trial number or phone number from your Twilio dashboard.'
+  id: totrans-209
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '**From**：从你的 Twilio 仪表板复制试用号码或电话号码。'
+- en: '**To**: The mobile number to send the text message to in international format.'
+  id: totrans-210
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '**To**：以国际格式填写要发送短信的手机号码。'
+- en: '**Message body**:'
+  id: totrans-211
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '**消息正文**：'
+- en: '[PRE6]'
+  id: totrans-212
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: 'Your automation rule should look similar to the following screenshot:'
+  id: totrans-213
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 你的自动化规则应类似于以下截图：
+- en: '![Figure 4.11 – Sending an SMS message via Twilio'
+  id: totrans-214
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '![图 4.11 – 通过 Twilio 发送短信'
+- en: '](img/Figure_4.11_B16551.jpg)'
+  id: totrans-215
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '](img/Figure_4.11_B16551.jpg)'
+- en: Figure 4.11 – Sending an SMS message via Twilio
+  id: totrans-216
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 图 4.11 – 通过 Twilio 发送短信
+- en: Finally, name the rule `High priority after-hours notification` and click **Turn
+    it on** to save and enable the rule.
+  id: totrans-217
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 最后，命名规则为 `高优先级非工作时间通知`，然后点击 **开启** 以保存并启用规则。
+- en: 'Creating an issue in the Service Management project with a high or highest
+    priority should result in an SMS message being sent that looks similar to the
+    following screenshot:'
+  id: totrans-218
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在 Service Management 项目中创建一个优先级为高或最高的 issue 时，应该会发送一条短信，内容与以下截图相似：
+- en: '![Figure 4.12 – Receiving an SMS message notification via Twilio'
+  id: totrans-219
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '![图 4.12 – 通过 Twilio 接收短信通知'
+- en: '](img/Figure_4.12_B16551.jpg)'
+  id: totrans-220
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '](img/Figure_4.12_B16551.jpg)'
+- en: Figure 4.12 – Receiving an SMS message notification via Twilio
+  id: totrans-221
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 4.12 – 通过 Twilio 接收短信通知
+- en: In this section, we have learned how to use the Twilio platform to send text
+    messages via SMS to a mobile phone number from an automation rule. The ability
+    to send an SMS message notification gives you another channel to ensure that your
+    notifications are delivered in a timely manner and express the desired level of
+    urgency.
+  id: totrans-222
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本节中，我们已经学习了如何使用 Twilio 平台通过 SMS 向手机号码发送短信通知。发送短信通知的能力为你提供了另一种渠道，确保通知能够及时送达，并传达预期的紧急程度。
+- en: Summary
+  id: totrans-223
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 概述
+- en: In this chapter, you have learned how to use automation rules to send custom
+    email notifications to users, groups of users, or indeed any valid email address.
+  id: totrans-224
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，你已学会了如何使用自动化规则向用户、用户组或任何有效的电子邮件地址发送自定义电子邮件通知。
+- en: You have also learned how to send notifications to two of the most widely used
+    chat systems, Slack and Microsoft Teams.
+  id: totrans-225
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你还学会了如何向两个最广泛使用的聊天系统，Slack 和 Microsoft Teams 发送通知。
+- en: Finally, we have learned how to integrate with Twilio to send text messages
+    via SMS to mobile phones.
+  id: totrans-226
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后，我们已经学习了如何与 Twilio 集成，通过 SMS 向手机发送文本消息。
+- en: With these skills, you will now be able to leverage automation rules to send
+    customized notifications at exactly the right time and with the relevant contextual
+    information, and this will encourage your users to take the desired actions.
+  id: totrans-227
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 凭借这些技能，你现在可以利用自动化规则在恰当的时间发送定制通知，并附带相关的上下文信息，这将鼓励用户采取预期的行动。
+- en: In the next chapter, we will explore how to use automation rules to integrate
+    with external systems that can accept web requests and how to accept requests
+    from external systems.
+  id: totrans-228
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一章中，我们将探讨如何使用自动化规则与可以接受 web 请求的外部系统集成，以及如何接受来自外部系统的请求。

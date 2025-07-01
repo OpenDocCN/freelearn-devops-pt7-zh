@@ -1,0 +1,1509 @@
+- en: '6'
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '6'
+- en: Automating Microsoft Windows and Network Devices
+  id: totrans-1
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用 Ansible 自动化 Microsoft Windows 和网络设备
+- en: Due to the complexity and wide variety of technologies, there are no one-size-fits-all
+    tools in the information technology space. This is common for automation software
+    as well but fortunately, Ansible can be used for most of your IT automation use
+    cases because of the large community support and contributions from the vendors
+    who provide these services, such as cloud platforms, network appliances, and software
+    platforms.
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于技术的复杂性和广泛的多样性，信息技术领域没有一种适合所有的工具。这在自动化软件中同样适用，但幸运的是，由于大量的社区支持和提供这些服务的供应商的贡献（如云平台、网络设备和软件平台），Ansible
+    可以用于大多数 IT 自动化用例。
+- en: When we talk about basic system automation, we know how easy it is to automate
+    Linux machines using Ansible. However, we can do the same for Microsoft Windows
+    machines as well. There are community collections and certified Content Collection
+    for managing Microsoft Windows operations, such as user management, firewall,
+    system management, package management, and registry configurations.
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当我们谈论基本系统自动化时，我们知道使用 Ansible 自动化 Linux 机器有多么容易。然而，我们也可以同样地对 Microsoft Windows
+    机器进行自动化。有社区集合和认证内容集合用于管理 Microsoft Windows 操作，如用户管理、防火墙、系统管理、软件包管理和注册表配置。
+- en: Similarly, we have thousands of modules available via different collections
+    for managing network devices such as Cisco, FortiGate, Palo Alto, VyOS, F5, and
+    CheckPoint. To become familiar with network automation, we will discuss the network
+    connection methods and configurations for VyOS and Cisco ASA devices.
+  id: totrans-4
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 同样地，我们通过不同的集合拥有数千个模块，用于管理诸如 Cisco、FortiGate、Palo Alto、VyOS、F5 和 CheckPoint 等网络设备。为了熟悉网络自动化，我们将讨论
+    VyOS 和 Cisco ASA 设备的网络连接方法和配置。
+- en: 'In this chapter, we will cover the following topics:'
+  id: totrans-5
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们将涵盖以下主题：
+- en: Ansible remote connection methods
+  id: totrans-6
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Ansible 远程连接方法
+- en: Automating Microsoft Windows servers using Ansible
+  id: totrans-7
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用 Ansible 自动化 Microsoft Windows 服务器
+- en: Introduction to network automation
+  id: totrans-8
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 网络自动化简介
+- en: VyOS information gathering using Ansible
+  id: totrans-9
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用 Ansible 收集 VyOS 信息
+- en: Creating ACL entries in a Cisco ASA device
+  id: totrans-10
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在 Cisco ASA 设备中创建 ACL 条目
+- en: First, you will learn about the different connection methods available in Ansible.
+    Then, you will learn how to configure and automate Microsoft Windows tasks using
+    Ansible. Finally, you will learn about how to use Ansible for network automation.
+  id: totrans-11
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 首先，您将了解 Ansible 中可用的不同连接方法。然后，您将学习如何使用 Ansible 配置和自动化 Microsoft Windows 任务。最后，您将学习如何使用
+    Ansible 进行网络自动化。
+- en: Technical requirements
+  id: totrans-12
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 技术要求
+- en: 'The following are the technical requirements for this chapter:'
+  id: totrans-13
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章的技术要求如下：
+- en: A Linux machine for the Ansible control node
+  id: totrans-14
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 一个用作 Ansible 控制节点的 Linux 机器
+- en: One or more Linux machines as managed nodes with Red Hat repositories configured
+    (if you are using non-RHEL machines, then make sure you have the appropriate repositories
+    configured to get packages and updates)
+  id: totrans-15
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 一个或多个作为受管节点的 Linux 机器，并配置了 Red Hat 仓库（如果您使用非 RHEL 机器，则确保配置了适当的仓库以获取软件包和更新）
+- en: One or more Microsoft Windows machines (we used a Windows 2019 server)
+  id: totrans-16
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 一个或多个 Microsoft Windows 机器（我们使用了 Windows 2019 服务器）
+- en: One or more network devices/virtual appliances (for practicing this chapter’s
+    network automation use case)
+  id: totrans-17
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 一个或多个网络设备/虚拟设备（用于实践本章的网络自动化用例）
+- en: Basic administrative knowledge of Microsoft Windows machines, including user
+    creation and package management
+  id: totrans-18
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 包括用户创建和软件包管理在内的 Microsoft Windows 机器基础管理知识
+- en: Basic administrative knowledge of network devices, including IP configuration
+    and access configuration
+  id: totrans-19
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 包括 IP 配置和访问配置在内的网络设备基础管理知识
+- en: All the Ansible code, playbooks, commands, and snippets for this chapter can
+    be found in this book’s GitHub repository at [https://github.com/PacktPublishing/Ansible-for-Real-life-Automation/tree/main/Chapter-06](https://github.com/PacktPublishing/Ansible-for-Real-life-Automation/tree/main/Chapter-06).
+  id: totrans-20
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章的所有 Ansible 代码、playbook、命令和片段均可在本书的 GitHub 代码库中找到：[https://github.com/PacktPublishing/Ansible-for-Real-life-Automation/tree/main/Chapter-06](https://github.com/PacktPublishing/Ansible-for-Real-life-Automation/tree/main/Chapter-06)。
+- en: Ansible remote connection methods
+  id: totrans-21
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Ansible 远程连接方法
+- en: By default, Ansible communicates with the remote machine using the SSH protocol
+    (native OpenSSH), as you learned previously in this book. For remote nodes, which
+    do not have SSH server options, it is possible to use other connection methods
+    such as WinRM for Microsoft Windows remote machines or **httpapi** for API-based
+    remote devices (such as Cisco NXAPI and Arista eAPI).
+  id: totrans-22
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 默认情况下，Ansible使用SSH协议（本地OpenSSH）与远程机器进行通信，正如你在本书中前面所学到的。对于没有SSH服务器选项的远程节点，可以使用其他连接方法，如Microsoft
+    Windows远程机器的WinRM，或基于API的远程设备（如Cisco NXAPI和Arista eAPI）的**httpapi**。
+- en: 'The following diagram shows the different connection methods used by Ansible
+    for automating different devices and platforms:'
+  id: totrans-23
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 下图展示了Ansible用于自动化不同设备和平台的不同连接方法：
+- en: '![Figure 6.1 – Connection methods used by Ansible ](img/B18383_06_01.jpg)'
+  id: totrans-24
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图6.1 – Ansible使用的连接方法](img/B18383_06_01.jpg)'
+- en: Figure 6.1 – Connection methods used by Ansible
+  id: totrans-25
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图6.1 – Ansible使用的连接方法
+- en: 'You can find the available Ansible `ansible-doc` command, as follows:'
+  id: totrans-26
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以找到可用的Ansible `ansible-doc`命令，如下所示：
+- en: '![Figure 6.2 – Ansible connection plugins ](img/B18383_06_02.jpg)'
+  id: totrans-27
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图6.2 – Ansible连接插件](img/B18383_06_02.jpg)'
+- en: Figure 6.2 – Ansible connection plugins
+  id: totrans-28
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图6.2 – Ansible连接插件
+- en: Ansible Inventory and Connection Parameters
+  id: totrans-29
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible清单和连接参数
+- en: Refer to [https://docs.ansible.com/ansible/latest/user_guide/intro_inventory.xhtml#connecting-to-hosts-behavioral-inventory-parameters](https://docs.ansible.com/ansible/latest/user_guide/intro_inventory.xhtml#connecting-to-hosts-behavioral-inventory-parameters)
+    for specific connection parameters for connections such as SSH, Docker, and more.
+  id: totrans-30
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请参考[https://docs.ansible.com/ansible/latest/user_guide/intro_inventory.xhtml#connecting-to-hosts-behavioral-inventory-parameters](https://docs.ansible.com/ansible/latest/user_guide/intro_inventory.xhtml#connecting-to-hosts-behavioral-inventory-parameters)，了解SSH、Docker等连接的具体连接参数。
+- en: The number of connection plugins on your Ansible control node will depend on
+    the Ansible collections you are using as by default, Ansible only has a few connection
+    options such as `ssh`, `winrm`, `local`, and so on. The remaining connection plugins
+    come with the Ansible collections you have installed.
+  id: totrans-31
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在你的Ansible控制节点上的连接插件数量将取决于你所使用的Ansible集合，因为默认情况下，Ansible只提供少量的连接选项，如`ssh`、`winrm`、`local`等。其余的连接插件来自你已安装的Ansible集合。
+- en: 'It is also possible to see details about the `ansible-doc` command, as follows:'
+  id: totrans-32
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你还可以查看关于`ansible-doc`命令的详细信息，如下所示：
+- en: '![Figure 6.3 – Docker connection plugin details ](img/B18383_06_03.jpg)'
+  id: totrans-33
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图6.3 – Docker连接插件的详细信息](img/B18383_06_03.jpg)'
+- en: Figure 6.3 – Docker connection plugin details
+  id: totrans-34
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图6.3 – Docker连接插件的详细信息
+- en: In the preceding output, we can see details about the `community.docker.docker`
+    connection plugin, including its usage.
+  id: totrans-35
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在前面的输出中，我们可以看到关于`community.docker.docker`连接插件的详细信息，包括它的使用方式。
+- en: You will learn more about Ansible connection variables and the available options
+    in the next section.
+  id: totrans-36
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你将在下一节中学到更多关于Ansible连接变量和可用选项的内容。
+- en: Ansible connection variables
+  id: totrans-37
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: Ansible连接变量
+- en: 'It is possible to control the remote connection details using the Ansible inventory
+    parameters and other variables. Refer to the documentation at [https://docs.ansible.com/ansible/latest/reference_appendices/special_variables.xhtml](https://docs.ansible.com/ansible/latest/reference_appendices/special_variables.xhtml)
+    to learn more about Ansible special variables. The following screenshot shows
+    the inventory variables section. Here, different remote connection details are
+    mentioned, such as `ansible_connection`, `ansible_port`, and `ansible_user`:'
+  id: totrans-38
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以通过Ansible清单参数和其他变量来控制远程连接的详细信息。更多关于Ansible特殊变量的内容，请参考文档：[https://docs.ansible.com/ansible/latest/reference_appendices/special_variables.xhtml](https://docs.ansible.com/ansible/latest/reference_appendices/special_variables.xhtml)。以下截图显示了清单变量部分。这里提到了不同的远程连接详细信息，如`ansible_connection`、`ansible_port`和`ansible_user`：
+- en: '![Figure 6.4 – Ansible inventory variable with special variables ](img/B18383_06_04.jpg)'
+  id: totrans-39
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图6.4 – Ansible清单变量与特殊变量](img/B18383_06_04.jpg)'
+- en: Figure 6.4 – Ansible inventory variable with special variables
+  id: totrans-40
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图6.4 – Ansible清单变量与特殊变量
+- en: 'It is possible to configure different values and variables, as follows:'
+  id: totrans-41
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 可以配置不同的值和变量，如下所示：
+- en: '`ansible_connection`: This specifies the connection type to use, such as `ssh`,
+    `local` (for `localhost` nodes), `winrm`, or `docker`:'
+  id: totrans-42
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible_connection`：指定要使用的连接类型，如`ssh`、`local`（用于`localhost`节点）、`winrm`或`docker`：'
+- en: '[PRE0]'
+  id: totrans-43
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: '`ansible_host`: The actual name or IP address of the remote node if it is different
+    from the inventory name.'
+  id: totrans-44
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible_host`：如果远程节点的名称或IP地址与清单中的名称不同，则使用实际的名称或IP地址。'
+- en: '`ansible_user`: The user account to be used for remote node authentication.'
+  id: totrans-45
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible_user`：用于远程节点身份验证的用户账户。'
+- en: '`ansible_password`: The password for `ansible_user` to authenticate. Note that
+    keeping `ansible_password` in plain text is not a best practice; you should consider
+    keeping it encrypted using Ansible Vault (refer to [*Chapter 3*](B18383_03.xhtml#_idTextAnchor052),
+    *Automating Your Daily Jobs*, the *Encrypting sensitive data using Ansible Vault*
+    section and [*Chapter 13*](B18383_13.xhtml#_idTextAnchor241), *Using Ansible for
+    Secret Management*) or following authentication based on SSH keys (refer to *Chapter
+    1''s*, *Configuring Your Managed Nodes section*).'
+  id: totrans-46
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible_password`：用于 `ansible_user` 身份验证的密码。请注意，保持 `ansible_password` 为明文密码并不是最佳实践；你应考虑使用
+    Ansible Vault 对其进行加密（请参阅 [*第 3 章*](B18383_03.xhtml#_idTextAnchor052)，*自动化你的日常工作*，以及
+    *使用 Ansible Vault 加密敏感数据* 部分，和 [*第 13 章*](B18383_13.xhtml#_idTextAnchor241)，*使用
+    Ansible 进行密钥管理*），或者采用基于 SSH 密钥的身份验证（参见 *第 1 章*，*配置你的托管节点* 部分）。'
+- en: '`ansible_port`: If the remote connection port is something other than `22`
+    (the default SSH port), then specify the port number to use for the remote connection.'
+  id: totrans-47
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible_port`：如果远程连接端口不是 `22`（默认 SSH 端口），则需要指定用于远程连接的端口号。'
+- en: In the next section, we will learn about the SSH connection parameters and how
+    to configure it for managed nodes.
+  id: totrans-48
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在接下来的章节中，我们将学习关于 SSH 连接参数及如何为托管节点配置它。
+- en: SSH connection parameters
+  id: totrans-49
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: SSH 连接参数
+- en: 'Additionally, there are SSH-specific variables such as `ansible_ssh_private_key_file`
+    and `ansible_ssh_common_args` for assigning different SSH keys for different managed
+    nodes if needed:'
+  id: totrans-50
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 此外，还存在一些 SSH 特定变量，如 `ansible_ssh_private_key_file` 和 `ansible_ssh_common_args`，用于为不同的托管节点分配不同的
+    SSH 密钥（如果需要）：
+- en: '![Figure 6.5 – Ansible SSH-specific variables ](img/B18383_06_05.jpg)'
+  id: totrans-51
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 6.5 – Ansible SSH 特定变量 ](img/B18383_06_05.jpg)'
+- en: Figure 6.5 – Ansible SSH-specific variables
+  id: totrans-52
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 6.5 – Ansible SSH 特定变量
+- en: With that, you have learned about the Ansible connection methods and connection
+    parameters that are available for controlling the connection. Now, let’s learn
+    how to automate Microsoft Windows servers using Ansible.
+  id: totrans-53
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 到此，你已经了解了可用于控制连接的 Ansible 连接方法和连接参数。现在，让我们学习如何使用 Ansible 自动化 Microsoft Windows
+    服务器。
+- en: Automating Microsoft Windows servers using Ansible
+  id: totrans-54
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用 Ansible 自动化 Microsoft Windows 服务器
+- en: 'As I mentioned earlier, Ansible is only available for Linux/Unix platforms,
+    but that doesn’t mean you can’t use Ansible to automate Microsoft Windows machines.
+    It is possible to use Ansible on a Linux/Unix machine (the Ansible control node)
+    and automate your Microsoft Windows machines like so:'
+  id: totrans-55
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如我之前提到的，Ansible 仅适用于 Linux/Unix 平台，但这并不意味着你不能使用 Ansible 来自动化 Microsoft Windows
+    机器。你可以在 Linux/Unix 机器（即 Ansible 控制节点）上使用 Ansible，像这样自动化你的 Microsoft Windows 机器：
+- en: '![Figure 6.6 – Ansible and managed nodes ](img/B18383_06_06.jpg)'
+  id: totrans-56
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 6.6 – Ansible 和托管节点 ](img/B18383_06_06.jpg)'
+- en: Figure 6.6 – Ansible and managed nodes
+  id: totrans-57
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 6.6 – Ansible 和托管节点
+- en: 'Multiple Ansible **Content Collections** can be used for Microsoft Windows
+    automation. Altogether, there are more than 100 Ansible modules available for
+    automating Microsoft Windows tasks:'
+  id: totrans-58
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 可以使用多个 Ansible **内容集合**来进行 Microsoft Windows 自动化。总共有超过 100 个 Ansible 模块可用于自动化
+    Microsoft Windows 任务：
+- en: Ansible modules for Microsoft Windows from the community ([https://galaxy.ansible.com/community/windows](https://galaxy.ansible.com/community/windows))
+    contains 84 modules.
+  id: totrans-59
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 来自社区的 Ansible Windows 模块 ([https://galaxy.ansible.com/community/windows](https://galaxy.ansible.com/community/windows))
+    包含 84 个模块。
+- en: The Ansible Windows module from Red Hat ([https://galaxy.ansible.com/ansible/windows](https://galaxy.ansible.com/ansible/windows))
+    contains 40 modules.
+  id: totrans-60
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Red Hat 提供的 Ansible Windows 模块 ([https://galaxy.ansible.com/ansible/windows](https://galaxy.ansible.com/ansible/windows))
+    包含 40 个模块。
+- en: In the next few sections, you will learn more about Ansible Windows automation,
+    such as the supported Microsoft Windows versions, prerequisites, credential configuration,
+    and inventory configurations.
+  id: totrans-61
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在接下来的几节中，你将进一步了解 Ansible Windows 自动化，如支持的 Microsoft Windows 版本、前提条件、凭据配置以及库存配置。
+- en: Ansible Windows Guides
+  id: totrans-62
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible Windows 指南
+- en: The official Ansible documentation portal contains details on how to configure
+    and set up Microsoft Windows machines to automate using Ansible. Refer to [https://docs.ansible.com/ansible/latest/user_guide/windows.xhtml](https://docs.ansible.com/ansible/latest/user_guide/windows.xhtml)
+    and [https://www.techbeatly.com/ansible-windows](https://www.techbeatly.com/ansible-windows)
+    for more details.
+  id: totrans-63
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 官方 Ansible 文档门户提供了如何配置和设置 Microsoft Windows 机器以便使用 Ansible 进行自动化的详细信息。请参考 [https://docs.ansible.com/ansible/latest/user_guide/windows.xhtml](https://docs.ansible.com/ansible/latest/user_guide/windows.xhtml)
+    和 [https://www.techbeatly.com/ansible-windows](https://www.techbeatly.com/ansible-windows)
+    获取更多信息。
+- en: Supported Microsoft Windows operating systems
+  id: totrans-64
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 支持的 Microsoft Windows 操作系统
+- en: 'Ansible can manage most general-purpose Microsoft Windows operating system
+    versions, as follows:'
+  id: totrans-65
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 可以管理大多数通用的 Microsoft Windows 操作系统版本，如下所示：
+- en: Microsoft Windows 7
+  id: totrans-66
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Microsoft Windows 7
+- en: Microsoft Windows 8.1
+  id: totrans-67
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Microsoft Windows 8.1
+- en: Microsoft Windows 10
+  id: totrans-68
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Microsoft Windows 10
+- en: Microsoft Windows Server 2008
+  id: totrans-69
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Microsoft Windows Server 2008
+- en: Microsoft Windows Server2008 R2
+  id: totrans-70
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Microsoft Windows Server 2008 R2
+- en: Microsoft Windows Server 2012
+  id: totrans-71
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Microsoft Windows Server 2012
+- en: Microsoft Windows Server 2012 R2
+  id: totrans-72
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Microsoft Windows Server 2012 R2
+- en: Microsoft Windows Server 2016
+  id: totrans-73
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Microsoft Windows Server 2016
+- en: Microsoft Windows Server 2019
+  id: totrans-74
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Microsoft Windows Server 2019
+- en: Microsoft Windows automation – Ansible control node prerequisites
+  id: totrans-75
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: Microsoft Windows 自动化 – Ansible 控制节点的先决条件
+- en: 'There is no special requirement for an Ansible control node other than installing
+    the Python `pywinrm` library, which can be installed as follows:'
+  id: totrans-76
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于 Ansible 控制节点，没有特殊要求，只需安装 Python `pywinrm` 库，安装方法如下：
+- en: 'If you are using a Python virtual environment, then remember to activate your
+    virtual environment (skip this step otherwise):'
+  id: totrans-77
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如果您正在使用 Python 虚拟环境，请记得激活虚拟环境（如果不是，则跳过此步骤）：
+- en: '[PRE1]'
+  id: totrans-78
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: 'Install the `pywinrm` library:'
+  id: totrans-79
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 安装 `pywinrm` 库：
+- en: '[PRE2]'
+  id: totrans-80
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: Make sure that you have installed the `pywinrm` library on the exact Python
+    environment Ansible is using (check `ansible --version` and see which Python version
+    it is using).
+  id: totrans-81
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 确保在 Ansible 使用的 Python 环境中安装了 `pywinrm` 库（检查 `ansible --version` 以查看它使用的 Python
+    版本）。
+- en: Microsoft Windows automation – managed node prerequisites
+  id: totrans-82
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: Microsoft Windows 自动化 – 被管理节点的先决条件
+- en: 'The Microsoft Windows machine should be installed and configured with the following
+    items:'
+  id: totrans-83
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Microsoft Windows 机器应安装并配置以下项：
+- en: PowerShell 3.0 or newer (some of the Ansible modules for Microsoft Windows may
+    require newer versions of PowerShell; refer to the module documentation you use).
+  id: totrans-84
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: PowerShell 3.0 或更新版本（某些 Ansible 模块需要更新版本的 PowerShell，具体要求请参考所用模块的文档）。
+- en: .NET 4.0 or newer.
+  id: totrans-85
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: .NET 4.0 或更新版本。
+- en: A **WinRM** listener should be created and activated – Ansible uses WinRM to
+    connect to the Microsoft Windows machines by default. Microsoft Windows Remote
+    Management is a SOAP-based remote management protocol that communicates over HTTP
+    or HTTPS.
+  id: totrans-86
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 应该创建并启用 **WinRM** 监听器 – Ansible 默认使用 WinRM 连接到 Microsoft Windows 机器。Microsoft
+    Windows 远程管理（WinRM）是一个基于 SOAP 的远程管理协议，通过 HTTP 或 HTTPS 进行通信。
+- en: A Microsoft Windows firewall should be configured to allow traffic on `5985`
+    (HTTP) and/or `5986` (HTTPS). If there is additional firewall or network traffic
+    control between the Ansible control node and Microsoft Windows machines, then
+    make sure the ports are allowed there too.
+  id: totrans-87
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 应配置 Microsoft Windows 防火墙，允许通过 `5985`（HTTP）和/或 `5986`（HTTPS）端口的流量。如果 Ansible
+    控制节点与 Microsoft Windows 机器之间存在额外的防火墙或网络流量控制，请确保相应端口也被允许。
+- en: Configuring the user account and WinRM on a Microsoft Windows machine
+  id: totrans-88
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 配置 Microsoft Windows 机器上的用户帐户和 WinRM
+- en: 'In this exercise, you will configure a user and WinRM on the Microsoft Windows
+    machine:'
+  id: totrans-89
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本练习中，您将配置 Microsoft Windows 机器上的用户和 WinRM：
+- en: 'Log into the Microsoft Windows machine and create a new user called `ansible`.
+    Use any method to create this user:'
+  id: totrans-90
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 登录到 Microsoft Windows 机器并创建一个名为 `ansible` 的新用户。使用任意方法创建此用户：
+- en: Note
+  id: totrans-91
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 注意
+- en: It is possible to use the default `Administrator` group membership to demonstrate
+    automation without issues. Refer to the documentation at [https://docs.microsoft.com/en-us/windows-server-essentials/manage/manage-user-accounts-in-windows-server-essentials](https://docs.microsoft.com/en-us/windows-server-essentials/manage/manage-user-accounts-in-windows-server-essentials)
+    to learn more about how to manage user accounts in Windows Server.
+  id: totrans-92
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 可以使用默认的 `Administrator` 用户组成员身份来演示自动化而不会遇到问题。有关如何管理 Windows Server 用户帐户的详细信息，请参阅文档
+    [https://docs.microsoft.com/en-us/windows-server-essentials/manage/manage-user-accounts-in-windows-server-essentials](https://docs.microsoft.com/en-us/windows-server-essentials/manage/manage-user-accounts-in-windows-server-essentials)。
+- en: '![Figure 6.7 – Creating a new user account on the Microsoft Windows server
+    ](img/B18383_06_07.jpg)'
+  id: totrans-93
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 6.7 – 在 Microsoft Windows 服务器上创建新用户帐户](img/B18383_06_07.jpg)'
+- en: Figure 6.7 – Creating a new user account on the Microsoft Windows server
+  id: totrans-94
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 6.7 – 在 Microsoft Windows 服务器上创建新用户帐户
+- en: 'Like `sudo` access in Linux, you need administrator rights for the Microsoft
+    Windows user that you are using to connect from Ansible to the Microsoft Windows
+    machine. Add the new `ansible` user to the **Administrators** group, as shown
+    here:'
+  id: totrans-95
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 类似于 Linux 中的 `sudo` 权限，你需要为从 Ansible 连接到 Microsoft Windows 机器的 Microsoft Windows
+    用户提供管理员权限。将新的 `ansible` 用户添加到**管理员**组，如下所示：
+- en: '![Figure 6.8 – Adding the Ansible user to the Administrators group ](img/B18383_06_08.jpg)'
+  id: totrans-96
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 6.8 – 将 Ansible 用户添加到管理员组](img/B18383_06_08.jpg)'
+- en: Figure 6.8 – Adding the Ansible user to the Administrators group
+  id: totrans-97
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 6.8 – 将 Ansible 用户添加到管理员组
+- en: 'Verify the PowerShell version using the `(Get-Host).Version` command:'
+  id: totrans-98
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用 `(Get-Host).Version` 命令验证 PowerShell 版本：
+- en: '![Figure 6.9 – Checking the PowerShell version ](img/B18383_06_09.jpg)'
+  id: totrans-99
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 6.9 – 检查 PowerShell 版本](img/B18383_06_09.jpg)'
+- en: Figure 6.9 – Checking the PowerShell version
+  id: totrans-100
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 6.9 – 检查 PowerShell 版本
+- en: The next step is to configure the WinRM listener and enable the WinRM service
+    on the Microsoft Windows managed node. Instead of executing multiple commands
+    on PowerShell, use the ready-to-use script available in the Ansible `ConfigureRemotingForAnsible.ps1`
+    repository ([https://github.com/ansible/ansible/blob/devel/examples/scripts/ConfigureRemotingForAnsible.ps1](https://github.com/ansible/ansible/blob/devel/examples/scripts/ConfigureRemotingForAnsible.ps1)).
+  id: totrans-101
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 下一步是配置 WinRM 侦听器并启用 Microsoft Windows 管理节点上的 WinRM 服务。你可以使用 Ansible `ConfigureRemotingForAnsible.ps1`
+    仓库中现成的脚本，而不必在 PowerShell 中执行多个命令 ([https://github.com/ansible/ansible/blob/devel/examples/scripts/ConfigureRemotingForAnsible.ps1](https://github.com/ansible/ansible/blob/devel/examples/scripts/ConfigureRemotingForAnsible.ps1))。
+- en: 'Download the script and execute it on the Microsoft Windows machine, as follows:'
+  id: totrans-102
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 下载脚本并在 Microsoft Windows 机器上执行，如下所示：
+- en: '![Figure 6.10 – Configuring WinRM on the Microsoft Windows machine using a
+    script ](img/B18383_06_10.jpg)'
+  id: totrans-103
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 6.10 – 使用脚本在 Microsoft Windows 机器上配置 WinRM](img/B18383_06_10.jpg)'
+- en: Figure 6.10 – Configuring WinRM on the Microsoft Windows machine using a script
+  id: totrans-104
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 6.10 – 使用脚本在 Microsoft Windows 机器上配置 WinRM
+- en: If your Microsoft Windows machine is in a disconnected environment, then download
+    the script from some other machine and transfer it to the Microsoft Windows machine.
+  id: totrans-105
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你的 Microsoft Windows 机器位于离线环境中，可以从其他机器下载脚本并将其传输到 Microsoft Windows 机器。
+- en: 'Verify the WinRM configuration using the `winrm e winrm/config/listener` command
+    once the script has been executed successfully:'
+  id: totrans-106
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在脚本成功执行后，使用 `winrm e winrm/config/listener` 命令验证 WinRM 配置：
+- en: '![Figure 6.11 – Verifying the WinRM configuration ](img/B18383_06_11.jpg)'
+  id: totrans-107
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 6.11 – 验证 WinRM 配置](img/B18383_06_11.jpg)'
+- en: Figure 6.11 – Verifying the WinRM configuration
+  id: totrans-108
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 6.11 – 验证 WinRM 配置
+- en: Then verify the WinRM configuration using the `winrm get winrm/config` command.
+  id: totrans-109
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 然后使用`winrm get winrm/config`命令验证 WinRM 配置。
+- en: 'Verify port access from the Ansible control node:'
+  id: totrans-110
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 验证来自 Ansible 控制节点的端口访问：
+- en: '![Figure 6.12 – Verifying the Ansible to Microsoft Windows connection using
+    WinRM ](img/B18383_06_12.jpg)'
+  id: totrans-111
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 6.12 – 使用 WinRM 验证 Ansible 与 Microsoft Windows 的连接](img/B18383_06_12.jpg)'
+- en: Figure 6.12 – Verifying the Ansible to Microsoft Windows connection using WinRM
+  id: totrans-112
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 6.12 – 使用 WinRM 验证 Ansible 与 Microsoft Windows 的连接
+- en: Configure Your Microsoft Windows Host to be Managed by Ansible
+  id: totrans-113
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 配置你的 Microsoft Windows 主机以便由 Ansible 管理
+- en: Refer to [https://www.techbeatly.com/configure-your-windows-host-to-manage-by-ansible/](https://www.techbeatly.com/configure-your-windows-host-to-manage-by-ansible/)
+    or [https://docs.ansible.com/ansible/latest/user_guide/windows_winrm.xhtml](https://docs.ansible.com/ansible/latest/user_guide/windows_winrm.xhtml)
+    for additional reading.
+  id: totrans-114
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请参考[https://www.techbeatly.com/configure-your-windows-host-to-manage-by-ansible/](https://www.techbeatly.com/configure-your-windows-host-to-manage-by-ansible/)
+    或 [https://docs.ansible.com/ansible/latest/user_guide/windows_winrm.xhtml](https://docs.ansible.com/ansible/latest/user_guide/windows_winrm.xhtml)
+    以获取更多资料。
+- en: Now, the Microsoft Windows managed node is ready to connect using WinRM. Now,
+    you need to configure these details on the Ansible side. In the next section,
+    you will learn how to configure your Ansible inventory to connect to a Microsoft
+    Windows managed node.
+  id: totrans-115
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，Microsoft Windows 管理节点已准备好通过 WinRM 连接。接下来，你需要在 Ansible 端配置这些细节。在下一节中，你将学习如何配置
+    Ansible 清单以连接到 Microsoft Windows 管理节点。
+- en: Configuring Ansible to access the Microsoft Windows machine
+  id: totrans-116
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 配置 Ansible 访问 Microsoft Windows 机器
+- en: 'In this exercise, you will configure the Ansible control node with Microsoft
+    Windows user and other access details:'
+  id: totrans-117
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本练习中，您将为Ansible控制节点配置Microsoft Windows用户和其他访问详细信息：
+- en: 'Create a host entry for Microsoft Windows in the Ansible inventory (replace
+    the IP address as needed for your machine):'
+  id: totrans-118
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在Ansible清单中为Microsoft Windows创建主机条目（根据需要替换IP地址）：
+- en: '[PRE3]'
+  id: totrans-119
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: 'Create a directory for Ansible group variables:'
+  id: totrans-120
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建一个目录用于Ansible组变量：
+- en: '[PRE4]'
+  id: totrans-121
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: 'Add the `group_vars/windows` group variable file to configure `ansible_connection`,
+    `ansible_port`, and user credentials. These are special variables; see the `ansible_`
+    prefix for all of them (refer to the [https://docs.ansible.com/ansible/latest/reference_appendices/special_variables.xhtml](https://docs.ansible.com/ansible/latest/reference_appendices/special_variables.xhtml)
+    documentation to learn more about special variables):'
+  id: totrans-122
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 添加`group_vars/windows`组变量文件，以配置`ansible_connection`、`ansible_port`和用户凭据。这些是特殊变量；有关所有特殊变量，请参阅`ansible_`前缀（参阅[https://docs.ansible.com/ansible/latest/reference_appendices/special_variables.xhtml](https://docs.ansible.com/ansible/latest/reference_appendices/special_variables.xhtml)文档了解有关特殊变量的更多信息）：
+- en: '![Figure 6.13 – Ansible group variable for Windows ](img/B18383_06_13.jpg)'
+  id: totrans-123
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图6.13 – 用于Windows的Ansible组变量](img/B18383_06_13.jpg)'
+- en: Figure 6.13 – Ansible group variable for Windows
+  id: totrans-124
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图6.13 – 用于Windows的Ansible组变量
+- en: '*Note that it is not a best practice to use basic authentication using a username
+    and password in critical environments. For production and critical environments,
+    you are encouraged to use a password that’s been encrypted using Ansible Vault
+    or keep credentials in Ansible Automation Controller (or Ansible Tower). Also,
+    you may need to create a different user rather than an Administrator. You should
+    also consider using SSL certificates and other secure methods to connect Microsoft
+    Windows machines from the Ansible control node.*'
+  id: totrans-125
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '*请注意，在关键环境中使用用户名和密码进行基本身份验证并不是最佳实践。对于生产环境和关键环境，建议使用通过Ansible Vault加密的密码，或将凭据保存在Ansible自动化控制器（或Ansible
+    Tower）中。此外，您可能需要创建一个与管理员不同的用户。您还应该考虑使用SSL证书和其他安全方法，从Ansible控制节点连接Microsoft Windows机器。*'
+- en: Ansible Windows Management Using HTTPS and SSL
+  id: totrans-126
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用HTTPS和SSL进行Ansible Windows管理
+- en: Consider using SSL certificates and other secure methods to connect Microsoft
+    Windows machines from the Ansible control node (or Automation Controller). Refer
+    to [https://www.techbeatly.com/ansible-windows-management-using-https-and-ssl](https://www.techbeatly.com/ansible-windows-management-using-https-and-ssl)
+    to learn more.
+  id: totrans-127
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 考虑使用SSL证书和其他安全方法，从Ansible控制节点（或自动化控制器）连接Microsoft Windows机器。请参考[https://www.techbeatly.com/ansible-windows-management-using-https-and-ssl](https://www.techbeatly.com/ansible-windows-management-using-https-and-ssl)了解更多信息。
+- en: 'Verify the Ansible to Microsoft Windows machine connection:'
+  id: totrans-128
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 验证Ansible与Microsoft Windows机器的连接：
+- en: '![Figure 6.14 – Ansible to Microsoft Windows connection test using the win_ping
+    module ](img/B18383_06_14.jpg)'
+  id: totrans-129
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图6.14 – 使用win_ping模块测试Ansible与Microsoft Windows的连接](img/B18383_06_14.jpg)'
+- en: Figure 6.14 – Ansible to Microsoft Windows connection test using the win_ping
+    module
+  id: totrans-130
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图6.14 – 使用win_ping模块测试Ansible与Microsoft Windows的连接
+- en: Like the `ping` module (for Linux machines), the `win_ping` module will establish
+    a connection to the target machine and display the `pong` message if the connection
+    is successful.
+  id: totrans-131
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 与`ping`模块（用于Linux机器）类似，`win_ping`模块将建立与目标机器的连接，如果连接成功，将显示`pong`消息。
+- en: Microsoft Windows automation – using Ansible to create a Windows user
+  id: totrans-132
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: Microsoft Windows自动化 – 使用Ansible创建Windows用户
+- en: 'In this exercise, you will create a new user in the Microsoft Windows machine
+    using Ansible:'
+  id: totrans-133
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本练习中，您将使用Ansible在Microsoft Windows机器上创建一个新用户：
+- en: 'Create a new Ansible playbook called `Chapter-06/windows-create-user.yaml`
+    and add the following details:'
+  id: totrans-134
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建一个新的Ansible playbook，命名为`Chapter-06/windows-create-user.yaml`，并添加以下详细信息：
+- en: '![Figure 6.15 – Ansible playbook to create a user in Microsoft Windows ](img/B18383_06_15.jpg)'
+  id: totrans-135
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图6.15 – 用于在Microsoft Windows中创建用户的Ansible playbook](img/B18383_06_15.jpg)'
+- en: Figure 6.15 – Ansible playbook to create a user in Microsoft Windows
+  id: totrans-136
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图6.15 – 用于在Microsoft Windows中创建用户的Ansible playbook
+- en: 'Execute the Ansible playbook:'
+  id: totrans-137
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 执行Ansible playbook：
+- en: '![Figure 6.16 – Executing the Ansible playbook to create a user in Microsoft
+    Windows ](img/B18383_06_16.jpg)'
+  id: totrans-138
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图6.16 – 执行Ansible playbook以在Microsoft Windows中创建用户](img/B18383_06_16.jpg)'
+- en: Figure 6.16 – Executing the Ansible playbook to create a user in Microsoft Windows
+  id: totrans-139
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图6.16 – 执行Ansible playbook以在Microsoft Windows中创建用户
+- en: Inventory Nodes as Extra Variables
+  id: totrans-140
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 将清单节点作为额外变量
+- en: In the preceding playbook, we did not hardcode the `hosts` information. Instead,
+    we passed the `windows` host group while executing the playbook.
+  id: totrans-141
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在前面的 playbook 中，我们没有硬编码 `hosts` 信息，而是在执行 playbook 时传递了 `windows` 主机组。
+- en: 'Verify the Microsoft Windows machine to see if the user has been created or
+    not:'
+  id: totrans-142
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 验证 Microsoft Windows 机器，查看用户是否已创建：
+- en: '![Figure 6.17 – New Windows user account created using Ansible ](img/B18383_06_17.jpg)'
+  id: totrans-143
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 6.17 – 使用 Ansible 创建的新 Windows 用户账户](img/B18383_06_17.jpg)'
+- en: Figure 6.17 – New Windows user account created using Ansible
+  id: totrans-144
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 6.17 – 使用 Ansible 创建的新 Windows 用户账户
+- en: Find more Microsoft Windows automation use cases from your workplace, such as
+    package deployment, group policy update, Active Directory operations, firewall
+    management, service management, or even executing PowerShell scripts.
+  id: totrans-145
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 查找更多来自工作场所的 Microsoft Windows 自动化用例，例如包部署、组策略更新、Active Directory 操作、防火墙管理、服务管理，甚至执行
+    PowerShell 脚本。
+- en: Ansible for Windows Automation
+  id: totrans-146
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 用于 Windows 自动化
+- en: Refer to [https://www.ansible.com/for/windows](https://www.ansible.com/for/windows)
+    to learn more about Ansible Windows automation. Visit [https://aap2.demoredhat.com/exercises/ansible_windows](https://aap2.demoredhat.com/exercises/ansible_windows)
+    to find workshops and practice sessions for Microsoft Windows automation using
+    Ansible.
+  id: totrans-147
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请访问 [https://www.ansible.com/for/windows](https://www.ansible.com/for/windows)
+    了解更多关于 Ansible Windows 自动化的信息。访问 [https://aap2.demoredhat.com/exercises/ansible_windows](https://aap2.demoredhat.com/exercises/ansible_windows)
+    查找有关使用 Ansible 进行 Microsoft Windows 自动化的工作坊和实践课程。
+- en: In the next section, you will learn the basics of network automation using Ansible.
+  id: totrans-148
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一部分，你将学习使用 Ansible 进行网络自动化的基础知识。
+- en: Introduction to network automation
+  id: totrans-149
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 网络自动化简介
+- en: Network automation using Ansible is based on different connection methods. There
+    are some differences between Ansible network automation compared to Linux/Unix
+    and Microsoft Windows automation. Also, note that Ansible can be used to automate
+    the existing network automation tools such as Cisco ACI using the available Cisco
+    ACI modules ([https://docs.ansible.com/ansible/latest/scenario_guides/guide_aci.xhtml](https://docs.ansible.com/ansible/latest/scenario_guides/guide_aci.xhtml)).
+  id: totrans-150
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用 Ansible 进行网络自动化基于不同的连接方法。与 Linux/Unix 和 Microsoft Windows 自动化相比，Ansible 网络自动化有一些差异。同时，注意
+    Ansible 可以用于自动化现有的网络自动化工具，如使用可用的 Cisco ACI 模块自动化 Cisco ACI ([https://docs.ansible.com/ansible/latest/scenario_guides/guide_aci.xhtml](https://docs.ansible.com/ansible/latest/scenario_guides/guide_aci.xhtml))。
+- en: Task execution on an Ansible control node
+  id: totrans-151
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 在 Ansible 控制节点上执行任务
+- en: Previously, you learned that Ansible is built on top of Python, so a remote
+    node must be installed with Python to execute the automation tasks (Microsoft
+    Windows modules are written in PowerShell and a `winrm` connection must be set
+    to use PowerShell modules). Unlike Linux/Microsoft Windows nodes, many network
+    devices do not have Python and cannot run Python scripts. Hence, the network automation
+    modules are processed and executed in the Ansible control node; all actual commands
+    will be executed on the target network devices.
+  id: totrans-152
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 之前，你已经学到 Ansible 是建立在 Python 之上的，因此必须在远程节点上安装 Python 才能执行自动化任务（Microsoft Windows
+    模块是用 PowerShell 编写的，必须设置 `winrm` 连接才能使用 PowerShell 模块）。与 Linux/Microsoft Windows
+    节点不同，许多网络设备没有 Python，无法运行 Python 脚本。因此，网络自动化模块会在 Ansible 控制节点中处理和执行；所有实际命令将在目标网络设备上执行。
+- en: Different connection methods
+  id: totrans-153
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 不同的连接方法
+- en: 'Network task execution can support multiple communication methods, depending
+    on the operating system of the network device and its version:'
+  id: totrans-154
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 网络任务执行可以支持多种通信方法，具体取决于网络设备的操作系统及其版本：
+- en: '![Figure 6.18 – Ansible network communication protocols (source: https://docs.ansible.com)
+    ](img/B18383_06_18.jpg)'
+  id: totrans-155
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 6.18 – Ansible 网络通信协议（来源：https://docs.ansible.com）](img/B18383_06_18.jpg)'
+- en: 'Figure 6.18 – Ansible network communication protocols (source: [https://docs.ansible.com](https://docs.ansible.com))'
+  id: totrans-156
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 6.18 – Ansible 网络通信协议（来源：[https://docs.ansible.com](https://docs.ansible.com)）
+- en: 'You need to specify the appropriate method to use for the network device connection,
+    the privilege escalation method (`become_method` such as `enable`), and the operating
+    system of the network device, as shown in the following screenshot:'
+  id: totrans-157
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你需要指定用于网络设备连接的适当方法、特权升级方法（`become_method`，如 `enable`）以及网络设备的操作系统，如下图所示：
+- en: '![Figure 6.19 – Ansible network device inventory ](img/B18383_06_19.jpg)'
+  id: totrans-158
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 6.19 – Ansible 网络设备清单](img/B18383_06_19.jpg)'
+- en: Figure 6.19 – Ansible network device inventory
+  id: totrans-159
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 6.19 – Ansible 网络设备清单
+- en: 'In the preceding screenshot, we used the following:'
+  id: totrans-160
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在前面的截图中，我们使用了以下内容：
+- en: '`ansible_connection=ansible.netcommon.network_cli` to specify the connection
+    plugin to use'
+  id: totrans-161
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible_connection=ansible.netcommon.network_cli` 指定要使用的连接插件'
+- en: '`ansible_become_method=enable` to use `enable` as the privilege escalation
+    method'
+  id: totrans-162
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible_become_method=enable` 使用 `enable` 作为特权提升方法'
+- en: '`ansible_network_os=cisco.ios.ios` to indicate the network device operating
+    system'
+  id: totrans-163
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible_network_os=cisco.ios.ios` 表示网络设备的操作系统'
+- en: Network Communication Protocols
+  id: totrans-164
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 网络通信协议
+- en: Refer to [https://docs.ansible.com/ansible/latest/network/getting_started/network_differences.xhtml#multiple-communication-protocols](https://docs.ansible.com/ansible/latest/network/getting_started/network_differences.xhtml#multiple-communication-protocols)
+    for different communication protocols available for network automation using Ansible.
+  id: totrans-165
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 参阅 [https://docs.ansible.com/ansible/latest/network/getting_started/network_differences.xhtml#multiple-communication-protocols](https://docs.ansible.com/ansible/latest/network/getting_started/network_differences.xhtml#multiple-communication-protocols)
+    了解使用 Ansible 进行网络自动化时支持的不同通信协议。
+- en: In the next section, you will learn how to create an Ansible playbook to gather
+    information from a VyOS network device.
+  id: totrans-166
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一部分，你将学习如何创建一个 Ansible playbook，以收集来自 VyOS 网络设备的信息。
+- en: VyOS information gathering using Ansible
+  id: totrans-167
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用 Ansible 收集 VyOS 信息
+- en: This is an optional exercise for you to become familiar with network automation
+    using Ansible. We assume that you have the basic knowledge to install and configure
+    the **VyOS** appliance inside a virtual machine with your choice of virtualization
+    platform.
+  id: totrans-168
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这是一个可选练习，让你熟悉使用 Ansible 进行网络自动化。我们假设你已经掌握了在虚拟机中安装和配置 **VyOS** 设备的基本知识，并且可以使用你选择的虚拟化平台。
+- en: Download the VyOS image from [https://support.vyos.io/en/downloads](https://support.vyos.io/en/downloads)
+    and install it as a virtual appliance (refer to the VyOS documentation at https://support.vyos.io/en/kb
+    more for details).
+  id: totrans-169
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 从 [https://support.vyos.io/en/downloads](https://support.vyos.io/en/downloads)
+    下载 VyOS 镜像，并将其安装为虚拟设备（更多细节请参考 VyOS 文档 https://support.vyos.io/en/kb）。
+- en: VyOS Network Operating System
+  id: totrans-170
+  prefs: []
+  type: TYPE_NORMAL
+  zh: VyOS 网络操作系统
+- en: VyOs is an open source network operating system based on Debian Linux. VyOS
+    provides most networking functionalities, such as routing, **Virtual Private Networks**
+    (**VPNs**), firewalls, **Network Address Translation** (**NAT**), and so on. Refer
+    to [https://vyos.io](https://vyos.io) for more details.
+  id: totrans-171
+  prefs: []
+  type: TYPE_NORMAL
+  zh: VyOS 是一个基于 Debian Linux 的开源网络操作系统。VyOS 提供了大部分网络功能，例如路由、**虚拟私人网络**（**VPNs**）、防火墙、**网络地址转换**（**NAT**）等。详情请参见
+    [https://vyos.io](https://vyos.io)。
+- en: 'In the following exercise, you will create a simple Ansible playbook to collect
+    the operating system information from a VyOS device (or virtual appliance):'
+  id: totrans-172
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在以下练习中，你将创建一个简单的 Ansible playbook，以从 VyOS 设备（或虚拟设备）收集操作系统信息：
+- en: 'Add the VyOS virtual machine details to the Ansible inventory:'
+  id: totrans-173
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 将 VyOS 虚拟机的详细信息添加到 Ansible 清单中：
+- en: '[PRE5]'
+  id: totrans-174
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: 'Update the inventory as follows:'
+  id: totrans-175
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 按如下方式更新清单：
+- en: '![Figure 6.20 – Updating the Ansible inventory with VyOS device information
+    ](img/B18383_06_20.jpg)'
+  id: totrans-176
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 6.20 – 使用 VyOS 设备信息更新 Ansible 清单](img/B18383_06_20.jpg)'
+- en: Figure 6.20 – Updating the Ansible inventory with VyOS device information
+  id: totrans-177
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 6.20 – 使用 VyOS 设备信息更新 Ansible 清单
+- en: 'Create a playbook called `Chapter-06/vyos-facts.yaml` to gather the VyOS facts:'
+  id: totrans-178
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建一个名为 `Chapter-06/vyos-facts.yaml` 的 playbook 来收集 VyOS 事实：
+- en: '![Figure 6.21 – Ansible playbook for collecting details from the VyOS device
+    ](img/B18383_06_21.jpg)'
+  id: totrans-179
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 6.21 – 用于从 VyOS 设备收集详细信息的 Ansible playbook](img/B18383_06_21.jpg)'
+- en: Figure 6.21 – Ansible playbook for collecting details from the VyOS device
+  id: totrans-180
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 6.21 – 用于从 VyOS 设备收集详细信息的 Ansible playbook
+- en: 'Execute the playbook, as follows:'
+  id: totrans-181
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 执行 playbook，如下所示：
+- en: '![Figure 6.22 – VyOS fact-gathering playbook output ](img/B18383_06_22.jpg)'
+  id: totrans-182
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 6.22 – VyOS 收集事实的 playbook 输出](img/B18383_06_22.jpg)'
+- en: Figure 6.22 – VyOS fact-gathering playbook output
+  id: totrans-183
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 6.22 – VyOS 收集事实的 playbook 输出
+- en: Expand the playbook by collecting more facts and generating reports using the
+    methods you learned about in [*Chapter 3*](B18383_03.xhtml#_idTextAnchor052),
+    *Automating Your Daily Jobs*.
+  id: totrans-184
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 通过收集更多事实并使用你在[*第 3 章*](B18383_03.xhtml#_idTextAnchor052)中学到的方法生成报告，扩展 playbook，*自动化你的日常工作*。
+- en: In the next section, you will learn about some more advanced network automation
+    use cases by creating **access control list** (**ACL**) entries in a Cisco ASA
+    device.
+  id: totrans-185
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一部分，你将通过在 Cisco ASA 设备中创建 **访问控制列表**（**ACL**）条目来了解一些更高级的网络自动化使用案例。
+- en: Creating ACL entries in a Cisco ASA device
+  id: totrans-186
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 在 Cisco ASA 设备中创建 ACL 条目
+- en: Cisco ASA is a security device with the capabilities of firewall, antivirus,
+    intrusion prevention, and VPN. Refer to [https://www.cisco.com/c/en/us/products/security/adaptive-security-appliance-asa-software/index.xhtml](https://www.cisco.com/c/en/us/products/security/adaptive-security-appliance-asa-software/index.xhtml)
+    to learn more about Cisco ASA.
+  id: totrans-187
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Cisco ASA 是一种安全设备，具备防火墙、病毒防护、入侵预防和 VPN 功能。请参考 [https://www.cisco.com/c/en/us/products/security/adaptive-security-appliance-asa-software/index.xhtml](https://www.cisco.com/c/en/us/products/security/adaptive-security-appliance-asa-software/index.xhtml)
+    了解更多关于 Cisco ASA 的信息。
+- en: The Cisco ASA collection ([https://galaxy.ansible.com/cisco/asa](https://galaxy.ansible.com/cisco/asa))
+    provides modules and plugins to automate Cisco ASA operations. In this section,
+    you will learn how to use Cisco ASA modules to create ACL entries in a Cisco ASA
+    device.
+  id: totrans-188
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Cisco ASA 集合 ([https://galaxy.ansible.com/cisco/asa](https://galaxy.ansible.com/cisco/asa))
+    提供了模块和插件，用于自动化 Cisco ASA 操作。在本节中，您将学习如何使用 Cisco ASA 模块在 Cisco ASA 设备中创建 ACL 条目。
+- en: 'The first task is to install the Cisco ASA collection using the `ansible-galaxy`
+    command, as follows:'
+  id: totrans-189
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 第一个任务是使用 `ansible-galaxy` 命令安装 Cisco ASA 集合，如下所示：
+- en: '[PRE6]'
+  id: totrans-190
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: 'Like you have configured the VyOS connection variables, you need to configure
+    the Cisco ASA device connection variables, as follows:'
+  id: totrans-191
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 像您配置 VyOS 连接变量一样，您需要配置 Cisco ASA 设备的连接变量，如下所示：
+- en: '![Figure 6.23 – Cisco ASA inventory variables ](img/B18383_06_23.jpg)'
+  id: totrans-192
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 6.23 – Cisco ASA 清单变量](img/B18383_06_23.jpg)'
+- en: Figure 6.23 – Cisco ASA inventory variables
+  id: totrans-193
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 6.23 – Cisco ASA 清单变量
+- en: As usual, remember to encrypt the password using Ansible Vault (or a credential
+    in Ansible Automation Controller) instead of keeping it as a plain text value
+    inside the file. Also, notice the connection variables we have used for the Cisco
+    ASA device, such as `ansible_network_os=cisco.asa.asa` and `ansible_connection=ansible.netcommon.network_cli`.
+  id: totrans-194
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 和往常一样，记得使用 Ansible Vault（或 Ansible 自动化控制器中的凭证）加密密码，而不是将其作为明文值保存在文件中。另外，注意我们为
+    Cisco ASA 设备使用的连接变量，例如 `ansible_network_os=cisco.asa.asa` 和 `ansible_connection=ansible.netcommon.network_cli`。
+- en: 'A typical ACL entry creation task includes multiple steps, as shown in the
+    following diagram:'
+  id: totrans-195
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一个典型的 ACL 条目创建任务包括多个步骤，如下图所示：
+- en: '![Figure 6.24 – ACL entry creation steps for Cisco ASA ](img/B18383_06_24.jpg)'
+  id: totrans-196
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 6.24 – Cisco ASA 的 ACL 条目创建步骤](img/B18383_06_24.jpg)'
+- en: Figure 6.24 – ACL entry creation steps for Cisco ASA
+  id: totrans-197
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 6.24 – Cisco ASA 的 ACL 条目创建步骤
+- en: 'Follow the standard pre-tasks and post-tasks as per the organization’s policies
+    and procedures. It is a best practice to create Ansible roles based on specific
+    operations, such as creating an object group, backup configuration, or creating
+    an ACL entry. To make this easier to understand, I have used a single playbook
+    for this demonstration, as follows:'
+  id: totrans-198
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 遵循组织的政策和程序，执行标准的前置任务和后置任务。最佳实践是基于特定操作创建 Ansible 角色，例如创建对象组、备份配置或创建 ACL 条目。为了使这个过程更容易理解，我为本示例使用了一个单一的
+    Playbook，如下所示：
+- en: '![Figure 6.25 – Cisco ACL playbook with variables ](img/B18383_06_25.jpg)'
+  id: totrans-199
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 6.25 – 带变量的 Cisco ACL Playbook](img/B18383_06_25.jpg)'
+- en: Figure 6.25 – Cisco ACL playbook with variables
+  id: totrans-200
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 6.25 – 带变量的 Cisco ACL Playbook
+- en: In the actual environment, take those variables (shown in *Figure 6.25*) from
+    the variable file in the repository (as a source of truth) or collect them using
+    a Survey form in Ansible Automation Controller (or Ansible Tower).
+  id: totrans-201
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在实际环境中，从仓库中的变量文件（作为事实源）获取这些变量（如 *图 6.25* 所示），或通过 Ansible 自动化控制器（或 Ansible Tower）中的调查表格收集它们。
+- en: Add the tasks to the playbook to implement the steps explained in *Figure 6.24*.
+  id: totrans-202
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 向 Playbook 中添加任务，执行 *图 6.24* 中解释的步骤。
+- en: 'First, you must take the backup of the current configuration to the TFTP server
+    using the `cisco.asa.asa_command` module, as shown here:'
+  id: totrans-203
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 首先，您必须使用 `cisco.asa.asa_command` 模块将当前配置备份到 TFTP 服务器，如下所示：
+- en: '![Figure 6.26 – Playbook task to take the Cisco ASA backup ](img/B18383_06_26.jpg)'
+  id: totrans-204
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 6.26 – 使用 Playbook 任务备份 Cisco ASA](img/B18383_06_26.jpg)'
+- en: Figure 6.26 – Playbook task to take the Cisco ASA backup
+  id: totrans-205
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 6.26 – 使用 Playbook 任务备份 Cisco ASA
+- en: 'Add a task to create the object group using the `cisco.asa.asa_ogs` module,
+    as shown here:'
+  id: totrans-206
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 添加任务，使用 `cisco.asa.asa_ogs` 模块创建对象组，如下所示：
+- en: '![Figure 6.27 – Playbook task to create the object group ](img/B18383_06_27.jpg)'
+  id: totrans-207
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 6.27 – 创建对象组的 Playbook 任务](img/B18383_06_27.jpg)'
+- en: Figure 6.27 – Playbook task to create the object group
+  id: totrans-208
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 6.27 – 创建对象组的 Playbook 任务
+- en: 'Finally, add the task to create the ACL entry using the `cisco.asa.asa_acls`
+    module, as shown here:'
+  id: totrans-209
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后，添加任务以使用 `cisco.asa.asa_acls` 模块创建 ACL 条目，如下所示：
+- en: '![Figure 6.28 – Playbook task to create the ACL entry ](img/B18383_06_28.jpg)'
+  id: totrans-210
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图6.28 – 创建ACL条目的剧本任务](img/B18383_06_28.jpg)'
+- en: Figure 6.28 – Playbook task to create the ACL entry
+  id: totrans-211
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图6.28 – 创建ACL条目的剧本任务
+- en: 'Execute the playbook and verify that the task has been completed:'
+  id: totrans-212
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 执行剧本并验证任务是否已完成：
+- en: '![Figure 6.29 – Cisco ASA ACL playbook execution ](img/B18383_06_29.jpg)'
+  id: totrans-213
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图6.29 – Cisco ASA ACL剧本执行](img/B18383_06_29.jpg)'
+- en: Figure 6.29 – Cisco ASA ACL playbook execution
+  id: totrans-214
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图6.29 – Cisco ASA ACL剧本执行
+- en: 'Once the playbook has been executed successfully, verify its details from the
+    Cisco ASA device by logging in. The following screenshot shows the sample output:'
+  id: totrans-215
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦剧本成功执行，请通过登录Cisco ASA设备来验证其详细信息。以下截图显示了示例输出：
+- en: '![Figure 6.30 – Verifying the ACL entry’s creation from the Cisco ASA device
+    console ](img/B18383_06_30.jpg)'
+  id: totrans-216
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图6.30 – 从Cisco ASA设备控制台验证ACL条目的创建](img/B18383_06_30.jpg)'
+- en: Figure 6.30 – Verifying the ACL entry’s creation from the Cisco ASA device console
+  id: totrans-217
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图6.30 – 从Cisco ASA设备控制台验证ACL条目的创建
+- en: 'Then, log in to the TFTP server and verify that the backups have been created
+    from the playbook tasks:'
+  id: totrans-218
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后，登录TFTP服务器并验证备份是否已从剧本任务中创建：
+- en: '![Figure 6.31 – Verifying the configuration backups in the TFTP server ](img/B18383_06_31.jpg)'
+  id: totrans-219
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图6.31 – 在TFTP服务器中验证配置备份](img/B18383_06_31.jpg)'
+- en: Figure 6.31 – Verifying the configuration backups in the TFTP server
+  id: totrans-220
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图6.31 – 在TFTP服务器中验证配置备份
+- en: This use case can be expanded by adding multiple rules, object groups, and other
+    backup methods. Refer to the Cisco ASA module documentation at [https://docs.ansible.com/ansible/latest/collections/cisco/asa/index.xhtml](https://docs.ansible.com/ansible/latest/collections/cisco/asa/index.xhtml)
+    to learn more.
+  id: totrans-221
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通过添加多个规则、对象组和其他备份方法，可以扩展此用例。有关更多信息，请参阅[https://docs.ansible.com/ansible/latest/collections/cisco/asa/index.xhtml](https://docs.ansible.com/ansible/latest/collections/cisco/asa/index.xhtml)中的Cisco
+    ASA模块文档。
+- en: Expand your knowledge with other network devices you have such as Cisco, Arista,
+    Juniper Network, or HPE devices, but remember to use the appropriate connection
+    methods and parameters.
+  id: totrans-222
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 扩展你对其他网络设备的知识，例如Cisco、Arista、Juniper Network或HPE设备，但请记住使用适当的连接方法和参数。
+- en: Ansible for Network Automation
+  id: totrans-223
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 网络自动化中的Ansible
+- en: Refer to the documentation at [https://docs.ansible.com/ansible/latest/network/index.xhtml](https://docs.ansible.com/ansible/latest/network/index.xhtml)
+    to learn more about network automation basics. Also, check out *Network Getting
+    Started* ([https://docs.ansible.com/ansible/latest/network/getting_started/index.xhtml](https://docs.ansible.com/ansible/latest/network/getting_started/index.xhtml))
+    to start configuring network automation.
+  id: totrans-224
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请参阅[https://docs.ansible.com/ansible/latest/network/index.xhtml](https://docs.ansible.com/ansible/latest/network/index.xhtml)中的文档，了解更多关于网络自动化基础知识的内容。还可以查看*网络入门*([https://docs.ansible.com/ansible/latest/network/getting_started/index.xhtml](https://docs.ansible.com/ansible/latest/network/getting_started/index.xhtml))，以开始配置网络自动化。
+- en: Visit [https://www.ansible.com/use-cases/network-automation?hsLang=en-us](https://www.ansible.com/use-cases/network-automation?hsLang=en-us)
+    to learn more about Red Hat Ansible Network Automation. Also, check out the Ansible
+    Network Automation Workshop ([https://aap2.demoredhat.com/exercises/ansible_network](https://aap2.demoredhat.com/exercises/ansible_network))
+    for practice guides.
+  id: totrans-225
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 访问[https://www.ansible.com/use-cases/network-automation?hsLang=en-us](https://www.ansible.com/use-cases/network-automation?hsLang=en-us)了解更多关于Red
+    Hat Ansible网络自动化的信息。还可以查看Ansible网络自动化工作坊([https://aap2.demoredhat.com/exercises/ansible_network](https://aap2.demoredhat.com/exercises/ansible_network))，获取实践指南。
+- en: Summary
+  id: totrans-226
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 总结
+- en: In this chapter, you learned about different remote connection methods and connection
+    variables available in Ansible. After that, you explored Microsoft Windows automation
+    using Ansible. You learned how to connect to a Microsoft Windows machine from
+    Ansible and create a new user account using an Ansible playbook.
+  id: totrans-227
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，你学习了Ansible中不同的远程连接方法和连接变量。之后，你使用Ansible探索了Microsoft Windows自动化。你学习了如何从Ansible连接到Microsoft
+    Windows机器，并使用Ansible剧本创建一个新的用户账户。
+- en: You also learned the difference in network automation between Linux and Windows.
+    You explored simple network automation using a VyOS appliance and collected system
+    information using a fact-gathering playbook.
+  id: totrans-228
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你还学习了Linux和Windows在网络自动化中的区别。你使用VyOS设备探索了简单的网络自动化，并使用收集系统信息的事实收集剧本。
+- en: Finally, you learned how to use a Cisco ASA collection and implemented a use
+    case for creating an ACL entry in a Cisco ASA device.
+  id: totrans-229
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后，你学习了如何使用Cisco ASA集合，并实现了一个用于在Cisco ASA设备中创建ACL条目的用例。
+- en: In the next chapter, you will learn how to use Ansible to automate your virtualization
+    and cloud platforms, such as VMware, AWS, and Google Cloud Platform.
+  id: totrans-230
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一章中，你将学习如何使用 Ansible 来自动化你的虚拟化和云平台，如 VMware、AWS 和 Google Cloud Platform。
+- en: Further reading
+  id: totrans-231
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 深入阅读
+- en: 'To learn more about the topics that were covered in this chapter, take a look
+    at the following resources:'
+  id: totrans-232
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要了解本章中涉及的主题，请查看以下资源：
+- en: '*Cisco ACI Guide*: [https://docs.ansible.com/ansible/latest/scenario_guides/guide_aci.xhtml](https://docs.ansible.com/ansible/latest/scenario_guides/guide_aci.xhtml)'
+  id: totrans-233
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*Cisco ACI 指南*：[https://docs.ansible.com/ansible/latest/scenario_guides/guide_aci.xhtml](https://docs.ansible.com/ansible/latest/scenario_guides/guide_aci.xhtml)'
+- en: '*Self-paced interactive hands-on labs with Ansible Automation Platform*: [https://www.redhat.com/en/engage/redhat-ansible-automation-202108061218](https://www.redhat.com/en/engage/redhat-ansible-automation-202108061218)'
+  id: totrans-234
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*自定进度的 Ansible 自动化平台互动实验室*：[https://www.redhat.com/en/engage/redhat-ansible-automation-202108061218](https://www.redhat.com/en/engage/redhat-ansible-automation-202108061218)'
+- en: '*Network Automation with Ansible*: [https://www.ansible.com/integrations/networks](https://www.ansible.com/integrations/networks)'
+  id: totrans-235
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*使用 Ansible 进行网络自动化*：[https://www.ansible.com/integrations/networks](https://www.ansible.com/integrations/networks)'
+- en: '*Ansible Network Automation Workshop*: [https://aap2.demoredhat.com/exercises/ansible_network/](https://aap2.demoredhat.com/exercises/ansible_network/)'
+  id: totrans-236
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*Ansible 网络自动化工作坊*：[https://aap2.demoredhat.com/exercises/ansible_network/](https://aap2.demoredhat.com/exercises/ansible_network/)'

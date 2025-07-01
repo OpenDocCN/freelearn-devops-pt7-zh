@@ -1,0 +1,1248 @@
+- en: Storing Additional Information in Your Repository
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 在你的仓库中存储附加信息
+- en: 'In this chapter, we will cover the following recipes:'
+  id: totrans-1
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们将涵盖以下内容：
+- en: Adding your first Git note
+  id: totrans-2
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 添加你的第一个Git备注
+- en: Separating notes by category
+  id: totrans-3
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 按类别分离备注
+- en: Retrieving notes from the remote repository
+  id: totrans-4
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 从远程仓库获取备注
+- en: Pushing Git notes to a remote repository
+  id: totrans-5
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 将Git备注推送到远程仓库
+- en: Tagging commits in the repository
+  id: totrans-6
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在仓库中标记提交
+- en: Introduction
+  id: totrans-7
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 介绍
+- en: Git is powerful in many ways. One of the most powerful features of Git is that
+    it has immutable history. This is powerful because nobody can squeeze something
+    into the history of Git without it being noticed by the people who have cloned
+    the repository. This also causes some challenges for developers, as some would
+    like to change the commit messages after a commit has been released. This is possible
+    in many other version control systems, but because of the immutable history with
+    Git, it has Git notes. A Git note is essentially an extra `refs/notes/commits`
+    reference in Git. Here, you add additional information to the commits that can
+    be displayed when running a `git log` command. You can also release the notes
+    into a remote repository so that people can fetch the notes.
+  id: totrans-8
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git在许多方面都非常强大。Git最强大的功能之一是它有不可变的历史记录。这非常强大，因为没有人可以在Git的历史中偷偷插入任何东西，所有克隆了该仓库的人都会注意到这一点。这也给开发者带来了一些挑战，因为有些开发者希望在提交发布后修改提交消息。在许多其他版本控制系统中这是可能的，但由于Git有不可变历史记录，它提供了Git备注。Git备注本质上是Git中的一个额外的`refs/notes/commits`引用。在这里，你可以在提交中添加额外的信息，这些信息可以在运行`git
+    log`命令时显示出来。你还可以将备注推送到远程仓库，以便其他人能够获取这些备注。
+- en: Adding your first Git note
+  id: totrans-9
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 添加你的第一个Git备注
+- en: We will add some extra information to the already released code. If we were
+    doing it in the actual commits, we would see the commit hashes change.
+  id: totrans-10
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将为已发布的代码添加一些额外的信息。如果我们在实际的提交中做这件事，我们会看到提交哈希发生变化。
+- en: Getting ready
+  id: totrans-11
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 准备就绪
+- en: 'Before we start, we need a repository to work in; you can use the previous
+    clone of `jgit`, but to get an output from the example that''s almost identical,
+    you can clone the `jgit` repository as follows:'
+  id: totrans-12
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在开始之前，我们需要一个仓库来进行操作；你可以使用之前克隆的`jgit`，但为了获得几乎完全相同的输出，你可以按如下方式克隆`jgit`仓库：
+- en: '[PRE0]'
+  id: totrans-13
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: How to do it...
+  id: totrans-14
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 如何做...
+- en: We start by creating a local branch, `notesMessage`, tracking `origin/stable-3.2`.
+  id: totrans-15
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们首先创建一个本地分支`notesMessage`，并跟踪`origin/stable-3.2`。
+- en: 'Then, we will try and change the commit message and see that the commit hash
+    changes:'
+  id: totrans-16
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后，我们将尝试修改提交消息，并看到提交哈希发生变化：
+- en: 'Checkout the branch `notesMessage` tracking `origin/stable-3.2`:'
+  id: totrans-17
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 切换到跟踪`origin/stable-3.2`的`notesMessage`分支：
+- en: '[PRE1]'
+  id: totrans-18
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: 'List the commit hash of the `HEAD` of your branch:'
+  id: totrans-19
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 列出分支的`HEAD`提交哈希：
+- en: '[PRE2]'
+  id: totrans-20
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: 'Change the commit message by amending the commit using `git commit --amend`,
+    and, following that, add a line above the `Change-Id:` line with `Update MANIFEST
+    files`:'
+  id: totrans-21
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 通过使用`git commit --amend`修改提交消息，然后，在`Change-Id:`行上方添加一行`Update MANIFEST files`：
+- en: '[PRE3]'
+  id: totrans-22
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: 'Now, we list the commit again and see that the commit hash has changed:'
+  id: totrans-23
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在，我们再次列出提交，看到提交哈希已经变化：
+- en: '[PRE4]'
+  id: totrans-24
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: 'Notice that the commit parts have changed from `f839d383e6fbbda26729db7fd57fc917fa47db44` to `9fcaa153c4afc6ee95572a58ddfa297f60b7e1cf`,
+    as the commit is derived from the content in the commit, the parents of the commit,
+    and the commit message. So, the commit hash will change when updating the commit
+    message. Since we have changed the content of the `HEAD` commit, we are no longer
+    based on the `HEAD` commit of the `origin/stable-3.2` branch. This becomes visible
+    in `gitk` and `git status`:'
+  id: totrans-25
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 注意到提交部分已经从`f839d383e6fbbda26729db7fd57fc917fa47db44`变化为`9fcaa153c4afc6ee95572a58ddfa297f60b7e1cf`，因为提交是由提交中的内容、提交的父级和提交消息派生出来的。所以，在更新提交消息时，提交哈希会发生变化。由于我们已经改变了`HEAD`提交的内容，我们不再基于`origin/stable-3.2`分支的`HEAD`提交。这一点在`gitk`和`git
+    status`中可以看到：
+- en: '[PRE5]'
+  id: totrans-26
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: 'As you can see from the output, our branch has diverged from `origin/stable-3.2`;
+    this is also visible from `gitk`. Note that we can specify which branches and
+    commits we want to see with `gitk`. In this case, we want to see `origin/stable-3.2`
+    and `HEAD`:'
+  id: totrans-27
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 从输出中可以看到，我们的分支已经与`origin/stable-3.2`发生了分歧；这一点也可以从`gitk`中看到。注意，我们可以通过`gitk`指定想要查看的分支和提交。在这种情况下，我们希望查看`origin/stable-3.2`和`HEAD`：
+- en: '[PRE6]'
+  id: totrans-28
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: 'The following is the screenshot for this:'
+  id: totrans-29
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是此操作的截图：
+- en: '![](img/c750e1d1-0166-48e5-bf5f-ea32aa1d6f6e.png)'
+  id: totrans-30
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/c750e1d1-0166-48e5-bf5f-ea32aa1d6f6e.png)'
+- en: To prevent this result, we can add a note to the commit message.
+  id: totrans-31
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 为了避免这种情况，我们可以在提交消息中添加一个备注。
+- en: 'Let''s start by resetting the branch to `origin/stable-3.2` and then adding
+    a note to the commit:'
+  id: totrans-32
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 让我们先将分支重置为 `origin/stable-3.2`，然后为提交添加一条笔记：
+- en: '[PRE7]'
+  id: totrans-33
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE7]'
+- en: 'Now, add the same message as the previous one, but just as a note:'
+  id: totrans-34
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在，添加与之前相同的消息，但仅作为笔记：
+- en: '[PRE8]'
+  id: totrans-35
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE8]'
+- en: 'We have added the note directly from the command line without invoking the
+    editor by using the `-m` flag and then a message. The log will now be visible
+    when running `git log`:'
+  id: totrans-36
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 我们已经通过使用 `-m` 标志和消息，直接从命令行添加了笔记，而不调用编辑器。现在，当运行 `git log` 时，日志将可见：
+- en: '[PRE9]'
+  id: totrans-37
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE9]'
+- en: 'As you can see from the log output, we have a `Notes:` section with our note.
+    Although it does not add the note directly in the commit message as the `--amend`
+    option does, we still have our important addition to the commit message. We can
+    verify with `git status` that we have no longer diverged:'
+  id: totrans-38
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 从日志输出中可以看到，我们有一个 `Notes:` 部分，显示了我们的笔记。尽管它不会像 `--amend` 选项那样直接将笔记添加到提交信息中，但我们仍然可以看到我们对提交信息的关键添加。我们可以通过
+    `git status` 验证，确保我们没有再偏离：
+- en: '[PRE10]'
+  id: totrans-39
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE10]'
+- en: There's more...
+  id: totrans-40
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 还有更多内容...
+- en: 'So, you have your notes for your commit and now you want to add to them. You
+    will perhaps expect that you just add the note again with more information. This
+    is not the case. You have the option to append, edit, or force the note to be
+    created:'
+  id: totrans-41
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 所以，你已经为提交添加了笔记，现在你想进一步添加信息。你可能会认为只需再次添加笔记并补充更多内容。实际上并非如此。你有选项可以附加、编辑或强制创建笔记：
+- en: 'Start by trying to add the note again with additional information:'
+  id: totrans-42
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 首先尝试再次添加笔记并附加更多信息：
+- en: '[PRE11]'
+  id: totrans-43
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE11]'
+- en: 'As predicted, we cannot add the note but we can do it with the `-f` flag:'
+  id: totrans-44
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 正如预期的那样，我们不能直接添加笔记，但可以使用 `-f` 标志来进行操作：
+- en: '[PRE12]'
+  id: totrans-45
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE12]'
+- en: 'Git overwrites the existing notes due to the `-f` flag. You can also use `--force`,
+    which is the same. Verify it with `git log`:'
+  id: totrans-46
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 由于 `-f` 标志，Git 会覆盖现有的笔记。你也可以使用 `--force`，效果相同。用 `git log` 验证它：
+- en: '[PRE13]'
+  id: totrans-47
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE13]'
+- en: 'You can also append a current note with `git notes append`:'
+  id: totrans-48
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 你也可以使用 `git notes append` 来附加当前笔记：
+- en: '[PRE14]'
+  id: totrans-49
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE14]'
+- en: 'There is no output from this unless something goes wrong, but you can verify
+    this by using `git log` again. To keep the output to a minimum, we are using `--oneline`.
+    This will show a minimum output of the commit. But to show the note, we have to
+    add `--notes`, which will show the notes for the commits in the output:'
+  id: totrans-50
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 除非出现错误，否则此操作不会产生输出，但你可以通过再次使用 `git log` 来验证。为了保持输出简洁，我们使用了 `--oneline`。这将显示提交的最简输出。但要显示笔记，我们必须添加
+    `--notes`，它会在输出中显示提交的笔记：
+- en: '[PRE15]'
+  id: totrans-51
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE15]'
+- en: 'As we can see from the output, we have the line appended to the note. If you
+    try to use the `edit` option, you will see that you can only use this with the
+    `-m` flag. This makes good sense, as you should edit the note and not overwrite
+    or append an already created note:'
+  id: totrans-52
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 从输出中可以看到，我们已经将行附加到笔记中。如果你尝试使用 `edit` 选项，你会发现只有在使用 `-m` 标志时才能使用此选项。这是有道理的，因为你应该编辑笔记，而不是覆盖或附加到已经创建的笔记：
+- en: '[PRE16]'
+  id: totrans-53
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE16]'
+- en: In other words, Git rejects editing the note and mentions other ways of doing
+    it.
+  id: totrans-54
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 换句话说，Git 会拒绝编辑笔记，并提到其他的操作方法。
+- en: The `git notes add` and `git notes edit` commands without any arguments will
+    do exactly the same, that is, open the configured editor and allow you to write
+    a note to the commit.
+  id: totrans-55
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果不带任何参数使用 `git notes add` 和 `git notes edit` 命令，它们将执行相同的操作，即打开配置的编辑器并允许你为提交编写笔记。
+- en: Separating notes by category
+  id: totrans-56
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 按类别分隔笔记
+- en: As we saw in the previous example, we can add notes to the commits; however,
+    in some cases, it makes sense to store the information sorted by categories, such
+    as `featureImplemented`, `defect`, and `alsoCherryPick`. As briefly explained
+    at the beginning of the chapter, notes are stored in `refs/notes/commits`, but
+    we can add multiple references so that we can easily sort and list the various
+    scopes of the notes.
+  id: totrans-57
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如我们在前面的示例中看到的，我们可以将笔记添加到提交中；然而，在某些情况下，将信息按类别存储是有意义的，例如 `featureImplemented`、`defect`
+    和 `alsoCherryPick`。正如本章开头简要解释的那样，笔记存储在 `refs/notes/commits` 中，但我们可以添加多个引用，以便轻松地对笔记的不同范围进行排序和列出。
+- en: Getting ready
+  id: totrans-58
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 准备工作
+- en: 'To start this example, we need a new branch that tracks the `origin/stable-3.1`
+    branch; we name the branch `notesReferences`, and create and checkout the branch
+    with the following command:'
+  id: totrans-59
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了开始这个示例，我们需要一个新的分支来跟踪 `origin/stable-3.1` 分支；我们将分支命名为 `notesReferences`，并使用以下命令创建并切换到该分支：
+- en: '[PRE17]'
+  id: totrans-60
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE17]'
+- en: How to do it...
+  id: totrans-61
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: Imagine a situation where we have corrected a defect and did everything we could
+    to ensure the quality of the commit before releasing it. Nonetheless, we had to
+    make another fix for the same defect.
+  id: totrans-62
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 假设我们修复了一个缺陷，并在发布之前尽一切可能确保提交的质量。尽管如此，我们还是不得不为相同的缺陷做出另一个修复。
+- en: So, we want to add a note to the reference `refs/notes/alsoCherryPick`, which
+    should indicate that if you cherry-pick this commit, you should also cherry-pick
+    the other commits as they fix the same defect.
+  id: totrans-63
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 因此，我们希望向`refs/notes/alsoCherryPick`引用添加一个注释，该注释应表示如果你选择性地拾取这个提交，你还应该选择性地拾取其他提交，因为它们修复了相同的缺陷。
+- en: 'In this example, we will find the commit and add some extra information to
+    the commit in multiple notes'' reference specifications:'
+  id: totrans-64
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这个示例中，我们将找到提交，并在多个注释引用规格中为提交添加一些额外的信息：
+- en: 'Start by listing the top 10 commits on the branch so we have something to copy
+    and paste from:'
+  id: totrans-65
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 首先列出分支上的前10个提交，这样我们就有一些内容可以复制和粘贴：
+- en: '[PRE18]'
+  id: totrans-66
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE18]'
+- en: 'Add a note for the `da6e87bc3` commit:'
+  id: totrans-67
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 为`da6e87bc3`提交添加注释：
+- en: '[PRE19]'
+  id: totrans-68
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE19]'
+- en: 'Now, to add a note for the `b4f07df` commit in the ref `alsoCherryPick`, we
+    must use the `--ref` option for `git notes`. This has to be specified before the
+    `add` option:'
+  id: totrans-69
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在，要为`b4f07df`提交在`alsoCherryPick`引用中添加注释，我们必须在`git notes`中使用`--ref`选项。这个选项必须在`add`选项之前指定：
+- en: '[PRE20]'
+  id: totrans-70
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE20]'
+- en: 'No output indicates success while adding notes. Now that we have a note, we
+    should be able to list it with a single `git log -1` command. However, this is
+    not the case. You actually need to specify that you want to list the notes from
+    the specific ref. This can be done with the `--notes=alsoCherryPick` option for
+    `git log`:'
+  id: totrans-71
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 没有输出表示添加注释成功。现在我们已经有了一个注释，我们应该能够通过单个`git log -1`命令列出它。但事实并非如此。实际上，你需要指定要从特定引用中列出注释。这可以通过`git
+    log`的`--notes=alsoCherryPick`选项来完成：
+- en: '[PRE21]'
+  id: totrans-72
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE21]'
+- en: 'As you see from the output, Git shows the `alsoCherryPick` notes. Git defaults
+    to adding notes to `refs/notes/commits`, but we have explicitly specified to show
+    `alsoCherryPick`. It would be nice if you could show the `alsoCherryPick` notes''
+    reference by default so you don''t have to use `--notes=alsoCherryPick`. This
+    can be done by configuring Git as follows:'
+  id: totrans-73
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如你从输出中看到的，Git显示了`alsoCherryPick`注释。Git默认将注释添加到`refs/notes/commits`，但我们已经明确指定要显示`alsoCherryPick`。如果你能够默认显示`alsoCherryPick`注释的引用，而无需使用`--notes=alsoCherryPick`，那会很好。可以通过如下配置Git来实现：
+- en: '[PRE22]'
+  id: totrans-74
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE22]'
+- en: 'By configuring this option, you are telling Git to always list these notes.
+    But what about the default notes? Have we overwritten the configuration to list
+    the default `refs/notes/commits` notes? We can check this with `git log -1` to
+    see if we still have the test note displayed:'
+  id: totrans-75
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 通过配置此选项，你告诉Git始终列出这些注释。但默认的注释呢？我们是否覆盖了列出默认`refs/notes/commits`注释的配置？我们可以通过`git
+    log -1`检查是否仍然显示测试注释：
+- en: '[PRE23]'
+  id: totrans-76
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE23]'
+- en: 'No, we did not overwrite the setting to list notes in the default refs. Knowing
+    that we can have as many `notes.displayRef` configurations as we want, we should
+    add all the refs we want to use in our repository. In some situations, it is even
+    better to just add `refs/notes/*`. This will configure Git to show all the notes:'
+  id: totrans-77
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 不，我们并没有覆盖设置来列出默认的注释引用。既然我们知道可以有任意数量的`notes.displayRef`配置，我们应该在我们的仓库中添加所有我们想要使用的引用。在某些情况下，最好直接添加`refs/notes/*`。这将配置Git显示所有注释：
+- en: '[PRE24]'
+  id: totrans-78
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE24]'
+- en: 'If we now add another note in `refs/notes/defect`, we should be able to list
+    it without specifying which notes'' reference we want to list when using `git
+    log`. We are adding to the commit that already has a note in the `alsoCherryPick`
+    reference:'
+  id: totrans-79
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如果我们现在在`refs/notes/defect`中添加另一个注释，我们应该能够在使用`git log`时列出它，而不需要指定我们想要列出哪个注释引用。我们正在为已经在`alsoCherryPick`引用中有注释的提交添加注释：
+- en: '[PRE25]'
+  id: totrans-80
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE25]'
+- en: 'Now, list the commit with `git log`:'
+  id: totrans-81
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在，用`git log`列出提交：
+- en: '[PRE26]'
+  id: totrans-82
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE26]'
+- en: Git shows both notes, which is what we would expect.
+  id: totrans-83
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: Git显示了两个注释，这正是我们预期的结果。
+- en: How it works...
+  id: totrans-84
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 它是如何工作的…
+- en: We have been discussing the `refs/notes/alsoCherryPick` reference and so on.
+    As you know, we refer to the remote branches as references, such as `refs/remotes/origin/stable-3.2`,
+    but the local branches also have references such as `refs/heads/develop`, for
+    instance.
+  id: totrans-85
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们一直在讨论`refs/notes/alsoCherryPick`引用等等。如你所知，我们将远程分支称为引用，例如`refs/remotes/origin/stable-3.2`，但是本地分支也有引用，例如`refs/heads/develop`，例如。
+- en: 'Since you can create a branch that starts at a specific reference, you should
+    be able to create a branch that starts at the `refs/notes/alsoCherrypick` reference:'
+  id: totrans-86
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于你可以创建一个从特定引用开始的分支，因此你应该能够创建一个从`refs/notes/alsoCherrypick`引用开始的分支：
+- en: 'Create a branch that starts from `refs/notes/alsoCherryPick`. Also, checkout
+    the branch:'
+  id: totrans-87
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建一个从`refs/notes/alsoCherryPick`开始的分支，并切换到该分支：
+- en: '[PRE27]'
+  id: totrans-88
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE27]'
+- en: 'The `myNotes` branch now points to `HEAD` on `refs/notes/alsoCherryPick`. Listing
+    the files on the branch will show a file with the commit hash of the commit we
+    have added the notes to:'
+  id: totrans-89
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: '`myNotes`分支现在指向`refs/notes/alsoCherryPick`上的`HEAD`。列出分支上的文件会显示一个包含我们已添加注释的提交哈希的文件：'
+- en: '[PRE28]'
+  id: totrans-90
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE28]'
+- en: 'Showing the file content will show the text we used as note text:'
+  id: totrans-91
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 显示文件内容将展示我们用作注释文本的文字：
+- en: '[PRE29]'
+  id: totrans-92
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE29]'
+- en: As you can see, the abbreviated commit hash `570bba5` we added as a note for
+    `b4f07df357fccdff891df2a4fa5c5bd9e83b4a4a` is in the file. If we had a longer
+    message, that message would also be shown here.
+  id: totrans-93
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如你所见，我们为`b4f07df357fccdff891df2a4fa5c5bd9e83b4a4a`添加的注释`570bba5`已经存在于文件中。如果我们有更长的消息，这条消息也会在这里显示。
+- en: Retrieving notes from the remote repository
+  id: totrans-94
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 从远程仓库获取笔记
+- en: So far, we have been creating notes in our own local repository, which is fine.
+    But if we want to share those notes, we have to be sure to be able to push them.
+    We would also like to be able to retrieve other people's notes from the remote
+    repository. Unfortunately, this is not so simple.
+  id: totrans-95
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 到目前为止，我们一直在自己的本地仓库中创建笔记，这样做没问题。但如果我们想要分享这些笔记，就必须确保能够推送它们。我们还希望能够从远程仓库中获取其他人的笔记。不幸的是，这并不像看起来那么简单。
+- en: Getting ready
+  id: totrans-96
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 准备就绪
+- en: 'Before we can start, we need another clone from the local clone we already
+    have. This is to show the push and fetch mechanism of Git with `git notes`:'
+  id: totrans-97
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在开始之前，我们需要从已有的本地克隆中再克隆一个。这是为了展示Git使用`git notes`的推送和获取机制：
+- en: 'Start by checking out the master branch:'
+  id: totrans-98
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 首先检查主分支：
+- en: '[PRE30]'
+  id: totrans-99
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE30]'
+- en: 'Now, create a local branch of all the `stable-3.1` branches:'
+  id: totrans-100
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在，创建一个所有`stable-3.1`分支的本地分支：
+- en: '[PRE31]'
+  id: totrans-101
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE31]'
+- en: 'We are checking out all these branches because we want to clone this repository
+    and, by default, all the `refs/heads/*` branches will be cloned. So, when we clone
+    the `chapter5` directory, you will see that we only get the branches we see if
+    you execute `git branch`:'
+  id: totrans-102
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 我们检查所有这些分支，因为我们想克隆这个仓库，并且默认情况下，所有`refs/heads/*`分支都会被克隆。因此，当我们克隆`chapter5`目录时，你会看到我们只获得了执行`git
+    branch`命令时看到的分支：
+- en: '[PRE32]'
+  id: totrans-103
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE32]'
+- en: 'Now, go one directory up so that you can create your new clone from the `chapter5`
+    directory:'
+  id: totrans-104
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在，向上跳转到一个目录，以便可以从`chapter5`目录创建新的克隆：
+- en: '[PRE33]'
+  id: totrans-105
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE33]'
+- en: 'Now, enter the `shareNotes` directory and run `git branch -a` to see that the
+    only remote branches we have are the branches we checked out as local branches
+    in the `chapter5` directory. After this, we are ready to fetch some notes:'
+  id: totrans-106
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在，进入`shareNotes`目录并运行`git branch -a`，你会看到我们唯一的远程分支是我们在`chapter5`目录中作为本地分支检查出来的分支。完成这一步后，我们准备好提取一些笔记：
+- en: '[PRE34]'
+  id: totrans-107
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE34]'
+- en: As predicted, the list matches the Git branch output from the `chapter5` directory.
+  id: totrans-108
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 正如预测的那样，列表与`chapter5`目录中的Git分支输出相匹配。
+- en: How to do it...
+  id: totrans-109
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 怎么做...
+- en: 'We have now prepared the setup for pushing and fetching notes. The challenge
+    is that Git is not a default setup for retrieving and pushing notes, and hence
+    you won''t usually see other people''s notes:'
+  id: totrans-110
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们现在已经准备好推送和获取笔记的设置。挑战在于，Git默认并不设置为获取和推送笔记，因此你通常看不到其他人的笔记：
+- en: 'We start by showing that we did not receive the notes during the clone:'
+  id: totrans-111
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 我们首先展示没有在克隆过程中接收到笔记的情况：
+- en: '[PRE35]'
+  id: totrans-112
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE35]'
+- en: 'As expected, the output does not show the note, and the first line makes it
+    clear why. In the `chapter5` directory, we will see the note. To enable the notes
+    to be fetched, we need to create a new fetch rule configuration; it needs to be
+    similar to the fetch rule for `refs/heads`. Take a look at the configuration from
+    `git config`:'
+  id: totrans-113
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 正如预期的那样，输出没有显示笔记，第一行明确说明了原因。在`chapter5`目录中，我们会看到该笔记。为了使笔记可以被提取，我们需要创建一个新的提取规则配置；它需要类似于`refs/heads`的提取规则。请查看`git
+    config`中的配置：
+- en: '[PRE36]'
+  id: totrans-114
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE36]'
+- en: 'This shows that we are fetching `refs/heads` into the `refs/remotes/origin`
+    reference, but what we also want to do is fetch `refs/notes/*` into `refs/notes/*`:'
+  id: totrans-115
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 这表明我们正在将`refs/heads`提取到`refs/remotes/origin`引用中，但我们还想做的是将`refs/notes/*`提取到`refs/notes/*`：
+- en: '[PRE37]'
+  id: totrans-116
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE37]'
+- en: 'You should now have it configured. If you leave out the `--add` option from
+    your command, you will overwrite your current settings. Verify that the rule now
+    exists:'
+  id: totrans-117
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 你现在应该已经配置好了。如果在命令中省略了`--add`选项，你会覆盖当前设置。请验证规则是否已存在：
+- en: '[PRE38]'
+  id: totrans-118
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE38]'
+- en: 'Now, try and fetch the notes:'
+  id: totrans-119
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在，尝试获取笔记：
+- en: '[PRE39]'
+  id: totrans-120
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE39]'
+- en: 'As the Git output indicates, we have received some new refs. So, let''s check
+    whether we have the note on the commit now:'
+  id: totrans-121
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 正如Git输出所示，我们已经接收到了一些新的引用。所以，让我们检查一下现在是否已经有了提交的笔记：
+- en: '[PRE40]'
+  id: totrans-122
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE40]'
+- en: We now have the notes in our repository, which is what we expected.
+  id: totrans-123
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在，我们的仓库中已经有了笔记，这正是我们所期望的。
+- en: How it works...
+  id: totrans-124
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 它是如何工作的...
+- en: We fetched the notes. The reason why it works is because of the way we fetched
+    them. By default, Git is configured to fetch `refs/heads/*` into `refs/remotes/origin/*`.
+    This way, we can easily keep track of what is remote and what is local. The branches
+    in our local repository are in `refs/heads/*`. These branches are also listed
+    when you execute `git branch`.
+  id: totrans-125
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们已经成功获取了注释。之所以能够工作，是因为我们获取注释的方式。默认情况下，Git 被配置为将 `refs/heads/*` 获取到 `refs/remotes/origin/*`。这样，我们可以轻松地跟踪远程和本地的内容。我们本地仓库中的分支位于
+    `refs/heads/*`，这些分支也会在执行 `git branch` 时列出。
+- en: For notes, we need to fetch `refs/notes/*` into `refs/notes/*` since we want
+    to get the notes from the server and use them with the `git show`, `git log`,
+    and `git notes` Git commands.
+  id: totrans-126
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于注释，我们需要将 `refs/notes/*` 获取到 `refs/notes/*`，因为我们想从服务器获取注释，并在 `git show`、`git
+    log` 和 `git notes` 等 Git 命令中使用它们。
+- en: Pushing Git notes to a remote repository
+  id: totrans-127
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 将 Git 注释推送到远程仓库
+- en: We have, successfully, tried to retrieve the notes from the remote repository,
+    but what about your notes? How can you push them to the server? This has to be
+    done with the push command just as with any other references, such as branches
+    and commits.
+  id: totrans-128
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们已经成功地尝试从远程仓库获取注释，但那你的注释呢？你如何将它们推送到服务器？这必须像推送其他引用（例如分支和提交）一样，通过推送命令来完成。
+- en: How to do it...
+  id: totrans-129
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: 'Before we can push the notes from the `shareNotes` repository, we have to create
+    a note to be pushed, as the notes we have now are all available on the remote
+    repository. The remote repository in this case is the `chapter5` directory:'
+  id: totrans-130
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在我们可以将注释从 `shareNotes` 仓库推送之前，我们需要创建一个注释，因为我们现在的注释都已经在远程仓库中。此时远程仓库是 `chapter5`
+    目录：
+- en: 'You have found a commit you would like to add a note to, and you want to add
+    the note to the `verified` reference:'
+  id: totrans-131
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 你已经找到了一个想要添加注释的提交，并且想将注释添加到 `verified` 引用：
+- en: '[PRE41]'
+  id: totrans-132
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE41]'
+- en: 'Now that we have added the note, we can list it with the `git log` command:'
+  id: totrans-133
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在我们已经添加了注释，可以通过 `git log` 命令列出它：
+- en: '[PRE42]'
+  id: totrans-134
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE42]'
+- en: As expected, we can see the note. If you cannot see the note, you probably missed
+    `--notes=verified` for the `git log` command, since we have not configured `verified`
+    as `notes.displayRef`. To push the note, we must use the `git push` command, because
+    the default push rule in Git is to push branches to `refs/heads/<branchname>`.
+  id: totrans-135
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 正如预期的那样，我们可以看到注释。如果你看不到注释，可能是因为在执行 `git log` 命令时漏掉了 `--notes=verified`，因为我们尚未将
+    `verified` 配置为 `notes.displayRef`。要推送注释，我们必须使用 `git push` 命令，因为 Git 中的默认推送规则是将分支推送到
+    `refs/heads/<branchname>`。
+- en: 'So, if we just try to push the note to the remote, nothing happens:'
+  id: totrans-136
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 所以，如果我们仅仅尝试将注释推送到远程，什么也不会发生：
+- en: '[PRE43]'
+  id: totrans-137
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE43]'
+- en: 'You will probably see a warning about `git push.default` not being configured;
+    you can safely ignore this for these examples. The important part is that Git
+    shows that everything is up-to-date. But we know we have created a Git note for
+    a commit. So, to push these notes, we need to push our note references to the
+    remote notes, references. This can be done as follows:'
+  id: totrans-138
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 你可能会看到关于 `git push.default` 未配置的警告；你可以在这些示例中安全地忽略此警告。重要的是，Git 显示一切都是最新的。但是我们知道我们已经为一个提交创建了
+    Git 注释。所以，要推送这些注释，我们需要将注释引用推送到远程的注释引用。这可以按如下方式完成：
+- en: '[PRE44]'
+  id: totrans-139
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE44]'
+- en: 'Now, something happened; we have a new branch on the remote named `refs/notes/verified`.
+    This is because we have pushed the notes to the remote. What we can do in order
+    to verify it is go to the `chapter5` directory and check whether the `871ee53b52a`
+    commit has a Git note:'
+  id: totrans-140
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在，发生了一些变化；我们在远程仓库上有了一个新的分支，名为 `refs/notes/verified`。这是因为我们将注释推送到了远程仓库。为了验证这一点，我们可以进入
+    `chapter5` 目录，查看 `871ee53b52a` 提交是否有 Git 注释：
+- en: '[PRE45]'
+  id: totrans-141
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE45]'
+- en: As predicted, we can see the note in this directory.
+  id: totrans-142
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如预期的那样，我们可以在此目录中看到注释。
+- en: There's more...
+  id: totrans-143
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 还有更多内容...
+- en: Since Git notes do not work as normal branches, it can be a little cumbersome
+    to push them back and forth to a repository when you are trying to collaborate
+    on them. Since you cannot just fetch and merge the Git notes branches as easily
+    as with other branches, a clear recommendation is to build some tools to add these
+    notes so that you only have one server adding the notes.
+  id: totrans-144
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于 Git 注释不像普通分支那样工作，所以当你尝试协作时，将它们推来推去可能会有些麻烦。因为你不能像处理其他分支一样，轻松地获取和合并 Git 注释分支，因此明确的建议是建立一些工具来添加这些注释，这样就只有一个服务器来添加注释。
+- en: A simple, but value adding, note could be information about Jenkins builds and
+    testing. This can be valuable when you have to reopen a defect. You can then actually
+    see in the repository which tests were executed on the commit hash.
+  id: totrans-145
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一个简单但有价值的备注可以是关于Jenkins构建和测试的信息。这在你需要重新打开一个缺陷时非常有价值。这样你可以在仓库中查看哪个测试是在提交哈希上执行的。
+- en: Tagging commits in the repository
+  id: totrans-146
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 在仓库中标记提交
+- en: If you are releasing software with Git, you are bound to deal with tags. Tags
+    describe the different software releases in the repository. There are two types
+    of tags, a lightweight tag and an annotated tag. The lightweight tag is very similar
+    to a branch, since it is just a named reference, such as `refs/tags/version123` .
+    This points to the commit hash of the commit you are tagging; whereas if it were
+    a branch, it would be `refs/heads/version123`. The difference is that the branch
+    moves forward when you work and commit to it. A tag will always point to the same
+    commit hash. We will discuss the annotated tag shortly.
+  id: totrans-147
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你正在使用Git发布软件，你必然会涉及标签。标签描述了仓库中的不同软件发布版本。标签有两种类型，轻量标签和注释标签。轻量标签与分支非常相似，因为它只是一个命名的引用，比如`refs/tags/version123`。它指向你标记的提交的提交哈希；而如果它是一个分支，则会是`refs/heads/version123`。不同之处在于，当你在分支上工作并提交时，分支会向前移动。而标签始终指向相同的提交哈希。我们稍后会讨论注释标签。
+- en: Getting ready
+  id: totrans-148
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 准备工作
+- en: Before we start, you must go to the `chapter5` directory, where we made the
+    original clone
+  id: totrans-149
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在我们开始之前，你必须进入`chapter5`目录，这是我们最初克隆的地方。
+- en: for this chapter.
+  id: totrans-150
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章内容。
+- en: We should start by tagging the commit that is ten commits behind `origin/stable-2.3`
+    and is not a merge. In order to find that commit, we will use the `git log` command.
+  id: totrans-151
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们应该从标记距离`origin/stable-2.3`十次提交并且不是合并的提交开始。为了找到那个提交，我们将使用`git log`命令。
+- en: For the `git log` command, we are using the `--no-merges` option, which will
+    show commits that only have one parent. The `--oneline` option we have used before
+    tells Git to limit the output to one line per commit. Moreover, `-11` shows us
+    the last 11 commits (10 commits before the latest).
+  id: totrans-152
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于`git log`命令，我们使用了`--no-merges`选项，它会显示只有一个父提交的提交。我们之前使用过的`--oneline`选项告诉Git将输出限制为每个提交一行。此外，`-11`选项显示了最近的11个提交（比最新的提交早10个）。
+- en: 'Find the commit as follows:'
+  id: totrans-153
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 按如下方式找到提交：
+- en: '[PRE46]'
+  id: totrans-154
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE46]'
+- en: How to do it...
+  id: totrans-155
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: 'Now that we have found the `60d538f` commit, we should make it a lightweight
+    tag:'
+  id: totrans-156
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经找到了`60d538f`提交，我们应该将其标记为轻量标签：
+- en: 'Use the `git tag` command to give a meaningful release name:'
+  id: totrans-157
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用`git tag`命令为发布指定有意义的名称：
+- en: '[PRE47]'
+  id: totrans-158
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE47]'
+- en: 'Since there is no output, it is a success. To see whether the tag is available,
+    use the `git tag` command:'
+  id: totrans-159
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 由于没有输出，操作成功。要查看标签是否可用，请使用`git tag`命令：
+- en: '[PRE48]'
+  id: totrans-160
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE48]'
+- en: 'We are using the `git tag` command with `-l` as a flag, since we want to list
+    the tags and not tag the current `HEAD`. Some repositories have a lot of tags;
+    so to prevent the list from becoming too long, you can specify which tags you
+    want to list and use a `*` wildcard as we did previously. Our tag is available,
+    but all it really says is that we have a tag in the repository with the name `v2.3.0.201302061315rc1`,
+    and if you are using `git show v2.3.0.201302061315rc1`, you will see that the
+    output is the same as `git show ea060dd`:'
+  id: totrans-161
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 我们使用`git tag`命令并带上`-l`选项，因为我们想列出标签，而不是标记当前的`HEAD`。一些仓库有很多标签；为了防止列表变得过长，你可以指定要列出的标签，并使用`*`通配符，就像我们之前做的那样。我们的标签是可用的，但它实际上只是说我们在仓库中有一个名为`v2.3.0.201302061315rc1`的标签，如果你使用`git
+    show v2.3.0.201302061315rc1`，你会看到输出与`git show ea060dd`相同：
+- en: '[PRE49]'
+  id: totrans-162
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE49]'
+- en: 'There will also be a lot of file diff information in the output, but it is
+    exactly the same output. So, in order to add more information, we should use an
+    annotated tag. An annotated tag is a tag where you have to add some information
+    to the tag. To create an annotated tag, we use the `--annotate` tag for the `git
+    tag` command:'
+  id: totrans-163
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 输出中还会有大量的文件差异信息，但输出内容完全相同。因此，为了添加更多信息，我们应该使用注释标签。注释标签是你需要在标签中添加一些信息的标签。要创建注释标签，我们使用`git
+    tag`命令的`--annotate`选项：
+- en: '[PRE50]'
+  id: totrans-164
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE50]'
+- en: 'The `-m` flag is the same as `--message`, as we want to give the tag a message.
+    If you leave out the `-m` flag, Git will open the configured editor and you can
+    write a full release note into the annotation of the tag. We can check the tag
+    information with `git show`:'
+  id: totrans-165
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: '`-m`标志与`--message`相同，因为我们希望给标签添加一条消息。如果你不使用`-m`标志，Git会打开配置的编辑器，你可以在标签的注释中写入完整的发布说明。我们可以使用`git
+    show`来检查标签信息：'
+- en: '[PRE51]'
+  id: totrans-166
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE51]'
+- en: We can actually see the tag name and information we added with the `-m` flag.
+    With the lightweight tag, we don't see anything about the tag from the output.
+    We actually don't even see the tag name when using `git show` on a lightweight
+    tag.
+  id: totrans-167
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 我们实际上可以看到标签名称和我们通过`-m`标志添加的信息。使用轻量级标签时，我们在输出中看不到任何关于标签的信息。实际上，当我们使用`git show`查看轻量级标签时，甚至看不到标签名称。
+- en: There's more...
+  id: totrans-168
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 还有更多内容...
+- en: Tags are very powerful as they can add valuable information to the repository,
+    and since tags should be considered official releases in the repository, we should
+    be very careful when working with them.
+  id: totrans-169
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 标签非常强大，因为它们可以为仓库添加有价值的信息，并且由于标签应被视为仓库中的正式发布版本，因此在使用时应非常小心。
+- en: 'Naturally, you can push the tags to a remote area, and contributors to the
+    repository would fetch those tags. This is where you have to be careful. With
+    a legacy version control system, you can go back in time and just change the release,
+    and since these legacy systems are all based on a centralized server where you
+    have to be connected in order to work, changing a release is not that bad, since
+    not so many people use the release or have even downloaded the release. But it
+    is different in Git. If you change a tag that you have already pushed to point
+    to another commit hash, then those developers who have already fetched the tag
+    will not get the new tag unless they delete the tag locally:'
+  id: totrans-170
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 自然，你可以将标签推送到远程区域，仓库的贡献者会获取这些标签。这是你需要小心的地方。在传统的版本控制系统中，你可以回到过去并直接更改发布版本，而这些传统系统都基于集中式服务器，你必须连接才能工作，因此更改发布版本并不会造成太大问题，因为并不是很多人使用这个版本或者已经下载了这个版本。但在
+    Git 中则不同。如果你修改了已经推送的标签，使其指向另一个提交哈希值，那么那些已经获取了该标签的开发者将无法获得新的标签，除非他们在本地删除该标签：
+- en: 'To prove the dangers of not getting a new tag, we will try to delete a tag
+    and recreate it to point to another commit hash:'
+  id: totrans-171
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 为了证明不获取新标签的危险，我们将尝试删除一个标签并重新创建它，使其指向另一个提交哈希值：
+- en: '[PRE52]'
+  id: totrans-172
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE52]'
+- en: Now that we have deleted the tag, we are ready to recreate the tag again to
+  id: totrans-173
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在我们已删除该标签，准备重新创建标签：
+- en: 'point to `HEAD`:'
+  id: totrans-174
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 指向`HEAD`：
+- en: '[PRE53]'
+  id: totrans-175
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE53]'
+- en: 'We have recreated the tag, and it points to `HEAD` because we did not specify
+    a commit hash at the end of the command. Now, execute `git fetch` to see whether
+    you can get the tag overwritten from the remote repository:'
+  id: totrans-176
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 我们已经重新创建了标签，它指向`HEAD`，因为我们在命令末尾没有指定提交哈希值。现在，执行`git fetch`，看看是否能从远程仓库获取覆盖的标签：
+- en: '[PRE54]'
+  id: totrans-177
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE54]'
+- en: Since there is no output, the tag was probably not overwritten. Let's verify
+    with
+  id: totrans-178
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 由于没有输出，标签可能没有被覆盖。让我们通过以下方式验证：
+- en: '`git show`:'
+  id: totrans-179
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`git show`：'
+- en: '[PRE55]'
+  id: totrans-180
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE55]'
+- en: 'As you can see from the output, it is still our locally created tag. To get
+    the tag from the remote again, we need to delete the local tag and do a `git fetch`.
+    To delete a tag, you need to apply the `-d` flag:'
+  id: totrans-181
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如你从输出中看到的，它仍然是我们本地创建的标签。要再次从远程获取标签，我们需要删除本地标签并执行`git fetch`。要删除标签，你需要使用`-d`标志：
+- en: '[PRE56]'
+  id: totrans-182
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE56]'
+- en: As you can see, Git has fetched the tag from the server again. We can verify
+  id: totrans-183
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如你所见，Git已经从服务器重新获取了标签。我们可以验证：
+- en: 'with `git show`:'
+  id: totrans-184
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 使用`git show`：
+- en: '[PRE57]'
+  id: totrans-185
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE57]'
+- en: So, as you can see, we have the correct tag again, but it should also be a warning.
+    Once you have pushed a tag to a remote repository, you should never change it,
+    since the developers who are fetching from the repository may never know about
+    the changes unless they clone again or delete the tags locally and fetch them
+    again.
+  id: totrans-186
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 所以，如你所见，我们再次得到了正确的标签，但这也应当是一个警告。一旦你将标签推送到远程仓库，你就不应再更改它，因为从仓库拉取的开发者可能永远不会知道更改，除非他们重新克隆仓库或删除本地标签并重新拉取。
+- en: In this chapter, we learned how you can tag your commits and add notes to them.
+    These are powerful methods for storing additional information after a commit has
+    been committed and published to a shared repository. But before you actually publish
+    your commit, you have the chance to add the most valuable information for a commit.
+    The commit message is where you must specify what you are doing and sometimes
+    why you are doing it.
+  id: totrans-187
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这一章中，我们学习了如何为提交添加标签并添加注释。这些都是在提交已经提交并发布到共享仓库后，存储附加信息的强大方法。但在你实际发布提交之前，你有机会为提交添加最有价值的信息。提交信息是你必须指定你在做什么，及有时也说明你为什么这样做的地方。
+- en: If you are solving a bug, you should list the bug ID; if you are using a special
+    method to solve the problem, it is recommended that you describe why you have
+    used this awesome technique to solve the problem. So, when people look back on
+    your commits, they can also learn a few things about why different decisions were
+    made.
+  id: totrans-188
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你正在解决一个bug，你应该列出bug的ID；如果你使用了一种特殊的方法来解决问题，建议你描述一下为什么使用了这个很棒的技巧来解决问题。这样，当人们回顾你的提交时，他们也能了解为什么做出不同的决策。

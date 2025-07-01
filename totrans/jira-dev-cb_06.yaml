@@ -1,0 +1,2895 @@
+- en: Chapter 6. The Power of JIRA Searching
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 第六章：JIRA 搜索的强大功能
+- en: 'In this chapter, we will cover:'
+  id: totrans-1
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们将涵盖：
+- en: Writing a JQL function
+  id: totrans-2
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 编写 JQL 函数
+- en: Sanitizing JQL functions
+  id: totrans-3
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 清理 JQL 函数
+- en: Adding a search request view
+  id: totrans-4
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 添加搜索请求视图
+- en: Smart querying using quick search
+  id: totrans-5
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用快速搜索进行智能查询
+- en: Searching in plugins
+  id: totrans-6
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 插件中的搜索
+- en: Parsing a JQL query in plugins
+  id: totrans-7
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在插件中解析 JQL 查询
+- en: Linking directly to search queries
+  id: totrans-8
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 直接链接到搜索查询
+- en: Index and de-index programmatically
+  id: totrans-9
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 编程方式进行索引和取消索引
+- en: Managing filters programmatically
+  id: totrans-10
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 程序化管理过滤器
+- en: Introduction
+  id: totrans-11
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 介绍
+- en: JIRA is known for its search capabilities. It allows us to extend them in a
+    way that impresses its users! In this chapter, we will look at customizing the
+    various searching aspects of JIRA such as JQL, searching in plugins, managing
+    filters, and so on.
+  id: totrans-12
+  prefs: []
+  type: TYPE_NORMAL
+  zh: JIRA 以其强大的搜索功能而著名。它允许我们以令人印象深刻的方式扩展这些功能！在本章中，我们将探讨定制 JIRA 的各种搜索功能，例如 JQL、插件中的搜索、管理过滤器等。
+- en: Before we start, it would make sense to look at one of the major enhancements
+    in JIRA 4, that is, **JQL** – **JIRA Query Language**. JQL brings to the table
+    advanced searching capabilities, using which the users can search for issues in
+    their JIRA instance and then exploit all the capabilities of issue navigator.
+  id: totrans-13
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在我们开始之前，值得关注 JIRA 4 中的一项重要增强功能——**JQL**（**JIRA 查询语言**）。JQL 提供了先进的搜索功能，用户可以利用这些功能在
+    JIRA 实例中搜索问题，然后利用问题导航器的所有功能。
+- en: In addition to the previous searching capabilities, now called **Simple Searching**,
+    JQL or the **Advanced Searching** introduces support for logical operations, including
+    AND, OR, NOT, NULL, and EMPTY. It also introduces a set of JQL functions, which
+    can be used effectively to search based on predefined criteria.
+  id: totrans-14
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 除了之前的搜索功能，现在称为**简单搜索**，JQL 或**高级搜索**引入了对逻辑运算的支持，包括 AND、OR、NOT、NULL 和 EMPTY。它还引入了一组
+    JQL 函数，可以有效地根据预定义标准进行搜索。
+- en: 'JQL is a structured query language that lets us find issues using a simple
+    SQL-like syntax. It is simple because of its auto-complete features and maintains
+    a query history to navigate easily to the recent searches. As Atlassian puts it:'
+  id: totrans-15
+  prefs: []
+  type: TYPE_NORMAL
+  zh: JQL 是一种结构化查询语言，让我们使用类似 SQL 的简单语法查找问题。它之所以简单，是因为它的自动完成特性，并且保存查询历史，便于轻松导航到最近的搜索。正如
+    Atlassian 所说：
+- en: '"JQL allows you to use standard boolean operators and wild cards to perform
+    complex searches, including fuzzy, proximity, and empty field searches. It even
+    supports extensible functions, allowing you to define custom expressions like
+    "CurrentUser" or "LastSprint" for dynamic searches."'
+  id: totrans-16
+  prefs:
+  - PREF_BQ
+  type: TYPE_NORMAL
+  zh: “JQL 允许你使用标准的布尔运算符和通配符来执行复杂的搜索，包括模糊搜索、邻近搜索和空字段搜索。它甚至支持可扩展的函数，允许你定义像“CurrentUser”或“LastSprint”这样的自定义表达式进行动态搜索。”
+- en: 'A query in *Advanced Search* consists of a **field**, followed by an **operator**,
+    followed by a **value** or **function**. To find out all issues in a project,
+    we can use:'
+  id: totrans-17
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '*高级搜索*中的查询由**字段**、接着是**操作符**、然后是**值**或**函数**组成。要查找项目中的所有问题，我们可以使用：'
+- en: '[PRE0]'
+  id: totrans-18
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: '`project` is the field, `=` is the operator, and `TEST` is the value.'
+  id: totrans-19
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`project` 是字段，`=` 是操作符，`TEST` 是值。'
+- en: 'Similarly, we can find all issues assigned to the current user using:'
+  id: totrans-20
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 同样，我们可以使用以下方式找到分配给当前用户的所有问题：
+- en: '[PRE1]'
+  id: totrans-21
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: '`assignee` is the field, `=` is the operator, and `currentUser()` is a JQL
+    function.'
+  id: totrans-22
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`assignee` 是字段，`=` 是操作符，`currentUser()` 是一个 JQL 函数。'
+- en: 'At this point of time, JQL doesn''t support comparison of two fields or two
+    functions in a single query. But we can use logical operators and keywords to
+    introduce more control as follows:'
+  id: totrans-23
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 此时，JQL 不支持在单个查询中比较两个字段或两个函数。但我们可以使用逻辑运算符和关键字来引入更多控制，如下所示：
+- en: '[PRE2]'
+  id: totrans-24
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: This query will display issues that are in the project `TEST` and that have
+    the current user as the `assignee`. A more detailed explanation on Advanced Searching,
+    along with the full reference to the Keywords, Operators, Fields, and Functions
+    used can be found at [http://confluence.atlassian.com/display/JIRA/Advanced+Searching](http://
+    http://confluence.atlassian.com/display/JIRA/Advanced+Searching).
+  id: totrans-25
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 该查询将显示在项目 `TEST` 中且当前用户为 `assignee` 的问题。有关高级搜索的更详细说明，以及完整的关键字、操作符、字段和函数参考，可以在
+    [http://confluence.atlassian.com/display/JIRA/Advanced+Searching](http://confluence.atlassian.com/display/JIRA/Advanced+Searching)
+    找到。
+- en: Writing a JQL function
+  id: totrans-26
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 编写 JQL 函数
+- en: As we have seen, a **JQL function** allows us to define custom expressions or
+    searchers. JIRA has a set of built-in JQL functions, the details of which can
+    be found at [http://confluence.atlassian.com/display/JIRA/Advanced+Searching#AdvancedSearching-FunctionsReference](http://confluence.atlassian.com/display/JIRA/Advanced+Searching#AdvancedSearching-FunctionsReference).
+    In this recipe, we will look at writing a new JQL function.
+  id: totrans-27
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如我们所见，**JQL函数**允许我们定义自定义表达式或搜索器。JIRA有一组内置的JQL函数，详情可以参考[http://confluence.atlassian.com/display/JIRA/Advanced+Searching#AdvancedSearching-FunctionsReference](http://confluence.atlassian.com/display/JIRA/Advanced+Searching#AdvancedSearching-FunctionsReference)。在本教程中，我们将学习如何编写一个新的JQL函数。
+- en: JQL functions provide a way for values within a JQL query to be calculated at
+    runtime. It takes optional arguments and produces results based on the arguments
+    at runtime.
+  id: totrans-28
+  prefs: []
+  type: TYPE_NORMAL
+  zh: JQL函数提供了一种方法，允许在JQL查询中根据运行时的参数值进行计算。它接受可选参数，并根据运行时的参数返回结果。
+- en: In our example, let us consider creating a function `projects()`, which can
+    take a list of project keys and return all issues in the supplied projects. For
+    example,
+  id: totrans-29
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在我们的例子中，假设创建一个名为`projects()`的函数，它可以接收一个项目键的列表，并返回所有该项目中的问题。例如：
+- en: '[PRE3]'
+  id: totrans-30
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: 'It will be equivalent to:'
+  id: totrans-31
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 它等同于：
+- en: '[PRE4]'
+  id: totrans-32
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: We are introducing this new function just for the sake of this recipe.
+  id: totrans-33
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们仅为本教程引入这个新函数。
+- en: Getting ready
+  id: totrans-34
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 准备工作
+- en: Create a skeleton plugin using the Atlassian plugin SDK.
+  id: totrans-35
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用Atlassian插件SDK创建一个骨架插件。
+- en: How to do it...
+  id: totrans-36
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何实现...
+- en: 'JIRA uses the **JQL Function Module** to add new JQL functions to the Advanced
+    Search. The following is the step-by-step process for our example:'
+  id: totrans-37
+  prefs: []
+  type: TYPE_NORMAL
+  zh: JIRA使用**JQL函数模块**将新的JQL函数添加到高级搜索中。以下是我们示例的逐步过程：
+- en: 'Modify the plugin descriptor to include the JQL function module:'
+  id: totrans-38
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 修改插件描述符以包括JQL函数模块：
+- en: '[PRE5]'
+  id: totrans-39
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: 'As with any other plugin modules, a JQL function module also has a unique **key**.
+    The other major attribute of the function module is the function **class**. In
+    this example, `ProjectsFunction` is the function class. The root element, `jql-function`,
+    has two other elements—`fname` and `list`:'
+  id: totrans-40
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 与其他插件模块一样，JQL函数模块也有一个独特的**键**。该函数模块的另一个主要属性是函数的**类**。在本例中，`ProjectsFunction`就是函数类。根元素`jql-function`还有两个其他元素——`fname`和`list`：
+- en: '`fname` holds the JQL function name that is visible to the user. This will
+    be used in the JQL query.'
+  id: totrans-41
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`fname`保存的是用户可见的JQL函数名称，这将在JQL查询中使用。'
+- en: '`list` indicates whether the function returns a list or not. In our example,
+    we return a list of projects, and hence we use the value `true` to indicate that
+    it is a list. A list can be used along with operators `IN` and `NOT` `IN`, whereas
+    a scalar can be used with operators `=`, `!=`, `<`, `>`, `<=`, `>=`, `IS`, and
+    `IS` `NOT`.'
+  id: totrans-42
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`list`指示函数是否返回一个列表。在我们的例子中，我们返回一个项目列表，因此我们使用`true`来表示它是一个列表。列表可以与操作符`IN`和`NOT
+    IN`一起使用，而标量值可以与操作符`=`, `!=`, `<`, `>`, `<=`, `>=`, `IS`, `IS NOT`一起使用。'
+- en: 'Implement the function class:'
+  id: totrans-43
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 实现函数类：
+- en: 'The class name here is the name used in the module description, `ProjectsFunction`
+    in this case. The class should extend the `AbstractJqlFunction` class. We now
+    need to implement the major methods detailed next:'
+  id: totrans-44
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 这里的类名是模块描述中使用的名称，在本例中为`ProjectsFunction`。该类应当扩展`AbstractJqlFunction`类。接下来，我们需要实现下面详细介绍的主要方法：
+- en: '`getDataType` – This method defines the return type of the function. In our
+    example, we take a list of project keys and return valid projects, and hence we
+    will implement the method to return the `PROJECT` datatype as follows:'
+  id: totrans-45
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`getDataType` - 该方法定义了函数的返回类型。在我们的例子中，我们接收一个项目键的列表并返回有效的项目，因此我们将实现该方法以返回`PROJECT`数据类型，如下所示：'
+- en: '[PRE6]'
+  id: totrans-46
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: Check out the `JiraDataTypes` class to see other supported data types.
+  id: totrans-47
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 查看`JiraDataTypes`类以了解其他支持的数据类型。
+- en: '`getMinimumNumberOfExpectedArguments` – It returns the smallest number of arguments
+    that the function may accept. The auto-population of the method in the issue navigator
+    takes this into consideration and puts sufficient double quotes within brackets
+    when the function is selected.'
+  id: totrans-48
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`getMinimumNumberOfExpectedArguments` - 它返回该函数可能接受的最小参数数量。在问题导航器中自动填充的方法会考虑到这一点，并在选择函数时在括号内自动放入足够的双引号。'
+- en: 'For example, in our case, we need at least one project key in the function
+    name and hence we `return 1` as follows:'
+  id: totrans-49
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 例如，在我们的例子中，我们至少需要在函数名称中包含一个项目键，因此我们`return 1`，如下所示：
+- en: '[PRE7]'
+  id: totrans-50
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE7]'
+- en: The pre-populated function will then look like `projects("")`.
+  id: totrans-51
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 预填充的函数将类似于`projects("")`。
+- en: '`validate` – This method is used to do validation of the arguments we have
+    passed. In our example, we need to check if the method has at least one argument
+    or not and make sure all the arguments passed are valid project keys. The validate
+    method looks like the following:'
+  id: totrans-52
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`validate` – 该方法用于验证我们传递的参数。在我们的示例中，我们需要检查方法是否至少有一个参数，并确保传递的所有参数都是有效的项目密钥。`validate`方法如下所示：'
+- en: '[PRE8]'
+  id: totrans-53
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE8]'
+- en: Here we instantiate a new `MessageSet` and add error messages to it, if the
+    validation fails. We must always return a `MessageSet`, even if it is empty. Returning
+    `null` is not permitted. We can also add warning messages which doesn't prevent
+    the JQL execution, but warns the user about something.
+  id: totrans-54
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在这里，我们实例化一个新的`MessageSet`并将错误信息添加到其中，如果验证失败。我们必须始终返回一个`MessageSet`，即使它为空。返回`null`是不允许的。我们还可以添加警告信息，这不会阻止JQL的执行，但会提醒用户某些事情。
+- en: The most important argument in the `validate` method is `FunctionOperand`, as
+    it holds the arguments of the function which can be retrieved as `operand.getArgs()`.
+    The other argument `terminalClause` is JIRA's representation of the JQL condition
+    we are validating for. We can extract the name, operator, and function from the
+    argument using `terminalClause.getName`, `terminalClause.getOperator`, and `terminalClause.getOperand`
+    respectively.
+  id: totrans-55
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`validate`方法中最重要的参数是`FunctionOperand`，因为它持有函数的参数，可以通过`operand.getArgs()`检索。另一个参数`terminalClause`是JIRA表示我们正在验证的JQL条件。我们可以使用`terminalClause.getName`、`terminalClause.getOperator`和`terminalClause.getOperand`分别提取名称、操作符和函数。'
+- en: 'The `AbstractJqlFunction` has a validation method in it to check the number
+    of arguments. So if we know the expected number of arguments (which is not the
+    case in our example as we can have any number of projects passed in the example),
+    we can validate it using:'
+  id: totrans-56
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`AbstractJqlFunction`中有一个验证方法，用于检查参数的数量。所以，如果我们知道预期的参数数量（在我们的示例中并不适用，因为可以传递任意数量的项目），我们可以使用以下方法进行验证：'
+- en: '[PRE9]'
+  id: totrans-57
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE9]'
+- en: This code adds an error if the number of arguments is not 1.
+  id: totrans-58
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 如果参数数量不为1，则此代码会添加一个错误。
+- en: '`getValues` – This is the method that takes the arguments and returns the date
+    type as a list or scalar depending on the function. In our example, the `getValues`
+    method returns a list of literals that has the project ID.'
+  id: totrans-59
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`getValues` – 这是一个方法，接受参数并根据函数返回日期类型的列表或标量。在我们的示例中，`getValues`方法返回一个包含项目ID的字面量列表。'
+- en: 'The method is implemented as follows in our example:'
+  id: totrans-60
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在我们的示例中，方法的实现如下：
+- en: '[PRE10]'
+  id: totrans-61
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE10]'
+- en: '`notnull()` is a predefined method from the `Asserions` class that checks whether
+    the query creation context is null or not and throws an error if null. This is
+    not mandatory and can be handled in some other way if needed.'
+  id: totrans-62
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`notnull()`是`Asserions`类中的一个预定义方法，用于检查查询创建上下文是否为空，如果为空则抛出错误。这不是强制性的，如果需要，可以以其他方式处理。'
+- en: The arguments `operand` and `terminalClause` are the same as what we have seen
+    in the validate method. The `QueryCreationContext` argument holds the context
+    in which the query is executed. `QueryCreationContext.getUser` will retrieve the
+    user who executed the query, and the `QueryCreationContext.isSecurityOverriden`
+    method indicates whether or not this function should actually perform security
+    checks.
+  id: totrans-63
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 参数`operand`和`terminalClause`与我们在`validate`方法中看到的相同。`QueryCreationContext`参数持有查询执行时的上下文。`QueryCreationContext.getUser`将检索执行查询的用户，而`QueryCreationContext.isSecurityOverriden`方法指示此功能是否应该执行安全检查。
+- en: 'The function should always return a list of `QueryLiteral` objects. Even when
+    the function returns a scalar instead of list, it should return a list of `QueryLiteral`,
+    which can be created like the following:'
+  id: totrans-64
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 该函数应始终返回一个`QueryLiteral`对象的列表。即使函数返回标量而不是列表，它也应返回一个`QueryLiteral`列表，可以按以下方式创建：
+- en: '[PRE11]'
+  id: totrans-65
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE11]'
+- en: A `QueryLiteral` represents either a `String`, `Long`, or `EMPTY` value. These
+    three represent JQL's distinguishable types. Construct it with no value and it
+    will represent EMPTY, construct it with a String and it represents a String, or
+    construct it with a Long and it represents a Long.
+  id: totrans-66
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`QueryLiteral`表示`String`、`Long`或`EMPTY`值。这三者代表了JQL的可区分类型。如果没有值，它表示EMPTY；如果使用字符串构造，它表示一个字符串；如果使用Long构造，它表示一个Long。'
+- en: In our example, we use the project ID (LONG) which is unique across projects.
+    For projects, we can even use the key (STRING) or name (STRING), as they are also
+    unique. However, it may not work with fields such as Fix For Version as you might
+    find two Fix Versions with the same name. It is recommended to return the ID wherever
+    possible to avoid such unambiguous search results.
+  id: totrans-67
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在我们的例子中，我们使用项目 ID（LONG），它在项目中是唯一的。对于项目，我们甚至可以使用密钥（STRING）或名称（STRING），因为它们也是唯一的。然而，这种方法可能不适用于类似
+    Fix For Version 这样的字段，因为你可能会发现两个 Fix Version 拥有相同的名称。建议尽可能返回 ID，以避免产生模糊的搜索结果。
+- en: To summarize, we find out the project objects using the project keys supplied
+    by the user and return a list of `QueryLiterals`, created using the project IDs.
+  id: totrans-68
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 总结来说，我们通过用户提供的项目密钥查找项目对象，并返回一个使用项目 ID 创建的`QueryLiterals`列表。
+- en: Package the plugin and deploy it.
+  id: totrans-69
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 打包插件并进行部署。
+- en: How it works...
+  id: totrans-70
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 工作原理...
+- en: 'Once the plugin is deployed, we can go to the Issue Navigator and open the
+    advanced search to start using our brand new function! When you start typing **project
+    in** **p**, JIRA auto-populates the available options including our new function,
+    as shown:'
+  id: totrans-71
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦插件部署完成，我们可以进入问题导航器并打开高级搜索，开始使用我们全新的函数！当你开始输入**project in** **p**时，JIRA 会自动填充可用的选项，包括我们的新函数，如下所示：
+- en: '![How it works...](img/1803-06-01.jpg)'
+  id: totrans-72
+  prefs: []
+  type: TYPE_IMG
+  zh: '![工作原理...](img/1803-06-01.jpg)'
+- en: 'Once the function with appropriate arguments is added, the search is executed
+    and results are shown as follows:'
+  id: totrans-73
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦添加了适当参数的函数，搜索会被执行，结果如下所示：
+- en: '![How it works...](img/1803-06-02.jpg)'
+  id: totrans-74
+  prefs: []
+  type: TYPE_IMG
+  zh: '![工作原理...](img/1803-06-02.jpg)'
+- en: 'When an invalid project key is given as the argument, our `validate` method
+    populates the error message, as shown in the following screenshot:'
+  id: totrans-75
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当提供无效的项目密钥作为参数时，我们的`validate`方法将填充错误信息，如下图所示：
+- en: '![How it works...](img/1803-06-03.jpg)'
+  id: totrans-76
+  prefs: []
+  type: TYPE_IMG
+  zh: '![工作原理...](img/1803-06-03.jpg)'
+- en: See also
+  id: totrans-77
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 另见
+- en: '*Creating a skeleton plugin* in [Chapter 1](ch01.html "Chapter 1. Plugin Development
+    Process"), *Plugin Development Process*'
+  id: totrans-78
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在[第1章](ch01.html "第1章 插件开发过程")中，*创建骨架插件*，*插件开发过程*
+- en: '*Deploying your plugin*'
+  id: totrans-79
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*部署你的插件*'
+- en: Sanitizing JQL functions
+  id: totrans-80
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 清理 JQL 函数
+- en: If you don't want to make your JQL function violate the strict security aspects
+    of your JIRA instance, sanitizing the JQL functions is a must! So, what does this
+    actually mean?
+  id: totrans-81
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你不想让你的 JQL 函数违反你 JIRA 实例的严格安全性，清理 JQL 函数是必须的！那么，这到底意味着什么呢？
+- en: Imagine a filter created by you to find out issues in a pre-defined set of projects.
+    What will happen if you share the filter with a friend of yours who is not supposed
+    to see the project or know that the project existed? The person with whom you
+    shared it won't be able to modify the issues in the protected project due to JIRA's
+    permission schemes but he/she will surely see the name of the project in the JQL
+    query that is used in the filter!
+  id: totrans-82
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 想象一下，你创建了一个过滤器，用于查找预定义项目集合中的问题。如果你将该过滤器分享给一个不应该看到该项目或不知道项目存在的朋友，会发生什么？你分享过滤器的那个人将无法修改受保护项目中的问题，因为
+    JIRA 的权限方案限制了他们的操作，但他/她肯定会在过滤器中使用的 JQL 查询中看到项目的名称！
+- en: This is where sanitizing of the JQL function will help. In essence, we just
+    modify the JQL query to protect the arguments in line with the permission schemes.
+    Let us see an example of doing that by sanitizing the JQL function we created
+    in the previous recipe.
+  id: totrans-83
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这就是 JQL 函数清理能够提供帮助的地方。本质上，我们只是修改 JQL 查询，以根据权限方案保护参数。让我们来看一个通过清理我们在前一个例子中创建的
+    JQL 函数来做到这一点的示例。
+- en: Getting ready
+  id: totrans-84
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 准备工作
+- en: Develop the JQL function, as explained in the previous recipe.
+  id: totrans-85
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 开发 JQL 函数，如前一个例子中所述。
+- en: How to do it...
+  id: totrans-86
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: 'In our JQL function, we use the project keys as the arguments. To explain the
+    Function Sanitization, we will look to replace the keys with project IDs whenever
+    the user doesn''t have the permission to browse a project. The following is the
+    step-by-step process showing you how to do it:'
+  id: totrans-87
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在我们的 JQL 函数中，我们使用项目密钥作为参数。为了说明函数清理过程，我们将替换掉用户没有权限浏览项目时的密钥，而改用项目 ID。以下是逐步展示如何实现这一操作的过程：
+- en: 'Modify the JQL function class to implement the `ClauseSanitisingJqlFunction`
+    interface:'
+  id: totrans-88
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 修改 JQL 函数类以实现 `ClauseSanitisingJqlFunction` 接口：
+- en: '[PRE12]'
+  id: totrans-89
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE12]'
+- en: 'Implement the `sanitiseOperand` method:'
+  id: totrans-90
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 实现 `sanitiseOperand` 方法：
+- en: '[PRE13]'
+  id: totrans-91
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE13]'
+- en: 'Here we read all the existing arguments of the JQL function, from the `FunctionOperand`
+    argument, and modify it to include project IDs instead of keys, wherever the user
+    doesn''t have Browse permissions:'
+  id: totrans-92
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在这里，我们从`FunctionOperand`参数中读取所有现有的 JQL 函数参数，并修改它，使其在用户没有浏览权限的地方使用项目 ID 替代项目密钥：
+- en: '[PRE14]'
+  id: totrans-93
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE14]'
+- en: Package and deploy the modified plugin.
+  id: totrans-94
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 打包并部署修改后的插件。
+- en: How it works...
+  id: totrans-95
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 它是如何工作的……
+- en: Once the plugin is deployed, if a user doesn't have the permission to browse
+    a project, he/she will see the project ID instead of the key that was originally
+    entered when the filter was created. Following is a sample screenshot of how the
+    query will look in that case. In this case, I just removed myself from the Browse
+    permission of the `TEST` project, and you can see that the query is modified to
+    replace the key `TEST` with its unique ID, which doesn't reveal much information!
+  id: totrans-96
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 插件部署后，如果用户没有浏览项目的权限，他/她将看到项目 ID，而不是原本在创建过滤器时输入的密钥。以下是此情况下查询如何显示的示例截图。在这种情况下，我只是将自己从`TEST`项目的浏览权限中移除，您可以看到查询已修改，将密钥`TEST`替换为其唯一
+    ID，从而不会泄露太多信息！
+- en: '![How it works...](img/1803-06-04.jpg)'
+  id: totrans-97
+  prefs: []
+  type: TYPE_IMG
+  zh: '![它是如何工作的...](img/1803-06-04.jpg)'
+- en: What if you try to edit the filter now? Our validation will now kick in as it
+    is not able to find a project with the ID, as shown next! Nice, eh?
+  id: totrans-98
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果您现在尝试编辑过滤器会怎样？我们的验证机制将启动，因为它无法找到带有该 ID 的项目，如下所示！不错吧？
+- en: '![How it works...](img/1803-06-05.jpg)'
+  id: totrans-99
+  prefs: []
+  type: TYPE_IMG
+  zh: '![它是如何工作的...](img/1803-06-05.jpg)'
+- en: This is only an example, and we can sanitize the query in a similar way in every
+    other case.
+  id: totrans-100
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这只是一个示例，我们可以以类似的方式清理其他所有情况中的查询。
+- en: See also
+  id: totrans-101
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 另见
+- en: '*Writing a JQL function*'
+  id: totrans-102
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*编写 JQL 函数*'
+- en: Adding a search request view
+  id: totrans-103
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 添加搜索请求视图
+- en: One of the customizable features in JIRA is its **Issue Navigator**. It lets
+    us search based on numerous criteria, choose the fields that need to be shown,
+    in a way we want to see them!
+  id: totrans-104
+  prefs: []
+  type: TYPE_NORMAL
+  zh: JIRA 中的一个可定制功能是**问题导航器**。它让我们可以根据多种标准进行搜索，选择需要显示的字段，并以我们想要的方式展示！
+- en: The normal or the default view in the issue navigator is the tabular view to
+    display the issues and the fields we have chosen by configuring the issue navigator.
+    JIRA also gives us a few other options to see the search results in different
+    formats, to export them into Excel, Word, or XML, and so on with the help of the
+    pre-defined search request views.
+  id: totrans-105
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 问题导航器中的正常视图或默认视图是表格视图，用于显示我们通过配置问题导航器所选择的问题和字段。JIRA 还提供了几种其他选项，可以以不同的格式查看搜索结果，导出为
+    Excel、Word 或 XML 等，所有这些都可以通过预定义的搜索请求视图实现。
+- en: In this recipe, we will see how we can add more search views in to JIRA that
+    enables us to see the search results in a format we like. To achieve this we need
+    to use the **Search Request View Plugin** module.
+  id: totrans-106
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本教程中，我们将学习如何向 JIRA 添加更多搜索视图，使我们可以以自己喜欢的格式查看搜索结果。为实现这一目标，我们需要使用**搜索请求视图插件**模块。
+- en: Getting ready
+  id: totrans-107
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 准备工作
+- en: Create a plugin skeleton using Atlassian Plugin SDK.
+  id: totrans-108
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用 Atlassian Plugin SDK 创建插件框架。
+- en: How to do it...
+  id: totrans-109
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何操作……
+- en: As mentioned before, we use the Search Request View Plugin module to create
+    custom search views. In our example, let us create a simple HTML view that just
+    displays the issue key and summary.
+  id: totrans-110
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如前所述，我们使用搜索请求视图插件模块来创建自定义搜索视图。在我们的示例中，我们将创建一个简单的 HTML 视图，只显示问题的关键字和摘要。
+- en: 'The following is the step-by-step process:'
+  id: totrans-111
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是逐步过程：
+- en: 'Define the plugin descriptor with the search request view module:'
+  id: totrans-112
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用搜索请求视图模块定义插件描述符：
+- en: '[PRE15]'
+  id: totrans-113
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE15]'
+- en: 'As usual, the module has a unique key. Following are the other attributes:'
+  id: totrans-114
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 像往常一样，模块有一个唯一的键。以下是其他属性：
+- en: '`name`: The name that will appear in the Issue Navigator for the View'
+  id: totrans-115
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`name`：将在问题导航器中显示的视图名称'
+- en: '`class`: The search request view class. This is where we populate the velocity
+    contexts with the necessary information'
+  id: totrans-116
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`class`：搜索请求视图类。我们在这里填充 Velocity 上下文，提供必要的信息。'
+- en: '`contentType`: The `contentType` of the file that is generated. `text/html`,
+    `text/xml`, `application/rss+xml`, `application/vnd.ms-word`, `application/vnd.ms-excel`,
+    and so on'
+  id: totrans-117
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`contentType`：生成文件的 `contentType`。`text/html`、`text/xml`、`application/rss+xml`、`application/vnd.ms-word`、`application/vnd.ms-excel`
+    等'
+- en: '`fileExtension`: The extension of the file generated. `html`, `xml`, `xml`,
+    `doc`, `xls`, and so on'
+  id: totrans-118
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`fileExtension`：生成文件的扩展名。`html`、`xml`、`doc`、`xls` 等'
+- en: '`state`: Enabled or disabled. Determines whether the module is enabled at startup'
+  id: totrans-119
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`state`：启用或禁用。决定模块是否在启动时启用'
+- en: The Search-Request-View element also has few child elements to define the velocity
+    templates required for the various views and to determine the `order` in which
+    the views will appear. Modules with lower `order` values are shown first. JIRA
+    uses an order of 10 for the built-in views. A lower value will put the new view
+    above the built-in views and a higher value will put the new view at the bottom.
+  id: totrans-120
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: Search-Request-View元素还包含一些子元素，用于定义不同视图所需的Velocity模板，并确定视图出现的`order`。`order`值较低的模块将首先显示。JIRA对内置视图使用的是10的`order`值。较小的值会将新视图显示在内置视图之上，而较大的值则会将新视图放置在底部。
+- en: Implement the Search Request View class.
+  id: totrans-121
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 实现搜索请求视图类。
+- en: The Search Request View class must implement the `SearchRequestView` interface.
+    To make things easier, we can extend the `AbstractSearchRequestView` class that
+    already implements this interface. When we do that, we have one method, `writeSearchResults`,
+    to be implemented!
+  id: totrans-122
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 搜索请求视图类必须实现`SearchRequestView`接口。为了简化操作，我们可以扩展已经实现该接口的`AbstractSearchRequestView`类。这样，我们只需要实现一个方法——`writeSearchResults`！
+- en: 'This method takes a writer argument using which we can generate the output
+    using the various template views we define. For example:'
+  id: totrans-123
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 该方法接受一个writer参数，借此我们可以使用定义的各种模板视图生成输出。例如：
+- en: '[PRE16]'
+  id: totrans-124
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE16]'
+- en: It will identify the velocity template with the view named as `header` and will
+    use the variables on the map – `headerParams` to render the template. We can similarly
+    define as many templates as we want and write them to create the view that we
+    need.
+  id: totrans-125
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 它会识别名为`header`的Velocity模板，并使用映射中的`headerParams`变量来渲染模板。我们可以类似地定义任意数量的模板，并将它们写入以创建所需的视图。
+- en: In our example, we have three views defined – header, body, and footer. These
+    views can be named in any way we want, but the same names that we define in the
+    `atlassian-plugin.xml` should be used in the Search Request View class.
+  id: totrans-126
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在我们的示例中，定义了三个视图——头部、主体和尾部。这些视图可以根据我们需要命名，但我们在`atlassian-plugin.xml`中定义的相同名称应在搜索请求视图类中使用。
+- en: 'In our class implementation, we use the three views to generate the simple
+    HTML view. We use the header and footer views in the beginning and end and will
+    use the body view to generate the issue view for each individual issue in search
+    results. The following is how we do it:'
+  id: totrans-127
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在我们的类实现中，我们使用三个视图来生成简单的HTML视图。我们在开始和结束时使用头部和尾部视图，并使用主体视图为搜索结果中的每个单独问题生成视图。以下是我们如何操作的：
+- en: 'Generate a map with the default velocity context parameters:'
+  id: totrans-128
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 生成一个包含默认Velocity上下文参数的映射：
+- en: '[PRE17]'
+  id: totrans-129
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE17]'
+- en: 'Populate the map with the variables that we need in the context to render the
+    header template and write the header. In our example, let us keep the header fairly
+    simple and just use the filter name and the current user:'
+  id: totrans-130
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 用我们需要的变量填充映射，以便渲染头部模板并写出头部。在我们的示例中，我们将头部保持得相当简单，仅使用过滤器名称和当前用户：
+- en: '[PRE18]'
+  id: totrans-131
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE18]'
+- en: 'Now we need to write the search results. We should iterate over each issue
+    in the search results and write it to the writer using the format we defined.
+    To ensure that this doesn''t result in huge memory consumption, only one issue
+    should be loaded into memory at a time. This can be guaranteed by using a **Hitcollector**.
+    This collector is responsible for writing out each issue as it is encountered
+    in the search results. It will be called for each search result by the underlying
+    Lucene search code:'
+  id: totrans-132
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 现在我们需要写出搜索结果。我们应该遍历每个搜索结果中的问题，并使用我们定义的格式将其写入到writer中。为了避免导致巨大的内存消耗，每次只加载一个问题到内存中。这可以通过使用**HitCollector**来保证。该Collector负责在遇到每个搜索结果时将其写出。Lucene搜索代码会在每个搜索结果时调用它：
+- en: '[PRE19]'
+  id: totrans-133
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE19]'
+- en: All we do here is define the `HitCollector` and invoke the `searchAndSort` method,
+    which will then use the `HitCollector` to generate the view for each issue. Here
+    we can add more variables if we need them in the view.
+  id: totrans-134
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在这里，我们所做的只是定义`HitCollector`并调用`searchAndSort`方法，后者将使用`HitCollector`为每个问题生成视图。如果需要的话，我们可以在此添加更多变量。
+- en: 'We can now write the footer before we finish. Let us again put the user just
+    for educational purpose:'
+  id: totrans-135
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 我们现在可以在结束前写出尾部。为了教育目的，我们再次插入用户信息：
+- en: '[PRE20]'
+  id: totrans-136
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE20]'
+- en: Here we created a simple map just to show that we need only the variables we
+    use in the view.
+  id: totrans-137
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在这里，我们创建了一个简单的映射，只是为了展示我们只需要在视图中使用的变量。
+- en: 'The method will now look as follows:'
+  id: totrans-138
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 该方法现在看起来如下：
+- en: '[PRE21]'
+  id: totrans-139
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE21]'
+- en: 'Write the velocity templates. As we saw, we are using three views:'
+  id: totrans-140
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 编写Velocity模板。如我们所见，我们使用了三个视图：
+- en: '**Header** – The velocity template is `templates/searchrequest-html-header.vm`.
+    The following is how it looks:'
+  id: totrans-141
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**头部** – 速度模板是 `templates/searchrequest-html-header.vm`。以下代码展示了它的样子：'
+- en: '[PRE22]'
+  id: totrans-142
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE22]'
+- en: We just greet the user and display the filter name here. It also has a `<table>`
+    tag which is used at the beginning of the issue table. The table will be closed
+    in the footer.
+  id: totrans-143
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 我们只需向用户问候并显示筛选器名称。它还包含一个 `<table>` 标签，用于开始问题表格。表格将在页脚关闭。
+- en: '**Body** – The velocity template is `templates/searchrequest-html-body.vm`.
+    The following is how it looks:'
+  id: totrans-144
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**主体** – 速度模板是 `templates/searchrequest-html-body.vm`。以下代码展示了它的样子：'
+- en: '[PRE23]'
+  id: totrans-145
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE23]'
+- en: Whatever appears here is common to all the issues. Here we create a table row
+    for each issue and display the key and summary appropriately.
+  id: totrans-146
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 无论这里出现什么内容，都是所有问题的共同部分。这里我们为每个问题创建一行，并适当地显示键值和摘要。
+- en: '**Footer** – The velocity template is `templates/searchrequest-html-footer.vm`.
+    The following code shows how it looks:'
+  id: totrans-147
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**页脚** – 速度模板是 `templates/searchrequest-html-footer.vm`。以下代码展示了它的样子：'
+- en: '[PRE24]'
+  id: totrans-148
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE24]'
+- en: We just close the table and wind up with a message!
+  id: totrans-149
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 我们只需关闭表格并用一条消息结束！
+- en: Package the plugin and deploy it.
+  id: totrans-150
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 打包插件并部署它。
+- en: How it works...
+  id: totrans-151
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 它是如何工作的...
+- en: 'Once the plugin is deployed, we will find a new view in the issue navigator
+    named **Simple HTML View**:'
+  id: totrans-152
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 插件部署后，我们将在问题导航器中找到一个名为 **简单 HTML 视图** 的新视图：
+- en: '![How it works...](img/1803-06-06.jpg)'
+  id: totrans-153
+  prefs: []
+  type: TYPE_IMG
+  zh: '![它是如何工作的...](img/1803-06-06.jpg)'
+- en: 'On selecting the view, the current search results will appear as follows:'
+  id: totrans-154
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 选择视图后，当前搜索结果将如下所示：
+- en: '![How it works...](img/1803-06-07.jpg)'
+  id: totrans-155
+  prefs: []
+  type: TYPE_IMG
+  zh: '![它是如何工作的...](img/1803-06-07.jpg)'
+- en: 'If the results belong to a filter, it will display the filter name instead
+    of Anonymous:'
+  id: totrans-156
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果结果属于某个筛选器，它将显示筛选器名称，而不是显示匿名：
+- en: '![How it works...](img/1803-06-08.jpg)'
+  id: totrans-157
+  prefs: []
+  type: TYPE_IMG
+  zh: '![它是如何工作的...](img/1803-06-08.jpg)'
+- en: It is now left to our creativity to make it more beautiful or use an entirely
+    different content type instead of HTML. An example of how an XML view is generated
+    can be found in the JIRA documentation at [https://developer.atlassian.com/display/JIRADEV/Search+Request+View+Plugin+Module](https://developer.atlassian.com/display/JIRADEV/Search+Request+View+Plugin+Module).
+  id: totrans-158
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在就看我们的创意了，如何让它更漂亮，或者使用完全不同的内容类型代替 HTML。有关如何生成 XML 视图的示例，请参见 JIRA 文档中的 [https://developer.atlassian.com/display/JIRADEV/Search+Request+View+Plugin+Module](https://developer.atlassian.com/display/JIRADEV/Search+Request+View+Plugin+Module)。
+- en: See also
+  id: totrans-159
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 参见
+- en: '*Creating a skeleton plugin* in [Chapter 1](ch01.html "Chapter 1. Plugin Development
+    Process"), *Plugin Development Process*'
+  id: totrans-160
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*创建一个骨架插件* 在 [第1章](ch01.html "第1章. 插件开发过程")，*插件开发过程*'
+- en: '*Deploying your plugin*'
+  id: totrans-161
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*部署你的插件*'
+- en: Smart querying using quick search
+  id: totrans-162
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用快速搜索进行智能查询
+- en: The name says it all! JIRA allows smart querying using its Quick Search functionality
+    and it enables the users to find critical information with ease. There is a pre-defined
+    set of search keywords that JIRA recognizes and we can use them to search smart
+    and fast!
+  id: totrans-163
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个名字说明了一切！JIRA 通过其快速搜索功能支持智能查询，使用户能够轻松找到关键信息。JIRA 识别一组预定义的搜索关键字，我们可以使用它们快速、智能地进行搜索！
+- en: In this recipe, we will look at how we can do smart querying on some of the
+    JIRA fields.
+  id: totrans-164
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这个示例中，我们将学习如何在一些 JIRA 字段上进行智能查询。
+- en: How to do it...
+  id: totrans-165
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: 'Before we start, the **Quick Search** box is located at the right-hand top
+    corner of JIRA, as shown:'
+  id: totrans-166
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在开始之前，**快速搜索** 框位于 JIRA 右上角，如下所示：
+- en: '![How to do it...](img/1803-06-09.jpg)'
+  id: totrans-167
+  prefs: []
+  type: TYPE_IMG
+  zh: '![如何操作...](img/1803-06-09.jpg)'
+- en: The following is how we can search on some of the fields as of JIRA 4.4\. Don't
+    forget to check how many of them are supported in your version of JIRA!
+  id: totrans-168
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是 JIRA 4.4 中如何对某些字段进行搜索的方法。别忘了检查你的 JIRA 版本支持哪些字段！
+- en: '**Issue key**: If you already know the issue key that you want to see, it doesn''t
+    get any better! Just type the issue key in the **Quick Search** box and JIRA will
+    take you to the view issue page.'
+  id: totrans-169
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**问题键**：如果你已经知道想要查看的问题键，那就更方便了！只需在 **快速搜索** 框中输入问题键，JIRA 就会带你到该问题页面。'
+- en: And there's more! If you are browsing a project or viewing an issue and if you
+    want to see another issue for which the key is known, all you need to type is
+    the number in the unique key (just the numerical part). There isn't even a need
+    to type in the full key.
+  id: totrans-170
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 还有更多！如果你正在浏览一个项目或查看一个问题，并且想查看另一个已知键的问题，你只需要输入唯一键的数字部分（仅输入数字）。甚至不需要输入完整的键值。
+- en: For example, **TEST-123** will take you to that issue directly. Typing **125**
+    will then take you to **TEST-125**!
+  id: totrans-171
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 例如，**TEST-123** 会直接带你到该问题。输入 **125** 会将你带到 **TEST-125**！
+- en: '**Project**: If you type in the project key, the quick search will show you
+    all the issues in that particular project. The project name can also be used as
+    long as there are no spaces in it.'
+  id: totrans-172
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**项目**：如果输入项目的关键字，快速搜索将显示该特定项目中的所有问题。只要项目名称中没有空格，也可以使用项目名称。'
+- en: For example, **TEST** will return all issues in the project `TEST` or a project
+    with the key **TEST**. 'TEST Project' will not display issues in the project with
+    the name 'Test Project', as the quick search interprets it as two different keywords.
+  id: totrans-173
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 例如，**TEST** 将返回所有在项目 `TEST` 中或关键字为**TEST**的项目中的问题。而“TEST Project”不会显示名称为“Test
+    Project”的项目中的问题，因为快速搜索将其解释为两个不同的关键字。
+- en: '**Assignee**: The keyword **my** can be used to find all issues assigned to
+    me.'
+  id: totrans-174
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**被分配人**：可以使用关键字**my**来查找所有分配给我的问题。'
+- en: '**Reporter**: The keyword **r:** is followed by **me**, or the *reporter name*
+    can find all issues reported by me or the user respectively For example, **r:none**
+    is also supported and it returns issues without any reporter.'
+  id: totrans-175
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**报告人**：关键字**r:**后跟**me**，或者*报告人名称*，可以查找由我或指定用户报告的所有问题。例如，**r:none** 也支持，它会返回没有报告人的问题。'
+- en: '**r:me** will retrieve all issues reported by me, whereas **r:admin** will
+    retrieve all issues reported by the user – admin.'
+  id: totrans-176
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '**r:me** 将检索所有由我报告的问题，而**r:admin** 将检索所有由用户 admin 报告的问题。'
+- en: '**Date** **fields**: Quick Search can be done based on the three major date
+    fields on the issue – **created**, **updated**, and **due** **date**. The keywords
+    used are **created**, **updated**, and **due** respectively. The keyword should
+    be followed by **:** and the date range without any spaces.'
+  id: totrans-177
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**日期** **字段**：可以基于问题中的三个主要日期字段进行快速搜索——**创建时间**、**更新时间**和**到期时间**。使用的关键字分别是**created**、**updated**和**due**。关键字后面应跟着**:**和没有空格的日期范围。'
+- en: 'The date range can use one of the following keywords – **today**, **tomorrow**,
+    **yesterday**, or a single date range (for example,. ''-5d'') or two date ranges
+    (for example,. ''-2w,1w''). The date ranges cannot have spaces in them. Valid
+    date/time abbreviations are: ''w'' (week), ''d'' (day), ''h'' (hour), and ''m''
+    (minute). For example:'
+  id: totrans-178
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 日期范围可以使用以下关键字之一——**today**（今天）、**tomorrow**（明天）、**yesterday**（昨天），或者是单一日期范围（例如，‘-5d’）或两个日期范围（例如，‘-2w,1w’）。日期范围之间不能有空格。有效的日期/时间缩写为：‘w’（周）、‘d’（天）、‘h’（小时）和‘m’（分钟）。例如：
+- en: '**created:today** will retrieve all issues created on the date.'
+  id: totrans-179
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**created:today** 将检索所有今天创建的问题。'
+- en: '**updated:-5d** will retrieve all issues updated in the last five days.'
+  id: totrans-180
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**updated:-5d** 将检索所有在过去五天内更新的问题。'
+- en: '**due:-2w,1w** will retrieve all issues due in the last two weeks and in the
+    next week.'
+  id: totrans-181
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**due:-2w,1w** 将检索所有在过去两周内到期且在接下来一周内到期的问题。'
+- en: You can also use the keyword **overdue** to retrieve all issues that are overdue
+    (has a past due date).
+  id: totrans-182
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 你还可以使用关键字**overdue**来检索所有已过期（有过去的到期日期）的问题。
+- en: '**Priority**: The quick search can be done using the priority values **blocker**,
+    **critical**, **major**, **minor**, and **trivial**. Just typing the value will
+    retrieve all the issues that have the given priority value.'
+  id: totrans-183
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**优先级**：可以使用以下优先级值进行快速搜索：**blocker**（阻塞）、**critical**（关键）、**major**（重大）、**minor**（次要）和**trivial**（微不足道）。只需键入相应的值即可检索所有具有给定优先级值的问题。'
+- en: For example, all issues with the priority **major** can be retrieved by searching
+    with **major**.
+  id: totrans-184
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 例如，通过使用**major**可以检索所有优先级为**major**的问题。
+- en: '**IssueType**: Issue type names can be used in the Quick search as long as
+    it doesn''t have any spaces in it. Even plurals will work.'
+  id: totrans-185
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**问题类型**：只要问题类型名称中没有空格，就可以在快速搜索中使用。即使是复数形式也能有效。'
+- en: For example, typing **bug** or **bugs** will retrieve all the issues with the
+    issue type of bug.
+  id: totrans-186
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 例如，输入**bug**或**bugs**将检索所有类型为 bug 的问题。
+- en: '**Versions**: Quick Search can find issues with known Affected Versions or
+    Fix for versions using the keywords **v:** or **ff:** followed by the value without
+    any space. There shouldn''t be any spaces between **v:** and the version name.
+    It can also use wild card search. The search will also find all issues with version
+    values that contain the string you specify, followed immediately by a space. For
+    example:'
+  id: totrans-187
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**版本**：快速搜索可以使用关键字**v:**或**ff:**后跟版本值，查找具有已知受影响版本或修复版本的问题，且版本名之间不能有空格。也可以使用通配符进行搜索。搜索还将找到所有包含你指定字符串的版本值，字符串后面紧接着一个空格。例如：'
+- en: '**v:2.0** will find issues in versions – 2.0, 2.0 one, 2.0 beta, and so on.
+    But it wouldn''t find issues in version 2.0.1'
+  id: totrans-188
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**v:2.0** 将查找版本为 2.0、2.0 one、2.0 beta 等的所有问题。但它不会查找版本为 2.0.1 的问题。'
+- en: '**v:2.*** will find issues in versions – 2.0, 2.0 one, 2.0.1, 2.2, and so on.'
+  id: totrans-189
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**v:2.*** 将查找版本为 2.0、2.0 one、2.0.1、2.2 等的问题。'
+- en: 'The same applies to fixes for versions. The prefix only changes to ff:'
+  id: totrans-190
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 对于版本的修复，情况也是一样的。前缀仅更改为 ff：
+- en: '**Components**: Quick search can find issues with component names using the
+    prefix **c:** followed by the component name. It will retrieve all issues where
+    the component has the value somewhere in its name, not necessarily starting with
+    it.'
+  id: totrans-191
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**组件**：快速搜索可以使用前缀 **c:** 加上组件名称来查找带有组件名称的所有问题。它会检索所有组件名称中包含该值的所有问题，而不一定是以该值开头的。'
+- en: For example, **c:jql** will find all issues in components that have the word
+    'jql' in it. It will work for the components jql, jql performance, advanced jql,
+    and so on.
+  id: totrans-192
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 例如，**c:jql**将查找所有包含 'jql' 字样的组件中的问题。它适用于组件 jql、jql 性能、先进的 jql 等。
+- en: There's more...
+  id: totrans-193
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 还有更多...
+- en: Quick Search can also be used to search for any word within the issue(s) you
+    are looking for, provided the word is in the summary, description, or comments
+    of the issue. It is called **Smart** **Search**.
+  id: totrans-194
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 快速搜索也可以用来搜索问题中任何包含的单词，只要该单词出现在问题的摘要、描述或评论中。它被称为 **智能** **搜索**。
+- en: If you think you want to use any of these keywords without using Smart search,
+    the query can be run without smart search when the results are displayed.
+  id: totrans-195
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你认为你想在不使用智能搜索的情况下使用这些关键词，则可以在显示结果时不使用智能搜索来运行查询。
+- en: Smart Querying can have multiple keywords combined to narrow down the search.
+    It can even be combined with Free Text Search.
+  id: totrans-196
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 智能查询可以结合多个关键词来缩小搜索范围。它甚至可以与自由文本搜索结合使用。
+- en: 'For example, **my open bugs** will retrieve all bugs that are opened and assigned
+    to me. It is equivalent to the JQL:'
+  id: totrans-197
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 例如，**我未解决的 bug**将检索所有已打开并分配给我的 bug。它等同于以下 JQL：
+- en: '[PRE25]'
+  id: totrans-198
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE25]'
+- en: '**my open bugs jql** will retrieve all bugs that are opened and assigned to
+    me and has the word ''jql'' in its summary, description, or comments. It is equivalent
+    to:'
+  id: totrans-199
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**我的未解决 bug jql**将检索所有已打开并分配给我的 bug，并且在其摘要、描述或评论中包含 ''jql'' 这个词。它等同于：'
+- en: '[PRE26]'
+  id: totrans-200
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE26]'
+- en: '**my open bugs jql performance** is equivalent to:'
+  id: totrans-201
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**我的未解决 bug jql 性能**等同于：'
+- en: '[PRE27]'
+  id: totrans-202
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE27]'
+- en: More on advanced searching or JQL can be found at [http://confluence.atlassian.com/display/JIRA/Advanced+Searching](http://confluence.atlassian.com/display/JIRA/Advanced+Searching).
+  id: totrans-203
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 更多关于高级搜索或 JQL 的内容，请参见 [http://confluence.atlassian.com/display/JIRA/Advanced+Searching](http://confluence.atlassian.com/display/JIRA/Advanced+Searching)。
+- en: Searching in plugins
+  id: totrans-204
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 插件中的搜索
+- en: With the invention of JQL, JIRA Search APIs have changed drastically from 3.x
+    versions. Searching in plugins is now done using APIs supporting JQL. In this
+    recipe, we will see how to search for issues within our plugins using those APIs.
+  id: totrans-205
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 随着 JQL 的发明，JIRA 搜索 API 与 3.x 版本相比发生了巨大变化。插件中的搜索现在通过支持 JQL 的 API 完成。在本示例中，我们将看到如何使用这些
+    API 在插件中搜索问题。
+- en: How to do it...
+  id: totrans-206
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: For the sake of concentrating on the search APIs, we will look at writing a
+    simple method, `getIssues()`, that returns a list of issue objects based on some
+    search criteria.
+  id: totrans-207
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了专注于搜索 API，我们将编写一个简单的方法 `getIssues()`，根据一些搜索条件返回问题对象的列表。
+- en: The essence of searching is to build a `Query` object using `JqlQueryBuilder`.
+    A `Query` object will have a `where` clause and an `order by` clause, which are
+    built using the `JqlClauseBuilder`. We can also incorporate conditions in between
+    clauses using `ConditionBuilders`.
+  id: totrans-208
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 搜索的本质是使用 `JqlQueryBuilder` 构建一个 `Query` 对象。`Query` 对象将具有 `where` 子句和 `order
+    by` 子句，这些子句是通过 `JqlClauseBuilder` 构建的。我们还可以在子句之间使用 `ConditionBuilders` 加入条件。
+- en: 'For now, let us assume we want to find all the issues in a particular project
+    (project ID: 10000, Key: DEMO) and assigned to the current user within our plugin.
+    The JQL equivalent for this is:'
+  id: totrans-209
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，假设我们想在我们的插件中查找所有属于特定项目（项目 ID：10000，项目 Key：DEMO）并分配给当前用户的问题。其 JQL 等价语句为：
+- en: '[PRE28]'
+  id: totrans-210
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE28]'
+- en: 'The following are the steps to do this programmatically:'
+  id: totrans-211
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是执行此操作的步骤：
+- en: Create a JqlQueryBuilder ([http://docs.atlassian.com/software/jira/docs/api/latest/com/atlassian/jira/jql/builder/JqlQueryBuilder.html](http://docs.atlassian.com/software/jira/docs/api/latest/com/atlassian/jira/jql/builder/JqlQueryBuilder.html))
+    object.
+  id: totrans-212
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建一个 JqlQueryBuilder ([http://docs.atlassian.com/software/jira/docs/api/latest/com/atlassian/jira/jql/builder/JqlQueryBuilder.html](http://docs.atlassian.com/software/jira/docs/api/latest/com/atlassian/jira/jql/builder/JqlQueryBuilder.html))
+    对象。
+- en: '`JqlQueryBuilder` is used to build the query that is used to perform issue
+    searching. The following is how a `JqlQueryObject` is created:'
+  id: totrans-213
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`JqlQueryBuilder` 用于构建用于执行问题搜索的查询。以下是如何创建 `JqlQueryObject` 的示例：'
+- en: '[PRE29]'
+  id: totrans-214
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE29]'
+- en: Create a `where` clause that returns a JqlClauseBuilder ([http://docs.atlassian.com/software/jira/docs/api/latest/com/atlassian/jira/jql/builder/JqlClauseBuilder.html](http://docs.atlassian.com/software/jira/docs/api/latest/com/atlassian/jira/jql/builder/JqlClauseBuilder.html)).
+    A query is constructed with one or more JQL clauses with different conditions
+    added in between.
+  id: totrans-215
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建一个返回`JqlClauseBuilder`的`where`子句（[http://docs.atlassian.com/software/jira/docs/api/latest/com/atlassian/jira/jql/builder/JqlClauseBuilder.html](http://docs.atlassian.com/software/jira/docs/api/latest/com/atlassian/jira/jql/builder/JqlClauseBuilder.html)）。查询是通过一个或多个JQL子句构建的，每个子句之间可以添加不同的条件。
+- en: '`builder.where()` returns a `JqlClauseBuilder` object for our `QueryBuilder`
+    on which we can then add multiple clauses.'
+  id: totrans-216
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`builder.where()`返回一个`JqlClauseBuilder`对象，用于我们的`QueryBuilder`，在这个对象上我们可以添加多个子句。'
+- en: 'Add the project clause to search for a project with its ID as argument. The
+    project clause will return a `ConditionBuilder`:'
+  id: totrans-217
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 添加项目子句来搜索指定ID的项目。项目子句将返回一个`ConditionBuilder`：
+- en: '[PRE30]'
+  id: totrans-218
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE30]'
+- en: 'Add the `assignee` clause using the `AND` condition on the `ConditionBuilder`:'
+  id: totrans-219
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用`AND`条件在`ConditionBuilder`中添加`assignee`子句：
+- en: '[PRE31]'
+  id: totrans-220
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE31]'
+- en: We can have numerous clauses added like this using the different conditions.
+    Let us see some examples in the 'There's More...' section.
+  id: totrans-221
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 我们可以像这样使用不同的条件添加多个子句。让我们在“还有更多...”部分看到一些示例。
+- en: 'Add ordering, if you have any, using the `Order By` clause. We can sort based
+    on assignee as follows:'
+  id: totrans-222
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如果有排序需求，可以使用`Order By`子句来添加排序。我们可以按指派人排序，如下所示：
+- en: '[PRE32]'
+  id: totrans-223
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE32]'
+- en: '`SortOrder.DESC` can be used for descending orders.'
+  id: totrans-224
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`SortOrder.DESC`可以用于降序排序。'
+- en: 'Build the `Query` (`com.atlassian.query.Query`) object:'
+  id: totrans-225
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 构建`Query`（`com.atlassian.query.Query`）对象：
+- en: '[PRE33]'
+  id: totrans-226
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE33]'
+- en: The `Query` object is immutable; once it is created it cannot be changed. The
+    `JqlQueryBuilder` represents the mutable version of a `Query` object. We can create
+    a Query from an already existing Query by calling `JqlQueryBuilder.newBuilder(existingQuery)`.
+  id: totrans-227
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`Query`对象是不可变的；一旦创建，它就不能更改。`JqlQueryBuilder`表示`Query`对象的可变版本。我们可以通过调用`JqlQueryBuilder.newBuilder(existingQuery)`从一个已存在的查询创建一个新的查询。'
+- en: 'Get an instance of the `SearchService`. It could be injected in the constructor
+    of your plugin using dependency injection or can be retrieved from the `ComponentManager`
+    class as follows:'
+  id: totrans-228
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 获取`SearchService`的实例。它可以通过依赖注入在插件的构造函数中注入，也可以通过`ComponentManager`类按如下方式获取：
+- en: '[PRE34]'
+  id: totrans-229
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE34]'
+- en: 'Search using the query to retrieve the SearchResults ([http://docs.atlassian.com/jira/latest/com/atlassian/jira/issue/search/SearchResults.html](http://docs.atlassian.com/jira/latest/com/atlassian/jira/issue/search/SearchResults.html)):'
+  id: totrans-230
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用查询搜索以获取搜索结果（[http://docs.atlassian.com/jira/latest/com/atlassian/jira/issue/search/SearchResults.html](http://docs.atlassian.com/jira/latest/com/atlassian/jira/issue/search/SearchResults.html)）：
+- en: '[PRE35]'
+  id: totrans-231
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE35]'
+- en: Here we used `PagerFilter.getUnlimitedFilter()` to retrieve all the results.
+    It is possible to limit the results to a particular range, say from 20 to 80 results,
+    using the method `PagerFilter.newPageAlignedFilter(index, max)`. This will be
+    useful when Pagination is done, such as in the case of issue navigator.
+  id: totrans-232
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 这里我们使用了`PagerFilter.getUnlimitedFilter()`来获取所有结果。也可以通过方法`PagerFilter.newPageAlignedFilter(index,
+    max)`限制结果到特定范围，比如从20到80个结果。这在分页时非常有用，例如在问题导航器的情况下。
+- en: 'Retrieve the issues from the search results:'
+  id: totrans-233
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 从搜索结果中获取问题：
+- en: '[PRE36]'
+  id: totrans-234
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE36]'
+- en: 'The entire method will look as follows:'
+  id: totrans-235
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 整个方法将如下所示：
+- en: '[PRE37]'
+  id: totrans-236
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE37]'
+- en: Hopefully, that is a good starting point from which to write more complex queries!
+  id: totrans-237
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 希望这能为编写更复杂的查询提供一个良好的起点！
+- en: There's more...
+  id: totrans-238
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 还有更多...
+- en: As promised earlier, let us look at writing complex queries with a couple of
+    examples.
+  id: totrans-239
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如之前承诺的那样，让我们通过几个示例来看一下如何编写复杂的查询。
+- en: 'We can extend the aforementioned search to include multiple projects, assignees,
+    and a custom field. The JQL representation of the query will be:'
+  id: totrans-240
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 我们可以扩展前述的搜索，包含多个项目、指派人和自定义字段。该查询的JQL表示将是：
+- en: '[PRE38]'
+  id: totrans-241
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE38]'
+- en: 'The `where` clause is written as:'
+  id: totrans-242
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`where`子句写作：'
+- en: '[PRE39]'
+  id: totrans-243
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE39]'
+- en: 10000L is the ID of the custom field Customer Name.
+  id: totrans-244
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 10000L是自定义字段“客户名称”的ID。
+- en: 'We can group the conditions using `sub()` and `endsub()` to write even more
+    complex queries:'
+  id: totrans-245
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 我们可以使用`sub()`和`endsub()`来分组条件，从而编写更加复杂的查询：
+- en: '[PRE40]'
+  id: totrans-246
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE40]'
+- en: 'It can be written as:'
+  id: totrans-247
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 它可以写成：
+- en: '[PRE41]'
+  id: totrans-248
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE41]'
+- en: Similarly, we can write more complex queries.
+  id: totrans-249
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 同样，我们可以编写更复杂的查询。
+- en: See also
+  id: totrans-250
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 另请参见
+- en: '*Writing a JQL funcion*'
+  id: totrans-251
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*编写JQL函数*'
+- en: Parsing a JQL query in plugins
+  id: totrans-252
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 在插件中解析JQL查询
+- en: In the previous recipe, we saw how to build a Query to search within JIRA. In
+    this recipe, we will see searching again, but without building a Query using the
+    APIs. We will use the JQL Query as it is written in the Issue Navigator in advanced
+    mode and search using the same.
+  id: totrans-253
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在前面的例子中，我们看到了如何在JIRA中构建查询进行搜索。在本例中，我们将再次进行搜索，但不使用API构建查询。我们将直接使用在问题导航器的高级模式中书写的JQL查询进行搜索。
+- en: How to do it...
+  id: totrans-254
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何实现它...
+- en: 'Suppose we know the query that we want to execute. Let us assume it is the
+    same we saw in the previous recipe: `project = "DEMO" and assignee = currentUser()`.'
+  id: totrans-255
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 假设我们知道要执行的查询。假设它与我们在前面的例子中看到的是相同的：`project = "DEMO" and assignee = currentUser()`。
+- en: 'The following is how we do it:'
+  id: totrans-256
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是我们如何做到的：
+- en: 'Parse the JQL query:'
+  id: totrans-257
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 解析JQL查询：
+- en: '[PRE42]'
+  id: totrans-258
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE42]'
+- en: 'Check if the parsed result is valid or not:'
+  id: totrans-259
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 检查解析结果是否有效：
+- en: '[PRE43]'
+  id: totrans-260
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE43]'
+- en: 'If the result is valid, get the `Query` object from the `ParseResult`:'
+  id: totrans-261
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如果结果有效，从`ParseResult`中获取`Query`对象：
+- en: '[PRE44]'
+  id: totrans-262
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE44]'
+- en: 'Search for the issues and retrieve the `SearchResults`, as we have seen in
+    the previous recipe:'
+  id: totrans-263
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 搜索问题并获取`SearchResults`，就像我们在前面的例子中所看到的那样：
+- en: '[PRE45]'
+  id: totrans-264
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE45]'
+- en: 'Retrieve the list of issues from the search results:'
+  id: totrans-265
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 从搜索结果中检索问题列表：
+- en: '[PRE46]'
+  id: totrans-266
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE46]'
+- en: How it works...
+  id: totrans-267
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 它是如何工作的...
+- en: Here the `parseQuery` operation in `SearchService` converts the `String` JQL
+    query in to the `Query` object we normally construct using `JqlQueryBuilder`.
+    The actual parse operation is done by `JqlQueryParser` behind the scenes.
+  id: totrans-268
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这里，`SearchService`中的`parseQuery`操作将`String`类型的JQL查询转换为我们通常使用`JqlQueryBuilder`构建的`Query`对象。实际的解析操作由`JqlQueryParser`在幕后完成。
+- en: See also
+  id: totrans-269
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 另见
+- en: '*Searching in plugins*'
+  id: totrans-270
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*插件中的搜索*'
+- en: Linking directly to search queries
+  id: totrans-271
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 直接链接到搜索查询
+- en: Haven't you wondered how we can link to a query from a template or JSP from
+    a custom page or plugin page? In this recipe, we will see how we can create a
+    link programmatically and otherwise to use in various places.
+  id: totrans-272
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你有没有想过如何从模板或JSP页面通过自定义页面或插件页面链接到查询？在本例中，我们将看到如何以编程方式以及其他方式创建链接，并在不同的地方使用它。
+- en: How to do it...
+  id: totrans-273
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何实现它...
+- en: 'Let us first look at creating a search link programmatically. Perform the following
+    steps:'
+  id: totrans-274
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们首先看看如何以编程方式创建搜索链接。执行以下步骤：
+- en: Create the `Query` object using `JqlQueryBuilder`, as we have seen in the previous
+    recipe.
+  id: totrans-275
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用`JqlQueryBuilder`创建`Query`对象，就像我们在前面的例子中所看到的那样。
+- en: 'Get an instance of the `SearchService`. It could be injected in the constructor
+    of your plugin using dependency injection or can be retrieved from the `ComponentManager`
+    class as follows:'
+  id: totrans-276
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 获取`SearchService`的实例。它可以通过依赖注入注入到插件的构造函数中，也可以从`ComponentManager`类中按以下方式检索：
+- en: '[PRE47]'
+  id: totrans-277
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE47]'
+- en: 'Retrieve the query string from the `Query` object using `SearchService`, as
+    shown:'
+  id: totrans-278
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用`SearchService`从`Query`对象中检索查询字符串，如下所示：
+- en: '[PRE48]'
+  id: totrans-279
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE48]'
+- en: 'Construct the link using the context path. In JSPs, you can do it as shown
+    next:'
+  id: totrans-280
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用上下文路径构造链接。在JSP中，你可以按以下方式进行：
+- en: '[PRE49]'
+  id: totrans-281
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE49]'
+- en: Here, `getQueryString()` in the `Action` class returns the preceding `queryString`.
+  id: totrans-282
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 这里，`Action`类中的`getQueryString()`返回前面的`queryString`。
+- en: 'And in velocity templates:'
+  id: totrans-283
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在Velocity模板中：
+- en: '[PRE50]'
+  id: totrans-284
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE50]'
+- en: Here, `$queryString` is the preceding `queryString` in context!
+  id: totrans-285
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 这里，`$queryString`是上下文中的前一个`queryString`！
+- en: The `mode` parameter can have the values `hide` or `show` depending on whether
+    you want to open the issue navigator in view or edit mode!
+  id: totrans-286
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`mode`参数可以有`hide`或`show`两种值，取决于你是希望在查看模式还是编辑模式下打开问题导航器！'
+- en: How it works...
+  id: totrans-287
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 它是如何工作的...
+- en: 'The `getQueryString` method in `SearchService` returns the `queryString` in
+    a manner in which it can be used in a URL. It starts with `&jqlQuery=`, followed
+    by the actual query as a web URL:'
+  id: totrans-288
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`SearchService`中的`getQueryString`方法以可以用于URL的方式返回`queryString`。它以`&jqlQuery=`开头，后面跟随实际的查询，以Web
+    URL的形式表示：'
+- en: '[PRE51]'
+  id: totrans-289
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE51]'
+- en: There's more...
+  id: totrans-290
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 还有更多...
+- en: 'Linking to a Quick Search is also pretty easy and useful. We can even store
+    such searches in our browser favorites. All we need to do is find out the URL
+    by replacing `%s` in JIRA''s URL as follows:'
+  id: totrans-291
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 链接到快速搜索也非常简单且有用。我们甚至可以将这样的搜索存储在浏览器的收藏夹中。我们需要做的就是通过以下方式替换JIRA URL中的`%s`，来找出URL：
+- en: '`http://<Context_Path>/secure/QuickSearch.jspa?searchString=%s`'
+  id: totrans-292
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`http://<Context_Path>/secure/QuickSearch.jspa?searchString=%s`'
+- en: 'For example, if your JIRA instance is `http://localhost:8080/` and you want
+    to Quick Search for all the issues where you are the assignee, the relevant quick
+    search string will be: **my open**.'
+  id: totrans-293
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 例如，如果你的JIRA实例是`http://localhost:8080/`，并且你想快速搜索所有由你担任负责人（assignee）的任务，则相关的快速搜索字符串将是：**my
+    open**。
+- en: 'And the URL will then be:'
+  id: totrans-294
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后，URL将是：
+- en: '`http://localhost:8080/secure/QuickSearch.jspa?searchString=my+open`'
+  id: totrans-295
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`http://localhost:8080/secure/QuickSearch.jspa?searchString=my+open`'
+- en: Please note that the spaces in Quick Search are replaced by `+` while substituting
+    `%s`.
+  id: totrans-296
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请注意，Quick Search中的空格在替换`%s`时会被替换为`+`。
+- en: 'Other examples:'
+  id: totrans-297
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 其他示例：
+- en: '`http://localhost:8080/secure/QuickSearch.jspa?searchString=my+open+critical`
+    retrieves all open critical issues assigned to you'
+  id: totrans-298
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`http://localhost:8080/secure/QuickSearch.jspa?searchString=my+open+critical`
+    检索分配给您的所有未解决的紧急问题。'
+- en: '`http://localhost:8080/secure/QuickSearch.jspa?searchString=created:-1w+my`
+    retrieves all the issues assigned to you, created in the past week'
+  id: totrans-299
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`http://localhost:8080/secure/QuickSearch.jspa?searchString=created:-1w+my`
+    检索过去一周内分配给您的所有问题。'
+- en: Index and de-index programmatically
+  id: totrans-300
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 程序化索引和取消索引
+- en: As we have seen in the JIRA architecture explained in [Chapter 2](ch02.html
+    "Chapter 2. Understanding Plugin Framework"), *Understanding Plugin Framework*,
+    searching in JIRA is based on Apache Lucene. The Lucene indexes are stored in
+    the File System and are used as the basis for the search queries executed in JIRA.
+    Whenever an issue is updated, more records are created or existing records are
+    updated for that particular issue in the filesystem.
+  id: totrans-301
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如我们在[JIRA架构](ch02.html "Chapter 2. Understanding Plugin Framework")中解释的那样，*理解插件框架*，JIRA中的搜索基于Apache
+    Lucene。Lucene索引存储在文件系统中，并作为在JIRA中执行的搜索查询的基础。每当问题被更新时，会在文件系统中为该特定问题创建更多记录或更新现有记录。
+- en: It is possible to programmatically index selected or all issues or de-index
+    an issue. Also, we can switch OFF or ON indexing selectively in our plugins if
+    needed. In this recipe, we will see both of these.
+  id: totrans-302
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 可以程序化地为选定的或所有问题建立索引或取消索引问题。此外，如果需要，我们还可以在插件中选择性地关闭或开启索引。在这个示例中，我们将看到这两种操作。
+- en: How to do it...
+  id: totrans-303
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何执行...
+- en: 'Most of the indexing operations can be done with the help of `IssueIndexManager`.
+    An instance of `IssueIndexManager` can be created either by injecting in the constructor
+    or as follows:'
+  id: totrans-304
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 大多数索引操作可以借助`IssueIndexManager`来完成。可以通过构造函数注入或如下方式创建`IssueIndexManager`的实例：
+- en: '[PRE52]'
+  id: totrans-305
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE52]'
+- en: 'The following are the important operations supported by `IssueIndexManager`:'
+  id: totrans-306
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是`IssueIndexManager`支持的重要操作：
+- en: '`reIndexAll()` – Indexes all the issues in JIRA. A good method if you want
+    a custom admin operation to do indexing as well!'
+  id: totrans-307
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`reIndexAll()` – 为JIRA中的所有问题建立索引。如果您希望自定义管理员操作执行索引，这是一个不错的方法！'
+- en: '`reIndex(GenericValue issue)`or `reIndex(Issue issue)` – To selectively index
+    an issue by passing the `Issue` object or its `GenericValue`.'
+  id: totrans-308
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`reIndex(GenericValue issue)`或`reIndex(Issue issue)` – 通过传递`Issue`对象或其`GenericValue`来选择性地为一个问题建立索引。'
+- en: '`deIndex(GenericValue issue)` – Method to de-index an issue. Once this is done,
+    the issue won''t appear in the search results.'
+  id: totrans-309
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`deIndex(GenericValue issue)` – 用于取消索引某个问题的方法。一旦完成，该问题将不会出现在搜索结果中。'
+- en: Be aware that when the issue is later updated or a comment is added on the issue,
+    JIRA automatically indexes again. So don't rely on calling this just once to permanently
+    hide your issue from searches. To do so, the `IssueIndexer` should be overridden
+    so that it won't index the issue again.
+  id: totrans-310
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 请注意，当问题稍后更新或在问题上添加评论时，JIRA会自动重新建立索引。因此，不要依赖于仅调用一次来永久地将问题从搜索中隐藏。为此，`IssueIndexer`应被覆盖，以避免重新为该问题建立索引。
+- en: '`reIndexIssues(final Collection<GenericValue> issues)or reIndexIssueObjects(final
+    Collection<? extends Issue>issueObjects)` – Indexes a Collection of issues.'
+  id: totrans-311
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`reIndexIssues(final Collection<GenericValue> issues)`或`reIndexIssueObjects(final
+    Collection<? extends Issue>issueObjects)` – 为一组问题建立索引。'
+- en: Checkout the Java Docs at [http://docs.atlassian.com/software/jira/docs/api/latest/com/atlassian/jira/issue/index/IssueIndexManager.html](http://docs.atlassian.com/software/jira/docs/api/latest/com/atlassian/jira/issue/index/IssueIndexManager.html)
+    for more available methods on the `IssueIndexManager`.
+  id: totrans-312
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请查看Java文档中的[IssueIndexManager](http://docs.atlassian.com/software/jira/docs/api/latest/com/atlassian/jira/issue/index/IssueIndexManager.html)了解更多`IssueIndexManager`的可用方法。
+- en: 'If we want to make sure that indexing is turned ON when we make a major update
+    on an issue, we can do the following:'
+  id: totrans-313
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果我们想确保在对问题进行重大更新时索引被启用，我们可以做如下操作：
+- en: '[PRE53]'
+  id: totrans-314
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE53]'
+- en: Here we use `ImportUtils` to save the current indexing state and turn it ON.
+    After the update to issue(s) is done, indexing is turned back to whatever it was!
+  id: totrans-315
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这里，我们使用`ImportUtils`来保存当前的索引状态并将其开启。更新完问题后，索引将恢复到原始状态！
+- en: See also
+  id: totrans-316
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 另请参见
+- en: '*Searching in plugins*'
+  id: totrans-317
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*插件中的搜索*'
+- en: Managing filters programmatically
+  id: totrans-318
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 程序化管理过滤器
+- en: Be it a beginner in JIRA or a pro, one of the features used often is creating
+    and managing filters. The fact that we can save the searches, share them, and
+    subscribe to it adds a lot of value to JIRA. So, how do we programmatically create
+    and manage filters?
+  id: totrans-319
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 无论是JIRA新手还是专家，常用的功能之一是创建和管理过滤器。我们可以保存搜索、共享它们并订阅它们，这为JIRA增添了很大的价值。那么，我们如何通过编程方式创建和管理过滤器呢？
+- en: In this recipe, we will learn how to manage filters programmatically.
+  id: totrans-320
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本实例中，我们将学习如何通过编程方式管理过滤器。
+- en: How to do it...
+  id: totrans-321
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何执行...
+- en: 'We will see the various aspects of managing the filters one-by-one:'
+  id: totrans-322
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将一一查看管理过滤器的各个方面：
+- en: '**Creating a filter**'
+  id: totrans-323
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**创建过滤器**'
+- en: 'Most of the operations on managing filters are done using `SearchRequestService`.
+    For creating a filter, following are the steps:'
+  id: totrans-324
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 管理过滤器的大多数操作是通过`SearchRequestService`完成的。创建过滤器的步骤如下：
+- en: Create the Query to be saved as filter. The Query can be created using `JqlQueryBuilder`,
+    as we have seen in the previous recipes.
+  id: totrans-325
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建要保存为过滤器的查询。可以使用`JqlQueryBuilder`创建查询，正如我们在之前的实例中看到的那样。
+- en: Create a `SearchRequest` object from the Query
+  id: totrans-326
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 从查询创建一个`SearchRequest`对象
+- en: '[PRE54]'
+  id: totrans-327
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE54]'
+- en: 'Create a JIRA Service Context. If you are in an action class, you can get the
+    service context by calling `getJiraServiceContext()` and if not, an instance can
+    be created as:'
+  id: totrans-328
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建JIRA服务上下文。如果在一个action类中，可以通过调用`getJiraServiceContext()`来获取服务上下文，否则，可以像这样创建一个实例：
+- en: '[PRE55]'
+  id: totrans-329
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE55]'
+- en: Where user is the user for which the filter should be created.
+  id: totrans-330
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 其中，`user`是过滤器应为其创建的用户。
+- en: 'Get an instance of `SearchRequestService`. It can be either injected in the
+    constructor or as follows:'
+  id: totrans-331
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 获取`SearchRequestService`的实例。可以通过构造函数注入，也可以如下获取：
+- en: '[PRE56]'
+  id: totrans-332
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE56]'
+- en: 'Create the filter:'
+  id: totrans-333
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建过滤器：
+- en: '[PRE57]'
+  id: totrans-334
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE57]'
+- en: Where `favourite` is a boolean which can be set to true, if you want the filter
+    to be made a favorite.
+  id: totrans-335
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 其中，`favourite`是一个布尔值，如果要将过滤器设为收藏，可以设置为`true`。
+- en: '**Updating a filter**'
+  id: totrans-336
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**更新过滤器**'
+- en: 'Updating a filter is much similar to creating a filter. Once the `SearchRequest`
+    is updated and context is created, we need to invoke the following method to update
+    and persist in the database the filter with the new search parameters, that is,
+    the new query:'
+  id: totrans-337
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 更新过滤器与创建过滤器非常相似。一旦更新了`SearchRequest`并创建了上下文，我们需要调用以下方法，以更新并将新的查询参数（即新查询）保存到数据库中：
+- en: '[PRE58]'
+  id: totrans-338
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE58]'
+- en: 'To update the attributes such as name, description, and so on, one of the following
+    methods is invoked, depending on whether we want to make the filter favorite or
+    not:'
+  id: totrans-339
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要更新诸如名称、描述等属性，调用以下方法之一，具体取决于我们是否希望将过滤器设为收藏：
+- en: '[PRE59]'
+  id: totrans-340
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE59]'
+- en: 'Alternatively, we can use:'
+  id: totrans-341
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 或者，我们可以使用：
+- en: '[PRE60]'
+  id: totrans-342
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE60]'
+- en: '**Deleting a filter**'
+  id: totrans-343
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**删除过滤器**'
+- en: 'JIRA takes the filter ID as the input for deleting a filter. Before we actually
+    delete the filter, we need to validate the deletion as follows:'
+  id: totrans-344
+  prefs: []
+  type: TYPE_NORMAL
+  zh: JIRA以过滤器ID作为输入来删除过滤器。在实际删除过滤器之前，我们需要先进行删除验证，操作如下：
+- en: '[PRE61]'
+  id: totrans-345
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE61]'
+- en: If there are any errors, it will be added into the Action's error collection.
+    We can then check for the errors and delete the filter, if there are no errors.
+  id: totrans-346
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果出现任何错误，它将被添加到Action的错误集合中。然后，我们可以检查错误并在没有错误的情况下删除过滤器。
+- en: '[PRE62]'
+  id: totrans-347
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE62]'
+- en: 'We can also delete all the filters of a user using:'
+  id: totrans-348
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们也可以使用以下方法删除用户的所有过滤器：
+- en: '[PRE63]'
+  id: totrans-349
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE63]'
+- en: '**Retrieving filters**'
+  id: totrans-350
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**检索过滤器**'
+- en: 'The `SearchRequestService` also has few methods to retrieve favorite filters,
+    filters owned by a user, non-private filters, and so on. Key methods are listed
+    as follows:'
+  id: totrans-351
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`SearchRequestService`也有一些方法可以检索收藏的过滤器、用户拥有的过滤器、非私有过滤器等。关键方法如下所示：'
+- en: '[PRE64]'
+  id: totrans-352
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE64]'
+- en: The method names are self explanatory.
+  id: totrans-353
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 方法名称不言自明。
+- en: '**Sharing a filter**'
+  id: totrans-354
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**共享过滤器**'
+- en: 'In order to share a filter, we need to retrieve the relevant filter and set
+    the permissions on it using:'
+  id: totrans-355
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了共享一个过滤器，我们需要检索相关的过滤器并使用以下方法设置权限：
+- en: '[PRE65]'
+  id: totrans-356
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE65]'
+- en: Where permissions is a set of `SharePermission` objects. The `SharePermission`
+    objects can be created from a JSONArray using the `SharePermissionUtils utility`
+    class. The JSONObject can have three keys – `Type`, `Param1`, and `Param2`.
+  id: totrans-357
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 其中，`permissions`是一个`SharePermission`对象的集合。可以通过`SharePermissionUtils`工具类从JSONArray创建`SharePermission`对象。JSONObject可以有三个键——`Type`、`Param1`和`Param2`。
+- en: 'The `Type` can have the following values: `global`, `group`, or `project`.'
+  id: totrans-358
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`Type`可以有以下值：`global`、`group`或`project`。'
+- en: When `Type` is `global`, `Param1` and `Param2` are not required.
+  id: totrans-359
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 当`Type`是`global`时，`Param1`和`Param2`不是必需的。
+- en: When it is `group`, `Param1` is populated with the `groupname`.
+  id: totrans-360
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 当它是`group`时，`Param1`将被填充为`groupname`。
+- en: When it is `project`, `Param1` is the ID of the project and `Param2` is the
+    ID of the project role
+  id: totrans-361
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 当它是`project`时，`Param1`是项目的ID，`Param2`是项目角色的ID。
+- en: 'Example of JSON arrays is as follows:'
+  id: totrans-362
+  prefs: []
+  type: TYPE_NORMAL
+  zh: JSON数组的示例如下：
+- en: '[PRE66]'
+  id: totrans-363
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE66]'
+- en: See also
+  id: totrans-364
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 另见
+- en: '*Searching in plugins*'
+  id: totrans-365
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*插件中的搜索*'
+- en: Subscribing to a filter
+  id: totrans-366
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 订阅一个过滤器
+- en: We have seen various methods of managing filters. While filters are a great
+    way to save searches and access them quickly at a later point of time, filter
+    subscriptions are even better! The subscriptions help us to see the issues of
+    interest at regular intervals without even logging in to JIRA.
+  id: totrans-367
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们已经看到了管理过滤器的各种方法。虽然过滤器是保存搜索并在以后快速访问的好方法，但过滤器订阅更好！订阅帮助我们定期查看感兴趣的问题，而无需登录 JIRA。
+- en: How do we subscribe to a filter programmatically? In this recipe, we will focus
+    on subscribing to a filter in our plugins.
+  id: totrans-368
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们如何在程序中订阅过滤器？在本教程中，我们将专注于在插件中订阅过滤器。
+- en: How to do it...
+  id: totrans-369
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: For the subscription of filters, JIRA provides a manager class implementing
+    the `FilterSubscriptionService` interface. This class provides the important methods
+    needed for managing filter subscriptions.
+  id: totrans-370
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于过滤器的订阅，JIRA 提供了一个管理类，实现了 `FilterSubscriptionService` 接口。这个类提供了管理过滤器订阅所需的重要方法。
+- en: 'There are three important parameters for Filter Subscriptions:'
+  id: totrans-371
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 过滤器订阅有三个重要参数：
+- en: '**Cron Expression**: This is the most important part of a subscription. It
+    tells us when the subscription has to run, or in other words, it defines the schedule
+    of a subscription.'
+  id: totrans-372
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: '**Cron 表达式**：这是订阅中最重要的部分。它告诉我们订阅何时运行，换句话说，它定义了订阅的时间表。'
+- en: Cron expressions consist of the following fields separated by spaces.
+  id: totrans-373
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: Cron 表达式由以下字段组成，字段之间用空格分隔。
+- en: '| Field | Allowed Values | Allowed Special Characters |'
+  id: totrans-374
+  prefs:
+  - PREF_IND
+  type: TYPE_TB
+  zh: '| 字段 | 允许的值 | 允许的特殊字符 |'
+- en: '| --- | --- | --- |'
+  id: totrans-375
+  prefs:
+  - PREF_IND
+  type: TYPE_TB
+  zh: '| --- | --- | --- |'
+- en: '| `Second` | 0-59 | `, - * /` |'
+  id: totrans-376
+  prefs:
+  - PREF_IND
+  type: TYPE_TB
+  zh: '| `Second` | 0-59 | `, - * /` |'
+- en: '| `Minute` | 0-59 | `, - * /` |'
+  id: totrans-377
+  prefs:
+  - PREF_IND
+  type: TYPE_TB
+  zh: '| `Minute` | 0-59 | `, - * /` |'
+- en: '| `Hour` | 0-23 | `, - * /` |'
+  id: totrans-378
+  prefs:
+  - PREF_IND
+  type: TYPE_TB
+  zh: '| `Hour` | 0-23 | `, - * /` |'
+- en: '| `Day-of-Month` | 1-31 | `, - * / ? L W C` |'
+  id: totrans-379
+  prefs:
+  - PREF_IND
+  type: TYPE_TB
+  zh: '| `Day-of-Month` | 1-31 | `, - * / ? L W C` |'
+- en: '| `Month` | 1-12 Or JAN-DEC | `, - * /` |'
+  id: totrans-380
+  prefs:
+  - PREF_IND
+  type: TYPE_TB
+  zh: '| `Month` | 1-12 或 JAN-DEC | `, - * /` |'
+- en: '| `Day-of-week` | 1-7 Or SUN-SAT | `, - * / ? L C #` |'
+  id: totrans-381
+  prefs:
+  - PREF_IND
+  type: TYPE_TB
+  zh: '| `Day-of-week` | 1-7 或 SUN-SAT | `, - * / ? L C #` |'
+- en: '| `Year (Optional)` | 1970-2099 | `, - * /` |'
+  id: totrans-382
+  prefs:
+  - PREF_IND
+  type: TYPE_TB
+  zh: '| `Year (Optional)` | 1970-2099 | `, - * /` |'
+- en: 'The special characters denote the following:'
+  id: totrans-383
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 特殊字符表示以下内容：
+- en: '| Special Character | Usage |'
+  id: totrans-384
+  prefs:
+  - PREF_IND
+  type: TYPE_TB
+  zh: '| 特殊字符 | 用法 |'
+- en: '| --- | --- |'
+  id: totrans-385
+  prefs:
+  - PREF_IND
+  type: TYPE_TB
+  zh: '| --- | --- |'
+- en: '| `,` | List of values. For example, ''MON,WED,FRI'' means ''every Monday,
+    Wednesday, and Friday''. |'
+  id: totrans-386
+  prefs:
+  - PREF_IND
+  type: TYPE_TB
+  zh: '| `,` | 值的列表。例如，''MON,WED,FRI'' 表示“每个星期一、星期三和星期五”。 |'
+- en: '| `-` | Range of Values. For example, ''MON-WED'' means ''every Monday, Tuesday,
+    Wednesday''. |'
+  id: totrans-387
+  prefs:
+  - PREF_IND
+  type: TYPE_TB
+  zh: '| `-` | 值的范围。例如，''MON-WED'' 表示“每个星期一、星期二和星期三”。 |'
+- en: '| `*` | All possible values. For example, * in the `Hour` field means ''every
+    hour of the day''. |'
+  id: totrans-388
+  prefs:
+  - PREF_IND
+  type: TYPE_TB
+  zh: '| `*` | 所有可能的值。例如，`Hour` 字段中的 * 表示“每天的每个小时”。 |'
+- en: '| `/` | Increments to the give value. For example, 1/3 in `Hour` field means
+    '' every 3 hours during the day, starting from 1.00 AM''. |'
+  id: totrans-389
+  prefs:
+  - PREF_IND
+  type: TYPE_TB
+  zh: '| `/` | 增量值。例如，`Hour` 字段中的 1/3 表示“从凌晨1点开始，每3小时一次”。 |'
+- en: '| `?` | No particular value. This is useful when you need to specify a value
+    for only one of the two fields, `Day-of-month` or `Day-of-week`, but not the other.
+    |'
+  id: totrans-390
+  prefs:
+  - PREF_IND
+  type: TYPE_TB
+  zh: '| `?` | 无特定值。当你只需要为 `Day-of-month` 或 `Day-of-week` 中的一个字段指定值，而不是另一个字段时，这个符号非常有用。
+    |'
+- en: '| `L` | Last possible value. It has different meanings based on the context.
+    For example:'
+  id: totrans-391
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '| `L` | 最后一个可能的值。它的含义依据上下文不同而有所不同。例如：'
+- en: L in `Day-of-week` means 'Last day of every week'
+  id: totrans-392
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`Day-of-week` 中的 L 表示“每周的最后一天”'
+- en: 7L means 'last Saturday of the month'
+  id: totrans-393
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 7L 表示“本月的最后一个星期六”
+- en: L in `Day-of-month` means 'last day of the month'
+  id: totrans-394
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`Day-of-month` 中的 L 表示“本月的最后一天”'
+- en: LW means 'last weekday of the month'
+  id: totrans-395
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: LW表示“本月的最后一个工作日”
+- en: '|'
+  id: totrans-396
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '|'
+- en: '| `W` | Weekday (MON-FRI) nearest to the given day of the month.For example,
+    1W means ''nearest working day to the 1st of the month'' – useful when you want
+    to get the first working day of the month!It cannot be used with a range of days.
+    |'
+  id: totrans-397
+  prefs:
+  - PREF_IND
+  type: TYPE_TB
+  zh: '| `W` | 离给定日期最近的工作日（MON-FRI）。例如，1W 表示“离每月1日最近的工作日”——这在你想要得到每月的第一个工作日时非常有用！它不能与日期范围一起使用。
+    |'
+- en: '| `#` | N''th occurance of a given day of the week.For example, MON#3 means
+    ''3rd Monday of the month'' |'
+  id: totrans-398
+  prefs:
+  - PREF_IND
+  type: TYPE_TB
+  zh: '| `#` | 指定某一星期几的第N次出现。例如，MON#3 表示“本月的第3个星期一” |'
+- en: 'We need to create a valid Cron expression based on the subscription we want
+    to set up. The following are some examples based on these rules:'
+  id: totrans-399
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 我们需要根据希望设置的订阅创建一个有效的 Cron 表达式。以下是基于这些规则的一些示例：
+- en: '`0 7 30 * * ?` – 7:30 AM Every Day'
+  id: totrans-400
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`0 7 30 * * ?` – 每天早上7:30'
+- en: '`0 0/15 15 * * ?` – Every 15 minutes starting at 3.00PM ending at 3:59 PM'
+  id: totrans-401
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`0 0/15 15 * * ?` – 从下午3:00开始，每15分钟一次，直到下午3:59结束'
+- en: You can find more examples in the Atlassian documentation for filter subscriptions
+    at [http://confluence.atlassian.com/display/JIRA/Receiving+Search+Results+via+Email](http://confluence.atlassian.com/display/JIRA/Receiving+Search+Results+via+Email).
+  id: totrans-402
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 你可以在 Atlassian 文档中找到更多关于过滤器订阅的示例，链接为 [http://confluence.atlassian.com/display/JIRA/Receiving+Search+Results+via+Email](http://confluence.atlassian.com/display/JIRA/Receiving+Search+Results+via+Email)。
+- en: '**Group Name**: This is the group that we want to subscribe the filter. If
+    the value is null, it will be considered as a personal subscription and the user
+    in the context will be used.'
+  id: totrans-403
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: '**组名称**：这是我们希望订阅过滤器的组。如果值为 null，它将被视为个人订阅，且上下文中的用户将被使用。'
+- en: '**Email On Empty**: It is a boolean value which is `true` if you want the subscription
+    to send an e-mail, even when it has no results.'
+  id: totrans-404
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: '**空值时发送邮件**：这是一个布尔值，如果你希望即使没有结果时也发送邮件，设置为 `true`。'
+- en: 'Now let us see the steps to subscribe to a known filter:'
+  id: totrans-405
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，让我们来看一下订阅已知过滤器的步骤：
+- en: 'Get an instance of the `FilterSubscriptionService`. You can either inject the
+    class in the constructor or get it using the `ComponentManger` class as follows:'
+  id: totrans-406
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 获取 `FilterSubscriptionService` 实例。你可以通过构造函数注入该类，或者通过 `ComponentManger` 类按如下方式获取：
+- en: '[PRE67]'
+  id: totrans-407
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE67]'
+- en: 'Define the cron expression based on the aforementioned rules:'
+  id: totrans-408
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 根据上述规则定义 cron 表达式：
+- en: '[PRE68]'
+  id: totrans-409
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE68]'
+- en: 'Define the group name. Use `null` if it is a personal subscription:'
+  id: totrans-410
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 定义组名称。如果是个人订阅，请使用 `null`：
+- en: '[PRE69]'
+  id: totrans-411
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE69]'
+- en: 'Create a JIRA Service Context. If you are in an action class, you can get the
+    service context by calling `getJiraServiceContext()`, and if not, an instance
+    can be created as:'
+  id: totrans-412
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建一个 JIRA 服务上下文。如果你在一个动作类中，可以通过调用 `getJiraServiceContext()` 来获取服务上下文。如果不在动作类中，可以按如下方式创建实例：
+- en: '[PRE70]'
+  id: totrans-413
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE70]'
+- en: Where `user` is the user for whom the filter is subscribed, in case it is a
+    personal subscription.
+  id: totrans-414
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 其中 `user` 是订阅过滤器的用户，若为个人订阅，则使用上下文中的用户。
+- en: 'Define whether an e-mail should be sent, even when the number of results is
+    zero or not:'
+  id: totrans-415
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 定义是否应在结果数量为零时发送电子邮件：
+- en: '[PRE71]'
+  id: totrans-416
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE71]'
+- en: 'Validate the cron expression:'
+  id: totrans-417
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 验证 cron 表达式：
+- en: '[PRE72]'
+  id: totrans-418
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE72]'
+- en: If there are any errors, the Error Collection in `JiraServiceContext` will be
+    populated with an error message.
+  id: totrans-419
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 如果发生错误，`JiraServiceContext` 中的错误集合将会填充错误信息。
+- en: 'If there are no errors, use the `FilterSubscriptionService` class to store
+    the subscription:'
+  id: totrans-420
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如果没有错误，使用 `FilterSubscriptionService` 类来存储订阅：
+- en: '[PRE73]'
+  id: totrans-421
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE73]'
+- en: Here `filterId` is the ID of the filter we want to subscribe to and can be obtained
+    as `searchRequest.getId()`!
+  id: totrans-422
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 这里的 `filterId` 是我们要订阅的过滤器 ID，可以通过 `searchRequest.getId()` 获取！
+- en: The subscription should now be saved and the mails will be sent based on the
+    schedule defined by the cron expression.
+  id: totrans-423
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 订阅现在应该已保存，邮件将根据 cron 表达式定义的计划发送。
+- en: 'We can also update an existing subscription using `FilterSubscriptionService`
+    using the following method:'
+  id: totrans-424
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们还可以使用 `FilterSubscriptionService` 更新现有的订阅，方法如下：
+- en: '[PRE74]'
+  id: totrans-425
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE74]'
+- en: Where `subId` is the existing subscription ID!
+  id: totrans-426
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 其中 `subId` 是现有订阅的 ID！
+- en: How it works...
+  id: totrans-427
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 它是如何工作的...
+- en: Each subscription we create is stored as **Quartz** scheduled jobs in the system,
+    which runs based on the cron expression we have defined while storing the subscription.
+  id: totrans-428
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们创建的每个订阅都会作为 **Quartz** 定时任务存储在系统中，根据我们在存储订阅时定义的 cron 表达式运行。
+- en: There's more...
+  id: totrans-429
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 还有更多...
+- en: If you want to use a Web Form, like the one used in JIRA, to create filter subscriptions
+    and you don't want to write the cron expression, you can create a `CronEditorBean`
+    using the parameters from the Web Form.
+  id: totrans-430
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你想使用类似 JIRA 中的 Web 表单来创建过滤器订阅，而不想手动编写 cron 表达式，可以使用 Web 表单中的参数创建 `CronEditorBean`。
+- en: The various attributes supported in the form can be found from the `CronEditorBean`
+    class. The Java Docs can be found at [http://docs.atlassian.com/software/jira/docs/api/latest/com/atlassian/jira/web/component/cron/CronEditorBean.html](http://docs.atlassian.com/software/jira/docs/api/latest/com/atlassian/jira/web/component/cron/CronEditorBean.html).
+  id: totrans-431
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 表单中支持的各种属性可以从 `CronEditorBean` 类中找到。Java 文档可以在 [http://docs.atlassian.com/software/jira/docs/api/latest/com/atlassian/jira/web/component/cron/CronEditorBean.html](http://docs.atlassian.com/software/jira/docs/api/latest/com/atlassian/jira/web/component/cron/CronEditorBean.html)
+    查找。
+- en: 'Once the `CronEditorBean` is created, it can be parsed into a cron expression
+    as follows:'
+  id: totrans-432
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦 `CronEditorBean` 被创建，它可以按如下方式解析为 cron 表达式：
+- en: '[PRE75]'
+  id: totrans-433
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE75]'
+- en: See also
+  id: totrans-434
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 另见
+- en: '*Searching in plugins*'
+  id: totrans-435
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*插件中的搜索*'

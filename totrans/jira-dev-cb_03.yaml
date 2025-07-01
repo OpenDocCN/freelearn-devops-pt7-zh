@@ -1,0 +1,2818 @@
+- en: Chapter 3. Working with Custom Fields
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 第3章：与自定义字段一起工作
+- en: 'In this chapter, we will cover:'
+  id: totrans-1
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们将涵盖：
+- en: Writing a simple custom field
+  id: totrans-2
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 编写一个简单的自定义字段
+- en: Custom field searchers
+  id: totrans-3
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 自定义字段搜索器
+- en: Dealing with custom fields on an issue
+  id: totrans-4
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 处理问题中的自定义字段
+- en: Programming custom field options
+  id: totrans-5
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 编程自定义字段选项
+- en: Overriding validation of custom fields
+  id: totrans-6
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 重写自定义字段的验证
+- en: Customizing change log value
+  id: totrans-7
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 自定义变更日志值
+- en: Migrating from one custom field type to another
+  id: totrans-8
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 从一种自定义字段类型迁移到另一种
+- en: Making custom fields sortable
+  id: totrans-9
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使自定义字段可排序
+- en: Displaying custom fields on subtask columns on parent issue
+  id: totrans-10
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在父问题的子任务列上显示自定义字段
+- en: User and date fields from 4.1.x
+  id: totrans-11
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 来自4.1.x的用户和日期字段
+- en: Adding custom fields to notification mails
+  id: totrans-12
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 将自定义字段添加到通知邮件
+- en: Adding help text for a custom field
+  id: totrans-13
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 为自定义字段添加帮助文本
+- en: Removing the 'none' option from a select field
+  id: totrans-14
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 从选择字段中删除“无”选项
+- en: Making the custom field project importable
+  id: totrans-15
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使自定义字段项目可导入
+- en: Changing the size of a text area custom field
+  id: totrans-16
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 改变文本区域自定义字段的大小
+- en: Introduction
+  id: totrans-17
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 介绍
+- en: For an issue tracking application, the more details you can provide about an
+    issue, the better. JIRA helps by giving us some standard issue fields that are
+    most likely to be used while creating an issue. But what if we need to capture
+    additional information such as the name of the reporter's dad or something else
+    that is worth capturing, perhaps the SLA or the estimated costs? For this, we
+    can make use of custom fields.
+  id: totrans-18
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于一个问题追踪应用程序，提供尽可能多的关于问题的细节会更好。JIRA通过提供一些标准问题字段来帮助我们，这些字段在创建问题时最有可能被使用。但如果我们需要捕获额外的信息，比如报告人父亲的名字，或者一些其他值得捕获的内容，可能是SLA或预估的成本呢？为此，我们可以利用自定义字段。
+- en: With JIRA comes a group of pre-defined custom field types. It includes types
+    like Number Field, User Picker, and so on, which are most likely to be used by
+    JIRA users. But as you become a power user of JIRA, you might come across the
+    need for a customized field type. That is where people start writing custom field
+    plugins to create new field types or custom searchers.
+  id: totrans-19
+  prefs: []
+  type: TYPE_NORMAL
+  zh: JIRA提供了一组预定义的自定义字段类型，包括数字字段、用户选择器等，这些是JIRA用户最可能使用的类型。但随着你成为JIRA的高级用户，你可能会遇到需要自定义字段类型的情况。此时，人们会开始编写自定义字段插件，以创建新的字段类型或自定义搜索器。
+- en: We will use this chapter to learn more about custom fields.
+  id: totrans-20
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将利用本章来更深入了解自定义字段。
+- en: Writing a simple custom field
+  id: totrans-21
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 编写一个简单的自定义字段
+- en: In this recipe, we will see how to write a new custom field type. Once created,
+    we can create a number of custom fields of this type on our JIRA instance that
+    can then be used to capture information on the issues.
+  id: totrans-22
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本例中，我们将看到如何编写一个新的自定义字段类型。创建后，我们可以在JIRA实例中创建多个此类型的自定义字段，然后可以用来捕获问题上的信息。
+- en: New Custom field types are created with the help of the `customfield-type` module.
+    The following are the key attributes and elements supported.
+  id: totrans-23
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 新的自定义字段类型是通过`customfield-type`模块创建的。以下是支持的主要属性和元素。
+- en: '**Attributes:**'
+  id: totrans-24
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**属性：**'
+- en: '| Name | Description |'
+  id: totrans-25
+  prefs: []
+  type: TYPE_TB
+  zh: '| Name | 描述 |'
+- en: '| --- | --- |'
+  id: totrans-26
+  prefs: []
+  type: TYPE_TB
+  zh: '| --- | --- |'
+- en: '| `key` | This should be unique within the plugin. |'
+  id: totrans-27
+  prefs: []
+  type: TYPE_TB
+  zh: '| `key` | 这应该在插件中是唯一的。 |'
+- en: '| `class` | Must implement the `com.atlassian.jira.issue.customfields.CustomFieldType`
+    interface. |'
+  id: totrans-28
+  prefs: []
+  type: TYPE_TB
+  zh: '| `class` | 必须实现`com.atlassian.jira.issue.customfields.CustomFieldType`接口。
+    |'
+- en: '| `i18n-name-key` | The localization key for the human-readable name of the
+    plugin module. |'
+  id: totrans-29
+  prefs: []
+  type: TYPE_TB
+  zh: '| `i18n-name-key` | 插件模块的人类可读名称的本地化键。 |'
+- en: '| `Name` | Human-readable name of the web resource. |'
+  id: totrans-30
+  prefs: []
+  type: TYPE_TB
+  zh: '| `Name` | 网络资源的人类可读名称。 |'
+- en: '**Elements:**'
+  id: totrans-31
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**元素：**'
+- en: '| Name | Description |'
+  id: totrans-32
+  prefs: []
+  type: TYPE_TB
+  zh: '| Name | 描述 |'
+- en: '| --- | --- |'
+  id: totrans-33
+  prefs: []
+  type: TYPE_TB
+  zh: '| --- | --- |'
+- en: '| `Description` | Description of the custom field type. |'
+  id: totrans-34
+  prefs: []
+  type: TYPE_TB
+  zh: '| `Description` | 自定义字段类型的描述。 |'
+- en: '| `resource type="velocity"` | Velocity templates for the custom field views.
+    |'
+  id: totrans-35
+  prefs: []
+  type: TYPE_TB
+  zh: '| `resource type="velocity"` | 自定义字段视图的Velocity模板。 |'
+- en: Getting ready
+  id: totrans-36
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 准备工作
+- en: Before we start, create a skeleton plugin. Next, create an eclipse project using
+    the skeleton plugin, and we are good to go!
+  id: totrans-37
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在开始之前，创建一个骨架插件。接下来，使用骨架插件创建一个Eclipse项目，我们就可以开始了！
+- en: How to do it...
+  id: totrans-38
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何实现...
+- en: In this recipe, let us look at an example custom field type to ease understanding.
+    Let us consider the creation of a `Read Only` custom field that stores the name
+    of the user who edited the issue the last time. It is simple in functionality
+    and enough to explain the basic concepts.
+  id: totrans-39
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本例中，让我们看一个示例自定义字段类型，以便更容易理解。我们可以考虑创建一个`只读`自定义字段，存储最后一次编辑问题的用户名称。它功能简单，足以解释基本概念。
+- en: 'The following are the major steps to do:'
+  id: totrans-40
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是需要做的主要步骤：
+- en: Modify the `atlassian-plugin.xml` file to include the `customfield-type` module.
+    Make sure the appropriate class name and views are added.
+  id: totrans-41
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 修改`atlassian-plugin.xml`文件，包含`customfield-type`模块。确保添加了适当的类名和视图。
+- en: 'For our example, the modified `atlassian-plugin.xml` will look as follows:'
+  id: totrans-42
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 对于我们的例子，修改后的`atlassian-plugin.xml`文件将如下所示：
+- en: '[PRE0]'
+  id: totrans-43
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: Make sure the key is unique inside the plugin.
+  id: totrans-44
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 确保插件中的键是唯一的。
+- en: Implement the class. As mentioned in the introduction, the class must implement
+    the `com.atlassian.jira.issue.customfields.CustomFieldType` interface. Now if
+    you do this, make sure you implement all the methods in the interface.
+  id: totrans-45
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 实现该类。如引言中所述，该类必须实现`com.atlassian.jira.issue.customfields.CustomFieldType`接口。现在，如果你这样做，确保实现接口中的所有方法。
+- en: Note
+  id: totrans-46
+  prefs:
+  - PREF_IND
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: An easier way is to override some of the existing custom field implementations,
+    if there are any similar to the type you are developing. In such cases, you will
+    need to only override certain methods or maybe just modify the velocity templates!
+  id: totrans-47
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 一种更简单的方法是重写一些现有的自定义字段实现，如果有类似于你正在开发的类型。在这种情况下，你只需要重写某些方法，或者可能只需要修改 velocity
+    模板！
+- en: The details on existing implementations can be found at the Javadocs for the
+    `CustomFieldType` interface. `NumberCFType`, `DateCFType`, `UserCFType`, and so
+    on, are some useful examples.
+  id: totrans-48
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 有关现有实现的详细信息，可以在`CustomFieldType`接口的 Javadocs 中找到。`NumberCFType`，`DateCFType`，`UserCFType`等是一些有用的示例。
+- en: In our example, the class is `com.jtricks.ReadOnlyUserCF`. Now, our field type
+    is nothing but a text field in essence and so it makes sense to override the already
+    existing `TextCFType`.
+  id: totrans-49
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在我们的示例中，类是`com.jtricks.ReadOnlyUserCF`。现在，我们的字段类型实际上不过是一个文本字段，因此重写现有的`TextCFType`是有意义的。
+- en: 'Following is how the class will look:'
+  id: totrans-50
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 以下是该类的结构：
+- en: '[PRE1]'
+  id: totrans-51
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: As you can see, the class extends the `TextCFType` class. We perform a 'constructor
+    injection' to call the super class constructor. All you need to do is add the
+    required component as an argument in the public constructor of the class and Spring
+    will inject an instance of that component at runtime. Here, `JiraAuthenticationContext`
+    is injected as we use it in our class. As you can see, `authContext` is an argument
+    that is injected and is assigned to a class variable with the same name for using
+    it later in the various methods.
+  id: totrans-52
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 如你所见，类扩展了`TextCFType`类。我们执行了‘构造函数注入’来调用超类构造函数。你需要做的就是在类的公共构造函数中添加所需的组件作为参数，Spring
+    会在运行时注入该组件的实例。在这里，`JiraAuthenticationContext`被注入，因为我们在类中使用了它。如你所见，`authContext`是一个被注入的参数，并分配给具有相同名称的类变量，以便在后续的方法中使用。
+- en: Implement/Override the methods of interest. As mentioned earlier, implement
+    all the required methods, if you are implementing the interface directly.
+  id: totrans-53
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 实现/重写感兴趣的方法。如前所述，如果你直接实现接口，必须实现所有必需的方法。
+- en: In our case, we extend the `TextCFType`, and so we need to only override the
+    selected methods.
+  id: totrans-54
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在我们的例子中，我们扩展了`TextCFType`，因此只需要重写选定的方法。
+- en: 'The only method that we override here is the `getVelocityParameters` method
+    where we populate the velocity params with additional values. In this case, we
+    add the current user''s name. We will later use this params in the velocity context
+    to generate the views. The same method is used in creating the different views
+    in different scenarios, that is, create, edit, and so on. The following is the
+    codeippet:'
+  id: totrans-55
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 我们在这里唯一重写的方法是`getVelocityParameters`方法，我们在其中用额外的值填充了 velocity 参数。在这个例子中，我们添加了当前用户的名字。稍后我们将在
+    velocity 上下文中使用这些参数来生成视图。相同的方法也用于在不同的场景中创建不同的视图，例如创建、编辑等等。以下是代码片段：
+- en: '[PRE2]'
+  id: totrans-56
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: 'Note: Use the `authContext.getLoggedInUser` method if using JIRA 4.3+.'
+  id: totrans-57
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 注意：如果使用 JIRA 4.3+，请使用`authContext.getLoggedInUser`方法。
+- en: Create the templates defined in the `atlassian-plugin.xml` file. The templates
+    could be written in a way you want the fields to appear in different scenarios.
+  id: totrans-58
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建在`atlassian-plugin.xml`文件中定义的模板。模板可以根据你希望字段在不同场景中呈现的方式编写。
+- en: 'If you take a closer look, we have defined four velocity resources but using
+    only two velocity template files, as the `view-readonly-user.vm` is shared across
+    ''view'', ''column-view'', and ''xml'' resources. In this example, we only need
+    to show the `readonly` field in all the three mentioned cases, and so the template
+    will look as follows:'
+  id: totrans-59
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 如果仔细观察，我们定义了四个 velocity 资源，但只使用了两个 velocity 模板文件，因为`view-readonly-user.vm`在‘view’，‘column-view’和‘xml’资源中是共享的。在这个示例中，我们只需要在这三种情况中显示`readonly`字段，因此模板如下所示：
+- en: '[PRE3]'
+  id: totrans-60
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: This code uses velocity syntax, the details of which can be found at [http://velocity.apache.org/engine/devel/developer-guide.html](http://velocity.apache.org/engine/devel/developer-guide.html).
+    Here we display the existing custom field value of the issue.
+  id: totrans-61
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 这段代码使用了 Velocity 语法，相关的详细信息可以在 [http://velocity.apache.org/engine/devel/developer-guide.html](http://velocity.apache.org/engine/devel/developer-guide.html)
+    找到。这里我们展示了问题的现有自定义字段值。
+- en: 'The edit template should be a `readonly` `textfield` with `id` as the custom
+    field''s ID, as JIRA uses this to store values back into the database when the
+    issue is edited. The template looks as follows:'
+  id: totrans-62
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 编辑模板应是一个 `readonly` `textfield`，其 `id` 为自定义字段的 ID，因为 JIRA 使用这个 ID 在问题编辑时将值存储回数据库。模板如下所示：
+- en: '[PRE4]'
+  id: totrans-63
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: Here we use the field `currentUser`, as we added into the velocity context in
+    step 4\. The value of the text field is `$currentUser`. Also note that the ID
+    is `$customfield.id` and the `readonly` attribute is present to make it read only.
+  id: totrans-64
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在这里，我们使用字段 `currentUser`，正如我们在第 4 步中添加到 Velocity 上下文中的那样。文本字段的值是 `$currentUser`。还请注意，ID
+    是 `$customfield.id`，并且存在 `readonly` 属性，以使其为只读。
+- en: Package the plugin and deploy it!
+  id: totrans-65
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 打包插件并部署它！
+- en: Remember, more complex logic and beautifications can go into the class and velocity
+    templates. As they say, the sky is the limit!
+  id: totrans-66
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请记住，更多复杂的逻辑和美化可以加入到类和 Velocity 模板中。正如人们所说，天高任鸟飞！
+- en: How it works...
+  id: totrans-67
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 它是如何工作的...
+- en: Once the plugin is installed, it is available under **Administration** | **Issue
+    Fields** | **Custom Fields**.
+  id: totrans-68
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 插件安装完成后，可以在 **管理** | **问题字段** | **自定义字段** 下找到它。
+- en: Create a new custom field of the type we just created and map it into the appropriate
+    issue types and projects. Also add the fields to the appropriate screens. Once
+    done, the field will be available on the issue at the appropriate places.
+  id: totrans-69
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 创建一个我们刚刚创建的类型的新自定义字段，并将其映射到适当的问题类型和项目中。还需要将字段添加到适当的屏幕上。完成后，该字段将在问题的适当位置可用。
+- en: More details on adding a custom field can be found at [http://confluence.atlassian.com/display/JIRA/Adding+a+Custom+Field](http://confluence.atlassian.com/display/JIRA/Adding+a+Custom+Field).
+  id: totrans-70
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 更多有关添加自定义字段的详细信息可以在 [http://confluence.atlassian.com/display/JIRA/Adding+a+Custom+Field](http://confluence.atlassian.com/display/JIRA/Adding+a+Custom+Field)
+    查找。
+- en: In our example, whenever an issue is edited, the name of the user who edited
+    it is stored in the custom field.
+  id: totrans-71
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在我们的示例中，每当编辑一个问题时，编辑该问题的用户的姓名会存储在自定义字段中。
+- en: There's more...
+  id: totrans-72
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 还有更多内容...
+- en: You might have noticed that we added only one parameter in the velocity context,
+    that is, `currentUser`, but we have used `$value` in the view template. Where
+    does this variable `value` come from?
+  id: totrans-73
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可能已经注意到，我们只在 Velocity 上下文中添加了一个参数，即 `currentUser`，但我们在视图模板中使用了 `$value`。那么这个
+    `value` 变量是从哪里来的呢？
+- en: JIRA already populates the custom field velocity contexts with some existing
+    variables in addition to the new ones we add. `value` is just one among them and
+    the full list can be found at [http://confluence.atlassian.com/display/JIRADEV/Custom+field+Velocity+context+unwrapped](http://confluence.atlassian.com/display/JIRADEV/Custom+field+Velocity+context+unwrapped).
+  id: totrans-74
+  prefs: []
+  type: TYPE_NORMAL
+  zh: JIRA 除了我们新增的变量外，还会自动填充一些现有变量到自定义字段的 Velocity 上下文中。`value` 就是其中之一，完整的列表可以在 [http://confluence.atlassian.com/display/JIRADEV/Custom+field+Velocity+context+unwrapped](http://confluence.atlassian.com/display/JIRADEV/Custom+field+Velocity+context+unwrapped)
+    查找。
+- en: You may notice that `authContext` is already available in the velocity context
+    and so we could have implemented this example by getting the current user in the
+    velocity template itself instead of injecting the `JiraAuthenticationContext`
+    in the constructor of the class and getting the `currentUser` variable from it
+    in the class. But we have done that just for the purpose of explaining the example.
+  id: totrans-75
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可能会注意到，`authContext` 已经在 Velocity 上下文中可用，因此我们本可以直接在 Velocity 模板中获取当前用户，而不是在类的构造函数中注入
+    `JiraAuthenticationContext`，并从中获取 `currentUser` 变量。但我们这么做仅仅是为了说明这个示例。
+- en: See also
+  id: totrans-76
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 另请参见
+- en: '*Creating a skeleton plugin* in [Chapter 1](ch01.html "Chapter 1. Plugin Development
+    Process"), *Plugin Development Process*'
+  id: totrans-77
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在 [第1章](ch01.html "第1章 插件开发流程") 中 *创建一个骨架插件*，*插件开发流程*
+- en: '*Deploying your plugin* in [Chapter 1](ch01.html "Chapter 1. Plugin Development
+    Process")'
+  id: totrans-78
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在 [第1章](ch01.html "第1章 插件开发流程") 中 *部署你的插件*
+- en: Custom field searchers
+  id: totrans-79
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 自定义字段搜索器
+- en: Writing the custom field type is one thing, but making it available to one of
+    JIRA's most powerful functionalities, that is, Search, is another! When you create
+    the custom field, you can associate the searcher to be used along with it.
+  id: totrans-80
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 编写自定义字段类型是一回事，但使其可用于 JIRA 的强大功能之一——搜索——则是另一回事！在创建自定义字段时，你可以关联要与其一起使用的搜索器。
+- en: In most cases, you wouldn't need a custom searcher. Instead, you can use the
+    built-in custom field searchers in JIRA itself. The list includes, but is not
+    restricted to, Text Field Searcher, Date Searcher, Number Searcher, User Searcher,
+    and so on.
+  id: totrans-81
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在大多数情况下，你无需自定义搜索器。相反，你可以使用 JIRA 本身内置的自定义字段搜索器。该列表包括但不限于：文本字段搜索器、日期搜索器、数字搜索器、用户搜索器等。
+- en: The first step, of course, is to determine what the kind of Searcher your new
+    field needs. For example, a Select field can easily be searched with Text Searcher
+    or an Exact Text Searcher! A User Picker field can be searched with a User Searcher
+    or a Text Searcher. You might even want to extend one of these Searchers to add
+    some extra functionality, like some special conditions or hacks you want to introduce!
+    Yeah, you know what I mean!
+  id: totrans-82
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当然，第一步是确定你的新字段需要哪种类型的搜索器。例如，Select 字段可以通过 Text Searcher 或 Exact Text Searcher
+    轻松搜索！User Picker 字段可以使用 User Searcher 或 Text Searcher 进行搜索。你甚至可能想扩展这些搜索器中的某一个，加入一些额外的功能，比如一些特殊条件或黑客技巧！是的，你明白我的意思吧！
+- en: 'Here is how JIRA has defined the Text Searcher for its system custom fields:'
+  id: totrans-83
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是 JIRA 为其系统自定义字段定义的文本搜索器：
+- en: '[PRE5]'
+  id: totrans-84
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: As you can see, it makes use of the `customfield-searcher` module. The custom
+    fields that should be searchable using this **Free Text Searcher** should be added
+    under the `valid-customfield-type` tag.
+  id: totrans-85
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，它使用了 `customfield-searcher` 模块。应该通过 **Free Text Searcher** 搜索的自定义字段应该添加在
+    `valid-customfield-type` 标签下。
+- en: The following are the key attributes and elements supported by the `customfield-searcher`
+    module.
+  id: totrans-86
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是 `customfield-searcher` 模块支持的关键属性和元素。
+- en: '**Attributes**:'
+  id: totrans-87
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**属性**：'
+- en: '| Name | Description |'
+  id: totrans-88
+  prefs: []
+  type: TYPE_TB
+  zh: '| 名称 | 描述 |'
+- en: '| --- | --- |'
+  id: totrans-89
+  prefs: []
+  type: TYPE_TB
+  zh: '| --- | --- |'
+- en: '| `key` | This should be unique within the plugin |'
+  id: totrans-90
+  prefs: []
+  type: TYPE_TB
+  zh: '| `key` | 这个值在插件中应该是唯一的 |'
+- en: '| `class` | Must implement the `com.atlassian.jira.issue.customfields.CustomFieldSearcher`
+    interface |'
+  id: totrans-91
+  prefs: []
+  type: TYPE_TB
+  zh: '| `class` | 必须实现 `com.atlassian.jira.issue.customfields.CustomFieldSearcher`
+    接口 |'
+- en: '| `i18n-name-key` | The localization key for the human-readable name of the
+    plugin module |'
+  id: totrans-92
+  prefs: []
+  type: TYPE_TB
+  zh: '| `i18n-name-key` | 插件模块的本地化名称键 |'
+- en: '| `name` | Human-readable name of the web resource |'
+  id: totrans-93
+  prefs: []
+  type: TYPE_TB
+  zh: '| `name` | 网络资源的人类可读名称 |'
+- en: '**Elements**:'
+  id: totrans-94
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**元素**：'
+- en: '| Name | Description |'
+  id: totrans-95
+  prefs: []
+  type: TYPE_TB
+  zh: '| 名称 | 描述 |'
+- en: '| --- | --- |'
+  id: totrans-96
+  prefs: []
+  type: TYPE_TB
+  zh: '| --- | --- |'
+- en: '| `description` | Description of the custom field searcher module |'
+  id: totrans-97
+  prefs: []
+  type: TYPE_TB
+  zh: '| `description` | 自定义字段搜索器模块的描述 |'
+- en: '| `resource type="velocity"` | Velocity templates for the custom field searcher
+    views |'
+  id: totrans-98
+  prefs: []
+  type: TYPE_TB
+  zh: '| `resource type="velocity"` | 自定义字段搜索器视图的 Velocity 模板 |'
+- en: '| `valid-customfield-type` | Defines the custom field types this searcher can
+    apply to. It has two attributes: `package` – the key of the atlassian plugin where
+    the custom field resides and `key` – the module key for the custom field type.
+    |'
+  id: totrans-99
+  prefs: []
+  type: TYPE_TB
+  zh: '| `valid-customfield-type` | 定义此搜索器可以应用的自定义字段类型。它有两个属性：`package` – 自定义字段所在的
+    atlassian 插件的 key，`key` – 自定义字段类型的模块 key。 |'
+- en: Let us see in detail how to define a searcher for the custom field we wrote
+    in the previous recipe.
+  id: totrans-100
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们详细看看如何为之前示例中编写的自定义字段定义一个搜索器。
+- en: Getting ready
+  id: totrans-101
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 准备工作
+- en: Make sure you have created the `Read Only User` custom field (`com.jtricks.ReadOnlyUserCF`
+    ) using the previous recipe.
+  id: totrans-102
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 确保你已使用之前的示例创建了 `只读用户` 自定义字段（`com.jtricks.ReadOnlyUserCF`）。
+- en: How to do it...
+  id: totrans-103
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何实现...
+- en: 'As usual, we will do it as a step-by-step procedure:'
+  id: totrans-104
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 和往常一样，我们将按步骤进行：
+- en: Add the `customfield-searcher` module into the `atlassian-plugin.xml` file.
+  id: totrans-105
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 将 `customfield-searcher` 模块添加到 `atlassian-plugin.xml` 文件中。
+- en: 'In our example, the field is a read-only text field that holds the username,
+    and so it makes sense to use the existing `TextSearcher` instead of writing a
+    new Searcher class. The module will look as follows:'
+  id: totrans-106
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在我们的示例中，字段是一个只读文本字段，用于存储用户名，因此使用现有的`TextSearcher`比编写一个新的搜索器类更合适。模块将如下所示：
+- en: '[PRE6]'
+  id: totrans-107
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: '[PRE7]'
+  id: totrans-108
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE7]'
+- en: Here we use `com.atlassian.jira.issue.customfields.searchers.TextSearcher` that
+    implements the `com.atlassian.jira.issue.customfields.CustomFieldSearcher` interface.
+    If we need to write custom searchers, the appropriate class should appear here.
+  id: totrans-109
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在这里，我们使用了实现 `com.atlassian.jira.issue.customfields.CustomFieldSearcher` 接口的
+    `com.atlassian.jira.issue.customfields.searchers.TextSearcher`。如果我们需要编写自定义搜索器，合适的类应该出现在这里。
+- en: We also need to define the velocity templates for `edit` and `view` scenarios.
+  id: totrans-110
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 我们还需要为 `edit` 和 `view` 场景定义 Velocity 模板。
+- en: Implement the custom field searcher class. In this case, we can skip this step,
+    as we are going with the already implemented class `TextSearcher`.
+  id: totrans-111
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 实现自定义字段搜索器类。在这个案例中，我们可以跳过这一步，因为我们使用的是已经实现的类`TextSearcher`。
+- en: Even if we are implementing a custom searcher, it might be wise to extend an
+    already existing searcher class and override only the methods of interest to avoid
+    implementing everything from scratch. Having said that, it is entirely up to the
+    developer to give a brand new implementation.
+  id: totrans-112
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 即使我们在实现自定义搜索器时，最好还是扩展一个已存在的搜索器类，并只覆盖感兴趣的方法，这样可以避免从头开始实现所有内容。话虽如此，完全由开发人员决定是否提供全新的实现。
+- en: The only mandatory thing to note is that the searcher class must implement the
+    `com.atlassian.jira.issue.customfields.CustomFieldSearcher` interface.
+  id: totrans-113
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 唯一需要注意的强制要求是，搜索器类必须实现`com.atlassian.jira.issue.customfields.CustomFieldSearcher`接口。
+- en: Write the velocity templates. For a custom field searcher, there are two views.
+    `Edit` and `view`, both of which will appear on the issue navigator.
+  id: totrans-114
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 编写Velocity模板。对于自定义字段搜索器，有两个视图：`Edit`和`view`，它们都将在问题导航器中显示。
+- en: The `edit` template is used when the filters are created / edited. The `view`
+    template is used when the filter is viewed or the search results are viewed by
+    clicking on **View and Hide** ('Search' from JIRA 4.3) on the issue navigator.
+  id: totrans-115
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`edit`模板在创建/编辑过滤器时使用。`view`模板在查看过滤器或通过点击问题导航器中的 **查看和隐藏**（JIRA 4.3中的“搜索”）查看搜索结果时使用。'
+- en: In our example, we have used the in-built JIRA templates, but it is perfectly
+    fine to give a custom implementation of these templates.
+  id: totrans-116
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在我们的示例中，我们使用了内置的JIRA模板，但完全可以根据需要自定义这些模板的实现。
+- en: Make sure the `valid-customfield-type` tags are correctly entered.
+  id: totrans-117
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 确保正确输入`valid-customfield-type`标签。
+- en: 'There is a basic, but very common, error you might make here. The `package`
+    attribute here refers to the atlassian-plugin key where the custom field resides
+    and not the Java package where the Searcher class resides! Just to make it clear,
+    the atlassian plugin key is the key in the first line of your `atlassian-plugin.xml`,
+    which is `com.jtricks` in our case:'
+  id: totrans-118
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 这里有一个基本但常见的错误。`package`属性指的是自定义字段所在的atlassian插件键，而不是Search类所在的Java包！为了明确起见，atlassian插件键就是你在`atlassian-plugin.xml`文件中的第一行中的键，在我们这个例子中是`com.jtricks`：
+- en: '[PRE8]'
+  id: totrans-119
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE8]'
+- en: This package (plugin key) along with the custom field key (`readonly-user` in
+    this case) will point to the right custom field. This would also mean that you
+    can have the same `readonly-user` in another plugin with a different plugin key!
+  id: totrans-120
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 该插件（插件键）以及自定义字段键（此处为`readonly-user`）将指向正确的自定义字段。这也意味着，你可以在另一个插件中使用相同的`readonly-user`，并且插件键不同！
+- en: Package the plugin and deploy it.
+  id: totrans-121
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 打包插件并部署它。
+- en: How it works...
+  id: totrans-122
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 它是如何工作的……
+- en: Once the custom field type is associated with a searcher using the `customfield-searcher`
+    module, you will see it appear in the searcher drop-down when a custom field of
+    that type is created.
+  id: totrans-123
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦自定义字段类型与搜索器通过`customfield-searcher`模块关联，你会看到它出现在搜索器下拉菜单中，当创建该类型的自定义字段时。
+- en: For any existing custom fields, the searcher can be defined or modified using
+    the edit operation. Once the searcher is changed, a re-indexing must be done for
+    the changes to be effective.
+  id: totrans-124
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于任何现有的自定义字段，可以通过编辑操作来定义或修改搜索器。一旦搜索器更改，必须重新索引才能使更改生效。
+- en: We can define more than one custom field using the `valid-customfield-type`
+    element for a single searcher.
+  id: totrans-125
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以为单个搜索器定义多个自定义字段，使用`valid-customfield-type`元素。
+- en: Similarly, the same custom field type can be defined under more than one searcher.
+    This will be useful when two different custom fields of the same type can potentially
+    use two different searchers. For example, text fields can use `TextSearcher` or
+    `ExactTextSearcher`.
+  id: totrans-126
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 同样，同一类型的自定义字段可以在多个搜索器下定义。这将非常有用，当两个不同的相同类型的自定义字段可能需要使用两个不同的搜索器时。例如，文本字段可以使用`TextSearcher`或`ExactTextSearcher`。
+- en: Once the searcher is defined against the custom field, you can see it appearing
+    in the issue navigator **when the correct context is selected**. The last part
+    is extremely important because the field will be available to search only when
+    the context chosen is correct. For example, if field X is available only on bugs,
+    it won't appear on the issue navigator when the issue types selected has both
+    bugs and new features. Refresh the search menu after the correct context is selected
+    to see your field. This is applicable only for **simple** searching.
+  id: totrans-127
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦搜索器与自定义字段定义关联后，你可以在问题导航器中看到它 **当选择正确的上下文时**。最后这一部分非常重要，因为字段仅在选择的上下文正确时才会出现在搜索中。例如，如果字段X只在缺陷上可用，当选择的问题类型同时包含缺陷和新特性时，它将不会出现在问题导航器中。选择正确的上下文后刷新搜索菜单，即可查看你的字段。这仅适用于
+    **简单** 搜索。
+- en: There's more...
+  id: totrans-128
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 还有更多……
+- en: With the introduction of v2 plugins, courtesy of OSGI bundles, referring to
+    the built-in JIRA searcher classes directly in the `atlassian-plugin.xml` file
+    will fail sometimes because it can't resolve all the dependencies (the notorious
+    **Unsatisfied dependency** errors!). This is because some of the classes are not
+    available for dependency injection in the version 2 plugins, as they were in version
+    1 plugins.
+  id: totrans-129
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 随着v2插件的引入，得益于OSGI捆绑包，直接在`atlassian-plugin.xml`文件中引用内置的JIRA搜索器类有时会失败，因为它无法解析所有的依赖项（臭名昭著的**依赖未满足**错误！）。这是因为某些类在v2插件中无法进行依赖注入，而在v1插件中是可以的。
+- en: 'But there is an easy hack to do it. Just create a dummy custom Searcher class
+    with the constructor that does the dependency injection for you:'
+  id: totrans-130
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 但是有一个简单的解决方法。只需创建一个虚拟的自定义搜索器类，并在构造函数中为你进行依赖注入：
+- en: '[PRE9]'
+  id: totrans-131
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE9]'
+- en: If that doesn't work, add the field to the `system-customfield-types.xml` file
+    under `WEB-INF/classes` along with the JIRA system custom fields, that is, one
+    more `valid-customfield-type` entry into the relevant `customfield-searcher` element.
+    If you do this, remember to apply this workaround when JIRA is upgraded!
+  id: totrans-132
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果那样不行，可以将字段添加到`WEB-INF/classes`下的`system-customfield-types.xml`文件中，与JIRA系统自定义字段一起，换句话说，在相关的`customfield-searcher`元素中再添加一个`valid-customfield-type`条目。如果你这么做，记得在JIRA升级时应用这个解决方法！
+- en: Dealing with custom fields on an issue
+  id: totrans-133
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 处理问题中的自定义字段
+- en: In this recipe, we will see how to work with custom fields on an issue. It covers
+    reading a custom field value from an issue and then updating the custom field
+    value on the issue, with and without notifications.
+  id: totrans-134
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这个教程中，我们将学习如何在问题上处理自定义字段。它涵盖了如何从问题中读取自定义字段值，然后在问题中更新自定义字段值，无论是否触发通知。
+- en: Getting ready
+  id: totrans-135
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 准备工作
+- en: Identify the places where the custom fields needs to be manipulated, be it on
+    a listener, workflow element, or somewhere else in our plugins.
+  id: totrans-136
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 确定需要操作自定义字段的位置，可以是在监听器、工作流元素中，或者我们插件中的其他地方。
+- en: How to do it...
+  id: totrans-137
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何做到这一点...
+- en: We will see how to access the value of a custom field and modify the value as
+    we go along.
+  id: totrans-138
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将学习如何访问自定义字段的值，并在过程中修改该值。
+- en: The following are the steps to read the custom field value from an `Issue` object.
+  id: totrans-139
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是从`Issue`对象中读取自定义字段值的步骤。
+- en: 'Create an instance of the `CustomFieldManager` class. This is the manager class
+    that does most of the operations on custom fields. There are two ways to retrieve
+    a manager class:'
+  id: totrans-140
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建一个`CustomFieldManager`类的实例。这是执行大部分自定义字段操作的管理器类。有两种方式可以获取管理器类：
+- en: Inject the manager class in the constructor of your plugin class implementation.
+  id: totrans-141
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在插件类实现的构造函数中注入管理器类。
+- en: 'Retrieve the `CustomFieldManager` directly from the `ComponentManager` class.
+    It can be done as follows:'
+  id: totrans-142
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 直接从`ComponentManager`类中获取`CustomFieldManager`。可以通过以下方式完成：
+- en: '[PRE10]'
+  id: totrans-143
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE10]'
+- en: 'Retrieve the `customField` object using the `customfield` name or the ID:'
+  id: totrans-144
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用`customfield`名称或ID来检索`customField`对象：
+- en: '[PRE11]'
+  id: totrans-145
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE11]'
+- en: OR
+  id: totrans-146
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 或者
+- en: '[PRE12]'
+  id: totrans-147
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE12]'
+- en: 'Once the custom field object is available, its value for an issue can be retrieved
+    as follows:'
+  id: totrans-148
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 一旦自定义字段对象可用，就可以通过以下方式检索与某个问题相关的自定义字段值：
+- en: '[PRE13]'
+  id: totrans-149
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE13]'
+- en: OR
+  id: totrans-150
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 或者
+- en: '[PRE14]'
+  id: totrans-151
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE14]'
+- en: The latter works fine in all scenarios, whereas the former seems to fail in
+    cases like workflow validators and post functions.
+  id: totrans-152
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 后者在所有场景下都能正常工作，而前者在工作流验证器和后置函数等情况下似乎会失败。
+- en: Cast the value object to the appropriate class. For example, String for a text
+    field, `List<String>` for a multi select field, `Double` for a number field, and
+    so on.
+  id: totrans-153
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 将值对象强制转换为适当的类。例如，文本字段用`String`，多选字段用`List<String>`，数字字段用`Double`，依此类推。
+- en: If you want to update the custom field values back on to the issue, continue
+    with the following steps.
+  id: totrans-154
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你想将自定义字段值更新回问题中，请继续以下步骤。
+- en: 'Create a modified value object with the old value and the new value:'
+  id: totrans-155
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建一个修改过的值对象，其中包含旧值和新值：
+- en: '[PRE15]'
+  id: totrans-156
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE15]'
+- en: Obtain the `FieldLayoutItem` associated with the custom field for this issue
+  id: totrans-157
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 获取与该问题相关联的自定义字段的`FieldLayoutItem`
+- en: '[PRE16]'
+  id: totrans-158
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE16]'
+- en: 'Update the custom field value for the issue using the `fieldLayoutItem`, `modfiedValue`
+    and a default change holder:'
+  id: totrans-159
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用`fieldLayoutItem`、`modifiedValue`和默认更改持有者来更新问题的自定义字段值：
+- en: '[PRE17]'
+  id: totrans-160
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE17]'
+- en: The advantage of doing this, or the disadvantage depending on your perception,
+    is that the custom field value change will not trigger a notification. If you
+    want to trigger notifications, please follows these steps to update the issue
+    instead of previous steps.
+  id: totrans-161
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这样做的优点，或者根据你的看法是缺点，便是自定义字段的值更改不会触发通知。如果你希望触发通知，请按照以下步骤更新问题，而不是之前的步骤。
+- en: 'Modify the custom field value for the issue:'
+  id: totrans-162
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 修改问题的自定义字段值：
+- en: '[PRE18]'
+  id: totrans-163
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE18]'
+- en: 'Create the action parameters Map using `issueObject`, `remoteUser` details,
+    and so on:'
+  id: totrans-164
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用`issueObject`、`remoteUser`等详细信息创建操作参数映射：
+- en: '[PRE19]'
+  id: totrans-165
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE19]'
+- en: 'Execute the `ISSUE_UPDATE` operation:'
+  id: totrans-166
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 执行`ISSUE_UPDATE`操作：
+- en: '[PRE20]'
+  id: totrans-167
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE20]'
+- en: This will throw an issue update event and all the handlers will be able to pick
+    it up.
+  id: totrans-168
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这将抛出一个问题更新事件，所有处理程序将能够接收到该事件。
+- en: 'An alternate, and probably simpler, way to update the custom fields is to use
+    the type of the field, as shown next:'
+  id: totrans-169
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 更新自定义字段的一个替代方法，可能更简单，就是使用字段的类型，如下所示：
+- en: '[PRE21]'
+  id: totrans-170
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE21]'
+- en: How it works...
+  id: totrans-171
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 它是如何工作的...
+- en: The following are the things taking place at the backend when the custom field
+    value is changed using one of the aforementioned methods.
+  id: totrans-172
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当使用上述方法之一更改自定义字段值时，后端发生的事情如下。
+- en: The Value is updated in the database
+  id: totrans-173
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 值会在数据库中更新
+- en: A change record is created and change history is updated with the latest changes
+  id: totrans-174
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 会创建一个变更记录，并更新变更历史以反映最新的更改
+- en: Indexes are updated to hold the new values
+  id: totrans-175
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 索引会被更新以保存新的值
+- en: An *Issue Updated* event is fired if `ActionDispatcher` is used to update the
+    field, which in turn fires notifications and listeners
+  id: totrans-176
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 如果使用`ActionDispatcher`更新字段，则会触发一个*问题更新*事件，进而触发通知和监听器
+- en: See also
+  id: totrans-177
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 另见
+- en: '*Working with custom fields and SOAP* in [Chapter 9](ch09.html "Chapter 9. Remote
+    Access to JIRA"), *Remote Access to JIRA*'
+  id: totrans-178
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在[第9章](ch09.html "第9章：远程访问 JIRA")中，*使用自定义字段和 SOAP*，*远程访问 JIRA*
+- en: Programming custom field options
+  id: totrans-179
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 编程自定义字段选项
+- en: We have seen how to create a custom field type, search for it, and read/update
+    its value from/on an issue. But one important aspect of multi-valued custom fields
+    and one that we haven't seen yet is custom field options.
+  id: totrans-180
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们已经看到如何创建自定义字段类型，如何搜索它，并且如何从问题中读取/更新其值。但关于多值自定义字段的一个重要方面，我们还没有看到的是自定义字段选项。
+- en: On a multi-valued custom field, the administrator can configure the allowed
+    set of values, also called `options`. Once the options are configured, users can
+    only select values within that set of options and there is a validation done to
+    ensure that this is the case.
+  id: totrans-181
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于多值自定义字段，管理员可以配置允许的值集，也称为`选项`。一旦选项被配置，用户只能在这些选项中选择值，并且会进行验证以确保这样做。
+- en: So, how do we programmatically read those options or add a new option to the
+    custom field so that it can be later set on an issue? Let us have a look at that
+    in this recipe.
+  id: totrans-182
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 那么，如何通过编程方式读取这些选项或向自定义字段添加新选项，以便以后可以在问题上设置它呢？让我们在这个配方中看看。
+- en: Getting ready
+  id: totrans-183
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 准备工作
+- en: Create a multi-valued custom field, say X, in your JIRA instance. Add a few
+    options onto the field X.
+  id: totrans-184
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在你的 JIRA 实例中创建一个多值自定义字段，假设为 X，给字段 X 添加一些选项。
+- en: How to do it...
+  id: totrans-185
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: To deal with custom field options, Atlassian has written a manager class named
+    `OptionsManager`.
+  id: totrans-186
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了处理自定义字段选项，Atlassian 编写了一个名为`OptionsManager`的管理类。
+- en: 'Following are the steps to get the options configured for a custom field:'
+  id: totrans-187
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是获取为自定义字段配置的选项的步骤：
+- en: Get an instance of the `OptionsManager` class. Similar to any other manager
+    class, this can be done in two ways.
+  id: totrans-188
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 获取`OptionsManager`类的实例。与任何其他管理类类似，这可以通过两种方式来完成。
+- en: Inject the manager class in the constructor
+  id: totrans-189
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在构造函数中注入管理类
+- en: 'Directly get an instance from the `ComponentManager` class as shown:'
+  id: totrans-190
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 如下所示，直接从`ComponentManager`类中获取实例：
+- en: '[PRE22]'
+  id: totrans-191
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE22]'
+- en: Retrieve the field configuration schemes for the custom field.
+  id: totrans-192
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 检索自定义字段的字段配置方案。
+- en: 'There could be more than one field configuration scheme for a custom field,
+    each with its own set of projects, issue types, and so on, defined in different
+    contexts. We need to identify the field configuration scheme of interest to us:'
+  id: totrans-193
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 自定义字段可能有多个字段配置方案，每个方案都有自己的一组项目、问题类型等，定义在不同的上下文中。我们需要确定我们感兴趣的字段配置方案：
+- en: '[PRE23]'
+  id: totrans-194
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE23]'
+- en: 'Retrieve the field configuration from the scheme:'
+  id: totrans-195
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 从方案中检索字段配置：
+- en: '[PRE24]'
+  id: totrans-196
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE24]'
+- en: 'Once the field configuration is available, we can use it to retrieve the options
+    on the custom field for that field configuration. The options could be different
+    for different contexts and that is the reason why we retrieve the `config` first
+    and use it to get the options:'
+  id: totrans-197
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 一旦字段配置可用，我们就可以使用它来检索该字段配置的自定义字段选项。不同的上下文可能会有不同的选项，这就是为什么我们先检索`config`并用它来获取选项的原因：
+- en: '[PRE25]'
+  id: totrans-198
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE25]'
+- en: '`option.getValue()` will give the name of the option while iterating on the
+    preceding list.'
+  id: totrans-199
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`option.getValue()` 在遍历前述列表时会返回选项的名称。'
+- en: '`option.getChildOptions()` will retrieve the child options in the case of a
+    cascading select or any other multilevel select'
+  id: totrans-200
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`option.getChildOptions()` 将在级联选择或其他多级选择的情况下检索子选项。'
+- en: 'If you need to add new options to the list, it is again `OptionsManager` who
+    comes to the rescue. We do it as follows:'
+  id: totrans-201
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你需要向列表中添加新选项，`OptionsManager`再次来帮助我们。我们可以按照以下方式操作：
+- en: 'Create the new option:'
+  id: totrans-202
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建新选项：
+- en: '[PRE26]'
+  id: totrans-203
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE26]'
+- en: The first parameter is `fieldConfig` that we saw earlier. The second parameter
+    is the `parent option ID`, used in case of a multi-level custom field like cascading
+    select. It will be `null` for single-level custom fields. The third parameter
+    is `sequence`, which determines the order in which the options will appear. The
+    fourth parameter is the actual `value` to be added as an option.
+  id: totrans-204
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 第一个参数是我们之前看到的`fieldConfig`。第二个参数是`parent option ID`，用于多级自定义字段（如级联选择）的情况。对于单级自定义字段，它将是`null`。第三个参数是`sequence`，它决定了选项显示的顺序。第四个参数是要作为选项添加的实际`value`。
+- en: Add the new `option` to the list of options and update!
+  id: totrans-205
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 将新的`option`添加到选项列表中并更新！
+- en: '[PRE27]'
+  id: totrans-206
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE27]'
+- en: Deleting and updating options are also possible like this, but we shouldn't
+    forget to handle existing issues with those option values.
+  id: totrans-207
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 删除和更新选项也可以像这样进行，但我们不能忘记处理那些已使用这些选项值的现有问题。
+- en: '`OptionsManager` exposes a lot of other useful methods to handle custom field
+    options, which can be found in the Javadocs.'
+  id: totrans-208
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: '`OptionsManager`提供了许多其他有用的方法来处理自定义字段选项，这些方法可以在Javadocs中找到。'
+- en: See also
+  id: totrans-209
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 另见
+- en: '*Writing a simple custom field*'
+  id: totrans-210
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*编写一个简单的自定义字段*'
+- en: Overriding validation of custom fields
+  id: totrans-211
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 自定义字段的验证覆盖
+- en: We have seen how to write a custom field and set its options programmatically.
+    We also discussed how the value set on a multi-valued custom field is validated
+    against its set of pre-configured options. If the value doesn't belong to it,
+    the validation fails and the issue can't be created or updated.
+  id: totrans-212
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们已经看到如何编写一个自定义字段，并通过编程设置其选项。我们还讨论了如何验证多值自定义字段上设置的值是否符合其预配置选项。如果值不属于预配置选项中的任何一个，验证失败，问题将无法创建或更新。
+- en: But what if we have a scenario where we need to suppress this validation? What
+    if we need to add values to an issue which doesn't come from its pre-configured
+    options? Normally, you would add this to the options programmatically, as we've
+    seen before but what if we don't want to do this due to some reason? This is when
+    you can suppress the validation in your custom field.
+  id: totrans-213
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 但是，如果我们遇到一个需要抑制验证的场景怎么办？如果我们需要向一个问题添加一些不来自其预配置选项的值怎么办？通常，你会像之前所示那样通过编程将其添加到选项中，但如果因为某些原因我们不想这么做呢？这时，你可以在自定义字段中抑制验证。
+- en: Getting ready
+  id: totrans-214
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 准备就绪
+- en: Create your custom field, as we have seen in the first recipe of this chapter.
+  id: totrans-215
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 创建你的自定义字段，就像我们在本章的第一个配方中看到的那样。
+- en: How to do it...
+  id: totrans-216
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: 'All you need to do here is to suppress the validation happening in the original
+    parent custom field if you are extending an existing custom field type like `MultiSelectCFType`.
+    The following is the method you should override:'
+  id: totrans-217
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这里你需要做的就是，如果你正在扩展一个现有的自定义字段类型（如`MultiSelectCFType`），抑制原始父自定义字段中发生的验证。以下是你应该覆盖的方法：
+- en: '[PRE28]'
+  id: totrans-218
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE28]'
+- en: You can add any additional validation in this method as well!
+  id: totrans-219
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你还可以在这个方法中添加任何额外的验证！
+- en: If you are writing a custom field type from scratch, you will be implementing
+    the `CustomFieldType` interface. You will then need to implement the above method
+    and can do the same thing.
+  id: totrans-220
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你从头开始编写一个自定义字段类型，你将实现`CustomFieldType`接口。然后你需要实现上述方法，并且可以执行相同的操作。
+- en: And if you are interested and have access to the JIRA source code, go and have
+    a look at how the validation is done in some existing custom field types!
+  id: totrans-221
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你有兴趣并且能够访问JIRA源代码，去看看现有自定义字段类型中是如何进行验证的吧！
+- en: See also
+  id: totrans-222
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 另见
+- en: '*Writing a simple custom field*'
+  id: totrans-223
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*编写一个简单的自定义字段*'
+- en: Customizing the change log value
+  id: totrans-224
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 自定义变更日志值
+- en: One scenario we might come across when writing certain custom field types is
+    to manipulate the way we display the change log. For a normal Version Picker custom
+    field, the change log is displayed as follows.
+  id: totrans-225
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在编写某些自定义字段类型时，我们可能会遇到一个场景，即操作如何显示变更日志。对于一个普通的版本选择器自定义字段，变更日志将如下所示。
+- en: '![Customizing the change log value](img/1803-03-01.jpg)'
+  id: totrans-226
+  prefs: []
+  type: TYPE_IMG
+  zh: '![自定义变更日志值](img/1803-03-01.jpg)'
+- en: Here **Test Version** is the field name. The first value you see, `Test2 [10010]`,
+    is the old value and the second value, `Test1 [10000]`, is the new value.
+  id: totrans-227
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这里**Test Version**是字段名称。你看到的第一个值`Test2 [10010]`是旧值，第二个值`Test1 [10000]`是新值。
+- en: Getting ready
+  id: totrans-228
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 准备就绪
+- en: Write your custom field type, as described in the first recipe of this chapter.
+  id: totrans-229
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 编写你的自定义字段类型，正如本章的第一个配方所描述的。
+- en: How to do it...
+  id: totrans-230
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: 'As you have seen in the preceding screen, the change log value for both old
+    value and new value are displayed in the following format:'
+  id: totrans-231
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你在前面的屏幕中所见，旧值和新值的变更日志值以以下格式显示：
+- en: '[PRE29]'
+  id: totrans-232
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE29]'
+- en: Both the string value and ID value are stored in the `ChangeItem` table. But
+    before storing the value in the database, this value is generated from the individual
+    custom fields. That is where we need to intercept to manipulate the way change
+    log is written.
+  id: totrans-233
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 字符串值和ID值都存储在`ChangeItem`表中。但在将值存储到数据库之前，该值是通过单个自定义字段生成的。这正是我们需要拦截并操作变更日志写入方式的地方。
+- en: 'There are two methods, one for `change log string` and another for `change
+    log id`, which need to be modified. Following are the method definitions in the
+    interface:'
+  id: totrans-234
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有两个方法，一个是`change log string`，另一个是`change log id`，需要修改。以下是接口中的方法定义：
+- en: '[PRE30]'
+  id: totrans-235
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE30]'
+- en: All you need to do is implement these methods or override them if you are extending
+    an existing custom field type to put your custom implementation.
+  id: totrans-236
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你只需要实现这些方法，或者如果你在扩展现有的自定义字段类型时，可以重写这些方法来加入自定义实现。
+- en: If you don't want the string to appear in the change history, just return `null`
+    in the `getChangelogString` method. Note that if `null` is returned in the `getChangelogValue`
+    method, the change log isn't created!
+  id: totrans-237
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你不希望字符串出现在变更历史中，只需在`getChangelogString`方法中返回`null`。请注意，如果在`getChangelogValue`方法中返回`null`，则不会创建变更日志！
+- en: 'Let us consider a simple example where the change history string is truncated
+    when the length of a string is more than 100 characters. In this case, the `getChangelogValue`
+    returns an empty string and `getChangelogString` returns the truncated string.
+    The overridden methods are as shown next:'
+  id: totrans-238
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们考虑一个简单的例子，当字符串的长度超过100个字符时，变更历史字符串会被截断。在这种情况下，`getChangelogValue`返回空字符串，而`getChangelogString`返回截断后的字符串。重写后的方法如下所示：
+- en: '[PRE31]'
+  id: totrans-239
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE31]'
+- en: How it works...
+  id: totrans-240
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 它是如何工作的...
+- en: Whenever a value is changed for a custom field, it updates the value in the
+    `CustomFieldValue` table. In addition, it also stores the changes on the issue
+    by making a change log entry.
+  id: totrans-241
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 每当自定义字段的值发生变化时，它会在`CustomFieldValue`表中更新该值。此外，它还通过创建变更日志条目来存储该问题的变化。
+- en: For every set of changes happening on an issue at a single update, a record
+    is created under the `ChangeGroup` table. It stores the name of the user who made
+    the change (author), the time when the change was made (created), and the issue
+    ID (issue).
+  id: totrans-242
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 每当某个问题在单次更新中发生变化时，都会在`ChangeGroup`表中创建一条记录。它存储了执行更改的用户姓名（作者）、更改时间（创建时间）和问题ID（问题）。
+- en: 'For every change group, there will be one or more change items stored in the
+    `ChangeItem` table. It is in this table that the old and new values for fields
+    are stored. For both old and new value, there are two columns in the table – one
+    for the string representation and another for the ID. The following is the entity
+    definition for the `ChangeItem` table:'
+  id: totrans-243
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于每个变更组，都将在`ChangeItem`表中存储一个或多个变更项。在此表中存储了字段的旧值和新值。对于旧值和新值，表中有两列——一列用于字符串表示，另一列用于ID。以下是`ChangeItem`表的实体定义：
+- en: '[PRE32]'
+  id: totrans-244
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE32]'
+- en: The fields `oldvalue` and `newvalue` are populated using the method `getChangelogValue`.
+    Similarly, the fields `oldstring` and `newstring` are populated using `getChangelogString`.
+  id: totrans-245
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 字段`oldvalue`和`newvalue`是通过`getChangelogValue`方法填充的。同样，字段`oldstring`和`newstring`是通过`getChangelogString`方法填充的。
+- en: These fields are the ones used while displaying the change history.
+  id: totrans-246
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这些字段是用于显示变更历史时的字段。
+- en: Migrating from one custom field type to another
+  id: totrans-247
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 从一个自定义字段类型迁移到另一个自定义字段类型
+- en: Have you been using JIRA for more than a year or are you a power user of JIRA?
+    That is, have you performed huge customizations, created numerous plugins, used
+    lot of use cases, and so on? Then it is very likely that you have come across
+    this scenario. You want to move the values from an old custom field to a new field.
+  id: totrans-248
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你使用JIRA已经超过一年了吗？或者你是JIRA的高级用户吗？也就是说，你是否进行了大量的自定义，创建了众多插件，使用了很多用例，等等？那么你很可能遇到过这种场景：你想把旧自定义字段的值迁移到新字段中。
+- en: JIRA doesn't have a standard way of doing this. But you can achieve this to
+    an extent by modifying the JIRA database. Even with SQL, there are some restrictions
+    for doing this.
+  id: totrans-249
+  prefs: []
+  type: TYPE_NORMAL
+  zh: JIRA没有标准的方式来执行这个操作。但你可以通过修改JIRA数据库来在一定程度上实现此操作。即使使用SQL，也会有一些限制。
+- en: The first and foremost thing to check is that both the fields are compatible.
+    You can't move the values from a text field to a number field without extra checks
+    and validations. If there is a value `1234a` stored in one of the issues, it can't
+    be stored as a number field as it is not a valid number. The same applies to all
+    the field types.
+  id: totrans-250
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 首先要检查的是两个字段是否兼容。在没有额外检查和验证的情况下，您无法将值从文本字段移动到数字字段。如果某个问题中存储的值为`1234a`，则无法将其存储为数字字段，因为它不是有效的数字。所有字段类型都适用同样的规则。
+- en: Let us see the migration of compatible types and discuss a few other scenarios
+    in this recipe.
+  id: totrans-251
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们看看兼容类型的迁移，并讨论一下这个教程中的其他一些场景。
+- en: How to do it...
+  id: totrans-252
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: 'Let us assume you have two text fields `Field A` and `Field B`. We need to
+    migrate the values on every issue from `Field A` to `Field B`. Following are the
+    steps that should be executed:'
+  id: totrans-253
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 假设您有两个文本字段`Field A`和`Field B`。我们需要将每个问题中的`Field A`的值迁移到`Field B`。以下是应该执行的步骤：
+- en: Shut down the JIRA instance.
+  id: totrans-254
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 关闭JIRA实例。
+- en: Take a backup of the database. We can revert to this backup if anything goes
+    wrong.
+  id: totrans-255
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 备份数据库。如果发生任何问题，我们可以恢复到此备份。
+- en: 'Connect to your database:'
+  id: totrans-256
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 连接到您的数据库：
+- en: 'Execute the following SQL query:'
+  id: totrans-257
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 执行以下SQL查询：
+- en: '[PRE33]'
+  id: totrans-258
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE33]'
+- en: The query assumes that the custom field names are unique. If you have more than
+    one custom field with the same name, use the IDs instead.
+  id: totrans-259
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 查询假设自定义字段名称是唯一的。如果您有多个自定义字段具有相同的名称，请改用ID。
+- en: Commit the changes.
+  id: totrans-260
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 提交更改。
+- en: Disconnect from the database.
+  id: totrans-261
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 断开与数据库的连接。
+- en: Start JIRA.
+  id: totrans-262
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 启动JIRA。
+- en: Re-index JIRA by going to **Administration** | **System** | **Indexing**.
+  id: totrans-263
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 通过转到**管理** | **系统** | **索引**来重新索引JIRA。
+- en: That should do it! Verify your changes both on the issue and in the filters.
+  id: totrans-264
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 就这样！请验证您在问题和过滤器中的更改。
+- en: Note
+  id: totrans-265
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: All the SQL statements and database references are based on Oracle 10g. Please
+    modify it to suit your database.
+  id: totrans-266
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 所有的SQL语句和数据库引用都基于Oracle 10g。请根据您的数据库进行相应修改。
+- en: How it works...
+  id: totrans-267
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 它是如何工作的...
+- en: All that we did here was change the custom field ID in the `customfieldvalue`
+    table. The other steps are standard steps for executing any SQL in JIRA.
+  id: totrans-268
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们在这里所做的仅仅是更改了`customfieldvalue`表中的自定义字段ID。其他步骤是执行任何SQL语句时的标准操作。
+- en: Remember, if you have two custom fields with the same `name`, make sure you
+    use the correct `id` instead of finding it using the `name` in SQL.
+  id: totrans-269
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 记住，如果您有两个具有相同`name`的自定义字段，请确保使用正确的`id`，而不是通过SQL中的`name`来查找。
+- en: Now, this will work fine if both the fields are of the same type. But what if
+    you want to move the values from one type to another? This may not always be possible
+    because some of the values in the `customfieldvalue` table may not be compatible
+    with other custom field types.
+  id: totrans-270
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，如果两个字段是相同类型，这个方法将正常工作。但如果您想将值从一种类型迁移到另一种类型怎么办？这并非总是可能的，因为在`customfieldvalue`表中的某些值可能与其他自定义字段类型不兼容。
+- en: Let us consider migrating a normal text field to a text area custom field. The
+    value in the text area custom field is stored as a `CLOB` in the `textvalue` column
+    in the database. But the value in a normal text field is stored as VARCHAR 2(255)
+    in the `stringvalue` column. So, when you convert, we need to update the custom
+    field ID, read the VARACHAR2(255) value from the `stringvalue` column and store
+    it in the `textvalue` column as a `CLOB`. And set the no longer used `stringvalue`
+    to `null` in order to free space in the database.
+  id: totrans-271
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 假设我们要将一个普通的文本字段迁移到文本区域自定义字段。文本区域自定义字段中的值作为`CLOB`存储在数据库中的`textvalue`列中。而普通文本字段中的值作为VARCHAR2(255)存储在`stringvalue`列中。因此，在转换时，我们需要更新自定义字段ID，从`stringvalue`列中读取VARCHAR2(255)值，并将其作为`CLOB`存储到`textvalue`列中，并将不再使用的`stringvalue`设置为`null`，以释放数据库空间。
+- en: In this example, if you are trying the reverse order, that is, migrating from
+    text area to text field, you should take into consideration the length of the
+    text, and remove the extra text, as the text field can hold only up to 255 characters.
+  id: totrans-272
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这个示例中，如果您尝试逆向操作，即从文本区域迁移到文本字段，您应该考虑文本的长度，并删除多余的文本，因为文本字段最多只能容纳255个字符。
+- en: 'You can find the data type for the various custom fields by looking at the
+    `getDatabaseType` method. For a `TextField`, the method looks as follows:'
+  id: totrans-273
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 您可以通过查看`getDatabaseType`方法来查找各种自定义字段的数据类型。对于`TextField`，该方法如下所示：
+- en: '[PRE34]'
+  id: totrans-274
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE34]'
+- en: Other available field types are `TYPE_UNLIMITED_TEXT` (for example, text area),
+    `TYPE_DATE` (Date custom field), and `TYPE_DECIMAL` (for example, number field).
+  id: totrans-275
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 其他可用的字段类型包括`TYPE_UNLIMITED_TEXT`（例如，文本区域）、`TYPE_DATE`（日期自定义字段）和`TYPE_DECIMAL`（例如，数字字段）。
+- en: There's more...
+  id: totrans-276
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 还有更多...
+- en: Sometimes we just need to change the type of a custom field instead of creating
+    a new one and then migrating the values across. Let us quickly see how to do it.
+  id: totrans-277
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有时我们只需要更改自定义字段的类型，而不是创建一个新字段并迁移其值。让我们快速看看如何操作。
+- en: Changing the type of a custom field
+  id: totrans-278
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 更改自定义字段的类型
+- en: In this case, the table that needs to be updated is the `CustomField` table.
+    All we need to do is to update the `customfieldtypekey`. Just set the new custom
+    field type key which will be {`YOUR_ATLASSIAN_PLUGIN_KEY}:{MODULE_KEY}`.
+  id: totrans-279
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这种情况下，需要更新的表是`CustomField`表。我们需要做的只是更新`customfieldtypekey`。只需设置新的自定义字段类型键，格式为{`YOUR_ATLASSIAN_PLUGIN_KEY}:{MODULE_KEY`}。
+- en: For a text field, the key is `com.atlassian.jira.plugin.system.customfieldtypes:textfield`.
+  id: totrans-280
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于文本字段，键值是`com.atlassian.jira.plugin.system.customfieldtypes:textfield`。
+- en: For incompatible types, we need to consider all aforementioned cases and update
+    the `CustomFieldValue` table accordingly.
+  id: totrans-281
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于不兼容的类型，我们需要考虑所有上述情况，并相应更新`CustomFieldValue`表。
+- en: See also
+  id: totrans-282
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 参见
+- en: '*Retrieving custom field details from database*'
+  id: totrans-283
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*从数据库中检索自定义字段详情*'
+- en: Making custom fields sortable
+  id: totrans-284
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使自定义字段可排序
+- en: We have seen the creation of new custom fields, writing new searchers for them,
+    and so on. Another important feature with the fields, be it custom fields or the
+    standard JIRA fields, is to use them for sorting. But simply writing a new custom
+    field type won't enable sorting on that field.
+  id: totrans-285
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们已经看到如何创建新的自定义字段，为它们编写新的搜索器，等等。与字段（无论是自定义字段还是标准JIRA字段）相关的另一个重要功能是将它们用于排序。但仅仅编写一个新的自定义字段类型并不会启用该字段的排序功能。
+- en: In this recipe, we will see how to enable sorting on custom fields.
+  id: totrans-286
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本教程中，我们将看到如何启用自定义字段的排序功能。
+- en: Getting ready
+  id: totrans-287
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 准备工作
+- en: Create the new custom field type that we need to enable searching for.
+  id: totrans-288
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 创建我们需要启用搜索的新的自定义字段类型。
+- en: How to do it...
+  id: totrans-289
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: 'This is easy to do. There are only two simple steps that you need to do to
+    make sure the custom field is a sortable field:'
+  id: totrans-290
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这很容易做。你只需要做两个简单的步骤，确保自定义字段是可排序的字段：
+- en: 'Implement the `SortableCustomField` interface. A new custom field type will
+    look like the following:'
+  id: totrans-291
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 实现`SortableCustomField`接口。一个新的自定义字段类型看起来应该像以下这样：
+- en: '[PRE35]'
+  id: totrans-292
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE35]'
+- en: If you are extending an existing custom field type like `TextCFType`, it already
+    implements the interface.
+  id: totrans-293
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 如果你正在扩展一个现有的自定义字段类型，如`TextCFType`，它已经实现了该接口。
+- en: 'Implement the `compare` method. Following is an example:'
+  id: totrans-294
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 实现`compare`方法。以下是一个示例：
+- en: '[PRE36]'
+  id: totrans-295
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE36]'
+- en: '`DemoComparator` here is a custom comparator that we can write to implement
+    the sorting logic.'
+  id: totrans-296
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 这里的`DemoComparator`是一个自定义比较器，我们可以编写它来实现排序逻辑。
+- en: Just invoke `SortableCustomField.compare()` if a custom comparator is not needed.
+  id: totrans-297
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 如果不需要自定义比较器，只需调用`SortableCustomField.compare()`。
+- en: How it works...
+  id: totrans-298
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 它是如何工作的...
+- en: Once the custom field implements the `SortableCustomField` interface, we can
+    click on its header on the issue navigator, and see it getting sorted based on
+    the logic we implemented.
+  id: totrans-299
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦自定义字段实现了`SortableCustomField`接口，我们可以点击问题导航器中的字段头部，看到它根据我们实现的逻辑进行排序。
+- en: There's more...
+  id: totrans-300
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 还有更多...
+- en: '`BestNameComparator`, `FullNameComparator`, `LocaleComparator`, `GenericValueComparator`,
+    and so on, are some reusable comparators that ships with JIRA. There is no definite
+    list, but you will find quite a lot of them in the JIRA source, if you have access.'
+  id: totrans-301
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`BestNameComparator`、`FullNameComparator`、`LocaleComparator`、`GenericValueComparator`等是一些随JIRA一起提供的可重用比较器。没有明确的列表，但如果你有访问权限，你会在JIRA源代码中找到很多它们。'
+- en: See also
+  id: totrans-302
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 参见
+- en: '*Writing a simple custom field*'
+  id: totrans-303
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*编写一个简单的自定义字段*'
+- en: '*Making the custom field project importable*'
+  id: totrans-304
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*使自定义字段可导入项目*'
+- en: Displaying custom fields on subtask columns
+  id: totrans-305
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 在子任务列中显示自定义字段
+- en: This is one of the easiest things that you can do! But it adds a lot of value
+    at times. We are talking about adding extra columns for subtasks on the parent
+    issue page.
+  id: totrans-306
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这是你可以做的最简单的事情之一！但它有时会增加很大的价值。我们讨论的是在父问题页面上为子任务添加额外的列。
+- en: We know how to add extra fields, don't we? Let us see how to do it and especially
+    how to add custom fields.
+  id: totrans-307
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们知道如何添加额外的字段，对吧？让我们来看看怎么做，特别是如何添加自定义字段。
+- en: How to do it...
+  id: totrans-308
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: In short, you need to modify the `jira.table.cols.subtasks` property in the
+    `jira-application.properties`. Following are the steps to do it. We add a custom
+    field in the example shown here.
+  id: totrans-309
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 简而言之，你需要在`jira-application.properties`文件中修改`jira.table.cols.subtasks`属性。以下是操作步骤。我们在这里展示了如何添加一个自定义字段的示例。
+- en: Stop JIRA.
+  id: totrans-310
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 停止JIRA。
+- en: 'Navigate to the `WEB-INF/classes` folder and modify the `jira.table.cols.subtasks`
+    property in the `jira-application.properties` file:'
+  id: totrans-311
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 导航到`WEB-INF/classes`文件夹，并修改`jira-application.properties`文件中的`jira.table.cols.subtasks`属性：
+- en: '[PRE37]'
+  id: totrans-312
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE37]'
+- en: Add the extra fields you want to add along with the existing fields like status,
+    assignee, and so on. For a custom field to be added in the columns, add `customfield_xxxxxx`
+    where `xxxxx` is the unique numeric ID of the custom field. You can find this
+    unique ID from the database or from the URL when you hover over any of the operations
+    on the custom field (for example, Edit).
+  id: totrans-313
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 添加你想要的额外字段，并与现有的字段（如状态、指派人等）一起显示。要将自定义字段添加到列中，添加`customfield_xxxxxx`，其中`xxxxx`是自定义字段的唯一数字
+    ID。你可以从数据库中找到这个唯一 ID，或者当你将鼠标悬停在自定义字段的任何操作上时（例如编辑），URL 中会显示该 ID。
+- en: Start JIRA.
+  id: totrans-314
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 启动 JIRA。
+- en: From JIRA 4.4, this property is available under **Administration** | **General
+    Configuration** | **Advanced**. There is no need to modify the property file and
+    restart JIRA.
+  id: totrans-315
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 从 JIRA 4.4 开始，此属性可以在**管理**|**常规配置**|**高级**下找到。无需修改属性文件并重启 JIRA。
+- en: How it works...
+  id: totrans-316
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 它是如何工作的...
+- en: JIRA renders the subtask columns on the view issue page by looking at the preceding
+    property. While adding the standard subtask fields are useful, adding custom fields
+    can be extremely helpful sometimes.
+  id: totrans-317
+  prefs: []
+  type: TYPE_NORMAL
+  zh: JIRA 通过查看前面的属性在查看问题页面上呈现子任务列。虽然添加标准子任务字段是有用的，但有时添加自定义字段会极为有帮助。
+- en: 'In our example, we have added `customfield_10140`, where `10140` is the numeric
+    ID for the custom field. It stores the URL associated with the task, as shown:'
+  id: totrans-318
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在我们的示例中，我们添加了`customfield_10140`，其中`10140`是自定义字段的数字 ID。它存储与任务相关联的 URL，如下所示：
+- en: '![How it works...](img/1803-03-02.jpg)'
+  id: totrans-319
+  prefs: []
+  type: TYPE_IMG
+  zh: '![它是如何工作的...](img/1803-03-02.jpg)'
+- en: Looks useful, doesn't it?
+  id: totrans-320
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 看起来很有用，是吧？
+- en: User and date fields from 4.1.x
+  id: totrans-321
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 4.1.x 版本的用户和日期字段
+- en: 'If you have upgraded from a pre 4.1 to a post 4.1 version, you must have noticed
+    the new **View Issue** page. People have different opinions on the new UI usability,
+    but one thing that gets everyone''s vote is how the date and user fields are arranged
+    in the UI. You will see a section of its own for the user and date fields, as
+    shown in the next screenshot:'
+  id: totrans-322
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你从 4.1 之前的版本升级到 4.1 之后的版本，你一定注意到了新的**查看问题**页面。人们对新 UI 可用性有不同的看法，但有一点是每个人都同意的，那就是日期和用户字段在
+    UI 中的排列方式。你将看到用户和日期字段有自己独立的部分，如下图所示：
+- en: '![User and date fields from 4.1.x](img/1803-03-03.jpg)'
+  id: totrans-323
+  prefs: []
+  type: TYPE_IMG
+  zh: '![4.1.x 版本的用户和日期字段](img/1803-03-03.jpg)'
+- en: So how do our fields appear in that section?
+  id: totrans-324
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 那么我们的字段如何出现在这个部分呢？
+- en: How to do it...
+  id: totrans-325
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何实现...
+- en: When you write your new date fields or user fields, all you need to do to make
+    it appear in the correct sections is to implement the right interface!
+  id: totrans-326
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当你编写新的日期字段或用户字段时，确保它出现在正确的部分，只需实现正确的接口即可！
+- en: 'For a user field, the new custom field type class should implement the following
+    interface:'
+  id: totrans-327
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于用户字段，新的自定义字段类型类应该实现以下接口：
+- en: '[PRE38]'
+  id: totrans-328
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE38]'
+- en: 'For a date field, implement:'
+  id: totrans-329
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于日期字段，实施以下操作：
+- en: '[PRE39]'
+  id: totrans-330
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE39]'
+- en: If you are extending the existing date fields or user fields, they already implement
+    the interface, and hence they will appear automatically in there!
+  id: totrans-331
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你正在扩展现有的日期字段或用户字段，它们已经实现了接口，因此它们会自动出现在这里！
+- en: What if you do not want your field in the special date/user sections? Simply
+    ignore these interfaces. The fields will appear just like normal custom fields
+    and will then appear in the order specified under field configurations.
+  id: totrans-332
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你不希望你的字段出现在特殊的日期/用户部分呢？只需忽略这些接口。字段将像普通的自定义字段一样显示，并按照字段配置中指定的顺序显示。
+- en: How it works...
+  id: totrans-333
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 它是如何工作的...
+- en: This is quite simple. JIRA looks out for classes implementing the `UserField`/`DateField`
+    interfaces and displays them in the respective sections. On the standard custom
+    field section, it doesn't show these fields.
+  id: totrans-334
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这非常简单。JIRA 会查找实现了`UserField`/`DateField`接口的类，并将它们显示在相应的部分。在标准自定义字段部分，它不会显示这些字段。
+- en: 'Ever wondered where this check is done in the JIRA source code? The view is
+    rendered in the `ViewIssue` class, but the actual check is done in the `util`
+    class: `com.atlassian.jira.issue.fields.util.FieldPredicates`.'
+  id: totrans-335
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 曾经想过这个检查是如何在 JIRA 源代码中完成的吗？视图是在`ViewIssue`类中渲染的，但实际的检查是在`util`类中完成的：`com.atlassian.jira.issue.fields.util.FieldPredicates`。
+- en: See also
+  id: totrans-336
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 另见
+- en: '*Writing a simple custom field*'
+  id: totrans-337
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*编写一个简单的自定义字段*'
+- en: Adding custom fields to notification mails
+  id: totrans-338
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 向通知邮件中添加自定义字段
+- en: One of the main features of JIRA is its capability to send notifications – to
+    selected people on selected events! It is often a requirement from JIRA users
+    to customize these notifications, mainly to add more content in the form of custom
+    fields.
+  id: totrans-339
+  prefs: []
+  type: TYPE_NORMAL
+  zh: JIRA 的一个主要功能是其向选定人员发送通知的能力——针对特定事件发送通知！JIRA 用户常常要求定制这些通知，主要是添加更多的内容，形式为自定义字段。
+- en: If you understand velocity templates, adding custom fields to notification mails
+    is a cakewalk, as we would see in this recipe.
+  id: totrans-340
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你理解 velocity 模板，向通知邮件中添加自定义字段是轻松的事情，正如我们将在这个方案中看到的那样。
+- en: Getting ready
+  id: totrans-341
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 准备工作
+- en: You should know the custom field ID that you need to add into the template.
+    The `id` can be found in the URL that you see when you hover over the 'Edit' operation
+    on the custom field in the administration page.
+  id: totrans-342
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你应该知道需要添加到模板中的自定义字段 ID。`id` 可以在你将鼠标悬停在管理页面上的“编辑”操作时的 URL 中找到。
+- en: How to do it...
+  id: totrans-343
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: 'Let us have a look at adding a custom field, X, into a notification mail when
+    an issue is updated. The following are the steps:'
+  id: totrans-344
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们看一下在问题更新时如何将自定义字段 X 添加到通知邮件中。以下是步骤：
+- en: Identify the template that needs to be updated. For each event in JIRA, you
+    can find the template associated with it in the `email-template-id-mappings.xml`
+    residing under the `WEB-INF/classes` folder.
+  id: totrans-345
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 确定需要更新的模板。对于 JIRA 中的每个事件，可以在位于 `WEB-INF/classes` 文件夹下的 `email-template-id-mappings.xml`
+    文件中找到与之关联的模板。
+- en: In this case, the event is `Issue Updated`, and the matching template is `issueupdated.vm`.
+  id: totrans-346
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在这种情况下，事件是 `问题已更新`，匹配的模板是 `issueupdated.vm`。
+- en: Once the template is identified, the files are present under `WEB-INF/classes/templates/email/text/`
+    and `WEB-INF/classes/templates/email/html/`.
+  id: totrans-347
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 一旦识别出模板，文件将位于 `WEB-INF/classes/templates/email/text/` 和 `WEB-INF/classes/templates/email/html/`
+    文件夹下。
+- en: Modify the template to include the custom field name and value wherever required.
+  id: totrans-348
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 修改模板，确保在需要的地方包含自定义字段的名称和值。
+- en: 'The name of the custom field can be retrieved as follows:'
+  id: totrans-349
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 可以通过以下方式检索自定义字段的名称：
+- en: '[PRE40]'
+  id: totrans-350
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE40]'
+- en: 'The actual value can be retrieved as follows:'
+  id: totrans-351
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 实际的值可以通过以下方式检索：
+- en: '[PRE41]'
+  id: totrans-352
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE41]'
+- en: In both the cases, `10010` is the numeric ID of the `customfield` that we discussed
+    before.
+  id: totrans-353
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在这两种情况下，`10010` 是我们之前讨论的 `customfield` 的数字 ID。
+- en: How it works...
+  id: totrans-354
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 它是如何工作的...
+- en: The e-mail notifications are rendered using velocity templates. JIRA already
+    has a lot of objects in the velocity context including `customFieldManager` and
+    `issue` objects that we have just used. The full list of objects available in
+    the velocity context for e-mail templates can be found in the Atlassian documentation
+    at [http://confluence.atlassian.com/display/JIRADEV/Velocity+Context+for+Email+Templates](http://confluence.atlassian.com/display/JIRADEV/Velocity+Context+for+Email+Templates).
+  id: totrans-355
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 电子邮件通知是使用 velocity 模板渲染的。JIRA 在 velocity 上下文中已经有很多对象，包括我们刚刚使用的 `customFieldManager`
+    和 `issue` 对象。有关电子邮件模板的 velocity 上下文中可用的对象的完整列表，可以在 Atlassian 文档中找到，网址为 [http://confluence.atlassian.com/display/JIRADEV/Velocity+Context+for+Email+Templates](http://confluence.atlassian.com/display/JIRADEV/Velocity+Context+for+Email+Templates)。
+- en: In this case, we use the `customFieldManager` object to retrieve information
+    about the custom field and then we use the `issue` object to retrieve its value
+    from the issue.
+  id: totrans-356
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这种情况下，我们使用 `customFieldManager` 对象来检索自定义字段的信息，然后使用 `issue` 对象从问题中获取其值。
+- en: Adding help text for a custom field
+  id: totrans-357
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 为自定义字段添加帮助文本
+- en: As our JIRA instance grows, demanding more and more information from the users
+    through the custom fields, it becomes a norm to let the users know what we expect
+    from them. Apart from a bunch of tutorials that we can prepare for them, it makes
+    sense to give them some help right there on the screen, next to the field.
+  id: totrans-358
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 随着我们的 JIRA 实例的增长，并且通过自定义字段要求用户提供越来越多的信息，让用户了解我们期望他们提供什么，已经成为常态。除了我们可以为他们准备的一堆教程之外，在屏幕上、字段旁边提供帮助也很有意义。
+- en: Let us see the various options on how to do it.
+  id: totrans-359
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们看看如何做的各种选项。
+- en: Getting ready
+  id: totrans-360
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 准备工作
+- en: Make sure you have the custom field, for which the help needs to be displayed
+    and configured properly.
+  id: totrans-361
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 确保你已经有了需要显示帮助的自定义字段，并且已正确配置。
+- en: How to do it...
+  id: totrans-362
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: 'There are various ways to provide help. Let us see the most widely accepted
+    ways:'
+  id: totrans-363
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 提供帮助的方式有多种。让我们看看最广泛接受的几种方式：
+- en: Link to a help page.
+  id: totrans-364
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 链接到帮助页面。
+- en: This is just common sense. Just link to a documentation about the field, hosted
+    somewhere. We can do this easily by adding few hyperlinks in the description of
+    the custom field. We just need to reuse some of the JIRA styles to make sure the
+    help appears consistent across the system.
+  id: totrans-365
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 这只是常识。只需链接到某个地方托管的有关该字段的文档即可。我们可以通过在自定义字段的描述中添加几个超链接轻松实现这一点。我们只需要重用一些 JIRA 样式，以确保帮助内容在系统中的一致性。
+- en: 'The hyperlinks again can be added in two ways. They are as follows:'
+  id: totrans-366
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 超链接可以通过两种方式添加。它们如下：
+- en: Open the help document in a new window
+  id: totrans-367
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在新窗口中打开帮助文档
+- en: Here we just link to an external page, which opens in a new window.
+  id: totrans-368
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 这里我们只是链接到一个外部页面，该页面将在新窗口中打开。
+- en: '[PRE42]'
+  id: totrans-369
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE42]'
+- en: '`My Demo Field` here is the custom field name. As you can see, we use the image
+    that ships along with JIRA for the consistency we discussed before. One thing
+    we need to note here is the URL of the image – `/jira/images/icons/help_blue.gif`.
+    In this case, we assume that `/jira` is the context path for this instance. If
+    there is no context path, just use `/images/icons/help_blue.gif` or replace `/jira`
+    using the context path of your instance!'
+  id: totrans-370
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`My Demo Field` 这里是自定义字段名称。如你所见，我们使用了与 JIRA 一同提供的图像，以确保前面提到的一致性。这里需要注意的一点是图像的
+    URL —— `/jira/images/icons/help_blue.gif`。在这种情况下，我们假设 `/jira` 是该实例的上下文路径。如果没有上下文路径，只需使用
+    `/images/icons/help_blue.gif` 或者使用你实例的上下文路径替换 `/jira`！'
+- en: Also notice the CSS class `localHelp`, which is again used for consistency across
+    help texts. Modify the help URL and title as per your needs.
+  id: totrans-371
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 还要注意 CSS 类 `localHelp`，它再次被用来确保所有帮助文本的一致性。根据需要修改帮助 URL 和标题。
+- en: Open the help document as a popup
+  id: totrans-372
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 以弹出窗口的形式打开帮助文档
+- en: Here we open the help document as a popup instead of opening a new window. The
+    focus is passed to the new window.
+  id: totrans-373
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在这里，我们将帮助文档作为弹出窗口打开，而不是打开新窗口。焦点会转移到新窗口。
+- en: '[PRE43]'
+  id: totrans-374
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE43]'
+- en: Again, the image and CSS files remain the same. Here we can specify the width,
+    height, and so on, of the pop-up window as shown in the preceding code. Everything
+    else remains the same!
+  id: totrans-375
+  prefs:
+  - PREF_IND
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 再次强调，图像和 CSS 文件保持不变。这里我们可以指定弹出窗口的宽度、高度等，正如前面代码所示。其他一切保持不变！
+- en: Provide inline help.
+  id: totrans-376
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 提供内联帮助。
+- en: This is suitable if the help isn't big enough to be put in documentation, but
+    at the same time you don't want them to appear along with the description of the
+    field! In this case, we go for a little JavaScript trick where we hide the help
+    text under an HTML `DIV` and toggle the visibility as the user clicks on the help
+    image.
+  id: totrans-377
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 如果帮助内容不够大，无法放入文档中，但同时你又不希望它与字段描述一起显示，这种情况适用！在这种情况下，我们使用一个小的 JavaScript 技巧，将帮助文本隐藏在一个
+    HTML `DIV` 中，并在用户点击帮助图片时切换其可见性。
+- en: 'Put the following under the field description after modifying the relevant
+    text. Here, `My Demo Field` is the actual field description and `Inline help for
+    my demo field!` is the extra help we added:'
+  id: totrans-378
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在修改相关文本后，将以下内容放置在字段描述下方。这里，`My Demo Field` 是实际的字段描述，而 `Inline help for my demo
+    field!` 是我们添加的额外帮助：
+- en: '[PRE44]'
+  id: totrans-379
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE44]'
+- en: Short and sweet, right?
+  id: totrans-380
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 简短而直接，是吧？
+- en: How it works...
+  id: totrans-381
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 它是如何工作的……
+- en: JIRA, thankfully, allows HTML rendering on its description field. We have just
+    used the HTML capabilities to provide some help for the field. It gives us lot
+    of options and the aforementioned ones are just pointers on how to exploit it.
+  id: totrans-382
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 幸运的是，JIRA 允许在描述字段中渲染 HTML。我们仅仅利用了 HTML 功能为字段提供帮助。这为我们提供了很多选项，前面提到的仅仅是如何利用它的一些提示。
+- en: Removing the 'none' option from a select field
+  id: totrans-383
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 从 select 字段中移除 'none' 选项
+- en: If you are a JIRA plugin developer, you must have come across this feature request
+    before. Some people just don't like the 'none' option in the select fields for
+    various reasons. One reason, obviously, is to force the users to select a valid
+    value.
+  id: totrans-384
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你是 JIRA 插件开发人员，你一定遇到过这个功能请求。有些人就是不喜欢 select 字段中的 'none' 选项，原因各异。显而易见的原因之一是强制用户选择有效值。
+- en: How to do it...
+  id: totrans-385
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何操作……
+- en: '`Select Field` is a system custom field that uses velocity templates to render
+    the view and edit screens. In order to remove the `none` option, we need to modify
+    the edit template.'
+  id: totrans-386
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`Select Field` 是一个系统自定义字段，使用 velocity 模板来渲染视图和编辑屏幕。为了移除 `none` 选项，我们需要修改编辑模板。'
+- en: For any system custom field, you can find the associated classes and their velocity
+    templates from the file `system-customfieldtypes-plugin.xml` residing under the
+    `WEB-INF/classes` folder.
+  id: totrans-387
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于任何系统自定义字段，你可以在 `WEB-INF/classes` 文件夹下的 `system-customfieldtypes-plugin.xml`
+    文件中找到相关类及其 velocity 模板。
+- en: 'In our case, we can find the following snippet related to `select-field`:'
+  id: totrans-388
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在我们的例子中，我们可以找到与 `select-field` 相关的以下代码片段：
+- en: '[PRE45]'
+  id: totrans-389
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE45]'
+- en: As evident from the preceding snippet, the edit template for the select field
+    is `templates/plugins/fields/edit/edit-select.vm`. That is the file we need to
+    modify.
+  id: totrans-390
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 从前面的代码片段可以看出，select 字段的编辑模板是 `templates/plugins/fields/edit/edit-select.vm`。我们需要修改的文件就是这个。
+- en: 'All we need to do now is to navigate to the file and remove the following lines:'
+  id: totrans-391
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们现在需要做的就是导航到文件并删除以下几行：
+- en: '[PRE46]'
+  id: totrans-392
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE46]'
+- en: The remaining code in the template *must not* be deleted.
+  id: totrans-393
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 模板中的其余代码 *不能* 删除。
+- en: Restart JIRA to make the change effective.
+  id: totrans-394
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 重启 JIRA 以使更改生效。
+- en: Note
+  id: totrans-395
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: The same approach can be used to remove the `none` option from other fields
+    like 'radio buttons', 'multi select', 'cascading select', and so on. The actual
+    code to remove will differ, but the approach is the same.
+  id: totrans-396
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 同样的方法也可以用来移除其他字段的`none`选项，比如“单选按钮”、“多选框”、“级联选择”等等。移除的实际代码会有所不同，但方法是相同的。
+- en: There's more...
+  id: totrans-397
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 还有更多…
+- en: There's more to it…
+  id: totrans-398
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 还有更多内容…
+- en: Reloading velocity changes without restart (auto reloading)
+  id: totrans-399
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 在不重启的情况下重新加载 velocity 更改（自动重新加载）
+- en: 'You can configure JIRA to reload the changes to velocity templates without
+    a restart. To do this, you need to make two changes to the `velocity.properties`
+    file under `WEB-INF/classes`:'
+  id: totrans-400
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以配置 JIRA 在不重启的情况下重新加载 velocity 模板的更改。为此，你需要对`WEB-INF/classes`中的`velocity.properties`文件进行两项更改：
+- en: Set the `class.resource.loader.cache` property to `false`. It is true, by default.
+  id: totrans-401
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 将 `class.resource.loader.cache` 属性设置为 `false`。默认情况下，它是 `true`。
+- en: Uncomment the `velocimacro.library.autoreload=true` property. This can be done
+    by removing the `#` at the beginning of the line.
+  id: totrans-402
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 取消注释 `velocimacro.library.autoreload=true` 属性。这可以通过去掉行首的 `#` 来实现。
+- en: Restart JIRA and then the changes to the velocity templates will be reloaded
+    without another restart!
+  id: totrans-403
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 重启 JIRA 后，velocity 模板的更改将会被重新加载，无需再次重启！
+- en: See also
+  id: totrans-404
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 另见
+- en: '*Changing the size of a text area custom field*'
+  id: totrans-405
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*更改文本区域自定义字段的大小*'
+- en: Making the custom field project importable
+  id: totrans-406
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使自定义字段项目可导入
+- en: As of JIRA 3.13, individual projects can be imported from an existing JIRA backup
+    file. More information on this can be found at [http://confluence.atlassian.com/display/JIRA/Restoring+a+Project+from+Backup](http://confluence.atlassian.com/display/JIRA/Restoring+a+Project+from+Backup).
+  id: totrans-407
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 从 JIRA 3.13 开始，可以从现有的 JIRA 备份文件中导入单个项目。有关更多信息，请访问 [http://confluence.atlassian.com/display/JIRA/Restoring+a+Project+from+Backup](http://confluence.atlassian.com/display/JIRA/Restoring+a+Project+from+Backup)。
+- en: While importing projects, JIRA lets you copy all the issue data across, but
+    only if it is asked to do so! Let us see how we can make the custom fields' project
+    importable, or in simple words, inform JIRA that our fields are okay to be imported!
+  id: totrans-408
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在导入项目时，JIRA 允许你复制所有的任务数据，但只有在被要求时才会这么做！让我们看看如何使自定义字段的项目可导入，或者用简单的话来说，就是告诉 JIRA
+    我们的字段可以导入！
+- en: How to do it...
+  id: totrans-409
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何实现...
+- en: 'All we need to do to tag our custom field project as importable is to implement
+    the following interface: `com.atlassian.jira.imports.project.customfield.ProjectImportableCustomField`.'
+  id: totrans-410
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们只需要实现以下接口，就能将自定义字段项目标记为可导入：`com.atlassian.jira.imports.project.customfield.ProjectImportableCustomField`。
+- en: 'You will have to then implement the following method:'
+  id: totrans-411
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后你需要实现以下方法：
+- en: '[PRE47]'
+  id: totrans-412
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE47]'
+- en: There are already existing implementations for the `ProjectCustomFieldImporter`
+    class like the `SelectCustomFieldImporter` class, which we can reuse. It is in
+    this class that we check whether the value getting imported is a valid value or
+    not.
+  id: totrans-413
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 已经有一些现有的实现，如 `SelectCustomFieldImporter` 类，供我们复用。在这个类中，我们会检查正在导入的值是否是有效值。
+- en: For example, in the case of a `select` field, we need to make sure that the
+    value being imported is a valid option configured in the custom field on the target
+    system. It is entirely up to the users to implement the various rules at this
+    stage.
+  id: totrans-414
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 例如，对于一个 `select` 字段，我们需要确保导入的值是目标系统中自定义字段配置的有效选项。此时，具体的规则实现完全由用户决定。
+- en: 'See the Javadocs at: [http://docs.atlassian.com/jira/latest/com/atlassian/jira/imports/project/customfield/ProjectCustomFieldImporter.html](http://docs.atlassian.com/jira/latest/com/atlassian/jira/imports/project/customfield/ProjectCustomFieldImporter.html)
+    for more details on doing custom `ProjectCustomFieldImporter` implementations.'
+  id: totrans-415
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 查看 Javadocs：[http://docs.atlassian.com/jira/latest/com/atlassian/jira/imports/project/customfield/ProjectCustomFieldImporter.html](http://docs.atlassian.com/jira/latest/com/atlassian/jira/imports/project/customfield/ProjectCustomFieldImporter.html)，获取有关自定义
+    `ProjectCustomFieldImporter` 实现的更多详细信息。
+- en: See also
+  id: totrans-416
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 另见
+- en: '*Making custom fields sortable*'
+  id: totrans-417
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*使自定义字段可排序*'
+- en: Changing the size of a text area custom field
+  id: totrans-418
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 更改文本区域自定义字段的大小
+- en: As we have discussed before, JIRA ships with some pre-defined custom field types.
+    One such commonly used type is the Text Area field.
+  id: totrans-419
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如我们之前讨论过的，JIRA 自带了一些预定义的自定义字段类型。常用的一种是文本区域字段。
+- en: The Text Area field has a pre-defined width and height which is not customizable.
+    It is often a requirement from the JIRA users to increase the size of the field
+    either globally or for a particular custom field.
+  id: totrans-420
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 文本区域字段有一个预定义的宽度和高度，不能自定义。JIRA 用户通常要求增加字段的大小，无论是全局设置还是为特定的自定义字段设置。
+- en: We will have a look at how to achieve this in the recipe.
+  id: totrans-421
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将在这篇教程中查看如何实现这一点。
+- en: How to do it...
+  id: totrans-422
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何做...
+- en: Just like any other custom fields, the Text Area field is also rendered using
+    velocity templates. From the `system-customfieldtypes-plugin.xml` file, we can
+    find out that the location of the edit template is `templates/plugins/fields/edit/edit-textarea.vm`.
+  id: totrans-423
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 和其他自定义字段一样，文本区域字段也是通过 velocity 模板渲染的。从 `system-customfieldtypes-plugin.xml`
+    文件中，我们可以找到编辑模板的位置是 `templates/plugins/fields/edit/edit-textarea.vm`。
+- en: '[PRE48]'
+  id: totrans-424
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE48]'
+- en: If we need to increase the size, we need to modify the template to increase
+    the `rows` or `cols` property, as per the requirement.
+  id: totrans-425
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果我们需要增加大小，我们需要修改模板以增加 `rows` 或 `cols` 属性，以满足要求。
+- en: 'If we need to increase the width (number of columns) to 50 and height (number
+    of rows) to 8, the `cols` and `rows` properties need to be updated to 50 and 8,
+    respectively. The template will then look like the following code:'
+  id: totrans-426
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果我们需要将宽度（列数）增加到 50，高度（行数）增加到 8，则需要将 `cols` 和 `rows` 属性分别更新为 50 和 8。模板将如下所示：
+- en: '[PRE49]'
+  id: totrans-427
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE49]'
+- en: 'If this needs to be done only for a selected `customfield`, just add a condition
+    at the beginning of the template to handle the custom field separately. The template
+    will then look like the following lines of code:'
+  id: totrans-428
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果这只需要为特定的 `customfield` 执行，只需在模板的开始部分添加一个条件，以便单独处理该自定义字段。模板将如下所示：
+- en: '[PRE50]'
+  id: totrans-429
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE50]'
+- en: Hopefully, that gives you an idea about increasing the size of the Text Area
+    custom field.
+  id: totrans-430
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 希望这能给你一些关于增加文本区域自定义字段大小的思路。
+- en: As usual, JIRA should be restarted to make this change effective, unless *velocity
+    autoloading* is enabled, as we discussed in the previous recipe.
+  id: totrans-431
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 像往常一样，JIRA 需要重启才能使此更改生效，除非启用了 *velocity 自动加载*，正如我们在前面的教程中讨论的那样。
+- en: See also
+  id: totrans-432
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 另请参见
+- en: '*Removing the ''none'' option from a select field*'
+  id: totrans-433
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*从选择字段中移除 ''none'' 选项*'

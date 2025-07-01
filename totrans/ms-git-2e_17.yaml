@@ -1,0 +1,1930 @@
+- en: '14'
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '14'
+- en: Git Administration
+  id: totrans-1
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Git 管理
+- en: The previous chapter, *Customizing and Extending Git*, among other things, explained
+    how to use Git hooks for automation. The client-side hooks were described in detail,
+    while the server-side hooks were only covered briefly. In this chapter, we will
+    cover server-side hooks comprehensively and discuss client-side hooks’ usage as
+    helpers.
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 前一章，*自定义和扩展 Git*，其中解释了如何使用 Git 钩子进行自动化。客户端钩子进行了详细描述，而服务器端钩子仅做了简要介绍。在本章中，我们将全面介绍服务器端钩子，并讨论客户端钩子作为助手的使用。
+- en: The earlier chapters helped master your work with Git as a developer, as a team
+    member collaborating with others, and as a maintainer. When the book discussed
+    setting up repositories and branch structure, it was from the point of view of
+    a Git user.
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 前面的章节帮助你作为开发者、团队成员和维护者掌握了 Git 的使用。当书中讨论设置仓库和分支结构时，是从 Git 用户的角度出发的。
+- en: This chapter is intended to help those of you who are in a situation of dealing
+    with the administrative side of Git. This includes setting up remote Git repositories
+    and configuring their access. This chapter covers the work required to make Git
+    go smoothly (that is, Git maintenance) and finding and recovering from repository
+    errors. It also describes how to use server-side hooks to implement and enforce
+    a development policy. Additionally, you will find here a short description of
+    the various types of tools that can be used to manage remote repositories, helping
+    you to choose from them.
+  id: totrans-4
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章旨在帮助那些处理 Git 管理方面工作的读者。这包括设置远程 Git 仓库和配置其访问权限。本章涵盖了让 Git 顺利运行所需的工作（即 Git 维护），以及如何发现并从仓库错误中恢复。同时还介绍了如何使用服务器端钩子来实施和强制执行开发政策。此外，你还会找到关于用于管理远程仓库的各种工具的简短描述，帮助你从中进行选择。
+- en: 'In this chapter, we will cover the following topics:'
+  id: totrans-5
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章将涵盖以下内容：
+- en: Server-side hooks – implementing a policy and notifications
+  id: totrans-6
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 服务器端钩子 – 实施政策和通知
+- en: How to set up Git on a server
+  id: totrans-7
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 如何在服务器上设置 Git
+- en: Third-party tools to manage remote repositories
+  id: totrans-8
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用第三方工具管理远程仓库
+- en: Signed pushes to assert updating refs and enable audits
+  id: totrans-9
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 签名推送以确保更新引用并启用审计
+- en: Reducing the size of hosted repositories with alternates and namespaces
+  id: totrans-10
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用替代和命名空间减少托管仓库的大小
+- en: Improving server performance and helping the initial clone
+  id: totrans-11
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 改进服务器性能并帮助初始化克隆
+- en: Checking for repository corruption and fixing a repository
+  id: totrans-12
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 检查仓库是否损坏并修复仓库
+- en: Recovering from errors with the help of reflogs and **git fsck**
+  id: totrans-13
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在 reflog 的帮助下恢复错误并使用 **git fsck**
+- en: Git repository maintenance and repacking
+  id: totrans-14
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Git 仓库维护和重新打包
+- en: Augmenting development workflows with Git
+  id: totrans-15
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 用 Git 增强开发工作流
+- en: Repository maintenance
+  id: totrans-16
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 仓库维护
+- en: Occasionally, you may need to do some cleanup of a repository, usually to make
+    it more compact. Such cleanups are also a very important step after migrating
+    a repository from another version control system.
+  id: totrans-17
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 偶尔，你可能需要清理一个仓库，通常是为了让它变得更紧凑。这种清理在从其他版本控制系统迁移仓库后也是一个非常重要的步骤。
+- en: Automatic housekeeping with git-gc
+  id: totrans-18
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 使用 git-gc 自动化清理工作
+- en: Modern Git (or, rather, all but ancient Git) from time to time runs the `git
+    gc --auto` command in each repository. This command checks whether there are too
+    many loose objects (objects stored as separate files, with one file per object,
+    rather than those stored together in a packfile; objects are almost always created
+    loosely), and if so, then it launches the garbage collection operation. Garbage
+    collection means gathering up all the loose objects and placing them in packfiles,
+    as well as consolidating many small packfiles into one large packfile. Additionally,
+    it packs references into the `packed-refs` file. Objects that are unreachable
+    even via reflog and are safely old are, by default, packed separately into a cruft
+    pack. Git then deletes loose objects, cruft packs, and packfiles that got repacked
+    (with some safety margin relating to the age of the loose objects files), thus
+    pruning old unreachable objects. There are various configuration knobs in the
+    `gc.*` namespace to control garbage collection operations.
+  id: totrans-19
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现代Git（或者说，几乎所有版本的Git）会不时在每个仓库中运行`git gc --auto`命令。这个命令检查是否有太多松散对象（对象作为单独的文件存储，每个对象一个文件，而不是存储在打包文件中；对象几乎总是以松散形式创建的），如果有，便会启动垃圾回收操作。垃圾回收意味着将所有松散对象收集起来并放入打包文件中，还会将多个小打包文件合并为一个大打包文件。此外，它还会将引用打包到`packed-refs`文件中。那些即使通过reflog也无法访问且已经足够旧的对象，默认情况下会单独打包到一个垃圾打包文件中。然后，Git会删除松散对象、垃圾打包文件和重新打包过的打包文件（保留松散对象文件的年龄安全边际），从而修剪掉旧的不可访问对象。`gc.*`命名空间中有多个配置选项可以控制垃圾回收操作。
+- en: You can run `auto gc` manually with `git gc --auto` or force garbage collection
+    with `git gc`. The `git count-objects` command (sometimes with the help of the
+    `-v` parameter) can be used to check whether there are signs that a repack is
+    needed. You can even run individual steps of the garbage collection individually
+    with `git repack`, `git pack-refs`, `git prune`, and `git prune-packed`.
+  id: totrans-20
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以手动运行`auto gc`，使用`git gc --auto`，或者通过`git gc`强制垃圾回收。`git count-objects`命令（有时配合`-v`参数）可用于检查是否有需要重新打包的迹象。你甚至可以通过`git
+    repack`、`git pack-refs`、`git prune`和`git prune-packed`分别运行垃圾回收的单个步骤。
+- en: By default, Git will try to reuse the results of an earlier packing to reduce
+    CPU time spent on repacking, while still providing good disk space utilization.
+    In some cases, you will want to more aggressively optimize the size of the repository
+    at the cost of it taking more time; this is possible with `git gc --aggressive`
+    (or by repacking the repository by hand with `git repack`, run with appropriate
+    parameters). It is recommended to do this after importing from other version control
+    systems, as the mechanism that Git uses for importing (namely, the `fast-import`
+    stream) is optimized for the speed of the operation, not for the final repository
+    size.
+  id: totrans-21
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 默认情况下，Git会尽量重用早期打包的结果，以减少重新打包时的CPU时间，同时仍能提供良好的磁盘空间利用率。在某些情况下，你可能希望通过更多的时间成本来更积极地优化仓库的大小；这可以通过`git
+    gc --aggressive`实现（或者通过手动使用`git repack`并使用适当的参数重新打包仓库）。建议在从其他版本控制系统导入数据后执行此操作，因为Git用于导入的机制（即`fast-import`流）是为了操作的速度优化的，而不是为了最终仓库的大小。
+- en: There are issues of maintenance not covered by `git gc` because of their nature.
+    One of them is pruning (deleting) remote-tracking branches that were deleted in
+    the remote repository. This can be done with `git fetch --prune` or `git remote
+    prune`, or on a per-branch basis with `git branch --delete --remotes <remote-tracking
+    branch>`. This action is left to the user and not run by `git gc`, as Git simply
+    cannot know whether you have based your own work on the remote-tracking branch
+    that will be pruned.
+  id: totrans-22
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有一些维护问题是`git gc`无法覆盖的，因为它们的性质。其中之一是修剪（删除）已经在远程仓库中删除的远程跟踪分支。可以使用`git fetch --prune`或`git
+    remote prune`，或者通过`git branch --delete --remotes <remote-tracking branch>`按分支逐个操作。这一操作由用户执行，而不是由`git
+    gc`运行，因为Git无法知道你是否基于将要被修剪的远程跟踪分支来进行自己的工作。
+- en: Periodic maintenance with git-maintenance
+  id: totrans-23
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 使用git-maintenance进行定期维护
+- en: Git commands that add data to the repository, such as `git add` or `git fetch`,
+    can trigger automatic garbage collection and perform some repository optimization.
+    However, because they need to provide a responsive user interface, this does not
+    trigger more costly repository optimizations. Those tasks include updating the
+    commit graph data, prefetching from remote repositories (so that `git fetch` will
+    have fewer objects to download), cleaning up loose objects, and doing an incremental
+    repack. Such optimization tasks often scale with the full size of the repository.
+  id: totrans-24
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 像 `git add` 或 `git fetch` 这样将数据添加到仓库的 Git 命令，会触发自动垃圾回收并进行一些仓库优化。然而，由于这些命令需要提供响应式的用户界面，它们不会触发更昂贵的仓库优化任务。这些任务包括更新提交图数据、从远程仓库预取数据（这样
+    `git fetch` 就可以下载更少的对象）、清理松散对象以及进行增量重新打包。这些优化任务通常会随着仓库的整体大小增长而增加。
+- en: A better solution is to run the maintenance tasks that are expensive in the
+    background, periodically – hourly, daily, or weekly. With modern Git, you can
+    schedule those tasks with the help of the `git maintenance` command. It will schedule
+    those jobs differently depending on the operating system.
+  id: totrans-25
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 更好的解决方案是将耗费资源的维护任务定期地在后台运行——每小时、每天或每周运行一次。借助现代 Git，你可以通过 `git maintenance` 命令来调度这些任务。它会根据操作系统的不同，安排这些任务的运行方式。
+- en: You can configure how often a given task is run. Note that `git maintenance
+    run`, a process that performs scheduled tasks, puts a lock on the repository’s
+    object database, preventing competing processes from leaving the repository in
+    an unpredicted state. This is not the case for `git gc`; therefore, if you do
+    periodic maintenance, use `git maintenance run --task=gc` instead of the `git`
+    `gc` command.
+  id: totrans-26
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以配置给定任务的运行频率。请注意，`git maintenance run` 这个执行调度任务的过程，会对仓库的对象数据库加锁，防止竞争进程导致仓库处于无法预测的状态。`git
+    gc` 则不会这样做；因此，如果你进行定期维护，应该使用 `git maintenance run --task=gc` 而不是直接使用 `git` 的 `gc`
+    命令。
+- en: Data recovery and troubleshooting
+  id: totrans-27
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 数据恢复与故障排除
+- en: It is almost impossible to never make any mistakes. This applies also to using
+    Git. The knowledge presented in this book, and your experience with using Git,
+    should help to reduce the number of mistakes. Note that Git tries quite hard not
+    to help you avoid losing your work; many mistakes are recoverable. The next subsection
+    will explain how you can try to recover from an error.
+  id: totrans-28
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 几乎不可能做到从不犯错。这同样适用于使用 Git。书中呈现的知识，以及你使用 Git 的经验，应该有助于减少错误的发生。请注意，Git 会尽力避免帮助你丢失工作；很多错误是可以恢复的。下一节将解释如何尝试从错误中恢复。
+- en: Recovering a lost commit
+  id: totrans-29
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 恢复丢失的提交
+- en: It may happen that you accidentally lost a commit. Perhaps you force-deleted
+    an incorrect branch that you were going to work on, you rewound the branch to
+    an incorrect place, or you were on an incorrect branch while starting an operation.
+    Assuming something like this happened, is there any way to get your commits back
+    and undo the mistake?
+  id: totrans-30
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 可能会发生你不小心丢失了一个提交。也许你强制删除了一个错误的分支，或者你将分支回退到了错误的位置，或者在开始操作时，你所在的分支是错误的。如果发生了类似的情况，有没有办法找回你的提交并撤销这个错误呢？
+- en: Because Git does not delete objects immediately and keeps them for a while,
+    only deleting them if they are unreachable during the garbage collection phase,
+    the commit you lost will be there; you just need to find it. The garbage collection
+    operation has, as mentioned, its own safety margins; however, if you find that
+    you need to troubleshoot, it is better to turn off automatic garbage collection
+    temporarily with `git config gc.auto never` (and turning off the `gc` task if
+    it is scheduled to run periodically with `git maintenance`, by setting `maintenance.gc.enabled`
+    to false or by turning maintenance off with `git` `maintenance unregister`).
+  id: totrans-31
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 因为 Git 并不会立即删除对象，而是将其保留一段时间，只有在垃圾回收阶段发现对象不可达时才会删除，所以你丢失的提交仍然存在；你只需要找到它。正如前面所提到的，垃圾回收操作有自己的安全边界；不过，如果你发现需要进行故障排除，最好暂时关闭自动垃圾回收功能，可以通过
+    `git config gc.auto never` 来关闭（并且如果 `git maintenance` 被调度定期运行，可以通过将 `maintenance.gc.enabled`
+    设置为 false 或通过 `git maintenance unregister` 关闭维护，来关闭 `gc` 任务）。
+- en: Often, the simplest way to find and recover lost commits is to use the `git
+    reflog` tool. For each branch, and separately for the `HEAD`, Git silently records
+    (logs) where the tip of the branch was in your local repository, what time it
+    was there, and how it got there. This record is called the **reflog**. Each time
+    you commit or rewind a branch, the reflog for the branch and the HEAD is updated.
+    Each time you change the branches, the HEAD reflog is updated, and so on.
+  id: totrans-32
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通常，找回丢失提交的最简单方法是使用`git reflog`工具。对于每个分支，以及单独的`HEAD`，Git会悄悄记录（日志）分支的顶部在本地仓库中的位置、何时到达以及如何到达。这个记录被称为**reflog**。每次提交或回滚分支时，分支和HEAD的reflog都会更新。每次切换分支时，HEAD的reflog也会更新，依此类推。
+- en: 'You can see where the tip of a branch has been at any time by running `git
+    reflog` or `git reflog <branch>`. You can also run `git log -g`, where `-g` is
+    a short way of saying `--walk-reflog`; this gives you a normal configurable log
+    output. There is also `--grep-reflog=<pattern>` to search the reflog:'
+  id: totrans-33
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以通过运行`git reflog`或`git reflog <branch>`查看分支顶部曾经的位置。你也可以运行`git log -g`，其中`-g`是`--walk-reflog`的简写；这将显示一个正常的可配置日志输出。还有`--grep-reflog=<pattern>`可以用来搜索reflog：
+- en: '[PRE0]'
+  id: totrans-34
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: You should remember the `<ref>@{<n>}` syntax from [*Chapter 4*](B21194_04.xhtml#_idTextAnchor083),
+    *Exploring Project History*. With the information from reflogs, you can rewind
+    the branch in question to the version from before the set of operations, or you
+    can start a new branch, starting with any commit in the list.
+  id: totrans-35
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你应该记得[*第4章*](B21194_04.xhtml#_idTextAnchor083)中的`<ref>@{<n>}`语法，*探索项目历史*。通过reflog中的信息，你可以将相关分支回滚到操作之前的版本，或者可以从列表中的任何提交开始创建一个新分支。
+- en: Let’s assume that your loss was caused by deleting the wrong branch. Because
+    of the way reflogs are implemented (e.g., logs for a branch named `foo` – that
+    is, for the `refs/heads/foo` ref – are kept in the `.git/logs/refs/heads/foo`
+    file), a reflog for a given branch is deleted, together with the branch. You might
+    still have the necessary information in the `HEAD` reflog, unless you have manipulated
+    the branch tip without involving the working area, but it might not be easy to
+    find it.
+  id: totrans-36
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 假设你的丢失是因为删除了错误的分支。由于reflog的实现方式（例如，`foo`分支的日志——即`refs/heads/foo`的日志——被保存在`.git/logs/refs/heads/foo`文件中），给定分支的reflog会在删除分支时一并删除。除非你没有涉及工作区，单纯操作了分支顶部，否则你可能仍然可以在`HEAD`的reflog中找到必要的信息，但这可能不容易找到。
+- en: 'In a case where the information is not present in reflogs, one way to find
+    the necessary information to recover lost objects is to use the `git fsck` utility,
+    which checks your repository for integrity. With the `--full` option, you can
+    use this command to show all unreferenced objects:'
+  id: totrans-37
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果reflog中没有相关信息，可以使用`git fsck`工具来查找恢复丢失对象所需的信息，它可以检查你的仓库是否完整。使用`--full`选项，你可以用此命令显示所有未引用的对象：
+- en: '[PRE1]'
+  id: totrans-38
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: 'You can see the SHA1 identifiers of the unreferenced (lost) commits in the
+    lines with the `git fsck` output for the commits with `grep "commit"`, extract
+    their SHA1 identifiers with `cut -d'' '' -f3`, and then feed these revisions into
+    `git log --stdin --no-walk`, as shown here:'
+  id: totrans-39
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以在`git fsck`输出的行中看到未引用（丢失）提交的SHA1标识符，通过`grep "commit"`查找提交，使用`cut -d' ' -f3`提取SHA1标识符，然后将这些修订输入`git
+    log --stdin --no-walk`，如下所示：
+- en: '[PRE2]'
+  id: totrans-40
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: Tip
+  id: totrans-41
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 提示
+- en: The same technique, but with using **blob** command, can be used to recover
+    accidentally deleted files – assuming that you have used **git add** with the
+    version of the file you want to recover.
+  id: totrans-42
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 同样的技术，但使用**blob**命令，可以用来恢复意外删除的文件——前提是你在想要恢复的文件版本上使用了**git add**。
+- en: Troubleshooting Git
+  id: totrans-43
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 故障排除 Git
+- en: The main purpose of `git fsck` is to check for repository corruption. Besides
+    having the option to find dangling objects, this command runs sanity checks for
+    each object and tracks the reachability fully. It can find corrupted and missing
+    objects; then, if the corruption was limited to your clone and the correct version
+    can be found in other repositories (in backups and other archives), you can try
+    to recover those objects from an uncorrupted source.
+  id: totrans-44
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`git fsck`的主要目的是检查仓库是否损坏。除了可以找到悬挂对象外，这个命令还会对每个对象进行完整性检查，并跟踪对象的可达性。它可以发现损坏和丢失的对象；如果损坏仅限于你的克隆，且正确版本可以在其他仓库（备份和其他存档）中找到，你可以尝试从未损坏的源中恢复这些对象。'
+- en: Sometimes, however, the error might be more difficult to recover from. You can
+    try to find a Git expert outside your team, but often, the data in the repository
+    is proprietary. Creating a minimal reproduction of the problem is not always possible.
+    With modern Git, if the problem is structural, you can try to use `git fast-export
+    --anonymize` to strip the repository from the data, while ensuring that the anonymized
+    repository reproduces the issue. Reproducing some bugs may require referencing
+    particular commits or paths; with modern Git, you can ask for a particular token
+    to be left as-is, or mapped to a new value with a set of `--``anonymize-map` options.
+  id: totrans-45
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，有时错误可能更难恢复。你可以尝试寻找团队外的 Git 专家，但通常，仓库中的数据是专有的，无法创建问题的最小化重现。对于现代 Git，如果问题是结构性问题，你可以尝试使用`git
+    fast-export --anonymize`来去除仓库中的数据，同时确保匿名化后的仓库能够重现该问题。重现某些 bug 可能需要引用特定的提交或路径；对于现代
+    Git，你可以请求某个特定标记保持原样，或者通过一组`--anonymize-map`选项将其映射到新值。
+- en: If the repository is fine but the problem is with the Git operations, you can
+    try to use various tracking and debugging mechanisms built into Git, or you can
+    try to increase the verbosity of the commands. You can turn on tracing with the
+    appropriate environment variables (which we will show later). The trace output
+    can be written to a standard error stream by setting the value of the appropriate
+    environment variable to **1**, **2**, or **true**. The **0** or **false** value
+    disables it. Other integer values between 2 and 10 will be interpreted as open
+    file descriptors to be used for trace output. You can also set such environment
+    variables to the absolute path of the file to write trace messages to.
+  id: totrans-46
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果仓库本身没问题，但问题出在 Git 操作上，你可以尝试使用 Git 内置的各种追踪和调试机制，或者尝试增加命令的详细程度。你可以通过适当的环境变量来启用追踪功能（稍后我们会展示）。通过将相应环境变量的值设置为**1**、**2**或**true**，追踪输出可以被写入标准错误流。**0**或**false**值则会禁用追踪。介于
+    2 和 10 之间的其他整数值会被解释为用于追踪输出的打开文件描述符。你也可以将这些环境变量设置为文件的绝对路径，以便将追踪信息写入该文件。
+- en: 'These tracking-related variables include the following (see the manpage of
+    the `git` wrapper for the complete list):'
+  id: totrans-47
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这些与追踪相关的变量包括以下内容（请参阅`git`包装器的手册页以获取完整列表）：
+- en: '**GIT_TRACE**: This enables general trace messages that do not fit into any
+    specific category. This includes the expansion of Git aliases (see [*Chapter 13*](B21194_13_split_000.xhtml#_idTextAnchor320),
+    *Customizing and Extending Git*), built-in command execution, and external command
+    execution (such as pager, editor, or helper).'
+  id: totrans-48
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**GIT_TRACE**：启用一般的追踪消息，适用于任何不属于特定类别的消息。这包括 Git 别名的扩展（参见[*第 13 章*](B21194_13_split_000.xhtml#_idTextAnchor320)，*定制和扩展
+    Git*）、内置命令执行和外部命令执行（例如分页器、编辑器或助手）。'
+- en: '**GIT_TRACE_PACKET**: This enables packet-level tracking of the network operations
+    for the “smart” transport protocols. This can help to debug protocol issues or
+    any troubles with the remote server that you set up. To debug and fetch from shallow
+    repositories, there is **GIT_TRACE_SHALLOW**.'
+  id: totrans-49
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**GIT_TRACE_PACKET**：启用对“智能”传输协议的网络操作进行数据包级别的追踪。这有助于调试协议问题或你设置的远程服务器上的任何问题。要调试并从浅层仓库获取数据，可以使用**GIT_TRACE_SHALLOW**。'
+- en: '**GIT_TRACE_CURL** (possibly with **GIT_TRACE_CURL_NO_DATA**): This enables
+    a **curl** full trace dump of the HTTP(S) transport protocol, similar to running
+    the **curl --****trace-ascii** option.'
+  id: totrans-50
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**GIT_TRACE_CURL**（可能与**GIT_TRACE_CURL_NO_DATA**一起使用）：启用对 HTTP(S) 传输协议的**curl**完整追踪，类似于运行**curl
+    --trace-ascii**选项。'
+- en: '**GIT_TRACE_SETUP**: This enables trace messages, printing information about
+    the location of the administrative area of the repository, the working area, the
+    current working directory, and the prefix (the last one is the subdirectory inside
+    the repository directory structure).'
+  id: totrans-51
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**GIT_TRACE_SETUP**：启用追踪消息，打印有关仓库管理区域、工作区、当前工作目录和前缀（最后一个是仓库目录结构中的子目录）的位置。'
+- en: '**GIT_TRACE_PERFORMANCE**: This shows the total execution time of each Git
+    command.'
+  id: totrans-52
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**GIT_TRACE_PERFORMANCE**：显示每个 Git 命令的总执行时间。'
+- en: With modern Git, you can enable more detailed trace messages from the `trace2`
+    library, either in a simple text-based format meant for human consumption with
+    `GIT_TRACE2`, or in the JSON-based format meant for machine interpretation with
+    `GIT_TRACE2_EVENT`. In addition to redirecting the output from a standard error,
+    to a given file descriptor, or to a given file, you can also ask to write output
+    files to a given directory (one file per process) and even ask to open the path
+    as a Unix domain socket. The Trace2 API replacement for `GIT_TRACE_PERFORMANCE`
+    is `GIT_TRACE2_PERF`. Instead of environment variables, you can use the `trace2.normalTarget`,
+    `trace2.eventTarget`, and `trace2.perfTarget` configuration variables, respectively.
+  id: totrans-53
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用现代 Git，你可以启用来自`trace2`库的更详细的跟踪信息，格式可以是简单的文本格式（供人类使用）通过`GIT_TRACE2`，也可以是用于机器解析的
+    JSON 格式通过`GIT_TRACE2_EVENT`。除了将输出重定向到标准错误、指定的文件描述符或指定的文件，你还可以要求将输出文件写入指定目录（每个进程一个文件），甚至可以请求将路径打开为
+    Unix 域套接字。`GIT_TRACE_PERFORMANCE`的 Trace2 API 替代方案是`GIT_TRACE2_PERF`。除了环境变量，你还可以分别使用`trace2.normalTarget`、`trace2.eventTarget`和`trace2.perfTarget`配置变量。
+- en: There is also `GIT_CURL_VERBOSE` to emit all the messages generated by the curl
+    library for the network operations over HTTP, and `GIT_MERGE_VERBOSITY` to control
+    the amount of output shown by the recursive merge strategy.
+  id: totrans-54
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 还有`GIT_CURL_VERBOSE`，它会输出由 curl 库生成的所有 HTTP 网络操作的消息，以及`GIT_MERGE_VERBOSITY`，它用来控制递归合并策略显示的输出量。
+- en: Git on the server
+  id: totrans-55
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 服务器上的 Git
+- en: The previous chapters should have given you enough knowledge to master most
+    of the day-to-day version control tasks in Git. [*Chapter 6*](B21194_06.xhtml#_idTextAnchor140),
+    *Collaborative Development with Git*, explained how you can lay out repositories
+    for collaboration. Here, we will explain how to set up Git repositories to enable
+    remote access on a server, allowing you to fetch from and push to them.
+  id: totrans-56
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 前几章应该已经为你提供了足够的知识，帮助你掌握大多数日常的 Git 版本控制任务。[*第6章*](B21194_06.xhtml#_idTextAnchor140)，*使用
+    Git 进行协作开发*，解释了如何布局仓库以进行协作。在这里，我们将讲解如何设置 Git 仓库，以便在服务器上启用远程访问，允许你从中获取和推送数据。
+- en: The topic of administration of the Git repositories is a large one. There are
+    books written about specific repository management solutions, such as Gitolite,
+    Gerrit, GitHub, or GitLab. Here, you will hopefully find enough information to
+    help you choose a solution or your own.
+  id: totrans-57
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git 仓库的管理是一个庞大的话题。关于特定仓库管理解决方案（如 Gitolite、Gerrit、GitHub 或 GitLab）的书籍也已出版。在这里，希望你能找到足够的信息，帮助你选择解决方案或自行开发。
+- en: Let’s start with the tools and mechanisms to manage remote repositories themselves,
+    and then move on to the ways of serving Git repositories (i.e., putting Git on
+    the server).
+  id: totrans-58
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们从管理远程仓库的工具和机制开始，然后再讲解如何提供 Git 仓库服务（即将 Git 部署在服务器上）。
+- en: Server-side hooks
+  id: totrans-59
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 服务器端钩子
+- en: Hooks that are invoked on the server can be used for server administration;
+    among others, these hooks can control access to the remote repository by performing
+    the authorization step, and they can ensure that the commits entering the repository
+    meet certain minimal criteria. The latter is best done with the additional help
+    of client-side hooks, which were discussed in [*Chapter 13*](B21194_13_split_000.xhtml#_idTextAnchor320),
+    *Customizing and Extending Git*. That way, users are not notified that their commits
+    do not pass muster only when they want to publish them. Conversely, client-side
+    hooks implementing validation are easy to skip with the `--no-verify` option (so
+    server-side validation is necessary), and you need to remember to install them.
+  id: totrans-60
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在服务器上调用的钩子可用于服务器管理；其中，钩子可以通过执行授权步骤来控制对远程仓库的访问，并且它们可以确保提交进入仓库时符合某些最基本的标准。后者最好通过客户端钩子的额外帮助来完成，这些钩子在[*第13章*](B21194_13_split_000.xhtml#_idTextAnchor320)，*定制和扩展
+    Git*中已有讨论。这样，用户在提交时才不会被通知提交未通过验证。相反，实现验证的客户端钩子很容易通过`--no-verify`选项跳过（因此，服务器端验证是必要的），并且需要记得安装它们。
+- en: Important note
+  id: totrans-61
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 重要提示
+- en: Note, however, that server-side hooks are invoked only during the push operation;
+    you need other solutions for access control to the fetch (and clone) operation.
+  id: totrans-62
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 但请注意，服务器端钩子仅在推送操作期间被触发；对于获取（和克隆）操作，你需要其他的访问控制解决方案。
+- en: Hooks are also obviously not run while using “dumb” protocols – there is no
+    Git on the server invoked then.
+  id: totrans-63
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 显然，在使用“笨”协议时，钩子也不会被触发——此时服务器上不会调用 Git。
+- en: While writing hooks to implement some Git-enforced policy, you need to remember
+    at what stage the hook in question is run and what information is available then.
+    It is also important to know how the relevant information is passed to the hook;
+    however, you can find the last quite easily in the Git documentation on the `githooks`
+    man page. The previous chapter included a simple summary of server-side hooks.
+    Here, we will expand a bit on this topic.
+  id: totrans-64
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在编写钩子以实现某些Git强制的策略时，您需要记住该钩子在哪个阶段运行以及当时可用的信息。了解相关信息是如何传递给钩子的也很重要；然而，您可以通过查阅Git文档中的`githooks`手册页轻松找到最后一点。上一章简要总结了服务器端钩子的内容。在这里，我们将对此主题做一些扩展。
+- en: All the server-side hooks are invoked by `git receive-pack`, which is responsible
+    for receiving published commits (which are received in the form of a packfile,
+    hence the name of the command). If a hook, except for a `post-*` one, exits with
+    the non-zero status, then the operation is interrupted and no further stages are
+    run. The post hooks are run after the operation finishes, so there is nothing
+    to interrupt.
+  id: totrans-65
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 所有服务器端钩子都是由`git receive-pack`调用的，`git receive-pack`负责接收已发布的提交（以packfile的形式接收，因此命令名称如此）。如果一个钩子（除了`post-*`类型的钩子）以非零状态退出，则操作会中断，并且不会执行进一步的阶段。post钩子在操作完成后运行，因此没有任何事情可以中断它。
+- en: Both the standard output and the standard error output are forwarded to `git
+    send-pack` at the client end, so the hooks can simply pass messages for the user
+    by printing them (for example, with `echo`, if the hook was written as a shell
+    script). Note that the client doesn’t disconnect until all the hooks complete
+    their operation, so be careful if you try to do anything that may take a long
+    time, such as automated tests. It is better to have a hook simply start such long
+    operations asynchronously and exit, allowing the client to finish.
+  id: totrans-66
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 标准输出和标准错误输出都会被转发到客户端的`git send-pack`，因此钩子可以通过打印消息来简单地向用户传递信息（例如，如果钩子是作为shell脚本编写的，可以使用`echo`）。请注意，客户端在所有钩子完成操作之前不会断开连接，因此，如果您尝试执行可能需要很长时间的操作（例如自动化测试），请小心。最好让钩子简单地启动这些长时间的操作并异步退出，以允许客户端完成。
+- en: You need to remember that, with pre-hooks, you don’t have refs updated yet,
+    and that post-hooks cannot affect the result of an operation. You can use pre-hooks
+    for access control (permission checking),and post-hooks for notification, updating
+    the side data, and logging. Hooks are listed in the order of operation.
+  id: totrans-67
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 您需要记住，在pre钩子中，引用尚未更新，而post钩子不能影响操作结果。您可以使用pre钩子进行访问控制（权限检查），并使用post钩子进行通知、更新侧数据和日志记录。钩子的列出顺序是按照操作的顺序。
+- en: The pre-receive hook
+  id: totrans-68
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: pre-receive钩子
+- en: The first hook to run is the `git push` operation will fail before Git invokes
+    this hook.
+  id: totrans-69
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 第一个运行的钩子是`git push`操作，Git调用此钩子之前，操作将会失败。
+- en: 'This hook receives no arguments; all the information is received on the standard
+    input of the script. For each ref to be updated, it receives a line in the following
+    format:'
+  id: totrans-70
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 该钩子不接收任何参数；所有信息都通过脚本的标准输入接收。对于每个要更新的引用，它会接收到一行，格式如下：
+- en: '[PRE3]'
+  id: totrans-71
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: Refs that need to be created will have the old SHA1 value of 40 zeros, while
+    refs that need to be deleted will have a new SHA1 value equal to the same. The
+    same convention is used in all the other places, where the hooks receive the old
+    and new state of the updated ref.
+  id: totrans-72
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 需要创建的引用将具有40个零的旧SHA1值，而需要删除的引用将具有相同的新SHA1值。所有其他地方也使用相同的约定，其中钩子接收更新的引用的旧状态和新状态。
+- en: Push options
+  id: totrans-73
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 推送选项
+- en: You can pass additional data to the server with **git push --push-option=<option>**
+    or the **push.pushOption** configuration variable. Both can be given multiple
+    times. This data is then passed to pre-receive and post-receive hooks via environment
+    variables – **GIT_PUSH_OPTION_COUNT** and **GIT_PUSH_OPTION_0**, **GIT_PUSH_OPTION_1**,
+    and so on.
+  id: totrans-74
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 您可以通过**git push --push-option=<option>**或**push.pushOption**配置变量向服务器传递附加数据。两者都可以多次使用。然后，这些数据通过环境变量**GIT_PUSH_OPTION_COUNT**以及**GIT_PUSH_OPTION_0**、**GIT_PUSH_OPTION_1**等，传递给pre-receive和post-receive钩子。
+- en: This hook can be used to quickly abort the operation if the update cannot to
+    be accepted – for example, if the received commits do not follow the specified
+    policy or if the signed push (more on this later) is invalid. Note that to use
+    it for access control (i.e., authorization) you need to get the authentication
+    token somehow, be it with the `getpwuid` command or with an environment variable
+    such as `USER`. However, this depends on the server setup and the server configuration.
+  id: totrans-75
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果更新无法接受，则可以使用此钩子快速中止操作——例如，如果接收到的提交不符合指定的策略，或者签名推送（稍后会讲到）无效。请注意，要将其用于访问控制（即授权），你需要以某种方式获取身份验证令牌，可以通过`getpwuid`命令或使用环境变量如`USER`。然而，这取决于服务器的设置和配置。
+- en: The push-to-checkout hook to push to non-bare repositories
+  id: totrans-76
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 用于推送到非裸仓库的推送钩子
+- en: When pushing to the non-bare repositories, if a push operation tries to update
+    the currently checked-out branch, then the `receive.denyCurrentBranch` configuration
+    variable is set to the `updateInstead` value (instead of one of the `true` or
+    `refuse`, `warn` or `false`, or `ignore` values). This hook receives the SHA1
+    identifier of the commit that will be the tip of the current branch that is going
+    to be updated.
+  id: totrans-77
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当推送到非裸仓库时，如果推送操作试图更新当前已检出的分支，则`receive.denyCurrentBranch`配置变量会被设置为`updateInstead`值（而不是`true`、`refuse`、`warn`、`false`或`ignore`等值）。此钩子接收将成为即将更新的当前分支的提交的SHA1标识符。
+- en: This mechanism is intended to synchronize working directories when one side
+    is not easily accessible interactively (for example, accessible via interactive
+    `ssh`), or as a simple deployment scheme. It can be used to deploy to a live website
+    or to run code tests on different operating systems.
+  id: totrans-78
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 该机制旨在同步工作目录，当一方不能方便地通过交互式方式访问时（例如，通过交互式`ssh`访问），或作为一个简单的部署方案。它可以用于部署到实时网站，或在不同操作系统上运行代码测试。
+- en: If this hook is not present, Git will refuse the update of the ref if either
+    the working tree or the index (the staging area) differs from `HEAD` – that is,
+    if the status is “not clean.” This hook should be used to override this default
+    behavior.
+  id: totrans-79
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果此钩子不存在，Git将在工作树或索引（暂存区）与`HEAD`不同的情况下拒绝更新引用——也就是说，如果状态为“未清理”。此钩子应当用于覆盖此默认行为。
+- en: You can craft this hook to have it make changes to the working tree and the
+    index that are necessary to bring them to the desired state. For example, the
+    hook can simply run `git read-tree -u -m HEAD "$1"` to switch to the new branch
+    tip (the `-u` option updates the files in the working tree), while keeping the
+    local changes (the `-m` option makes it perform a fast-forward merge with two
+    commits/trees). If this hook exits with a nonzero status, then Git will refuse
+    to push to the currently checked-out branch.
+  id: totrans-80
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以编写这个钩子，使其对工作树和索引进行必要的修改，以使它们达到所需的状态。例如，钩子可以简单地运行`git read-tree -u -m HEAD
+    "$1"`来切换到新的分支尖端（`-u`选项更新工作树中的文件），同时保留本地更改（`-m`选项使其执行快速合并，处理两个提交/树）。如果此钩子以非零状态退出，那么Git将拒绝推送到当前已检出的分支。
+- en: The update hook
+  id: totrans-81
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 更新钩子
+- en: The next to run is the `receive. denyDeletes`, `receive.denyDeleteCurrent`,
+    `receive.denyCurrentBranch`, and `receive.denyNonFastForwards`.
+  id: totrans-82
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来运行的是`receive.denyDeletes`、`receive.denyDeleteCurrent`、`receive.denyCurrentBranch`和`receive.denyNonFastForwards`。
+- en: Note that exiting with nonzero refuses the ref to be updated; if the push is
+    *atomic* (`git push --atomic`), then refusing any ref to be updated will abandon
+    the whole push operation. With an ordinary push, only the update of a single ref
+    will be refused; the push of other refs will proceed normally.
+  id: totrans-83
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请注意，退出时如果返回非零状态，则会拒绝更新引用；如果推送是*原子性*的（`git push --atomic`），那么拒绝更新任何引用将放弃整个推送操作。对于普通推送，仅拒绝更新单个引用；其他引用的推送将正常进行。
+- en: 'This hook receives the information about the ref to be updated as its parameters,
+    in order:'
+  id: totrans-84
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 此钩子接收有关要更新的引用的信息，按顺序提供：
+- en: The full name of the ref that is updated,
+  id: totrans-85
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 被更新的引用的完整名称，
+- en: The old SHA1 object name stored in the ref before the push operation
+  id: totrans-86
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 推送操作前存储在引用中的旧SHA1对象名称
+- en: The new SHA1 object name to be stored in the ref after the push operation
+  id: totrans-87
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 推送操作后要存储在引用中的新SHA1对象名称
+- en: The `update.sample` hook example can be used to block unannotated tags from
+    entering the repository, and also to allow or deny deleting and modifying tags
+    and deleting and creating branches. All the configurable of this sample hook is
+    done with the appropriate `hooks.*` configuration variables, rather than being
+    hardcoded. There is also the `update-paranoid` Perl script in `contrib/hooks/`,
+    which can be used as an example of how to use this hook for access control. This
+    hook is configured with an external configuration file, where, among other options,
+    you can set up access so that only commits and tags from specified authors are
+    allowed, and authors are required to have correct access permissions.
+  id: totrans-88
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`update.sample` 钩子示例可用于阻止未注释的标签进入代码库，也可以允许或拒绝删除和修改标签、删除和创建分支。这个示例钩子的所有配置都通过适当的
+    `hooks.*` 配置变量完成，而不是硬编码的。此外，在 `contrib/hooks/` 目录中还有 `update-paranoid` Perl 脚本，可以作为如何使用此钩子进行访问控制的示例。这个钩子通过外部配置文件进行配置，其中你可以设置访问控制，确保只有来自指定作者的提交和标签被允许，并且要求作者具有正确的访问权限。'
+- en: Many repository management tools, such as Gitolite, set up and use this hook
+    for their work. You need to read the tool documentation if you want, for some
+    reason, to run your own `update` hook together with the one provided by such a
+    tool, perhaps with the help of some hook management tool (see, for example, a
+    list of such tools on [https://githooks.com/](https://githooks.com/)).
+  id: totrans-89
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 许多代码库管理工具，如 Gitolite，会设置并使用这个钩子来完成它们的工作。如果你出于某种原因希望同时运行你自己的 `update` 钩子和这些工具提供的钩子，可能需要借助一些钩子管理工具（例如，查看
+    [https://githooks.com/](https://githooks.com/) 上的工具列表），你需要查阅工具的文档。
+- en: The post-receive hook
+  id: totrans-90
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: '`post-receive` 钩子'
+- en: Then, after all the refs are updated, the `pre-receive` one. Only now do all
+    the refs point to the new SHA1s. It can happen that another user has modified
+    the ref after it was updated but before the hook was able to evaluate it. This
+    hook can be used to update other services (for example, notify the continuous
+    integration server), notify users (via an email or a mailing list, a chat channel,
+    or a ticket-tracking system), or log the information about the push for audit
+    (for example, about signed pushes). It supersedes the `post-update` hook, and
+    should be used instead.
+  id: totrans-91
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后，在所有引用更新后，`pre-receive` 钩子会执行。只有现在，所有引用才会指向新的 SHA1 值。可能会发生在钩子评估引用之前，另一个用户已经修改了引用。这种钩子可以用于更新其他服务（例如，通知持续集成服务器），通知用户（通过电子邮件或邮件列表、聊天频道或问题跟踪系统），或记录关于推送的信息以便审计（例如，关于已签名的推送）。它取代了
+    `post-update` 钩子，应当使用这个钩子。
+- en: There is no default `post-receive` hook, but you can find the simple `post-receive-email`
+    script, and its replacement, `git-multimail`, in the `contrib/hooks/` area.
+  id: totrans-92
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 没有默认的 `post-receive` 钩子，但你可以在 `contrib/hooks/` 目录中找到简单的 `post-receive-email`
+    脚本及其替代品 `git-multimail`。
+- en: These two example hooks are actually developed separately from Git itself, but
+    for convenience, they are provided with the Git source. `git-multimail` sends
+    one email summarizing each changed ref, one email for each new commit with the
+    changes – threaded (as a reply) to the corresponding ref change email, and one
+    announcement email for each new annotated tag. Each of these is separately configurable
+    with respect to the email address used and, to some extent, also with respect
+    to the information included in the emails.
+  id: totrans-93
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这两个示例钩子实际上是独立于 Git 本身开发的，但为了方便，它们与 Git 源代码一起提供。`git-multimail` 会发送一封总结每个更改引用的电子邮件，每个新提交更改的电子邮件（作为回复进行线程化），以及每个新标注标签的公告邮件。每个邮件在使用的电子邮件地址以及包含的信息方面都可以单独配置。
+- en: To provide an example of third-party tools, `irker` includes the script to be
+    used as Git’s `post-receive` hook to send notifications about the new changes
+    to the appropriate IRC channel, using the irker daemon (set up separately).
+  id: totrans-94
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 举个第三方工具的例子，`irker` 包含一个脚本，作为 Git 的 `post-receive` 钩子，用于将新更改的通知发送到适当的 IRC 频道，使用
+    irker 守护进程（需要单独设置）。
+- en: The post-update hook (a legacy mechanism)
+  id: totrans-95
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: '`post-update` 钩子（一个遗留机制）'
+- en: Then, the `post-receive` hook is a better solution.
+  id: totrans-96
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后，`post-receive` 钩子是一个更好的解决方案。
+- en: The sample hook runs `git update-server-info` to prepare a repository for use
+    over the dumb transports(described in the *Legacy (dumb) transports* section of
+    [*Chapter 7*](B21194_07.xhtml#_idTextAnchor172)*, Publishing Your Changes*, and
+    in the *Dumb protocols* section later in this chapter), by creating and saving
+    some extra information. If the directory with the repository is to be accessible
+    via plain HTTP or other walker-based transport like FTP, you may consider enabling
+    it. However, in modern Git, it is enough to simply set `receive.updateServerInfo`
+    to `true` so that a hook is no longer necessary.
+  id: totrans-97
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 示例钩子运行`git update-server-info`，以准备一个仓库，用于通过简易传输（在[*第7章*](B21194_07.xhtml#_idTextAnchor172)的*传统（简易）传输*部分、*发布更改*部分以及本章稍后的*简易协议*部分中描述）进行使用，通过创建和保存一些额外的信息。如果仓库所在的目录要通过普通的HTTP或其他基于步行器的传输方式（如FTP）访问，您可以考虑启用此功能。然而，在现代Git中，只需将`receive.updateServerInfo`设置为`true`，就足够了，因此不再需要钩子。
+- en: Using hooks to implement Git-enforced policy
+  id: totrans-98
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 使用钩子实现Git强制策略
+- en: The only way to truly enforce a policy is to implement it using server-side
+    hooks, either `pre-receive` or `update`; if you want a per-ref decision, you need
+    to use the latter. Client-side hooks can be used to help developers pay attention
+    to the policy, but these can be disabled, skipped, or not enabled.
+  id: totrans-99
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 强制执行策略的唯一真正方法是使用服务器端钩子来实现，使用`pre-receive`或`update`钩子；如果您需要按引用进行决策，则需要使用后者。客户端钩子可以帮助开发人员关注策略，但这些钩子可以被禁用、跳过或未启用。
+- en: Enforcing the policy with server-side hooks
+  id: totrans-100
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 使用服务器端钩子强制执行策略
+- en: 'One part of the development policy could be requiring that each commit message
+    adheres to a specified template. For example, you could require each non-merge
+    commit message to include the *digital certificate of origin* in the form of the
+    **Signed-off-by:** line, or that each commit refers to the issue tracker ticket
+    by including a string that looks like **ref: 2387**. The possibilities are endless.'
+  id: totrans-101
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '开发政策的一部分可能是要求每个提交信息遵循指定的模板。例如，您可以要求每个非合并的提交信息包含**Signed-off-by:**行，作为*数字来源证书*，或者要求每个提交都引用问题追踪器的票据，格式类似于**ref:
+    2387**。可能性无穷无尽。'
+- en: To implement such a hook, you first need to turn the old and new values for
+    a ref (that you got by either reading them line by line from the standard input
+    in `pre-receive`, or as the `update` hook parameters) into a list of all the commits
+    that are being pushed. You need to take care of the corner cases – deleting a
+    ref (no commits pushed), creating a new ref, and a possibility of non-fast-forward
+    pushes (where you need to use the merge base as the lower limit of the revision
+    range – for example, with the `git merge-base` command), pushes to tags, pushes
+    to notes, and other non-branch pushes. The operation of turning a revision range
+    into a list of commits can be done with the `git rev-list` command, which is a
+    low-level equivalent (plumbing) of the user-facing `git log` command (`porcelain`);
+    by default, this command prints out only the SHA1 values of the commits in the
+    specified revision range, one per line, and no other information.
+  id: totrans-102
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了实现这样的钩子，您首先需要将引用的旧值和新值（您可以通过在`pre-receive`中逐行读取标准输入，或者作为`update`钩子的参数获取这些值）转化为正在推送的所有提交的列表。您需要处理一些特殊情况——删除引用（没有提交被推送）、创建新引用、以及非快进推送的可能性（您需要使用合并基准作为修订范围的下限——例如，使用`git
+    merge-base`命令），推送到标签、推送到注释以及其他非分支推送。将修订范围转换为提交列表的操作可以通过`git rev-list`命令完成，这是`git
+    log`命令的低级等效命令（也叫做*plumbing*）；默认情况下，此命令仅输出指定修订范围内每个提交的SHA1值，每行一个，并且没有其他信息。
+- en: 'Then, for each revision, you need to grab the commit message and check whether
+    it matches the template specified in the policy. You can use another plumbing
+    command, called `git cat-file`, and then extract the commit message from this
+    command output by skipping everything before the first blank line. This blank
+    line separates commit metadata in the raw form from the commit body:'
+  id: totrans-103
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后，对于每个修订版，您需要获取提交信息并检查它是否符合政策中指定的模板。您可以使用另一个低级命令，`git cat-file`，然后从此命令的输出中提取提交信息，跳过所有在第一个空行之前的内容。这个空行将提交元数据和提交主体分开：
+- en: '[PRE4]'
+  id: totrans-104
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: Alternatively, you can use `git show -s` or `git log -1`, which are both porcelain
+    commands, instead of `git cat-file`. However, you would then need to specify the
+    exact output format – for example, `git show -s --``format=%B <SHA1>`.
+  id: totrans-105
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 或者，您可以使用`git show -s`或`git log -1`，这两个都是简单命令，代替`git cat-file`。但是，您需要指定确切的输出格式——例如，`git
+    show -s --format=%B <SHA1>`。
+- en: When you have these commit messages, you can then use the regular expression
+    match or another tool on each of the commit messages caught to check whether they
+    matche the policy.
+  id: totrans-106
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当你拥有这些提交信息时，你可以使用正则表达式匹配或其他工具检查每个提交信息，以确认它们是否符合政策。
+- en: Another part of the policy may be the restrictions on how branches are managed.
+    For example, you may want to prevent the deletion of long-lived development stage
+    branches (see [*Chapter 8*](B21194_08_split_000.xhtml#_idTextAnchor196), *Advanced
+    Branching Techniques*), while allowing the deletion of topic branches. To distinguish
+    between them – that is, to find out whether the branch being deleted is a topic
+    branch or not – you can either include a configurable list of branches to manage
+    strictly, or you can assume that topic branches always use the `<user>/<topic>`
+    naming convention. The latter solution can be enforced by requiring the newly
+    created branches, which should be topic branches only, to match this naming convention.
+  id: totrans-107
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 政策的另一个部分可能是关于分支管理的限制。例如，你可能希望防止删除长期存在的开发阶段分支（参见[*第8章*](B21194_08_split_000.xhtml#_idTextAnchor196)，*高级分支技术*），同时允许删除主题分支。为了区分它们——也就是说，找出被删除的分支是否为主题分支——你可以选择包含一个可配置的分支列表来严格管理，或者假设主题分支总是使用`<user>/<topic>`命名规范。后一种解决方案可以通过要求新创建的分支（应该只为主题分支）匹配这一命名规范来强制执行。
+- en: Conceivably, you could make a policy that topic branches can be fast-forwarded
+    only if they are not merged in, although implementing checks for this policy would
+    be nontrivial.
+  id: totrans-108
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 理论上，你可以制定一个政策，要求主题分支只能在没有合并的情况下进行快进合并，尽管实现这一政策的检查并非易事。
+- en: Usually, only specific people have permission to push to the official repository
+    of a project (holding a so-called commit bit). With server-side hooks, you can
+    configure the repository so that it allows anyone to push, but only to the special
+    mob branch; all the other push access is restricted.
+  id: totrans-109
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通常，只有特定的人有权限推送到项目的官方仓库（持有所谓的提交权限）。通过服务器端钩子，你可以配置仓库，使其允许任何人推送，但仅限于特殊的群体分支；所有其他推送访问将受到限制。
+- en: You can also use server-side hooks to require that only annotated tags are allowed
+    in the repository, that tags are signed with a public key that is present in the
+    specified key server (and, thus, can be verified by other developers), and that
+    tags cannot be deleted or updated. If needed, you can restrict signed tags to
+    those coming from the selected (and configured) set of users – for example, enforcing
+    a policy that only one of the maintainers can mark a project for a release (by
+    creating an appropriately named tag – e.g., `v0.9`).
+  id: totrans-110
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你还可以使用服务器端钩子来要求仓库中只允许注解标签，标签必须使用在指定密钥服务器中存在的公钥进行签名（因此，其他开发者可以验证），并且标签不能被删除或更新。如有需要，你可以将签名标签限制为来自已选择（并配置）的用户集——例如，执行一个政策，要求只有一位维护者可以标记项目为发布版本（通过创建一个适当命名的标签——例如`v0.9`）。
+- en: Early notices about policy violations with client-side hooks
+  id: totrans-111
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 使用客户端钩子提前通知关于政策违规的情况
+- en: It would be not a good solution to have strict enforcement of development policies
+    and not provide users with a way to help watch and fulfill those policies. Having
+    your work rejected during a push can be frustrating; to fix the issue preventing
+    one from publishing the commit, you would have to edit your local history of the
+    project (that is, rewrite your changes). See [*Chapter 10*](B21194_10_split_000.xhtml#_idTextAnchor247),
+    *Keeping History Clean*, for details on how to do it.
+  id: totrans-112
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 严格执行开发政策而不给用户提供帮助监视和遵守这些政策的方式并不是一个好的解决方案。在推送过程中工作被拒绝可能会令人沮丧；为了修复阻止提交发布的问题，你需要编辑本地项目历史（也就是重写你的更改）。详细了解如何操作，请参见[*第10章*](B21194_10_split_000.xhtml#_idTextAnchor247)，*保持历史清洁*。
+- en: The answer to that problem is to provide some client-side hooks that users can
+    install and have Git notify them immediately when they violate the policy, which
+    would make their changes get rejected by the server. The intent is to help correct
+    any problem as fast as possible, usually before committing the changes. These
+    client-side hooks must be distributed somehow, as hooks are not copied when cloning
+    a repository. Various ways to distribute these hooks are described in [*Chapter
+    13*](B21194_13_split_000.xhtml#_idTextAnchor320), *Customizing and* *Extending
+    Git*.
+  id: totrans-113
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 解决这个问题的方法是提供一些客户端钩子，用户可以安装这些钩子，并让 Git 在他们违反政策时立即通知他们，这将导致他们的更改被服务器拒绝。其目的是尽可能快速地帮助纠正问题，通常是在提交更改之前。这些客户端钩子必须以某种方式分发，因为克隆仓库时不会复制钩子。各种分发这些钩子的方法在
+    [*第 13 章*](B21194_13_split_000.xhtml#_idTextAnchor320)，*自定义和扩展 Git* 中进行了描述。
+- en: If there are any limitations on the contents of the changes (for example, some
+    files might be changed only by specified developers), a warning message can be
+    created with `pre-commit` hook. The `prepare-commit-msg` hook (and the `commit.template`
+    configuration variable) can provide the developer with a customized template to
+    be filled in while working on a commit message. You can also make Git check the
+    commit message, just before the commit is recorded, with the `commit-msg` hook.
+    This hook would find out and inform you whether you have correctly formatted the
+    commit message and whether it includes all the information required by the policy.
+    This hook can also be used instead of or in addition to `pre-commit`, checking
+    whether you are modifying the files you are not allowed to.
+  id: totrans-114
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果对变更内容有任何限制（例如，某些文件可能仅由指定的开发者修改），可以使用 `pre-commit` 钩子创建警告信息。`prepare-commit-msg`
+    钩子（和 `commit.template` 配置变量）可以为开发者提供一个自定义的模板，开发者在提交消息时填写。你还可以让 Git 在提交记录之前，通过
+    `commit-msg` 钩子检查提交消息。此钩子会检查并通知你是否正确格式化了提交消息，是否包含了政策要求的所有信息。此钩子也可以替代或与 `pre-commit`
+    一起使用，检查你是否修改了不允许修改的文件。
+- en: The `pre-rebase` hook can be used to verify that you don’t try to rewrite history
+    in a manner that would lead to a non-fast-forward push (with `receive.``denyNonFastForwards`
+    on the server, forcing a push won’t work anyway).
+  id: totrans-115
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`pre-rebase` 钩子可用于验证你是否试图以会导致非快进推送的方式重写历史（如果服务器启用了 `receive.``denyNonFastForwards`，强制推送也无法生效）。'
+- en: As a last resort, there is a `pre-push` hook, which can check for correctness
+    before trying to connect to the remote repository.
+  id: totrans-116
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 作为最后的手段，还有一个 `pre-push` 钩子，可以在尝试连接到远程仓库之前检查是否正确。
+- en: Signed pushes
+  id: totrans-117
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 签名推送
+- en: '[*Chapter 6*](B21194_06.xhtml#_idTextAnchor140), *Collaborative Development
+    with Git*, includes a description of various mechanisms that a developer can use
+    to ensure the integrity and authenticity of their work – signed tags, signed commits,
+    and signed merges (merging signed tags). All these mechanisms assert that the
+    objects (and the changes they contain) came from the signer.'
+  id: totrans-118
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '[*第 6 章*](B21194_06.xhtml#_idTextAnchor140)，*使用 Git 进行协作开发*，包括开发者可以用来确保自己工作完整性和真实性的各种机制描述——签名标签、签名提交和签名合并（合并签名标签）。所有这些机制都声明对象（及其包含的更改）来自签名者。'
+- en: However, signed tags and commits do not assert that the developer wanted to
+    have a particular revision at the tip of a particular branch. Authentication done
+    by the hosting site cannot be easily audited later, and it requires you to trust
+    the hosting site and its authentication mechanism. Modern Git (version 2.2 or
+    newer) allows you to **sign pushes** for this purpose.
+  id: totrans-119
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，签名标签和提交并不能证明开发者希望在某个特定分支的顶端有某个特定的修订版本。托管网站进行的身份验证无法轻松审计，且这要求你信任托管网站及其身份验证机制。现代
+    Git（版本 2.2 或更新版本）允许你为此目的**签名推送**。
+- en: Signed pushes require the server to set up `receive.certNonceSeed` and the client
+    to use `git push --signed`. Handling of signed pushes is done with the server-side
+    hooks. Currently, none of the Git forges such as GitHub, GitLab, Bitbucket, or
+    Gitea support signed pushes; there are tools such as **gittuf** or **Kernel.org
+    Transparency Log Monitor** that provide transparency logs for push operations.
+  id: totrans-120
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 签名推送要求服务器设置 `receive.certNonceSeed`，客户端使用 `git push --signed`。签名推送的处理通过服务器端钩子完成。目前，包括
+    GitHub、GitLab、Bitbucket 和 Gitea 在内的 Git 仓库平台都不支持签名推送；有一些工具如**gittuf**或**Kernel.org
+    Transparency Log Monitor**提供推送操作的透明日志。
+- en: The signed push certificate sent by the client is stored in the repository as
+    a blob object and is verified using the `pre-receive` hook can then examine various
+    `GIT_PUSH_CERT_*` environment variables (see the `git-receive-pack` man page for
+    the details) to decide whether to accept or deny a given signed push.
+  id: totrans-121
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 客户端发送的签名推送证书作为 blob 对象存储在仓库中，并通过 `pre-receive` 钩子进行验证，该钩子可以检查各种 `GIT_PUSH_CERT_*`
+    环境变量（有关详细信息，请参阅 `git-receive-pack` 手册页面），以决定是否接受或拒绝给定的签名推送。
+- en: Logging signed pushes for audit can be done with the `post-receive` hook. You
+    can have this hook send an email notification about the signed push or have it
+    append information about the push to a log file. The `pre-receive` and `post-receive`
+    input.
+  id: totrans-122
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 可以通过 `post-receive` 钩子来记录签名推送的审计日志。您可以让此钩子发送关于签名推送的电子邮件通知，或者将推送信息附加到日志文件中。`pre-receive`
+    和 `post-receive` 输入。
+- en: Serving Git repositories
+  id: totrans-123
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 提供 Git 仓库服务
+- en: In [*Chapter 6*](B21194_06.xhtml#_idTextAnchor140), *Collaborative Development
+    with Git*, we examined four major protocols used by Git to connect with remote
+    repositories – local, HTTP, **SSH** (**Secure** **Shell**), and Git (the native
+    protocol). This was done from the point of view of a client connecting to the
+    repository, discussing what these protocols are and which one to use if the remote
+    repository offers more than one.
+  id: totrans-124
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 [*第 6 章*](B21194_06.xhtml#_idTextAnchor140)，《使用 Git 进行协作开发》中，我们探讨了 Git 用于连接远程仓库的四种主要协议——本地协议、HTTP
+    协议、**SSH**（**安全** **外壳**）协议和 Git 协议（原生协议）。从客户端连接到仓库的角度进行讨论，解释了这些协议是什么，以及在远程仓库提供多种协议时应使用哪个协议。
+- en: This chapter will offer the administrator’s side of view, explaining how to
+    set up and later move rephrased Git repositories to be served with different transport
+    protocols. Here, we will also examine, for each protocol, what authentication
+    and authorization look like.
+  id: totrans-125
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章将提供管理员的视角，解释如何设置并随后迁移改写后的 Git 仓库，以通过不同的传输协议提供服务。在这里，我们还将逐一检查每种协议的身份验证和授权方式。
+- en: Local protocol
+  id: totrans-126
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 本地协议
+- en: This is the most basic protocol, where a client uses a path to the repository
+    or the `file://` URL to access remotes. You just need to have a shared filesystem,
+    such as an NFS or SMB/CIFS mount, which contains Git repositories to serve. This
+    is a nice option if you already have access to a networked filesystem, as you
+    don’t need to set up any server.
+  id: totrans-127
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这是最基本的协议，客户端使用指向仓库的路径或 `file://` URL 来访问远程仓库。您只需要拥有一个共享的文件系统，例如 NFS 或 SMB/CIFS
+    挂载，其中包含 Git 仓库。这是一个不错的选择，如果您已经有网络文件系统的访问权限，因为您不需要设置任何服务器。
+- en: Access to repositories using a file-based transport protocol is controlled by
+    the existing file permissions and network access permissions. You need read permissions
+    to fetch and clone and write permissions to push.
+  id: totrans-128
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用基于文件的传输协议访问仓库由现有的文件权限和网络访问权限控制。您需要读取权限来获取和克隆，写入权限来推送。
+- en: In the latter case, if you want to enable a push, you’d better set up a repository
+    in such a way that pushing does not screw up the permissions. This can be helped
+    by creating a repository with the `--shared` option to use `git init` (or `git
+    clone`). This option allows users belonging to the same group to push into the
+    repository by using the sticky group ID, ensuring that the repositories stay available
+    to all the group members.
+  id: totrans-129
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在后一种情况下，如果您希望启用推送，最好以一种不会破坏权限的方式设置仓库。这可以通过使用 `git init`（或 `git clone`）时创建带有
+    `--shared` 选项的仓库来实现。此选项允许属于同一组的用户通过使用粘滞组 ID 推送到仓库，从而确保仓库对所有组成员可用。
+- en: The disadvantage of this method is that shared access to a networked filesystem
+    is, generally, more difficult to set up and reach safely from multiple remote
+    locations than basic network access and setting up an appropriate server. Mounting
+    the remote disk over the internet can be difficult and slow.
+  id: totrans-130
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这种方法的缺点在于，与基本的网络访问和设置适当的服务器相比，共享网络文件系统的访问通常更难设置并从多个远程位置安全地访问。通过互联网挂载远程磁盘可能困难且速度较慢。
+- en: This protocol does not protect the repository against accidental damage. Every
+    user has full access to the repository’s internal files, and there is nothing
+    preventing them from accidentally corrupting the repository.
+  id: totrans-131
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 此协议不能防止仓库遭受意外损坏。每个用户对仓库的内部文件都有完全访问权限，并且没有任何措施阻止他们意外破坏仓库。
+- en: The SSH protocol
+  id: totrans-132
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: SSH 协议
+- en: SSH is a common transport protocol (commonly used by Linux users) to self-host
+    Git repositories. SSH access to servers is often already set up in many cases
+    as a way to safely log in to the remote machine; if not, it is generally quite
+    easy to set up and use. SSH is an authenticated and encrypted network protocol.
+  id: totrans-133
+  prefs: []
+  type: TYPE_NORMAL
+  zh: SSH是一种常见的传输协议（Linux用户常用）来自托管Git仓库。SSH对服务器的访问在许多情况下已经设置好，通常是作为安全登录远程机器的一种方式；如果没有设置，通常也很容易设置和使用。SSH是一种经过身份验证和加密的网络协议。
+- en: Conversely, you can’t serve anonymous access to Git repositories over SSH. People
+    must have at least limited access to your machine over SSH; this protocol does
+    not allow anonymous read-only access to published repositories.
+  id: totrans-134
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 相反，你不能通过SSH为Git仓库提供匿名访问。用户必须至少具有对你的机器的有限SSH访问权限；该协议不允许对已发布的仓库进行匿名的只读访问。
+- en: Generally, there are two ways to give access to Git repositories over SSH. The
+    first is to have a separate account on the server for each client trying to access
+    the repository (although such an account can be limited and does not need full
+    shell access, you can, in this case, use `git-shell` as a login shell for Git-specific
+    accounts). This can be used both with ordinary SSH access, where you provide the
+    password, and with a public-key login. In a one-account-per-user case, the access
+    control situation is similar to the local protocol – namely, access is controlled
+    with filesystem permissions.
+  id: totrans-135
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通常，有两种方式可以通过SSH访问Git仓库。第一种是为每个尝试访问仓库的客户端在服务器上创建一个单独的账户（尽管这样的账户可以被限制，并且不需要完全的shell访问权限，在这种情况下，你可以为Git专用账户使用`git-shell`作为登录shell）。这种方式可以与普通的SSH访问一起使用，你提供密码，或者使用公钥登录。在每个用户一个账户的情况下，访问控制与本地协议类似——即通过文件系统权限控制访问。
+- en: A second method is to create a single shell account, which is often the `git`
+    user, specifically to access Git repositories and use public-key login to authenticate
+    users. Each user who will have access to the repositories would then need to send
+    their SSH public key to the administrator, who would then add this key to the
+    list of authorized keys. The actual user is identified by the key they use to
+    connect to the server.
+  id: totrans-136
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 第二种方法是创建一个单一的shell账户，通常是`git`用户，专门用于访问Git仓库，并使用公钥登录来验证用户。每个需要访问仓库的用户需要将他们的SSH公钥发送给管理员，管理员将此公钥添加到授权密钥列表中。实际用户通过他们用于连接服务器的密钥来识别。
+- en: Another alternative is to have the SSH server authenticated from an LDAP server
+    or some other centralized authentication scheme (often to implement single sign-on).
+    As long as the client can get (limited) shell access, any SSH authentication mechanism
+    can be used.
+  id: totrans-137
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 另一种选择是通过LDAP服务器或其他集中式身份验证方案对SSH服务器进行身份验证（通常用于实现单点登录）。只要客户端能够获得（有限的）shell访问权限，就可以使用任何SSH身份验证机制。
+- en: Anonymous Git protocol
+  id: totrans-138
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 匿名Git协议
+- en: Next is the Git protocol. This is served by a special and really simple TCP
+    daemon, which listens on a dedicated port (by default, port `9418`). This is (or
+    was) a common choice for fast, anonymous, and unauthenticated read-only access
+    to Git repositories.
+  id: totrans-139
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来是Git协议。这是由一个特殊且非常简单的TCP守护进程提供的，它在一个专用端口上监听（默认情况下是端口`9418`）。这是（或曾经是）快速、匿名、未经身份验证的只读访问Git仓库的常见选择。
+- en: The Git protocol server, `git daemon`, is relatively easy to set up. Basically,
+    you need to run this command, usually in a daemonized manner. How to run the daemon
+    (the server) depends on the operating system you use. It can be a `systemd` unit
+    file, an Upstart script, or a `sysvinit` script. A common solution is to use `inetd`
+    or `xinetd`.
+  id: totrans-140
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git协议服务器`git daemon`相对容易设置。基本上，你只需要运行此命令，通常以守护进程方式运行。如何运行守护进程（服务器）取决于你使用的操作系统。它可以是`systemd`单元文件、Upstart脚本或`sysvinit`脚本。常见的解决方案是使用`inetd`或`xinetd`。
+- en: You can remap all the repository requests relative to the given path (a project
+    root for the Git repositories) with `--base-path=<directory>`. There is also support
+    for virtual hosting; see the `git-daemon` documentation for more details. By default,
+    `git daemon` will export only the repositories that have the `git-daemon-export-ok`
+    file inside `gitdir`, unless the `--export-all` option is used. Usually, you would
+    also want to turn on `--reuseaddr`, allowing the server to restart without waiting
+    for the connection to time out.
+  id: totrans-141
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以通过`--base-path=<directory>`重映射所有相对于给定路径（Git仓库的项目根目录）的仓库请求。也支持虚拟主机；更多细节请参见`git-daemon`文档。默认情况下，`git
+    daemon`只会导出在`gitdir`内具有`git-daemon-export-ok`文件的仓库，除非使用`--export-all`选项。通常，你还会希望开启`--reuseaddr`，允许服务器在不等待连接超时的情况下重新启动。
+- en: The downside of the Git protocol is the lack of authentication and the obscure
+    port that it runs on (which may require you to punch a hole in the firewall).
+    The lack of authentication is because, by default, it is used only for read access
+    – that is, for fetching and cloning repositories. Generally, it is paired with
+    either SSH (always authenticated and never anonymous) or HTTPS for pushing.
+  id: totrans-142
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git协议的缺点是缺乏认证，并且运行时使用的端口较为隐蔽（可能需要你在防火墙中打孔）。缺乏认证的原因是，默认情况下它仅用于读取访问——即用于拉取和克隆仓库。通常，它与SSH（始终经过认证且绝不匿名）或HTTPS一起用于推送。
+- en: You can configure it to allow for a push (by starting the `receive-pack` service
+    with the `--enable=<service>` command-line option or, on a per-repository basis,
+    by setting the `daemon.receivePack` configuration to `true`), but it is generally
+    not recommended. The only information available to hooks to implement access control
+    is the client address, unless you require all the pushes to be signed. You can
+    run external commands in an access hook, but this would not provide much more
+    information about the client.
+  id: totrans-143
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以配置它以允许推送（通过使用`--enable=<service>`命令行选项启动`receive-pack`服务，或者在每个仓库的基础上，通过将`daemon.receivePack`配置设置为`true`），但通常不推荐这么做。钩子实现访问控制时可以获得的唯一信息是客户端地址，除非你要求所有推送都进行签名。你可以在访问钩子中运行外部命令，但这并不能提供更多关于客户端的信息。
+- en: Tip
+  id: totrans-144
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 提示
+- en: One service you might consider enabling is **upload-archive**, which serves
+    **git** **archive --remote**.
+  id: totrans-145
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可能考虑启用的一个服务是**upload-archive**，它提供**git** **archive --remote**服务。
+- en: This lack of authentication means that not only does the Git server not know
+    who accesses the repositories, but also that the client must trust the network
+    to not spoof the address while accessing the server. This transportation is not
+    encrypted.
+  id: totrans-146
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这种缺乏认证意味着，Git服务器不仅不知道是谁访问了仓库，而且客户端也必须信任网络，确保在访问服务器时地址不会被伪造。这种传输没有加密。
+- en: The smart HTTP(S) protocol
+  id: totrans-147
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 智能HTTP(S)协议
+- en: Setting up the so-called “smart” HTTP(S) protocol consists basically of enabling
+    a server script that would invoke `git receive-pack` and `git upload-pack` on
+    the server. Git provides a CGI script named `git-http-backend` for this task.
+    This CGI script can detect whether the client understands the smart HTTP protocol;
+    if not, it will fall back on the “dumb” behavior (a backward compatibility feature).
+  id: totrans-148
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 设置所谓的“智能”HTTP(S)协议，基本上是启用一个服务器脚本，该脚本会在服务器上调用`git receive-pack`和`git upload-pack`。Git为此任务提供了一个名为`git-http-backend`的CGI脚本。这个CGI脚本可以检测客户端是否理解智能HTTP协议；如果不理解，它将回退到“笨重”模式（这是一种向后兼容的功能）。
+- en: To use this protocol, you need a CGI server – for example, Apache (with this
+    server , you would also need the `mod_cgi` module or its equivalent, and the `mod_env`
+    and `mod_alias` modules). The parameters are passed using environment variables
+    (hence the need for `mod_env` when using Apache) – `GIT_PROJECT_ROOT` to specify
+    where repositories are and an optional `GIT_HTTP_EXPORT_ALL` if you want to have
+    all the repositories exported, not only those with the `git-daemon-export-ok`
+    file in them.
+  id: totrans-149
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要使用此协议，你需要一个CGI服务器——例如Apache（使用此服务器时，你还需要`mod_cgi`模块或其等效模块，以及`mod_env`和`mod_alias`模块）。参数通过环境变量传递（因此在使用Apache时需要`mod_env`）——`GIT_PROJECT_ROOT`用于指定仓库的位置，且如果你希望导出所有仓库而不仅仅是那些包含`git-daemon-export-ok`文件的仓库，还可以选择使用`GIT_HTTP_EXPORT_ALL`。
+- en: The authentication is done by the web server. In particular, you can set it
+    up to allow unauthenticated anonymous read-only access, while requiring authentication
+    for a push. Utilizing HTTPS gives encryption and server authentication, like with
+    the SSH protocol. The URL for fetching and pushing is the same when using HTTP(S);
+    you can also configure it so that the web interface to browse Git repositories
+    uses the same URL for fetching.
+  id: totrans-150
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 认证由Web服务器完成。特别是，你可以设置它允许未经认证的匿名只读访问，同时要求推送时进行认证。使用HTTPS可以提供加密和服务器认证，类似于SSH协议。使用HTTP(S)时，拉取和推送的URL是相同的；你还可以配置，使得用于浏览Git仓库的Web界面也使用相同的URL进行拉取。
+- en: Note
+  id: totrans-151
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 注意
+- en: The documentation of **git-http-backend** includes a setup for Apache for different
+    situations, including unauthenticated read and authenticated write. The setup
+    presented there is a bit involved because initial ref advertisements use the query
+    string, while the **receive-pack** service invocation uses path info.
+  id: totrans-152
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**git-http-backend**的文档包括了不同情况下的Apache设置，包括未认证的读取和认证的写入。那里展示的设置有些复杂，因为最初的引用广告使用查询字符串，而**receive-pack**服务的调用使用路径信息。'
+- en: Conversely, requiring authentication with any valid account for reads and writes,
+    and leaving the restriction of writes to the server-side hook, is a simpler and
+    often acceptable solution.
+  id: totrans-153
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 相反，要求任何有效账户进行身份验证以进行读取和写入，并将写入的限制留给服务器端钩子，这是一个更简单且通常可接受的解决方案。
+- en: If you try to push to the repository that requires authentication, the server
+    can prompt for credentials. Because the HTTP protocol is stateless and involves
+    more than one connection sometimes, it is useful to utilize credential helpers
+    (see [*Chapter 13*](B21194_13_split_000.xhtml#_idTextAnchor320), *Customizing
+    and Extending Git*) to avoid either having to give the password more than once
+    for a single operation, or having to save the password somewhere on the disk (for
+    example, in the remote URL).
+  id: totrans-154
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你尝试推送到需要身份验证的仓库，服务器可能会提示输入凭证。由于 HTTP 协议是无状态的，并且有时涉及多个连接，因此使用凭证助手（请参见 [*第 13
+    章*](B21194_13_split_000.xhtml#_idTextAnchor320)，*自定义和扩展 Git*）是有用的，这样就可以避免在单次操作中多次输入密码，或者将密码保存在磁盘上的某个地方（例如，在远程
+    URL 中）。
+- en: Gitolite for smart HTTPS access control
+  id: totrans-155
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Gitolite 用于智能 HTTPS 访问控制
+- en: While Gitolite ([https://gitolite.com/](https://gitolite.com/)) provides an
+    access control layer on top of Git for access over SSH, it can be configured to
+    perform authorization for smart HTTP mode.
+  id: totrans-156
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 虽然 Gitolite ([https://gitolite.com/](https://gitolite.com/)) 为通过 SSH 访问的 Git
+    提供了访问控制层，但它也可以配置为对智能 HTTP 模式进行授权。
+- en: Dumb protocols
+  id: totrans-157
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 傻瓜协议
+- en: If you cannot run Git on the server, you can still use the dumb protocol, which
+    does not require it. The dumb HTTP(S) protocol expects the Git repository to be
+    served like normal static files from the web server. However, to be able to use
+    this kind of protocol, Git requires the extra `objects/info/packs` and `info/refs`
+    files to be present on the server and kept up to date with `git update-server-info`.
+    This command is usually run on a push via one of the earlier mentioned smart protocols
+    (the default `post-update` hook does that, and so does `git-receive-pack` if `receive.updateServerInfo`
+    is set to `true`).
+  id: totrans-158
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你无法在服务器上运行 Git，你仍然可以使用傻瓜协议，因为它不需要 Git。在这种传输协议下，Git 仓库被期望像普通静态文件一样由 Web 服务器提供服务。然而，为了能够使用这种协议，Git
+    需要额外的 `objects/info/packs` 和 `info/refs` 文件，并且这些文件必须通过 `git update-server-info`
+    保持最新。通常，这个命令是在通过前面提到的某个智能协议进行推送时运行的（默认的 `post-update` 钩子会执行此操作，如果 `receive.updateServerInfo`
+    设置为 `true`，`git-receive-pack` 也会执行此操作）。
+- en: It is possible to push with the dumb protocol, but this requires a setup that
+    allows you to update files using a specified transport; for the dumb HTTP(S) transport
+    protocol, this means configuring WebDAV.
+  id: totrans-159
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 可以使用傻瓜协议进行推送，但这需要一种设置，允许你使用指定的传输更新文件；对于傻瓜 HTTP(S) 传输协议，这意味着配置 WebDAV。
+- en: Authentication, in this case, is done by the web server for static files. Obviously,
+    for this kind of transport, Git’s server-side hooks are not invoked, and thus
+    they cannot be used to further restrict access.
+  id: totrans-160
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这种情况下，身份验证是由 Web 服务器为静态文件完成的。显然，对于这种传输方式，Git 的服务器端钩子不会被调用，因此不能用来进一步限制访问。
+- en: Historical note
+  id: totrans-161
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 历史说明
+- en: Note that, for modern Git, the dumb transport is implemented using the curl
+    family of remote helpers, which may be not installed by default.
+  id: totrans-162
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请注意，对于现代 Git，傻瓜传输是通过 curl 系列的远程助手实现的，而这些助手可能不是默认安装的。
+- en: This transport works (for fetching) by downloading requested refs (as plain
+    files), examining where to find files containing the referenced commit objects
+    (hence the need for server information files, at least for objects in packfiles),
+    getting them, and then walking through the chain of revisions, examining each
+    object needed, and downloading new files if the object is not present yet in the
+    local repository. This walker method can be horrendously inefficient if the repository
+    is not packed well with respect to the requested revision range. It requires a
+    large number of connections and always downloads the whole pack, even if only
+    one object from it is needed.
+  id: totrans-163
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这种传输方式（用于获取）通过下载请求的引用（作为普通文件），检查在哪儿可以找到包含引用提交对象的文件（因此需要服务器信息文件，至少对于包文件中的对象），获取它们，然后遍历修订链，检查每个所需的对象，如果对象尚未存在于本地仓库，则下载新文件。如果仓库在请求的修订范围内没有良好打包，这种遍历方法可能会非常低效。它需要大量连接，并且即使只需要其中一个对象，也总是会下载整个包。
+- en: With smart protocols, Git on the client side and Git on the server side negotiate
+    between themselves which objects need to be sent (a want/have negotiation). Git
+    then creates a customized packfile, utilizing the knowledge of what objects are
+    already present on the other side, and usually includes only deltas – that is,
+    the difference from what the other side has (a thin packfile). The other side
+    rewrites the received packfile to be self-contained.
+  id: totrans-164
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用智能协议时，客户端和服务器端的 Git 会协商哪些对象需要发送（即“需要/已有”协商）。然后 Git 创建一个定制的打包文件，利用已知的对方已有的对象，通常只包括增量——也就是与对方所拥有的不同部分（即瘦打包文件）。对方会将接收到的打包文件重写为自包含的格式。
+- en: Remote helpers
+  id: totrans-165
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 远程助手
+- en: Git allows us to create support for new transport protocols by writing remote
+    helper programs. This mechanism can be also used to support foreign repositories.
+    Git interacts with a repository requiring a remote helper by spawning the helper
+    as an independent child process, communicating with this process through its standard
+    input and output with a set of commands. The use of remote transport helpers is
+    described in [*Chapter 6*](B21194_06.xhtml#_idTextAnchor140), *Collaborative Development*
+    *with Git*.
+  id: totrans-166
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git 允许我们通过编写远程助手程序来创建对新传输协议的支持。这个机制也可以用于支持外部仓库。Git 通过将远程助手作为独立的子进程启动，并通过标准输入和输出与这个进程通信，执行一组命令来与需要远程助手的仓库交互。远程传输助手的使用在[*第6章*](B21194_06.xhtml#_idTextAnchor140)，*使用
+    Git 进行协作开发*中有描述。
+- en: You can find third-party remote helpers to add support to the new ways of accessing
+    repositories – for example, there is `git-remote-dropbox` to use Dropbox to store
+    the remote Git repository. Note, however, that remote helpers are (possibly yet)
+    limited in features compared to built-in transport support.
+  id: totrans-167
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以找到第三方远程助手来支持新的访问仓库方式——例如，有`git-remote-dropbox`可以使用 Dropbox 来存储远程 Git 仓库。不过，注意的是，与内建传输支持相比，远程助手的功能可能（仍然）有所限制。
+- en: Tools to manage Git repositories
+  id: totrans-168
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 用于管理 Git 仓库的工具
+- en: Nowadays, there is no need to write a Git repository management solution yourself.
+    There is a wide range of various third-party solutions that you can use. It is
+    impossible to list them all, and even giving recommendations is risky. The Git
+    ecosystem is actively developed; which tool is the best could have changed since
+    the time of writing.
+  id: totrans-169
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，你不需要自己编写 Git 仓库管理解决方案。有许多各种各样的第三方解决方案可以使用。列出所有的解决方案是不可能的，甚至给出推荐也是有风险的。Git
+    生态系统正在积极开发中；哪个工具最好可能会随着时间的推移而改变。
+- en: I’d like to focus here just on the types of tools for administrators, just as
+    I did for GUIs in [*Chapter 13*](B21194_13_split_000.xhtml#_idTextAnchor320),
+    *Customizing and* *Extending Git*.
+  id: totrans-170
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我在这里仅想集中讨论管理员工具的类型，就像我在[*第13章*](B21194_13_split_000.xhtml#_idTextAnchor320)，*Git
+    的定制与扩展*中讨论 GUI 工具一样。
+- en: First, there are `update-paranoid` script in the `contrib/` area). These tools
+    focus on access control, usually the authorization part, making it easy to add
+    repositories and manage their permissions. An example of such a tool is *Gitolite*.
+  id: totrans-171
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 首先，在 `contrib/` 目录下有 `update-paranoid` 脚本。这些工具侧重于访问控制，通常是授权部分，使得添加仓库和管理其权限变得简单。一个这样的工具的例子是*Gitolite*。
+- en: They often support some mechanism to add your own additional access constraints.
+  id: totrans-172
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 它们通常支持某些机制，以添加你自己的额外访问限制。
+- en: Then, there are `git log` and `git show` commands, and a view with a list of
+    files in the repository. An example of such tools is the `gitweb` script in Perl
+    that is distributed with Git; another is `cgit`, used by [git.kernel.org](http://git.kernel.org).
+  id: totrans-173
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后是 `git log` 和 `git show` 命令，以及显示仓库中文件列表的视图。一个这样的工具的例子是与 Git 一起分发的 Perl 脚本
+    `gitweb`；另一个是由 [git.kernel.org](http://git.kernel.org) 使用的 `cgit`。
+- en: Also useful are the **code review** (**code collaboration**) tools. These make
+    it possible for developers in a team to review each other’s proposed changes using
+    a web interface. These tools often allow the creation of new projects and the
+    handling of access management. An example of such a tool is Gerrit Code Review.
+  id: totrans-174
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 同样有用的是**代码审查**（**代码协作**）工具。这些工具使得团队中的开发人员可以通过网页界面审查彼此提出的修改。这些工具通常允许创建新项目并处理访问管理。一个这样的工具的例子是
+    Gerrit 代码审查。
+- en: Finally, there are **Git hosting** solutions, also called **software forges**,
+    usually with a web interface for the administrative side of managing repositories,
+    allowing us to add users, create repositories, manage their access, and often
+    work from the web browser on Git repositories. Examples of such tools are GitLab
+    and Gitea. There are also similar **source code management** systems, which provide
+    (among other web-based interfaces) repository hosting services, together with
+    the features to collaborate and manage development. One example of such a system
+    is Kallithea; however, nowadays, many software forges include some source code
+    management features, such as issue tracking, and **CI/CD** (**Continuous Integration/Continuous**
+    **Delivery**) pipelines.
+  id: totrans-175
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后，有**Git托管**解决方案，也称为**软件Forge**，通常具有用于管理仓库的网页界面，使我们能够添加用户、创建仓库、管理访问权限，并且通常可以在浏览器中操作Git仓库。此类工具的示例有GitLab和Gitea。也有类似的**源代码管理**系统，它们提供（除了其他基于网页的界面）仓库托管服务，以及协作和开发管理功能。这样的系统示例有Kallithea；然而，现如今，许多软件Forge也包括一些源代码管理功能，如问题追踪，以及**CI/CD**（**持续集成/持续交付**）管道。
+- en: Of course, you don’t need to self-host your code. There is a plethora of third-party
+    hosted options – GitHub, Bitbucket, and so on. There are even hosted solutions
+    using open source hosting management tools, such as GitLab and Codeberg.
+  id: totrans-176
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当然，你不需要自己托管代码。市面上有大量第三方托管选项——如GitHub、Bitbucket等。甚至还有使用开源托管管理工具的托管解决方案，如GitLab和Codeberg。
+- en: Tips and tricks to host repositories
+  id: totrans-177
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 托管仓库的小技巧
+- en: If you want to self-host Git repositories, there are a few things that may help
+    you with server performance and user satisfaction.
+  id: totrans-178
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你想自托管Git仓库，有一些事情可能有助于提升服务器性能和用户满意度。
+- en: Reducing the size taken by repositories
+  id: totrans-179
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 减少仓库占用的空间
+- en: If you are hosting many forks (clones) of the same repository, you might want
+    to reduce disk usage by somehow sharing common objects. One solution is to use
+    `git clone --reference`) while creating a fork. In this case, the derived repository
+    would look to its parent object storage if the object is not found on its own.
+  id: totrans-180
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你托管了许多同一仓库的分支（克隆），你可能希望通过某种方式共享公共对象以减少磁盘使用。一个解决方案是在创建分支时使用`git clone --reference`。在这种情况下，衍生仓库会在其自身找不到对象时查找其父仓库的对象存储。
+- en: There are, however, two problems with this approach. First, you need to ensure
+    that the object the borrowing repository relies on does not vanish from the repository
+    set as the alternate object storage (the repository you borrow from). This can
+    be done, for example, by linking the borrowing repository refs in the repository
+    lending the objects, (e.g., in the `refs/borrowed/` namespace). Second is that
+    the objects entering the borrowing repository are not automatically de-duplicated;
+    you need to run `git repack -a -d -l`, which internally passes the `--local` option
+    to `git pack-objects`.
+  id: totrans-181
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，这种方法有两个问题。首先，你需要确保借用仓库依赖的对象不会从作为备用对象存储的仓库集合中消失（即你借用的仓库）。例如，你可以通过在借用对象的仓库中链接借用仓库的
+    refs（例如，在`refs/borrowed/`命名空间中）来完成此操作。第二，进入借用仓库的对象不会自动去重；你需要运行`git repack -a -d
+    -l`，它内部会将`--local`选项传递给`git pack-objects`。
+- en: An alternate solution would be to keep every fork together in a single repository
+    and use `git-http-backend` manpage includes an example configuration to serve
+    multiple repositories from different namespaces in a single repository. Gitolite
+    also has some support for namespaces in the form of logical and backing repositories
+    and `option namespace.pattern`, although not every feature works for logical repositories.
+  id: totrans-182
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 另一种解决方案是将所有的分支放在同一个仓库中，并使用`git-http-backend`手册页中包含的示例配置，从单个仓库为不同的命名空间提供多个仓库。Gitolite
+    也对命名空间提供了一些支持，形式为逻辑仓库和后端仓库，以及`option namespace.pattern`，尽管并不是所有功能都适用于逻辑仓库。
+- en: Storing multiple repositories as the namespace of a single repository avoids
+    storing duplicated copies of the same objects. It automatically prevents duplication
+    between new objects without the need for ongoing maintenance, as opposed to the
+    alternate solution. Conversely, security is weaker; you need to treat anyone with
+    access to the single namespace, which is within the repository, as if they had
+    access to all the other namespaces (although this might not be a problem for your
+    case).
+  id: totrans-183
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 将多个仓库作为单一仓库的命名空间来存储，可以避免存储相同对象的重复副本。它自动防止了新对象之间的重复，而不需要进行持续的维护，这与替代方案不同。相反，安全性较弱；你需要将对单一命名空间（位于仓库内）有访问权限的人视为对所有其他命名空间都有访问权限（尽管这可能对你的情况来说不是问题）。
+- en: Speeding up smart protocols with pack bitmaps
+  id: totrans-184
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 通过 pack 位图加速智能协议
+- en: Another issue that you can stumble upon while self-hosting repositories is the
+    performance of smart protocols. For the clients of your server, it is important
+    that operations finish quickly; as an administrator, you would not want to generate
+    a high CPU load on the server due to serving Git repositories.
+  id: totrans-185
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 另一个在自托管仓库时可能遇到的问题是智能协议的性能。对于你的服务器客户端而言，操作需要快速完成；作为管理员，你不希望因为提供 Git 仓库服务而在服务器上产生高
+    CPU 负载。
+- en: One feature, ported from JGit, should significantly improve the performance
+    of the counting objects phase, while serving objects from a repository that uses
+    it. This feature is a **bitmap-index file**, available since Git 2.0.
+  id: totrans-186
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一项从 JGit 移植过来的特性应该显著提高计数对象阶段的性能，同时为使用该特性的仓库提供对象服务。这个特性是**位图索引文件**，自 Git 2.0
+    起可用。
+- en: The bitmap-index file
+  id: totrans-187
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 位图索引文件
+- en: The major function of the **bitmap-index** file is providing for a selected
+    subset of commits, including the most recent ones, bit vectors (bitmaps) that
+    store reachability information for a set of objects in a packfile, or in a multi-pack
+    index. In each bit vector, the value of 1 at index **i** means that the **i-th**
+    object (in the order defined by a packfile or a multi-pack index file) is reachable
+    from the commit that the given bit vector belongs to.
+  id: totrans-188
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**位图索引**文件的主要功能是为选定的提交子集（包括最近的提交）提供位向量（位图），这些位向量存储了在 packfile 或多 pack 索引中的一组对象的可达性信息。在每个位向量中，索引
+    **i** 处的 1 表示第 **i** 个对象（按 packfile 或多 pack 索引文件定义的顺序）可以从该位向量所属的提交中访问。'
+- en: This file is stored alongside packfiles and their indexes. It can be generated
+    manually by running `git repack -A -d --write-bitmap-index`, or it can be generated
+    automatically together with the packfile by setting the `repack.writeBitmaps`
+    configuration variable to `true`. The disadvantage of this solution is that bitmaps
+    take additional disk space, and the initial repack requires extra time to create
+    bitmap-index. With modern Git, thanks to the multi-pack index, you no longer need
+    to repack everything into a single packfile to be able to use the bitmap file.
+    This feature also makes it faster to update the bitmap.
+  id: totrans-189
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 该文件与 packfile 及其索引一起存储。可以通过运行`git repack -A -d --write-bitmap-index`手动生成，或者通过将`repack.writeBitmaps`配置变量设置为`true`，与
+    packfile 一起自动生成。该方案的缺点是位图会占用额外的磁盘空间，而且初次 repack 需要额外时间来创建位图索引。随着现代 Git 的发展，得益于多
+    pack 索引，你不再需要将所有内容重新打包成单一的 packfile 就能使用位图文件。这个特性还加快了位图更新的速度。
+- en: Nowadays, this feature is turned on by default for bare repositories.
+  id: totrans-190
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如今，这个特性默认在裸仓库中启用。
+- en: Solving the large non-resumable initial clone problem
+  id: totrans-191
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 解决大型不可恢复初始克隆问题
+- en: Repositories with a large code base and a long history can get quite large.
+    The problem is that the initial clone, where you need to get everything in a possibly
+    large repository, is an all-or-nothing operation, at least for modern (safe and
+    effective) smart transfer protocols – SSH, `git://`, and smart HTTP(S). This might
+    be a problem if a network connection is not very reliable. There is no support
+    for a resumable clone, and it unfortunately looks like it is a fundamentally hard
+    problem to solve for Git developers. This does not mean, however, that you, as
+    a hosting administrator, can do nothing to help users get this initial clone.
+  id: totrans-192
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 拥有大型代码库和悠久历史的仓库可能会变得相当庞大。问题在于，初始克隆需要从一个可能很大的仓库中获取所有内容，这是一个全有或全无的操作，至少对于现代（安全且有效的）智能传输协议——SSH、`git://`和智能
+    HTTP(S) 来说是这样。如果网络连接不太可靠，这可能会成为问题。目前不支持可恢复克隆，遗憾的是，这似乎是 Git 开发者面临的一个根本难题。然而，这并不意味着你作为托管管理员无能为力，无法帮助用户完成初始克隆。
+- en: One solution is to create, with the `git bundle` command, a static file that
+    can be used for the initial clone, or as a reference repository for the initial
+    clone (the latter can be done with the `git clone --reference=<bundle> --dissociate`
+    command after downloading the bundle). This bundle file can be distributed using
+    any transport – in particular, one that can be resumed if interrupted, be it HTTP(S),
+    FTP, rsync, or BitTorrent. The convention that people use, besides explaining
+    how to get such a bundle in the developer documentation, is to use the same URL
+    as that used for the repository but with the `.bundle` extension (instead of an
+    empty extension or a `.git` suffix). If the bundle is available via the HTTP(S)
+    or SSH protocols, it can be used without explicitly downloading it first with
+    `git clone --``bundle-uri=<bundle uri>`.
+  id: totrans-193
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一个解决方案是使用`git bundle`命令创建一个静态文件，该文件可以用于初始克隆，或者作为初始克隆的参考仓库（后者可以在下载bundle后使用`git
+    clone --reference=<bundle> --dissociate`命令完成）。这个bundle文件可以通过任何传输方式进行分发——特别是能够在中断时恢复的方式，
+    无论是HTTP(S)、FTP、rsync还是BitTorrent。人们通常使用的约定是，在开发者文档中解释如何获取这样的bundle时，使用与仓库相同的URL，但文件扩展名是`.bundle`（而不是空扩展名或`.git`后缀）。如果bundle可以通过HTTP(S)或SSH协议访问，则可以在没有显式下载的情况下直接使用`git
+    clone --bundle-uri=<bundle uri>`。
+- en: There is also the **bundle-uri** capability of Git, where the server suggests
+    where you can download such a bundle from the client, which in turn can use the
+    bundle to speed up the initial clone. At the time of [writing, no software forge
+    supports this feature,](https://github.com/git-ecosystem/git-bundle-server) but
+    there is the **git bundle-server** ([https://github.com/git-ecosystem/git-bundle-server](https://github.com/git-ecosystem/git-bundle-server))
+    web server and management interface for use with this feature.
+  id: totrans-194
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git 还有**bundle-uri**功能，服务器可以向客户端建议从哪里下载这样的bundle，客户端可以使用该bundle来加速初始克隆。在[写这篇文档时，没有软件托管平台支持此功能，](https://github.com/git-ecosystem/git-bundle-server)但有一个**git
+    bundle-server**（[https://github.com/git-ecosystem/git-bundle-server](https://github.com/git-ecosystem/git-bundle-server)）的Web服务器和管理界面可以配合此功能使用。
+- en: There are also more esoteric approaches to solving the problem of the initial
+    clone cost, such as a step-by-step deepening of a shallow clone (or perhaps just
+    using a shallow clone with `git clone --depth` is all that’s needed), starting
+    with a partial clone, or using approaches such as GitTorrent.
+  id: totrans-195
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 还有一些更为复杂的方法可以解决初始克隆成本的问题，例如逐步加深一个浅克隆（或者也许只需要使用`git clone --depth`进行浅克隆），从部分克隆开始，或者使用像GitTorrent这样的方式。
+- en: Augmenting development workflows
+  id: totrans-196
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 增强开发工作流程
+- en: Handling version control is only a part of the development workflow. There is
+    also work management, code review and audit, running automated tests, and generating
+    builds.
+  id: totrans-197
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 版本控制只是开发工作流程的一部分。还有工作管理、代码审查与审核、自动化测试执行以及构建生成等任务。
+- en: Many of these steps can be aided by specialized tools. Many of them offer Git
+    integration. For example, code review can be managed using Gerrit, requiring that
+    each change passes a review before being made public. Another example is setting
+    up development environments so that pushing changes to the public repository can
+    automatically close tickets in the issue tracker, based on the patterns in the
+    commit messages. This can be done with server-side hooks or with the hosting service’s
+    Webhooks.
+  id: totrans-198
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 许多这些步骤可以通过专门的工具来辅助。许多工具提供Git集成。例如，可以使用Gerrit来管理代码审查，要求每个变更在公开之前都通过审查。另一个例子是设置开发环境，以便将更改推送到公共仓库时，可以根据提交信息中的模式自动关闭问题跟踪器中的工单。可以通过服务器端钩子或托管服务的Webhooks来实现这一点。
+- en: A repository can serve as a gateway, running automated tests (for example, with
+    the help of Jenkins’ or Hudson’s continuous integration service) and deploying
+    changes to ensure quality environments only after passing all of these tests.
+    Another repository can be configured to trigger builds for various supported systems.
+    Many tools and services support push-to-deploy mechanisms (for example, Heroku
+    or Google’s App Engine).
+  id: totrans-199
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一个仓库可以作为一个网关，运行自动化测试（例如，借助Jenkins或Hudson的持续集成服务）并在所有测试通过后仅部署更改以确保质量环境。另一个仓库可以配置为触发不同支持的系统的构建。许多工具和服务支持推送部署机制（例如，Heroku或Google的App
+    Engine）。
+- en: Git can automatically notify users and developers about published changes. This
+    can be done via email, a mailing list, an IRC/Discord/Slack channel, or a web-based
+    dashboard application. The possibilities are plentiful; you only need to find
+    them.
+  id: totrans-200
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git 可以自动通知用户和开发者有关已发布更改的信息。这可以通过电子邮件、邮件列表、IRC/Discord/Slack 频道或基于 Web 的仪表盘应用程序来实现。可能性很多；你只需要找到它们。
+- en: Defining development workflows in the repository
+  id: totrans-201
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 在仓库中定义开发工作流
+- en: Many software forges allow you to automate, customize, and execute software
+    development workflows right from the repository. Those solutions, such as *GitHub
+    Actions* and *GitLab CI/CD*, let you run various workflows (for example, to run
+    tests or to deploy an application) when other events happen in your repository
+    at the software forge. Those workflows are run using runners, either virtual machines
+    or containers. They are usually defined by a YAML file checked into your repository.
+  id: totrans-202
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 许多软件开发平台允许你直接从仓库自动化、定制和执行软件开发工作流。这些解决方案，如*GitHub Actions* 和 *GitLab CI/CD*，允许你在仓库中发生其他事件时运行各种工作流（例如，运行测试或部署应用程序）。这些工作流是通过运行器来执行的，运行器可以是虚拟机或容器。它们通常由一个
+    YAML 文件定义并检查到你的仓库中。
+- en: While the specific dialect of the YAML markup language, the pathname of the
+    file, and the available pre-defined actions differ from service to service, they
+    are similar enough that you should be able to migrate from one solution to the
+    other.
+  id: totrans-203
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 虽然 YAML 标记语言的具体方言、文件路径名以及可用的预定义操作因服务而异，但它们足够相似，你应该能够从一个解决方案迁移到另一个解决方案。
+- en: GitOps – using Git for operational procedures
+  id: totrans-204
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: GitOps —— 使用 Git 进行操作程序
+- en: The natural extension of defining software development workflows in the Git
+    repository is to use Git to automatically manage deployment infrastructure, especially
+    for cloud-native applications. This is called **GitOps** – an operational framework
+    that uses the Git repository to store **infrastructure as code** (**IoC**) files
+    and application configuration files. This data can be stored in the same repository
+    as the application code, or in a separate repository.
+  id: totrans-205
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 Git 仓库中定义软件开发工作流的自然扩展是使用 Git 来自动管理部署基础设施，特别是对于云原生应用程序。这被称为**GitOps**——一种操作框架，使用
+    Git 仓库存储**基础设施即代码**（**IoC**）文件和应用程序配置文件。这些数据可以与应用程序代码存储在同一个仓库中，或存储在单独的仓库中。
+- en: GitOps ensures that the infrastructure (including the development, testing,
+    and deployment environments) is immediately reproducible, based on the state of
+    the Git repository. This provides version control for operations should a rollback
+    be needed.
+  id: totrans-206
+  prefs: []
+  type: TYPE_NORMAL
+  zh: GitOps 确保基础设施（包括开发、测试和部署环境）基于 Git 仓库的状态能够立即重现。这为操作提供了版本控制，以便在需要回滚时使用。
+- en: Often, the infrastructure configuration is defined declaratively, and a specialized
+    software agent (such as Argo CD, Flux, or Gitkube) running in the cloud pulls
+    from the Git repository at regular intervals and checks the configuration against
+    the live state, adjusting the state as necessary.
+  id: totrans-207
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通常，基础设施配置是声明式定义的，专门的软件代理（例如 Argo CD、Flux 或 Gitkube）在云端定期从 Git 仓库拉取并检查配置与实时状态的匹配情况，根据需要调整状态。
+- en: Summary
+  id: totrans-208
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 总结
+- en: This chapter covered various issues related to the administrative side of working
+    with Git. You learned the basics of maintenance, data recovery, and repository
+    troubleshooting. You also learned how to set up Git on a server, how to use server-side
+    hooks, and how to manage remote repositories. The chapter covered tips and tricks
+    for a better remote performance. It described how you can use Git (with the help
+    of third-party tools) to augment development workflows. The information in this
+    chapter should help you to choose a Git repository management solution, or even
+    write your own.
+  id: totrans-209
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章涵盖了与 Git 使用相关的管理方面的各种问题。你学习了维护、数据恢复和仓库故障排除的基础知识。你还学习了如何在服务器上设置 Git，如何使用服务器端钩子以及如何管理远程仓库。本章还介绍了提高远程性能的技巧和窍门，并描述了如何在第三方工具的帮助下使用
+    Git 来增强开发工作流。本章中的信息应该帮助你选择 Git 仓库管理解决方案，甚至自己编写一个。
+- en: The next chapter will include a set of recommendations and best practices, both
+    specific to Git and those that are version control-agnostic. A policy based on
+    these suggestions can be enforced and encouraged with the help of the tools explored
+    in this chapter.
+  id: totrans-210
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 下一章将包含一套建议和最佳实践，既包括特定于 Git 的，也包括那些与版本控制无关的。可以通过本章中探索的工具来执行和鼓励基于这些建议的政策。
+- en: Questions
+  id: totrans-211
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 问题
+- en: 'Answer the following questions to test your knowledge of this chapter:'
+  id: totrans-212
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 回答以下问题，测试你对本章内容的理解：
+- en: How do you set up automatic repository maintenance to ensure that Git operations
+    will not slow down?
+  id: totrans-213
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如何设置自动化的仓库维护，确保Git操作不会变慢？
+- en: How you can try to recover a lost commit?
+  id: totrans-214
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如何尝试恢复丢失的提交？
+- en: How do you find out why some Git commands started to perform badly and took
+    too much time to execute?
+  id: totrans-215
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如何找出某些Git命令开始表现不佳且执行时间过长的原因？
+- en: How you can ensure that development follows a given defined policy?
+  id: totrans-216
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如何确保开发过程遵循既定的定义政策？
+- en: What is the simplest solution to sharing the repository privately, where all
+    developers work on a single computer (on a single machine)?
+  id: totrans-217
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 分享仓库的最简单私密方法是什么，其中所有开发者都在单台计算机上工作（在一台机器上）？
+- en: Answers
+  id: totrans-218
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 答案
+- en: 'Here are the answers to the questions given above:'
+  id: totrans-219
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是对上述问题的答案：
+- en: Use the **git** **maintenance** command.
+  id: totrans-220
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用**git** **maintenance**命令。
+- en: First, check the branch and HEAD reflogs if the lost committing question is
+    not readily available from there. If this fails, you can try to browse through
+    unreachable commits with **git fsck**.
+  id: totrans-221
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 首先，如果无法从分支和HEAD的reflog中找到丢失的提交，检查它们。如果此方法无效，你可以尝试使用**git fsck**浏览不可达的提交。
+- en: You can use the “**Git trace**” mechanism – for example, with the **GIT_TRACE2_PERF**
+    or **GIT_TRACE_PERFORMANCE** environment variables.
+  id: totrans-222
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 你可以使用“**Git trace**”机制——例如，通过设置**GIT_TRACE2_PERF**或**GIT_TRACE_PERFORMANCE**环境变量。
+- en: Use your software forge features, if possible (for example, to protect a branch
+    against changes or deletion), or use server-side hooks. Enforcing the policy can
+    be helped, but not ensured, with client-side hooks.
+  id: totrans-223
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如果可能，使用你的软件平台功能（例如，保护分支免受更改或删除）或使用服务器端钩子。客户端钩子可以帮助但不能确保强制执行政策。
+- en: Simply create the bare repository with **git init --bare --shared**, while ensuring
+    that all developers that need access to it have appropriate filesystem permissions.
+    If necessary, push to that repository.
+  id: totrans-224
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 只需使用**git init --bare --shared**创建裸仓库，同时确保所有需要访问仓库的开发者拥有适当的文件系统权限。如果需要，可以向该仓库推送。
+- en: Further reading
+  id: totrans-225
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 深入阅读
+- en: 'To learn more about the topics that were covered in this chapter, take a look
+    at the following resources:'
+  id: totrans-226
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要了解更多关于本章所涵盖的主题，请参考以下资源：
+- en: 'Scott Chacon, Ben Straub: *Pro Git, 2nd Edition*, Apress (2014) *Chapter 4*,
+    *Git on the* *Server* [https://git-scm.com/book/en/v2/Git-on-the-Server-The-Protocols](https://git-scm.com/book/en/v2/Git-on-the-Server-The-Protocols)'
+  id: totrans-227
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 'Scott Chacon, Ben Straub: *Pro Git, 第2版*，Apress（2014）*第4章*，*Git在服务器上* [https://git-scm.com/book/en/v2/Git-on-the-Server-The-Protocols](https://git-scm.com/book/en/v2/Git-on-the-Server-The-Protocols)'
+- en: 'Scott Chacon: *Git Tips 2: New Stuff in Git* (2024) [https://blog.gitbutler.com/git-tips-2-new-stuff-in-git/#git-maintenance](https://blog.gitbutler.com/git-tips-2-new-stuff-in-git/#git-maintenance)'
+  id: totrans-228
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 'Scott Chacon: *Git技巧 2：Git中的新特性*（2024）[https://blog.gitbutler.com/git-tips-2-new-stuff-in-git/#git-maintenance](https://blog.gitbutler.com/git-tips-2-new-stuff-in-git/#git-maintenance)'
+- en: 'Konstantin Ryabitsev: *Signed git pushes* (2020) [https://people.kernel.org/monsieuricon/signed-git-pushes](https://people.kernel.org/monsieuricon/signed-git-pushes)'
+  id: totrans-229
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 'Konstantin Ryabitsev: *签名的Git推送*（2020）[https://people.kernel.org/monsieuricon/signed-git-pushes](https://people.kernel.org/monsieuricon/signed-git-pushes)'
+- en: 'Vicent Martí: *Counting Objects* (2015) [https://github.blog/2015-09-22-counting-objects/](https://github.blog/2015-09-22-counting-objects/)'
+  id: totrans-230
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 'Vicent Martí: *计数对象*（2015）[https://github.blog/2015-09-22-counting-objects/](https://github.blog/2015-09-22-counting-objects/)'
+- en: 'Sitaram Chamarty: *Gitolite Essentials*, Packt (2014) [https://subscription.packtpub.com/book/programming/9781783282371](https://subscription.packtpub.com/book/programming/9781783282371)'
+  id: totrans-231
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 'Sitaram Chamarty: *Gitolite基础*，Packt（2014）[https://subscription.packtpub.com/book/programming/9781783282371](https://subscription.packtpub.com/book/programming/9781783282371)'
+- en: 'Derrick Stolee: *Exploring new frontiers for Git push performance* (2019) [https://devblogs.microsoft.com/devops/exploring-new-frontiers-for-git-push-performance/](https://devblogs.microsoft.com/devops/exploring-new-frontiers-for-git-push-performance/)'
+  id: totrans-232
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 'Derrick Stolee: *探索Git推送性能的新前沿*（2019）[https://devblogs.microsoft.com/devops/exploring-new-frontiers-for-git-push-performance/](https://devblogs.microsoft.com/devops/exploring-new-frontiers-for-git-push-performance/)'
+- en: 'Taylor Blau: *Scaling monorepo maintenance* (2021) [https://github.blog/2021-04-29-scaling-monorepo-maintenance/](https://github.blog/2021-04-29-scaling-monorepo-maintenance/)'
+  id: totrans-233
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 'Taylor Blau: *扩展单一仓库的维护*（2021）[https://github.blog/2021-04-29-scaling-monorepo-maintenance/](https://github.blog/2021-04-29-scaling-monorepo-maintenance/)'

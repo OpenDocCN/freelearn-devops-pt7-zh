@@ -1,0 +1,1201 @@
+- en: '7'
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '7'
+- en: Ansible Windows Modules
+  id: totrans-1
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Ansible Windows 模块
+- en: In this chapter, we will look at the ever-growing collection of built-in Ansible
+    modules that support and interact with Windows-based servers; coming from an almost
+    exclusively macOS and Linux background, it seemed odd to be using a tool not natively
+    supported on Windows to manage Windows.
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们将探讨内置的 Ansible 模块集，这些模块支持并与基于 Windows 的服务器进行交互；对于几乎完全依赖 macOS 和 Linux
+    背景的人来说，使用一个在 Windows 上不受原生支持的工具来管理 Windows 似乎有些奇怪。
+- en: By the end of our time in this chapter, I am sure you will agree that looking
+    at the options available, the Ansible developers have made managing Windows Server
+    workloads with a playbook as seamless and familiar as possible.
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章结束时，我相信您会同意，通过查看可用的选项，Ansible 的开发人员已经使得使用 Playbook 管理 Windows Server 工作负载尽可能简单和熟悉。
+- en: 'In this chapter, we will learn how to do the following:'
+  id: totrans-4
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们将学习如何执行以下操作：
+- en: Launch a Windows server instance in Microsoft Azure
+  id: totrans-5
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在 Microsoft Azure 中启动 Windows 服务器实例
+- en: Enable features in Windows
+  id: totrans-6
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 启用 Windows 中的功能
+- en: Create users
+  id: totrans-7
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 创建用户
+- en: Install third-party packages using Chocolatey
+  id: totrans-8
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用 Chocolatey 安装第三方软件包
+- en: 'The chapter covers the following topics:'
+  id: totrans-9
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章涵盖以下主题：
+- en: Launching a Windows server in Azure
+  id: totrans-10
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在 Azure 中启动 Windows 服务器
+- en: Ansible preparation
+  id: totrans-11
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Ansible 准备工作
+- en: The Windows Playbook roles
+  id: totrans-12
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Windows Playbook 角色
+- en: Running the Playbook
+  id: totrans-13
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 运行 Playbook
+- en: Technical requirements
+  id: totrans-14
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 技术要求
+- en: Rather than trying to run a full Windows Server 2022 locally in a **virtual
+    machine** (**VM**), in this chapter, we will cover securely launching and configuring
+    a Windows Server 2022 VM hosted in Microsoft Azure. If you are following along,
+    you must have an active Microsoft Azure subscription and the Azure **command-line
+    interface** (**CLI**) installed.
+  id: totrans-15
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 与其在本地运行完整的 Windows Server 2022 虚拟机（**VM**），本章中我们将介绍如何安全地启动和配置托管在 Microsoft Azure
+    中的 Windows Server 2022 VM。如果您正在跟随学习，请确保已激活 Microsoft Azure 订阅并安装了 Azure **命令行界面**（**CLI**）。
+- en: For details on how to install and configure the Azure CLI, please see the documentation
+    at [https://learn.microsoft.com/en-us/cli/azure/install-azure-cli/](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli/).
+    If you are following along on a Windows host, I recommend installing the Azure
+    CLI within your Windows Subsystem for Linux installation alongside where you installed
+    Ansible.
+  id: totrans-16
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有关如何安装和配置 Azure CLI 的详细信息，请参阅文档：[https://learn.microsoft.com/en-us/cli/azure/install-azure-cli/](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli/)。如果您在
+    Windows 主机上进行学习，请在您的 Windows Subsystem for Linux 安装中安装 Azure CLI，同时也安装 Ansible。
+- en: Launching a Windows server in Azure
+  id: totrans-17
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 在 Azure 中启动 Windows 服务器
+- en: We will not use Ansible to deploy the Azure resources as we will do in [*Chapter
+    9*](B21620_09.xhtml#_idTextAnchor411), *Moving to the Cloud*; instead, we will
+    use the Azure CLI to launch our VM.
+  id: totrans-18
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将不会像在 [*第 9 章*](B21620_09.xhtml#_idTextAnchor411) 中所做的那样，使用 Ansible 部署 Azure
+    资源；相反，我们将使用 Azure CLI 来启动我们的 VM。
+- en: Note
+  id: totrans-19
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 注意
+- en: As some of the commands in this chapter will be pretty long, I will break them
+    up with a backslash. In Linux command lines, the backslash (`\`) followed by a
+    newline is a line continuation character. It lets you split a single command over
+    multiple lines for better readability.
+  id: totrans-20
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于本章中的某些命令会很长，我会用反斜杠来分隔它们。在 Linux 命令行中，反斜杠（`\`）后跟换行符表示命令的延续。这使您可以将单个命令分割成多行，以提高可读性。
+- en: 'Start by changing to the `Chapter07` folder within your checked-out copy of
+    the repository that accompanies this title and run the following commands:'
+  id: totrans-21
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 首先切换到您所检出的存储库的 `Chapter07` 文件夹，并运行以下命令：
+- en: '[PRE0]'
+  id: totrans-22
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: The first two commands set two variables on your command line; the first uses
+    the `$MYIP` variable with the public IP address of your current network session.
+  id: totrans-23
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 前两个命令在您的命令行上设置了两个变量；第一个使用 `$MYIP` 变量与当前网络会话的公共 IP 地址。
+- en: The second generates a random password using the `openssl` command and assigns
+    it to the variable called `$VMPASSWORD`.
+  id: totrans-24
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 第二个命令使用 `openssl` 命令生成一个随机密码，并将其分配给名为 `$VMPASSWORD` 的变量。
+- en: The third command copies the content of `$VMPASSWORD` to a file called `VMPASSWORD`;
+    this command must be executed in the same folder as the host inventory file, as
+    it will be called in our host inventory file, which we will discuss later in the
+    chapter.
+  id: totrans-25
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 第三个命令将 `$VMPASSWORD` 的内容复制到一个名为 `VMPASSWORD` 的文件中；此命令必须在与主机清单文件相同的文件夹中执行，因为它将在我们稍后将讨论的主机清单文件中调用。
+- en: Note
+  id: totrans-26
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 注意
+- en: I will follow the Azure Cloud Adoption Framework recommendations around resource
+    naming and launching the resources in the UK South region.
+  id: totrans-27
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我将遵循Azure云采纳框架的资源命名建议，并在英国南部区域启动资源。
+- en: 'Now that we know our IP address and have a password, we can start using the
+    Azure CLI to launch resources. The first thing we need to do is make sure that
+    we are logged in by running the following:'
+  id: totrans-28
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 既然我们知道了IP地址并且有了密码，我们就可以开始使用Azure CLI启动资源。首先，我们需要确保已登录，可以运行以下命令：
+- en: '[PRE1]'
+  id: totrans-29
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: 'Once logged in, we can then create an **Azure Resource Group** by executing
+    the following:'
+  id: totrans-30
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 登录后，我们可以通过执行以下命令来创建一个**Azure资源组**：
+- en: '[PRE2]'
+  id: totrans-31
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: The Azure Resource Group is the logic container we will be deploying our Azure
+    resources to, the first of which will be an **Azure** **Virtual Network**.
+  id: totrans-32
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Azure资源组是我们将部署Azure资源的逻辑容器，首先将部署一个**Azure虚拟网络**。
+- en: 'The following command will create the Azure Virtual Network with an address
+    space of `10.0.0.0/24` and a single subnet using `10.0.0.0/27`; this is where
+    we will launch our Windows Server:'
+  id: totrans-33
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下命令将创建一个地址空间为`10.0.0.0/24`、单一子网为`10.0.0.0/27`的Azure虚拟网络；我们将在这里启动我们的Windows
+    Server：
+- en: '[PRE3]'
+  id: totrans-34
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: Now, we need to create a **Network Security Group** to assign to the network
+    interface of our VM once it has been launched.
+  id: totrans-35
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，我们需要创建一个**网络安全组**，并在虚拟机启动后将其分配给网络接口。
+- en: 'We need this as we will assign a public IP address to the VM, and we don’t
+    want to expose our three management ports directly to the internet; instead, we
+    want to lock them down to just us:'
+  id: totrans-36
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们需要这样做，因为我们将为虚拟机分配一个公共IP地址，我们不希望将三个管理端口直接暴露到互联网；相反，我们希望将它们限制为仅对我们开放：
+- en: '[PRE4]'
+  id: totrans-37
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: 'We now have an empty Network Security Group created. Let’s add some rules,
+    starting with the rule that opens port `80` to everyone to allow HTTP traffic:'
+  id: totrans-38
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们现在已经创建了一个空的网络安全组。接下来，我们添加一些规则，从允许所有人访问端口`80`以允许HTTP流量的规则开始：
+- en: '[PRE5]'
+  id: totrans-39
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: 'Next, we have the rule that opens port `3389`, which **Remote Desktop** uses
+    to allow you to create a session to the host; we only want this open to us, so
+    the command here would be as follows:'
+  id: totrans-40
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来，我们有一个规则，打开端口`3389`，**远程桌面**使用该端口让你与主机建立会话；我们只希望该端口对我们开放，所以这里的命令如下：
+- en: '[PRE6]'
+  id: totrans-41
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: Note that we are passing in the `$MYIP` variable we registered when launching
+    the resources. This will pass your IP address, and as you can see, we are then
+    appending `/32` to the end; this is the **Classless Inter-Domain Routing** (**CIDR**)
+    notation for a single IP address.
+  id: totrans-42
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请注意，我们正在传递在启动资源时注册的`$MYIP`变量。这将传递你的IP地址，如你所见，我们随后在末尾附加了`/32`；这是**无类域间路由**（**CIDR**）表示法，表示单个IP地址。
+- en: 'Now that we have the rule for Remote Desktop in place, which is how we, as
+    end users, will connect to the VM, we need to open the **Windows Remote Management**
+    (**WinRM**) port, which is how Ansible will be connecting to the machine:'
+  id: totrans-43
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经有了远程桌面规则，这也是我们作为终端用户连接到虚拟机的方式，我们需要打开**Windows远程管理**（**WinRM**）端口，这是Ansible将连接到机器的方式：
+- en: '[PRE7]'
+  id: totrans-44
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE7]'
+- en: 'The next of the commands we need to run is the one that launches the VM itself
+    and configures it to use the core networking components we have just launched:'
+  id: totrans-45
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们需要运行的下一个命令是启动虚拟机（VM）本身并配置它，以便使用我们刚刚启动的核心网络组件：
+- en: '[PRE8]'
+  id: totrans-46
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE8]'
+- en: As you can see, we are instructing the Azure CLI to launch a VM that uses the
+    `rg-ansible-windows-server-uks` resource group and using all of the network resources
+    we launched using the previous commands.
+  id: totrans-47
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，我们正在指示Azure CLI启动一个虚拟机，使用`rg-ansible-windows-server-uks`资源组，并使用我们通过之前的命令启动的所有网络资源。
+- en: You might be thinking, great, let’s get back to looking at Ansible. However,
+    there is one more command we need to run before we can connect to the VM using
+    Ansible – and the reason is that while we have a Windows 2022 server up and running,
+    the WinRM protocol is not enabled by default.
+  id: totrans-48
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可能会想，太好了，接下来可以继续看Ansible了。然而，在使用Ansible连接到虚拟机之前，我们还需要运行一个命令——原因是尽管我们已经有了Windows
+    2022服务器，但默认情况下WinRM协议并未启用。
+- en: 'The command to enable this functionality is as follows:'
+  id: totrans-49
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 启用此功能的命令如下：
+- en: '[PRE9]'
+  id: totrans-50
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE9]'
+- en: This enables a VM Extension on the Azure VM we have just deployed. There are
+    many different types of Virtual Machine Extensions; the one we are using is **Custom
+    Script Extension**. This extension downloads a script from a URL passed to it
+    and then executes a command; in our case, we are downloading the script configuring
+    WinRM from the GitHub repository accompanying this title.
+  id: totrans-51
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这会在我们刚刚部署的Azure虚拟机上启用一个虚拟机扩展。虚拟机扩展有多种类型；我们使用的是**自定义脚本扩展**。此扩展从传递给它的URL下载脚本，然后执行命令；在我们的案例中，我们正在从与本书一起提供的GitHub仓库下载配置WinRM的脚本。
+- en: 'You can see the script that will be downloaded at the following URL: [https://raw.githubusercontent.com/PacktPublishing/Learn-Ansible-Second-Edition/main/Scripts/ConfigureRemotingForAnsible.ps1](https://raw.githubusercontent.com/PacktPublishing/Learn-Ansible-Second-Edition/main/Scripts/ConfigureRemotingForAnsible.ps1)'
+  id: totrans-52
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以看到将从以下URL下载的脚本：[https://raw.githubusercontent.com/PacktPublishing/Learn-Ansible-Second-Edition/main/Scripts/ConfigureRemotingForAnsible.ps1](https://raw.githubusercontent.com/PacktPublishing/Learn-Ansible-Second-Edition/main/Scripts/ConfigureRemotingForAnsible.ps1)
+- en: 'The command that runs once the script is downloaded is as follows:'
+  id: totrans-53
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 脚本下载后运行的命令如下：
+- en: '[PRE10]'
+  id: totrans-54
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE10]'
+- en: The Virtual Machine Extension executes the preceding command, so we do not have
+    to run it directly.
+  id: totrans-55
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 虚拟机扩展执行了上述命令，因此我们不需要直接运行它。
+- en: 'The Resource Visualizer in the Azure portal for the resource group should show
+    you something that looks like the following overview:'
+  id: totrans-56
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在Azure门户中，资源组的资源可视化工具应该显示如下所示的概览：
+- en: '![Figure 7.1 – Reviewing our resources in the Azure Resource Visualizer](img/B21620_07_1.jpg)'
+  id: totrans-57
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 7.1 – 在Azure资源可视化工具中查看我们的资源](img/B21620_07_1.jpg)'
+- en: Figure 7.1 – Reviewing our resources in the Azure Resource Visualizer
+  id: totrans-58
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 7.1 – 在Azure资源可视化工具中查看我们的资源
+- en: Once completed, our Windows Server VM is ready to have our Ansible run against
+    it.
+  id: totrans-59
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 完成后，我们的Windows Server虚拟机已经准备好接受Ansible的操作。
+- en: Ansible preparation
+  id: totrans-60
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Ansible准备工作
+- en: As mentioned in the previous section, Ansible will use WinRM to interact with
+    our Windows host.
+  id: totrans-61
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如前一节所述，Ansible将使用WinRM与我们的Windows主机进行交互。
+- en: Information
+  id: totrans-62
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 信息
+- en: WinRM provides access to a **Simple Object Access Protocol** (**SOAP**)-like
+    protocol called **WS-Management**. Unlike **Secure Shell** (**SSH**), which provides
+    the user with an interactive shell to manage the host, WinRM accepts executed
+    scripts, and the results are passed back to you.
+  id: totrans-63
+  prefs: []
+  type: TYPE_NORMAL
+  zh: WinRM提供了一种类似**简单对象访问协议**（**SOAP**）的协议，叫做**WS-Management**。与提供交互式Shell来管理主机的**安全外壳**（**SSH**）不同，WinRM接受已执行的脚本，结果会返回给你。
+- en: Ansible requires us to install a few Python modules to enable it to use the
+    protocol; these modules need to be installed as they are not typically installed
+    alongside Ansible.
+  id: totrans-64
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible要求我们安装一些Python模块，以便它能够使用该协议；这些模块需要单独安装，因为它们通常不会与Ansible一起安装。
+- en: 'To install the module, if you are running on Ubuntu, run the following command:'
+  id: totrans-65
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你使用的是Ubuntu，运行以下命令来安装该模块：
+- en: '[PRE11]'
+  id: totrans-66
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE11]'
+- en: 'On macOS, run the following:'
+  id: totrans-67
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在macOS上，运行以下命令：
+- en: '[PRE12]'
+  id: totrans-68
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE12]'
+- en: Once installed, we need to update our environment file to instruct Ansible to
+    use the WinRM protocol rather than SSH.
+  id: totrans-69
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 安装完成后，我们需要更新环境文件，指示Ansible使用WinRM协议，而不是SSH。
+- en: 'Our updated `hosts` file looks like the following file, which is a copy of
+    the `hosts.example` file from the `Chapter07` folder in the accompanying repository.
+    If you are following along with the exercise, you will need to update yours to
+    update the IP address to match that of your Azure Virtual Machine once it has
+    been launched:'
+  id: totrans-70
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们更新后的`hosts`文件如下所示，它是来自附带仓库中`Chapter07`文件夹的`hosts.example`文件的副本。如果你在跟随练习，你需要更新你的文件，将IP地址更改为与你的Azure虚拟机匹配，一旦虚拟机启动：
+- en: '[PRE13]'
+  id: totrans-71
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE13]'
+- en: The start of the file mirrors what we have been used to so far in that it contains
+    a name for a host and the resolvable hostname of the VM, again using the **Nip.io**
+    service ([https://nip.io/](https://nip.io/)).
+  id: totrans-72
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 文件的开始部分与我们迄今为止所熟悉的类似，包含了主机的名称和虚拟机的可解析主机名，再次使用了**Nip.io**服务（[https://nip.io/](https://nip.io/)）。
+- en: Next, we take the named host and put it in the `ansible_hosts` group before
+    defining a bunch of settings for the group.
+  id: totrans-73
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来，我们将命名的主机放入`ansible_hosts`组中，然后为该组定义一系列设置。
+- en: The first of these settings instructs Ansible to use `winrm` by setting it as
+    the value for the `ansible_connection` key.
+  id: totrans-74
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这些设置中的第一个指示Ansible通过将`winrm`设置为`ansible_connection`键的值来使用WinRM。
+- en: Next, we set the `ansible_user` key; the value is `azureuser`, which we defined
+    when we launched the Azure Virtual Machine; and also the `ansible_password` key.
+  id: totrans-75
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来，我们设置 `ansible_user` 键；该值为 `azureuser`，我们在启动 Azure 虚拟机时定义的值；同时还设置了 `ansible_password`
+    键。
+- en: 'If you recall, at the start of the chapter, we ran the following command:'
+  id: totrans-76
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你还记得，在本章开始时，我们运行了以下命令：
+- en: '[PRE14]'
+  id: totrans-77
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE14]'
+- en: This took the random password we generated, that is, `$VMPASSWORD`, and placed
+    it inside a file named `VMPASSWORD`; this means that when we define the `ansible_password`
+    key, we can use a lookup value, using `{{ lookup('ansible.builtin.file', 'VMPASSWORD')
+    }}`, to read the contents of the `VMPASSWORD` file and use that rather than us
+    having to hardcode the password into our environment file.
+  id: totrans-78
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这将我们生成的随机密码，即 `$VMPASSWORD`，放入一个名为 `VMPASSWORD` 的文件中；这意味着当我们定义 `ansible_password`
+    键时，可以使用查找值，使用 `{{ lookup('ansible.builtin.file', 'VMPASSWORD') }}` 来读取 `VMPASSWORD`
+    文件的内容，而无需将密码硬编码到我们的环境文件中。
+- en: Finally, we tell Ansible to ignore any certificate errors by setting the `ansible_winrm_server_cert_validation`
+    key to `false`; we need to do this because WinRM has been configured to use a
+    self-signed certificate, which will cause a certificate error as our local machine
+    does not know to trust the certificate.
+  id: totrans-79
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后，我们告诉 Ansible 忽略任何证书错误，将 `ansible_winrm_server_cert_validation` 键设置为 `false`；我们需要这样做，因为
+    WinRM 已配置为使用自签名证书，这会导致证书错误，因为我们的本地机器不知道信任该证书。
+- en: Now that we have Windows up and running and Ansible configured, we can start
+    interacting with it.
+  id: totrans-80
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经启动了 Windows 并配置了 Ansible，可以开始与其交互了。
+- en: The ping module
+  id: totrans-81
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: ping 模块
+- en: Not all Ansible modules work with Windows hosts, and `ansible.builtin.ping`
+    is one of them.
+  id: totrans-82
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 并不是所有 Ansible 模块都能与 Windows 主机配合使用，`ansible.builtin.ping` 就是其中之一。
+- en: 'If you were to run the following command:'
+  id: totrans-83
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你运行以下命令：
+- en: '[PRE15]'
+  id: totrans-84
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE15]'
+- en: 'You would then get quite a verbose error with the following warning:'
+  id: totrans-85
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后你会看到一个详细的错误，包含以下警告：
+- en: '[PRE16]'
+  id: totrans-86
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE16]'
+- en: 'Luckily, there is a module provided for Windows called `ansible.windows.win_ping`,
+    so let’s update our command to run that instead:'
+  id: totrans-87
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 幸运的是，Windows 提供了一个名为 `ansible.windows.win_ping` 的模块，所以让我们更新命令以运行这个模块：
+- en: '[PRE17]'
+  id: totrans-88
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE17]'
+- en: 'This returns the result you would expect to receive if you sent a ping:'
+  id: totrans-89
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这将返回你期望接收到的 ping 结果：
+- en: '[PRE18]'
+  id: totrans-90
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE18]'
+- en: The next module we will look at doesn’t require any changes from how we ran
+    it against a Linux host.
+  id: totrans-91
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来我们将查看的模块不需要做任何更改，就像我们在 Linux 主机上运行时一样。
+- en: The setup module
+  id: totrans-92
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: setup 模块
+- en: 'As before, we need to run the module and target our host, so the command is
+    as follows:'
+  id: totrans-93
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如之前所述，我们需要运行该模块并定位到我们的主机，因此命令如下：
+- en: '[PRE19]'
+  id: totrans-94
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE19]'
+- en: 'This will return information on the host as it did when executing the same
+    module against our Linux host, a snippet of which can be seen in the following
+    screenshot:'
+  id: totrans-95
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这将返回主机的信息，就像在对我们的 Linux 主机执行相同模块时一样，以下截图中可以看到部分输出：
+- en: '![Figure 7.2 – Some of the output from the setup module](img/B21620_07_2.jpg)'
+  id: totrans-96
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 7.2 – 来自 setup 模块的一些输出](img/B21620_07_2.jpg)'
+- en: Figure 7.2 – Some of the output from the setup module
+  id: totrans-97
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 7.2 – 来自 setup 模块的一些输出
+- en: This is one of the only modules that will work on Windows and Linux hosts.
+  id: totrans-98
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这是为数不多的可以同时在 Windows 和 Linux 主机上运行的模块之一。
+- en: Now that we have confirmed that our host is accessible, let’s look at the changes
+    we need to make to the playbooks.
+  id: totrans-99
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已确认主机可以访问，让我们看看需要在 playbook 中做出的更改。
+- en: The Windows Playbook roles
+  id: totrans-100
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Windows Playbook 角色
+- en: The entire playbook can be found in the `Chapter 07` folder in the repository
+    that accompanies the title, so I will not cover how to create roles in this chapter
+    as we have covered it at length in the previous chapters.
+  id: totrans-101
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 整个 playbook 可以在与本书一起提供的存储库中的 `Chapter 07` 文件夹中找到，因此我将不再在本章中介绍如何创建角色，因为我们在前几章已经详细讲解过了。
+- en: Enabling Windows features
+  id: totrans-102
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 启用 Windows 功能
+- en: Two roles cover how to enable features; the first role, called `iis`, enables
+    the **Internet Information Services** (**IIS**) on our Windows Server.
+  id: totrans-103
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 两个角色涉及如何启用功能；第一个角色，名为 `iis`，在我们的 Windows Server 上启用 **Internet Information Services**
+    (**IIS**)。
+- en: Information
+  id: totrans-104
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 信息
+- en: 'IIS is the default web server that ships with Windows Server, and it supports
+    the following protocols: HTTP, HTTPS, and HTTP/2, as well as FTP, FTPS, SMTP,
+    and NNTP. It was first released in 1995 as part of Windows NT.'
+  id: totrans-105
+  prefs: []
+  type: TYPE_NORMAL
+  zh: IIS 是 Windows Server 默认随附的 Web 服务器，支持以下协议：HTTP、HTTPS 和 HTTP/2，以及 FTP、FTPS、SMTP
+    和 NNTP。它于 1995 年作为 Windows NT 的一部分首次发布。
+- en: 'There are some default variables in `roles/iis/defaults/main.yml`; these define
+    where things need to be copied to on the server and also include the contents
+    on an HTML file we will copy to the host:'
+  id: totrans-106
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 `roles/iis/defaults/main.yml` 中有一些默认变量；这些定义了需要复制到服务器上的位置，并包括我们将复制到主机的 HTML
+    文件内容：
+- en: '[PRE20]'
+  id: totrans-107
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE20]'
+- en: 'There are then two tasks in `roles/iis/tasks/main.yml`. The first task is *where
+    the* *magic happens*:'
+  id: totrans-108
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后在 `roles/iis/tasks/main.yml` 中有两个任务。第一个任务是 *魔法发生的地方*：
+- en: '[PRE21]'
+  id: totrans-109
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE21]'
+- en: I say *where the magic happens* because I don’t get to touch Windows hosts very
+    often as a Linux system administrator by trade.
+  id: totrans-110
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我说 *魔法发生的地方* 是因为作为一名 Linux 系统管理员，我很少接触 Windows 主机。
+- en: Still, as you can see from the preceding task, Ansible is giving us a Linux-like
+    experience, meaning that I don’t have to roll up my sleeves and get under the
+    hood of Windows too much.
+  id: totrans-111
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 尽管如此，正如您从前面的任务中看到的那样，Ansible 给了我们一个类似 Linux 的体验，这意味着我不需要卷起袖子过多地深入 Windows 的内部。
+- en: 'The task uses the `ansible.windows.win_feature` module to enable the `Web-Server`
+    and `Web-Common-Http` features; as we are sticking with the default out-of-the-box
+    settings, there isn’t any more configuration we need to do other than to copy
+    an HTML file across to the document root:'
+  id: totrans-112
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 该任务使用 `ansible.windows.win_feature` 模块来启用 `Web-Server` 和 `Web-Common-Http` 功能；由于我们坚持使用默认的开箱即用设置，因此除了将一个
+    HTML 文件复制到文档根目录之外，不需要进行任何额外的配置：
+- en: '[PRE22]'
+  id: totrans-113
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE22]'
+- en: 'As you can see, we are using a Jinja2 template file, an abridged version of
+    which looks like the following:'
+  id: totrans-114
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如您所见，我们正在使用一个 Jinja2 模板文件，其中的简化版本如下所示：
+- en: '[PRE23]'
+  id: totrans-115
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE23]'
+- en: But rather than `ansible.builtin.template`, we are using `ansible.windows.win_template`,
+    which is the Windows module version, as I am sure you will have already guessed.
+  id: totrans-116
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 但是，我们并没有使用 `ansible.builtin.template`，而是使用了 `ansible.windows.win_template`，这是
+    Windows 模块版本，正如您已经猜到的那样。
+- en: Suppose we were to use the `ansible.builtin.template` version; we would get
+    the same error as when we ran the `ansible.builtin.ping` module, and complaints
+    about Python not being installed.
+  id: totrans-117
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 假设我们使用的是 `ansible.builtin.template` 版本，我们将遇到与运行 `ansible.builtin.ping` 模块时相同的错误，并且会抱怨
+    Python 没有安装。
+- en: The next role expands on the `iis` file and enables `.Net`; the role is called
+    `dotnet`.
+  id: totrans-118
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 下一个角色扩展了 `iis` 文件并启用了 `.Net`；该角色名为 `dotnet`。
+- en: 'Again, there are some default variables in `roles/dotnet/defaults/main.yml`:'
+  id: totrans-119
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 同样，`roles/dotnet/defaults/main.yml` 中也有一些默认变量：
+- en: '[PRE24]'
+  id: totrans-120
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE24]'
+- en: As you can see, this time, the body contains some inline code.
+  id: totrans-121
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如您所见，这一次，正文中包含了一些内联代码。
+- en: 'However, you may have yet to spot a subtle difference in how we define the
+    paths in the variables. For both tasks for our Windows workload, the path variables
+    have been defined as follows:'
+  id: totrans-122
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，您可能还没有注意到我们在变量中定义路径时的微妙差异。对于我们的 Windows 工作负载的两个任务，路径变量已如下所示定义：
+- en: '[PRE25]'
+  id: totrans-123
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE25]'
+- en: 'But, if we look at how we defined the path in [*Chapter 5*](B21620_05.xhtml#_idTextAnchor253),
+    *Deploying WordPress*, there is quite a crucial difference:'
+  id: totrans-124
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 但是，如果我们查看在 [*第5章*](B21620_05.xhtml#_idTextAnchor253)《部署 WordPress》中如何定义路径，就会发现有一个至关重要的区别：
+- en: '[PRE26]'
+  id: totrans-125
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE26]'
+- en: The difference is not that we have used `wordpress_system.home` as the variable;
+    it is more subtle than that.
+  id: totrans-126
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 区别并不是我们使用了 `wordpress_system.home` 作为变量；它比这更微妙。
+- en: If you have noticed that the Windows workload paths are using single quotes
+    and the Linux one is using double quotes, give yourself a pat on the back.
+  id: totrans-127
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果您注意到 Windows 工作负载的路径使用单引号，而 Linux 的路径使用双引号，给自己点个赞。
+- en: In Ansible, single quotes (`'`) that enclose strings are treated as literals,
+    ensuring special characters aren’t interpreted or expanded, making them ideal
+    for Windows paths.
+  id: totrans-128
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 Ansible 中，包围字符串的单引号（`'`）被视为字面量，这样可以确保特殊字符不会被解释或展开，这使得它们非常适合 Windows 路径。
+- en: Double quotes (`"`) allow for string interpolation, meaning embedded Jinja2
+    template expressions or special characters will be expanded. They also support
+    escape sequences, such as `\n` for new lines, because many escape sequences such
+    as `\`, which is in our path, could cause problems.
+  id: totrans-129
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 双引号（`"`）允许进行字符串插值，这意味着嵌入的 Jinja2 模板表达式或特殊字符将被展开。它们还支持转义序列，例如用于换行的`\n`，因为许多转义序列，如我们路径中的`\`，可能会导致问题。
+- en: 'If we needed to use double quotes because we needed to pass in something that
+    needed to be expanded, then you could have a double slash (`\\`) like this:'
+  id: totrans-130
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果我们需要使用双引号，因为我们需要传递某些需要展开的内容，那么您可以像这样使用双斜杠（`\\`）：
+- en: '[PRE27]'
+  id: totrans-131
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE27]'
+- en: However, it can confuse reading the paths, so I used single quotes in our examples
+    – back to the role now.
+  id: totrans-132
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，这可能会让路径的阅读变得混乱，所以我在示例中使用了单引号——现在回到角色。
+- en: 'The first of four tasks in `roles/dotnet/tasks/main.yml` enables `.Net`:'
+  id: totrans-133
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 `roles/dotnet/tasks/main.yml` 中的四个任务中，第一个任务启用了 `.Net`：
+- en: '[PRE28]'
+  id: totrans-134
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE28]'
+- en: 'We are also triggering a restart of IIS via a handler if any changes are detected;
+    this uses `ansible.windows.win_service`:'
+  id: totrans-135
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果检测到任何更改，我们还通过处理程序触发 IIS 的重启；这使用了 `ansible.windows.win_service`：
+- en: '[PRE29]'
+  id: totrans-136
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE29]'
+- en: 'The next task creates a folder if one doesn’t exist:'
+  id: totrans-137
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 下一个任务是如果文件夹不存在，则创建一个文件夹：
+- en: '[PRE30]'
+  id: totrans-138
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE30]'
+- en: 'Again, a Windows version of an existing module we have used is called, this
+    time `ansible.windows.win_file`. Next, we copy the file to the folder we just
+    created:'
+  id: totrans-139
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 再次调用了我们之前使用过的一个现有模块，这次是 `ansible.windows.win_file`。接下来，我们将文件复制到我们刚创建的文件夹：
+- en: '[PRE31]'
+  id: totrans-140
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE31]'
+- en: 'The final task in the role configures IIS to consider we are now running an
+    application:'
+  id: totrans-141
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 角色中的最后一个任务配置 IIS，以便它知道我们现在正在运行一个应用程序：
+- en: '[PRE32]'
+  id: totrans-142
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE32]'
+- en: There are a few more roles to cover before we run the playbook; let’s look at
+    the next one.
+  id: totrans-143
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在运行 playbook 之前，还有一些角色需要覆盖；让我们来看下一个角色。
+- en: Creating a user
+  id: totrans-144
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 创建用户
+- en: 'This role creates a user for us to connect to our instance with. The defaults
+    that can be found in `roles/user/defaults/main.yml` are as follows:'
+  id: totrans-145
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 该角色为我们创建一个用户，以便我们能够连接到实例。可以在 `roles/user/defaults/main.yml` 中找到的默认设置如下：
+- en: '[PRE33]'
+  id: totrans-146
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE33]'
+- en: As you can see, here, we are defining a user called `ansible` that has a 30-character
+    random `password`, which Ansible will create using a lookup plugin if one doesn’t
+    exist. The `ansible` user will be a member of the `Users` and `Administrators`
+    groups.
+  id: totrans-147
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，在这里我们定义了一个名为 `ansible` 的用户，并设置了一个 30 个字符的随机 `password`，如果不存在，Ansible 会使用查找插件创建该密码。`ansible`
+    用户将是 `Users` 和 `Administrators` 组的成员。
+- en: 'There is a single task in `roles/user/tasks/main.yml` using the `ansible.windows.win_user`
+    module, which looks like the following:'
+  id: totrans-148
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 `roles/user/tasks/main.yml` 中有一个任务，使用 `ansible.windows.win_user` 模块，任务如下所示：
+- en: '[PRE34]'
+  id: totrans-149
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE34]'
+- en: Like all Windows modules, the syntax is similar to the Linux equivalent, so
+    you should know what each key means. As you can see from the previous task, we
+    are using a Jinja2 transformation to capitalize the first letter of the `ansible.username`
+    variable.
+  id: totrans-150
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 和所有 Windows 模块一样，语法类似于 Linux 等效模块，因此你应该知道每个键的含义。如前一个任务所示，我们使用 Jinja2 转换将 `ansible.username`
+    变量的首字母大写。
+- en: Installing applications using Chocolatey
+  id: totrans-151
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 使用 Chocolatey 安装应用程序
+- en: The next role, called `choco`, uses **Chocolatey** to install a few bits of
+    software on the machine.
+  id: totrans-152
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 下一个角色叫做 `choco`，它使用 **Chocolatey** 在机器上安装一些软件。
+- en: Information
+  id: totrans-153
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 信息
+- en: Chocolatey is Windows’ answer to macOS’s Homebrew – a package manager streamlining
+    software installations. Like we used Homebrew earlier, Chocolatey wraps typical
+    Windows installations into neat PowerShell commands, making it a perfect match
+    for orchestration tools such as Ansible.
+  id: totrans-154
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Chocolatey 是 Windows 对 macOS Homebrew 的回应——一个简化软件安装的包管理器。就像我们之前使用 Homebrew，Chocolatey
+    将典型的 Windows 安装封装成整洁的 PowerShell 命令，使其成为 Ansible 等自动化工具的完美搭档。
+- en: 'In `roles/choco/defaults/main.yml`, we have a single variable that contains
+    a list of the packages we want to install:'
+  id: totrans-155
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 `roles/choco/defaults/main.yml` 中，我们有一个包含我们想要安装的软件包列表的变量：
+- en: '[PRE35]'
+  id: totrans-156
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE35]'
+- en: 'As you may have already guessed, this is the task that installs the applications:'
+  id: totrans-157
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如你可能已经猜到的，这是安装应用程序的任务：
+- en: '[PRE36]'
+  id: totrans-158
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE36]'
+- en: Again, the module takes a similar input to the previous package manager modules,
+    `ansible.builtin.apt` and `ansible.builtin.dnf`, that we used. This means that
+    the logic Ansible uses across the modules that do similar tasks is consistent
+    across multiple operating systems and not just different Linux distributions.
+  id: totrans-159
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 再次，该模块接受类似于我们之前使用的包管理模块 `ansible.builtin.apt` 和 `ansible.builtin.dnf` 的输入。这意味着，Ansible
+    在多个操作系统之间，甚至不仅仅是不同的 Linux 发行版之间，使用一致的逻辑来处理类似的任务。
+- en: Information role
+  id: totrans-160
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 信息角色
+- en: 'The final role is called info; its only purpose is to output once the playbook
+    has finished running. The role has a single task defined in `roles/info/tasks/main.yml`:'
+  id: totrans-161
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最终的角色叫做 info；它的唯一作用是在 playbook 执行完成后输出信息。该角色在 `roles/info/tasks/main.yml` 中定义了一个任务：
+- en: '[PRE37]'
+  id: totrans-162
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE37]'
+- en: As you can see, this will provide us with the hostname to create a Remote Desktop
+    session, along with confirming the username and password we should use.
+  id: totrans-163
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，这将提供我们所需的主机名，以创建远程桌面会话，同时确认我们应该使用的用户名和密码。
+- en: That concludes our look at the roles that will be called when we run the playbook,
+    which we are now ready to do.
+  id: totrans-164
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这就是我们在运行 playbook 时将调用的角色概览，现在我们可以开始执行了。
+- en: Running the Playbook
+  id: totrans-165
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 运行 Playbook
+- en: 'The `site.yml` is missing some of the settings at the top because we are targeting
+    a Windows host:'
+  id: totrans-166
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`site.yml` 在顶部缺少一些设置，因为我们正在针对 Windows 主机：'
+- en: '[PRE38]'
+  id: totrans-167
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE38]'
+- en: As you can see, there is no need for the `become` or `become_method` keys to
+    be set, as we do not need to change users once connected to the host.
+  id: totrans-168
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，不需要设置 `become` 或 `become_method` 键，因为连接到主机后，我们不需要更改用户。
+- en: 'Outside of that, the rest of the file is as expected, as is the way we run
+    the playbook:'
+  id: totrans-169
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 除此之外，文件的其余部分都符合预期，运行剧本的方式也是如此：
+- en: '[PRE39]'
+  id: totrans-170
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE39]'
+- en: 'It will take a little while to run as a lot is going on in the background,
+    as you will see from the output when the playbook runs for the first time:'
+  id: totrans-171
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于后台有很多操作，运行时需要一点时间，你将会在第一次运行剧本时看到输出中的信息：
+- en: '![Figure 7.3 – Reviewing the playbook output](img/B21620_07_3.jpg)'
+  id: totrans-172
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 7.3 – 审查剧本输出](img/B21620_07_3.jpg)'
+- en: Figure 7.3 – Reviewing the playbook output
+  id: totrans-173
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 7.3 – 审查剧本输出
+- en: As you can see from the preceding output, the host I was given was `20.50.120.120.nip.io`
+    (this host has long since been terminated, but if you are following along, you
+    can replace the preceding host with your own).
+  id: totrans-174
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如你从之前的输出中看到的，我使用的主机是 `20.50.120.120.nip.io`（这台主机早已终止，但如果你跟着操作，可以将其替换为你自己的主机）。
+- en: To view the static HTML and `.Net` pages we uploaded, you can visit [http://20.50.120.120.nip.io/ansible.html](http://20.50.120.120.nip.io/ansible.html)
+    or [http://20.50.120.120.nip.io/ansible/default.aspx](http://20.50.120.120.nip.io/ansible/default.aspx),
+    making sure to update the host to reflect your own.
+  id: totrans-175
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要查看我们上传的静态 HTML 和 `.Net` 页面，你可以访问[http://20.50.120.120.nip.io/ansible.html](http://20.50.120.120.nip.io/ansible.html)或[http://20.50.120.120.nip.io/ansible/default.aspx](http://20.50.120.120.nip.io/ansible/default.aspx)，记得更新主机以反映你自己的主机地址。
+- en: 'You can also open a remote desktop session to the host using the credentials
+    given in the output; the following screenshot shows a session using the user we
+    created and opening the side using **Google Chrome** with notes in **Notepad++**,
+    both of which are applications we installed with the Playbook:'
+  id: totrans-176
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你还可以使用输出中给出的凭据打开远程桌面会话；下面的截图展示了我们创建的用户会话，并使用 **Google Chrome** 打开页面，旁边是 **Notepad++**，这两个应用程序都是我们通过剧本安装的：
+- en: '![Figure 7.4 – A remote desktop session](img/B21620_07_4.jpg)'
+  id: totrans-177
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 7.4 – 远程桌面会话](img/B21620_07_4.jpg)'
+- en: Figure 7.4 – A remote desktop session
+  id: totrans-178
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 7.4 – 远程桌面会话
+- en: 'Once you have finished with the host, you can run the following Azure CLI command
+    to terminate all the resources we created:'
+  id: totrans-179
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 完成后，你可以运行以下 Azure CLI 命令来终止我们创建的所有资源：
+- en: '[PRE40]'
+  id: totrans-180
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE40]'
+- en: Double-check that everything has been removed as expected to ensure you do not
+    get any unexpected bills.
+  id: totrans-181
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请再次检查确保所有内容已经按照预期被删除，以确保不会收到任何意外账单。
+- en: Summary
+  id: totrans-182
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 总结
+- en: As mentioned at the start of the chapter, using what we would consider a traditional
+    Linux tool such as Ansible on Windows always feels a little strange. However,
+    I am sure you will agree that the experience is as Linux-like as possible.
+  id: totrans-183
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如本章开始时提到的那样，在 Windows 上使用我们认为的传统 Linux 工具（如 Ansible）总是有点奇怪。然而，我相信你会同意，这种体验尽可能地像
+    Linux。
+- en: When I first started experimenting with the Windows modules, I was surprised
+    that I managed to launch a Windows Server in Azure and deploy a simple web application
+    without having to remote desktop into the target instance.
+  id: totrans-184
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当我第一次开始实验 Windows 模块时，我很惊讶于我居然能够在 Azure 中启动一台 Windows Server 并部署一个简单的 Web 应用程序，而无需远程桌面连接到目标实例。
+- en: With each new release, Ansible gets more and more support for Windows-based
+    hosts, making it easy to manage mixed workloads from your playbooks.
+  id: totrans-185
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 随着每次新版本的发布，Ansible 对基于 Windows 的主机支持越来越好，使得从剧本中管理混合工作负载变得更加轻松。
+- en: In the next chapter, we will examine the networking modules available in Ansible.
+  id: totrans-186
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一章，我们将研究 Ansible 中可用的网络模块。
+- en: Further reading
+  id: totrans-187
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 深入阅读
+- en: You can find more information on the excellent Chocolatey at [https://chocolatey.org/](https://chocolatey.org/).
+  id: totrans-188
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以在[https://chocolatey.org/](https://chocolatey.org/)上找到更多关于优秀的Chocolatey的信息。
+- en: 'Part 3: Network and Cloud Automation'
+  id: totrans-189
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 第3部分：网络与云自动化
+- en: Ansible’s power extends beyond just managing servers; it can also automate network
+    devices and cloud infrastructure. Here, we will explore Ansible’s network modules
+    and discuss how to interact with network devices programmatically. We will then
+    shift our attention to the cloud, where you will discover how to provision and
+    manage resources on popular cloud platforms such as Microsoft Azure and Amazon
+    Web Services. By the end of this part, you will have the skills needed to automate
+    complex cloud deployments using Ansible.
+  id: totrans-190
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible的强大功能不仅限于管理服务器，它还可以自动化网络设备和云基础设施。在这里，我们将探索Ansible的网络模块，并讨论如何以编程方式与网络设备进行交互。接下来，我们将把注意力转向云计算，你将了解如何在流行的云平台如
+    Microsoft Azure 和 Amazon Web Services 上配置和管理资源。到本部分结束时，你将掌握使用Ansible自动化复杂云部署的技能。
+- en: 'This part has the following chapters:'
+  id: totrans-191
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本部分包括以下章节：
+- en: '[*Chapter 8*](B21620_08.xhtml#_idTextAnchor386), *Ansible Network Modules*'
+  id: totrans-192
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '[*第8章*](B21620_08.xhtml#_idTextAnchor386)，*Ansible网络模块*'
+- en: '[*Chapter 9*](B21620_09.xhtml#_idTextAnchor411), *Moving to the Cloud*'
+  id: totrans-193
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '[*第9章*](B21620_09.xhtml#_idTextAnchor411)，*迁移到云端*'
+- en: '[*Chapter 10*](B21620_10.xhtml#_idTextAnchor458), *Building Out a Cloud Network*'
+  id: totrans-194
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '[*第10章*](B21620_10.xhtml#_idTextAnchor458)，*构建云网络*'
+- en: '[*Chapter 11*](B21620_11.xhtml#_idTextAnchor501), *Highly Available Cloud Deployments*'
+  id: totrans-195
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '[*第11章*](B21620_11.xhtml#_idTextAnchor501)，*高度可用的云部署*'
+- en: '[*Chapter 12*](B21620_12.xhtml#_idTextAnchor550), *Building Out a VMware Deployment*'
+  id: totrans-196
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '[*第12章*](B21620_12.xhtml#_idTextAnchor550)，*构建VMware部署*'

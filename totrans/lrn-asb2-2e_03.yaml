@@ -1,0 +1,947 @@
+- en: Chapter 3. Scaling to Multiple Hosts
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 第3章. 扩展到多个主机
+- en: In the previous chapters, we have specified the hosts in the command line. This
+    worked fine while having a single host to work on, but will not work very well
+    when managing multiple servers. In this chapter, we will see exactly how to manage
+    multiple servers.
+  id: totrans-1
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在前几章中，我们在命令行中指定了主机。虽然在只有一个主机的情况下，这种方式运行良好，但在管理多个服务器时效果不好。在本章中，我们将具体了解如何管理多个服务器。
+- en: 'We''ll explore the following topics:'
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将探讨以下主题：
+- en: Ansible inventories
+  id: totrans-3
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Ansible清单
+- en: Ansible host/group variables
+  id: totrans-4
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Ansible主机/组变量
+- en: Ansible loops
+  id: totrans-5
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Ansible循环
+- en: Working with inventory files
+  id: totrans-6
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用清单文件
+- en: An inventory file is the source of truth for Ansible (there is also an advanced
+    concept called **dynamic inventory**, which we will cover later). It follows the
+    **Initialization** (**INI**) format and tells Ansible whether the remote host
+    or hosts provided by the user are genuine.
+  id: totrans-7
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 清单文件是Ansible的真实数据来源（还有一个称为**动态清单**的高级概念，我们稍后将介绍）。它遵循**初始化**（**INI**）格式，并告诉Ansible用户提供的远程主机是否真实存在。
+- en: Ansible can run its tasks against multiple hosts in parallel. To do this, you
+    can directly pass the list of hosts to Ansible using an inventory file. For such
+    parallel execution, Ansible allows you to group your hosts in the inventory file;
+    the file passes the group name to Ansible. Ansible will search for that group
+    in the inventory file and run its tasks against all the hosts listed in that group.
+  id: totrans-8
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible可以并行地在多个主机上执行任务。为此，你可以通过清单文件将主机列表直接传递给Ansible。为了进行并行执行，Ansible允许你在清单文件中将主机分组；该文件将组名传递给Ansible。Ansible会在清单文件中查找该组，并在该组中列出的所有主机上执行任务。
+- en: You can pass the inventory file to Ansible using the `-i` or `--inventory-file`
+    option followed by the path to the file. If you do not explicitly specify any
+    inventory file to Ansible, it will take the default path from the `host_file`
+    parameter of `ansible.cfg`, which defaults to `/etc/ansible/hosts`.
+  id: totrans-9
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以通过使用`-i`或`--inventory-file`选项，后跟文件路径，将清单文件传递给Ansible。如果你没有明确指定任何清单文件给Ansible，它将使用`ansible.cfg`中`host_file`参数的默认路径，该默认路径为`/etc/ansible/hosts`。
+- en: Tip
+  id: totrans-10
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 提示
+- en: When using the `-i` parameter, if the value is a `list` (it contains at least
+    one comma) it will be used as the inventory list, while if the variable is a string,
+    it will be used as the inventory file path.
+  id: totrans-11
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用`-i`参数时，如果值是一个`list`（即包含至少一个逗号），它将被用作清单列表，而如果该变量是一个字符串，它将被用作清单文件路径。
+- en: The basic inventory file
+  id: totrans-12
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 基本清单文件
+- en: 'Before diving into the concept, let''s first look at a basic inventory file
+    called **hosts** that we can use instead of the list we used in the previous examples:'
+  id: totrans-13
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在深入了解这个概念之前，让我们先看一个基本的清单文件，叫做**hosts**，我们可以使用它代替之前示例中使用的列表：
+- en: '[PRE0]'
+  id: totrans-14
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: Tip
+  id: totrans-15
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 提示
+- en: Ansible can take either a FQDN or an IP address within the inventory file.
+  id: totrans-16
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible可以在清单文件中使用FQDN或IP地址。
+- en: 'We can now perform the same operations that we did in the previous chapter,
+    tweaking the Ansible command parameters. For instance, to install the web server,
+    we used this command:'
+  id: totrans-17
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们现在可以执行与上一章相同的操作，调整Ansible命令参数。例如，要安装Web服务器，我们使用了这个命令：
+- en: '[PRE1]'
+  id: totrans-18
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: 'Instead, we can use the following:'
+  id: totrans-19
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 相反，我们可以使用以下内容：
+- en: '[PRE2]'
+  id: totrans-20
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: As you can see, we have substituted the list of hosts with the inventory file
+    name.
+  id: totrans-21
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，我们已经用清单文件名替代了主机列表。
+- en: Groups in an inventory file
+  id: totrans-22
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 清单文件中的组
+- en: 'The advantages of inventory files are noticeable when we have more complex
+    situations. Let''s say our website is getting more complicated and we now need
+    a more complex environment. In our example, our website will require a MySQL database.
+    Also we decide to have two web servers. In this scenario it makes sense to group
+    different machines based on their role in our infrastructure. Our `hosts` file
+    would change to:'
+  id: totrans-23
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当我们面临更复杂的情况时，清单文件的优势就显现出来了。假设我们的网站变得更加复杂，现在需要一个更复杂的环境。在我们的示例中，我们的网站将需要一个MySQL数据库。此外，我们决定使用两台Web服务器。在这种情况下，根据机器在我们基础设施中的角色来分组不同的机器是有意义的。我们的`hosts`文件将更改为：
+- en: '[PRE3]'
+  id: totrans-24
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: 'Now we can instruct playbooks to run only on hosts in a certain group. We have
+    created three different playbooks for our website example:'
+  id: totrans-25
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们可以指示playbook仅在特定组中的主机上运行。我们为我们的网站示例创建了三个不同的playbook：
+- en: '`firstrun.yaml` is generic and will have to be run on every machine'
+  id: totrans-26
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`firstrun.yaml`是通用的，需要在每台机器上运行'
+- en: '`common_tasks.yaml` is generic and will have to be run on every machine'
+  id: totrans-27
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`common_tasks.yaml`是通用的，需要在每台机器上运行'
+- en: '`webserver.yaml` is specific for web servers and therefore should not be run
+    on any other machines'
+  id: totrans-28
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`webserver.yaml` 文件专门用于 Web 服务器，因此不应在其他机器上运行'
+- en: 'We need to change only the `webserver.yaml` file which, at the moment, specifies
+    that it has to be run on all machines and should become web server only. To do
+    so, let''s open the `webserver.yaml` file and change content from:'
+  id: totrans-29
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们只需要更改 `webserver.yaml` 文件，当前该文件指定它必须在所有机器上运行，而应该仅限于 Web 服务器。为了做到这一点，让我们打开
+    `webserver.yaml` 文件，并将内容从：
+- en: '[PRE4]'
+  id: totrans-30
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: 'to:'
+  id: totrans-31
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 到：
+- en: '[PRE5]'
+  id: totrans-32
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: With only those three playbooks, we cannot proceed to create our environment
+    with three servers. Since we don't have a playbook to set up the database yet
+    (we will see it in the next chapter), we will provision the two web servers completely
+    and for the database server we will only provision the base system.
+  id: totrans-33
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 仅凭这三个 playbook，我们无法继续创建带有三台服务器的环境。由于我们还没有设置数据库的 playbook（我们将在下一章中看到），我们将完全配置两台
+    Web 服务器，而对于数据库服务器，我们只配置基础系统。
+- en: 'We can run the `firstrun` playbook with the following:'
+  id: totrans-34
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以通过以下方式运行 `firstrun` playbook：
+- en: '[PRE6]'
+  id: totrans-35
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: 'The following would be the result:'
+  id: totrans-36
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下将是结果：
+- en: '[PRE7]'
+  id: totrans-37
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE7]'
+- en: As you can see, the output is very similar to what we received with a single
+    host, but with one line per host at each step. In this case, all the machines
+    were in the same state and the same steps have been performed, so we see that
+    they all acted the same, but with more complex scenarios, you can have different
+    machines returning different states on the same step. We can also execute the
+    other two playbooks with similar results.
+  id: totrans-38
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，输出与我们在单一主机上收到的结果非常相似，但每个步骤每个主机都有一行。在这种情况下，所有机器的状态相同，且执行了相同的步骤，因此我们看到它们的行为一致。但在更复杂的场景中，可能会有不同的机器在同一步骤上返回不同的状态。我们也可以执行其他两个
+    playbook，得到类似的结果。
+- en: Regular expressions in the inventory file
+  id: totrans-39
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 库存文件中的正则表达式
+- en: 'When you have a large number of servers, it is common and helpful to give them
+    predictable names, for instance, call all web servers `wsXY` or `webXY`, or call
+    the database servers `dbXY`. If you do so, you can reduce the number of lines
+    in your `hosts` file increasing its readability. For instance, our `hosts` file
+    can be simplified as:'
+  id: totrans-40
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当你有大量服务器时，给它们起个可预测的名字通常是很常见也很有帮助的。例如，可以将所有 Web 服务器命名为 `wsXY` 或 `webXY`，将数据库服务器命名为
+    `dbXY`。这样，你可以减少 `hosts` 文件中的行数，从而提高可读性。例如，我们的 `hosts` 文件可以简化为：
+- en: '[PRE8]'
+  id: totrans-41
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE8]'
+- en: In this example, we have used `[01:02]` that will match for all occurrences
+    between the first number (`01` in our case) and the last (`02` in our case). In
+    our case, the gain is not huge, but if you have 40 web servers, you can cut 39
+    lines from your `hosts` file.
+  id: totrans-42
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这个例子中，我们使用了 `[01:02]`，它会匹配从第一个数字（在我们这个例子中是 `01`）到最后一个数字（在我们这个例子中是 `02`）的所有出现情况。虽然我们这个例子的收益不大，但如果你有
+    40 台 Web 服务器，你就能从 `hosts` 文件中减少 39 行。
+- en: Working with variables
+  id: totrans-43
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用变量
+- en: Ansible allows you to define variables in many ways, from a variable file within
+    a playbook, by passing it from the Ansible command using the `-e / --extra-vars`
+    option, or by passing it to an inventory file. You can define variables in an
+    inventory file either on a per-host basis, for an entire group, or by creating
+    a variable file in the directory where your inventory file exists.
+  id: totrans-44
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 允许你通过多种方式定义变量：可以通过 playbook 中的变量文件，使用 `-e / --extra-vars` 选项从 Ansible
+    命令传递，或通过库存文件传递。你可以在库存文件中定义变量，可以按每个主机、按整个组，或者在库存文件所在的目录中创建一个变量文件。
+- en: Host variables
+  id: totrans-45
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 主机变量
+- en: 'It''s possible to declare variables for a specific host, declaring them in
+    the `hosts` file. For instance, we may want to specify different engines for our
+    web servers. Let''s suppose that one needs to reply to a specific domain, while
+    the other to a different domain name. In this case, we would do it with the following
+    `hosts` file:'
+  id: totrans-46
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 可以在 `hosts` 文件中为特定主机声明变量。例如，我们可能想为 Web 服务器指定不同的引擎。假设其中一台需要响应一个特定的域名，而另一台需要响应不同的域名。在这种情况下，我们可以通过以下
+    `hosts` 文件来实现：
+- en: '[PRE9]'
+  id: totrans-47
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE9]'
+- en: In this way, all playbooks running on web servers will be able to refer to the
+    domain name variable.
+  id: totrans-48
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这样，所有在 Web 服务器上运行的 playbook 都能够引用域名变量。
+- en: Group variables
+  id: totrans-49
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 分组变量
+- en: 'There are other cases where you want to set a variable that is valid for the
+    whole group. Let''s suppose that we want to declare the variable `https_enabled`
+    to `True` and its value has to be equal for all web servers. In this case, we
+    can create a `[webserver:vars]` section, so we will use the following `hosts`
+    file:'
+  id: totrans-50
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 还有其他情况，你可能希望设置适用于整个组的变量。假设我们要将变量 `https_enabled` 设置为 `True`，并且它的值必须对所有Web服务器一致。在这种情况下，我们可以创建一个
+    `[webserver:vars]` 部分，所以下面是我们将使用的 `hosts` 文件：
+- en: '[PRE10]'
+  id: totrans-51
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE10]'
+- en: Note
+  id: totrans-52
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: Remember that `host` variables will override `group` variables in case the same
+    variable is declared in both spaces.
+  id: totrans-53
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请记住，如果同一变量在主机和组中都被声明，`host` 变量将覆盖 `group` 变量。
+- en: Variable files
+  id: totrans-54
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 变量文件
+- en: Sometimes, you have a lot of variables to declare for each `host` and `group`,
+    and the `hosts` file gets hard to read. In those cases, you can move the variables
+    to specific files. For host level variables, you'll need to create a file named
+    the same as your host in the `host_vars` folder, while for `group` variables you'll
+    have to use the group name for the file name and place them in the `group_vars`
+    folder.
+  id: totrans-55
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有时，你需要为每个 `host` 和 `group` 声明很多变量，`hosts` 文件变得难以阅读。在这种情况下，你可以将变量移到特定的文件中。对于主机级变量，你需要在
+    `host_vars` 文件夹中创建一个与主机名称相同的文件，而对于 `group` 变量，你需要使用组名作为文件名，并将其放入 `group_vars`
+    文件夹中。
+- en: 'So, if we want to replicate the previous example of host-based variables using
+    files, we will need to create the `host_vars/ws01.fale.io` file with the following
+    content:'
+  id: totrans-56
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 所以，如果我们想使用文件复制前面基于主机的变量示例，我们需要创建一个 `host_vars/ws01.fale.io` 文件，文件内容如下：
+- en: '[PRE11]'
+  id: totrans-57
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE11]'
+- en: 'Create the `host_vars/ws02.fale.io` file with the following content:'
+  id: totrans-58
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 创建 `host_vars/ws02.fale.io` 文件，文件内容如下：
+- en: '[PRE12]'
+  id: totrans-59
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE12]'
+- en: 'While if we want to replicate the group based variables example, we will need
+    to have the `group_vars/webserver` file with the following content:'
+  id: totrans-60
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果我们想要复制基于组的变量示例，我们需要有一个 `group_vars/webserver` 文件，文件内容如下：
+- en: '[PRE13]'
+  id: totrans-61
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE13]'
+- en: Note
+  id: totrans-62
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: Inventory variables follow a hierarchy; at the top of this is the common variable
+    file (we discussed this in the previous section, *Working with inventory files*)
+    that will override any of the host variables, group variables, and inventory variable
+    files. After this comes the host variables, which will override group variables;
+    lastly, group variables will override inventory variable files.
+  id: totrans-63
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 库存变量遵循层级结构；在顶部是公共变量文件（我们在前一节 *Working with inventory files* 中讨论过），它将覆盖任何主机变量、组变量和库存变量文件。接下来是主机变量，它将覆盖组变量；最后，组变量将覆盖库存变量文件。
+- en: Overriding configuration parameters with an inventory file
+  id: totrans-64
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 通过库存文件覆盖配置参数
+- en: You can override some of Ansible's configuration parameters directly through
+    the inventory file. These configuration parameters will override all the other
+    parameters that are set either through `ansible.cfg`, environment variables, or
+    set in the playbooks themselves. Variable passed to the `ansible-playbook/ansible`
+    command have priority over any other variable, including the ones set in the inventory
+    file.
+  id: totrans-65
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以通过库存文件直接覆盖某些Ansible的配置参数。这些配置参数将覆盖通过 `ansible.cfg`、环境变量或在playbook中设置的所有其他参数。传递给
+    `ansible-playbook/ansible` 命令的变量优先于任何其他变量，包括在库存文件中设置的变量。
+- en: 'The following is the list of parameters you can override from an inventory
+    file:'
+  id: totrans-66
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是你可以从库存文件中覆盖的参数列表：
+- en: '`ansible_user`: This parameter is used to override the user that is used for
+    communicating with the remote host. Sometimes, a certain machine needs a different
+    user, in those cases this variable will help you.'
+  id: totrans-67
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible_user`：此参数用于覆盖与远程主机通信时使用的用户。有时，某些机器需要使用不同的用户，在这种情况下，使用此变量会对你有所帮助。'
+- en: '`ansible_port`: This parameter will override the default SSH port with the
+    user-specified port. Sometimes sysadmin chooses to run SSH on a non-standard port.
+    In this case, you''ll need to instruct Ansible about the change.'
+  id: totrans-68
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible_port`：此参数将覆盖默认的SSH端口，使用用户指定的端口。有时，系统管理员选择在非标准端口运行SSH。在这种情况下，你需要告知Ansible这个变化。'
+- en: '`ansible_host`: This parameter is used to override the host for an alias.'
+  id: totrans-69
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible_host`：此参数用于覆盖别名的主机。'
+- en: '`ansible_connection`: This specifies the connection type to the remote host.
+    The values are SSH, Paramiko, or local.'
+  id: totrans-70
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible_connection`：指定与远程主机的连接类型。可选值有SSH、Paramiko或local。'
+- en: '`ansible_private_key_file`: This parameter will override the private key used
+    for SSH; this will be useful if you want to use specific keys for a specific host.
+    A common use case is if you have hosts spread across multiple data centers, multiple
+    AWS regions, or different kinds of applications. Private keys can potentially
+    be different in such scenarios.'
+  id: totrans-71
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible_private_key_file`：此参数将覆盖用于 SSH 的私钥；如果你想为特定主机使用特定的密钥，这将非常有用。一种常见的用例是，如果你有主机分布在多个数据中心、多个
+    AWS 区域或不同类型的应用程序中。此类场景下，私钥可能会有所不同。'
+- en: '`ansible__type`: By default, Ansible uses the **sh shell**; you can override
+    this using the `ansible_shell_type` parameter. Changing this to `csh`, `ksh`,
+    and so on will make Ansible use the commands of that shell.'
+  id: totrans-72
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible__type`：默认情况下，Ansible 使用 **sh shell**；你可以通过 `ansible_shell_type` 参数覆盖这个设置。将其更改为
+    `csh`、`ksh` 等，会使 Ansible 使用该 shell 的命令。'
+- en: Working with dynamic inventory
+  id: totrans-73
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用动态清单
+- en: There are environments where you have a system that creates and destroys machines
+    automatically. We will see how to do this with Ansible in [Chapter 5](ch05.html
+    "Chapter 5.  Going Cloud"), *Going Cloud*. In such environments, the list of machines
+    changes very quickly and keeping the `hosts` file becomes complicated. In this
+    case, we can use dynamic inventories to solve the problem.
+  id: totrans-74
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在某些环境中，你可能有一个系统自动创建和销毁机器。我们将在 [第 5 章](ch05.html "第 5 章：云计算之路")，*云计算之路* 中看到如何使用
+    Ansible 实现这一点。在这样的环境中，机器列表变化非常快，维护 `hosts` 文件变得复杂。在这种情况下，我们可以使用动态清单来解决问题。
+- en: The idea behind dynamic inventories is that Ansible will not read the `hosts`
+    file, but instead execute a script that will return the list of hosts to Ansible
+    in JSON format. This allows you, for instance, to query your cloud provider and
+    ask it directly, what machines in your entire infrastructure are running at any
+    given moment.
+  id: totrans-75
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 动态清单的理念是，Ansible 不会读取 `hosts` 文件，而是执行一个脚本，该脚本将以 JSON 格式将主机列表返回给 Ansible。例如，这使得你可以直接向你的云服务提供商查询，了解在任何时刻，你整个基础设施中哪些机器正在运行。
+- en: 'Many scripts for the most common cloud providers are already present in Ansible
+    at: [https://github.com/ansible/ansible/tree/devel/contrib/inventory](https://github.com/ansible/ansible/tree/devel/contrib/inventory)
+    but you can create a custom script if you have different needs. The Ansible inventory
+    scripts can be written in any language but, for consistency reasons, dynamic inventory
+    scripts should be written in Python. Remember that these scripts need to be executable
+    directly, so please remember to set them with the executable flag (`chmod + x
+    inventory.py`).'
+  id: totrans-76
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 许多常见云服务提供商的脚本已经在 Ansible 中提供，位置在：[https://github.com/ansible/ansible/tree/devel/contrib/inventory](https://github.com/ansible/ansible/tree/devel/contrib/inventory)，但如果你有不同的需求，也可以创建自定义脚本。Ansible
+    清单脚本可以使用任何语言编写，但出于一致性考虑，动态清单脚本应该使用 Python 编写。记住，这些脚本需要直接可执行，因此请确保为其设置可执行标志（`chmod
+    + x inventory.py`）。
+- en: In this chapter, we will take a look at Amazon Web Services and DigitalOcean
+    scripts that can be downloaded from the official Ansible repository.
+  id: totrans-77
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们将介绍可以从官方 Ansible 仓库下载的 Amazon Web Services 和 DigitalOcean 脚本。
+- en: Amazon Web Services
+  id: totrans-78
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: Amazon Web Services
+- en: 'To allow Ansible to gather data from **Amazon Web Services** (**AWS**) about
+    your EC2 instances, you need to download the following two files from Ansible''s
+    GitHub repository at [https://github.com/ansible/ansible](https://github.com/ansible/ansible):'
+  id: totrans-79
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了允许 Ansible 从 **Amazon Web Services** (**AWS**) 获取你的 EC2 实例数据，你需要从 Ansible
+    的 GitHub 仓库下载以下两个文件：[https://github.com/ansible/ansible](https://github.com/ansible/ansible)：
+- en: The `ec2.py` inventory script
+  id: totrans-80
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ec2.py` 清单脚本'
+- en: The `ec2.ini` file, which contains the configuration for your EC2 inventory
+    script
+  id: totrans-81
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ec2.ini` 文件，其中包含 EC2 清单脚本的配置。'
+- en: Ansible uses AWS Python library `boto` to communicate with AWS using APIs. To
+    allow this communication, you need to export the `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`
+    variables.
+  id: totrans-82
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 使用 AWS Python 库 `boto` 通过 API 与 AWS 进行通信。为了允许这种通信，你需要导出 `AWS_ACCESS_KEY_ID`
+    和 `AWS_SECRET_ACCESS_KEY` 环境变量。
+- en: 'You can use the inventory in two ways:'
+  id: totrans-83
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以通过两种方式使用清单：
+- en: Pass it directly to an `ansible-playbook` command using the `-i` option and
+    copy the `ec2.ini` file to your current directory where you are running the Ansible
+    commands
+  id: totrans-84
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 直接将其传递给 `ansible-playbook` 命令，使用 `-i` 选项，并将 `ec2.ini` 文件复制到你运行 Ansible 命令的当前目录。
+- en: Copy the `ec2.py` file to `/etc/ansible/hosts`, make it executable using `chmod
+    +x`, and copy the `ec2.ini` file to `/etc/ansible/ec2.ini`
+  id: totrans-85
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 将 `ec2.py` 文件复制到 `/etc/ansible/hosts`，使用 `chmod +x` 命令使其可执行，并将 `ec2.ini` 文件复制到
+    `/etc/ansible/ec2.ini`。
+- en: The `ec2.py` file will create multiple groups based on the region, availability
+    zone, tags, and so on. You can check the contents of the inventory file by running
+    `./ec2.py --list`.
+  id: totrans-86
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`ec2.py`文件将根据区域、可用区、标签等创建多个组。你可以通过运行`./ec2.py --list`来查看清单文件的内容。'
+- en: Let's see an example playbook with EC2 dynamic inventory, which will simply
+    ping all machines in my account.
+  id: totrans-87
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们看一个使用EC2动态清单的示例playbook，它将简单地ping我账户中的所有机器。
+- en: '[PRE14]'
+  id: totrans-88
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE14]'
+- en: 'As expected, the two droplets I have on my account respond with the following:'
+  id: totrans-89
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如预期的那样，我在账户上的两个Droplet返回了以下信息：
+- en: '[PRE15]'
+  id: totrans-90
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE15]'
+- en: In the preceding example, we're using the `ec2.py` script instead of a static
+    inventory file with the `-i` option and the `ping` command.
+  id: totrans-91
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在前面的例子中，我们使用了`ec2.py`脚本，而不是使用静态清单文件，并通过`-i`选项和`ping`命令。
+- en: Similarly, you can use these inventory scripts to perform various types of operations.
+    For example, you can integrate it with your deployment script to figure out all
+    the nodes in a single zone and deploy to them if you're performing your deployment
+    zone-wise (a zone represents a data center) in AWS.
+  id: totrans-92
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 同样，你可以使用这些清单脚本执行各种类型的操作。例如，如果你按照区域（一个区域代表一个数据中心）在AWS中逐区部署，你可以将它与部署脚本集成，找出所有位于同一区域的节点并部署。
+- en: If you simply want to know what the web servers in the cloud are and you've
+    tagged them using a certain convention, you can do that by using the dynamic inventory
+    script by filtering out the tags. Furthermore, if you have special scenarios that
+    are not covered by your present script, you can enhance it to provide the required
+    set of nodes in JSON format and then act on those nodes from the playbooks. If
+    you're using a database to manage your inventory, your inventory script can query
+    the database and dump a JSON. It could even sync with your cloud and update your
+    database on a regular basis.
+  id: totrans-93
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你只是想知道云中有哪些Web服务器，并且已经使用某种约定标记了它们，你可以通过过滤标签来使用动态清单脚本。更进一步，如果你有特殊场景，这些场景未被当前的脚本覆盖，你可以增强脚本，使其提供所需的JSON格式的节点集，然后从playbooks中操作这些节点。如果你使用数据库管理清单，你的清单脚本可以查询数据库并导出JSON，甚至可以与云同步并定期更新数据库。
+- en: DigitalOcean
+  id: totrans-94
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: DigitalOcean
+- en: As we used the EC2 files in [https://github.com/ansible/ansible/tree/devel/contrib/inventory](https://github.com/ansible/ansible/tree/devel/contrib/inventory)
+    to pull data from AWS, we can do the same for DigitalOcean. The only difference
+    will be that we have to fetch the `digital_ocean.ini` and the `digital_ocean.py`
+    files.
+  id: totrans-95
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们使用了[https://github.com/ansible/ansible/tree/devel/contrib/inventory](https://github.com/ansible/ansible/tree/devel/contrib/inventory)中的EC2文件从AWS获取数据，现在我们可以对DigitalOcean做同样的操作。唯一的区别是，我们需要获取`digital_ocean.ini`和`digital_ocean.py`文件。
+- en: As before, we will need to tweak the `digital_ocean.ini` options, if needed
+    and to make the Python file executable. The only option that you'll probably need
+    to change is the `api_token`.
+  id: totrans-96
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如之前所述，我们可能需要调整`digital_ocean.ini`的选项（如果需要），并使Python文件可执行。你可能需要更改的唯一选项是`api_token`。
+- en: 'Now we can try to ping all machines available on `digital_ocean` with:'
+  id: totrans-97
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们可以尝试通过以下命令ping所有在`digital_ocean`上可用的机器：
+- en: '[PRE16]'
+  id: totrans-98
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE16]'
+- en: 'As expected, the two droplets I have on my account respond with the following:'
+  id: totrans-99
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如预期的那样，我在账户上的两个Droplet返回了以下信息：
+- en: '[PRE17]'
+  id: totrans-100
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE17]'
+- en: We have now seen how easy it is to retrieve data from many different cloud providers.
+  id: totrans-101
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经看到从多个不同的云服务提供商获取数据是多么容易。
+- en: Working with iterates in Ansible
+  id: totrans-102
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 在Ansible中使用迭代器
+- en: You may have noticed that up to now we have never used cycles, so every time
+    we had to do multiple, similar operations, we wrote the code multiple times. An
+    example of this is the `webserver.yaml` code.
+  id: totrans-103
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可能注意到到目前为止我们从未使用过循环，因此每次需要执行多个相似的操作时，我们都会多次编写相同的代码。一个例子就是`webserver.yaml`代码。
+- en: 'In fact, this was the content of the `webserver.yaml` file:'
+  id: totrans-104
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 实际上，这就是`webserver.yaml`文件的内容：
+- en: '[PRE18]'
+  id: totrans-105
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE18]'
+- en: As you can see, the last two blocks do the same operation (ensure that a certain
+    port of the firewall is open).
+  id: totrans-106
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，最后两个模块执行了相同的操作（确保防火墙的某个端口是开放的）。
+- en: Standard iteration - with_items
+  id: totrans-107
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 标准迭代 - `with_items`
+- en: 'To improve the above code, we can use a simple iteration: `with_items`.'
+  id: totrans-108
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了改进上述代码，我们可以使用一个简单的迭代器：`with_items`。
+- en: This allows us to iterate in a list of item, and at every iteration, the designated
+    item of the list will be available to us in the item variable.
+  id: totrans-109
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这使我们能够在项列表中进行迭代，每次迭代时，列表中的指定项将通过`item`变量供我们使用。
+- en: 'We can therefore change that code to the following:'
+  id: totrans-110
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 因此，我们可以将代码更改为以下内容：
+- en: '[PRE19]'
+  id: totrans-111
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE19]'
+- en: 'We can execute it as the following:'
+  id: totrans-112
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以按如下方式执行它：
+- en: '[PRE20]'
+  id: totrans-113
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE20]'
+- en: 'We receive the following:'
+  id: totrans-114
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们接收到以下内容：
+- en: '[PRE21]'
+  id: totrans-115
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE21]'
+- en: As you can see, the output is slightly different from the previous execution,
+    in fact on the lines for operations with loops we can see the item that was processed
+    the "Ensure HTTP and HTTPS can pass the firewall" block
+  id: totrans-116
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，输出与之前的执行略有不同，实际上在涉及循环操作的行中，我们可以看到处理的项——“确保 HTTP 和 HTTPS 能通过防火墙”块
+- en: We have now seen that we can iterate on a list of items, but Ansible allows
+    us other kind of iterations as well.
+  id: totrans-117
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们现在已经了解了如何在一个项目列表上进行迭代，但 Ansible 也支持其他类型的迭代。
+- en: Nested loops - with_nested
+  id: totrans-118
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 嵌套循环 - with_nested
+- en: There are cases where you have to iterate all elements of a list with all items
+    from other lists (**Cartesian product**). One case that is very common is when
+    you have to create multiple folders in multiple paths. In our example, we will
+    create the folders `mail` and `public_html` in the `home` folders of the users
+    `alice` and `bob`.
+  id: totrans-119
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有些情况下，你需要对一个列表中的所有元素与其他列表中的所有项进行迭代（**笛卡尔积**）。一个非常常见的情况是，当你需要在多个路径中创建多个文件夹时。在我们的示例中，我们将分别在用户
+    `alice` 和 `bob` 的 `home` 文件夹中创建 `mail` 和 `public_html` 文件夹。
+- en: 'We can do so with the following code from the `with_nested.yaml` file:'
+  id: totrans-120
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以使用以下来自 `with_nested.yaml` 文件的代码实现：
+- en: '[PRE22]'
+  id: totrans-121
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE22]'
+- en: 'Running this with the following:'
+  id: totrans-122
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用以下命令运行：
+- en: '[PRE23]'
+  id: totrans-123
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE23]'
+- en: 'We receive the following result:'
+  id: totrans-124
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们收到以下结果：
+- en: '[PRE24]'
+  id: totrans-125
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE24]'
+- en: Fileglobs loop - with_fileglobs
+  id: totrans-126
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 文件通配符循环 - with_fileglobs
+- en: 'Sometimes, we want to do some kind of action on every file present in a certain
+    folder. This could be handy if you want to copy multiple files with similar names
+    from a folder to another. To do so, you can create a file called `with_fileglobs.yaml`
+    with the following code:'
+  id: totrans-127
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有时，我们希望对某个文件夹中每个文件执行某种操作。如果你想将多个具有相似名称的文件从一个文件夹复制到另一个文件夹，这可能会非常方便。为此，你可以创建一个名为
+    `with_fileglobs.yaml` 的文件，并在其中写入以下代码：
+- en: '[PRE25]'
+  id: totrans-128
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE25]'
+- en: 'We can execute it with the following:'
+  id: totrans-129
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以使用以下命令执行：
+- en: '[PRE26]'
+  id: totrans-130
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE26]'
+- en: 'To receive an output like the following:'
+  id: totrans-131
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以接收到类似以下的输出：
+- en: '[PRE27]'
+  id: totrans-132
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE27]'
+- en: Integer loop - with_sequence
+  id: totrans-133
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 整数循环 - with_sequence
+- en: 'Many times you''ll need to iterate over the integer numbers. An example could
+    be to create ten folders called `fileXY`, where `XY` is the sequential numbers
+    from `1` to `10`. To do so, we can create a file called `with_sequence.yaml` with
+    the following code in it:'
+  id: totrans-134
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 许多时候，你需要对整数进行迭代。一个例子可能是创建十个名为 `fileXY` 的文件夹，其中 `XY` 是从 `1` 到 `10` 的顺序数字。为此，我们可以创建一个名为
+    `with_sequence.yaml` 的文件，并在其中写入以下代码：
+- en: '[PRE28]'
+  id: totrans-135
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE28]'
+- en: Note
+  id: totrans-136
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: In the case of `with_sequence`, we must use the single line notation.
+  id: totrans-137
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于 `with_sequence`，我们必须使用单行表示法。
+- en: 'We can then execute it with:'
+  id: totrans-138
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后，我们可以执行以下操作：
+- en: '[PRE29]'
+  id: totrans-139
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE29]'
+- en: 'We will receive:'
+  id: totrans-140
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将收到：
+- en: '[PRE30]'
+  id: totrans-141
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE30]'
+- en: Ansible supports many more types of loop, but since they are used far less,
+    you can refer directly to the official documentation about loops at [http://docs.ansible.com/ansible/playbooks_loops.html](http://docs.ansible.com/ansible/playbooks_loops.html).
+  id: totrans-142
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 支持更多种类的循环，但由于它们使用的较少，你可以直接参考官方文档中的循环部分：[http://docs.ansible.com/ansible/playbooks_loops.html](http://docs.ansible.com/ansible/playbooks_loops.html)。
+- en: Summary
+  id: totrans-143
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 总结
+- en: In this chapter, we have seen a large number of concepts that will help scale
+    your infrastructure beyond the single node. We started with inventories files
+    used to instruct Ansible about our machines, then how to have host-specific and
+    group-specific variables while running the same command on multiple heterogeneous
+    hosts. We then moved on to dynamics inventories that are populated directly by
+    some other system (usually a cloud provider). In the end, we analyzed multiple
+    kinds of iteration in the Ansible playbooks.
+  id: totrans-144
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们介绍了许多概念，帮助你将基础设施扩展到单一节点之外。我们从用于指示 Ansible 关于机器的清单文件开始，接着讨论了如何在对多个异构主机运行相同命令时使用主机特定和组特定的变量。然后，我们介绍了动态清单，这些清单是由其他系统（通常是云提供商）直接填充的。最后，我们分析了
+    Ansible playbook 中的多种迭代方式。
+- en: In the next chapter, we will structure our Ansible files in a saner way to ensure
+    maximum readability. To do this, we introduce roles which simplify the management
+    of complex environments even more .
+  id: totrans-145
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一章中，我们将以更合理的方式组织我们的 Ansible 文件，以确保最大程度的可读性。为此，我们引入了角色，这进一步简化了复杂环境的管理。

@@ -1,0 +1,3011 @@
+- en: '3'
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '3'
+- en: Managing Your Worktrees
+  id: totrans-1
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 管理你的工作树
+- en: The previous chapter, *Developing with Git*, described how you can use Git for
+    project development, including how to create new revisions. In this chapter, we
+    will focus on learning how to manage a working directory (worktree) so that you
+    can prepare content for a new commit. This chapter will teach you how to manage
+    your files in detail. It will also show you how to care for files that require
+    special handling while introducing the concepts of ignored files and file attributes.
+    Then, you will learn how to fix mistakes in handling files, both in the working
+    directory and in the staging area, as well as how to fix or split the latest commit.
+    Finally, you will learn how to safely handle interruptions in the workflow with
+    stashes and multiple working directories.
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 前一章《使用Git开发》描述了如何使用Git进行项目开发，包括如何创建新的修订。在本章中，我们将重点学习如何管理工作目录（工作树），以便你为新的提交准备内容。本章将详细教你如何管理文件，还将展示如何处理那些需要特殊处理的文件，同时介绍忽略文件和文件属性的概念。然后，你将学习如何修复处理文件时的错误，无论是在工作目录还是在暂存区中，以及如何修复或拆分最新的提交。最后，你将学习如何通过暂存和多个工作目录安全地处理中断。
+- en: The previous chapter also taught you how to examine changes. In this chapter,
+    you will learn how to undo and redo those changes selectively, as well as how
+    to view different versions of a file.
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 前一章还教了你如何检查更改。在本章中，你将学习如何有选择地撤销和重做这些更改，以及如何查看文件的不同版本。
+- en: 'This chapter will cover the following topics:'
+  id: totrans-4
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章将涵盖以下主题：
+- en: Ignoring files – marking files as intentionally not being under version control
+  id: totrans-5
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 忽略文件 – 将文件标记为故意不受版本控制
+- en: File attributes – path-specific configuration
+  id: totrans-6
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 文件属性 – 路径特定配置
+- en: Using various modes of the **git** **reset** command
+  id: totrans-7
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用**git** **reset** 命令的各种模式
+- en: Stashing away your changes to handle interruptions
+  id: totrans-8
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 将更改暂存以处理中断
+- en: Managing the working directory’s contents and the staging area
+  id: totrans-9
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 管理工作目录的内容和暂存区
+- en: Multiple working directories (worktrees)
+  id: totrans-10
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 多个工作目录（工作树）
+- en: Ignoring files
+  id: totrans-11
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 忽略文件
+- en: The files inside your **working area** (also known as the **worktree**) can
+    be *tracked* or *untracked* by Git. **Tracked files**, as the name suggests, are
+    those files whose changes Git will follow. For Git, if a file is present in the
+    **staging area** (also known as **the index**), it will be tracked, and – unless
+    specified otherwise – it will be a part of the next revision. You *add* files
+    to be tracked, to have them as a part of the project history.
+  id: totrans-12
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**工作区**（也称为**工作树**）中的文件可以被Git进行*跟踪*或*不跟踪*。**跟踪文件**顾名思义，是Git会跟踪其变化的文件。对于Git来说，如果文件存在于**暂存区**（也称为**索引**），它就会被跟踪，除非另行指定，否则它将成为下一个修订的一部分。你需要*添加*文件以使它们成为项目历史的一部分。'
+- en: The purpose of the staging area
+  id: totrans-13
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 暂存区的作用
+- en: The **index**, or the **staging area**, is used not only for Git to know which
+    files to track, but also as a kind of scratchpad to create new **commits**, as
+    described in [*Chapter 2*](B21194_02.xhtml#_idTextAnchor028), *Developing with
+    Git*, and to help resolve merge conflicts, as shown in [*Chapter 9*](B21194_09.xhtml#_idTextAnchor229),
+    *Merging* *Changes Together*.
+  id: totrans-14
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**索引**，或**暂存区**，不仅用于让Git知道哪些文件需要跟踪，还充当一种草稿区，用于创建新的**提交**，正如在[**第二章**](B21194_02.xhtml#_idTextAnchor028)《使用Git开发》中所描述的，并且帮助解决合并冲突，正如在[**第九章**](B21194_09.xhtml#_idTextAnchor229)《合并变更》中所展示的。'
+- en: Often, you will have some individual files or a class of files that you never
+    want to be a part of the project history, and never want to track. These can be
+    your editor backup files, or automatically generated files that are produced by
+    the project’s build system (executables, object files, minified sources, source
+    maps, and so on).
+  id: totrans-15
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通常，你会有一些单独的文件或一类文件，你永远不希望它们成为项目历史的一部分，也不希望它们被跟踪。这些文件可能是你的编辑器备份文件，或者是由项目的构建系统自动生成的文件（可执行文件、目标文件、压缩后的源文件、源映射文件等）。
+- en: You don’t want Git to automatically add such files, for example, when doing
+    `git add :/` (adding the entire working tree) or with `git add .` (adding the
+    current directory), or when updating the index to the worktree’s state with `git`
+    `add --all`.
+  id: totrans-16
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你不希望Git自动添加这些文件，例如，在执行`git add :/`（添加整个工作区）或使用`git add .`（添加当前目录）时，或者在使用`git
+    add --all`将索引更新为工作区的状态时。
+- en: 'Quite the opposite: you want Git to actively prevent you from accidentally
+    adding them. You also want such files to be absent from the `git status` output
+    as there can be many of them. They could otherwise drown out legitimate new *unknown*
+    files there. You want such files to be intentionally untracked – that is, *ignored*.'
+  id: totrans-17
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 完全相反：你希望 Git 能主动防止你不小心将它们添加进去。你还希望这些文件不出现在`git status`的输出中，因为它们可能很多，否则它们会淹没那些合法的、*未知*的文件。你希望这些文件被故意不追踪——也就是说，*被忽略*。
+- en: Un-tracking and re-tracking files
+  id: totrans-18
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 取消追踪和重新追踪文件
+- en: If you want to start ignoring a file that was formerly tracked, such as when
+    you’re moving from a hand-generated HTML file to using a lightweight markup language
+    such as **Markdown** instead, you usually need to **un-track** the file without
+    removing it from the working directory while adding it to the list of ignored
+    files. You can do this with **git rm --cached <file>** (as shown in the output
+    of **git status**). This command removes the named file from the staging area.
+  id: totrans-19
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你想开始忽略一个曾经被追踪的文件，例如，当你从手工生成的 HTML 文件转向使用轻量级标记语言如**Markdown**时，通常需要**取消追踪**该文件，而不是将其从工作目录中删除，同时将其添加到忽略文件的列表中。你可以使用**git
+    rm --cached <file>**来执行此操作（如**git status**的输出所示）。此命令会将指定的文件从暂存区移除。
+- en: To add (start tracking) an intentionally untracked (that is, ignored) file,
+    you need to use **git add --force <file>**, as Git will tell you.
+  id: totrans-20
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要添加（开始追踪）一个故意不追踪的（即被忽略的）文件，你需要使用**git add --force <file>**，因为 Git 会提示你。
+- en: Marking files as intentionally untracked (ignored)
+  id: totrans-21
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 标记文件为故意不追踪（忽略）
+- en: 'If you want to mark a file or a set of files as intentionally ignored, you
+    need to add a **shell glob pattern** that matches files that you want to have
+    ignored by Git to one of the following **gitignore** files, one pattern per line:'
+  id: totrans-22
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你想将一个文件或一组文件标记为故意忽略，你需要将一个**shell glob 模式**添加到以下**gitignore**文件中的其中一个，每行一个模式：
+- en: The per-user file, which can be specified by the **core.excludesFile** configuration
+    variable. If this configuration variable is not set, then the default value of
+    **$XDG_CONFIG_HOME/git/ignore** is used. This, in turn, defaults to **$HOME/.config/git/ignore**
+    if the **$XDG_CONFIG_HOME** environment variable is not set or empty (where **$HOME**
+    is the current user’s home directory).
+  id: totrans-23
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 每个用户的文件，可以通过**core.excludesFile**配置变量指定。如果没有设置此配置变量，则使用默认值**$XDG_CONFIG_HOME/git/ignore**。如果**$XDG_CONFIG_HOME**环境变量未设置或为空，则默认使用**$HOME/.config/git/ignore**（其中**$HOME**是当前用户的主目录）。
+- en: The per-local repository **$GIT_DIR/info/exclude** file in the administrative
+    area of the local clone of the repository (in most cases, **$GIT_DIR** points
+    to the **.git/** directory in the top-level directory of the project).
+  id: totrans-24
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 本地仓库中的**$GIT_DIR/info/exclude**文件，该文件位于本地克隆仓库的管理区域中（在大多数情况下，**$GIT_DIR**指向项目顶级目录中的**.git/**目录）。
+- en: The **.gitignore** files in the working directories of a project. These are
+    usually tracked, and in this case, they are shared among all developers.
+  id: totrans-25
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 项目工作目录中的**.gitignore**文件。通常这些文件是被追踪的，在这种情况下，它们会在所有开发者之间共享。
+- en: Some commands, such as `git clean`, also allow us to specify ignore patterns
+    from a command line with the `--``exclude=<pattern>` option.
+  id: totrans-26
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一些命令，如`git clean`，也允许我们通过命令行指定忽略模式，使用`--exclude=<pattern>`选项。
+- en: When deciding whether to ignore a path, Git checks all those sources in the
+    order specified in the preceding list, with the last matching pattern deciding
+    the outcome. The `.gitignore` files are checked in order, starting from the top
+    directory of the project down to the directory of files to be examined.
+  id: totrans-27
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在决定是否忽略一个路径时，Git 会按照前面列表中指定的顺序检查所有这些来源，最后一个匹配的模式决定最终结果。`.gitignore`文件会按照顺序检查，从项目的顶级目录一直到要检查的文件所在的目录。
+- en: To make `.gitignore` files more readable, you can use blank lines to separate
+    groups of files (a blank line matches no files). You can also describe patterns
+    or groups of patterns with comments; a line starting with the hash character,
+    `#`, serves as one (to ignore a pattern beginning with `#`, escape the first hash
+    character with a backslash, `\` – for example, `\#*#`). Trailing spaces (at the
+    end of the line) are ignored unless escaped with a backslash, `\`.
+  id: totrans-28
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了使`.gitignore`文件更具可读性，你可以使用空行将文件分组（空行不匹配任何文件）。你还可以用注释描述模式或模式组；以哈希字符`#`开头的行作为注释（要忽略以`#`开头的模式，可以用反斜杠`\`转义第一个哈希字符，例如`\#*#`）。行尾的空格会被忽略，除非用反斜杠`\`进行转义。
+- en: 'Each line in the `.gitignore` file specifies a Unix glob pattern, a shell wildcard.
+    The `*` wildcard matches zero or more characters (any string), while the `?` wildcard
+    matches any single character. You can also use character classes with brackets,
+    `[...]`. Take, for example, the following list of patterns:'
+  id: totrans-29
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`.gitignore` 文件中的每一行指定了一个 Unix glob 模式，也就是 shell 通配符。`*` 通配符匹配零个或多个字符（任意字符串），而
+    `?` 通配符匹配任何单个字符。你还可以使用带有括号的字符类 `[...]`。例如，以下是一些模式列表：'
+- en: '[PRE0]'
+  id: totrans-30
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: Here, the first line tells Git to ignore all files with the `.a` or `.o` extension
+    – `*.a` files are archive files (for example, a static library), and `*.o` files
+    are object files that may be the products of compiling your code. The second line
+    tells Git to ignore all files ending with a tilde, `~`; this is used by many Unix
+    text editors to mark temporary backup files.
+  id: totrans-31
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这里，第一行告诉 Git 忽略所有扩展名为 `.a` 或 `.o` 的文件——`*.a` 文件是归档文件（例如静态库），而 `*.o` 文件是目标文件，可能是你编译代码时生成的文件。第二行告诉
+    Git 忽略所有以波浪号（`~`）结尾的文件；许多 Unix 文本编辑器使用波浪号来标记临时备份文件。
+- en: If the pattern does not contain a slash, `/`, which is a path component separator,
+    Git treats it as a `.gitignore` file location if the pattern is in such a file,
+    or the top level of the repository otherwise). The exception is patterns ending
+    with a slash, `/`, which is used to have the pattern only matched against directories
+    but otherwise treated as if the trailing slash was removed.
+  id: totrans-32
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果模式不包含斜杠 `/`（斜杠是路径组件分隔符），Git 会将其视为 `.gitignore` 文件的位置，如果模式出现在这样的文件中，或者如果不在文件中，则视为仓库的顶级目录）。唯一的例外是以斜杠结尾的模式
+    `/`，它用于只匹配目录，否则会像去掉结尾斜杠一样处理。
+- en: 'A leading slash matches the beginning of the pathname. This means the following:'
+  id: totrans-33
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 前导斜杠匹配路径名的开头。这意味着以下内容：
+- en: Patterns not containing a slash match everywhere in the repository; we can say
+    that the pattern is recursive.
+  id: totrans-34
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 不包含斜杠的模式会匹配整个仓库；我们可以说，这种模式是递归的。
+- en: For example, the `*.o` pattern matches object files anywhere, both at the `.gitignore`
+    file level and in subdirectories such as `file.o`, `obj/file.o`, and others.
+  id: totrans-35
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 例如，`*.o` 模式匹配任何地方的目标文件，包括 `.gitignore` 文件所在的目录以及 `file.o`、`obj/file.o` 等子目录中的文件。
+- en: Patterns ending with a slash only match directories but are otherwise recursive
+    (unless they contain other slashes).
+  id: totrans-36
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 以斜杠结尾的模式只匹配目录，但在其他情况下是递归的（除非它们包含其他斜杠）。
+- en: For example, the `auto/` pattern will match both the top-level `auto` directory
+    and the `src/auto` directory but will not match the `auto` file (or a symbolic
+    link either).
+  id: totrans-37
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 例如，`auto/` 模式会匹配顶级的 `auto` 目录和 `src/auto` 目录，但不会匹配 `auto` 文件（也不会匹配符号链接）。
+- en: To *anchor* a pattern and make it non-recursive, add a leading slash.
+  id: totrans-38
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 要*锚定*一个模式并使其非递归，可以在前面加一个斜杠。
+- en: For example, the `/TODO` pattern will match and make Git ignore the current-level
+    `TODO` file, but not files in subdirectories, such as `src/TODO`.
+  id: totrans-39
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 例如，`/TODO` 模式会匹配并使 Git 忽略当前级别的 `TODO` 文件，但不会忽略子目录中的文件，比如 `src/TODO`。
+- en: Patterns containing a slash inside are anchored and non-recursive, and wildcard
+    characters (`doc/*.html` matches the `doc/index.html` file but not `doc/api/index.html`;
+    to match HTML files anywhere inside the `doc` directory, you can use the `doc/**/*.html`
+    pattern (or put the `*.html` pattern in the `doc/.gitignore` file).
+  id: totrans-40
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 包含斜杠的模式是锚定的，并且是非递归的，通配符（`doc/*.html` 匹配 `doc/index.html` 文件，但不匹配 `doc/api/index.html`；要匹配
+    `doc` 目录下的任何 HTML 文件，你可以使用 `doc/**/*.html` 模式（或者将 `*.html` 模式放入 `doc/.gitignore`
+    文件中）。
+- en: 'You can also negate a pattern by prefixing it with an exclamation mark, `!`;
+    any matching file excluded by the earlier rule is then included (non-ignored)
+    again. For example, to ignore all generated HTML files, but include the one HTML
+    file generated by hand, you can put the following in the `.``gitignore` file:'
+  id: totrans-41
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你还可以通过在模式前加上感叹号（`!`）来否定一个模式；任何被之前规则排除的匹配文件将会重新被包含（不再被忽略）。例如，如果你想忽略所有生成的 HTML
+    文件，但包括手动生成的那个 HTML 文件，可以在`.gitignore`文件中写入以下内容：
+- en: '[PRE1]'
+  id: totrans-42
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: Note
+  id: totrans-43
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 注意
+- en: For performance reasons, Git doesn’t go into excluded directories, and (up until
+    *Git 2.7*) this means that you cannot re-include a file if a parent directory
+    is excluded.
+  id: totrans-44
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 出于性能考虑，Git 不会进入被排除的目录，并且（直到 *Git 2.7*）这意味着如果父目录被排除，你不能重新包含一个文件。
+- en: 'This means that to ignore everything except for the subdirectory, you need
+    to write the following:'
+  id: totrans-45
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这意味着，要忽略除了子目录以外的所有内容，你需要写下以下内容：
+- en: '[PRE2]'
+  id: totrans-46
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: To match a pattern beginning with `!`, escape it with a backslash, similar to
+    what you need to do for the `#` character – for example, use the `\!important!.md`
+    pattern to match the file named `!important!.md`.
+  id: totrans-47
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要匹配以`!`开头的模式，使用反斜杠进行转义，类似于你需要为`#`字符做的事情——例如，使用`\!important!.md`模式来匹配名为`!important!.md`的文件。
+- en: Which types of files should be ignored?
+  id: totrans-48
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 哪些类型的文件应该被忽略？
+- en: Now that we know how to mark files as intentionally untracked (ignored), there
+    is the question of *which* files (or classes of files) should be marked as such.
+    Another issue is *where* we should add a pattern for ignoring specific types of
+    files – that is, in which of the three types of `.``gitignore` files.
+  id: totrans-49
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们知道如何将文件标记为故意未被追踪（被忽略），但接下来我们要考虑的问题是*哪些*文件（或文件类别）应该被标记为这样。另一个问题是*我们应该在哪里*添加忽略特定类型文件的模式——也就是说，在三种类型的`.gitignore`文件中的哪一个里。
+- en: The first rule is that you should never track *automatically generated files*
+    (usually generated by the build system of a project). If you add such files to
+    the repository and if you track them, there is a high chance that they will get
+    out of sync with their source. Besides, they are not necessary, as you can always
+    re-generate them. The only possible exception is generated files where the source
+    rarely changes and generating them requires extra tools that developers might
+    not have (if the source changes more often, you can use an orphan branch to store
+    these generated files and refresh this branch only at release time; see [*Chapter
+    2*](B21194_02.xhtml#_idTextAnchor028), *Developing With Git*, the *Creating orphan
+    branches* section for more information).
+  id: totrans-50
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 第一个规则是，你绝不应该追踪*自动生成的文件*（通常是项目构建系统生成的文件）。如果你将这些文件添加到仓库中并追踪它们，那么它们与源文件之间很可能会出现不同步的情况。此外，它们并不是必需的，因为你总是可以重新生成它们。唯一的例外情况是那些源文件很少变化且生成它们需要额外工具（开发者可能没有的工具）的生成文件（如果源文件变化更频繁，你可以使用孤立分支来存储这些生成的文件，并且只在发布时更新该分支；详情请参见[*第2章*](B21194_02.xhtml#_idTextAnchor028)，*与Git一起开发*章节，*创建孤立分支*部分了解更多信息）。
+- en: Those automatically generated files are the files that *all developers* will
+    want to ignore. Therefore, they should go into a tracked `.gitignore` file. This
+    list of patterns will be version-controlled and distributed to other developers
+    via a clone; this way, all developers will get it. You can find a collection of
+    useful `.gitignore` templates for different programming languages at [https://github.com/github/gitignore](https://github.com/github/gitignore),
+    or you can use the web app at [https://gitignore.io](https://gitignore.io).
+  id: totrans-51
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这些自动生成的文件是*所有开发者*都会想要忽略的文件。因此，它们应该放入一个受版本控制的`.gitignore`文件中。这个模式列表会被版本控制，并通过克隆分发给其他开发者；这样，所有开发者都会得到它。你可以在[https://github.com/github/gitignore](https://github.com/github/gitignore)找到不同编程语言的有用`.gitignore`模板，或者你可以使用[https://gitignore.io](https://gitignore.io)上的网络应用。
+- en: Second, there are *temporary files* and byproducts specific to one user’s toolchain;
+    those should usually not be shared with other developers. If the pattern is specific
+    to both the repository and the user – for example, auxiliary files that live inside
+    the repository but are specific to the workflow of a user (for example, to the
+    IDE used for the project) – it should go into the per-clone `$``GIT_DIR/info/exclude`
+    file.
+  id: totrans-52
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 第二类是*临时文件*和特定于某一用户工具链的副产品；这些通常不应该与其他开发者共享。如果模式同时特定于仓库和用户——例如，存在于仓库内但只对某个用户的工作流（例如，用于项目的IDE）特有的辅助文件——则应将其放入每个克隆的`$GIT_DIR/info/exclude`文件中。
+- en: Patterns that the user wants to ignore in all situations and are not specific
+    to the repository (or to the project) should generally go into a per-user `.gitignore`
+    file specified by the `core.excludesFile` config variable, set in the per-user
+    (global) `~/.gitconfig` config file (or `~/.config/git/config`). This is usually
+    `~/.config/git/ignore` by default.
+  id: totrans-53
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 用户希望在所有情况下都忽略的、与仓库（或项目）无关的模式，通常应放入每个用户的`.gitignore`文件中，该文件通过`core.excludesFile`配置变量指定，并在每个用户（全局）的`~/.gitconfig`配置文件（或`~/.config/git/config`）中设置。默认情况下，这通常是`~/.config/git/ignore`。
+- en: Important note about the per-user .gitignore file
+  id: totrans-54
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 关于每个用户的.gitignore文件的重要说明
+- en: The per-user ignore file cannot be **~/.gitignore** as this would be the in-repository
+    **.gitignore** file for the versioned user’s home directory if the user wants
+    to keep the **~/** directory (**$HOME**) under version control.
+  id: totrans-55
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 每个用户的忽略文件不能是**~/.gitignore**，因为这将是版本化用户主目录的仓库内**.gitignore**文件，如果用户希望将**~/**目录（**$HOME**）纳入版本控制的话。
+- en: This is the place where you can put patterns that match the backup or temporary
+    files generated by your editor or IDE of choice.
+  id: totrans-56
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这是您可以放置与备份或临时文件匹配的模式的地方，这些文件是由您选择的编辑器或 IDE 生成的。
+- en: Ignored files are considered expendable
+  id: totrans-57
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 被忽略的文件被视为可丢弃的
+- en: 'Warning: Do not add *precious files* – that is, those you do not want to track
+    in a given repository but whose contents are important – to the list of ignored
+    files! The types of files that are ignored (excluded) by Git are either easy to
+    regenerate (build products and other generated files) or not important to the
+    user (temporary or backup files).'
+  id: totrans-58
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 警告：不要将*宝贵的文件*（即那些您不希望在特定仓库中追踪，但其内容很重要的文件）添加到被忽略的文件列表中！Git 忽略（排除）的文件类型要么容易再生成（如构建产物和其他生成的文件），要么对用户不重要（如临时文件或备份文件）。
+- en: Therefore, Git considers ignored files *expendable* and will remove them without
+    warning when required to do a requested command – for example, if the ignored
+    file conflicts with the contents of the revision being checked out.
+  id: totrans-59
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 因此，Git 会将被忽略的文件视为*可丢弃的*，并且在执行所请求的命令时，如果被忽略的文件与正在检出的修订内容冲突，Git 会在没有警告的情况下删除它们。
+- en: Listing ignored files
+  id: totrans-60
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 列出被忽略的文件
+- en: 'You can list untracked ignored files by appending the `--ignored` option to
+    the `git` `status` command:'
+  id: totrans-61
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 您可以通过将`--ignored`选项附加到`git` `status`命令，列出未被追踪的被忽略文件：
+- en: '[PRE3]'
+  id: totrans-62
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: 'Instead of using `git status --ignored`, you can use the dry-run option of
+    cleaning ignored files, `git clean -Xnd`, or the low-level (plumbing) `git` `ls-files`
+    command:'
+  id: totrans-63
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 与其使用`git status --ignored`，您可以使用清理被忽略文件的干运行选项`git clean -Xnd`，或者使用底层（plumbing）`git
+    ls-files`命令：
+- en: '[PRE4]'
+  id: totrans-64
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: 'The latter command can also be used to list *tracked files* that match *ignore
+    patterns*. If there are any such files, it might mean that some files need to
+    be un-tracked (perhaps because what was once a source file is now generated),
+    or that ignore patterns are too broad. Since Git uses the existence of a file
+    in the staging area (*cache*) to know which files to track, this can be done with
+    the following command:'
+  id: totrans-65
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 后一个命令还可以用于列出匹配*忽略模式*的*已追踪文件*。如果有此类文件，可能意味着某些文件需要取消追踪（也许是因为曾经是源文件的文件现在是生成文件），或者忽略模式过于宽泛。由于
+    Git 使用暂存区（*缓存*）中文件的存在来确定要追踪哪些文件，您可以通过以下命令实现这一操作：
+- en: '[PRE5]'
+  id: totrans-66
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: An empty result, like what’s shown here, means that everything is fine.
+  id: totrans-67
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如此处所示的空结果意味着一切正常。
+- en: Plumbing versus porcelain commands
+  id: totrans-68
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Plumbing 命令与 porcelain 命令
+- en: 'Git commands can be divided into two sets: high-level **porcelain** commands
+    intended for interactive usage by the end user and low-level **plumbing** commands
+    intended mainly for shell scripting. The major difference is that high-level commands
+    have outputs that can change and are constantly improving. For example, the output
+    of the **git branch** command in the detached **HEAD** case changed from (**no
+    branch**) to (**detached from HEAD**). Their output and behavior are also subject
+    to the configuration. Note that some porcelain commands have the option to switch
+    to unchanging output via **--porcelain**.'
+  id: totrans-69
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git 命令可以分为两组：面向最终用户交互使用的高级**porcelain**命令和主要用于 shell 脚本的低级**plumbing**命令。它们的主要区别在于，高级命令的输出可能会改变并不断改进。例如，**git
+    branch**命令在分离**HEAD**的情况下，其输出从（**no branch**）变为（**detached from HEAD**）。它们的输出和行为还会受到配置的影响。请注意，某些
+    porcelain 命令可以通过**--porcelain**选项切换到不变的输出。
+- en: Another important difference is that plumbing commands try to guess what you
+    meant, they have default parameters, use the default configuration, and so on.
+    This isn’t the case with plumbing commands. You need to pass the **--exclude-standard**
+    option to the **git ls-files** command to make it respect the default set of ignore
+    files.
+  id: totrans-70
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 另一个重要的区别是，plumbing 命令试图猜测您的意图，它们有默认参数，使用默认配置，等等。但 plumbing 命令并非如此。您需要为**git
+    ls-files**命令传递**--exclude-standard**选项，以使其尊重默认的忽略文件集。
+- en: You can find more on this topic in [*Chapter 13*](B21194_13_split_000.xhtml#_idTextAnchor320),
+    *Customizing and* *Extending Git*.
+  id: totrans-71
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 您可以在[*第13章*](B21194_13_split_000.xhtml#_idTextAnchor320)中找到更多关于此主题的内容，*自定义和扩展
+    Git*。
+- en: Trick – ignoring changes in tracked files
+  id: totrans-72
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 技巧 – 忽略已追踪文件的更改
+- en: You might have files in your repository that are changed but rarely committed.
+    These can be various local configuration files that are edited to match the local
+    setup but should never be committed upstream. This can be a file containing the
+    proposed name for a new release, to be committed later when tagging the next released
+    version.
+  id: totrans-73
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可能在仓库中有一些已更改但很少提交的文件。这些可能是各种本地配置文件，用于匹配本地设置，但永远不应该提交到上游。这可以是一个包含新版本提议名称的文件，等到标记下一个发布版本时再提交。
+- en: You would want to keep such files in a *dirty* state most of the time, but you
+    would like Git not to tell you about their changes all the time in case you miss
+    other changes because you’re used to ignoring such messages.
+  id: totrans-74
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你通常会希望将这些文件保持在*脏*状态，但你希望Git不会一直告诉你它们的更改，以免你忽略其他更改，因为你已经习惯了忽略这些消息。
+- en: Dirty working directory
+  id: totrans-75
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 脏的工作目录
+- en: The working directory is considered **clean** if it is the same as the committed
+    and staged version and **dirty** if any modifications or changes have been made.
+  id: totrans-76
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果工作目录与已提交和已暂存的版本相同，则被认为是**干净**的；如果有任何修改或更改，则被认为是**脏**的。
+- en: 'Git can be configured – or rather tricked in this case – to skip checking the
+    worktree (to assume that it is always up to date), and to use the staged version
+    of the file instead. This can be done by setting the aptly named `skip-worktree`
+    flag for a file. For this, you would need to use the low-level `git update-index`
+    command, which is the plumbing equivalent of the user-facing `git add` porcelain.
+    You can check file status and flags with `git ls-files`, which will use the letter
+    `S` for files with this flag set:'
+  id: totrans-77
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git可以被配置——或者说在这种情况下被“欺骗”——跳过检查工作区（假定它始终是最新的），并使用文件的暂存版本。可以通过为文件设置恰当命名的`skip-worktree`标志来实现这一点。为此，你需要使用底层的`git
+    update-index`命令，它是用户界面中`git add`命令的底层实现。你可以使用`git ls-files`来检查文件的状态和标志，标有此标志的文件会显示字母`S`：
+- en: '[PRE6]'
+  id: totrans-78
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: 'Note that this elision of the worktree also includes the `git stash` command;
+    to stash away your changes and make the working directory *clean*, you need to
+    disable this flag (at least temporarily). To make Git look at the working directory
+    version and start tracking changes to the file, use the following command:'
+  id: totrans-79
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请注意，这种跳过工作区的做法也包括`git stash`命令；如果你想将更改暂存并使工作目录保持*干净*，你需要禁用此标志（至少是暂时禁用）。要让Git查看工作目录版本并开始跟踪文件的更改，请使用以下命令：
+- en: '[PRE7]'
+  id: totrans-80
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE7]'
+- en: This problem is caused by the fact that this use of the `skip-worktree` flag
+    is not intended use; this flag was created to manage so-called sparse checkout
+    – more on that in [*Chapter 12*](B21194_12.xhtml#_idTextAnchor302), *Managing*
+    *Large Repositories*.
+  id: totrans-81
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个问题是由于`skip-worktree`标志的使用不当所导致的；该标志是为了管理所谓的稀疏检出（sparse checkout）而创建的，更多内容请参见[*第12章*](B21194_12.xhtml#_idTextAnchor302)，*管理*
+    *大型代码库*。
+- en: Important note
+  id: totrans-82
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 重要说明
+- en: There is a similar **assume-unchanged** flag that can be used to make Git completely
+    ignore any changes to the file, or rather *assume that it is unchanged*. Files
+    marked with this flag never show as changed in the output of the **git status**
+    or **git diff** command. The changes to such files will not be staged, nor committed.
+  id: totrans-83
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 还有一个类似的**assume-unchanged**标志，可以用来让Git完全忽略文件的任何更改，或者说是*假定文件未更改*。标记此标志的文件在**git
+    status**或**git diff**命令的输出中永远不会显示为已更改。对这些文件的更改既不会被暂存，也不会被提交。
+- en: This is sometimes useful when you’re working with a big project on a filesystem
+    that’s very slow at checking for changes. However, do not use **assume-unchanged**
+    to *ignore* changes to tracked files. You are promising that the file didn’t change,
+    lying to Git. This means, for example, that with **git stash save** believing
+    what you stated, you would lose your precious local changes.
+  id: totrans-84
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当你在一个文件系统上处理一个大项目，而这个文件系统检查更改的速度非常慢时，这有时是有用的。然而，千万不要使用**assume-unchanged**来*忽略*已追踪文件的更改。你是在向Git保证文件没有更改，实际上是在欺骗Git。这意味着，举个例子，如果你使用**git
+    stash save**并相信你所说的内容，你会丢失宝贵的本地更改。
+- en: File attributes
+  id: totrans-85
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 文件属性
+- en: There are some settings and options in Git that can be specified on a per-path
+    basis, similar to how ignoring files (marking files as intentionally untracked)
+    works. These path-specific settings are called **attributes**.
+  id: totrans-86
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git中有一些设置和选项，可以按路径指定，这类似于忽略文件（将文件标记为故意不跟踪）的方法。这些按路径指定的设置被称为**属性**。
+- en: 'To specify attributes for files matching a given pattern, you need to add a
+    line with a pattern, separated by a space and followed by a whitespace-separated
+    list of attributes, to one of the `.gitignore` files work):'
+  id: totrans-87
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要为匹配给定模式的文件指定属性，需要在一个 `.gitignore` 文件中添加一行，包含模式，空格分隔，后面跟着一个由空格分隔的属性列表。
+- en: The per-user file, for attributes that should affect all repositories for a
+    single user, specified by the **core.attributesFile** configuration variable.
+    By default, this is **~/.config/git/attributes**
+  id: totrans-88
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 每个用户的文件，用于影响单个用户的所有仓库的属性，由 **core.attributesFile** 配置变量指定。默认情况下，这是 **~/.config/git/attributes**。
+- en: The per-repository **.git/info/attributes** file in the administrative area
+    of the local clone of the repository, for attributes that should only affect a
+    single specific clone of the repository (for one user’s workflow).
+  id: totrans-89
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 本地克隆仓库的管理区域中的每个仓库**.git/info/attributes**文件，用于那些只应影响特定克隆仓库（某个用户工作流程）的属性。
+- en: The **.gitattributes** files in the working directories of a project, for those
+    attributes that should be shared among developers.
+  id: totrans-90
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 项目工作目录中的 **.gitattributes** 文件，用于那些应该在开发者之间共享的属性。
+- en: The rules for how patterns are used to match files are the same as for the `.gitignore`
+    files, as described previously, except that there is no support for negative patterns,
+    and that patterns matching the directory do not recursively match paths inside
+    that directory.
+  id: totrans-91
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 用于匹配文件的模式规则与 `.gitignore` 文件中描述的规则相同，只是没有对负模式的支持，并且匹配目录的模式不会递归地匹配该目录中的路径。
+- en: 'Each attribute can be in one of the following states for a given path: set
+    (special value true), unset (special value false), set to a given value, or unspecified:'
+  id: totrans-92
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于给定路径，每个属性可以处于以下状态之一：已设置（特殊值 true）、未设置（特殊值 false）、设置为给定值，或未指定：
+- en: '[PRE8]'
+  id: totrans-93
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE8]'
+- en: Note
+  id: totrans-94
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 注意
+- en: There can be no whitespace around the equals sign, **=**, when setting an attribute
+    to a string value!
+  id: totrans-95
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 设置属性为字符串值时，**=** 周围不能有空格！
+- en: When more than one pattern matches the path, a later line overrides an earlier
+    line on a per-attribute basis. `.gitattributes` files are used in order, from
+    the per-user, through per-repository, to the `.gitattributes` file in a given
+    directory, like for `.``gitignore` files.
+  id: totrans-96
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当多个模式匹配路径时，后面的行会在每个属性的基础上覆盖前面的行。`.gitattributes` 文件按顺序使用，从每个用户的文件，到每个仓库的文件，再到给定目录中的
+    `.gitattributes` 文件，像 `.gitignore` 文件一样。
+- en: Identifying binary files and end-of-line conversions
+  id: totrans-97
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 识别二进制文件和行尾转换
+- en: Different operating systems and different applications can differ in how they
+    represent newlines in text files. Unix and Unix-like systems (including Mac OS
+    X) use a single control character LF (`\n`), while Windows uses CRLF – that is,
+    CR followed by LF (`\n\r`); macOS up to version 9 used CR alone (`\r`).
+  id: totrans-98
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 不同的操作系统和不同的应用程序在表示文本文件中的换行符时可能有所不同。Unix 和类 Unix 系统（包括 Mac OS X）使用单一的控制字符 LF
+    (`\n`)，而 Windows 使用 CRLF —— 即 CR 后跟 LF (`\n\r`)；直到版本 9，macOS 使用的是仅 CR (`\r`)。
+- en: That might be a problem for developing portable applications if different developers
+    use different operating systems. We don’t want to have spurious changes because
+    of different end-of-line conventions. Therefore, Git makes it possible to automatically
+    normalize end-of-line characters to be LF in the repository on commit (check-in),
+    and optionally to convert them to `CR + LF` in the working directory on checkout.
+  id: totrans-99
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果不同的开发者使用不同的操作系统，这可能会成为开发可移植应用程序的一个问题。我们不希望因为不同的行尾约定而产生多余的更改。因此，Git 使得可以在提交（check-in）时自动将行尾字符标准化为
+    LF，并可选择在检出时将其转换为 `CR + LF`。
+- en: You can control whether a file should be considered for end-of-line conversion
+    with the `text` attribute. Setting it enables end-of-line conversion, and unsetting
+    it disables it. Setting it to the `auto` value makes Git guess if the given file
+    is a text file; if it is, end-of-line conversion is enabled. For files where the
+    `text` attribute is unspecified, Git uses `core.autocrlf` to decide whether to
+    treat them as `text=auto` case.
+  id: totrans-100
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以使用 `text` 属性控制文件是否应考虑进行行尾转换。设置它会启用行尾转换，取消设置则会禁用。将其设置为 `auto` 值时，Git 会猜测给定的文件是否是文本文件；如果是，行尾转换将启用。对于那些未指定
+    `text` 属性的文件，Git 会使用 `core.autocrlf` 来决定是否将其视为 `text=auto` 情况。
+- en: How Git detects if a file contains binary data
+  id: totrans-101
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git 如何检测文件是否包含二进制数据
+- en: 'To decide whether a file contains binary data, Git examines the beginning of
+    the file for an occurrence of a zero byte (the **null**/**NUL** character or **\0**).
+    When deciding whether to convert a file (as in end-of-line conversion), the criterion
+    is stricter: for a file to be considered text, it must have no nulls, and no more
+    than around 1% of it should be non-printable characters.'
+  id: totrans-102
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了判断一个文件是否包含二进制数据，Git 会检查文件开头是否有零字节（**null**/**NUL** 字符或 **\0**）。在决定是否转换文件（例如行尾转换）时，标准会更加严格：如果一个文件要被认为是文本文件，它必须没有
+    null 字符，并且非可打印字符的比例不能超过大约 1%。
+- en: However, this means that Git usually considers files saved in the UTF-16 encoding
+    to be binary.
+  id: totrans-103
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，这意味着 Git 通常会将以 UTF-16 编码保存的文件视为二进制文件。
+- en: 'To decide what line ending type Git should use in the working directory for
+    text files, you need to set up the `core.eol` configuration variable. This can
+    be set to `crlf`, `lf`, or `native` (the last is the default). You can also force
+    a specific line ending for a given file with the `eol=lf` or `eol=crlf` attribute:'
+  id: totrans-104
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要决定 Git 在工作目录中为文本文件使用哪种行尾类型，你需要设置 `core.eol` 配置变量。该变量可以设置为 `crlf`、`lf` 或 `native`（默认值为
+    `native`）。你也可以为特定文件强制指定某种行尾格式，通过 `eol=lf` 或 `eol=crlf` 属性：
+- en: '| **Old** **crlf attribute** | **New text and** **eol attributes** |'
+  id: totrans-105
+  prefs: []
+  type: TYPE_TB
+  zh: '| **旧的** **crlf 属性** | **新的文本和** **eol 属性** |'
+- en: '| --- | --- |'
+  id: totrans-106
+  prefs: []
+  type: TYPE_TB
+  zh: '| --- | --- |'
+- en: '| `crlf` | `text` |'
+  id: totrans-107
+  prefs: []
+  type: TYPE_TB
+  zh: '| `crlf` | `text` |'
+- en: '| `-``crlf` | `-``text` |'
+  id: totrans-108
+  prefs: []
+  type: TYPE_TB
+  zh: '| `-``crlf` | `-``text` |'
+- en: '| `crlf=input` | `eol=lf` |'
+  id: totrans-109
+  prefs: []
+  type: TYPE_TB
+  zh: '| `crlf=input` | `eol=lf` |'
+- en: Table 3.1 – Backward compatibility of the text and eof attributes with the crlf
+    attribute
+  id: totrans-110
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 表 3.1 – `text` 和 `eof` 属性与 `crlf` 属性的向后兼容性
+- en: End-of-line conversion bears a slight chance of corrupting data. If you want
+    Git to warn or prevent conversion for files with a mixture of `LF` and `CRLF`
+    line endings, use the `core.safecrlf` configuration variable.
+  id: totrans-111
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 行尾转换有轻微的损坏数据的风险。如果你希望 Git 在文件包含混合的 `LF` 和 `CRLF` 行尾时发出警告或阻止转换，可以使用 `core.safecrlf`
+    配置变量。
+- en: 'Sometimes, Git might not detect that a file is binary correctly, or there may
+    be some type of file that is nominally text, but which is opaque to a human reader.
+    Examples include PostScript documents (`*.ps`) and Xcode build settings (`*.pbxproj`).
+    Such files should not be normalized and using textual `diff` for them doesn’t
+    make sense. You can mark such files explicitly as binary with the `binary` attribute
+    macro (which is equivalent to `-``text -diff`):'
+  id: totrans-112
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有时，Git 可能无法正确检测一个文件是否为二进制文件，或者有一些文件虽然名义上是文本文件，但对人类读者来说是不可读的。例如 PostScript 文档（`*.ps`）和
+    Xcode 构建设置（`*.pbxproj`）。这种类型的文件不应进行规范化，对它们使用文本 `diff` 是没有意义的。你可以通过 `binary` 属性宏显式标记这些文件为二进制文件（这相当于
+    `-``text -diff`）：
+- en: '[PRE9]'
+  id: totrans-113
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE9]'
+- en: What to do if files start without end-of-line normalization
+  id: totrans-114
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果文件未进行行尾规范化，应如何处理
+- en: When the normalization of line endings is turned on in the repository (by editing
+    the **.gitattributes** file), you should also force the **normalization** of files.
+    Otherwise, the change in newline representation will be misattributed to the next
+    change to the file. This can be done, for example, with the **git add --renormalize**
+    command. This should also be done when changing which files have the **text**
+    attribute.
+  id: totrans-115
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当在仓库中启用行尾规范化（通过编辑 **.gitattributes** 文件）时，你还应该强制进行文件的 **规范化**。否则，换行符表示的变化将被错误地归因于下一个文件更改。例如，可以使用
+    **git add --renormalize** 命令来完成这项工作。当改变哪些文件具有 **text** 属性时，也应当执行此操作。
+- en: Diff and merge configuration
+  id: totrans-116
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: Diff 和合并配置
+- en: In Git, you can use the attributes functionality to configure how to show differences
+    between different versions of a file, and how to do a three-way merge of its contents.
+    This can be used to enhance that operation, making `diff` more attractive and
+    `merge` less likely to conflict. It can even be used to make it possible to effectively
+    `diff` binary files, or to describe differences in a specific way.
+  id: totrans-117
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 Git 中，你可以使用属性功能来配置如何显示文件不同版本之间的差异，以及如何进行三方合并。这可以用来增强该操作，使得 `diff` 更具吸引力，`merge`
+    更不容易发生冲突。它甚至可以用来有效地进行二进制文件的 `diff`，或者以特定的方式描述差异。
+- en: In both cases, we would usually need to set up the `diff` and/or `merge` driver.
+    The attributes file only tells us which driver to use; the rest of the information
+    is contained in the configuration file, and this configuration is not automatically
+    shared among developers, unlike the `.gitattributes` file (though you can create
+    a shared configuration fragment, add it to the repository, and have developers
+    include it in their local per-repository config via the relative `include.path`).
+    The reason for this behavior is easy to understand – the tool’s configuration
+    may be different on different computers, and some tools may be not available for
+    the developer’s operating system of choice. But this means that some information
+    needs to be distributed out-of-band.
+  id: totrans-118
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这两种情况下，我们通常需要设置`diff`和/或`merge`驱动程序。属性文件仅告诉我们使用哪个驱动程序；其余的信息包含在配置文件中，而这个配置不会自动在开发者之间共享，这与`.gitattributes`文件不同（尽管你可以创建一个共享的配置片段，将其添加到仓库中，并让开发者通过相对的`include.path`将其包含到本地的每个仓库配置中）。这种行为的原因很容易理解——工具的配置可能在不同的计算机上不同，并且某些工具可能在开发者选择的操作系统上不可用。但这意味着一些信息需要通过外部渠道分发。
+- en: There are, however, a few built-in **diff drivers** and **merge drivers** that
+    anyone can use without further configuration.
+  id: totrans-119
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，有一些内置的**diff驱动程序**和**合并驱动程序**，任何人都可以在不做进一步配置的情况下使用它们。
+- en: Generating diffs and binary files
+  id: totrans-120
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 生成差异和二进制文件
+- en: Diffs that are generated for particular files are affected by the `diff` attribute.
+    If this attribute is unset, Git will treat files as binary concerning generating
+    diffs and show just `\``0`) character.
+  id: totrans-121
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为特定文件生成的差异会受到`diff`属性的影响。如果未设置此属性，Git会将文件视为二进制文件来生成差异，并仅显示`\``0`)字符。
+- en: You can use the `diff` attribute to make Git more effectively describe the differences
+    between two versions of a binary file via a `diff` command. Even though conversion
+    to text usually loses some information, the resulting differences is useful for
+    human viewing (even though it is not information about all the changes).
+  id: totrans-122
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以使用`diff`属性，通过`diff`命令使Git更有效地描述二进制文件的两个版本之间的差异。尽管转换为文本通常会丢失一些信息，但结果的差异对于人类查看是有用的（尽管它不是关于所有更改的信息）。
+- en: This can be done with the `textconv` config key for a `diff` driver, where you
+    specify a program that takes the name of the file as an argument and returns a
+    text representation on its output.
+  id: totrans-123
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这可以通过`diff`驱动程序的`textconv`配置项来完成，在该项中你指定一个程序，该程序将文件名作为参数并返回其文本表示。
+- en: 'For example, you might want to see the difference in the contents of Microsoft
+    Word documents and see the difference in metadata for JPEG images. First, you
+    need to put something like this in your `.``gitattributes` file:'
+  id: totrans-124
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 例如，你可能希望查看Microsoft Word文档的内容差异，或查看JPEG图像的元数据差异。首先，你需要在`.gitattributes`文件中添加类似这样的内容：
+- en: '[PRE10]'
+  id: totrans-125
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE10]'
+- en: For example, you can use the `catdoc` program to extract text from binary Microsoft
+    Word documents and `exiftool` to extract EXIF metadata from JPEG images.
+  id: totrans-126
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 例如，你可以使用`catdoc`程序从二进制Microsoft Word文档中提取文本，使用`exiftool`从JPEG图像中提取EXIF元数据。
+- en: 'Because conversion can be slow, Git provides a mechanism to cache the output
+    in the form of the Boolean `cachetextconv` attribute; the cached data is stored
+    using **notes** (this mechanism will be explained in [*Chapter 10*](B21194_10_split_000.xhtml#_idTextAnchor247),
+    *Keeping History Clean*). The part of the configuration file that’s responsible
+    for this setup looks like this:'
+  id: totrans-127
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于转换可能会比较慢，Git提供了一种机制，将输出缓存为布尔类型的`cachetextconv`属性；缓存的数据通过**notes**存储（此机制将在[*第10章*](B21194_10_split_000.xhtml#_idTextAnchor247)中解释，*保持历史记录清晰*）。负责此设置的配置文件部分如下所示：
+- en: '[PRE11]'
+  id: totrans-128
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE11]'
+- en: You can see what the output of the `textconv` filter looks like with `git show`,
+    or with `git cat-file -p` with the `--``textconv` option.
+  id: totrans-129
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以使用`git show`或带有`--textconv`选项的`git cat-file -p`来查看`textconv`过滤器的输出效果。
+- en: 'The more complicated but also more powerful option is to use an `GIT_EXTERNAL_DIFF`
+    environment variable or the `diff.external` configuration variable) with the `command`
+    option of the `diff` driver. However, when choosing to use this option, you lose
+    some options that Git `diff` gives for free: colorization, word diff, and combined
+    diff for merges.'
+  id: totrans-130
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 更复杂但也更强大的选项是使用`GIT_EXTERNAL_DIFF`环境变量或`diff.external`配置变量，并结合`diff`驱动的`command`选项。然而，选择使用此选项时，你会失去一些Git
+    `diff`免费提供的功能：上色、单词差异和合并时的合并差异。
+- en: 'Such a program will be called with seven parameters: `path`, `old-file`, `old-hex`,
+    `old-mode`, `new-file`, `new-hex`, and `new-mode`. Here, `old-file` and `new-file`
+    are files that the `diff` driver can use to read the contents of two versions
+    of the differing file, `old-hex` and `new-hex` are SHA-1 identifiers of file contents,
+    and `old-mode` and `new-mode` are octal representations of file modes. The command
+    is expected to generate a `diff`-like output. For example, you might want to use
+    the XML-aware `diff` tool to compare XML files:'
+  id: totrans-131
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这样的程序将用七个参数调用：`path`、`old-file`、`old-hex`、`old-mode`、`new-file`、`new-hex`和`new-mode`。在这里，`old-file`和`new-file`是`diff`驱动程序可以用来读取两个不同版本文件内容的文件，`old-hex`和`new-hex`是文件内容的SHA-1标识符，`old-mode`和`new-mode`是文件模式的八进制表示。该命令预计将生成类似`diff`的输出。例如，你可能想使用支持XML的`diff`工具来比较XML文件：
+- en: '[PRE12]'
+  id: totrans-132
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE12]'
+- en: This example assumes that you have written the `xmldiff-wrapper.sh` shell script
+    to reorder options so that they fit the expectations of the XML `diff` tool.
+  id: totrans-133
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本示例假设你已经编写了`xmldiff-wrapper.sh`脚本来重新排序选项，以便它们符合XML `diff`工具的期望。
+- en: Configuring diff output
+  id: totrans-134
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 配置diff输出
+- en: 'The `diff` format that Git uses to show changes for users was described in
+    detail in [*Chapter 2*](B21194_02.xhtml#_idTextAnchor028), *Developing with Git*.
+    Each group of changes (called a hunk) in textual `diff` output is preceded by
+    the hunk header line, as shown here:'
+  id: totrans-135
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git用于显示更改的`diff`格式在[*第2章*](B21194_02.xhtml#_idTextAnchor028)中已经详细描述，*使用Git开发*。每一组更改（称为hunk）在文本`diff`输出中都以hunk头部行开始，如下所示：
+- en: '[PRE13]'
+  id: totrans-136
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE13]'
+- en: 'The text after the second `@@` is meant to describe the section of the file
+    where the chunk is; for C source files, it is the start of the function. The decision
+    on how to detect the beginning of such a section depends on the type of file.
+    Git allows you to configure this by setting the `xfuncname` configuration option
+    of the `diff` driver to the regular expression, which matches the description
+    of the section of the file. For example, for LaTeX documents, you might want to
+    use the following configuration for the `tex` `diff` driver (you don’t need to
+    as `tex` is one of the pre-defined, built-in `diff` drivers):'
+  id: totrans-137
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 第二个`@@`后的文本是用来描述文件中该块所在的部分；对于C源文件，它是函数的开始。如何检测该部分的开始取决于文件的类型。Git允许你通过设置`diff`驱动程序的`xfuncname`配置选项为正则表达式来配置这一点，该正则表达式与文件部分的描述相匹配。例如，对于LaTeX文档，你可能想为`tex`
+    `diff`驱动程序使用以下配置（你不需要这么做，因为`tex`是预定义的内置`diff`驱动程序之一）：
+- en: '[PRE14]'
+  id: totrans-138
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE14]'
+- en: The `wordRegex` configuration defines what `word` is to define it for the `git
+    diff --word-diff` command (described in [*Chapter 2*](B21194_02.xhtml#_idTextAnchor028),
+    *Developing with Git*, near the end of the *Unified diff output* section). Here,
+    it’s being used for LaTeX documents.
+  id: totrans-139
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`wordRegex`配置定义了什么是`word`，并为`git diff --word-diff`命令（在[*第2章*](B21194_02.xhtml#_idTextAnchor028)中描述，*使用Git开发*，接近*统一diff输出*部分的末尾）定义了它。这里，它用于LaTeX文档。'
+- en: Note
+  id: totrans-140
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 注意
+- en: 'You would need to double the backslashes: **\\** matches the literal backslash,
+    **\**, in a regexp, so you need to use **\\\\** here (which is typical for storing
+    regexps in strings).'
+  id: totrans-141
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你需要将反斜杠加倍：**\\**匹配字面量反斜杠**\**，因此在正则表达式中需要使用**\\\\**（这在存储正则表达式字符串时是典型的做法）。
+- en: Performing a three-way merge
+  id: totrans-142
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 执行三方合并
+- en: You can also use the `merge` attribute to tell Git to use specific merge strategies
+    for specific files or classes of files in your project. By default, Git will use
+    the thee-way merge driver (similar to `rcsmerge`) for text files, and it will
+    take our (being merged) version and mark the result as a conflicted merge for
+    binary files. You can force a three-way merge by setting the `merge` attribute
+    (or by using `merge=text`); you can force binary-like merging by unsetting this
+    attribute (with `-merge`, which is equivalent to `merge=binary`).
+  id: totrans-143
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你还可以使用`merge`属性告诉Git为项目中的特定文件或文件类别使用特定的合并策略。默认情况下，Git将为文本文件使用三方合并驱动程序（类似于`rcsmerge`），并将我们的（被合并的）版本标记为二进制文件的冲突合并结果。你可以通过设置`merge`属性（或使用`merge=text`）强制三方合并；你可以通过取消设置此属性（使用`-merge`，相当于`merge=binary`）强制进行类似二进制的合并。
+- en: 'You can also write your `ChangeLog` file in your repository (with a curated
+    list of changes with their description), you can use the `git-merge-changelog`
+    command from the G**NU Portability Library** (**Gnulib**). You need to add the
+    following to the appropriate Git config file:'
+  id: totrans-144
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你还可以在你的代码库中编写`ChangeLog`文件（包含有描述的变更列表），并使用来自G**NU可移植库**(**Gnulib**)的`git-merge-changelog`命令。你需要在适当的Git配置文件中添加以下内容：
+- en: '[PRE15]'
+  id: totrans-145
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE15]'
+- en: Here, the token, `%O`, in `merge.merge-changelog.driver` will be expanded to
+    the name of the temporary file holding the contents of the merge ancestor’s (old)
+    version. The `%A` and `%B` tokens expand to the names of temporary files holding
+    contents being merged – that is, the current (ours, merged into) version and the
+    other branches’ (theirs, merged) version, respectively. The `merge` driver is
+    expected to leave the merged version in the `%A` file, exiting with a non-zero
+    status if there is a merge conflict. You can also use `%L` to denote the conflict
+    marker size and `%P` to find a pathname where the merged results will be stored.
+  id: totrans-146
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这里，`merge.merge-changelog.driver`中的令牌`%O`将展开为包含合并祖先（旧版本）内容的临时文件的名称。`%A`和`%B`令牌分别展开为包含正在合并的内容的临时文件的名称——即当前（我们的，已合并）版本和其他分支（他们的，已合并）版本。`merge`驱动程序预计会将合并后的版本保留在`%A`文件中，如果发生合并冲突，将以非零状态退出。你还可以使用`%L`来表示冲突标记的大小，并使用`%P`查找合并结果将存储的路径名。
+- en: Note
+  id: totrans-147
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 注意
+- en: You can use a different driver for an internal merge between common ancestors
+    (when there is more than one). You can do this by setting the **merge.*.recursive**
+    configuration variable for a given driver. For example, here, you can use the
+    predefined **binary** driver.
+  id: totrans-148
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以为常见祖先之间的内部合并使用不同的驱动程序（当有多个祖先时）。你可以通过为给定驱动程序设置**merge.*.recursive**配置变量来实现这一点。例如，在这里，你可以使用预定义的**binary**驱动程序。
+- en: 'Of course, you will also need to tell Git to use this driver for `ChangeLog`
+    files, adding the following line to `.gitattributes`:'
+  id: totrans-149
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当然，你还需要告诉 Git 使用此驱动程序处理`ChangeLog`文件，将以下行添加到`.gitattributes`中：
+- en: '[PRE16]'
+  id: totrans-150
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE16]'
+- en: Transforming files (content filtering)
+  id: totrans-151
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 转换文件（内容过滤）
+- en: Sometimes, the format of the content you want to put in a version control system
+    may depend on where it is stored, be it on disk or in the repository, with different
+    shapes in different places that are more convenient for Git, the platform (operating
+    system), the filesystem, and the user to use. End-of-line conversion can be considered
+    a special case for such an operation.
+  id: totrans-152
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有时，你想放入版本控制系统中的内容格式可能取决于它存储的位置，无论是在磁盘上还是在仓库中，不同位置的格式对 Git、平台（操作系统）、文件系统和用户来说更方便使用。换行符转换可以视为此类操作的一个特例。
+- en: 'To do this, you need to set the `filter` attribute for appropriate paths and
+    configure the `clean` and `smudge` commands of the specified filter driver (either
+    command can be left unspecified for a pass-through filter). When checking out
+    the file matching the given pattern, the `smudge` command is fed file contents
+    from the repository in its standard input, and its standard output is used to
+    update the file in the working directory. See *Figure 3**.1* for details:'
+  id: totrans-153
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为此，你需要为适当的路径设置`filter`属性，并配置指定过滤器驱动程序的`clean`和`smudge`命令（对于通行过滤器，可以不指定任何一个命令）。当检出与给定模式匹配的文件时，`smudge`命令会将来自仓库的文件内容作为标准输入传递给它，标准输出用于更新工作目录中的文件。详情请参见*图
+    3.1*：
+- en: '![Figure 3.1 – The “smudge” filter is run on checkout (when writing files to
+    the working directory)](img/B21194_03_01.jpg)'
+  id: totrans-154
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 3.1 – 当检出（写入文件到工作目录）时，运行“smudge”过滤器](img/B21194_03_01.jpg)'
+- en: Figure 3.1 – The “smudge” filter is run on checkout (when writing files to the
+    working directory)
+  id: totrans-155
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 3.1 – 当检出（写入文件到工作目录）时，运行“smudge”过滤器
+- en: 'Similarly, the `clean` command of a filter is used to convert the contents
+    of the worktree file into a shape suitable to be stored in the repository; see
+    *Figure 3**.2*:'
+  id: totrans-156
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 同样，过滤器的`clean`命令用于将工作树文件的内容转换为适合存储在仓库中的格式；请参见*图 3.2*：
+- en: '![Figure 3.2 – The “clean” filter is run when files are staged (added to the
+    index, also known as the staging area)](img/B21194_03_02.jpg)'
+  id: totrans-157
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 3.2 – 当文件被暂存（添加到索引，也称为暂存区）时，将运行“clean”过滤器](img/B21194_03_02.jpg)'
+- en: Figure 3.2 – The “clean” filter is run when files are staged (added to the index,
+    also known as the staging area)
+  id: totrans-158
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 3.2 – 当文件被暂存（添加到索引，也称为暂存区）时，将运行“clean”过滤器。
+- en: When specifying a command, you can use the `%f` token, which will be replaced
+    by the name of the file the filter is working on.
+  id: totrans-159
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在指定命令时，你可以使用`%f`令牌，它将被过滤器正在处理的文件名替换。
+- en: 'One simple example of how you can use this feature is to use the `rezip` script
+    for **OpenDocument Format** (**ODF**) files. ODF documents are ZIP archives of
+    mainly XML files. Git uses compression itself and also does deltaification (but
+    cannot do it on already compressed files); the idea is to store uncompressed files
+    in the repository but to check out compressed files:'
+  id: totrans-160
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一个简单的示例是如何使用此功能：使用`rezip`脚本处理**OpenDocument格式**（**ODF**）文件。ODF文档是主要包含XML文件的ZIP归档。Git本身使用压缩，并且也进行增量存储（但不能对已压缩的文件进行增量存储）；其理念是将未压缩的文件存储在仓库中，但检出时使用压缩文件：
+- en: '[PRE17]'
+  id: totrans-161
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE17]'
+- en: 'Of course, you also need to tell Git to use this filter for all kinds of ODF
+    files:'
+  id: totrans-162
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当然，你还需要告诉Git为所有类型的ODF文件使用此过滤器：
+- en: '[PRE18]'
+  id: totrans-163
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE18]'
+- en: 'Another example of an *advisory* filter is to use the `indent` program to force
+    a code formatting convention, as shown in the following example, or `gofmt` for
+    the Go programming language. A similar example would be to replace tabs with spaces
+    on check-in:'
+  id: totrans-164
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '*建议性*过滤器的另一个示例是使用`indent`程序强制代码格式约定，如下例所示，或者使用Go编程语言的`gofmt`。另一个类似的示例是，在提交时将制表符替换为空格：'
+- en: '[PRE19]'
+  id: totrans-165
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE19]'
+- en: Yet another example is `nbdev_clean` command to strip metadata and cell output
+    from **Jupyter Notebook** files. This is done to reduce the number of merge conflicts
+    and to avoid storing generated data in the repository.
+  id: totrans-166
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 另一个示例是`nbdev_clean`命令，用于从**Jupyter Notebook**文件中去除元数据和单元格输出。这样做是为了减少合并冲突的数量，并避免将生成的数据存储在仓库中。
+- en: Obligatory file transformations
+  id: totrans-167
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 强制性文件转换
+- en: Another use of content filtering is to store the content that cannot be directly
+    used in the repository and turn it into a usable form upon checkout.
+  id: totrans-168
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 内容过滤的另一个用途是将无法直接使用的内容存储在仓库中，并在检出时将其转化为可用的形式。
+- en: 'One such example might be to use `.gitattributes` files to configure Git so
+    that it stores large binary files outside the Git repository (such files are often
+    only used by a subset of developers); inside the repository, there is only an
+    identifier that allows us to get file contents from external storage. That’s how
+    `git-media` works:'
+  id: totrans-169
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一个这样的示例可能是使用`.gitattributes`文件配置Git，以便将大型二进制文件存储在Git仓库之外（这些文件通常只有一部分开发者使用）；仓库内部只有一个标识符，用来从外部存储获取文件内容。这就是`git-media`的工作原理：
+- en: '[PRE20]'
+  id: totrans-170
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE20]'
+- en: Tip
+  id: totrans-171
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 提示
+- en: You can find the **git-media** tool at [https://github.com/alebedev/git-media](https://github.com/alebedev/git-media).
+    Other similar tools will be mentioned in [*Chapter 12*](B21194_12.xhtml#_idTextAnchor302),
+    *Managing Large Repositories*, as one of the possible solutions to the problem
+    of handling large files.
+  id: totrans-172
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以在[https://github.com/alebedev/git-media](https://github.com/alebedev/git-media)找到**git-media**工具。其他类似工具将在[*第12章*](B21194_12.xhtml#_idTextAnchor302)，*管理大型仓库*中提到，作为处理大型文件问题的可能解决方案之一。
+- en: 'Another example of obligatory transformations would be encrypting sensitive
+    content or replacing a local sensitive program configuration that is required
+    for an application to work (for example, a database password) with a placeholder.
+    Because running such a filter is, like in the preceding example, *required* to
+    get useful content, you can mark it as such:'
+  id: totrans-173
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 另一个强制性转换的示例是加密敏感内容，或者用占位符替换本地应用程序配置中所需的敏感程序配置（例如，数据库密码）。因为运行此类过滤器，像前述示例中一样，*是必需的*，才能获得有用的内容，所以你可以标记为必需：
+- en: '[PRE21]'
+  id: totrans-174
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE21]'
+- en: Important note
+  id: totrans-175
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 重要提示
+- en: This is only a simplified example; in real use, you would have to consider the
+    security of the config file itself if you do this or store the real password in
+    an external smudge script. In such a case, you should also set up **pre-commit**,
+    **pre-push**, and **update** hooks to ensure that the password won’t make it to
+    the public repository (see [*Chapter 13*](B21194_13_split_000.xhtml#_idTextAnchor320),
+    *Customizing and Extending Git*, for details).
+  id: totrans-176
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这只是一个简化的示例；在实际使用中，如果你这么做或者将真实的密码存储在外部`smudge`脚本中，你还必须考虑配置文件本身的安全性。在这种情况下，你还应该设置**pre-commit**、**pre-push**和**update**钩子，以确保密码不会泄露到公开的仓库中（详情请见[*第13章*](B21194_13_split_000.xhtml#_idTextAnchor320)，*自定义与扩展Git*）。
+- en: If many files need to be processed, and the time it takes to invoke and run
+    the `clean` and `smudge` scripts becomes a problem, you can configure Git to use
+    a program that will process all files with a single filter invocation for the
+    entire lifetime of a Git command. You can define such a filter with a `process`
+    key in place of `clean` and `smudge`.
+  id: totrans-177
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果需要处理许多文件，而调用和运行`clean`和`smudge`脚本所需的时间成为问题，你可以配置Git，使用一个程序，通过单次调用过滤器处理所有文件，整个Git命令生命周期内都使用该过滤器。你可以用`process`键定义这样一个过滤器，代替`clean`和`smudge`。
+- en: Keyword expansion and substitution
+  id: totrans-178
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 关键字扩展与替换
+- en: 'Sometimes, though rare, there is a need to have a piece of dynamic information
+    about the versioned file in the contents of the file itself. To keep such information
+    up to date, you can request the version control system to perform `$Keyword$`,
+    with the keyword inside dollar characters (keyword anchor). This is usually replaced
+    by a version-control system with `$Keyword: value$`, which is a keyword followed
+    by its expansion.'
+  id: totrans-179
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '然而，虽然很少见，但有时确实需要在文件内容中包含版本化文件的动态信息。为了保持此类信息的最新状态，您可以要求版本控制系统执行 `$Keyword$`，即将关键字放在美元符号（keyword
+    anchor）内。通常，版本控制系统会将其替换为 `$Keyword: value$`，其中 `Keyword` 是关键字，`value` 是其扩展值。'
+- en: The main problem with doing this in Git is that you cannot modify the file contents
+    stored in the repository with information about the commit after you’ve committed
+    because of the way Git works (more information about this can be found in [*Chapter
+    10*](B21194_10_split_000.xhtml#_idTextAnchor247), *Keeping History Clean*). This
+    means that keyword anchors must be stored in the repository as-is, and only expanded
+    in the worktree on checkout. However, this is also an advantage; you would get
+    no spurious differences due to keyword expansion when examining the history.
+  id: totrans-180
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 Git 中执行此操作的主要问题是，无法在提交之后修改存储在版本库中的文件内容和提交信息，这是由于 Git 的工作原理所决定的（更多信息请参考[*第10章*](B21194_10_split_000.xhtml#_idTextAnchor247)，*保持历史清洁*）。这意味着关键字锚点必须原样存储在版本库中，并且只有在签出时才会在工作树中展开。然而，这也是一个优势；在检查历史记录时，不会因关键字扩展而产生无关的差异。
+- en: 'The only built-in keyword that Git supports is `$Id$`: its value is the SHA-1
+    identifier of the file contents (the SHA-1 checksum of the blob object representing
+    the file contents, which is not the same as the SHA-1 of the file; see [*Chapter
+    10*](B21194_10_split_000.xhtml#_idTextAnchor247), *Keeping History Clean*, to
+    learn how objects are constructed). You need to request this keyword expansion
+    by setting the `ident` attribute for a file.'
+  id: totrans-181
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git 支持的唯一内建关键字是 `$Id$`：其值是文件内容的 SHA-1 标识符（表示文件内容的 blob 对象的 SHA-1 校验和，与文件的 SHA-1
+    不同；有关如何构建对象的详细信息，请参考[*第10章*](B21194_10_split_000.xhtml#_idTextAnchor247)，*保持历史清洁*）。您需要通过为文件设置
+    `ident` 属性来请求此关键字扩展。
+- en: However, you can write your keyword expansion support with an appropriate `filter`
+    while defining the `smudge` command, which would expand the keyword, and the `clean`
+    command, which would replace the expanded keyword with its keyword anchor.
+  id: totrans-182
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，您可以在定义 `smudge` 命令时编写自己的关键字扩展支持，通过适当的 `filter`，该命令将扩展关键字，`clean` 命令则会将扩展后的关键字替换回其关键字锚点。
+- en: 'With this mechanism you can, for example, implement support for the `$Date$`
+    keyword, expanding it on checkout to the date when the file was last modified:'
+  id: totrans-183
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用此机制，您可以例如实现对 `$Date$` 关键字的支持，在签出时将其扩展为文件最后修改的日期：
+- en: '[PRE22]'
+  id: totrans-184
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE22]'
+- en: The `expand_date` script, which is passed the name of the file as an argument,
+    could run the `git log --pretty=format:"%ad" "$1"` command to get the substitution
+    value, for example.
+  id: totrans-185
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`expand_date` 脚本可以将文件名作为参数传递，运行 `git log --pretty=format:"%ad" "$1"` 命令来获取替换值，例如。'
+- en: 'However, you need to remember another limitation: for better performance, Git
+    does not touch files that did not change, be it on commit, on switching the branch
+    (on checkout), or on rewinding the branch (on reset). This means that this trick
+    cannot support keyword expansion for the date of the last revision of a project
+    (as opposed to the last revision that changed the file).'
+  id: totrans-186
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 但是，您需要记住另一个限制：为了提高性能，Git 不会触及没有改变的文件，无论是在提交时、切换分支时（签出时）还是回滚分支时（重置时）。这意味着此技巧无法支持项目最后修订日期的关键字扩展（与更改文件的最后一次修订不同）。
+- en: 'If you need to have such information in distributed sources (for example, the
+    description of the current commit, or how long it was since the tagged release),
+    you can either make it a part of the build system, or use `git archive` command.
+    The latter is quite a generic feature: if the `export-subst` attribute is set
+    for a file, Git will expand the `$Format:<PLACEHOLDERS>$` generalized keyword
+    when adding the file to an archive.'
+  id: totrans-187
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果您需要在分布式源中获取此类信息（例如，当前提交的描述，或自标签发布以来的时间），您可以将其作为构建系统的一部分，或使用 `git archive`
+    命令。后者是一个相当通用的功能：如果为文件设置了 `export-subst` 属性，Git 会在将文件添加到归档时展开 `$Format:<PLACEHOLDERS>$`
+    这种通用关键字。
+- en: Limitation of the keyword expansion with export-subst
+  id: totrans-188
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用 `export-subst` 的关键字扩展的限制
+- en: The expansion of the **$Format$** meta-keyword depends on the availability of
+    the revision identifier; it cannot be done if you, for example, pass the SHA-1
+    identifier of a tree object to the **git** **archive** command.
+  id: totrans-189
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**$Format$**元关键字的扩展取决于修订标识符的可用性；例如，如果您将树对象的SHA-1标识符传递给**git** **archive**命令，就无法完成此操作。'
+- en: The placeholders are the same as for the `--pretty=format:` custom formats for
+    `git log`, which are described in [*Chapter 4*](B21194_04.xhtml#_idTextAnchor083),
+    *Exploring Project History*. For example, the `$Format:%H$` string will be *replaced*
+    (not expanded) by the commit hash. It is an irreversible keyword substitution;
+    there is no trace of the keyword in the result of the archive (export) operation.
+  id: totrans-190
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 占位符与`git log`的`--pretty=format:`自定义格式相同，这些格式在[*第4章*](B21194_04.xhtml#_idTextAnchor083)
+    *探索项目历史*中有描述。例如，`$Format:%H$`字符串将被*替换*（而非展开）为提交哈希值。这是一种不可逆的关键字替换；在存档（导出）操作的结果中不会留下关键字的任何痕迹。
+- en: Other built-in attributes
+  id: totrans-191
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 其他内置属性
+- en: 'You can also tell Git not to add certain files or directories when generating
+    an archive. For example, in the user-facing archive, you may not want to include
+    the directory with distribution tests, which are useful for the developer but
+    not for end users (those tests may require additional tools or checking the quality
+    of the program and processing it rather than checking the correctness of the application
+    behavior). This can be done by setting the `export-ignore` attribute – for example,
+    by adding the following line to the `.``gitattributes` file:'
+  id: totrans-192
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 您还可以告诉Git在生成存档时不添加某些文件或目录。例如，在面向用户的存档中，您可能不希望包含包含分发测试的目录，这些测试对开发者有用，但对最终用户没有用（这些测试可能需要额外的工具或检查程序质量，而不是检查应用程序行为的正确性）。可以通过设置`export-ignore`属性来完成此操作，例如，向`.gitattributes`文件添加以下行：
+- en: '[PRE23]'
+  id: totrans-193
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE23]'
+- en: 'Another thing that can be configured with file attributes is defining what
+    `diff` and `apply` should consider a `core.whitespace` configuration variable.
+    Note that the list of common whitespace problems to take notice of should use
+    commas as an element separator, without any surrounding whitespace, when put in
+    the `.gitattributes` file. See the following example (taken from the Git project):'
+  id: totrans-194
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用文件属性还可以配置`diff`和`apply`应如何考虑`core.whitespace`配置变量。请注意，列出应关注的常见空白问题时，在`.gitattributes`文件中应使用逗号作为元素分隔符，并且没有任何周围的空白。请参见以下示例（摘自Git项目）：
+- en: '[PRE24]'
+  id: totrans-195
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE24]'
+- en: 'With file attributes, you can also specify the `encoding` attribute. Git can
+    use it to select how to display the file in GUI tools (for example, `gitk` and
+    `git gui`). This is a fine-grained version of the `gui.encoding` configuration
+    variable and is only used when explicitly asked for due to performance considerations.
+    For example, GNU gettext **Portable Object** (**.po**) files holding translations
+    should use the UTF-8 encoding:'
+  id: totrans-196
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用文件属性，您还可以指定`encoding`属性。Git可以使用它来选择如何在GUI工具中显示文件（例如，`gitk`和`git gui`）。这是`gui.encoding`配置变量的精细版本，并且仅在出于性能考虑明确要求时使用。例如，保存翻译的GNU
+    gettext **可移植对象**（**.po**）文件应使用UTF-8编码：
+- en: '[PRE25]'
+  id: totrans-197
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE25]'
+- en: 'To have Git convert between UTF-8 encoding in the staging area and the repository,
+    as well as specify the encoding of a file in the working directory on checkout,
+    you can use the `working-tree-encoding` attribute. For example, `diff` and other
+    commands to work correctly, you might want to use the following command:'
+  id: totrans-198
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要使Git在暂存区和仓库之间进行UTF-8编码转换，并指定工作目录中检出文件的编码，可以使用`working-tree-encoding`属性。例如，要让`diff`和其他命令正常工作，您可能想要使用以下命令：
+- en: '[PRE26]'
+  id: totrans-199
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE26]'
+- en: Note
+  id: totrans-200
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 注意
+- en: Reencoding might slow down certain Git operations.
+  id: totrans-201
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 重新编码可能会减慢某些Git操作。
+- en: Defining attribute macros
+  id: totrans-202
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 定义属性宏
+- en: In the *Identifying binary files and end-of-line conversions* section, we learned
+    how to mark binary files with the `binary` attribute. The `binary` attribute is
+    the `-diff -merge -text` (unsetting three file attributes). It would be nice to
+    define such macros for arbitrary combinations of attributes. There can be more
+    than one pattern matching a given type of file, but one `.gitattributes` line
+    can contain only one file pattern. If we want to have the same attributes for
+    different types of files, attribute macros allow avoiding duplication.
+  id: totrans-203
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在*识别二进制文件和行尾转换*部分，我们学习了如何使用`binary`属性标记二进制文件。`binary`属性是`-diff -merge -text`（取消设置这三个文件属性）。定义这种宏以支持属性的任意组合会非常有用。一个给定类型的文件可以匹配多个模式，但一个`.gitattributes`行只能包含一个文件模式。如果我们希望不同类型的文件具有相同的属性，属性宏可以避免重复。
+- en: 'Git allows us to define such macros, but only in top-level `.gitattributes`
+    files, namely `core.attributesFile`, `.git/info/attributes`, or `.gitattributes`
+    in the main (top-level) directory of a project. The built-in `binary` macro could
+    have been defined as follows:'
+  id: totrans-204
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git允许我们定义这样的宏，但仅限于顶层的`.gitattributes`文件，即`core.attributesFile`、`.git/info/attributes`，或者项目的主（顶层）目录下的`.gitattributes`文件。内置的`binary`宏可以这样定义：
+- en: '[PRE27]'
+  id: totrans-205
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE27]'
+- en: You can also define your own attributes. In this case, you can use the `git
+    check-attr` command to programmatically check which attributes are set for a given
+    file, or what the value is of an attribute for a set of files.
+  id: totrans-206
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你也可以定义自己的属性。在这种情况下，你可以使用`git check-attr`命令以编程方式检查给定文件设置了哪些属性，或者一组文件的某个属性值是什么。
+- en: Fixing mistakes with the reset command
+  id: totrans-207
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用重置命令修复错误
+- en: At any stage during development, you might want to `git undo` command in core
+    Git, and neither is there support for the universal `--undo` option in Git commands,
+    though many commands have an `--abort` option to abandon current **work in progress**
+    (**WIP**). One of the reasons why there is no such command or option yet is the
+    ambiguity on what needs to be undone (especially for multi-step operations).
+  id: totrans-208
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在开发的任何阶段，你可能想使用`git undo`命令，但核心Git中并没有这个命令，Git命令中也没有支持通用的`--undo`选项，尽管许多命令都有`--abort`选项用于放弃当前的**工作进度**（**WIP**）。没有这种命令或选项的原因之一是对于需要撤销的内容没有明确的定义（特别是对于多步骤操作）。
+- en: Many mistakes can be fixed with the help of the `git reset` command. It can
+    be used for various purposes and in various ways; understanding how this command
+    works will help you in using it in any situation, which is not limited to the
+    provided example usage.
+  id: totrans-209
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 许多错误可以通过`git reset`命令来修复。它可以用于多种目的和方式；理解该命令的工作原理将帮助你在任何情况下使用它，使用场景不限于提供的示例。
+- en: Note that this section only covers the full-tree mode of `git reset`; the description
+    of what `git reset -- <file>` does, which is an alternative to using the more
+    modern `git restore <file>` command, has been left for the *Managing worktree
+    and staging area* section at the end of this chapter.
+  id: totrans-210
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请注意，本节仅涉及`git reset`的完整树模式；`git reset -- <file>`的作用（这是使用更现代的`git restore <file>`命令的替代方式）已被留到本章末尾的*管理工作区和暂存区*部分。
+- en: Rewinding the branch head, softly
+  id: totrans-211
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 回滚分支头，软重置
+- en: The `git reset` command in its full-tree mode affects the current branch head,
+    and can also affect the index (the staging area) and the working directory. This
+    reset does not change which branch is current, as opposed to `git checkout` or
+    `git switch`.
+  id: totrans-212
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`git reset`命令在其完整树模式下会影响当前分支头，也可能影响索引（暂存区）和工作目录。这个重置不会改变当前分支，与`git checkout`或`git
+    switch`不同。'
+- en: 'To reset only the current branch head and not touch the index or the working
+    tree, you can use `git reset --soft [<revision>]` (if a revision is not given,
+    it defaults to `HEAD`):'
+  id: totrans-213
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要仅重置当前分支头，而不触及索引或工作区，你可以使用`git reset --soft [<revision>]`（如果没有给定修订版本，它默认是`HEAD`）：
+- en: '![Figure 3.3 – Before and after a soft reset](img/B21194_03_03.jpg)'
+  id: totrans-214
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 3.3 – 软重置前后](img/B21194_03_03.jpg)'
+- en: Figure 3.3 – Before and after a soft reset
+  id: totrans-215
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 3.3 – 软重置前后
+- en: Effectively, we are just changing the pointer of the current branch (`master`
+    in the example shown in *Figure 3**.3*) to point to a given revision (`HEAD^`
+    – the previous commit in the example). Neither the staging area nor the working
+    directory is affected. This leaves all your changed files (and all files that
+    differ between the old and new revision pointed by branch) in the `git status`
+    would put it.
+  id: totrans-216
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 实际上，我们只是将当前分支（示例中是`master`，见*图 3.3*）的指针指向某个修订版本（示例中的`HEAD^`——上一个提交）。暂存区和工作目录不会受到影响。这使得所有已更改的文件（以及分支所指向的旧修订和新修订之间不同的所有文件）在`git
+    status`中都会显示出来。
+- en: Removing or amending a commit
+  id: totrans-217
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 删除或修改提交
+- en: The way the command works means that a `--amend` option of `git commit`.
+  id: totrans-218
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 命令的工作方式意味着`git commit`有一个`--amend`选项。
+- en: 'Let’s take a look at the following command:'
+  id: totrans-219
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们来看看以下命令：
+- en: '[PRE28]'
+  id: totrans-220
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE28]'
+- en: 'This is equivalent to the following:'
+  id: totrans-221
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这相当于以下操作：
+- en: '[PRE29]'
+  id: totrans-222
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE29]'
+- en: The `git commit --amend` command also works for merge commits as opposed to
+    using a soft reset. When amending a commit, if you want to just fix the commit
+    message, there will be no additional options. If you want to include a fix from
+    the working directory without changing the commit message, you can add `--all
+    --no-edit`. If you want to fix the authorship information after correcting the
+    Git configuration, use `--``reset-author --no-edit`.
+  id: totrans-223
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`git commit --amend` 命令也适用于合并提交，而不是使用软重置。在修改提交时，如果你只想修复提交消息，不会有其他选项。如果你想在不更改提交消息的情况下包括工作目录中的修复，可以添加
+    `--all --no-edit`。如果你想在修正 Git 配置后修复作者信息，可以使用 `--reset-author --no-edit`。'
+- en: You learned how amending a commit changes the graph of revisions in [*Chapter
+    2*](B21194_02.xhtml#_idTextAnchor028), *Developing With Git*, in the *Amending
+    a* *commit* section.
+  id: totrans-224
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你已经在 [*第二章*](B21194_02.xhtml#_idTextAnchor028)《使用 Git 开发》中学习过如何通过修改提交来更改修订图，在
+    *修改提交* 部分。
+- en: Squashing commits with reset
+  id: totrans-225
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 使用重置压缩提交
+- en: You are not limited to rewinding the branch head to just the previous commit.
+    Using a soft reset, you can squash a few earlier commits (for example, commit
+    and bugfix, or introducing new functionality and using it), making one commit
+    out of two (or more); alternatively, you can instead use the `squash` instruction
+    of `merge --squash` for this.
+  id: totrans-226
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你并不局限于将分支头回退到上一个提交。通过软重置，你可以将一些较早的提交合并（例如，提交和修复 bug，或引入新功能并使用它），将两个（或更多）提交合并为一个；另外，你也可以使用
+    `merge --squash` 的 `squash` 指令来实现这一点。
+- en: Resetting the branch head and the index
+  id: totrans-227
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 重置分支头和索引
+- en: 'The default mode of reset command – the so-called **mixed reset** (because
+    it is between the soft and hard forms) – changes the current branch head so that
+    it points to a given revision, and also resets the index, putting the contents
+    of that revision into the staging area. This mode is shown in *Figure 3**.4*:'
+  id: totrans-228
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`reset` 命令的默认模式——所谓的 **混合重置**（因为它介于软重置和硬重置之间）——会更改当前分支头，使其指向给定的修订，并且重置索引，将该修订的内容放入暂存区。此模式在
+    *图 3.4* 中显示：'
+- en: '![Figure 3.4 – Before and after a mixed reset](img/B21194_03_04.jpg)'
+  id: totrans-229
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 3.4 – 混合重置前后的对比](img/B21194_03_04.jpg)'
+- en: Figure 3.4 – Before and after a mixed reset
+  id: totrans-230
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 3.4 – 混合重置前后的对比
+- en: 'This leaves all your changed files (and all files that differ between the old
+    and new revision pointed by branch) in the `git status` would put it. The `git
+    reset --mixed` command will also report what has not been updated using the short
+    status format:'
+  id: totrans-231
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这将把你所有更改过的文件（以及分支指向的旧修订与新修订之间的所有不同文件）保留在 `git status` 会显示的状态中。`git reset --mixed`
+    命令也会以简短的状态格式报告哪些内容没有更新：
+- en: '[PRE30]'
+  id: totrans-232
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE30]'
+- en: This version of the `reset` command can be used, for example, to undo all additions
+    of new files. This can be done by running `git reset`, if you didn’t stage any
+    changes (or that you can put up with losing them). If you want to un-add a particular
+    file, use `git rm --``cached <file>`.
+  id: totrans-233
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这种版本的 `reset` 命令可以用于例如撤销所有新增文件的操作。通过运行 `git reset`，如果你没有暂存任何更改（或者你可以接受丢失它们），就可以完成此操作。如果你想撤销某个特定文件的添加，可以使用
+    `git rm --cached <file>`。
+- en: Splitting a commit in two with reset
+  id: totrans-234
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 使用重置将提交拆分为两部分
+- en: You can use a mixed reset to split a commit in two. First, run `git reset HEAD^`
+    to reset the branch head and the index to the previous revision. Then, interactively
+    add changes that you want to have in the first commit, and then create this first
+    commit from the index (`git add -i` and `git commit`). A second commit can then
+    be created from the working directory state (`git` `commit -a`).
+  id: totrans-235
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以使用混合重置将提交拆分为两部分。首先，运行 `git reset HEAD^` 将分支头和索引重置为之前的修订。然后，交互式地添加你想包含在第一个提交中的更改，之后从索引中创建第一个提交（`git
+    add -i` 和 `git commit`）。然后，可以从工作目录状态中创建第二个提交（`git commit -a`）。
+- en: If it is easier to interactively remove changes, that’s also an option. Use
+    `git reset --soft HEAD^`, interactively un-stage changes with an interactive per-file
+    reset, create the first commit from the constructed state in the index, and create
+    the second commit from the working directory.
+  id: totrans-236
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果交互式地移除更改更容易，也可以选择这种方式。使用 `git reset --soft HEAD^`，通过交互式按文件撤销暂存的更改，在索引中创建第一个提交，然后从工作目录创建第二个提交。
+- en: Here, again, like for squashing commits, you can use the interactive rebase
+    to split commits further in the history. The rebase operation will switch to the
+    appropriate commit, at which point the actual splitting can be done, as described
+    here.
+  id: totrans-237
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这里，同样地，就像压缩提交一样，你可以使用交互式 rebase 来进一步拆分历史中的提交。rebase 操作会切换到适当的提交点，此时可以进行实际的拆分，具体操作如这里所述。
+- en: Saving and restoring state with the WIP commit
+  id: totrans-238
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 使用WIP提交保存和恢复状态
+- en: 'Suppose you are interrupted by an urgent bugfix request while you are in the
+    middle of work on the development branch. You don’t want to lose your changes,
+    but the worktree is a bit of a mess, and you are unable to finish the commit in
+    time. One possible solution is to save the current state of the working area by
+    creating a temporary commit:'
+  id: totrans-239
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 假设你在开发分支上工作时被一个紧急的bug修复请求中断。你不想丢失更改，但工作树有点混乱，你也没有时间完成提交。一个可能的解决方案是通过创建临时提交来保存当前工作区的状态：
+- en: '[PRE31]'
+  id: totrans-240
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE31]'
+- en: 'Then, you can handle the interruption, switching to the maintenance branch
+    and creating a commit to fix the issue. At this point, you need to go back to
+    the previous branch (by using checkout), remove the WIP commit from the history
+    (using a soft reset), and go back to the un-staged starting state (with a mixed
+    reset), as follows:'
+  id: totrans-241
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后，你可以处理这个中断，切换到维护分支并创建一个提交来修复问题。此时，你需要返回到之前的分支（使用checkout），将WIP提交从历史记录中移除（使用软重置），并返回到未暂存的起始状态（使用混合重置），如下所示：
+- en: '[PRE32]'
+  id: totrans-242
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE32]'
+- en: Usually, though it is much easier to just use `git stash` instead to handle
+    interruptions, see the *Stashing away your changes* section in this chapter. On
+    the other hand, such temporary commits can be shared with other developers, as
+    opposed to stash (because stash stack is based on purely local data – the reflog).
+  id: totrans-243
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通常，使用`git stash`来处理中断会更加方便，详见本章的*暂存你的更改*部分。另一方面，暂时的提交可以与其他开发者共享，而不像stash那样（因为stash栈是基于纯本地数据的——reflog）。
+- en: Discarding changes and rewinding the branch
+  id: totrans-244
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 丢弃更改并回退分支
+- en: 'Sometimes, your files will get in such a mess that you want to discard all
+    changes and return the working directory and the staging area (the index) to the
+    last committed state to the last good version. In other cases, you might want
+    to rewind the state of the repository to an earlier version. In such instances,
+    a **hard reset** is what you need; it will change the current branch head while
+    resetting the index and the working tree. Any changes to any tracked files will
+    be discarded:'
+  id: totrans-245
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有时，你的文件可能会变得一团糟，以至于你想丢弃所有更改，并将工作目录和暂存区（索引）恢复到最后一次提交的状态，即恢复到最后一个正常版本。在其他情况下，你可能想将仓库的状态回退到早期的版本。在这种情况下，**硬重置**是你需要的操作；它将更改当前分支的头指针，同时重置索引和工作树。任何对已跟踪文件的更改都会被丢弃：
+- en: '![Figure 3.5 – Before and after a hard reset](img/B21194_03_05.jpg)'
+  id: totrans-246
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图3.5 – 硬重置前后的状态](img/B21194_03_05.jpg)'
+- en: Figure 3.5 – Before and after a hard reset
+  id: totrans-247
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图3.5 – 硬重置前后的状态
+- en: This command can be used to undo a commit as if it had never happened, by removing
+    it. Running `git reset --hard HEAD^` will effectively discard the last commit
+    (though it will be available for a limited time via reflog) unless this commit
+    can be reached from some other branch.
+  id: totrans-248
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个命令可以用来撤销一个提交，就像它从未发生过一样，方法是将其移除。运行`git reset --hard HEAD^`将有效地丢弃最后一次提交（尽管它会在有限的时间内通过reflog可用），除非这个提交可以通过其他分支访问。
+- en: Another common usage is to discard changes to the working directory with `git
+    reset --hard`, which resets to the last committed state.
+  id: totrans-249
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 另一个常见的用法是使用`git reset --hard`丢弃工作目录中的更改，这将重置为最后一次提交的状态。
+- en: Important note
+  id: totrans-250
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 重要提示
+- en: It is very important to remember that a hard reset would irrecoverably remove
+    all changes from the staging area and working directory. You cannot undo this
+    part of the operation! Changes are lost forever!
+  id: totrans-251
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 需要非常注意的是，硬重置会不可恢复地删除暂存区和工作目录中的所有更改。你不能撤销此操作！更改将永远丢失！
+- en: Moving commits to a feature branch
+  id: totrans-252
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 将提交移动到功能分支
+- en: Say that you were working on something on the `master` branch, and you have
+    already created a sequence of commits. You have realized that the feature you
+    are working on is more involved, and you want to continue polishing it on a separate
+    topic branch, as described in [*Chapter 8*](B21194_08_split_000.xhtml#_idTextAnchor196),
+    *Advanced Branching Techniques*. You want to move all those commits that are in
+    `master` (let’s say, the last three revisions) to the aforementioned feature branch.
+  id: totrans-253
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 假设你正在`master`分支上工作，并且已经创建了一系列提交。你意识到你正在处理的功能更复杂，想要在一个单独的主题分支上继续完善它，正如在[*第8章*](B21194_08_split_000.xhtml#_idTextAnchor196)中所描述的，*高级分支技巧*。你想把`master`中的所有提交（假设是最后三次修订）移动到前述的功能分支。
+- en: 'You need to create the feature branch, save uncommitted changes (if any), rewind
+    the `master` branch while removing those topical commits from it, and switch to
+    the feature branch to continue working (or you can use rebase instead):'
+  id: totrans-254
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你需要创建功能分支，保存未提交的更改（如果有），回退`master`分支并移除其中的相关提交，然后切换到功能分支继续工作（或者你可以使用变基代替）：
+- en: '[PRE33]'
+  id: totrans-255
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE33]'
+- en: Of course, if there were local changes to save (there were none in the preceding
+    example), this preceding series of commands would have to be followed by `git`
+    `stash pop`.
+  id: totrans-256
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当然，如果有本地更改需要保存（在前面的例子中没有），那么在这组命令执行之后，需要使用`git stash pop`。
+- en: Undoing a merge or a pull
+  id: totrans-257
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 撤销合并或拉取
+- en: Hard resets can also be used to abort a failed merge. You can use `git reset
+    --hard HEAD` (here, `HEAD` is the default value for revision and can be omitted),
+    for example, if you decide that you don’t want to resolve the merge conflict at
+    this time (though with modern Git you can use `git merge --``abort` instead).
+  id: totrans-258
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 硬重置也可以用于中止失败的合并。例如，如果你决定此时不想解决合并冲突，可以使用`git reset --hard HEAD`（此处，`HEAD`是修订版本的默认值，可以省略），虽然在现代
+    Git 中，你也可以使用`git merge --abort`代替。
+- en: You can also remove a successful fast-forward pull or undo a rebase (and many
+    other operations while moving the branch head) with `git reset --hard ORIG_HEAD`.
+    (Here, you can use `HEAD@{1}` instead of `ORIG_HEAD`.)
+  id: totrans-259
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你还可以使用`git reset --hard ORIG_HEAD`来移除一个成功的快进拉取操作或撤销变基（以及许多其他在移动分支头部时的操作）。（在这里，你可以使用`HEAD@{1}`代替`ORIG_HEAD`。）
+- en: Safer reset – keeping your changes
+  id: totrans-260
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 更安全的重置 – 保留你的更改
+- en: 'A hard reset will discard your local changes, similar to how `git switch --discard-changes`
+    or `git checkout --force` would. Sometimes, you might want to rewind the current
+    branch while keeping the local changes: that’s what `git reset --keep` is for.'
+  id: totrans-261
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 硬重置会丢弃你的本地更改，类似于`git switch --discard-changes`或`git checkout --force`的效果。有时，你可能想回退当前分支并保留本地更改：这就是`git
+    reset --keep`的用途。
+- en: '![Figure 3.6 – Before and after a successful git reset --keep HEAD^ command](img/B21194_03_06.jpg)'
+  id: totrans-262
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 3.6 – 成功执行 `git reset --keep HEAD^` 命令前后的情况](img/B21194_03_06.jpg)'
+- en: Figure 3.6 – Before and after a successful git reset --keep HEAD^ command
+  id: totrans-263
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 3.6 – 成功执行 `git reset --keep HEAD^` 命令前后的情况
+- en: 'This mode resets the staging area (index entries) but retains the unstaged
+    (local) changes that are currently in the working directory; see *Figure 3**.6*.
+    If it is not possible, the reset operation is aborted:'
+  id: totrans-264
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 该模式会重置暂存区（索引条目），但保留当前工作目录中的未暂存（本地）更改；见 *图 3.6*。如果无法执行，重置操作会被中止：
+- en: '[PRE34]'
+  id: totrans-265
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE34]'
+- en: This means that local changes in the worktree are preserved and moved to the
+    new commit, in a similar way to how `git checkout <branch>` works with uncommitted
+    changes. The successful case is a bit like stashing changes away, hard resetting,
+    and then unstashing (but with a single atomic command).
+  id: totrans-266
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这意味着工作树中的本地更改将被保留并移到新的提交中，类似于`git checkout <branch>`在未提交更改时的操作。成功的情况有点像是暂存更改、硬重置，然后再恢复（但用一个原子命令完成）。
+- en: How does safe reset work?
+  id: totrans-267
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 安全重置是如何工作的？
+- en: The way **git reset --keep <revision>** works is by updating the version (in
+    the working directory) of only those files that are different between the revision
+    we rewind to and **HEAD**. The reset is aborted if there is any file that is different
+    between **HEAD** and **<revision>** (and thus would need to be updated) and has
+    local uncommitted changes.
+  id: totrans-268
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**git reset --keep <revision>** 的工作原理是通过更新工作目录中仅与我们回退到的修订版本和**HEAD**之间不同的文件版本来实现的。如果有任何文件在**HEAD**和**<revision>**之间不同（因此需要更新），并且有本地未提交的更改，则重置操作会被中止。'
+- en: Rebasing current changes to an earlier revision
+  id: totrans-269
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 将当前更改变基到早期的修订版本
+- en: Suppose that you are working on something but you realize that what you have
+    in your working directory should be in another branch, unrelated to a previous
+    commit. For example, you might have started to work on a bug while on the `master`
+    branch, and only then realized that it also affects the maintenance branch, `maint`.
+  id: totrans-270
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 假设你正在处理某个任务，但你意识到工作目录中的内容应该在另一个分支上，而与之前的提交无关。例如，你可能在`master`分支上开始修复一个 bug，随后才意识到它也影响了维护分支`maint`。
+- en: 'This means that the fix should be put earlier in a branch, starting from the
+    common ancestor of those branches (or a place where the bug was introduced). This
+    would make it possible to merge the same fix both into `master` and `maint`, as
+    described in [*Chapter 15*](B21194_15.xhtml#_idTextAnchor371), *Git* *Best Practices*:'
+  id: totrans-271
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这意味着修复应该早些放入分支，从这些分支的共同祖先开始（或错误被引入的地方）。这样就可以将相同的修复合并到 `master` 和 `maint` 分支中，正如在
+    [*第15章*](B21194_15.xhtml#_idTextAnchor371) *Git* *最佳实践* 中所描述的那样：
+- en: '[PRE35]'
+  id: totrans-272
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE35]'
+- en: 'An alternate solution would be to simply use `git stash` to move changes:'
+  id: totrans-273
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 另一种解决方案是简单地使用 `git stash` 来移动更改：
+- en: '[PRE36]'
+  id: totrans-274
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE36]'
+- en: Stashing away your changes
+  id: totrans-275
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 暂存你的更改
+- en: Often, when you’ve been working on a project, and things are in a messy state
+    not suitable for a permanent commit, you want to temporarily save the current
+    state and go to work on something else. The answer to this problem is the `git`
+    `stash` command.
+  id: totrans-276
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通常，当你在一个项目上工作时，状态会变得混乱，无法提交为永久更改，这时你可能想要暂时保存当前状态，然后去处理其他事情。解决这个问题的命令就是 `git`
+    的 `stash` 命令。
+- en: Stashing takes the dirty state of your working area – that is, your modified
+    *tracked* files in your worktree and the state of the staging area – saves this
+    state, and resets both the working directory and the index to the last committed
+    version (to match the `HEAD` commit), effectively running `git reset --hard HEAD`.
+    You can then reapply the stashed changes at any time.
+  id: totrans-277
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 暂存会将工作区域的脏状态——也就是你工作区内修改过的*跟踪*文件以及暂存区的状态——保存下来，并将工作目录和索引重置为最后一次提交的版本（与 `HEAD`
+    提交匹配），这实际上执行了 `git reset --hard HEAD`。之后，你可以随时重新应用暂存的更改。
+- en: You can also stash *untracked* files with the `--``include-untracked` option.
+  id: totrans-278
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你还可以通过 `--include-untracked` 选项来暂存*未跟踪*的文件。
+- en: 'Stashes are saved on a stack: by default, you apply the last stashed changes
+    (`stash@{0}`), though you can list stashed changes (with `git stash list`) and
+    explicitly select any of the stashes.'
+  id: totrans-279
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 暂存内容保存在一个栈中：默认情况下，你会应用最后一次暂存的更改（`stash@{0}`），不过你可以列出所有的暂存更改（使用`git stash list`），并显式选择任何一个暂存内容。
+- en: Using git stash
+  id: totrans-280
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 使用 `git stash`
+- en: 'If you don’t expect the interruption to last long, you can simply **stash away**
+    your changes, handle the interruption, and then unstash them:'
+  id: totrans-281
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你不预期中断会持续太久，你可以简单地**暂存**你的更改，处理完中断后再恢复它们：
+- en: '[PRE37]'
+  id: totrans-282
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE37]'
+- en: 'By default, `git stash pop` will apply the last stashed changes and delete
+    the stash if applied successfully. To see what stashes you have stored, you can
+    use `git` `stash list`:'
+  id: totrans-283
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 默认情况下，`git stash pop` 会应用最后一次暂存的更改，并在应用成功后删除该暂存。如果你想查看已保存的暂存内容，可以使用 `git stash
+    list`：
+- en: '[PRE38]'
+  id: totrans-284
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE38]'
+- en: You can use any of the older stashes by specifying the stash name as an argument,
+    or simply its number. For example, you can run `git stash apply stash@{1}` or
+    `git stash apply 1` to apply it, and you can drop it (remove it from the list
+    of stashes) with `git stash drop stash@{1}` or `git stash drop 1`; the `git stash
+    pop` command is just a shortcut for `apply` + `drop`.
+  id: totrans-285
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以通过指定暂存名称作为参数，或仅指定其编号来使用任何较早的暂存。例如，你可以运行 `git stash apply stash@{1}` 或 `git
+    stash apply 1` 来应用它，且可以使用 `git stash drop stash@{1}` 或 `git stash drop 1` 来删除它（从暂存列表中移除）；`git
+    stash pop` 命令其实是 `apply` + `drop` 的快捷方式。
+- en: 'The default description that Git gives to stashed changes (namely `git stash
+    show -p`. But if you expect that the interruption might be more involved, you
+    should save the current state to a stash while describing what you were working
+    on:'
+  id: totrans-286
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git 给暂存更改的默认描述（即 `git stash show -p`）。但如果你预计中断会涉及更多内容，你应该在描述你正在做的工作时将当前状态保存为一个暂存：
+- en: '[PRE39]'
+  id: totrans-287
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE39]'
+- en: 'Git would then use the provided message to describe stashed changes when listing
+    stashes:'
+  id: totrans-288
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git 随后会使用提供的消息来描述暂存的更改，当列出暂存内容时：
+- en: '[PRE40]'
+  id: totrans-289
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE40]'
+- en: Sometimes, the branch you were working on when you ran `git stash save` has
+    changed enough that `git stash pop` fails because there are too many new revisions
+    past the commit you were on when stashing the changes. If you want to create a
+    regular commit out of the stashed changes, or just test stashed changes, you can
+    use `git stash branch <branch name>`. This will create a new branch at the revision
+    you were at when saving the changes, switch to this branch, reapply your work
+    there, and drop stashed changes.
+  id: totrans-290
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有时，当你执行 `git stash save` 时，你正在工作的分支发生了足够的变化，以至于执行 `git stash pop` 失败，因为在你暂存更改时，已经有太多的新修订提交。若你希望将暂存的更改创建为常规提交，或者只是测试暂存的更改，你可以使用
+    `git stash branch <branch name>`。此命令会在你保存更改时所在的修订版本上创建一个新分支，切换到该分支，将你的工作重新应用于此分支，并删除暂存的更改。
+- en: Stash and the staging area
+  id: totrans-291
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 暂存与暂存区
+- en: 'By default, stashing resets both the working directory and the staging area
+    to the `HEAD` version. You can make `git stash` keep the state of the index and
+    reset the working area to the staged state with the `--``keep-index` option:'
+  id: totrans-292
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 默认情况下，暂存会将工作目录和暂存区都重置为`HEAD`版本。你可以使用`--keep-index`选项让`git stash`保留索引的状态并将工作区重置为暂存状态：
+- en: '![Figure 3.7 – The difference between git stash with and without --keep-index](img/B21194_03_07.jpg)'
+  id: totrans-293
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 3.7 – `git stash`与不使用`--keep-index`的区别](img/B21194_03_07.jpg)'
+- en: Figure 3.7 – The difference between git stash with and without --keep-index
+  id: totrans-294
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 3.7 – `git stash`与不使用`--keep-index`的区别
+- en: This is very useful if you used the staging area to untangle changes in the
+    working directory, as described in the *Selective commit* section in [*Chapter
+    2*](B21194_02.xhtml#_idTextAnchor028), *Developing with Git*, or if you want to
+    split the commit in two, as described in the *Splitting a commit with reset* section
+    in this chapter. In both cases, you would want to test each change before committing.
+  id: totrans-295
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这在你使用暂存区来整理工作目录中的更改时非常有用，如在[*第二章*](B21194_02.xhtml#_idTextAnchor028)中《使用 Git
+    开发》一节中的*选择性提交*部分所描述，或者如果你想将提交拆分成两部分，如本章中的*使用 reset 拆分提交*部分所描述。在这两种情况下，你都会希望在提交之前测试每个更改。
+- en: 'The workflow would look like this:'
+  id: totrans-296
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 工作流程如下所示：
+- en: '[PRE41]'
+  id: totrans-297
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE41]'
+- en: You can also use `git stash --patch` to select how the working area should look
+    after stashing away the changes.
+  id: totrans-298
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你还可以使用`git stash --patch`来选择暂存更改后，工作区应该是什么样子。
+- en: When restoring stashed changes, Git will ordinarily try to apply only saved
+    worktree changes, adding them to the current state of the working directory (which
+    must match the staging area). If there are conflicts while applying the state,
+    they are stored in the index as usual – Git won’t drop the stash if there are
+    conflicts.
+  id: totrans-299
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在恢复暂存的更改时，Git 通常会尝试只应用已保存的工作区更改，并将其添加到当前工作目录的状态（该状态必须与暂存区匹配）。如果在应用状态时发生冲突，冲突会像往常一样存储在索引中——如果存在冲突，Git
+    不会丢弃暂存。
+- en: You can also try to restore the saved state of the staging area with the `--index`
+    option; this will fail if there are conflicts when you’re applying working tree
+    changes (because there is no place to store conflicts since the staging area is
+    busy).
+  id: totrans-300
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你还可以尝试使用`--index`选项恢复暂存区的已保存状态；如果在应用工作区更改时存在冲突，这将失败（因为暂存区已占用，无法存储冲突）。
+- en: Stash internals
+  id: totrans-301
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: Stash 内部结构
+- en: Perhaps you applied stashed changes, did some work, and then for some reason
+    want to un-apply those changes that originally came from the stash. Maybe you
+    mistakenly dropped the stash or cleared all stashes (which you can do with `git
+    stash clear`) and would like to recover them. Or perhaps you want to see how the
+    file looked when you stashed away changes. To do any of this, you will need to
+    know what Git does when creating a stash entry.
+  id: totrans-302
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 或许你应用了暂存的更改，做了一些工作，然后因为某种原因想要撤销最初来自暂存区的更改。也许你误删了暂存，或者清除了所有暂存（你可以通过`git stash
+    clear`来执行此操作），并希望恢复它们。或者你可能想查看在暂存更改时文件的样子。要做这些操作，你需要知道 Git 在创建暂存条目时是如何处理的。
+- en: 'To stash away your changes, Git creates two automatic commits: one for the
+    index (staging area) and one for the working directory. With `git stash --include-untracked`,
+    Git creates an additional third automatic commit for untracked files.'
+  id: totrans-303
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了暂存你的更改，Git 会创建两个自动提交：一个用于索引（暂存区），另一个用于工作目录。使用`git stash --include-untracked`时，Git
+    会为未追踪的文件创建一个额外的第三个自动提交。
+- en: 'The commit containing the work in progress (WIP) in the working directory (the
+    state of files tracked from there) has the commit with the contents of the staging
+    area (the index) as its second parent. This WIP containing commit is stored in
+    a special ref: `refs/stash`. Both the WIP (stash) and index commits have the revision
+    you were on when saving changes as their first parent.'
+  id: totrans-304
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 包含工作目录中进行中的工作的提交（即从那里跟踪的文件的状态）将暂存区（索引）中的提交作为其第二个父提交。这个包含进行中的工作的提交被存储在一个特殊的引用中：`refs/stash`。无论是进行中的工作（stash）还是索引提交，都将保存更改时的修订作为其第一个父提交。
+- en: 'We can see this by running `git log --graph` or `gitk --all`:'
+  id: totrans-305
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以通过运行`git log --graph`或`gitk --all`来查看：
+- en: '[PRE42]'
+  id: totrans-306
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE42]'
+- en: 'This can be seen in the following figure:'
+  id: totrans-307
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这可以通过以下图示来查看：
+- en: '![Figure 3.8 – The structure of the stash without and with untracked file information.
+    Graphs were generated with gitk --all on a newly created repository with a single
+    commit and a stash](img/B21194_03_08.jpg)'
+  id: totrans-308
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 3.8 – 包含和不包含未追踪文件信息的暂存结构。图形是通过在一个新创建的仓库中运行`gitk --all`生成的，该仓库有一个提交和一个暂存](img/B21194_03_08.jpg)'
+- en: Figure 3.8 – The structure of the stash without and with untracked file information.
+    Graphs were generated with gitk --all on a newly created repository with a single
+    commit and a stash
+  id: totrans-309
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图3.8 – 不包含和包含未跟踪文件信息的stash结构。图形是通过在新创建的包含单个提交和stash的仓库上使用gitk --all生成的。
+- en: We had to use `git show-ref` here (we could have used `git for-each-ref` instead)
+    because `git branch -a` only shows branches, not arbitrary refs.
+  id: totrans-310
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们在这里不得不使用`git show-ref`（本来可以使用`git for-each-ref`）是因为`git branch -a`只显示分支，而不显示任意引用。
+- en: When saving untracked changes, with `git stash --include-untracked`, the situation
+    is similar. *Figure 3**.8* shows that the untracked file commit is the third parent
+    of the WIP commit and that it doesn’t have any parents. It only consists of untracked
+    files, which you can check with `git ls-tree -``r stash@{<n>}^3`.
+  id: totrans-311
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在保存未跟踪的更改时，使用`git stash --include-untracked`，情况类似。*图3.8*显示未跟踪文件提交是WIP提交的第三个父提交，并且它没有任何父提交。它仅由未跟踪的文件组成，你可以使用`git
+    ls-tree -r stash@{<n>}^3`检查它们。
+- en: 'Well, that’s how stashing works, but how does Git maintain the stack of stashes?
+    You may have noticed that the `git stash list` output and the `stash@{<n>}` notation
+    therein looks like reflog; Git finds older stashes in the reflog for the `refs/stash`
+    reference:'
+  id: totrans-312
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 好的，这就是stash的工作方式，但Git是如何维护stash栈的呢？你可能已经注意到，`git stash list`的输出和其中的`stash@{<n>}`表示法看起来像reflog；Git通过`refs/stash`引用在reflog中查找较旧的stash：
+- en: '[PRE43]'
+  id: totrans-313
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE43]'
+- en: 'This is why you cannot share the stack of stashes: reflogs are local to the
+    repository and are not and cannot be synchronized when pushing or fetching.'
+  id: totrans-314
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这就是为什么你不能共享stash栈的原因：reflog是本地仓库的，并且在推送或获取时不能同步。
+- en: Un-applying a stash
+  id: totrans-315
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 取消应用stash
+- en: 'Let’s take the first example from the beginning of this section: un-applying
+    changes from the earlier `git stash apply`. One possible solution to achieve the
+    required effect is to retrieve the patch associated with working directory changes
+    from a stash, and apply it in reverse:'
+  id: totrans-316
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们以本节开头的第一个例子为例：撤销先前`git stash apply`的更改。实现所需效果的一个可能解决方案是从stash中检索与工作目录更改相关的补丁，并反向应用它：
+- en: '[PRE44]'
+  id: totrans-317
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE44]'
+- en: Note the `-p` option that was applied to the `git stash show` command – it forces
+    patch output instead of a summary of changes. We could use `git show -m stash@{0}`
+    (the `-m` option is necessary because a WIP commit representing the stash is a
+    merge commit), or even simply `git diff stash@{0}^-1`, in place of `git stash`
+    `show -p`.
+  id: totrans-318
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 注意`-p`选项是如何应用到`git stash show`命令的——它强制输出补丁，而不是变更的总结。我们可以使用`git show -m stash@{0}`（`-m`选项是必要的，因为代表stash的WIP提交是一个合并提交），甚至可以简单地使用`git
+    diff stash@{0}^-1`来代替`git stash show -p`。
+- en: Recovering stashes that were dropped erroneously
+  id: totrans-319
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 恢复错误丢失的stash
+- en: 'Let’s try the second example: recovering stashes that were accidentally dropped
+    or cleared. If they are still in your repository and were not removed during the
+    repository maintenance phase, you can search all commit objects that are unreachable
+    from other refs and look like stashes (that is, they are merged commits and have
+    a commit message using a strict pattern).'
+  id: totrans-320
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们尝试第二个例子：恢复被意外删除或清除的stash。如果它们仍在你的仓库中，并且在仓库维护阶段没有被删除，你可以搜索所有无法从其他引用中访问的提交对象，看看它们是否像stash（即，它们是合并提交，并且有使用严格模式的提交信息）。
+- en: 'A simplified solution might look like this:'
+  id: totrans-321
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一个简化的解决方案可能看起来像这样：
+- en: '[PRE45]'
+  id: totrans-322
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE45]'
+- en: The first line of this pipeline finds all unreachable (lost) objects, the second
+    one filters out everything but commits and extracts their SHA-1 identifiers, and
+    the third line filters out even more, showing only merge commits with a commit
+    message containing the `"WIP on "` string.
+  id: totrans-323
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这条管道的第一行找到所有不可达（丢失的）对象，第二行过滤掉除提交以外的所有内容，并提取它们的SHA-1标识符，第三行进一步过滤，仅显示提交消息中包含`"WIP
+    on "`字符串的合并提交。
+- en: This solution would not, however, find stashes with a custom message (those
+    created with `git stash save "message"`); you would need to add another `--grep`.
+  id: totrans-324
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，这种方法无法找到带有自定义消息的stash（那些使用`git stash save "message"`创建的）；你需要再加一个`--grep`。
+- en: Managing worktrees and the staging area
+  id: totrans-325
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 管理工作树和暂存区
+- en: 'In [*Chapter 2*](B21194_02.xhtml#_idTextAnchor028), *Developing with Git*,
+    we learned that, besides the *working directory* (*worktree*) where you work on
+    changes and the local repository where you store committed changes as revisions,
+    there is also a third section between them: the *staging area*, sometimes called
+    the *index*.'
+  id: totrans-326
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在[*第2章*](B21194_02.xhtml#_idTextAnchor028)，*使用Git开发*中，我们了解到，除了用于修改的*工作目录*（*工作树*）和用于存储已提交修改的本地仓库外，它们之间还有一个第三部分：*暂存区*，有时也叫做*索引*。
+- en: In the same chapter, we learned how to examine the status of the working directory,
+    as well as how to view the differences. We saw how to create a new commit out
+    of the working directory or out of the staging area.
+  id: totrans-327
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在同一章节中，我们学习了如何检查工作目录的状态，以及如何查看差异。我们还学会了如何从工作目录或暂存区创建一个新的提交。
+- en: Now, it is time to learn how to examine and modify the state of individual files.
+  id: totrans-328
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，是时候学习如何检查和修改单个文件的状态了。
+- en: Examining files and directories
+  id: totrans-329
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 检查文件和目录
+- en: 'It is easy to examine the contents of the working directory: you can just use
+    the standard tools for viewing files (for example, an editor or pager) and examining
+    directories (for example, a file manager or the `dir` command). But how do we
+    view the staged contents of a file or the last committed version?'
+  id: totrans-330
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 查看工作目录的内容很容易：你只需使用标准的文件查看工具（例如，编辑器或分页器）和目录查看工具（例如，文件管理器或`dir`命令）。但是我们如何查看文件的暂存内容或最后一次提交的版本呢？
+- en: One possible solution is to use the `git show` command with the appropriate
+    selector. [*Chapter 4*](B21194_04.xhtml#_idTextAnchor083), *Exploring Project
+    History*, will introduce and explain the `<revision>:<pathname>` syntax to examine
+    the contents of a file at a given revision. A similar syntax can be used to retrieve
+    the staged contents, namely `:<pathname>` (or `:<stage>:<pathname>` if there is
+    a merge conflict involving the given file; `:<pathname>` in itself is equivalent
+    to `:0:<pathname>`).
+  id: totrans-331
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一种解决方案是使用`git show`命令和适当的选择器。[*第4章*](B21194_04.xhtml#_idTextAnchor083)，*探索项目历史*，将介绍并解释`<revision>:<pathname>`语法，以检查给定修订版本中文件的内容。类似的语法也可用于检索暂存内容，即`:<pathname>`（如果该文件涉及合并冲突，则使用`:<stage>:<pathname>`；`:<pathname>`本身等价于`:0:<pathname>`）。
+- en: 'Let’s assume that we are in the `src/` subdirectory and want to see the contents
+    of the `rand.c` file there as it’s in the working directory, in the staging area
+    (using the absolute and relative path), and in the last commit (also using the
+    absolute and the relative path):'
+  id: totrans-332
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 假设我们在`src/`子目录中，想要查看该目录中`rand.c`文件的内容，分别查看它在工作目录中的内容、暂存区中的内容（使用绝对路径和相对路径），以及最后一次提交中的内容（同样使用绝对路径和相对路径）：
+- en: '[PRE46]'
+  id: totrans-333
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE46]'
+- en: To see the list of files that are staged in the index, there is the `git ls-files`
+    command. By default, it operates on the staging area contents, but it can also
+    be used to examine the working directory. The latter feature can, as we have seen
+    in this chapter, be used to list ignored files. This command lists all files in
+    the specified directory. Alternatively, in the current directory, you can use
+    `:/` to denote the top-level directory of a project. The recursive behavior is
+    caused by the fact that the index is a flat list of files, similar to `MANIFEST`
+    files.
+  id: totrans-334
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 若要查看已暂存到索引中的文件列表，可以使用`git ls-files`命令。默认情况下，它操作的是暂存区的内容，但也可以用于检查工作目录。正如我们在这一章节中所看到的，这一功能可用于列出被忽略的文件。该命令会列出指定目录中的所有文件。或者，在当前目录下，你可以使用`:/`来表示项目的顶级目录。递归行为源自于索引是一个类似于`MANIFEST`文件的扁平化文件列表。
+- en: 'Without using the `--full-name` option, it would show filenames relative to
+    the current directory (or the one specified as a parameter). In all examples,
+    it is assumed that we are in the `src/` subdirectory, as seen in the command prompt:'
+  id: totrans-335
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果不使用`--full-name`选项，它将显示相对于当前目录（或指定目录作为参数）的文件名。在所有示例中，我们假设我们在`src/`子目录中，正如命令提示符所示：
+- en: '[PRE47]'
+  id: totrans-336
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE47]'
+- en: 'What about committed changes? How can we examine which files were in a given
+    revision? This is where `git ls-tree` comes to the rescue (note that it is a plumbing
+    command and does not default to the `HEAD` revision):'
+  id: totrans-337
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 那么，已提交的更改呢？我们如何查看某个修订版本中包含了哪些文件？这时`git ls-tree`就能派上用场（注意，它是一个“管道”命令，并且默认不会查看`HEAD`修订版本）：
+- en: '[PRE48]'
+  id: totrans-338
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE48]'
+- en: Note that `git ls-tree` is not recursive by default; you need to use the `-``r`
+    option.
+  id: totrans-339
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请注意，`git ls-tree`默认不进行递归；你需要使用`-r`选项。
+- en: Searching file contents
+  id: totrans-340
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 搜索文件内容
+- en: Let’s assume that you were reviewing code in the project and noticed an erroneous
+    doubled semicolon, `;;`, in the C source code. Or perhaps you were editing the
+    file and noticed a bug nearby. You fixed it, but you’re wondering, “*How many
+    of those mistakes are there?*” You would like to create a commit to fix such errors.
+  id: totrans-341
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 假设你在项目中审查代码时，发现C源代码中有一个错误的双分号`;;`，或者你正在编辑文件时发现了一个附近的bug。你修复了它，但你在想，“*这些错误到底有多少个？*”你希望创建一个提交来修复这些错误。
+- en: Or perhaps you want to search the version that was scheduled for the next commit
+    – that is the contents of the staging area. Perhaps you want to examine how it
+    looks in the `next` branch.
+  id: totrans-342
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 或者你可能想搜索计划在下次提交时使用的版本——也就是暂存区的内容。或许你想查看它在`next`分支中的样子。
+- en: 'With Git, you can use the `git` `grep` command:'
+  id: totrans-343
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用Git，你可以使用`git` `grep`命令：
+- en: '[PRE49]'
+  id: totrans-344
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE49]'
+- en: 'By default, this command will search tracked files in the working directory,
+    from the current directory downwards, recursively. Note that when running the
+    example command, we will get many false positives from shell scripts, for example.
+    So, let’s limit the search space to only C source files:'
+  id: totrans-345
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 默认情况下，这个命令会递归地搜索工作目录中已跟踪的文件，从当前目录开始往下。注意，当运行示例命令时，我们会从shell脚本等获得许多误报。因此，让我们将搜索范围限制为仅C源文件：
+- en: '[PRE50]'
+  id: totrans-346
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE50]'
+- en: 'The quotes around `*.c` are necessary for Git to do the glob pattern expansion
+    (path limiting) instead of `git grep` getting the list of files expanded by the
+    shell. We still have many false matches from the forever loop C idiom:'
+  id: totrans-347
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对`*.c`的引号是必须的，以便Git进行通配符模式扩展（路径限制），而不是让`git grep`通过shell扩展获得文件列表。我们仍然会遇到来自C语言中永远循环的许多误报：
+- en: '[PRE51]'
+  id: totrans-348
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE51]'
+- en: 'With `git grep`, you can construct complex conditions, excluding false positives.
+    Say that we want to search the whole project, not only the current directory,
+    and avoid false positives:'
+  id: totrans-349
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用`git grep`，你可以构造复杂的条件，排除误报。假设我们想搜索整个项目，而不仅仅是当前目录，并且避免误报：
+- en: '[PRE52]'
+  id: totrans-350
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE52]'
+- en: To search the staging area, use `git grep --cached` or the equivalent – and
+    perhaps easier to remember – `git grep --staged`. To search the `next` branch,
+    use `git grep next --`; this construction can be used to search any version.
+  id: totrans-351
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要搜索暂存区，使用`git grep --cached`或等效的命令——或许更容易记住的——`git grep --staged`。要搜索`next`分支，使用`git
+    grep next --`；这种构造可以用于搜索任何版本。
+- en: Un-tracking, un-staging, and un-modifying files
+  id: totrans-352
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 取消跟踪、取消暂存和取消修改文件
+- en: 'If you want to undo some file-level operation (if, for example, you have changed
+    your mind about tracking files or staging changes), then look no further than
+    `git status` hints (add `--ignored` to get advice about ignored files):'
+  id: totrans-353
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你想撤销某些文件级的操作（例如，如果你改变了主意，不再跟踪文件或暂存更改），那么就看一下`git status`提示（加上`--ignored`可以查看有关忽略文件的提示）：
+- en: '[PRE53]'
+  id: totrans-354
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE53]'
+- en: You need to remember that only the contents of the working directory and the
+    staging area can be changed. Committed changes are immutable (though you can *rewind*
+    the history or replace it).
+  id: totrans-355
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你需要记住，只有工作目录和暂存区的内容可以被更改。已提交的更改是不可变的（虽然你可以*回滚*历史或替换它）。
+- en: If you want to undo adding a previously untracked file to the index – or remove
+    a formerly tracked file from the staging area so that it will be deleted (not
+    present) in the next commit while keeping it in the working directory – use `git
+    rm --``cached <file>`.
+  id: totrans-356
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你想撤销将一个以前未跟踪的文件添加到索引中，或者将一个以前已跟踪的文件从暂存区移除，这样它将在下次提交中被删除（不会出现在提交中），但仍然保留在工作目录中——使用`git
+    rm --cached <file>`。
+- en: The difference between the --cached (--staged) and --index options
+  id: totrans-357
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`--cached`（`--staged`）和`--index`选项的区别'
+- en: Many Git commands, including **git diff**, **git grep**, and **git rm**, support
+    the **--cached** option (or its alias, **--staged**). Others, such as **git stash**,
+    have the **--index** option (the index is an alternate name for the staging area).
+    These are *not* synonyms (as we will later see with **git apply** command, which
+    supports both).
+  id: totrans-358
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 许多Git命令，包括**git diff**、**git grep**和**git rm**，支持**--cached**选项（或其别名**--staged**）。其他命令，如**git
+    stash**，则有**--index**选项（索引是暂存区的另一个名称）。这些*不是*同义词（正如我们稍后会看到的**git apply**命令，它支持两者）。
+- en: The **--cached** option is used to ask the command that usually works on files
+    in the working directory to *only* work on the staged contents *instead*. For
+    example, **git grep --cached** will search the staging area instead of the working
+    directory, and **git rm --cached** will only remove a file from the index, leaving
+    it in the worktree.
+  id: totrans-359
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**--cached**选项用于要求命令通常作用于工作目录中的文件时，*仅*作用于暂存的内容，*代替*工作目录。例如，**git grep --cached**将搜索暂存区，而不是工作目录，**git
+    rm --cached**将仅从索引中移除文件，保留在工作树中。'
+- en: The **--index** option is used to ask the command that usually works on files
+    in the working directory to *also* affect the index, *additionally*. For example,
+    **git stash apply --index** not only restores stashed working directory changes
+    but also restores the index.
+  id: totrans-360
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**--index**选项用于要求命令通常作用于工作目录中的文件时，*同时*也作用于索引，*另外*影响索引。例如，**git stash apply
+    --index**不仅恢复了暂存的工作目录更改，还恢复了索引。'
+- en: If you asked Git to record the state of some file in the staging area but changed
+    your mind, you can reset the staged contents of the file to the committed version
+    with `git restore --staged <file>` (`--source=HEAD` is the default) or `git reset
+    HEAD -- <``file>`.
+  id: totrans-361
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你要求 Git 记录某个文件在暂存区的状态，但改变了主意，你可以使用`git restore --staged <file>`（默认情况下`--source=HEAD`）或`git
+    reset HEAD -- <file>`将文件的暂存内容重置为已提交版本。
+- en: If you edited a file incorrectly to the point that the working directory version
+    is a mess and you want to restore it to the version from the index, use `git restore
+    <file>` (`--worktree` is the default if `--staged` is not given) or `git checkout
+    -- <file>`. If you staged some of this mess and would like to reset both the worktree
+    and the staging area to the last committed version, use `git restore --worktree
+    --staged <file>` or `git checkout HEAD -- <``file>` instead.
+  id: totrans-362
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你错误地编辑了文件，以至于工作目录中的版本已经乱七八糟，并且你想将其恢复到索引中的版本，可以使用`git restore <file>`（如果没有给出`--staged`，`--worktree`是默认选项）或`git
+    checkout -- <file>`。如果你将这些混乱的更改暂存了，并且想将工作树和暂存区都恢复到上次提交的版本，可以使用`git restore --worktree
+    --staged <file>`或`git checkout HEAD -- <file>`。
+- en: Important note
+  id: totrans-363
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 重要提示
+- en: These commands do *not undo operations*; they restore the previous state based
+    on a backup that is the worktree, the index, or the committed version. For example,
+    if you staged some changes, modified a file, and then added modifications to the
+    staging area, you can reset the index to the committed version, but not to the
+    state after the first and before the second **git add**.
+  id: totrans-364
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这些命令*不会撤销操作*；它们是基于工作树、索引或已提交版本的备份恢复到先前的状态。例如，如果你暂存了一些更改，修改了一个文件，然后将修改添加到暂存区，你可以将索引重置为已提交的版本，而不能重置到第一次`git
+    add`后和第二次`git add`前的状态。
+- en: Resetting a file to the old version
+  id: totrans-365
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 将文件重置为旧版本
+- en: You can use any revision when restoring a file, with a per-file reset and per-file
+    checkout. For example, to replace the current worktree version of the `src/rand.c`
+    file with the one from the previous commit, you can use `git restore -s HEAD^
+    src/rand.c` or `git checkout HEAD^ -- src/rand.c` (or redirect the output of `git
+    show HEAD^:src/rand.c` to a file). To put the version from the `next` branch into
+    the staging area, run `git restore -s next src/rand.c` or `git reset next --`
+    `src/rand.c`.
+  id: totrans-366
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 恢复文件时，你可以使用任何修订版本，并且可以进行单文件重置或单文件检出。例如，要用上一个提交的版本替换当前工作树中的`src/rand.c`文件，可以使用`git
+    restore -s HEAD^ src/rand.c`或`git checkout HEAD^ -- src/rand.c`（或者将`git show HEAD^:src/rand.c`的输出重定向到文件）。要将`next`分支中的版本放入暂存区，可以运行`git
+    restore -s next src/rand.c`或`git reset next -- src/rand.c`。
+- en: Note that `git add <file>`, `git restore <file>`, `git reset <file`>, and `git
+    checkout <file>` all enter interactive mode for a given file when invoked with
+    the `--patch` option. This can be used to hand-craft a staged or worktree version
+    of a file by selecting which changes should be applied (or un-applied).
+  id: totrans-367
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请注意，`git add <file>`、`git restore <file>`、`git reset <file>`和`git checkout <file>`在使用`--patch`选项时会进入交互模式。这可以用来精确地选择哪些更改应该应用（或撤销），从而手动处理文件的暂存区或工作区版本。
+- en: Tip
+  id: totrans-368
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 提示
+- en: When using Git from the command line, you might need to put a double dash, **--**,
+    after other options and before the filename if, for example, you have a file with
+    the same name as a branch.
+  id: totrans-369
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用命令行操作 Git 时，如果例如有一个文件与分支同名，你可能需要在其他选项后和文件名之前添加两个破折号，**--**。
+- en: Cleaning the working area
+  id: totrans-370
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 清理工作区
+- en: Untracked files and directories may pile up in your working directory. They
+    can be leftovers from merges or be temporary files, proof of concept work, or
+    perhaps mistakenly put there. Whatever the case, often, there is no pattern to
+    them, and you don’t need and don’t want to make Git ignore them (see the *Ignoring
+    files* section of this chapter); you just want to remove them. You can use the
+    `git clean` command for that.
+  id: totrans-371
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 未跟踪的文件和目录可能会堆积在工作目录中。它们可能是合并的残留文件，临时文件，概念验证工作文件，或者可能是误放的文件。无论哪种情况，它们通常没有规律，而你不需要也不想让
+    Git 忽略它们（请参阅本章的*忽略文件*部分）；你只需要将它们删除。你可以使用`git clean`命令来实现这一点。
+- en: 'Because untracked files do not have a backup in the repository, and you cannot
+    undo their removal (unless the operating system or the filesystem supports undo
+    or trashcan), it’s advisable to first check which files *can be removed* with
+    `--dry-run`/`-n`. By default, actual removal requires the `--``force`/`-f` option:'
+  id: totrans-372
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于未跟踪的文件在仓库中没有备份，并且你无法撤销它们的删除（除非操作系统或文件系统支持撤销或回收站），因此建议先使用`--dry-run`/`-n`查看哪些文件*可以删除*。默认情况下，实际删除需要`--force`/`-f`选项：
+- en: '[PRE54]'
+  id: totrans-373
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE54]'
+- en: 'Git will clean all untracked files recursively, starting from the current directory.
+    You can select which paths are affected by listing them as an argument; you can
+    also exclude additional types of files with the `--exclude=<pattern>` option.
+    You can also interactively select which untracked files to delete with the `--``interactive`
+    option:'
+  id: totrans-374
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git 将递归清理所有未跟踪的文件，从当前目录开始。你可以通过将路径列为参数来选择受影响的路径；你还可以使用 `--exclude=<pattern>`
+    选项排除额外类型的文件。你还可以使用 `--interactive` 选项交互式选择删除哪些未跟踪的文件：
+- en: '[PRE55]'
+  id: totrans-375
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE55]'
+- en: The `clean` command also allows us to only remove ignored files, for example,
+    to remove build products but keep manually tracked files, with the `-X` option.
+    However, usually, it is better to leave removing build byproducts to the build
+    system, so that the project files can be cleaned without having to clone the repository.
+  id: totrans-376
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`clean` 命令还允许我们只删除被忽略的文件，例如，使用 `-X` 选项删除构建产品，但保留手动跟踪的文件。然而，通常情况下，最好将构建产物的删除交给构建系统，这样可以在不克隆仓库的情况下清理项目文件。'
+- en: You can also use `git clean -x` in conjunction with `git reset --hard` to create
+    a pristine working directory to test a clean build by removing both ignored and
+    not-ignored untracked files and resetting tracked files to the committed version.
+  id: totrans-377
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你还可以将 `git clean -x` 与 `git reset --hard` 配合使用，通过删除被忽略和未被忽略的未跟踪文件并将已跟踪文件重置为提交版本，来创建一个干净的工作目录，以测试干净构建。
+- en: Multiple working directories
+  id: totrans-378
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 多个工作目录
+- en: For a long time, Git allowed you to specify where to find the administrative
+    area of the repository (the `.git` directory). This can be done by appending the
+    `--git-dir=<path>` option to the `git` command (that is, the `git --git-dir=<path>
+    <command>` construct), or by setting the `GIT_DIR` environment variable. This
+    feature makes it possible to work from the **detached** **working directory**.
+  id: totrans-379
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 很长一段时间，Git 允许你指定在何处找到仓库的管理区域（`.git` 目录）。这可以通过在 `git` 命令中添加 `--git-dir=<path>`
+    选项（即 `git --git-dir=<path> <command>` 构造），或通过设置 `GIT_DIR` 环境变量来完成。此功能使得从**分离的**
+    **工作目录**中工作成为可能。
+- en: 'With modern Git, you have a better solution to creating a new linked work tree
+    than manual configuration: `git worktree add <path> <branch>`. This feature allows
+    us to have more than one branch checked out. For convenience, if you omit the
+    `<branch>` argument, then the new branch will be created based on the name of
+    the created worktree.'
+  id: totrans-380
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用现代 Git，你有了比手动配置更好的解决方案来创建新的链接工作树：`git worktree add <path> <branch>`。此功能允许我们同时检出多个分支。为了方便起见，如果省略
+    `<branch>` 参数，则新分支将根据新创建的工作树名称创建。
+- en: This mechanism can be used instead of `git stash` if you need to switch to a
+    different branch, but your current working directory, and possibly also the staging
+    area, is in a state of high disarray. Instead of disturbing it, you can create
+    a temporary linked working tree to make a fix and remove it when you’re done.
+    For example, you might need to do this to urgently fix a security bug in a separate
+    branch.
+  id: totrans-381
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你需要切换到另一个分支，但当前的工作目录以及可能的暂存区处于高度混乱的状态，可以使用此机制代替 `git stash`。你可以创建一个临时链接的工作树进行修复，完成后再删除它。例如，你可能需要在一个单独的分支上紧急修复安全漏洞时使用此方法。
+- en: Each detached worktree should be associated with and have checked out different
+    branches or be on the anonymous branch (detached `HEAD`) to avoid problems. You
+    can override this safety with the `--``force` option.
+  id: totrans-382
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 每个分离的工作树应该与不同的分支关联并已检出，或者位于匿名分支（分离的 `HEAD`）上，以避免问题。你可以使用 `--force` 选项覆盖此安全措施。
+- en: You can remove any detached worktree with `git worktree remove` or by removing
+    its directory and allowing it to be pruned. If a working tree is on a portable
+    device or network disk, which may not always be available, we can `lock` the worktree
+    so that it can’t be pruned (and `unlock` if it is no longer needed).
+  id: totrans-383
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以使用 `git worktree remove` 或通过删除其目录并允许它被修剪来删除任何分离的工作树。如果工作树位于便携设备或网络磁盘上（可能并非始终可用），我们可以
+    `lock` 工作树，以防它被修剪（如果不再需要，可以 `unlock`）。
+- en: To examine details about each working directory, such as the currently checked-out
+    branch, and see if it is locked, you can use the `git worktree` `list` command.
+  id: totrans-384
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要查看每个工作目录的详细信息，例如当前检出的分支，并查看它是否被锁定，可以使用 `git worktree` `list` 命令。
+- en: Summary
+  id: totrans-385
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 总结
+- en: In this chapter, we learned how to better manage the contents of the working
+    directory and the staging area in preparation for creating a new commit.
+  id: totrans-386
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们学习了如何更好地管理工作目录和暂存区的内容，为创建新的提交做准备。
+- en: We now know how to undo the last commit, how to drop changes to the working
+    area, how to retroactively change the branch we are working on, and other uses
+    of the `git reset` command. We also understand the three (and a half) forms of
+    reset.
+  id: totrans-387
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们现在知道如何撤销最后一次提交，如何丢弃工作区中的更改，如何回溯更改我们正在使用的分支，以及如何使用`git reset`命令的其他用途。我们也理解了三种（以及一种半种）重置形式。
+- en: We also learned how to examine and search the contents of the working directory,
+    the staging area, and committed changes. We now know how to use Git to copy the
+    file version from the worktree, the index, or the `HEAD` commit into the worktree
+    or the index. We can use Git to clean (remove) untracked files.
+  id: totrans-388
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们还学习了如何检查和搜索工作目录、暂存区和已提交的更改内容。现在我们知道如何使用 Git 将文件版本从工作树、索引或`HEAD`提交复制到工作树或索引中。我们可以使用
+    Git 清理（删除）未跟踪的文件。
+- en: This chapter explained how to configure how files are handled in the working
+    directory and how to make Git ignore files (by making them intentionally untracked)
+    and why. It described how to handle the differences between line-ending formats
+    between operating systems. It also explained how to enable (and write) keyword
+    expansion, how to configure how binary files are handled, and how to enhance `diff`
+    and `merge` specific classes of files.
+  id: totrans-389
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章解释了如何配置工作目录中文件的处理方式，以及如何使 Git 忽略文件（通过将其故意设为未跟踪状态）及其原因。它描述了如何处理不同操作系统之间的行结束符格式差异。它还解释了如何启用（并编写）关键字扩展，如何配置二进制文件的处理方式，以及如何增强`diff`和`merge`特定类别文件的处理。
+- en: Finally, we learned to stash away changes to handle interruptions and to make
+    it possible to test interactively prepared commits, before creating a commit.
+    This chapter explained how Git manages stashes, enabling us to go beyond built-in
+    operations.
+  id: totrans-390
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后，我们学会了如何暂存更改，以应对中断并在创建提交之前，测试已准备好的交互式提交。本章解释了 Git 如何管理暂存，使我们能够超越内置操作。
+- en: This chapter, together with [*Chapter 2*](B21194_02.xhtml#_idTextAnchor028),
+    *Developing with Git*, taught you how to contribute to a project.
+  id: totrans-391
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章以及[*第 2 章*](B21194_02.xhtml#_idTextAnchor028)，*使用 Git 开发*，教你如何为项目做出贡献。
+- en: The following chapters will teach you how to collaborate with other people,
+    how to send what you contributed, and how to merge changes from other developers.
+    We will start with two chapters explaining how to explore ad search project history
+    with [*Chapter 4*](B21194_04.xhtml#_idTextAnchor083)*, Exploring Project History*
+    and [*Chapter 5*](B21194_05.xhtml#_idTextAnchor113)*, Searching Through* *the
+    Repository*.
+  id: totrans-392
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来的章节将教你如何与他人协作，如何提交你所贡献的内容，以及如何合并其他开发者的更改。我们将从两章开始，分别讲解如何探索和搜索项目历史，[*第 4 章*](B21194_04.xhtml#_idTextAnchor083)，*探索项目历史*和[*第
+    5 章*](B21194_05.xhtml#_idTextAnchor113)，*搜索仓库*。
+- en: Questions
+  id: totrans-393
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 问题
+- en: 'Answer the following questions to test your knowledge of this chapter:'
+  id: totrans-394
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请回答以下问题，以测试你对本章内容的掌握：
+- en: How can you avoid having a large number of build artifacts appear in the **git**
+    **status** output?
+  id: totrans-395
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如何避免在**git** **status**输出中出现大量构建工件？
+- en: Let’s assume that you use a custom **domain-specific language** (**DSL**) or
+    a programming language without built-in support in Git, such as Julia. How can
+    you configure Git so that it provides better support for this language?
+  id: totrans-396
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 假设你使用的是自定义的**领域特定语言**（**DSL**）或 Git 原生不支持的编程语言（例如 Julia）。如何配置 Git，使其更好地支持这种语言？
+- en: How can you squash the two most recent commits while making one commit out of
+    them?
+  id: totrans-397
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如何将最近的两个提交合并为一个提交？
+- en: How can you split the most recent commit into two commits?
+  id: totrans-398
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如何将最近的提交拆分为两个提交？
+- en: What should you do if an urgent change is needed (for example, because of a
+    security bug) but the working area is in a messy state and you don’t want to lose
+    your work?
+  id: totrans-399
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如果需要紧急更改（例如，因安全漏洞），但工作区处于混乱状态，你又不想丢失工作，应该怎么做？
+- en: How can you search through an old revision of the project – for example, a version
+    tagged **v0.1** – without checking out that revision?
+  id: totrans-400
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如何在不检出修订版的情况下，搜索项目的旧版本——例如，标记为**v0.1**的版本？
+- en: Answers
+  id: totrans-401
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 答案
+- en: 'Here are the answers to the questions given above:'
+  id: totrans-402
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 下面是以上问题的答案：
+- en: Add patterns matching the pathnames of those build artifacts to a **.****gitignore**
+    file.
+  id: totrans-403
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 将与这些构建工件路径名匹配的模式添加到**.****gitignore**文件中。
+- en: Define a custom **diff** driver and provide the regular expression pattern matching
+    the main “sections” of code with **xfuncname**. Also, add an appropriate regular
+    expression defining words in that programming language with **wordRegex**, and
+    perhaps also define whitespace problems with the **whitespace** attribute.
+  id: totrans-404
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 定义自定义**diff**驱动程序，并提供与代码的主要“部分”匹配的正则表达式模式，使用**xfuncname**。同时，添加一个适当的正则表达式来定义该编程语言中的单词，使用**wordRegex**，并且可能还需要定义与**whitespace**属性相关的空格问题。
+- en: Use **git reset --soft HEAD~2** to rewind the branch and create a joined commit
+    with **git commit**, or use interactive rebase.
+  id: totrans-405
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用**git reset --soft HEAD~2**来回滚分支并通过**git commit**创建合并提交，或者使用交互式rebase。
+- en: Perform a soft reset, **git reset --soft HEAD^**, construct the first commit
+    with **interactive add**, test the code with **git stash --keep-index**, pop the
+    stash if the tests pass, and create the first commit with **git commit** and the
+    second with **git commit -a**; there are other solutions.
+  id: totrans-406
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 执行软重置，**git reset --soft HEAD^**，使用**interactive add**构建第一个提交，通过**git stash
+    --keep-index**测试代码，如果测试通过，则弹出stash并用**git commit**进行第一次提交，用**git commit -a**进行第二次提交；还有其他解决方案。
+- en: Use **git stash** to stash away current changes, create a WIP commit, or create
+    a new detached working area for the urgent work with **git** **worktree add**.
+  id: totrans-407
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用**git stash**暂存当前更改，创建一个WIP提交，或者使用**git** **worktree add**为紧急工作创建一个新的分离工作区。
+- en: To search file contents from a revision tagged as v0.1, you can use **git grep
+    -e <****pattern> v0.1**.
+  id: totrans-408
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 要从标记为v0.1的修订版本中搜索文件内容，可以使用**git grep -e <****pattern> v0.1**。
+- en: Further reading
+  id: totrans-409
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 深入阅读
+- en: 'To learn more about the topics that were covered in this chapter, take a look
+    at the following resources:'
+  id: totrans-410
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要了解本章中涉及的更多内容，请查看以下资源：
+- en: 'Scott Chacon and Ben Straub, *Pro Git*, *2.2 Git Basics – Recording Changes
+    to the Repository*, the *Ignoring files* section: [https://git-scm.com/book/en/v2/Git-Basics-Recording-Changes-to-the-Repository#_ignoring](https://git-scm.com/book/en/v2/Git-Basics-Recording-Changes-to-the-Repository#_ignoring)'
+  id: totrans-411
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Scott Chacon和Ben Straub，*Pro Git*，*2.2 Git基础 - 记录仓库的变更*，*忽略文件*部分：[https://git-scm.com/book/en/v2/Git-Basics-Recording-Changes-to-the-Repository#_ignoring](https://git-scm.com/book/en/v2/Git-Basics-Recording-Changes-to-the-Repository#_ignoring)
+- en: 'Scott Chacon and Ben Straub, *Pro Git*, *7.3 Git Tools – Stashing and* *Cleaning*:
+    [https://git-scm.com/book/en/v2/Git-Tools-Stashing-and-Cleaning](https://git-scm.com/book/en/v2/Git-Tools-Stashing-and-Cleaning)'
+  id: totrans-412
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Scott Chacon和Ben Straub，*Pro Git*，*7.3 Git工具 - 暂存和* *清理*：[https://git-scm.com/book/en/v2/Git-Tools-Stashing-and-Cleaning](https://git-scm.com/book/en/v2/Git-Tools-Stashing-and-Cleaning)
+- en: 'Scott Chacon and Ben Straub, *Pro Git*, *8.2 Customizing Git – Git* *Attributes*:
+    [https://git-scm.com/book/en/v2/Customizing-Git-Git-Attributes](https://git-scm.com/book/en/v2/Customizing-Git-Git-Attributes)'
+  id: totrans-413
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Scott Chacon和Ben Straub，*Pro Git*，*8.2 自定义Git - Git* *Attributes*：[https://git-scm.com/book/en/v2/Customizing-Git-Git-Attributes](https://git-scm.com/book/en/v2/Customizing-Git-Git-Attributes)
+- en: '*gitattributes manpage - Defining attributes per* *path*: [https://www.git-scm.com/docs/gitattributes](https://www.git-scm.com/docs/gitattributes)'
+  id: totrans-414
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*gitattributes手册页 - 为* *路径*定义属性：[https://www.git-scm.com/docs/gitattributes](https://www.git-scm.com/docs/gitattributes)'
+- en: '*gitignore manpage - Specifies intentionally untracked files to* *ignore*:
+    [https://www.git-scm.com/docs/gitignore](https://www.git-scm.com/docs/gitignore)'
+  id: totrans-415
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*gitignore手册页 - 指定故意未跟踪的文件以* *忽略*：[https://www.git-scm.com/docs/gitignore](https://www.git-scm.com/docs/gitignore)'
+- en: 'Pragati Verma, *A Guide to Git Stash* (2021): [https://dev.to/pragativerma18/a-guide-to-git-stash-2h5d](https://dev.to/pragativerma18/a-guide-to-git-stash-2h5d)'
+  id: totrans-416
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Pragati Verma，*Git Stash指南*（2021）：[https://dev.to/pragativerma18/a-guide-to-git-stash-2h5d](https://dev.to/pragativerma18/a-guide-to-git-stash-2h5d)
+- en: 'Andrew Knight, *Ignoring Files with Git* (2018): [https://automationpanda.com/2018/09/19/ignoring-files-with-git/](https://automationpanda.com/2018/09/19/ignoring-files-with-git/)'
+  id: totrans-417
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Andrew Knight，*使用Git忽略文件*（2018）：[https://automationpanda.com/2018/09/19/ignoring-files-with-git/](https://automationpanda.com/2018/09/19/ignoring-files-with-git/)
+- en: 'Dragos Barosan, *New in Git: switch and restore* (2021): [https://www.banterly.net/2021/07/31/new-in-git-switch-and-restore/](https://www.banterly.net/2021/07/31/new-in-git-switch-and-restore/)'
+  id: totrans-418
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Dragos Barosan，*Git 新特性：切换和恢复*（2021）：[https://www.banterly.net/2021/07/31/new-in-git-switch-and-restore/](https://www.banterly.net/2021/07/31/new-in-git-switch-and-restore/)

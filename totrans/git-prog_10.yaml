@@ -1,0 +1,779 @@
+- en: '10'
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '10'
+- en: Important Git Commands and Metadata
+  id: totrans-1
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 重要的 Git 命令和元数据
+- en: 'There are hundreds of Git commands and flags. In this chapter, we''ll endeavor
+    to review a few of the most important that we have not looked at so far. These
+    include:'
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git 命令和标志成百上千。在本章中，我们将尽力回顾一些我们到目前为止没有看过的最重要的命令。包括：
+- en: Creating the stash
+  id: totrans-3
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 创建 stash
+- en: Listing what's in the stash
+  id: totrans-4
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 列出 stash 中的内容
+- en: Retrieving from the stash
+  id: totrans-5
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 从 stash 中恢复
+- en: The clean command for getting rid of unwanted untracked files
+  id: totrans-6
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 清理命令，用于删除不需要的未跟踪文件
+- en: How to see metadata and choose which data you want to see
+  id: totrans-7
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 如何查看元数据并选择你想查看的数据
+- en: Let's start by digging into the stash.
+  id: totrans-8
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们从挖掘 stash 开始。
+- en: You can find the complete list at [http://git-scm.com/docs](http://git-scm.com/docs).
+  id: totrans-9
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以在 [http://git-scm.com/docs](http://git-scm.com/docs) 找到完整的列表。
+- en: Stash
+  id: totrans-10
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Stash
+- en: 'When we reviewed the five areas of Git, we included an area called the stash,
+    but we did not delve into what the stash is. In short, the stash is a place where
+    you can hold (stash) files you''ve modified but not yet committed:'
+  id: totrans-11
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当我们回顾 Git 的五个领域时，我们提到了一个叫做 stash 的领域，但并没有深入讲解 stash 是什么。简而言之，stash 是一个可以存放（stash）你修改过但尚未提交的文件的地方：
+- en: '![](img/B17741_10_01.png)'
+  id: totrans-12
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_10_01.png)'
+- en: 'Figure 10.1: The five areas of Git'
+  id: totrans-13
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.1：Git 的五个领域
+- en: The stash can be pretty important. Let's say you are working on a feature and
+    suddenly you are asked to work on a very important bug. You are not ready to commit
+    the code you have, but you can't switch branches with uncommitted files in the
+    work area.
+  id: totrans-14
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Stash 非常重要。假设你正在开发一个功能，突然被要求处理一个非常重要的 bug。你还不准备提交当前的代码，但在工作区有未提交的文件时，你无法切换分支。
+- en: To solve this, you *could* just make a backup of your directory, and then delete
+    the uncommitted files, but that is very slow and error-prone. Instead, you want
+    to stash them away somewhere that you can get them back when you are ready, which
+    of course is the purpose of the stash.
+  id: totrans-15
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了解决这个问题，你*可以*只需备份你的目录，然后删除那些未提交的文件，但这种方法非常慢且容易出错。相反，你应该把这些文件存放在某个地方，当你准备好时可以将它们取回，这正是
+    stash 的目的所在。
+- en: To see this at work, we need a repository with some commits. Let's quickly make
+    a mirror of the `RockyHorror2` repo. To do so, we'll start by making sure we have
+    the `RockyHorror2` repository on disk, or else we'll pull it from the server.
+  id: totrans-16
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要看到这个工作效果，我们需要一个包含一些提交的仓库。让我们快速创建一个 `RockyHorror2` 仓库的镜像。为此，我们首先需要确保磁盘上有 `RockyHorror2`
+    仓库，如果没有，我们就从服务器拉取它。
+- en: 'Let''s go to GitHub and create a repo called `RockyHorrorStash`:'
+  id: totrans-17
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们去 GitHub 创建一个名为 `RockyHorrorStash` 的仓库：
+- en: '![](img/B17741_10_02.png)'
+  id: totrans-18
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_10_02.png)'
+- en: 'Figure 10.2: Creating the repository'
+  id: totrans-19
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.2：创建仓库
+- en: Notice that I did not bother creating a readme, .gitignore, nor a license since
+    these will all be overwritten when I do the mirror.
+  id: totrans-20
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 注意，我并没有麻烦去创建 readme、.gitignore 或许可证，因为当我执行镜像操作时，这些文件都会被覆盖。
+- en: Click **Create Repository** and once created, grab its address.
+  id: totrans-21
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 点击 **创建仓库**，创建后，获取其地址。
+- en: 'We are now ready to mirror `RockyHorror2` over `RockyHorrorStash`. Be sure
+    to change directory to `RockyHorror2` and enter this command:'
+  id: totrans-22
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们现在准备将 `RockyHorror2` 镜像到 `RockyHorrorStash`。请确保切换到 `RockyHorror2` 目录并输入以下命令：
+- en: '![](img/B17741_10_03.png)'
+  id: totrans-23
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_10_03.png)'
+- en: 'Figure 10.3: Push the mirrored repo to the remote'
+  id: totrans-24
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.3：将镜像仓库推送到远程
+- en: 'We now have the mirrored repo on the server but not locally, so let''s clone
+    it:'
+  id: totrans-25
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们现在在服务器上有了镜像仓库，但在本地没有，所以让我们克隆它：
+- en: '![](img/B17741_10_04.png)'
+  id: totrans-26
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_10_04.png)'
+- en: 'Figure 10.4: Pull the mirrored repo back to the local repo'
+  id: totrans-27
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.4：将镜像仓库拉回到本地仓库
+- en: 'Great, we have a repo we can work with. Let''s see what''s in it with a quick
+    call to log:'
+  id: totrans-28
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 太好了，我们有一个可以操作的仓库。让我们通过快速调用日志查看其中的内容：
+- en: '![](img/B17741_10_05.png)'
+  id: totrans-29
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_10_05.png)'
+- en: 'Figure 10.5: Examining the local repo with log'
+  id: totrans-30
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.5：检查本地仓库的日志
+- en: 'Suppose we are working on this project and we modify two files. First, we modify
+    the `Showing` class to keep count of how many boxes of popcorn are sold:'
+  id: totrans-31
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 假设我们正在这个项目中工作，并且修改了两个文件。首先，我们修改了 `Showing` 类来记录售出了多少盒爆米花：
+- en: '![](img/B17741_10_06.png)'
+  id: totrans-32
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_10_06.png)'
+- en: 'Figure 10.6: Adding the Showing class'
+  id: totrans-33
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.6：添加 Showing 类
+- en: 'Next, we modify `Program.cs` to say that the Brattle theater has 500 seats.
+    If we take a status, we see the two modified files in the work area:'
+  id: totrans-34
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来，我们修改 `Program.cs`，让它显示 Brattle 剧院有 500 个座位。如果我们查看状态，就会看到工作区中有两个已修改的文件：
+- en: '![](img/B17741_10_07.png)'
+  id: totrans-35
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_10_07.png)'
+- en: 'Figure 10.7: git status shows two modified files'
+  id: totrans-36
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.7：git status 显示两个已修改的文件
+- en: 'We have two uncommitted modified files. We have more work to do but our boss
+    calls and she tells us that there is an urgent bug in another project. This is
+    where stash comes in. We *could* commit what we have, but we''re not ready to,
+    so let''s put it in the stash:'
+  id: totrans-37
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们有两个未提交的修改文件。我们还有更多的工作要做，但老板打来电话，告诉我们另一个项目中有一个紧急bug。这时，暂存就派上用场了。我们*可以*提交现在的工作，但我们还没有准备好，所以让我们将其暂存起来：
+- en: '![](img/B17741_10_08.png)'
+  id: totrans-38
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_10_08.png)'
+- en: 'Figure 10.8: Adding to the stash'
+  id: totrans-39
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.8：添加到暂存区
+- en: You tell it `git stash`, and it takes everything in the work area and in the
+    index and puts it in the stash without committing it. At that point, the work
+    area is reset to the state it was in before you started modifying files—that is
+    the previous position of `HEAD`.
+  id: totrans-40
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你输入`git stash`，它会把工作区和索引中的所有内容都放入暂存区，而不会提交。此时，工作区会重置到你开始修改文件之前的状态——也就是`HEAD`的先前位置。
+- en: 'You can see what is in your stash with the `stash list` command:'
+  id: totrans-41
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以使用`stash list`命令查看暂存中的内容：
+- en: '![](img/B17741_10_09.png)'
+  id: totrans-42
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_10_09.png)'
+- en: 'Figure 10.9: Listing what is in the stash'
+  id: totrans-43
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.9：列出暂存中的内容
+- en: The stash has added the designation `WIP on main`. WIP means Work In Progress.
+  id: totrans-44
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 暂存中已经加入了`WIP on main`的标记。WIP意味着“进行中的工作”。
+- en: 'At the moment, you only have one thing in the stash. You might find, however,
+    that while fixing that "very important bug," your boss calls back and says to
+    stop work on that and fix a fatal bug. Once again, you may need to stash your
+    work. Rather than setting all that up, we''ll make a small change in the main
+    program and then stash it. Let''s change the name of the theater:'
+  id: totrans-45
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 目前，你在暂存区只有一项内容。然而，你可能会发现，在修复那个“非常重要的bug”时，你的老板打来电话，告诉你停止这个工作，改去修复一个致命bug。再次，你可能需要暂存你的工作。为了避免设置所有内容，我们只需在主程序中做一个小改动，然后将其暂存。我们来改一下剧院的名字：
+- en: '![](img/B17741_10_10.png)'
+  id: totrans-46
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_10_10.png)'
+- en: 'Figure 10.10: Stashing more work'
+  id: totrans-47
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.10：暂存更多工作
+- en: 'Hey! What happened to the number of seats being increased to 500? Remember,
+    we never committed that, we stashed it away and the working area was reset. Let''s
+    take a look at the status:'
+  id: totrans-48
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 嘿！增加500个座位的事怎么了？记得吗？我们从未提交过那个改动，我们将它暂存了，并且工作区已重置。让我们看一下状态：
+- en: '![](img/B17741_10_11.png)'
+  id: totrans-49
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_10_11.png)'
+- en: 'Figure 10.11: Examining the status'
+  id: totrans-50
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.11：检查状态
+- en: 'As we expect, we see the one modification we''ve made. Let''s stash that away
+    using `git stash`:'
+  id: totrans-51
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如我们预期的那样，我们看到了我们所做的修改。让我们使用`git stash`将其暂存起来：
+- en: '![](img/B17741_10_12.png)'
+  id: totrans-52
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_10_12.png)'
+- en: 'Figure 10.12: Stashing the modification'
+  id: totrans-53
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.12：暂存修改
+- en: 'We now have two items in the stash. If we ask for a list, we should see both:'
+  id: totrans-54
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，我们在暂存区有两项内容。如果我们请求列出内容，应该会看到这两项：
+- en: '![](img/B17741_10_13.png)'
+  id: totrans-55
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_10_13.png)'
+- en: 'Figure 10.13: Listing the items in the stash'
+  id: totrans-56
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.13：列出暂存中的项目
+- en: 'Sure enough, both stashed items are there. Normally they would have different
+    ID and messages, but since we stashed from the same place, we ended up with this
+    anomalous situation. You can see what is in the stash by using `stash show`:'
+  id: totrans-57
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 果然，两个暂存的项目都在那儿。通常它们会有不同的 ID 和消息，但由于我们是从同一位置暂存的，最终出现了这种异常情况。你可以使用`stash show`查看暂存中的内容：
+- en: '![](img/B17741_10_14.png)'
+  id: totrans-58
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_10_14.png)'
+- en: 'Figure 10.14: Showing the contents of the stash'
+  id: totrans-59
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.14：显示暂存内容
+- en: You can drop items from the stash and you can clear the entire stash with `stash
+    clear`.
+  id: totrans-60
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以从暂存中删除项目，也可以使用`stash clear`清空整个暂存。
+- en: Clean
+  id: totrans-61
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 清理
+- en: 'From time to time, you''ll find that there are untracked files listed in your
+    status. 99% of the time these will be files you created and you''ll want them
+    to be tracked, which you do by adding them to the index (as shown previously).
+    There are times, however, when you may find untracked files that you don''t want:'
+  id: totrans-62
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有时，你会发现状态中列出了未跟踪的文件。99%的情况下，这些是你创建的文件，你希望它们被跟踪，这可以通过将它们添加到索引中来实现（如前所示）。然而，有时你可能会发现一些你不需要的未跟踪文件：
+- en: '![](img/B17741_10_15.png)'
+  id: totrans-63
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_10_15.png)'
+- en: 'Figure 10.15: Untracked files'
+  id: totrans-64
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.15：未跟踪的文件
+- en: 'In this case, we have a couple choices. We can add `Untracked.cs` to the index
+    or we can get rid of it. To do so, we try `git clean`:'
+  id: totrans-65
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这种情况下，我们有几个选择。我们可以将`Untracked.cs`添加到索引中，或者将其删除。为了实现这一点，我们可以使用`git clean`：
+- en: '![](img/B17741_10_16.png)'
+  id: totrans-66
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_10_16.png)'
+- en: 'Figure 10.16: Using clean to remove untracked files (fails)'
+  id: totrans-67
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.16：使用 clean 删除未跟踪文件（失败）
+- en: 'Because `git clean` is one of the few truly destructive commands—once called,
+    the untracked files are gone, never to be seen again—Git comes back with the snarky
+    reply that it is "refusing to clean." To actually clean, Git requires that you
+    tell it you really mean it by using the `-f` (force) flag:'
+  id: totrans-68
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于 `git clean` 是少数几个真正具有破坏性的命令之一——一旦执行，未追踪的文件将被永久删除——Git 会以讽刺的回应“拒绝清理”。为了真正清理，Git
+    要求你通过使用 `-f`（强制）标志来告诉它你是认真的：
+- en: '![](img/B17741_10_17.png)'
+  id: totrans-69
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_10_17.png)'
+- en: 'Figure 10.17: Using clean as above, but with the force flag (succeeds)'
+  id: totrans-70
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.17：使用如上所示的 clean 命令，但加上了 force 标志（成功执行）
+- en: The `-f` flag essentially says "I know what I'm doing"—so make sure you do.
+  id: totrans-71
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`-f` 标志基本上意味着“我知道自己在做什么”——所以确保你确实知道。'
+- en: Metadata
+  id: totrans-72
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 元数据
+- en: 'Every commit, merge, and so on, is accompanied by metadata. You can get at
+    a lot of the metadata by using the log, but sometimes you just want to extract
+    a few pieces of important metadata. For that you can use the `show` command:'
+  id: totrans-73
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 每次提交、合并等操作都会伴随元数据。你可以通过使用日志获取大量元数据，但有时你只是想提取一些重要的元数据。为此，你可以使用 `show` 命令：
+- en: '![](img/B17741_10_18.png)'
+  id: totrans-74
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_10_18.png)'
+- en: 'Figure 10.18: Using show to see metadata'
+  id: totrans-75
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.18：使用 show 查看元数据
+- en: 'In this example, we use `show` to find the name and email of the author, along
+    with the ID and the metadata telling us where the tip of main is. Let''s break
+    it down:'
+  id: totrans-76
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这个示例中，我们使用 `show` 查找作者的姓名和邮箱，以及 ID 和元数据，告诉我们 main 的尖端位置。让我们逐步解析：
+- en: '`git` `show`—the `show` command.'
+  id: totrans-77
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`git` `show`—`show` 命令。'
+- en: '`-s`—silent (or quiet), which suppresses the difference output (try the command
+    without it to see).'
+  id: totrans-78
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`-s`—静默模式（或安静模式），它会抑制差异输出（可以尝试去掉它看看效果）。'
+- en: '`HEAD` tells show which commit you are interested in.'
+  id: totrans-79
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`HEAD` 告诉 show 你感兴趣的提交。'
+- en: '`%an` is the author''s name.'
+  id: totrans-80
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`%an` 是作者的名字。'
+- en: '`%ae` is the author''s email address.'
+  id: totrans-81
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`%ae` 是作者的电子邮件地址。'
+- en: We put this code into a string and assign it to the format flag.
+  id: totrans-82
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将这段代码放入字符串中，并将其分配给 format 标志。
+- en: 'Let''s look at the log and see what else we can do with showing metadata:'
+  id: totrans-83
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们看看日志，看看我们还可以使用 `show` 查看哪些元数据：
+- en: '![](img/B17741_10_19.png)'
+  id: totrans-84
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_10_19.png)'
+- en: 'Figure 10.19: Looking at the log'
+  id: totrans-85
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.19：查看日志
+- en: 'Let''s zero in on the metadata associated with one of these entries. To do
+    so, we use the ID:'
+  id: totrans-86
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们集中查看与这些条目之一相关的元数据。为此，我们使用 ID：
+- en: '![](img/B17741_10_20.png)'
+  id: totrans-87
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_10_20.png)'
+- en: 'Figure 10.20: Using show -s to see metadata'
+  id: totrans-88
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.20：使用 show -s 查看元数据
+- en: 'You can also specify a range of entries:'
+  id: totrans-89
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你也可以指定一个条目的范围：
+- en: '![](img/B17741_10_21.png)'
+  id: totrans-90
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_10_21.png)'
+- en: 'Figure 10.21: Specifying a range of entries'
+  id: totrans-91
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.21：指定条目的范围
+- en: We are able to zero in on what we want in the stash. To retrieve the stashed
+    files, use `git stash apply`. This will apply everything in the stash to the current
+    working directory. Once you are sure you have what you need, you can then call
+    `git stash pop`, which will apply the changes again and remove them from the stash.
+  id: totrans-92
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们能够聚焦于 stash 中需要的内容。要恢复暂存的文件，请使用 `git stash apply`。这会将暂存中的所有内容应用到当前工作目录中。一旦确定你得到了需要的内容，就可以调用
+    `git stash pop`，这将再次应用更改并将其从暂存中移除。
+- en: Summary
+  id: totrans-93
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 总结
+- en: 'In this chapter, we reviewed some of the most important commands that we had
+    not yet looked at. These include:'
+  id: totrans-94
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们回顾了我们之前没有查看的一些最重要的命令。这些命令包括：
+- en: Creating the stash
+  id: totrans-95
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 创建 stash
+- en: Listing what's in the stash
+  id: totrans-96
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 列出 stash 中的内容
+- en: Retrieving from the stash
+  id: totrans-97
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 从 stash 中恢复
+- en: The `clean` command for getting rid of unwanted untracked files
+  id: totrans-98
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`clean` 命令用于删除不需要的未追踪文件'
+- en: How to see metadata and choose which data you want to see
+  id: totrans-99
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 如何查看元数据并选择你想查看的数据
+- en: Challenge
+  id: totrans-100
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 挑战
+- en: Mirror a repo, or use one you already have if you don't mind changing it. Examine
+    the list of commits. Start work on some changes but don't commit your changes.
+    Switch to working on a different repo. Create or modify some files in the second
+    repo but don't commit them. Start work on a third repo. Abandon that work and
+    go back to the first repository. Examine the stash and retrieve the stash you
+    need to keep working.
+  id: totrans-101
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 镜像一个仓库，或者如果你不介意修改现有仓库，可以使用一个已经存在的仓库。检查提交列表。开始进行一些更改，但不提交这些更改。切换到另一个仓库继续工作。在第二个仓库中创建或修改一些文件，但不要提交它们。开始第三个仓库的工作。放弃这项工作并返回到第一个仓库。检查
+    stash 并恢复你需要的 stash 以继续工作。
+- en: Answer
+  id: totrans-102
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 答案
+- en: Once again, there are many ways to answer this. I'll start by mirroring the
+    `RockyHorrorStash` repo to `RockyHorrorStash2`, and then I will immediately clone
+    it to my local repo.
+  id: totrans-103
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 再次提醒，有许多方法可以回答这个问题。我将通过将 `RockyHorrorStash` 仓库镜像到 `RockyHorrorStash2`，然后立即将其克隆到我的本地仓库来开始。
+- en: 'I''ll do the same thing with `Panofy` (to `PanofyStash`) and `musicHandler2`
+    (creating `musicHandler2Stash`). Now we have three repos we can work on:'
+  id: totrans-104
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我将对 `Panofy`（创建 `PanofyStash`）和 `musicHandler2`（创建 `musicHandler2Stash`）做同样的操作。现在我们有三个仓库可以操作：
+- en: '`musicHandler2Stash`'
+  id: totrans-105
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`musicHandler2Stash`'
+- en: '`PanofyStash`'
+  id: totrans-106
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`PanofyStash`'
+- en: '`RockyHorrorStash`'
+  id: totrans-107
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`RockyHorrorStash`'
+- en: 'Let''s begin with `musicHandler2Stash` by changing directory and getting a
+    log of what is already there. Then let''s open it in Visual Studio and do some
+    work:'
+  id: totrans-108
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们从 `musicHandler2Stash` 开始，先切换目录并获取已有日志。然后，我们将在 Visual Studio 中打开它并进行工作：
+- en: '![](img/B17741_10_22.png)'
+  id: totrans-109
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_10_22.png)'
+- en: 'Figure 10.22: Log of MusicHandler2Stash'
+  id: totrans-110
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.22：MusicHandler2Stash 的日志
+- en: 'Let''s make two changes by opening Visual Studio in that directory. We need
+    changes in a couple of files, so let''s just add comments. When we take a status,
+    we see that there are two modified files:'
+  id: totrans-111
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们在 Visual Studio 中打开该目录并做出两处修改。我们需要修改几个文件，所以我们仅添加一些注释。当我们执行 `status` 命令时，我们看到有两个已修改的文件：
+- en: '![](img/B17741_10_23.png)'
+  id: totrans-112
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_10_23.png)'
+- en: 'Figure 10.23: Status of MusicHandler files after changes and before commit'
+  id: totrans-113
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.23：MusicHandler 文件在修改后和提交前的状态
+- en: 'Right in the middle of our work, we''re asked to work on a bug. We''re not
+    ready to check in these files so we add them to the stash:'
+  id: totrans-114
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在我们工作进行到一半时，突然被要求处理一个 bug。我们还没准备好提交这些文件，所以我们将它们加入到暂存区：
+- en: '![](img/B17741_10_24.png)'
+  id: totrans-115
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_10_24.png)'
+- en: 'Figure 10.24: Call stash, which puts the modified files into the stash, then
+    call status to see the working directory is empty'
+  id: totrans-116
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.24：调用暂存命令，将修改的文件放入暂存区，然后调用 `status` 查看工作目录为空
+- en: We are now free to change to the `RockyHorrorStash` directory. Here we will
+    start fixing the bug (which we will do by adding comments to represent the real
+    work). Uh oh, we have to work on a bigger bug. Let's stash the work we did in
+    `RockyHorrorStash`.
+  id: totrans-117
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们可以自由切换到 `RockyHorrorStash` 目录，在这里我们将开始修复 bug（我们会通过添加注释来表示实际工作）。哦哦，我们需要处理一个更大的
+    bug。让我们将 `RockyHorrorStash` 中的工作暂存起来。
+- en: 'We''ll switch to `PanofyStash` and make some changes and commit them. We are
+    now ready to return to the bug we were working on in `musicHandler2stash` as that
+    has now become the priority. The first thing to do is to list what we have in
+    the stash for this repository (remember, stashes are per repository):'
+  id: totrans-118
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将切换到 `PanofyStash`，做一些修改并提交。现在我们准备好返回到我们在 `musicHandler2stash` 中正在处理的 bug，因为这已经成为优先处理的任务。首先要做的是列出这个仓库中暂存区的内容（记住，暂存区是按仓库分开的）：
+- en: '![](img/B17741_10_25.png)'
+  id: totrans-119
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_10_25.png)'
+- en: 'Figure 10.25: stash list in musicHandler2stash'
+  id: totrans-120
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.25：musicHandler2stash 中的暂存列表
+- en: 'Let''s restore that. There are two ways to do so:'
+  id: totrans-121
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们恢复这些。我们可以通过两种方式来实现：
+- en: '`apply` applies the stashed files but leaves them in the stash.'
+  id: totrans-122
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`apply` 会应用暂存的文件，但会将它们保留在暂存区。'
+- en: '`pop` applies the stashed files but removes them from the stash.'
+  id: totrans-123
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`pop` 会应用暂存的文件，但会从暂存区中移除它们。'
+- en: 'I recommend using `apply` because it leaves a copy of the stashed items in
+    the:'
+  id: totrans-124
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我建议使用 `apply`，因为它会保留暂存项的副本在暂存区：
+- en: '![](img/B17741_10_26.png)'
+  id: totrans-125
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_10_26.png)'
+- en: 'Figure 10.26: stash apply'
+  id: totrans-126
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.26：暂存应用
+- en: In *Figure 10.26* we first call `git stash apply`. Be very careful with this—there
+    is a different command, `git apply`, which is not what you want here.
+  id: totrans-127
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在*图 10.26*中，我们首先执行 `git stash apply`。这一步需要非常小心——有一个不同的命令 `git apply`，这并不是我们在这里需要的。
+- en: 'Once applied you can see that the two files that were modified are back. We
+    take a status to make sure everything is as we expect. Now that we know it is
+    safe, we can clean out the stash:'
+  id: totrans-128
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦应用，你可以看到两个修改过的文件已经回来了。我们执行了 `status` 命令，确保一切如我们所预期。现在我们知道没有问题，我们可以清理暂存区：
+- en: '![](img/B17741_10_27.png)'
+  id: totrans-129
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/B17741_10_27.png)'
+- en: 'Figure 10.27: Dropping the cache'
+  id: totrans-130
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.27：删除缓存
+- en: In *Figure 10.27* we list what's in the stash, then we drop the stash, and then
+    list again to make sure it is gone.
+  id: totrans-131
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在*图 10.27*中，我们列出了暂存区中的内容，然后我们删除了暂存区的文件，接着再次列出，确保它们已经消失。
+- en: In this challenge, we mirrored three repos so that we could work on them without
+    changing their original state. We then looked at what commits were there and added
+    new files without committing them. In order to be able to switch repositories,
+    we stashed the uncommitted files. When we returned to the original project, we
+    were able to retrieve the stashed items.
+  id: totrans-132
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这个挑战中，我们镜像了三个仓库，这样我们就可以在不改变它们原始状态的情况下进行操作。然后，我们查看了有哪些提交，并在不提交的情况下添加了新文件。为了能够切换仓库，我们将未提交的文件暂存了起来。当我们回到原始项目时，我们能够恢复暂存的文件。

@@ -1,0 +1,1272 @@
+- en: '5'
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '5'
+- en: Expanding Your Automation Landscape
+  id: totrans-1
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 扩展你的自动化领域
+- en: It is important to find and apply automation at the right place and at the right
+    level. Usually, when searching for automation use cases, people make mistakes
+    by automating the inappropriate tasks and end up wasting money, effort, and time.
+    This is the reason why we need to analyze the environment and day-to-day tasks
+    and find the best tasks as automation candidates. We can use your statistical
+    data such as event tickets, customer change requests, and project tasks to find
+    this information.
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在合适的地方和适当的层级应用自动化是非常重要的。通常，在寻找自动化应用场景时，人们会犯错，自动化了不合适的任务，最终浪费了金钱、精力和时间。这就是为什么我们需要分析环境和日常任务，找出最适合作为自动化候选的任务的原因。我们可以通过使用诸如事件票据、客户变更请求和项目任务等统计数据来获取这些信息。
+- en: 'In this chapter, you will learn about the following topics:'
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章节中，你将学习以下内容：
+- en: Finding your automation use cases in your day-to-day work
+  id: totrans-4
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在日常工作中寻找自动化的应用场景
+- en: Automation feasibility and usability
+  id: totrans-5
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 自动化的可行性和可用性
+- en: Involving teams in the automation journey
+  id: totrans-6
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在自动化过程中涉及团队成员
+- en: The Ansible dynamic inventory
+  id: totrans-7
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Ansible动态库存
+- en: We will start with standard methods to analyze the tasks to find the highest
+    number of tasks and check the feasibility of automation. We will explore the integration
+    opportunities between **IT service management** (**ITSM**) tools and Ansible Automation
+    Platform. We will also practice the Ansible dynamic inventory with public clouds
+    such as **Amazon Web Services** (**AWS**) and explore the importance of Ansible
+    host variables and group variables.
+  id: totrans-8
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将从标准方法开始，分析任务，找出任务的最大数量，并检查自动化的可行性。我们还将探索**IT服务管理**（**ITSM**）工具与Ansible自动化平台之间的集成机会。我们还将实践Ansible动态库存与如**亚马逊网络服务**（**AWS**）等公共云，并探索Ansible主机变量和组变量的重要性。
+- en: Technical requirements
+  id: totrans-9
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 技术要求
+- en: 'The following are the technical requirements to proceed with this chapter:'
+  id: totrans-10
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是继续本章节所需的技术要求：
+- en: A Linux machine as an Ansible control node (with internet access)
+  id: totrans-11
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 一台Linux机器作为Ansible控制节点（需要有互联网连接）
+- en: One or more Linux machines as managed nodes with Red Hat repositories configured
+    (if you are using non-RHEL machines, then make sure you have appropriate repositories
+    configured to get packages and updates)
+  id: totrans-12
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 一台或多台配置了Red Hat仓库的Linux机器作为管理节点（如果你使用非RHEL机器，请确保已配置适当的仓库以获取软件包和更新）
+- en: Basic knowledge of the AWS platform and an AWS account with one or more test
+    machines created
+  id: totrans-13
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: AWS平台的基础知识，并拥有一个或多个已创建测试机器的AWS账户
+- en: All the Ansible artifacts, playbooks, commands, and snippets for this chapter
+    can be found in the GitHub repository at [https://github.com/PacktPublishing/Ansible-for-Real-life-Automation/tree/main/Chapter-05](https://github.com/PacktPublishing/Ansible-for-Real-life-Automation/tree/main/Chapter-05).
+  id: totrans-14
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章节的所有Ansible工件、剧本、命令和代码片段都可以在GitHub仓库中找到，地址为[https://github.com/PacktPublishing/Ansible-for-Real-life-Automation/tree/main/Chapter-05](https://github.com/PacktPublishing/Ansible-for-Real-life-Automation/tree/main/Chapter-05)。
+- en: Finding your automation use cases in your day-to-day work
+  id: totrans-15
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 在日常工作中寻找自动化的应用场景
+- en: 'We all know that every member of staff working in an IT environment is executing
+    some tasks and most of the time, they repeat the same job every day. Looking around,
+    we can see many examples, as follows:'
+  id: totrans-16
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们都知道，IT环境中每个员工都在执行一些任务，而大多数时间，他们每天都在重复同样的工作。环顾四周，我们可以看到很多例子，如下所示：
+- en: A system engineer is building servers and virtual machines, installing packages,
+    patching old systems, and more.
+  id: totrans-17
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 系统工程师正在构建服务器和虚拟机，安装软件包，修补旧系统，等等。
+- en: A network engineer is configuring the new network device and firewall devices,
+    configuring ports and **virtual local area networks** (**VLANs**) based on requests,
+    patching the device firmware, and many other things.
+  id: totrans-18
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 网络工程师正在配置新的网络设备和防火墙设备，基于请求配置端口和**虚拟局域网**（**VLANs**），修补设备固件，以及许多其他任务。
+- en: A developer is struggling to build his coding environment every time there is
+    a new version of the programming language or software library. They are also spending
+    a lot of time testing the code and waiting for test results.
+  id: totrans-19
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 开发人员每次当编程语言或软件库有新版本时，都在为构建其编程环境而苦恼。他们还花费大量时间测试代码并等待测试结果。
+- en: A storage administrator is spending their valuable time provisioning the disk
+    space and configuring the storage devices.
+  id: totrans-20
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 存储管理员正在花费宝贵的时间来配置磁盘空间和存储设备。
+- en: A database administrator is complaining about the provisioning delay of a new
+    database server and issues with network or system readiness.
+  id: totrans-21
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 一名数据库管理员抱怨新数据库服务器的配置延迟，以及网络或系统准备情况的问题。
+- en: A database user is struggling with the delay on a simple database password resetting
+    task.
+  id: totrans-22
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 一名数据库用户正在为简单的数据库密码重置任务的延迟而苦恼。
+- en: The operation team is struggling with the flood of events and alerts and spending
+    their time filtering out the false alerts, resulting in unproductive work.
+  id: totrans-23
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 操作团队正为事件和警报的洪流而苦恼，他们花费时间筛选虚假警报，导致工作效率低下。
+- en: The security team is working hard to fix the violations and make sure the systems
+    are compliant with the security standards.
+  id: totrans-24
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 安全团队正在努力修复违规问题，并确保系统符合安全标准。
+- en: The list is not comprehensive; you will be able to find many additional tasks
+    and scenarios in your workplace as well.
+  id: totrans-25
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 该列表并不全面；您还会在工作场所发现许多额外的任务和场景。
+- en: Assessing the tasks
+  id: totrans-26
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 评估任务
+- en: 'You can take your daily or weekly task reports or details from your ITSM systems
+    such as ServiceNow, Remedy, and Jira. For this scenario, we will use the very
+    common tasks undertaken by a platform team, but you can use any tasks, team, or
+    methods for this assessment. We have extracted a report for a week, as shown in
+    *Figure 5.1*:'
+  id: totrans-27
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 您可以从 ITSM 系统（如 ServiceNow、Remedy 和 Jira）中获取每日或每周的任务报告或详细信息。在此场景中，我们将使用平台团队常见的任务，但您可以使用任何任务、团队或方法进行评估。我们已提取了一周的报告，如*图
+    5.1*所示：
+- en: '![Figure 5.1 – Sample task report ](img/B18383_05_01.jpg)'
+  id: totrans-28
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 5.1 – 示例任务报告](img/B18383_05_01.jpg)'
+- en: Figure 5.1 – Sample task report
+  id: totrans-29
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 5.1 – 示例任务报告
+- en: 'We can see on the chart (*Figure 5.2*) the most critical tasks that are taking
+    the most time and effort of systems engineers:'
+  id: totrans-30
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以从图表中（*图 5.2*）看到最关键的任务，这些任务花费了系统工程师最多的时间和精力：
+- en: '![Figure 5.2 – Weekly task summary ](img/B18383_05_02.jpg)'
+  id: totrans-31
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 5.2 – 每周任务汇总](img/B18383_05_02.jpg)'
+- en: Figure 5.2 – Weekly task summary
+  id: totrans-32
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 5.2 – 每周任务汇总
+- en: Based on this very small chart, we can almost identify the tasks needed to automate
+    and save time.
+  id: totrans-33
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 根据这个非常小的图表，我们几乎可以识别出需要自动化并节省时间的任务。
+- en: 'If we check some more details, we can see the source of the task requests (*Figure
+    5.3*) and further scope and opportunities for automation:'
+  id: totrans-34
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果我们查看更多的细节，可以看到任务请求的来源（*图 5.3*）以及进一步的自动化范围和机会：
+- en: '![Figure 5.3 – Weekly task source summary ](img/B18383_05_03.jpg)'
+  id: totrans-35
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 5.3 – 每周任务来源汇总](img/B18383_05_03.jpg)'
+- en: Figure 5.3 – Weekly task source summary
+  id: totrans-36
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 5.3 – 每周任务来源汇总
+- en: Most of the ITSM tools can integrate with automation tools that will help us
+    to automate the execution trigger from the tools themselves.
+  id: totrans-37
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 大多数 ITSM 工具可以与自动化工具集成，帮助我们从工具本身触发自动化执行。
+- en: Ansible and ITSM
+  id: totrans-38
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: Ansible 和 ITSM
+- en: For example, when a user requests a package deployment in a Linux server via
+    the ServiceNow portal, you can configure your Ansible Automation Platform to trigger
+    the package installation job based on the input details from ServiceNow. At the
+    end of the automation job, Ansible will return the results to the ServiceNow ticket
+    and the user who created the ticket can see the details without waiting for the
+    engineer to update the ticket manually.
+  id: totrans-39
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 例如，当用户通过 ServiceNow 门户请求在 Linux 服务器上部署软件包时，您可以配置您的 Ansible Automation Platform，根据
+    ServiceNow 提供的输入细节触发软件包安装任务。在自动化任务完成后，Ansible 将结果返回到 ServiceNow 工单，创建工单的用户可以在无需等待工程师手动更新工单的情况下查看详细信息。
+- en: Please note that you need either Ansible AWX or Red Hat **Ansible Automation
+    Platform** (**AAP**) for this integration, and this is not possible with a simple
+    Ansible control node alone.
+  id: totrans-40
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请注意，您需要使用 Ansible AWX 或 Red Hat **Ansible Automation Platform**（**AAP**）进行此集成，单独的
+    Ansible 控制节点无法实现这一点。
+- en: '*Figure 5.4* demonstrates a simple integration with ITSM tools and Ansible
+    AWX or Red Hat AAP. You will learn more about Ansible and ITSM tools integration
+    in [*Chapter 12*](B18383_12.xhtml#_idTextAnchor213), *Integrating Ansible with
+    Your Tools*.'
+  id: totrans-41
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '*图 5.4*展示了与 ITSM 工具和 Ansible AWX 或 Red Hat AAP 的简单集成。您将在[*第 12 章*](B18383_12.xhtml#_idTextAnchor213)《将
+    Ansible 与您的工具集成》中了解更多关于 Ansible 和 ITSM 工具集成的内容。'
+- en: '![Figure 5.4 – Ansible integration with ITSM tools ](img/B18383_05_04.jpg)'
+  id: totrans-42
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 5.4 – Ansible 与 ITSM 工具的集成](img/B18383_05_04.jpg)'
+- en: Figure 5.4 – Ansible integration with ITSM tools
+  id: totrans-43
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 5.4 – Ansible 与 ITSM 工具的集成
+- en: ITSM Software
+  id: totrans-44
+  prefs: []
+  type: TYPE_NORMAL
+  zh: ITSM 软件
+- en: 'ITSM software will help organizations track and manage their IT infrastructure
+    operations, resources, and other related usages: [https://www.gartner.com/reviews/market/it-service-management-tools](https://www.gartner.com/reviews/market/it-service-management-tools).'
+  id: totrans-45
+  prefs: []
+  type: TYPE_NORMAL
+  zh: ITSM软件将帮助组织跟踪和管理其IT基础设施的操作、资源及其他相关使用情况：[https://www.gartner.com/reviews/market/it-service-management-tools](https://www.gartner.com/reviews/market/it-service-management-tools)。
+- en: Automation and Information Technology Infrastructure Library compliance
+  id: totrans-46
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 自动化和信息技术基础设施库合规性
+- en: When we talk about automated operations using ITSM and automation tools, it
+    is normal for the stakeholders to raise concerns about **Information Technology
+    Infrastructure Library** (**ITIL**) practices and compliances. IT automation does
+    not mean that you need to bypass your organization’s best practices or ITIL processes;
+    instead, you are automating the tasks that a human needs to execute manually and
+    repeatedly. For example, you will still follow the standard change approval process
+    in the ITSM system, and the tool will trigger automation only when the request
+    is approved to execute.
+  id: totrans-47
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当我们谈论使用ITSM和自动化工具进行自动化操作时，利益相关者通常会提出关于**信息技术基础设施库**（**ITIL**）的实践和合规性问题。IT自动化并不意味着您需要绕过组织的最佳实践或ITIL流程；相反，您是将那些需要人工手动反复执行的任务自动化。例如，您仍然需要在ITSM系统中遵循标准的变更审批流程，只有在请求获得批准执行后，工具才会触发自动化操作。
+- en: In this section, we have learned some simple methods to find automation use
+    cases from your workspaces. You can break complex operations into small tasks
+    and start with simple automation use cases. We will learn how to study those use
+    cases and convert them into automation candidates in the next section.
+  id: totrans-48
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本节中，我们了解了一些简单的方法来从工作空间中找出自动化使用场景。您可以将复杂的操作拆分为小任务，并从简单的自动化使用场景开始。我们将在下一节中学习如何研究这些使用场景并将其转化为自动化候选项。
+- en: Automation feasibility and usability
+  id: totrans-49
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 自动化的可行性和可用性
+- en: We all need to understand that not all use cases or repeated jobs are suitable
+    for automation. We need to study and confirm the feasibility of implementing the
+    use case using Ansible automation.
+  id: totrans-50
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们都需要明白，并非所有的使用场景或重复性工作都适合自动化。我们需要研究并确认是否可以使用Ansible自动化来实现这些任务。
+- en: Once you find the use cases, you can ask yourself several questions to understand
+    the feasibility of implementation and usability of your automation use cases.
+  id: totrans-51
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦找到了使用场景，您可以通过提问自己一些问题来了解自动化使用场景的可行性和可用性。
+- en: How complex is the use case?
+  id: totrans-52
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 这个使用场景有多复杂？
+- en: You need to Consider the complexity of the use case or workflow you are trying
+    to automate. If the use case is too complex, then you can split it into smaller
+    use cases. You need to start with smaller use cases to avoid any possible delay
+    or obstruction.
+  id: totrans-53
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 您需要考虑您要自动化的使用场景或工作流的复杂性。如果使用场景过于复杂，您可以将其拆分为更小的使用场景。为了避免任何可能的延迟或障碍，您需要从较小的使用场景开始。
+- en: 'For example, if you want to automate the Linux **operating system** (**OS**)
+    patching task, then split the job into multiple use cases as follows:'
+  id: totrans-54
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 例如，如果您想自动化Linux**操作系统**（**OS**）的补丁任务，您可以将工作拆分为多个使用场景，如下所示：
+- en: Take a virtual machine snapshot.
+  id: totrans-55
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 拍摄虚拟机快照。
+- en: Back up the configuration.
+  id: totrans-56
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 备份配置。
+- en: OS patching tasks.
+  id: totrans-57
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 操作系统补丁任务。
+- en: Verification of the OS after patching and reboot.
+  id: totrans-58
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 补丁安装和重启后验证操作系统。
+- en: Restore snapshot in case of any failure.
+  id: totrans-59
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在出现故障时恢复快照。
+- en: By doing this, you will get more confidence to start the automation journey
+    and also, different people on your team can contribute to their own domain of
+    expertise.
+  id: totrans-60
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通过这样做，您将更有信心开始自动化之旅，同时，团队中的不同成员也可以在自己的专业领域作出贡献。
+- en: Can I reduce human error?
+  id: totrans-61
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 我可以减少人为错误吗？
+- en: Consider how many human mistakes we can avoid by implementing automation for
+    a use case. If the task contains multiple steps, there is a high chance that the
+    engineer will miss some steps or execute typos while implementing the job. Such
+    jobs are good candidates for automation, as you will not need to worry about errors
+    and typos when using automated workflows.
+  id: totrans-62
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 想一想通过为某个使用场景实现自动化，我们能避免多少人为失误。如果任务包含多个步骤，工程师在执行任务时很有可能会遗漏某些步骤或在输入过程中出现拼写错误。这类任务是自动化的好候选项，因为使用自动化工作流时，您无需担心错误和拼写问题。
+- en: 'For example, imagine you have a task to deploy a database cluster with hundreds
+    of steps, a sample of which is as follows:'
+  id: totrans-63
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 例如，假设您有一个任务需要部署一个数据库集群，其中有数百个步骤，部分步骤如下：
+- en: Configure the IP address for the cluster nodes.
+  id: totrans-64
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 为集群节点配置IP地址。
+- en: Install multiple packages on the cluster nodes.
+  id: totrans-65
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在集群节点上安装多个包。
+- en: Configure multiple files on the nodes.
+  id: totrans-66
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在节点上配置多个文件。
+- en: Configure clustering and heartbeats.
+  id: totrans-67
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 配置集群和心跳。
+- en: Configure the virtual IP and virtual interface, and so on.
+  id: totrans-68
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 配置虚拟IP和虚拟接口等。
+- en: In such cases, you can develop Ansible playbooks to cover each and every task
+    and save enormous amounts of time and effort.
+  id: totrans-69
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这种情况下，你可以开发Ansible剧本来覆盖每一个任务，从而节省大量的时间和精力。
+- en: Can I reduce the deployment time and speed up my tasks?
+  id: totrans-70
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 我可以减少部署时间并加快任务速度吗？
+- en: It is a proven fact that automation can improve the speed of your tasks, deployment,
+    and deliveries. Automation can significantly reduce the time required for an operation,
+    as a single trigger can complete the entire workflow and the engineer doesn’t
+    need to observe the monitor or console for errors and status updates.
+  id: totrans-71
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 自动化可以提高任务、部署和交付的速度，这是一个经过验证的事实。自动化能够显著减少操作所需的时间，因为一个触发器就能完成整个工作流程，工程师无需观察监视器或控制台的错误和状态更新。
+- en: So, you should ask yourself about the use case and whether you can save time
+    or not by automating this task.
+  id: totrans-72
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 所以，你应该问自己关于使用场景的问题，并考虑通过自动化这个任务是否能够节省时间。
+- en: For example, if you are automating the OS patching task using Ansible, you can
+    trigger the patching for hundreds of servers with a single command and just wait
+    for the tasks to be completed. You do not need to log in to different servers,
+    switch between consoles, collect logs, or keep the time of events. You can include
+    each and every task in Ansible playbooks and collect the summary or report for
+    your later auditing purposes.
+  id: totrans-73
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 例如，如果你使用Ansible自动化操作系统补丁任务，你只需通过一个命令触发数百台服务器的补丁更新，然后等待任务完成。你不需要登录到不同的服务器，切换控制台，收集日志或记录事件的时间。你可以将每个任务包含在Ansible剧本中，并收集摘要或报告以供后续审核使用。
+- en: How frequently am I doing this task?
+  id: totrans-74
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 我执行这个任务的频率有多高？
+- en: If the tasks are not executed frequently (for example, once a year), then it
+    will not be much use to spend time developing the automation content for that
+    task. But, if the task is to be executed for several servers, then that automation
+    use case is valid and a good candidate, as during the execution time, you will
+    need fewer resources for that job as the automation will take care of the complex
+    workflows.
+  id: totrans-75
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果任务执行不频繁（例如，一年一次），那么为该任务开发自动化内容可能没什么用。但如果任务是针对多台服务器执行的，那么这个自动化用例就是有效的，也是一个很好的候选，因为在执行时，你将需要更少的资源，因为自动化将处理复杂的工作流程。
+- en: Always compare the time required for the manual task with the time required
+    for the development of Ansible playbook content. You also have to bear in mind
+    that the task might currently be executing less frequently due to resource unavailability
+    or task complexity. By automating such tasks, you can increase the frequency of
+    the tasks as you need less effort to execute them using your Ansible playbooks.
+  id: totrans-76
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 始终将手动任务所需的时间与开发Ansible剧本内容所需的时间进行比较。你还需要考虑当前任务可能因为资源不可用或任务复杂性较高而执行得不那么频繁。通过自动化这些任务，你可以提高任务的执行频率，因为使用Ansible剧本执行任务时所需的努力更少。
+- en: For example, assume you have thousands of servers to manage and the patching
+    is possible only once every 6 months due to having a small team, and we all know
+    that engineers need to spend a few hours to complete patching for a single server.
+    Due to the complexity and criticality of OS patching tasks, you can do it only
+    during non-business hours (usually weekends) and you need to rotate your engineers
+    on weekend activities to accomplish this task. If you can automate this task using
+    Ansible, then the engineers need to spend much less time and you can do the OS
+    patching almost every month or whenever necessary.
+  id: totrans-77
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 例如，假设你需要管理成千上万台服务器，而由于团队规模较小，操作系统补丁每6个月只能更新一次，而且我们都知道工程师需要花费几个小时才能完成单台服务器的补丁更新。由于操作系统补丁任务的复杂性和关键性，你只能在非工作时间（通常是周末）进行操作，并且你需要安排工程师在周末轮流进行这项工作。如果你能通过Ansible自动化这个任务，工程师将花费更少的时间，你几乎可以每个月或在需要时随时进行操作系统补丁更新。
+- en: How much time can I save by automating this task?
+  id: totrans-78
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 我通过自动化这个任务可以节省多少时间？
+- en: Consider whether the automation can help to save some time and help the engineers
+    to focus on improving their workflows. For some tasks, engineers need to sit in
+    front of their workstations until the task reaches a particular stage and they
+    need to interactively complete the task regardless of their work hours.
+  id: totrans-79
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 考虑是否自动化可以帮助节省一些时间，并帮助工程师专注于改进他们的工作流程。对于某些任务，工程师需要坐在工作站前，直到任务达到特定阶段，并且无论工作时间如何，他们都需要交互式地完成任务。
+- en: For example, for a weekly system reboot job, you need to wait for the system
+    to be up and running before focusing on the next machine in the workflow. Ansible
+    can help you to automate this reboot, validation, and system restore process in
+    case of an emergency. You can schedule the jobs in a parallel or serial workflow
+    without waiting for one machine to complete the reboot activity.
+  id: totrans-80
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 例如，对于每周的系统重启任务，你需要等待系统启动并正常运行，然后才能集中精力处理工作流中的下一个机器。Ansible 可以帮助你自动化这个重启、验证和系统恢复过程，以应对紧急情况。你可以在并行或串行工作流中安排任务，而不必等待某台机器完成重启活动。
+- en: Can I save some money?
+  id: totrans-81
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 我能节省一些钱吗？
+- en: It is not a major reason from the technical point of view, but reducing cost
+    is one of the most common reasons organizations are looking for automation of
+    their IT and application infrastructure. You can assess the cost savings together
+    with the time saving, as the engineers will be spending more time on improvements
+    and better practices rather than working on the same repeated jobs. Also, the
+    reduction of human errors will help to reduce service outages, which, in turn,
+    reduces the cost to the organization.
+  id: totrans-82
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 从技术角度来看，这并不是主要原因，但降低成本是组织寻求自动化其 IT 和应用基础设施的最常见原因之一。你可以将节省的成本与节省的时间一起评估，因为工程师将花更多时间在改进和更好的实践上，而不是重复处理相同的工作。此外，减少人为错误将有助于减少服务中断，从而减少组织的成本。
+- en: You can add more facts and questions in the use case selection criteria and
+    assessment as per your organization’s requirements.
+  id: totrans-83
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以根据你组织的需求，在使用案例选择标准和评估中添加更多事实和问题。
+- en: In the next section, we will learn how to organize and store managed node information
+    in the Ansible inventory, and different best practices to follow.
+  id: totrans-84
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一部分中，我们将学习如何在 Ansible 清单中组织和存储受管节点信息，以及需要遵循的不同最佳实践。
+- en: Involving teams in the automation journey
+  id: totrans-85
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 在自动化过程中涉及团队
+- en: It is a common misunderstanding that the responsibility for finding use cases
+    and implementing automation only falls to the systems team, platforms team, or
+    infrastructure team. When we explore our work environment and day-to-day tasks,
+    we will find thousands of tasks that we can automate using Ansible. It could be
+    the database team managing database servers and instances, the network team handling
+    network operations, or the application team who wants to deploy their application
+    updates more effectively. Implementing automation in the environment is a collaborative
+    journey, and we need support and guidance from different teams.
+  id: totrans-86
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一个常见的误解是，寻找使用案例并实施自动化的责任仅仅落在系统团队、平台团队或基础设施团队身上。当我们探索我们的工作环境和日常任务时，我们会发现有成千上万的任务可以使用
+    Ansible 自动化。可能是数据库团队管理数据库服务器和实例，网络团队处理网络操作，或者应用团队希望更有效地部署其应用程序更新。在环境中实施自动化是一个协作过程，我们需要来自不同团队的支持和指导。
+- en: 'For example, typical database provisioning steps can be seen in *Figure 5.5*:'
+  id: totrans-87
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 例如，典型的数据库配置步骤可以在 *图 5.5* 中看到：
+- en: '![Figure 5.5 – Typical database provisioning tasks ](img/B18383_05_05.jpg)'
+  id: totrans-88
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 5.5 – 典型的数据库配置任务](img/B18383_05_05.jpg)'
+- en: Figure 5.5 – Typical database provisioning tasks
+  id: totrans-89
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 5.5 – 典型的数据库配置任务
+- en: Many of the tasks listed in *Figure 5.5* can be automated using Ansible, and
+    the workflow can be completed in minutes instead of days and weeks. The database
+    team needs to share more insight about the database operations and the automation
+    opportunities, as they are the **subject matter experts** (**SMEs**) for database-related
+    topics.
+  id: totrans-90
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 *图 5.5* 中列出的许多任务都可以使用 Ansible 自动化，并且工作流可以在几分钟内完成，而不是几天或几周。数据库团队需要分享更多关于数据库操作和自动化机会的见解，因为他们是数据库相关主题的
+    **主题专家** (**SMEs**)。
+- en: We have detailed sections on learning about database automation using Ansible,
+    which you can find in [*Chapter 8*](B18383_08.xhtml#_idTextAnchor144), *Helping
+    the Database Team with Automation*.
+  id: totrans-91
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们有关于使用 Ansible 学习数据库自动化的详细章节，你可以在 [*第8章*](B18383_08.xhtml#_idTextAnchor144)
+    中找到，*帮助数据库团队实现自动化*。
+- en: 'We can take Windows server automation as another example, as there is always
+    a misconception that Ansible is only available for Linux and cannot be used for
+    automation on Windows servers. This is incorrect as Ansible can be used to automate
+    most of your Windows management and administration operations. There are about
+    100 Ansible modules available in the Ansible Windows collection, which can be
+    downloaded from Ansible Galaxy as follows:'
+  id: totrans-92
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以以 Windows 服务器自动化为例，因为总有一种误解，认为 Ansible 仅适用于 Linux，不能用于 Windows 服务器自动化。这是不正确的，Ansible
+    可以用于自动化大多数 Windows 管理和操作。Ansible Windows 集合中大约有 100 个模块，可以通过 Ansible Galaxy 下载，地址如下：
+- en: '`community.windows` – [https://galaxy.ansible.com/community/windows](https://galaxy.ansible.com/community/windows)'
+  id: totrans-93
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`community.windows` – [https://galaxy.ansible.com/community/windows](https://galaxy.ansible.com/community/windows)'
+- en: '`Ansible.windows` – [https://galaxy.ansible.com/ansible/windows](https://galaxy.ansible.com/ansible/windows%20)'
+  id: totrans-94
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`Ansible.windows` – [https://galaxy.ansible.com/ansible/windows](https://galaxy.ansible.com/ansible/windows%20)'
+- en: 'Refer to *Figure 5.6* for a typical user creation job in Windows:'
+  id: totrans-95
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请参阅*图 5.6*，了解 Windows 中典型的用户创建工作：
+- en: '![Figure 5.6 – Windows user creation workflow ](img/B18383_05_06.jpg)'
+  id: totrans-96
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 5.6 – Windows 用户创建工作流](img/B18383_05_06.jpg)'
+- en: Figure 5.6 – Windows user creation workflow
+  id: totrans-97
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 5.6 – Windows 用户创建工作流
+- en: The entire workflow can be automated using a few tasks inside an Ansible playbook
+    and the Windows team can reuse the same automation artifacts for thousands of
+    servers in the environment. As an Ansible content developer, you can collaborate
+    with the Windows platform team and find more such use cases for implementing automation.
+    You will learn more about Windows automation in [*Chapter 6*](B18383_06.xhtml#_idTextAnchor105),*Automating
+    Microsoft Windows and Network Devices*.
+  id: totrans-98
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 整个工作流可以通过 Ansible playbook 中的几个任务进行自动化，Windows 团队可以在环境中的数千台服务器上重用相同的自动化工件。作为
+    Ansible 内容开发人员，你可以与 Windows 平台团队合作，找到更多类似的使用案例来实施自动化。你将在[*第 6 章*](B18383_06.xhtml#_idTextAnchor105)中了解更多关于
+    Windows 自动化的内容，*自动化 Microsoft Windows 和网络设备*。
+- en: Let’s explore one more use case opportunity and challenge that the cloud platform
+    team faces. When you introduce Ansible automation to the cloud platform team that
+    manages the public or private cloud, they are always faced with a dilemma – how
+    to update the managed node information in the Ansible inventory every time when
+    there are frequent changes in terms of virtual machines, disks, network, and so
+    on. In the next section, we will learn how to handle a large number of dynamically
+    managed nodes in the Ansible inventory using the dynamic inventory plugins.
+  id: totrans-99
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们再探讨一个云平台团队面临的使用案例机会和挑战。当你将 Ansible 自动化引入到管理公共或私有云的云平台团队时，他们总是会面临一个两难问题——如何在虚拟机、磁盘、网络等方面频繁变化时，每次更新
+    Ansible 清单中的受管节点信息。在接下来的章节中，我们将学习如何使用动态清单插件处理 Ansible 清单中大量动态管理的节点。
+- en: Ansible dynamic inventory
+  id: totrans-100
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Ansible 动态清单
+- en: It is easy to manage your managed node information inside static inventory files
+    when you have a smaller number of nodes or an almost fixed set of assets, such
+    as bare-metal servers or virtual machines that are not frequently recreated. But,
+    if your environment contains many dynamic nodes, such as virtual machines on multiple
+    public or private cloud platforms, Kubernetes, or OpenShift platforms, then keeping
+    your managed node information inside static files will be difficult, as you need
+    to keep track of the changes and update your inventory files with them, including
+    IP addresses, login credentials, and more. In such cases, you can use the **dynamic
+    inventory** features in Ansible, which are basically some custom scripts and inventory
+    plugins that collect inventory information from these virtualization or container
+    platforms.
+  id: totrans-101
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当节点数量较少或资产集几乎固定时（如不经常重建的裸金属服务器或虚拟机），在静态清单文件中管理受管节点信息是容易的。但如果你的环境包含许多动态节点，如多个公共或私有云平台上的虚拟机、Kubernetes
+    或 OpenShift 平台上的节点，那么将受管节点信息保存在静态文件中就会变得困难，因为你需要跟踪这些变化并将其更新到清单文件中，包括 IP 地址、登录凭证等。在这种情况下，你可以使用
+    Ansible 中的**动态清单**功能，基本上是一些自定义脚本和清单插件，从这些虚拟化或容器平台收集清单信息。
+- en: When you pass the dynamic inventories to Ansible, the inventory plugins will
+    be executed and will collect the details of managed nodes from your virtualization
+    platforms. This information will be passed to Ansible as regular inventory data
+    and Ansible will execute the automation tasks for those managed nodes based on
+    the node selection.
+  id: totrans-102
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当你将动态库存传递给Ansible时，库存插件将被执行，并将从你的虚拟化平台收集受管节点的详细信息。这些信息将作为常规库存数据传递给Ansible，Ansible将根据节点选择为这些受管节点执行自动化任务。
+- en: 'You can use dynamic inventory plugins for any supported platforms, such as
+    VMware, OpenStack, AWS, Azure, GCP, or from other container platforms such as
+    Kubernetes, OpenShift, and so on, as depicted in *Figure 5.7*:'
+  id: totrans-103
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以为任何受支持的平台使用动态库存插件，例如VMware、OpenStack、AWS、Azure、GCP，或者来自其他容器平台（如Kubernetes、OpenShift等），如*图
+    5.7*所示：
+- en: '![Figure 5.7 – Ansible static and dynamic inventories ](img/B18383_05_07.jpg)'
+  id: totrans-104
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 5.7 – Ansible静态和动态库存](img/B18383_05_07.jpg)'
+- en: Figure 5.7 – Ansible static and dynamic inventories
+  id: totrans-105
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 5.7 – Ansible静态和动态库存
+- en: 'You can list all the available dynamic plugins as follows:'
+  id: totrans-106
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以按如下方式列出所有可用的动态插件：
+- en: '[PRE0]'
+  id: totrans-107
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: Please note that you will see additional inventory plugins if you have installed
+    additional Ansible collections, as some of the collections may include inventory
+    plugins as well.
+  id: totrans-108
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请注意，如果你安装了额外的Ansible集合，你将看到更多的库存插件，因为某些集合可能也包含库存插件。
+- en: Ansible Inventory Plugins
+  id: totrans-109
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible库存插件
+- en: For more details about Ansible Inventory plugins, you can look them up at [https://docs.ansible.com/ansible/latest/plugins/inventory.xhtml](https://docs.ansible.com/ansible/latest/plugins/inventory.xhtml).
+    Old dynamic inventory scripts are available at [https://docs.ansible.com/ansible/latest/user_guide/intro_dynamic_inventory.xhtml](https://docs.ansible.com/ansible/latest/user_guide/intro_dynamic_inventory.xhtml)
+    and [https://github.com/ansible/ansible/tree/stable-2.9/contrib/inventory](https://github.com/ansible/ansible/tree/stable-2.9/contrib/inventory).
+  id: totrans-110
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 欲了解更多有关Ansible库存插件的详细信息，可以访问[https://docs.ansible.com/ansible/latest/plugins/inventory.xhtml](https://docs.ansible.com/ansible/latest/plugins/inventory.xhtml)。旧版动态库存脚本可在[https://docs.ansible.com/ansible/latest/user_guide/intro_dynamic_inventory.xhtml](https://docs.ansible.com/ansible/latest/user_guide/intro_dynamic_inventory.xhtml)
+    和 [https://github.com/ansible/ansible/tree/stable-2.9/contrib/inventory](https://github.com/ansible/ansible/tree/stable-2.9/contrib/inventory)
+    查找。
+- en: Using the Ansible dynamic inventory with AWS
+  id: totrans-111
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 使用Ansible动态库存与AWS
+- en: In this practice session, you will learn how to install Ansible collections
+    and how to use the Ansible inventory plugin for AWS Cloud. You will use the default
+    AWS inventory plugin available at the official `amazon.aws` collection.
+  id: totrans-112
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本次练习中，你将学习如何安装Ansible集合，以及如何使用Ansible库存插件管理AWS云。你将使用`amazon.aws`集合中提供的默认AWS库存插件。
+- en: Assumptions
+  id: totrans-113
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 假设条件
+- en: 'We assume the following:'
+  id: totrans-114
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们假设以下内容：
+- en: You have an AWS account (the Free Tier is enough to proceed with this exercise).
+  id: totrans-115
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 你有一个AWS账户（免费套餐足以完成本练习）。
+- en: You have basic knowledge of the AWS platform sufficient to create new users
+    and EC2 instances.
+  id: totrans-116
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 你具备基本的AWS平台知识，足以创建新用户和EC2实例。
+- en: Installing AWS collection and libraries
+  id: totrans-117
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 安装AWS集合和库
+- en: 'First of all, we need to install the required Ansible collection and plugins
+    before using the inventory plugin:'
+  id: totrans-118
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 首先，我们需要在使用库存插件之前安装所需的Ansible集合和插件：
+- en: 'Configure `ansible.cfg` with a collection path. By default, `ansible-galaxy`
+    will install the Ansible collections (and roles) to a default path, which is under
+    your home directory (for example, `/home/ansible/.ansible/collections/ansible_collections`).
+    In this case, we will tell Ansible to install the collection to a specific path
+    for better management. Configure the `COLLECTIONS_PATHS` line in your `ansible.cfg`
+    file:'
+  id: totrans-119
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 配置`ansible.cfg`文件中的集合路径。默认情况下，`ansible-galaxy`会将Ansible集合（和角色）安装到默认路径，这个路径位于你的主目录下（例如，`/home/ansible/.ansible/collections/ansible_collections`）。在这种情况下，我们将告诉Ansible将集合安装到一个特定路径，以便更好地进行管理。请在`ansible.cfg`文件中配置`COLLECTIONS_PATHS`行：
+- en: '[PRE1]'
+  id: totrans-120
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: 'Install the `amazon.aws` collection using the `ansible-galaxy` command:'
+  id: totrans-121
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用`ansible-galaxy`命令安装`amazon.aws`集合：
+- en: '[PRE2]'
+  id: totrans-122
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: 'Verify the installed collection:'
+  id: totrans-123
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 验证已安装的集合：
+- en: '![Figure 5.8 – Ansible AWS collection installed ](img/B18383_05_08.jpg)'
+  id: totrans-124
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 5.8 – 已安装Ansible AWS集合](img/B18383_05_08.jpg)'
+- en: Figure 5.8 – Ansible AWS collection installed
+  id: totrans-125
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 5.8 – 已安装Ansible AWS集合
+- en: You can see that the collection is installed in your `PROJECT_DIRECTORY/collections`
+    path.
+  id: totrans-126
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以看到该集合已安装在你的`PROJECT_DIRECTORY/collections`路径中。
+- en: 'Verify the installed inventory plugin for AWS:'
+  id: totrans-127
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 验证已安装的AWS库存插件：
+- en: '![Figure 5.9 – AWS inventory plugin ](img/B18383_05_09.jpg)'
+  id: totrans-128
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 5.9 – AWS库存插件](img/B18383_05_09.jpg)'
+- en: Figure 5.9 – AWS inventory plugin
+  id: totrans-129
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 5.9 – AWS 清单插件
+- en: 'Install the `python3-boto3` package. AWS modules and plugins require the `boto3`
+    package to be available on the system:'
+  id: totrans-130
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 安装 `python3-boto3` 包。AWS 模块和插件要求系统中必须有 `boto3` 包：
+- en: '[PRE3]'
+  id: totrans-131
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: If your Ansible was installed using Python, then install `boto3` using the `pip
+    install` `boto3` command.
+  id: totrans-132
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果您的 Ansible 是通过 Python 安装的，那么可以使用 `pip install boto3` 命令安装 `boto3`。
+- en: After installing the Ansible AWS collection, you need to create the AWS user
+    with which Ansible will access the AWS platform.
+  id: totrans-133
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 安装 Ansible AWS 集合后，您需要创建一个用于 Ansible 访问 AWS 平台的 AWS 用户。
+- en: If you are using the automation execution environments with Ansible Automation
+    Platform, then all the dependencies and libraries can be packaged inside the execution
+    environment images. Refer to [https://www.ansible.com/products/execution-environments](https://www.ansible.com/products/execution-environments)
+    for more details.
+  id: totrans-134
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果您使用的是 Ansible 自动化平台的自动化执行环境，那么所有的依赖项和库可以打包在执行环境镜像中。详情请参见 [https://www.ansible.com/products/execution-environments](https://www.ansible.com/products/execution-environments)。
+- en: Creating an AWS user and credential
+  id: totrans-135
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 创建 AWS 用户和凭证
+- en: 'For the AWS `ec2` inventory plugin to access your AWS account, you need to
+    configure your AWS credentials using standard methods, as shown in *Figure 5.10*:'
+  id: totrans-136
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要使 AWS `ec2` 清单插件访问您的 AWS 账户，您需要使用标准方法配置 AWS 凭证，如*图 5.10*所示：
+- en: 'Go to **AWS Console** | **IAM** | **Users** | **Add User** and select **Programmatic
+    access**:'
+  id: totrans-137
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 转到**AWS 控制台** | **IAM** | **用户** | **添加用户**并选择**程序访问**：
+- en: '![Figure 5.10 – Creating an AWS user with programmatic access ](img/B18383_05_10.jpg)'
+  id: totrans-138
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 5.10 – 创建具有编程访问权限的 AWS 用户](img/B18383_05_10.jpg)'
+- en: Figure 5.10 – Creating an AWS user with programmatic access
+  id: totrans-139
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 5.10 – 创建具有编程访问权限的 AWS 用户
+- en: 'Add appropriate permissions for the new user (do not give the user **AdministratorAccess**
+    to your production account), as shown in *Figure 5.11*:'
+  id: totrans-140
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 为新用户添加适当的权限（不要授予用户**AdministratorAccess**权限，以免影响生产账户），如*图 5.11*所示：
+- en: '![Figure 5.11 – Applying permissions for the new AWS user ](img/B18383_05_11.jpg)'
+  id: totrans-141
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 5.11 – 为新 AWS 用户应用权限](img/B18383_05_11.jpg)'
+- en: Figure 5.11 – Applying permissions for the new AWS user
+  id: totrans-142
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 5.11 – 为新 AWS 用户应用权限
+- en: Add **Tags** if needed and click **Create User**. Please remember to copy the
+    **Access key ID** and **Secret access key** as shown in *Figure 5.12* as we need
+    this information in the next steps.
+  id: totrans-143
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如果需要，添加**标签**并点击**创建用户**。请记得复制**访问密钥 ID**和**秘密访问密钥**，如*图 5.12*所示，因为我们在接下来的步骤中需要这些信息。
+- en: '![Figure 5.12 – AWS user access key ID and secret access key  ](img/B18383_05_12.jpg)'
+  id: totrans-144
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 5.12 – AWS 用户访问密钥 ID 和秘密访问密钥](img/B18383_05_12.jpg)'
+- en: Figure 5.12 – AWS user access key ID and secret access key
+  id: totrans-145
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 5.12 – AWS 用户访问密钥 ID 和秘密访问密钥
+- en: Once you create the user account, you need to configure the access key and secret
+    access key on your Ansible control node.
+  id: totrans-146
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 创建用户账户后，您需要在 Ansible 控制节点上配置访问密钥和秘密访问密钥。
+- en: Configuring AWS credentials on the Ansible control node
+  id: totrans-147
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 在 Ansible 控制节点上配置 AWS 凭证
+- en: 'Now, you need to configure the AWS credential information on the control node:'
+  id: totrans-148
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，您需要在控制节点上配置 AWS 凭证信息：
+- en: 'Add new AWS credentials on your Ansible control node machine. If you have multiple
+    credentials, then add this as a new profile as follows (for example, `default`
+    and `ansible` profiles):'
+  id: totrans-149
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在您的 Ansible 控制节点机器上添加新的 AWS 凭证。如果您有多个凭证，则按照以下方式将其作为新配置文件添加（例如，`default` 和 `ansible`
+    配置文件）：
+- en: '![Figure 5.13 – AWS profile configuration ](img/B18383_05_13.jpg)'
+  id: totrans-150
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 5.13 – AWS 配置文件设置](img/B18383_05_13.jpg)'
+- en: Figure 5.13 – AWS profile configuration
+  id: totrans-151
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 5.13 – AWS 配置文件设置
+- en: 'Update the `config` file as shown:'
+  id: totrans-152
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 按照如下方式更新 `config` 文件：
+- en: '![Figure 5.14 – AWS profile config file ](img/B18383_05_14.jpg)'
+  id: totrans-153
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 5.14 – AWS 配置文件](img/B18383_05_14.jpg)'
+- en: Figure 5.14 – AWS profile config file
+  id: totrans-154
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 5.14 – AWS 配置文件
+- en: Remember to use the correct AWS profile name in your inventory configuration
+    in the next steps (`ansible`, in our case).
+  id: totrans-155
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请记得在接下来的步骤中使用正确的 AWS 配置文件名称（在我们的示例中为 `ansible`）。
+- en: Using the AWS aws_ec2 inventory plugin
+  id: totrans-156
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 使用 AWS aws_ec2 清单插件
+- en: 'Once you configure the AWS credentials, you can start testing the dynamic inventory
+    plugin:'
+  id: totrans-157
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 配置完 AWS 凭证后，您可以开始测试动态清单插件：
+- en: 'Create an inventory file with the `ec2` plugin information. We will also include
+    the location to filter for the `ec2` instances:'
+  id: totrans-158
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建一个包含 `ec2` 插件信息的清单文件。我们还将包含过滤 `ec2` 实例的位置信息：
+- en: '![Figure 5.15 – Inventory file for AWS ec2 instances ](img/B18383_05_15.jpg)'
+  id: totrans-159
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 5.15 – AWS ec2 实例的清单文件](img/B18383_05_15.jpg)'
+- en: Figure 5.15 – Inventory file for AWS ec2 instances
+  id: totrans-160
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 5.15 – AWS ec2 实例的清单文件
+- en: 'Verify the dynamic inventory plugin by passing the inventory location (`inventories/aws/`):'
+  id: totrans-161
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 通过传递清单位置（`inventories/aws/`）来验证动态清单插件：
+- en: '![Figure 5.16 – Verify AWS dynamic inventory ](img/B18383_05_16.jpg)'
+  id: totrans-162
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 5.16 – 验证 AWS 动态清单](img/B18383_05_16.jpg)'
+- en: Figure 5.16 – Verify AWS dynamic inventory
+  id: totrans-163
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 5.16 – 验证 AWS 动态清单
+- en: The inventory plugin will access the AWS platform using the account you have
+    configured in the previous steps and return the result in a format that Ansible
+    can read and use for execution. (We have used the `--graph` option for a summary
+    view, but you can use other options, such as `--list`.)
+  id: totrans-164
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 动态清单插件将使用你在之前步骤中配置的账户访问 AWS 平台，并以 Ansible 可以读取并用于执行的格式返回结果。（我们使用了`--graph`选项来查看概览，但你也可以使用其他选项，如`--list`。）
+- en: 'You can add more filters with tags and hostnames as shown here:'
+  id: totrans-165
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 你可以通过标签和主机名添加更多的过滤器，如下所示：
+- en: '[PRE4]'
+  id: totrans-166
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: 'The plugin will return the result based on the filter you have configured in
+    the inventory YAML file:'
+  id: totrans-167
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 插件将根据你在清单 YAML 文件中配置的过滤器返回结果：
+- en: '![Figure 5.17 – AWS dynamic inventory with additional filters ](img/B18383_05_17.jpg)'
+  id: totrans-168
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 5.17 – 带有附加过滤器的 AWS 动态清单](img/B18383_05_17.jpg)'
+- en: Figure 5.17 – AWS dynamic inventory with additional filters
+  id: totrans-169
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 5.17 – 带有附加过滤器的 AWS 动态清单
+- en: 'If you have configured the `ec2` instances (using the AWS `ec2` template or
+    other methods), then you can test the access now:'
+  id: totrans-170
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如果你已经配置了`ec2`实例（使用 AWS `ec2` 模板或其他方法），那么你现在可以测试访问：
+- en: '![Figure 5.18 – Ansible ping test using the AWS dynamic inventory ](img/B18383_05_18.jpg)'
+  id: totrans-171
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 5.18 – 使用 AWS 动态清单进行 Ansible ping 测试](img/B18383_05_18.jpg)'
+- en: Figure 5.18 – Ansible ping test using the AWS dynamic inventory
+  id: totrans-172
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 5.18 – 使用 AWS 动态清单进行 Ansible ping 测试
+- en: Secure Shell (SSH)
+  id: totrans-173
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 安全外壳（SSH）
+- en: SSH is a cryptographic network protocol that helps users to access the target
+    systems in a secure way. Read [https://www.techtarget.com/searchsecurity/definition/Secure-Shell](https://www.techtarget.com/searchsecurity/definition/Secure-Shell)
+    to learn more about SSH.
+  id: totrans-174
+  prefs: []
+  type: TYPE_NORMAL
+  zh: SSH 是一种加密网络协议，帮助用户以安全的方式访问目标系统。阅读 [https://www.techtarget.com/searchsecurity/definition/Secure-Shell](https://www.techtarget.com/searchsecurity/definition/Secure-Shell)
+    了解更多关于 SSH 的信息。
+- en: In the preceding exercise, you have learned how to use Ansible dynamic inventory
+    plugins and use the inventory without adding your managed node information inside
+    any static files. The procedure is more or less the same for all other cloud and
+    container platforms, as you can generally find and use suitable inventory plugins
+    to implement the dynamic inventory for them.
+  id: totrans-175
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在前面的练习中，你已经学会了如何使用 Ansible 动态清单插件，并在没有将受管节点信息添加到任何静态文件中的情况下使用清单。对于所有其他云平台和容器平台，这个过程大致相同，因为你通常可以找到并使用合适的清单插件来实现它们的动态清单。
+- en: Ansible Inventory Plugin Options
+  id: totrans-176
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 清单插件选项
+- en: 'Check the official documentation for the inventory plugin’s additional options
+    and filters: [https://docs.ansible.com/ansible/latest/plugins/inventory.xhtml](https://docs.ansible.com/ansible/latest/plugins/inventory.xhtml)
+    and [https://docs.ansible.com/ansible/latest/collections/amazon/aws/aws_ec2_inventory.xhtml](https://docs.ansible.com/ansible/latest/collections/amazon/aws/aws_ec2_inventory.xhtml)
+    and [https://docs.ansible.com/ansible/latest/user_guide/playbooks_variables.xhtml#understanding-variable-precedence](https://docs.ansible.com/ansible/latest/user_guide/playbooks_variables.xhtml#understanding-variable-precedence).'
+  id: totrans-177
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 查看官方文档以获取清单插件的附加选项和过滤器：[https://docs.ansible.com/ansible/latest/plugins/inventory.xhtml](https://docs.ansible.com/ansible/latest/plugins/inventory.xhtml)
+    和 [https://docs.ansible.com/ansible/latest/collections/amazon/aws/aws_ec2_inventory.xhtml](https://docs.ansible.com/ansible/latest/collections/amazon/aws/aws_ec2_inventory.xhtml)
+    以及 [https://docs.ansible.com/ansible/latest/user_guide/playbooks_variables.xhtml#understanding-variable-precedence](https://docs.ansible.com/ansible/latest/user_guide/playbooks_variables.xhtml#understanding-variable-precedence)。
+- en: Summary
+  id: totrans-178
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 总结
+- en: In this chapter, you have learned methods to find automation use cases in your
+    workplace and determine the feasibility and usability of these automation use
+    cases. You have also explored the importance of collaboration between teams to
+    implement better automation use cases. Later in the chapter, you learned how to
+    use the Ansible dynamic inventory and practiced using the Ansible inventory plugin
+    with the AWS `ec2` inventory plugin.
+  id: totrans-179
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，你已经学习了如何在工作场所中找到自动化使用案例，并确定这些自动化使用案例的可行性和可用性。你还探索了团队间合作在实施更好自动化使用案例中的重要性。稍后，你学习了如何使用
+    Ansible 动态清单，并练习了如何使用 AWS `ec2` 清单插件的 Ansible 清单插件。
+- en: In the next chapter, we will learn the basics of Windows automation and the
+    remote connection methods available. We will also learn the basics of network
+    automation using Ansible with practice sections.
+  id: totrans-180
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一章中，我们将学习 Windows 自动化的基础知识以及可用的远程连接方法。我们还将通过实践部分学习使用 Ansible 进行网络自动化的基础知识。
+- en: Further reading
+  id: totrans-181
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 进一步阅读
+- en: 'To learn more about the topics covered in this chapter, please visit the following
+    links:'
+  id: totrans-182
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要了解本章涉及的更多主题，请访问以下链接：
+- en: '*Ansible ServiceNow collection*: [https://github.com/ansible-collections/servicenow.itsm](https://github.com/ansible-collections/servicenow.itsm)'
+  id: totrans-183
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*Ansible ServiceNow 集合*: [https://github.com/ansible-collections/servicenow.itsm](https://github.com/ansible-collections/servicenow.itsm)'
+- en: '*Automating ServiceNow with Red Hat Ansible Automation Platform*: [https://www.ansible.com/blog/certified-collection-servicenow](https://www.ansible.com/blog/certified-collection-servicenow)'
+  id: totrans-184
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*使用 Red Hat Ansible 自动化平台自动化 ServiceNow*: [https://www.ansible.com/blog/certified-collection-servicenow](https://www.ansible.com/blog/certified-collection-servicenow)'
+- en: '*Ansible Use Cases*: [https://www.ansible.com/use-cases](https://www.ansible.com/use-cases)'
+  id: totrans-185
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*Ansible 使用案例*: [https://www.ansible.com/use-cases](https://www.ansible.com/use-cases)'
+- en: '*How to build your inventory*: [https://docs.ansible.com/ansible/latest/user_guide/intro_inventory.xhtml](https://docs.ansible.com/ansible/latest/user_guide/intro_inventory.xhtml)'
+  id: totrans-186
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*如何构建你的库存*: [https://docs.ansible.com/ansible/latest/user_guide/intro_inventory.xhtml](https://docs.ansible.com/ansible/latest/user_guide/intro_inventory.xhtml)'
+- en: '*Inventory tips*: [https://docs.ansible.com/ansible/latest/user_guide/playbooks_best_practices.xhtml#inventory-tips](https://docs.ansible.com/ansible/latest/user_guide/playbooks_best_practices.xhtml#inventory-tips)'
+  id: totrans-187
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*库存技巧*: [https://docs.ansible.com/ansible/latest/user_guide/playbooks_best_practices.xhtml#inventory-tips](https://docs.ansible.com/ansible/latest/user_guide/playbooks_best_practices.xhtml#inventory-tips)'
+- en: '*Working with dynamic inventory*: [https://docs.ansible.com/ansible/latest/user_guide/intro_dynamic_inventory.xhtml](https://docs.ansible.com/ansible/latest/user_guide/intro_dynamic_inventory.xhtml)'
+  id: totrans-188
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*使用动态库存*: [https://docs.ansible.com/ansible/latest/user_guide/intro_dynamic_inventory.xhtml](https://docs.ansible.com/ansible/latest/user_guide/intro_dynamic_inventory.xhtml)'
+- en: '*Ansible AWS collection*: [https://docs.ansible.com/ansible/latest/collections/amazon/aws/index.xhtml](https://docs.ansible.com/ansible/latest/collections/amazon/aws/index.xhtml)'
+  id: totrans-189
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*Ansible AWS 集合*: [https://docs.ansible.com/ansible/latest/collections/amazon/aws/index.xhtml](https://docs.ansible.com/ansible/latest/collections/amazon/aws/index.xhtml)'
+- en: '*Ansible and Windows*: [https://www.ansible.com/for/windows](https://www.ansible.com/for/windows)'
+  id: totrans-190
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*Ansible 与 Windows*: [https://www.ansible.com/for/windows](https://www.ansible.com/for/windows)'
+- en: '*Ansible Windows Guides*: [https://docs.ansible.com/ansible/latest/user_guide/windows.xhtml](https://docs.ansible.com/ansible/latest/user_guide/windows.xhtml)'
+  id: totrans-191
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*Ansible Windows 指南*: [https://docs.ansible.com/ansible/latest/user_guide/windows.xhtml](https://docs.ansible.com/ansible/latest/user_guide/windows.xhtml)'

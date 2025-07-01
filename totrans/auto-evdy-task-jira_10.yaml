@@ -1,0 +1,1096 @@
+- en: '*Chapter 7*: Automating Jira Software Projects'
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '*第七章*：自动化 Jira 软件项目'
+- en: Tracking software development tasks and bugs is arguably what Jira is most well-known
+    for; however, it has always come with administrative overhead in keeping issues
+    aligned and ensuring that work across projects is synchronized.
+  id: totrans-1
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 跟踪软件开发任务和 Bug 是 Jira 最为人所知的功能之一；然而，它一直伴随着管理开销，需要保持问题对齐并确保跨项目的工作同步。
+- en: Keeping on top of the administrative tasks in Jira can be frustrating at times
+    and usually means that less time can be devoted to actual development work. Introducing
+    automation can help cut down on many of the manual tasks, which leads to happier
+    and more productive team members.
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 Jira 中处理管理任务有时会令人沮丧，通常意味着无法投入更多时间进行实际开发工作。引入自动化可以减少许多手动任务，从而让团队成员更快乐、更高效。
+- en: In this chapter, we will learn how to harness automation rules to provide simple
+    yet effective productivity increases in Jira Software projects, such as how to
+    keep versions synchronized across projects.
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们将学习如何利用自动化规则，为 Jira 软件项目提供简单而有效的生产力提升，例如如何保持跨项目的版本同步。
+- en: We'll also see how aligning the statuses of an issue hierarchy using automation
+    can reduce a number of otherwise manual interactions and increase the efficiency
+    of working with issues in a software project.
+  id: totrans-4
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们还将看到，如何通过自动化对问题层级的状态进行对齐，从而减少大量手动操作，提升在软件项目中处理问题的效率。
+- en: 'We will cover the following topics in this chapter:'
+  id: totrans-5
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章将涵盖以下主题：
+- en: Managing versions across projects
+  id: totrans-6
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 跨项目管理版本
+- en: Ensuring epics and stories stay aligned
+  id: totrans-7
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 确保史诗和故事保持一致
+- en: Managing the scope of a sprint
+  id: totrans-8
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 管理 Sprint 范围
+- en: Technical requirements
+  id: totrans-9
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 技术要求
+- en: 'The requirements for this chapter are as follows:'
+  id: totrans-10
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章的要求如下：
+- en: '**Jira cloud environment**: If you don''t already have access to Jira, you
+    can create a free Jira cloud account at [https://www.atlassian.com/software/jira/free](https://www.atlassian.com/software/jira/free)
+    and ensure that you have both **Jira Software** and **Jira Service Desk** selected.'
+  id: totrans-11
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**Jira 云环境**：如果你尚未获得 Jira 访问权限，可以在[https://www.atlassian.com/software/jira/free](https://www.atlassian.com/software/jira/free)创建一个免费的
+    Jira 云账户，并确保选择了 **Jira Software** 和 **Jira Service Desk**。'
+- en: '**Jira server environment**: If you are using Jira Server (available from [https://www.atlassian.com/software/jira/download](https://www.atlassian.com/software/jira/download)),
+    ensure you have licenses for both Jira Software and Jira Service Desk. In addition,
+    you will also need to ensure that you install the *Automation for Jira* app, available
+    from the Atlassian Marketplace.'
+  id: totrans-12
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**Jira 服务器环境**：如果你正在使用 Jira 服务器（可从[https://www.atlassian.com/software/jira/download](https://www.atlassian.com/software/jira/download)下载），确保你拥有
+    Jira Software 和 Jira Service Desk 的许可证。此外，你还需要确保安装 *Automation for Jira* 应用，该应用可从
+    Atlassian 市场获取。'
+- en: In both instances, you will need to have at least **Project Administrator**
+    access to a Service Desk project and a Scrum software project to be able to follow
+    the examples in this chapter. For the examples in this chapter, we have used the
+    *IT service management project template* to create the Service Desk project and
+    the *Scrum software project template* to create the Software project.
+  id: totrans-13
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这两种情况下，你至少需要拥有 **项目管理员** 访问权限，才能在 Service Desk 项目和 Scrum 软件项目中跟随本章的示例进行操作。对于本章中的示例，我们使用了
+    *IT 服务管理项目模板* 来创建 Service Desk 项目，并使用 *Scrum 软件项目模板* 来创建软件项目。
+- en: 'You can download the latest code samples for this chapter from this book''s
+    official GitHub repository at [https://github.com/PacktPublishing/Automate-Everyday-Tasks-in-Jira](https://github.com/PacktPublishing/Automate-Everyday-Tasks-in-Jira).
+    Please visit the following link to check the CiA videos: https://bit.ly/3quqjil'
+  id: totrans-14
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以从本书的官方 GitHub 仓库下载本章的最新代码示例，地址是[https://github.com/PacktPublishing/Automate-Everyday-Tasks-in-Jira](https://github.com/PacktPublishing/Automate-Everyday-Tasks-in-Jira)。请访问以下链接查看
+    CiA 视频：https://bit.ly/3quqjil
+- en: Managing versions across projects
+  id: totrans-15
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 跨项目管理版本
+- en: A common use case with Jira Software projects is to have a public-facing project
+    where your customers can log defects and feature requests against released software,
+    and an internal project that is used by the development team to track their work.
+  id: totrans-16
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一个常见的 Jira 软件项目使用场景是，拥有一个面向公众的项目，客户可以在其中提交缺陷和功能请求，针对已发布的软件，另有一个内部项目供开发团队追踪工作。
+- en: Having this setup allows teams to triage incoming requests and select relevant
+    issues to work on without clogging up their actual project with thousands of issues.
+  id: totrans-17
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 拥有这种设置可以让团队筛选传入的请求，并选择相关的问题进行处理，而不会将实际项目中堆积成成千上万的问题。
+- en: However, realizing the benefits from this setup requires that the software versions
+    in both projects are synchronized, allowing customers to report issues against
+    the correct versions of the released software.
+  id: totrans-18
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，从这种设置中获得好处要求两个项目中的软件版本保持同步，以便客户能够针对发布的软件的正确版本报告问题。
+- en: In this section, we will explore how to use automation rules to manage the version
+    synchronization between projects.
+  id: totrans-19
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本节中，我们将探讨如何使用自动化规则来管理项目之间的版本同步。
+- en: To do this, we will need to ensure that when we release a version in the internal
+    project, we create a corresponding version in the public-facing project that customers
+    can then use when reporting bugs or creating feature requests.
+  id: totrans-20
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了做到这一点，我们需要确保当我们在内部项目中发布版本时，创建一个对应的版本在面向公众的项目中，客户可以在报告错误或创建功能请求时使用该版本。
+- en: Let's take a look at a rule that enables us to keep versions in sync across
+    projects.
+  id: totrans-21
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们来看一个规则，它可以帮助我们在多个项目之间保持版本同步。
+- en: Creating a rule to keep versions in sync across projects
+  id: totrans-22
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 创建一个规则以保持跨项目版本同步
+- en: In this example, we'll create a rule that will trigger for version releases
+    in our internal project and create and release a corresponding version in the
+    public-facing project that customers can then use when reporting issues.
+  id: totrans-23
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这个例子中，我们将创建一个规则，该规则会在我们内部项目发布版本时触发，并在面向公众的项目中创建并发布对应的版本，客户可以在报告问题时使用该版本。
+- en: Important note
+  id: totrans-24
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 重要提示
+- en: Creating automation rules that span multiple projects requires the user to create
+    the rule to have Jira administrator permissions. Project administrators are not
+    permitted to create multi-project rules.
+  id: totrans-25
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 创建跨多个项目的自动化规则要求用户创建规则时拥有Jira管理员权限。项目管理员不能创建跨项目的规则。
+- en: In this example, we are going to use two software projects in our rule. For
+    the first software project, we will create a project using the Scrum software
+    template named *My Application* with the project key *MAPP*. For the public-facing
+    support project, we will create a project using the bug tracking software template
+    named *My Application Support* with the project key *MAPS*.
+  id: totrans-26
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这个例子中，我们将在规则中使用两个软件项目。对于第一个软件项目，我们将创建一个使用Scrum软件模板的项目，命名为*我的应用程序*，项目键为*MAPP*。对于面向公众的支持项目，我们将创建一个使用Bug跟踪软件模板的项目，命名为*我的应用程序支持*，项目键为*MAPS*。
+- en: 'Let''s take a look at how to build this rule:'
+  id: totrans-27
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们来看看如何构建这个规则：
+- en: As we are working with more than a project, this rule needs to be set up by
+    a user with Jira administrator permissions.
+  id: totrans-28
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 由于我们处理的是多个项目，这个规则需要由拥有Jira管理员权限的用户设置。
+- en: Navigate to **Settings** (the cog icon in the top menu), select **System**,
+    click on the **Automation rules** tab in the left menu, and then click on **Create
+    rule**.
+  id: totrans-29
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 进入**设置**（顶部菜单中的齿轮图标），选择**系统**，点击左侧菜单中的**自动化规则**选项卡，然后点击**创建规则**。
+- en: Select the **Version released** trigger and click **Save**.
+  id: totrans-30
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 选择**版本发布**触发器并点击**保存**。
+- en: As both projects configured in this rule can cause this rule to fire, we need
+    to ensure that it only continues executing when the MAPP project causes it to
+    fire. To do this, select `{{version.project.key}}`
+  id: totrans-31
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 由于这个规则中配置的两个项目都可能触发规则，我们需要确保只有当MAPP项目触发时，规则才继续执行。为此，选择`{{version.project.key}}`。
+- en: '`equals`'
+  id: totrans-32
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`equals`'
+- en: '`MAPP`'
+  id: totrans-33
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`MAPP`'
+- en: Next, select `{{version.name}}` smart value to select the name of the version
+    that caused the rule to fire.
+  id: totrans-34
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 接下来，选择`{{version.name}}`智能值，以选择触发规则的版本名称。
+- en: Expand the **More options** disclosure and select your application support project
+    in the **Project** field. In the case of this example, it is **My Application
+    Support (MAPS)**.
+  id: totrans-35
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 展开**更多选项**，在**项目**字段中选择您的应用支持项目。对于这个例子，它是**我的应用支持 (MAPS)**。
+- en: Click `{{version.name}}` smart value to ensure the correct version is released.
+  id: totrans-36
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击`{{version.name}}`智能值以确保发布正确的版本。
+- en: Next, click `Keep support project versions in sync`.
+  id: totrans-37
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 接下来，点击`保持支持项目版本同步`。
+- en: Set the `Multiple projects`, and in the `My Application` and `My Application
+    Support`.
+  id: totrans-38
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 设置`多个项目`，并在`我的应用程序`和`我的应用程序支持`中进行选择。
+- en: Finally, click **Save**, and then click **Turn it on** to publish and enable
+    the rule.
+  id: totrans-39
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 最后，点击**保存**，然后点击**开启**来发布并启用该规则。
+- en: In this section, we have learned how to use automation rules to keep versions
+    synchronized across multiple projects, enabling customers to raise bugs and features
+    outside of the development project.
+  id: totrans-40
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本节中，我们学习了如何使用自动化规则来保持多个项目之间的版本同步，使客户能够在开发项目之外提出错误和功能请求。
+- en: In the following section, we will look at how to ensure that the status of epics
+    in a software project stays aligned to the underlying stories in the project.
+  id: totrans-41
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在接下来的部分，我们将了解如何确保软件项目中的史诗状态与项目中的基础故事保持一致。
+- en: Ensuring epics and stories are aligned
+  id: totrans-42
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 确保史诗和故事保持一致
+- en: Working in software projects using the **Scrum Agile framework** generally involves
+    having a hierarchy of issue types.
+  id: totrans-43
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用**Scrum敏捷框架**进行软件项目工作通常涉及一套问题类型的层级结构。
+- en: In a typical Scrum-based agile hierarchy, you will have epics that define larger
+    pieces of work, or business requirements, which may span multiple sprints.
+  id: totrans-44
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在典型的基于 Scrum 的敏捷层级中，你会有史诗来定义较大的工作任务或业务需求，这些任务可能跨越多个迭代周期。
+- en: These are broken down into stories (or user stories), which are high-level definitions
+    of the requirements that can be delivered in a time-boxed period or sprint.
+  id: totrans-45
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这些被分解为故事（或用户故事），它们是需求的高层次定义，可以在限定的时间周期或迭代中交付。
+- en: Stories can then be decomposed into tasks, modeled as sub-tasks of the story,
+    which are specific, measurable items of work required to get the story done.
+  id: totrans-46
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后，故事可以被分解为任务，作为故事的子任务，这些任务是完成故事所需的具体、可衡量的工作项。
+- en: In this section, we'll look at how we can use automation rules to keep the statuses
+    of the issues in this hierarchy in sync so that when work is started on a sub-task,
+    the linked issues above the sub-task move to the correct status without needing
+    manual intervention.
+  id: totrans-47
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本节中，我们将查看如何使用自动化规则来保持这个层级中问题的状态同步，这样当子任务开始工作时，子任务上方的相关问题将自动转换到正确的状态，无需人工干预。
+- en: Creating a rule to keep epics and stories synchronized
+  id: totrans-48
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 创建一个规则以保持史诗和故事的同步
+- en: In this example, we'll create a rule that triggers when a sub-task is transitioned
+    to a new status, and depending on the status of the sub-task, the rule will automatically
+    transition its parent story to the correct status if required.
+  id: totrans-49
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这个例子中，我们将创建一个规则，当子任务转换到新的状态时触发，并根据子任务的状态，如果需要，规则会自动将其父级故事转换到正确的状态。
+- en: In addition, we'll use the same rule to transition the epic linked to the story
+    to the correct status when the story transitions to a new status, so we'll need
+    to allow the rule to be triggered by other rules.
+  id: totrans-50
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 此外，我们还将使用相同的规则，当故事转换到新状态时，自动将与故事相关联的史诗转换到正确的状态，因此我们需要允许规则通过其他规则触发。
+- en: Important note
+  id: totrans-51
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 重要提示
+- en: Allowing rules to be triggered by other rules can inadvertently lead to execution
+    loops where a rule could be triggered indefinitely. The automation rule engine
+    includes loop detection to prevent infinite loops; however, an incorrectly configured
+    rule could still cause an execution loop up to a depth of 10 levels before the
+    rule execution is terminated.
+  id: totrans-52
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 允许规则通过其他规则触发可能会无意中导致执行循环，其中规则可能会被无限触发。自动化规则引擎包括循环检测机制，以防止无限循环；然而，配置不当的规则仍然可能导致执行循环，最多可达到10层深度，之后规则执行会被终止。
+- en: 'Let''s take a look at this rule now:'
+  id: totrans-53
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们来看看这个规则：
+- en: In your Jira Software project, navigate to **Project settings**, click on the
+    **Automation** link in the project settings menu, and then click **Create rule**.
+  id: totrans-54
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在你的 Jira 软件项目中，导航到**项目设置**，点击项目设置菜单中的**自动化**链接，然后点击**创建规则**。
+- en: Select the **Issue transitioned** trigger and click **Save**. Leave both the
+    **From status** and **To status** fields blank as we want the rule to fire for
+    every transition.
+  id: totrans-55
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 选择**问题转换**触发器并点击**保存**。保持**从状态**和**到状态**字段为空，因为我们希望规则在每次转换时都能触发。
+- en: The first thing we want to check is whether progress has started on a sub-task
+    and move its parent story to `issueType = Sub-task AND statusCategory = "In Progress"`
+  id: totrans-56
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 我们首先要检查的是子任务是否已经开始进展，并将其父级故事转移到`issueType = Sub-task AND statusCategory = "In
+    Progress"`。
+- en: Now, select **Branch rule / related issues**, and in the **Type of related issues**
+    field, select **Parent** and click **Save**.
+  id: totrans-57
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在，选择**分支规则/相关问题**，在**相关问题类型**字段中选择**父级**，然后点击**保存**。
+- en: Then, select **New action** followed by **Transition issue**. For this example,
+    ensure that the **Destination status** field is set to **Copy from trigger issue**,
+    and then click **Save**.
+  id: totrans-58
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 然后，选择**新建操作**，接着选择**转换问题**。对于这个例子，确保**目标状态**字段设置为**从触发问题复制**，然后点击**保存**。
+- en: The next stage of the rule is to ensure the user story transitions to a completed
+    status when all of its sub-tasks are done. To do this, click on `issueType = Sub-task
+    AND statusCategory = Done`
+  id: totrans-59
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 规则的下一个阶段是确保当所有子任务完成时，用户故事能够转换为完成状态。为此，点击`issueType = Sub-task AND statusCategory
+    = Done`。
+- en: Next, select **Branch rule / related issues**, and again, in the **Type of related
+    issues** field, select **Parent**, and then click **Save**.
+  id: totrans-60
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 接下来，选择**分支规则/相关问题**，在**相关问题类型**字段中再次选择**父级**，然后点击**保存**。
+- en: At this point, we need to check that all the sub-tasks for the parent issue
+    selected in the `Sub-tasks`
+  id: totrans-61
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 此时，我们需要检查`子任务`中选定父级问题的所有子任务。
+- en: '`All match specified JQL`'
+  id: totrans-62
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`所有匹配指定的 JQL`'
+- en: '`statusCategory = Done`'
+  id: totrans-63
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`statusCategory = Done`'
+- en: If the condition mentioned in *step 8* matches and all sub-tasks of the story
+    have a status whose category is done, then we need to transition the story itself
+    to a done status. To do this, select **New action** followed by **Transition issue**
+    and ensure the **Destination** field is set to **Copy from trigger issue**, and
+    then click **Save**.
+  id: totrans-64
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如果在*第8步*中提到的条件匹配，并且故事的所有子任务的状态类别为完成，那么我们需要将故事本身转换为完成状态。为此，选择**新建操作**，然后选择**转换问题**，并确保**目标**字段设置为**从触发问题复制**，然后点击**保存**。
+- en: Important note
+  id: totrans-65
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 重要说明
+- en: When you use **Copy from trigger issue** for statuses, you need to ensure that
+    both issue types use the same workflow or that the workflows share the same statuses.
+    If this is not the case, you will need to select the actual status you wish to
+    transition to.
+  id: totrans-66
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 当你使用**从触发问题复制**来处理状态时，你需要确保两种问题类型使用相同的工作流，或者这些工作流共享相同的状态。如果不是这种情况，你将需要选择你希望转换到的实际状态。
+- en: Now that we've handled keeping the story in sync with its sub-tasks, we need
+    to handle keeping epics in sync with their underlying stories.
+  id: totrans-67
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在我们已经处理好了将故事与其子任务同步的问题，接下来我们需要处理将 Epic 与其底层故事同步的问题。
+- en: First, we'll handle moving epics to `issueType = Story AND status = "In Progress"`
+  id: totrans-68
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 首先，我们将处理将 Epic 移动到`issueType = Story AND status = "In Progress"`。
+- en: Then, select **Branch rule / related issues**, and in the **Type of related
+    issues** field, select **Epic (parent)** and click **Save**.
+  id: totrans-69
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 然后，选择**分支规则/相关问题**，在**相关问题类型**字段中选择**Epic（父级）**，然后点击**保存**。
+- en: Next, select **New action**, and then select **Transition issue**. Make sure
+    the **Destination** field is set to **Copy from trigger issue** for this example,
+    and then click **Save**.
+  id: totrans-70
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 接下来，选择**新建操作**，然后选择**转换问题**。确保**目标**字段设置为**从触发问题复制**（对于本示例），然后点击**保存**。
+- en: The final conditional branch in this rule will ensure that an epic is automatically
+    transitioned to a completed status when all of its underlying stories are complete.
+  id: totrans-71
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 该规则中的最终条件分支将确保当所有底层故事完成时，Epic 自动转换为完成状态。
+- en: Do this by clicking `issueType = Story AND statusCategory = Done`
+  id: totrans-72
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 通过点击`issueType = Story AND statusCategory = Done`来完成此操作。
+- en: Now, select `Epic (parent)` and click **Save**.
+  id: totrans-73
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在，选择`Epic（父级）`并点击**保存**。
+- en: Like we did for sub-tasks, we need to ensure that all the stories in the epic
+    are completed before we can automatically transition the epic to a completed status.
+  id: totrans-74
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 像我们为子任务做的那样，我们需要确保 Epic 中的所有故事都完成后，才能自动将 Epic 转换为完成状态。
+- en: We do this by selecting `Stories (or other issues in this Epic)`
+  id: totrans-75
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 我们通过选择`Stories（或此 Epic 中的其他问题）`来完成此操作。
+- en: '`All match specified JQL`'
+  id: totrans-76
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`所有匹配指定的 JQL`'
+- en: '`statusCategory = Done`'
+  id: totrans-77
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`statusCategory = Done`'
+- en: To actually transition the epic, we need to add an action, so select **New action**
+    followed by **Transition issue**.
+  id: totrans-78
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 为了真正地转换 Epic，我们需要添加一个操作，选择**新建操作**，然后选择**转换问题**。
+- en: Ensure that the **Destination** field is set to **Copy from trigger issue**
+    for this example, and then click **Save**.
+  id: totrans-79
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 确保**目标**字段设置为**从触发问题复制**（对于本示例），然后点击**保存**。
+- en: One of the requirements for this rule is that it is able to fire itself to ensure
+    that all issues in the hierarchy are updated to the correct status.
+  id: totrans-80
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 这个规则的一个要求是它能够触发自身，确保层级中的所有问题都更新到正确的状态。
+- en: In order to achieve this, we need to set the rule option that allows rules to
+    be triggered by other rules.
+  id: totrans-81
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 为了实现这一点，我们需要设置一个允许规则由其他规则触发的规则选项。
+- en: Select **Rule details** in the rule-chain view on the left. In the **Name**
+    field, set the name of the rule to **Keep issue hierarchy statuses in sync** and
+    ensure that the **Allow rule trigger** checkbox is selected.
+  id: totrans-82
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在左侧的规则链视图中选择**规则详情**。在**名称**字段中，将规则名称设置为**保持问题层级状态同步**，并确保选中**允许规则触发**复选框。
+- en: 'Your rule should look similar to the following two screenshots:'
+  id: totrans-83
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 你的规则应该类似于以下两张截图：
+- en: '![Figure 7.2 – Rule to keep epics and stories in sync (part 1)'
+  id: totrans-84
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '![图 7.2 – 保持史诗与故事同步的规则（第 1 部分）](img/B16551_Figure_7.2.jpg)'
+- en: '](img/B16551_Figure_7.2.jpg)'
+  id: totrans-85
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '](img/B16551_Figure_7.2.jpg)'
+- en: Figure 7.2 – Rule to keep epics and stories in sync (part 1)
+  id: totrans-86
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 图 7.2 – 保持史诗与故事同步的规则（第 1 部分）
+- en: In the preceding screenshot, we can see the rule details and the first part
+    of the rule chain dealing with keeping stories in sync with sub-tasks.
+  id: totrans-87
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在前面的截图中，我们可以看到规则的详细信息，以及处理保持故事与子任务同步的规则链的第一部分。
+- en: '![Figure 7.3 – Keeping epics and stories in sync (part 2)'
+  id: totrans-88
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '![图 7.3 – 保持史诗与故事同步（第 2 部分）](img/B16551_Figure_7.3.jpg)'
+- en: '](img/B16551_Figure_7.3.jpg)'
+  id: totrans-89
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '](img/B16551_Figure_7.3.jpg)'
+- en: Figure 7.3 – Keeping epics and stories in sync (part 2)
+  id: totrans-90
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 图 7.3 – 保持史诗与故事同步（第 2 部分）
+- en: In this screenshot, we can see the second part of the rule chain, which deals
+    with keeping epics in sync with their underlying user stories.
+  id: totrans-91
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在这张截图中，我们可以看到规则链的第二部分，它处理保持史诗与其底层用户故事同步的问题。
+- en: Finally, click **Save**, and then click **Turn it on** to save and publish the
+    rule.
+  id: totrans-92
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 最后，点击 **保存**，然后点击 **启用** 以保存并发布规则。
+- en: In this section, we have learned how to use automation rules to keep a hierarchy
+    of issues in sync with each other and how we can allow a rule to trigger itself
+    in order to achieve this.
+  id: totrans-93
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这一节中，我们学习了如何使用自动化规则保持问题层级之间的同步，以及如何允许规则触发自身来实现这一目标。
+- en: In the next section, we'll take a look at how we can automatically adjust the
+    scope of a sprint by adding linked issues into the current sprint as well as notify
+    the team when the scope of a sprint is changed.
+  id: totrans-94
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一节中，我们将看看如何通过将关联问题自动添加到当前冲刺中来调整冲刺的范围，并在冲刺范围发生变化时通知团队。
+- en: Managing the scope of a sprint
+  id: totrans-95
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 管理冲刺的范围
+- en: During any development life cycle, it is inevitable that at some point there
+    will be a change to the scope of the sprint, either due to last-minute changes
+    to the requirements or by the need to include an urgent bug fix.
+  id: totrans-96
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在任何开发生命周期中，难免会在某些时刻由于需求的临时变化或需要包括紧急 bug 修复，导致冲刺范围的变化。
+- en: In this section, we'll firstly look at how we can change the scope of a sprint
+    by including a newly linked issue to the sprint.
+  id: totrans-97
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这一节中，我们首先将探讨如何通过将一个新关联的问题添加到冲刺中来改变冲刺的范围。
+- en: We'll also look at how we can use automation rules to monitor the sprint and
+    notify the team when the scope changes.
+  id: totrans-98
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们还将探讨如何使用自动化规则监控冲刺，并在冲刺范围变化时通知团队。
+- en: Creating a rule to add a linked issue to the sprint
+  id: totrans-99
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 创建规则以将关联问题添加到冲刺中
+- en: In this example, we are going to make use of the fact that we have both a private
+    internal software development project (*My Application* with key *MAPP*) and a
+    public support project (*My Application Support* with key *MAPS*) where customers
+    can raise requests and report bugs.
+  id: totrans-100
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这个例子中，我们将利用我们拥有的两个项目：一个是私有的内部软件开发项目（*我的应用程序*，关键字 *MAPP*），另一个是公共支持项目（*我的应用程序支持*，关键字
+    *MAPS*），客户可以在该项目中提交请求和报告错误。
+- en: We are also going to assume that we have a team that monitors the public support
+    project and triages incoming requests.
+  id: totrans-101
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们还将假设有一个团队在监控公共支持项目，并处理收到的请求。
+- en: Part of this triage involves examining high-priority bugs submitted by the organization's
+    top customers and if verified, will create a linked bug in the private development
+    project and add it to the current sprint.
+  id: totrans-102
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这部分处理包括检查由组织的顶级客户提交的高优先级 bug，如果验证通过，将在私有开发项目中创建一个关联 bug，并将其添加到当前冲刺中。
+- en: 'Let''s take a look at how we can achieve this with an automation rule:'
+  id: totrans-103
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们看看如何通过自动化规则实现这一目标：
+- en: As we are working with more than a project, this rule needs to be set up by
+    a user with Jira administrator permissions.
+  id: totrans-104
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 由于我们正在处理的不仅仅是一个项目，因此这个规则需要由具有 Jira 管理员权限的用户来设置。
+- en: Navigate to **Settings** (the cog icon in the top menu), select **System**,
+    and then click on the **Automation rules** tab in the left menu and click **Create
+    rule**.
+  id: totrans-105
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 转到 **设置**（顶部菜单中的齿轮图标），选择 **系统**，然后点击左侧菜单中的 **自动化规则** 标签，并点击 **创建规则**。
+- en: Select the `To Do`
+  id: totrans-106
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 选择 `待办`
+- en: '`In Progress`'
+  id: totrans-107
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`进行中`'
+- en: Next, we need to add in some conditions to ensure we only select the highest
+    priority bugs in the support project.
+  id: totrans-108
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 接下来，我们需要添加一些条件，确保我们只选择支持项目中优先级最高的 bug。
+- en: We will use multiple issue field conditions in this example as they have a performance
+    advantage over using a JQL condition.
+  id: totrans-109
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在这个例子中，我们将使用多个问题字段条件，因为它们比使用 JQL 条件具有性能优势。
+- en: Check for the correct project by selecting `Project`
+  id: totrans-110
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 通过选择 `项目` 来检查正确的项目
+- en: '`equals`'
+  id: totrans-111
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`等于`'
+- en: '`My Application Support (MAPS)`'
+  id: totrans-112
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`我的应用程序支持（MAPS）`'
+- en: Next, we'll ensure that this rule only executes for bug issue types.
+  id: totrans-113
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 接下来，我们将确保此规则仅适用于 bug 类型的问题。
+- en: Select `Issue Type`
+  id: totrans-114
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 选择 `问题类型`
+- en: '`equals`'
+  id: totrans-115
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`等于`'
+- en: '`Bug`'
+  id: totrans-116
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`Bug`'
+- en: The last condition is to check that the bug has the highest priority.
+  id: totrans-117
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 最后的条件是检查该 bug 是否为最高优先级。
+- en: Select `Priority`
+  id: totrans-118
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 选择 `优先级`
+- en: '`is one of`'
+  id: totrans-119
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`是其中之一`'
+- en: '`Highest`'
+  id: totrans-120
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`最高`'
+- en: The final step in this rule is to create the linked issue in our development
+    project and add it to the current sprint.
+  id: totrans-121
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 此规则的最后一步是创建关联问题并将其添加到当前的开发项目和冲刺中。
+- en: Select `My Application (MAPP)`
+  id: totrans-122
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 选择 `My Application (MAPP)`
+- en: '`Same issue type`'
+  id: totrans-123
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`相同问题类型`'
+- en: '`relates to`'
+  id: totrans-124
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`与...相关`'
+- en: '`Trigger issue`'
+  id: totrans-125
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`触发问题`'
+- en: '`Active Sprint (My Application Scrum Board)`'
+  id: totrans-126
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`当前冲刺（My Application Scrum Board）`'
+- en: 'Your rule should now look similar to the following screenshot:'
+  id: totrans-127
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 你的规则现在应该类似于以下截图：
+- en: '![Figure 7.4 – Creating a linked issue in the active sprint'
+  id: totrans-128
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '![图 7.4 – 在当前冲刺中创建关联问题'
+- en: '](img/B16551_Figure_7.4.jpg)'
+  id: totrans-129
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '](img/B16551_Figure_7.4.jpg)'
+- en: Figure 7.4 – Creating a linked issue in the active sprint
+  id: totrans-130
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 图 7.4 – 在当前冲刺中创建关联问题
+- en: Finally, select `Add critical bug to active sprint`.
+  id: totrans-131
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 最后，选择 `将关键 bug 添加到当前冲刺`。
+- en: Set the **Scope** field to **Multiple projects** and in the **Restrict to projects**
+    field, select your internal and support projects. In this case, we'll select **My
+    Application** and **My Application Support**.
+  id: totrans-132
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 将 **范围** 字段设置为 **多个项目**，在 **限制为项目** 字段中，选择你的内部和支持项目。在这个例子中，我们将选择 **My Application**
+    和 **My Application Support**。
+- en: Finally, click **Save**, and then click **Turn it on** to publish and enable
+    the rule.
+  id: totrans-133
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 最后，点击 **保存**，然后点击 **启用** 来发布并启用规则。
+- en: In this example, we have learned how to use automation rules to create a linked
+    issue in a project and add it to the current sprint.
+  id: totrans-134
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这个示例中，我们学会了如何使用自动化规则创建项目中的关联问题并将其添加到当前冲刺。
+- en: In the next example, we'll see how we can watch for scope changes to the current
+    sprint and notify the development team when this occurs.
+  id: totrans-135
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一个示例中，我们将展示如何监控当前冲刺的范围变化，并在发生变化时通知开发团队。
+- en: Creating a rule to notify the team when the scope changes
+  id: totrans-136
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 创建一个规则，当范围发生变化时通知团队
+- en: When the scope of an active sprint changes, we want to keep the team informed
+    so that everyone on the team is kept abreast of what is happening.
+  id: totrans-137
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当当前冲刺的范围发生变化时，我们希望让团队保持知情，这样团队中的每个人都能了解发生了什么。
+- en: To do this, we'll create a rule that listens for a change in the **Sprint**
+    field of an issue and if that sprint is currently the active sprint, we'll send
+    a notification to our team's Slack channel.
+  id: totrans-138
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了实现这一点，我们将创建一个规则，监听问题中 **冲刺** 字段的变化，如果该冲刺当前是激活的冲刺，我们将向团队的 Slack 渠道发送通知。
+- en: For this example, we'll send notifications to the **#sprint-updates** Slack
+    channel using the Slack integration that we set up in [*Chapter 4*](B16551_04_Final_ASB_ePub.xhtml#_idTextAnchor080),
+    *Sending Automated Notifications*.
+  id: totrans-139
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这个示例中，我们将通过我们在 [*第 4 章*](B16551_04_Final_ASB_ePub.xhtml#_idTextAnchor080) 中设置的
+    Slack 集成，将通知发送到 **#sprint-updates** Slack 渠道，*发送自动化通知*。
+- en: 'Let''s take a look at how this rule works:'
+  id: totrans-140
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们看看这个规则是如何工作的：
+- en: In your Jira Software project, navigate to **Project settings**, click on the
+    **Automation** link in the **Project Settings** menu, and then click **Create
+    rule**.
+  id: totrans-141
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在你的 Jira Software 项目中，导航至 **项目设置**，点击 **项目设置** 菜单中的 **自动化** 链接，然后点击 **创建规则**。
+- en: As there is no direct way to monitor changes to the active sprint, we'll instead
+    set our rule to trigger when the **Sprint** field in an issue is changed.
+  id: totrans-142
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 由于没有直接的方式来监控当前冲刺的变化，我们将设置规则，在问题的 **冲刺** 字段发生更改时触发。
+- en: To do this, we'll select the **Field value changed** trigger. In the **Fields
+    to monitor for changes** dropdown, select **Sprint**.
+  id: totrans-143
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 为了实现这一点，我们将选择 **字段值更改** 触发器。在 **监控更改的字段** 下拉菜单中选择 **冲刺**。
+- en: Leave the **For** field blank that corresponds to **All issue operations**,
+    and click **Save**.
+  id: totrans-144
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 保持 **For** 字段为空，选择 **所有问题操作**，然后点击 **保存**。
+- en: We need to ensure that the sprint that the issue was added to corresponds with
+    the currently active sprint.
+  id: totrans-145
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 我们需要确保问题添加到的冲刺与当前激活的冲刺相对应。
+- en: We can achieve this by selecting `sprint in openSprints()`
+  id: totrans-146
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 我们可以通过选择 `冲刺在 openSprints()` 来实现此功能
+- en: Next, we'll select `#sprint-updates`.
+  id: totrans-147
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 接下来，我们将选择 `#sprint-updates`。
+- en: 'Your rule should look similar to the following screenshot:'
+  id: totrans-148
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 你的规则应类似于以下截图：
+- en: '![Figure 7.5 – Monitoring scope changes to a sprint'
+  id: totrans-149
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '![图 7.5 – 监控冲刺范围变化'
+- en: '](img/B16551_Figure_7.5.jpg)'
+  id: totrans-150
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '](img/B16551_Figure_7.5.jpg)'
+- en: Figure 7.5 – Monitoring scope changes to a sprint
+  id: totrans-151
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 图 7.5 – 监控冲刺范围变化
+- en: We also need to ensure that this rule can be triggered by other automation rules;
+    otherwise, scope changes created by other rules will not cause notifications to
+    be sent.
+  id: totrans-152
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 我们还需要确保这个规则可以被其他自动化规则触发；否则，其他规则所创建的范围变更将不会触发通知。
+- en: Select **Rule details** in the rule-chain view on the left. In the **Name**
+    field, set the name of the rule to **Send notification to Slack when Sprint scope
+    changes** and ensure that the **Allow rule trigger** checkbox is selected.
+  id: totrans-153
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在规则链视图的左侧选择**规则详情**。在**名称**字段中，将规则名称设置为**当冲刺范围变化时发送通知到 Slack**，并确保勾选了**允许规则触发**复选框。
+- en: Finally, click **Save**, and then click **Turn it on** to publish and enable
+    the rule.
+  id: totrans-154
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 最后，点击**保存**，然后点击**启用**以发布并启用该规则。
+- en: We have learned in this example how we can use the sprint field in an issue
+    to monitor scope changes of a sprint and keep the team informed of these changes.
+  id: totrans-155
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这个示例中，我们学习了如何使用问题中的冲刺字段来监控冲刺的范围变化，并保持团队对这些变化的知情。
+- en: By cutting down on manual effort using automation to keep issues synchronized
+    and teams updated, you will enable your teams to be more efficient as they no
+    longer need to manage the project tool and can instead focus on their actual tasks.
+  id: totrans-156
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通过使用自动化减少手动操作，保持问题同步并及时更新团队，你将使团队更高效，因为他们不再需要管理项目工具，而可以专注于实际任务。
+- en: Summary
+  id: totrans-157
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 摘要
+- en: In this chapter, we learned how we can use automation rules to minimize the
+    administrative overhead usually involved in managing and working with Jira Software
+    projects, and indeed these can be applied to most project types within Jira.
+  id: totrans-158
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们学习了如何使用自动化规则来最小化管理和操作 Jira 软件项目时通常涉及的管理开销，事实上，这些规则可以应用于 Jira 中的大多数项目类型。
+- en: In particular, we learned how to keep versions synchronized across projects,
+    which is especially useful when you have a software project spanning multiple
+    Jira projects, whether they be internal team projects or, as in our example, public
+    projects for customers to log and track requests.
+  id: totrans-159
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 特别是，我们学习了如何在项目之间保持版本同步，当你有一个跨多个 Jira 项目的软件项目时，这一点尤其有用，无论这些项目是内部团队项目，还是像我们示例中的那样，供客户记录和跟踪请求的公共项目。
+- en: Keeping hierarchies of issues in sync is a very common task faced in Jira projects
+    and in this chapter, we learned how to use a looping rule to achieve this using
+    the most common hierarchy encountered in Jira Software projects. Lastly, we learned
+    how to maintain visibility of any scope changes to a sprint and how we can also
+    use automation to adjust the scope of a sprint.
+  id: totrans-160
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 保持问题层次结构同步是 Jira 项目中非常常见的任务，在本章中，我们学习了如何使用循环规则来实现这一点，利用 Jira 软件项目中最常见的层次结构。最后，我们学习了如何保持对冲刺范围变化的可见性，并且如何使用自动化调整冲刺范围。
+- en: With the exception of the sprint-specific examples we have looked at, the topics
+    we have covered in this chapter apply equally to any other style of software development,
+    including Kanban and waterfall, with some minor adjustments.
+  id: totrans-161
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 除了我们所看到的与冲刺相关的示例，本章中讨论的主题同样适用于任何其他类型的软件开发，包括看板和瀑布流，只需做一些小的调整。
+- en: Applying what we have learned in this chapter to your projects using automation
+    will help reduce the amount of manual and repetitive administrative work and in
+    doing so will enable your users to be both more efficient and productive.
+  id: totrans-162
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 将本章中学到的知识应用到你的项目中，使用自动化规则将有助于减少手动和重复的行政工作，从而使用户更加高效和富有生产力。
+- en: In the next chapter, we'll look at how to leverage automation rules to integrate
+    with tools such as GitHub and Bitbucket to support DevOps processes.
+  id: totrans-163
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一章，我们将探讨如何利用自动化规则与 GitHub 和 Bitbucket 等工具集成，以支持 DevOps 流程。

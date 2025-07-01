@@ -1,0 +1,1861 @@
+- en: '15'
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '15'
+- en: Automating Non-Standard Platforms and Operations
+  id: totrans-1
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 自动化非标准平台和操作
+- en: So far, you have learned about the different systems and platforms (managed
+    nodes) such as Linux systems, Microsoft Windows systems, network devices, and
+    cloud platforms, all of which can be automated using Ansible. You have used different
+    methods and protocols to connect to the target system or platform to execute the
+    automated operations. You do not need to understand how complex operations are
+    running inside these systems because Ansible will understand and take appropriate
+    actions on the target systems to reach the desired state.
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 到目前为止，您已经了解了不同的系统和平台（管理节点），例如 Linux 系统、Microsoft Windows 系统、网络设备和云平台，这些都可以通过
+    Ansible 进行自动化。您已经使用了不同的方法和协议来连接目标系统或平台，执行自动化操作。您无需了解这些系统内部如何运行复杂操作，因为 Ansible
+    会理解并对目标系统采取适当的行动，以达到所需的状态。
+- en: What if there are no standard Ansible modules or connection methods available
+    for a specific operation on the managed node? Or what if the module is missing
+    some feature you are looking for? For example, let’s say you want to automate
+    a machine that doesn’t have the supported Python version installed, and you want
+    to use Ansible to automate this Python installation or run raw commands on a firewall
+    device that does not have an appropriate module available.
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果没有标准的 Ansible 模块或连接方法可用于管理节点上的特定操作怎么办？或者，如果模块缺少您需要的某个功能呢？例如，假设您想要自动化一台没有安装支持的
+    Python 版本的机器，并且您想使用 Ansible 来自动化 Python 安装，或在没有合适模块的防火墙设备上运行原始命令。
+- en: Since Ansible is flexible and modular, you have multiple ways to overcome these
+    challenges. In this chapter, you will learn how to automate such non-standard
+    operations using Ansible.
+  id: totrans-4
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于 Ansible 灵活且模块化，您有多种方式来克服这些挑战。在本章中，您将学习如何使用 Ansible 自动化这些非标准操作。
+- en: 'In this chapter, we will cover the following topics:'
+  id: totrans-5
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们将覆盖以下主题：
+- en: Executing low-down raw commands
+  id: totrans-6
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 执行低级原始命令
+- en: Using raw commands for network operations
+  id: totrans-7
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用原始命令进行网络操作
+- en: Using API calls for automation
+  id: totrans-8
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用 API 调用进行自动化
+- en: Creating custom modules for Ansible
+  id: totrans-9
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 为 Ansible 创建自定义模块
+- en: We will start with the Ansible `raw` module and the lifesaving situations where
+    the `raw` module helps automate non-standard use cases. Then, you will learn how
+    to use API calls to automate operations when Ansible modules or SSH-based connections
+    are not available. You will also explore custom Ansible modules and how to develop
+    simple custom modules using Python.
+  id: totrans-10
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将从 Ansible 的`raw`模块开始，并探讨`raw`模块帮助自动化非标准用例的救命场景。然后，您将学习如何在 Ansible 模块或基于 SSH
+    的连接不可用时，使用 API 调用来自动化操作。您还将探索自定义 Ansible 模块，以及如何使用 Python 开发简单的自定义模块。
+- en: Technical requirements
+  id: totrans-11
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 技术要求
+- en: 'You will need the following technical requirements for this chapter:'
+  id: totrans-12
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 您需要以下技术要求来完成本章内容：
+- en: A Linux machine for the Ansible control node
+  id: totrans-13
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 用于 Ansible 控制节点的 Linux 机器
+- en: Basic knowledge of commands for network devices (for example, FortiOS and Cisco
+    ASA)
+  id: totrans-14
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 网络设备命令的基础知识（例如，FortiOS 和 Cisco ASA）
+- en: Basic knowledge of REST API endpoints and their usages
+  id: totrans-15
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: REST API 端点及其用法的基础知识
+- en: Basic knowledge of bash scripting and the Python programming language
+  id: totrans-16
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Bash 脚本编写和 Python 编程语言的基础知识
+- en: All the Ansible artifacts, commands, and snippets for this chapter can be found
+    in this book’s GitHub repository at [https://github.com/PacktPublishing/Ansible-for-Real-life-Automation/tree/main/Chapter-15](https://github.com/PacktPublishing/Ansible-for-Real-life-Automation/tree/main/Chapter-15).
+  id: totrans-17
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章的所有 Ansible 工件、命令和代码片段都可以在本书的 GitHub 仓库中找到，地址为 [https://github.com/PacktPublishing/Ansible-for-Real-life-Automation/tree/main/Chapter-15](https://github.com/PacktPublishing/Ansible-for-Real-life-Automation/tree/main/Chapter-15)。
+- en: Executing low-down raw commands
+  id: totrans-18
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 执行低级原始命令
+- en: 'So far, you have learned about different Ansible modules and collections for
+    developing automation content. Most of these modules expect a supported Python
+    version on the target node (or PowerShell for Microsoft Windows) to execute the
+    automation scripts in the backend (refer to Ansible’s managed node requirements
+    documentation for more details: [https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.xhtml#managed-node-requirements](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.xhtml#managed-node-requirements)).
+    When there is no required Python version or packages available, then you need
+    to install it manually (or using some scripts) on every node before Ansible can
+    automate the tasks on that nodes. When several managed nodes need to onboard to
+    Ansible, then it will be a tedious task to log into each node and install these
+    dependencies manually. In such situations, it is possible to execute the raw commands
+    (such as the ones you use inside a bash script or PowerShell script) to install
+    and configure the systems, as follows:'
+  id: totrans-19
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 到目前为止，你已经了解了不同的 Ansible 模块和集合，用于开发自动化内容。大多数这些模块要求在目标节点上有支持的 Python 版本（或 Microsoft
+    Windows 的 PowerShell）来执行后端的自动化脚本（有关更多详细信息，请参考 Ansible 的管理节点要求文档：[https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.xhtml#managed-node-requirements](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.xhtml#managed-node-requirements)）。当没有所需的
+    Python 版本或软件包时，你需要手动安装它（或使用某些脚本）到每个节点，才能让 Ansible 在这些节点上自动化任务。当多个管理节点需要加入到 Ansible
+    时，逐一登录每个节点并手动安装这些依赖项将是一项繁琐的任务。在这种情况下，可以执行原始命令（如你在 bash 脚本或 PowerShell 脚本中使用的命令）来安装和配置系统，具体如下：
+- en: '[PRE0]'
+  id: totrans-20
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: 'Before using the low-down raw commands, please note the following:'
+  id: totrans-21
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在使用低级原始命令之前，请注意以下几点：
+- en: Low-down raw commands are the same commands that you use inside the system to
+    handle the operations manually.
+  id: totrans-22
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 低级原始命令与在系统中手动处理操作时使用的命令相同。
+- en: These low-down raw commands will not go through the Ansible module system; instead,
+    they will be executed through the configured remote shell.
+  id: totrans-23
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 这些低级原始命令不会通过 Ansible 模块系统，而是通过配置的远程 shell 执行。
+- en: You will have to assume the output, success, and error conditions of the commands.
+  id: totrans-24
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 你必须假设命令的输出、成功和错误条件。
+- en: It is possible to automate such operations via Ansible by executing low-down
+    raw commands using the `ansible.builtin.raw` module.
+  id: totrans-25
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通过执行低级原始命令，可以通过 Ansible 自动化这些操作，使用 `ansible.builtin.raw` 模块。
+- en: The Difference in Ansible Network Automation
+  id: totrans-26
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 网络自动化的区别
+- en: We cannot install Python on network devices. Because of that, network automation
+    is different in the backend. Refer to [*Chapter 6*](B18383_06.xhtml#_idTextAnchor105),
+    *Automating Microsoft Windows and Network Devices*, to learn more.
+  id: totrans-27
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们无法在网络设备上安装 Python。正因如此，网络自动化在后端是不同的。请参阅 [*第 6 章*](B18383_06.xhtml#_idTextAnchor105)，*自动化
+    Microsoft Windows 和网络设备*，了解更多信息。
+- en: The `ansible.builtin.raw` module helps execute raw commands on the target nodes
+    over an SSH connection. It is not a best practice to use raw commands on the target
+    nodes as the command’s result will not be predictable; therefore, Ansible will
+    not be able to handle the validations and errors like other standard modules.
+    However, the `ansible.builtin.raw` module is useful for some special cases, as
+    you’ll learn in the following sections.
+  id: totrans-28
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`ansible.builtin.raw` 模块有助于在目标节点上通过 SSH 连接执行原始命令。由于命令的结果不可预测，因此在目标节点上使用原始命令并不是最佳实践；因此，Ansible
+    将无法像其他标准模块一样处理验证和错误。然而，`ansible.builtin.raw` 模块在一些特殊情况下是有用的，正如你将在接下来的章节中学习到的那样。'
+- en: Installing Python using the raw module
+  id: totrans-29
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 使用 raw 模块安装 Python
+- en: As I mentioned in the introduction of this chapter, what if your managed node
+    doesn’t have Python installed and you want to use Ansible to automate the Python
+    installation? Let’s learn how to create a playbook for installing Python using
+    Ansible.
+  id: totrans-30
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如我在本章介绍中提到的，如果你的管理节点没有安装 Python，而你又想使用 Ansible 自动化 Python 安装该怎么办呢？让我们来学习如何创建一个
+    Playbook，使用 Ansible 安装 Python。
+- en: We assume that the required package repositories have been configured on the
+    target node as per standard system configuration.
+  id: totrans-31
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们假设所需的包仓库已经按照标准系统配置在目标节点上进行了配置。
+- en: 'The following screenshot shows the sample playbook for installing and verifying
+    the Python version:'
+  id: totrans-32
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下截图显示了用于安装和验证 Python 版本的示例 Playbook：
+- en: '![Figure 15.1 – Playbook for installing and verifying Python using the raw
+    module ](img/B18383_15_01.jpg)'
+  id: totrans-33
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 15.1 – 使用 raw 模块安装和验证 Python 的 Playbook](img/B18383_15_01.jpg)'
+- en: Figure 15.1 – Playbook for installing and verifying Python using the raw module
+  id: totrans-34
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 15.1 – 使用原始模块安装并验证Python的Playbook
+- en: 'Note the `gather_facts: false` line in the preceding screenshot; this is a
+    fact-gathering task that relies on Python. The playbook will not work otherwise.'
+  id: totrans-35
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '请注意前面截图中的`gather_facts: false`行；这是一个依赖于Python的收集事实任务。否则，playbook将无法正常工作。'
+- en: 'The playbook’s installation output can be seen in the following screenshot:'
+  id: totrans-36
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Playbook的安装输出可以在以下截图中看到：
+- en: '![Figure 15.2 – Output of the Python installation playbook ](img/B18383_15_02.jpg)'
+  id: totrans-37
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 15.2 – Python安装Playbook的输出](img/B18383_15_02.jpg)'
+- en: Figure 15.2 – Output of the Python installation playbook
+  id: totrans-38
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 15.2 – Python安装Playbook的输出
+- en: Once you have Python installed on the target nodes, use any other Ansible modules
+    as usual. The `ansible.builtin.raw` module also supports Windows, network, and
+    firewall devices for executing low-down raw commands.
+  id: totrans-39
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦您在目标节点上安装了Python，可以像往常一样使用任何其他Ansible模块。`ansible.builtin.raw`模块还支持Windows、网络和防火墙设备，用于执行底层原始命令。
+- en: Ansible Raw Module
+  id: totrans-40
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible原始模块
+- en: The raw module is part of `ansible-core` and is included in your installation
+    by default. Refer to the documentation at [https://docs.ansible.com/ansible/latest/collections/ansible/builtin/raw_module.xhtml](https://docs.ansible.com/ansible/latest/collections/ansible/builtin/raw_module.xhtml)
+    to learn more. As mentioned earlier, the `raw` modules are only used in special
+    situations; otherwise, use the `ansible.builtin.shell` or `ansible.builtin.command`
+    module to execute shell commands (check out the alternative `ansible.windows.win_command`
+    and `ansible.windows.win_shell` modules for Windows machines).
+  id: totrans-41
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 原始模块是`ansible-core`的一部分，并且在您的安装中默认包含。请参考文档 [https://docs.ansible.com/ansible/latest/collections/ansible/builtin/raw_module.xhtml](https://docs.ansible.com/ansible/latest/collections/ansible/builtin/raw_module.xhtml)
+    了解更多信息。如前所述，`raw`模块仅在特殊情况下使用；否则，请使用`ansible.builtin.shell`或`ansible.builtin.command`模块来执行Shell命令（对于Windows机器，可以查看替代的`ansible.windows.win_command`和`ansible.windows.win_shell`模块）。
+- en: In the next section, you will learn how to use the `ansible.builtin.raw` module
+    for network automation when there are no appropriate modules available to use.
+  id: totrans-42
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一节中，您将学习如何在没有适当模块可用的情况下，使用`ansible.builtin.raw`模块进行网络自动化。
+- en: Using raw commands for network operations
+  id: totrans-43
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用原始命令进行网络操作
+- en: 'Ansible has a large collection of modules and plugins to support most of the
+    well-known network and firewall devices. The following figure shows some of the
+    supported network devices and brands for network automation:'
+  id: totrans-44
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible拥有大量的模块和插件，支持大多数知名的网络和防火墙设备。下图显示了支持的部分网络设备和品牌，用于网络自动化：
+- en: '![Figure 15.3 – Supported brands for Ansible network automation (source: https://www.ansible.com/integrations/networks)
+    ](img/B18383_15_03.jpg)'
+  id: totrans-45
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 15.3 – 支持的品牌用于Ansible网络自动化（来源：https://www.ansible.com/integrations/networks）](img/B18383_15_03.jpg)'
+- en: 'Figure 15.3 – Supported brands for Ansible network automation (source: https://www.ansible.com/integrations/networks)'
+  id: totrans-46
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 15.3 – 支持的品牌用于Ansible网络自动化（来源：https://www.ansible.com/integrations/networks）
+- en: 'However, there will be situations where you must overcome the following challenges:'
+  id: totrans-47
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，也会有一些情况，您必须克服以下挑战：
+- en: No supported Ansible module is available to execute a specific network or firewall
+    operation.
+  id: totrans-48
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 没有支持的Ansible模块可用于执行特定的网络或防火墙操作。
+- en: There is a module available for operation but the specific feature or parameter
+    you are looking for doesn’t exist in the current module version.
+  id: totrans-49
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 有一个可用的模块进行操作，但您所寻找的特定功能或参数在当前模块版本中不存在。
+- en: The supported module for the operation is using a slow method compared to the
+    CLI command on the device.
+  id: totrans-50
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 与设备上的CLI命令相比，支持的模块使用的是一种较慢的方法。
+- en: Network Collections in the Ansible Collection Index
+  id: totrans-51
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible集合索引中的网络集合
+- en: Refer to the documentation page at [https://docs.ansible.com/ansible/latest/collections/index.xhtml](https://docs.ansible.com/ansible/latest/collections/index.xhtml)
+    to see the network collections in the Ansible collection index.
+  id: totrans-52
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请参考文档页面 [https://docs.ansible.com/ansible/latest/collections/index.xhtml](https://docs.ansible.com/ansible/latest/collections/index.xhtml)
+    查看Ansible集合索引中的网络集合。
+- en: To overcome such situations, use the same `ansible.builtin.raw` module and execute
+    the raw commands on the target network devices over an SSH connection.
+  id: totrans-53
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了克服这种情况，请使用相同的`ansible.builtin.raw`模块，并通过SSH连接在目标网络设备上执行原始命令。
+- en: In the next section, you will learn how to use the `ansible.builtin.raw` module
+    to execute the necessary operations in FortiOS and Cisco devices, such as taking
+    a configuration backup, upgrading software, and more.
+  id: totrans-54
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一部分中，您将学习如何使用 `ansible.builtin.raw` 模块在 FortiOS 和 Cisco 设备中执行必要的操作，例如进行配置备份、升级软件等。
+- en: Backup FortiOS configurations
+  id: totrans-55
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 备份 FortiOS 配置
+- en: The `fortinet.fortios` Ansible collection contains more than 600 modules for
+    managing and operating devices or appliances with FortiOS. Let’s look at a simple
+    operation, such as taking a configuration backup from a FortiOS device.
+  id: totrans-56
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`fortinet.fortios` Ansible 集合包含超过 600 个用于管理和操作带有 FortiOS 的设备或设备的模块。我们来看看一个简单的操作，例如从
+    FortiOS 设备进行配置备份。'
+- en: 'The following screenshot shows the inventory variables for the FortiOS device
+    connection:'
+  id: totrans-57
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 下图显示了 FortiOS 设备连接的清单变量：
+- en: '![Figure 15.4 – Inventory variables for the FortiOS connection ](img/B18383_15_04.jpg)'
+  id: totrans-58
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 15.4 – FortiOS 连接的清单变量](img/B18383_15_04.jpg)'
+- en: Figure 15.4 – Inventory variables for the FortiOS connection
+  id: totrans-59
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 15.4 – FortiOS 连接的清单变量
+- en: 'We can use `fortinet.fortios.fortios_monitor_fact` to collect and save the
+    backup to a system, as shown here:'
+  id: totrans-60
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以使用 `fortinet.fortios.fortios_monitor_fact` 来收集并将备份保存到系统中，如此处所示：
+- en: '![Figure 15.5 – Backing up FortiOS using the fortios_monitor_fact module ](img/B18383_15_05.jpg)'
+  id: totrans-61
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 15.5 – 使用 fortios_monitor_fact 模块备份 FortiOS](img/B18383_15_05.jpg)'
+- en: Figure 15.5 – Backing up FortiOS using the fortios_monitor_fact module
+  id: totrans-62
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 15.5 – 使用 fortios_monitor_fact 模块备份 FortiOS
+- en: Ansible fortinet.fortios Collection
+  id: totrans-63
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible fortinet.fortios 集合
+- en: Find the modules and plugin containers in the `fortinet.fortios` Ansible collection
+    at [https://galaxy.ansible.com/fortinet/fortios](https://galaxy.ansible.com/fortinet/fortios).
+  id: totrans-64
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 [https://galaxy.ansible.com/fortinet/fortios](https://galaxy.ansible.com/fortinet/fortios)
+    上找到 `fortinet.fortios` Ansible 集合中的模块和插件容器。
+- en: 'However, the configuration backup needs to be transferred to the file server
+    (for example, a TFTP server) securely using another task in Ansible. Some organizations
+    may want to follow the standard and legacy way of backing up, which involves backing
+    up from the device itself without copying to the Ansible control node (or automation
+    controller). In such cases, use the `raw` module to execute the raw commands,
+    as shown here:'
+  id: totrans-65
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，配置备份需要通过 Ansible 中的另一个任务安全地传输到文件服务器（例如 TFTP 服务器）。一些组织可能希望遵循标准和传统的备份方式，这种方式是从设备本身进行备份，而不是复制到
+    Ansible 控制节点（或自动化控制器）。在这种情况下，使用 `raw` 模块执行原始命令，如此处所示：
+- en: '![Figure 15.6 – FortiOS backup using raw commands ](img/B18383_15_06.jpg)'
+  id: totrans-66
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 15.6 – 使用原始命令备份 FortiOS](img/B18383_15_06.jpg)'
+- en: Figure 15.6 – FortiOS backup using raw commands
+  id: totrans-67
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 15.6 – 使用原始命令备份 FortiOS
+- en: In the preceding example, we used raw CLI commands to copy the configurations
+    directly to the TFTP server.
+  id: totrans-68
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在前面的例子中，我们使用了原始 CLI 命令将配置直接复制到 TFTP 服务器。
+- en: 'Remember to modify the inventory variables to use the default SSH connection
+    instead of `ansible.netcommon.httpapi`:'
+  id: totrans-69
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 记得修改清单变量，使用默认的 SSH 连接，而不是 `ansible.netcommon.httpapi`：
+- en: '![Figure 15.7 – Inventory variables for the FortiOS connection without httpapi
+    ](img/B18383_15_07.jpg)'
+  id: totrans-70
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 15.7 – 没有 httpapi 的 FortiOS 连接清单变量](img/B18383_15_07.jpg)'
+- en: Figure 15.7 – Inventory variables for the FortiOS connection without httpapi
+  id: totrans-71
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 15.7 – 没有 httpapi 的 FortiOS 连接清单变量
+- en: Ansible will use the default SSH connection and execute the raw commands on
+    the target FortiOS device.
+  id: totrans-72
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 将使用默认的 SSH 连接，并在目标 FortiOS 设备上执行原始命令。
+- en: FortiOS software upgrade
+  id: totrans-73
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: FortiOS 软件升级
+- en: 'Let’s take a look at another example of a FortiOS software upgrade or patching.
+    We have a module called `fortios_system_federated_upgrade` to do this task in
+    the standard Ansible way. However, this module needs the new software image to
+    be uploaded from the localhost (which is the Ansible control node or the Ansible
+    execution environment), so first, you need to copy this image from some location
+    to the localhost. Also, if there is a restriction in the network stopping you
+    from copying large images such as firmware files, then the only choice is to execute
+    the legacy raw commands inside the FortiOS device, as shown in the following screenshot:'
+  id: totrans-74
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们来看另一个 FortiOS 软件升级或修补的例子。我们有一个名为 `fortios_system_federated_upgrade` 的模块来按照标准的
+    Ansible 方式执行此任务。然而，这个模块需要将新的软件镜像从本地主机（即 Ansible 控制节点或 Ansible 执行环境）上传，因此首先，您需要将这个镜像从某个位置复制到本地主机。此外，如果网络有限制，无法复制较大的镜像文件（如固件文件），那么唯一的选择就是在
+    FortiOS 设备内部执行传统的原始命令，如下图所示：
+- en: '![Figure 15.8 – Running the FortiOS software upgrade using the raw module ](img/B18383_15_08.jpg)'
+  id: totrans-75
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图15.8 – 使用raw模块运行FortiOS软件升级](img/B18383_15_08.jpg)'
+- en: Figure 15.8 – Running the FortiOS software upgrade using the raw module
+  id: totrans-76
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图15.8 – 使用raw模块运行FortiOS软件升级
+- en: The `execute restore image` command will ask you to confirm the image upgrade;
+    `Y` on the second line is the input to that confirmation question.
+  id: totrans-77
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`execute restore image`命令将要求你确认镜像升级；第二行的`Y`是对该确认问题的输入。'
+- en: The `fortios_system_federated_upgrade` module will take care of all such confirmations
+    and programmatic upgrades. Keep in mind that the raw command method should only
+    be followed in special cases.
+  id: totrans-78
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`fortios_system_federated_upgrade`模块将处理所有此类确认和程序化升级。请记住，raw命令方法应仅在特殊情况下使用。'
+- en: Raw commands on Cisco devices
+  id: totrans-79
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: Cisco设备上的raw命令
+- en: Similarly, it is possible to use raw commands on any device that supports an
+    SSH connection. Let’s take a look at another example for Cisco ASA device backup.
+  id: totrans-80
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 同样，也可以在任何支持SSH连接的设备上使用raw命令。让我们来看另一个关于Cisco ASA设备备份的例子。
+- en: The `cisco.asa.asa_config` module is part of the `cisco.asa` Ansible collection
+    ([https://galaxy.ansible.com/cisco/asa](https://galaxy.ansible.com/cisco/asa)).
+    Use this module to configure the Cisco ASA device and take a configuration backup
+    in the standard Ansible way. However, the backup will be downloaded to your `localmachine`
+    (Ansible control node or the Ansible execution environment), so it will need to
+    be transferred to the destination file server (for example, a TFTP server). The
+    backup may contain sensitive information, so the organization may prefer to copy
+    the backup directly to the TFTP server (or other supported target file servers).
+  id: totrans-81
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`cisco.asa.asa_config`模块是`cisco.asa` Ansible集合的一部分（[https://galaxy.ansible.com/cisco/asa](https://galaxy.ansible.com/cisco/asa)）。使用该模块可以按照标准Ansible方式配置Cisco
+    ASA设备并进行配置备份。备份将下载到你的`localmachine`（Ansible控制节点或Ansible执行环境），因此需要将其传输到目标文件服务器（例如，TFTP服务器）。备份可能包含敏感信息，因此组织可能更愿意直接将备份复制到TFTP服务器（或其他支持的目标文件服务器）。'
+- en: 'In such situations, utilize the same `ansible.builtin.raw` module to execute
+    the Cisco ASA commands on the target Cisco devices. But before you use the `ansible.builtin.raw`
+    module, you need to check the respective Ansible collection (for example, the
+    `cisco.asa` collection here) for any modules to execute the raw network commands
+    in the Ansible way. In this case, the `cisco.asa.asa_command` module can be used
+    to execute the Cisco ASA raw commands, as shown here:'
+  id: totrans-82
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这种情况下，使用相同的`ansible.builtin.raw`模块在目标Cisco设备上执行Cisco ASA命令。但在使用`ansible.builtin.raw`模块之前，你需要检查相应的Ansible集合（例如，这里的`cisco.asa`集合），以查看是否有任何模块可以以Ansible的方式执行原始网络命令。在这种情况下，可以使用`cisco.asa.asa_command`模块来执行Cisco
+    ASA的原始命令，如下所示：
+- en: '![Figure 15.9 – Cisco ASA backup using raw commands ](img/B18383_15_09.jpg)'
+  id: totrans-83
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图15.9 – 使用raw命令进行Cisco ASA备份](img/B18383_15_09.jpg)'
+- en: Figure 15.9 – Cisco ASA backup using raw commands
+  id: totrans-84
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图15.9 – 使用raw命令进行Cisco ASA备份
+- en: Similarly, you can utilize the `cisco.ios.ios_command` and `cisco.nxos.nxos_command`
+    modules on Cisco IOS and Cisco Nexus OS devices, respectively. If there is no
+    device-specific module available to execute raw commands, then utilize `ansible.builtin.raw`,
+    as you learned earlier.
+  id: totrans-85
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 同样，你可以在Cisco IOS和Cisco Nexus OS设备上分别使用`cisco.ios.ios_command`和`cisco.nxos.nxos_command`模块。如果没有特定设备的模块来执行原始命令，那么请使用`ansible.builtin.raw`，正如你之前所学的那样。
+- en: The raw module can be used on any device that supports SSH and command-line
+    execution. But for devices or platforms that don’t support SSH connections, or
+    no such commands are available, then it is possible to use API calls. In the next
+    section, you will learn how to use API calls to automate operations from Ansible.
+  id: totrans-86
+  prefs: []
+  type: TYPE_NORMAL
+  zh: raw模块可以用于任何支持SSH和命令行执行的设备。但对于不支持SSH连接的设备或没有此类命令的设备，可以使用API调用。在下一节中，你将学习如何使用API调用从Ansible自动化操作。
+- en: Using API calls for automation
+  id: totrans-87
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用API调用进行自动化
+- en: In [*Chapter 6*](B18383_06.xhtml#_idTextAnchor105), *Automating Microsoft Windows
+    and Network Devices*, you learned about the different ways Ansible can talk to
+    managed nodes, platforms, or applications. So as long as there is a supported
+    method to access the target system, it is possible use Ansible to automate these
+    tasks. In the previous chapters, you learned about the integration between Ansible
+    and other tools such as Jira, ServiceNow, Kubernetes, public or private cloud
+    platforms, and so on. For such platforms, most of those modules use HTTP/HTTPS
+    API calls to execute operations. This means that if there are no modules available
+    to automate your operations but there is an API method, you can use the same raw
+    API calls from your Ansible playbook.
+  id: totrans-88
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 [*第六章*](B18383_06.xhtml#_idTextAnchor105)，*自动化 Microsoft Windows 和网络设备* 中，你学习了
+    Ansible 与受管节点、平台或应用程序进行通信的不同方式。所以，只要有受支持的方法可以访问目标系统，就可以使用 Ansible 自动化这些任务。在前几章中，你学习了
+    Ansible 与 Jira、ServiceNow、Kubernetes、公共或私有云平台等工具的集成。对于这些平台，大多数模块使用 HTTP/HTTPS
+    API 调用来执行操作。这意味着，如果没有可用的模块来自动化操作，但有 API 方法，你可以在 Ansible 剧本中直接使用这些原始 API 调用。
+- en: Python SDK and API Calls
+  id: totrans-89
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Python SDK 和 API 调用
+- en: Please remember that not all modules use direct or native API calls to execute
+    the operations; some modules use Python libraries and `fortiosapi` Python library,
+    but now, `httpapi` is the preferred way to execute the playbooks. Read more about
+    **the httpapi** plugins at https://docs.ansible.com/ansible/latest/plugins/httpapi.xhtml.
+  id: totrans-90
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请记住，并非所有模块都使用直接或原生的 API 调用来执行操作；一些模块使用 Python 库和 `fortiosapi` Python 库，但现在，`httpapi`
+    是执行剧本的首选方式。阅读更多关于 **httpapi** 插件的信息，访问 https://docs.ansible.com/ansible/latest/plugins/httpapi.xhtml。
+- en: 'For example, the `amazon.aws.ec2_instance_info` module (part of the Ansible
+    `amazon.aws` collection) helps gather information about EC2 instances in AWS.
+    Its usage is straightforward, as shown in the following screenshot, and you do
+    not need to worry about the complex API calls to the AWS EC2 endpoints:'
+  id: totrans-91
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 例如，`amazon.aws.ec2_instance_info` 模块（Ansible `amazon.aws` 集合的一部分）有助于收集 AWS 中
+    EC2 实例的信息。它的使用方法很简单，如下图所示，你无需担心复杂的 AWS EC2 端点 API 调用：
+- en: '![Figure 15.10 – Gathering AWS EC2 information using amazon.aws.ec2_instance_info
+    module ](img/B18383_15_10.jpg)'
+  id: totrans-92
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 15.10 – 使用 amazon.aws.ec2_instance_info 模块收集 AWS EC2 信息](img/B18383_15_10.jpg)'
+- en: Figure 15.10 – Gathering AWS EC2 information using amazon.aws.ec2_instance_info
+    module
+  id: totrans-93
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 15.10 – 使用 amazon.aws.ec2_instance_info 模块收集 AWS EC2 信息
+- en: Let’s assume you have a requirement to collect some additional requirement that
+    is not available as part of the module’s output. In this case, it is also possible
+    to use the AWS EC2 API endpoints ([https://docs.aws.amazon.com/AWSEC2/latest/APIReference/Welcome.xhtml](https://docs.aws.amazon.com/AWSEC2/latest/APIReference/Welcome.xhtml))
+    to utilize the full features of API calls.
+  id: totrans-94
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 假设你有一个需求，需要收集一些模块输出中没有的附加要求。在这种情况下，也可以使用 AWS EC2 API 端点（[https://docs.aws.amazon.com/AWSEC2/latest/APIReference/Welcome.xhtml](https://docs.aws.amazon.com/AWSEC2/latest/APIReference/Welcome.xhtml)）来利用
+    API 调用的全部功能。
+- en: In the following sections, you will learn how to use API calls from Ansible
+    to automate the platform or applications.
+  id: totrans-95
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在接下来的章节中，你将学习如何从 Ansible 使用 API 调用来自动化平台或应用程序。
+- en: Automating a ToDo app using Ansible
+  id: totrans-96
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 使用 Ansible 自动化 ToDo 应用程序
+- en: In this section, you will automate a simple ToDo application using the API provided.
+    This demonstration will help you understand how to make API calls using Ansible
+    and how to handle the API call output appropriately. This section will help you
+    understand how to handle API calls for any other service (for example, the cloud,
+    network devices, software applications, and so on) by following the product’s
+    API documentation.
+  id: totrans-97
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本节中，你将使用提供的 API 自动化一个简单的 ToDo 应用程序。这个示范将帮助你了解如何使用 Ansible 发起 API 调用，并如何适当处理
+    API 调用的输出。本节将帮助你了解如何处理任何其他服务（例如云服务、网络设备、软件应用程序等）的 API 调用，方法是遵循产品的 API 文档。
+- en: Introducing the Ansible uri module
+  id: totrans-98
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 介绍 Ansible 的 uri 模块
+- en: 'The `ansible.builtin.uri` module is used to interact with the HTTP and HTTPS
+    endpoints and implement web-related operations using Ansible. The `ansible.builtin.uri`
+    module supports multiple authentication mechanisms, such as Digest, Basic, and
+    WSSE HTTP ([https://docs.ansible.com/ansible/latest/collections/ansible/builtin/uri_module.xhtml](https://docs.ansible.com/ansible/latest/collections/ansible/builtin/uri_module.xhtml)).
+    The `ansible.builtin.uri` module can be used for several use cases, as follows:'
+  id: totrans-99
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`ansible.builtin.uri`模块用于与HTTP和HTTPS端点进行交互，并使用Ansible实现与Web相关的操作。`ansible.builtin.uri`模块支持多种身份验证机制，如Digest、Basic和WSSE
+    HTTP（[https://docs.ansible.com/ansible/latest/collections/ansible/builtin/uri_module.xhtml](https://docs.ansible.com/ansible/latest/collections/ansible/builtin/uri_module.xhtml)）。`ansible.builtin.uri`模块可以用于多种用例，如下所示：'
+- en: Calling an AWS API service to fetch EC2 instance details
+  id: totrans-100
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 调用AWS API服务以获取EC2实例详细信息
+- en: Calling a Jira API to update a ticket
+  id: totrans-101
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 调用Jira API以更新票据
+- en: Fetching details from a web server
+  id: totrans-102
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 从Web服务器获取详细信息
+- en: Verifying a web service health check
+  id: totrans-103
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 验证Web服务健康检查
+- en: Now, let’s learn how to use the `ansible.builtin.uri` module to interact with
+    a ToDo application API.
+  id: totrans-104
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，让我们学习如何使用`ansible.builtin.uri`模块与ToDo应用程序的API进行交互。
+- en: 'Assume you have a ToDo application running, and the API is available at [http://todo-app.example.com:8081/api](http://todo-app.example.com:8081/api)
+    without any authentication. Test the API using the default `curl` command, as
+    shown here:'
+  id: totrans-105
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 假设你有一个正在运行的ToDo应用程序，API可以通过[http://todo-app.example.com:8081/api](http://todo-app.example.com:8081/api)进行访问，并且不需要身份验证。使用默认的`curl`命令测试API，如下所示：
+- en: '![Figure 15.11 – Testing the ToDo API’s access ](img/B18383_15_11.jpg)'
+  id: totrans-106
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图15.11 – 测试ToDo API的访问](img/B18383_15_11.jpg)'
+- en: Figure 15.11 – Testing the ToDo API’s access
+  id: totrans-107
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图15.11 – 测试ToDo API的访问
+- en: Let’s use Ansible and the `ansible.builtin.uri` module ([https://docs.ansible.com/ansible/latest/collections/ansible/builtin/uri_module.xhtml](https://docs.ansible.com/ansible/latest/collections/ansible/builtin/uri_module.xhtml))
+    to handle the ToDo application.
+  id: totrans-108
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们使用Ansible和`ansible.builtin.uri`模块（[https://docs.ansible.com/ansible/latest/collections/ansible/builtin/uri_module.xhtml](https://docs.ansible.com/ansible/latest/collections/ansible/builtin/uri_module.xhtml)）来处理ToDo应用程序。
+- en: 'Here, you have `Chapter-15/todo-app.yaml` (refer to the GitHub repository)
+    whose content is as follows:'
+  id: totrans-109
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这里是你有的`Chapter-15/todo-app.yaml`（请参阅GitHub仓库），其内容如下：
+- en: '![Figure 15.12 – ToDo app playbook details ](img/B18383_15_12.jpg)'
+  id: totrans-110
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图15.12 – ToDo应用程序playbook详细信息](img/B18383_15_12.jpg)'
+- en: Figure 15.12 – ToDo app playbook details
+  id: totrans-111
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图15.12 – ToDo应用程序playbook详细信息
+- en: 'In the preceding screenshot, we can see the following:'
+  id: totrans-112
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在上面的截图中，我们可以看到以下内容：
+- en: '`hosts: localhost`: This is used because we are running this API call from
+    a localhost machine.'
+  id: totrans-113
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`hosts: localhost`：这是因为我们是从本地主机运行此API调用。'
+- en: '`gather_facts: false`: This is used because we do not require any facts from
+    `localhost` (enable this if there is a requirement to use Ansible facts).'
+  id: totrans-114
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`gather_facts: false`：这是因为我们不需要来自`localhost`的任何事实（如果需要使用Ansible事实，请启用此选项）。'
+- en: '`become: false`: This is used because the API calls don’t require privileged
+    access.'
+  id: totrans-115
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`become: false`：这是因为API调用不需要特权访问。'
+- en: 'The `method` parameter uses `GET` as the default value in the `uri` module.
+    Since we are fetching the data from a URL, the default GET HTTP method will be
+    used in the following example. The first task is to fetch the health status of
+    the API and then print the output with a debug module, as shown in the following
+    screenshot:'
+  id: totrans-116
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`method`参数使用`GET`作为`uri`模块的默认值。由于我们是从URL获取数据，因此在以下示例中将使用默认的GET HTTP方法。第一个任务是获取API的健康状态，然后使用调试模块打印输出，如下截图所示：'
+- en: '![Figure 15.13 – API health check task ](img/B18383_15_13.jpg)'
+  id: totrans-117
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图15.13 – API健康检查任务](img/B18383_15_13.jpg)'
+- en: Figure 15.13 – API health check task
+  id: totrans-118
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图15.13 – API健康检查任务
+- en: 'The `status_code: 200` parameter helps validate the API call and task success
+    since you are expecting `OK success status`; you do not need to add additional
+    validation tasks. If the status code is anything other than `200`, the task will
+    fail.'
+  id: totrans-119
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`status_code: 200`参数有助于验证API调用和任务的成功，因为你期望`OK成功状态`；你不需要添加额外的验证任务。如果状态码不是`200`，任务将失败。'
+- en: 'The following screenshot shows the sample output for when you execute the playbook:'
+  id: totrans-120
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下截图显示了执行playbook时的示例输出：
+- en: '![Figure 15.14 – API health check sample output ](img/B18383_15_14.jpg)'
+  id: totrans-121
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图15.14 – API健康检查示例输出](img/B18383_15_14.jpg)'
+- en: Figure 15.14 – API health check sample output
+  id: totrans-122
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图15.14 – API健康检查示例输出
+- en: 'If you only need the returned content (result) of the API call, then modify
+    the `msg` parameter by setting it to `msg: “{{ health_status.content }}”`. By
+    doing this, you will get a more accurate result, as shown here:'
+  id: totrans-123
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '如果您只需要 API 调用返回的内容（结果），则通过将 `msg` 参数设置为 `msg: “{{ health_status.content }}”`
+    来修改 `msg`。这样，您将获得更准确的结果，如下所示：'
+- en: '![Figure 15.15 – API call returned content ](img/B18383_15_15.jpg)'
+  id: totrans-124
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 15.15 – API 调用返回的内容](img/B18383_15_15.jpg)'
+- en: Figure 15.15 – API call returned content
+  id: totrans-125
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 15.15 – API 调用返回的内容
+- en: The `uri` call will return detailed JSON output. Filter out the content as needed.
+  id: totrans-126
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`uri` 调用将返回详细的 JSON 输出。根据需要筛选出内容。'
+- en: HTTP Request Methods
+  id: totrans-127
+  prefs: []
+  type: TYPE_NORMAL
+  zh: HTTP 请求方法
+- en: Depending on the API or the web endpoint, different HTTP methods will be available,
+    such as GET, POST, PUT or DELETE. Refer to [https://www.w3schools.com/tags/ref_httpmethods.asp](https://www.w3schools.com/tags/ref_httpmethods.asp)
+    to understand more about HTTP methods.
+  id: totrans-128
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 根据 API 或 Web 端点，可能会提供不同的 HTTP 方法，例如 GET、POST、PUT 或 DELETE。请参阅 [https://www.w3schools.com/tags/ref_httpmethods.asp](https://www.w3schools.com/tags/ref_httpmethods.asp)
+    了解更多有关 HTTP 方法的信息。
+- en: 'The next task is to fetch the items in the ToDo list, as shown here:'
+  id: totrans-129
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 下一步是获取 ToDo 列表中的项目，如下所示：
+- en: '![Figure 15.16 – Fetching the items in the ToDo app using the API ](img/B18383_15_16.jpg)'
+  id: totrans-130
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 15.16 – 使用 API 获取 ToDo 应用中的项目](img/B18383_15_16.jpg)'
+- en: Figure 15.16 – Fetching the items in the ToDo app using the API
+  id: totrans-131
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 15.16 – 使用 API 获取 ToDo 应用中的项目
+- en: 'When you execute the playbook, you will get the list of ToDo items, as follows:'
+  id: totrans-132
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 执行剧本时，您将获得如下所示的 ToDo 项目列表：
+- en: '![Figure 15.17 – ToDo items fetched using the API call ](img/B18383_15_17.jpg)'
+  id: totrans-133
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 15.17 – 使用 API 调用获取的 ToDo 项目](img/B18383_15_17.jpg)'
+- en: Figure 15.17 – ToDo items fetched using the API call
+  id: totrans-134
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 15.17 – 使用 API 调用获取的 ToDo 项目
+- en: The individual items can be handled by filtering the JSON output. This will
+    allow you to retrieve the exact content as needed.
+  id: totrans-135
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通过筛选 JSON 输出，可以处理单独的项目。这样，您就可以根据需要检索精确的内容。
+- en: 'For creating or updating new items, use the `POST HTTP` method, along with
+    content to post and other details as needed. Let’s add a new item to the ToDo
+    list by using the `POST` method and the `body` content. The first step is to prepare
+    the data to post. In this case, you have a dictionary variable called `new_item`
+    that contains item details, as shown in the following screenshot:'
+  id: totrans-136
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于创建或更新新项目，使用 `POST HTTP` 方法，并根据需要附带内容和其他细节。让我们通过使用 `POST` 方法和 `body` 内容将新项目添加到
+    ToDo 列表。第一步是准备要发布的数据。在这种情况下，您有一个名为 `new_item` 的字典变量，其中包含项目详情，如下图所示：
+- en: '![Figure 15.18 – Variable for the new ToDo item ](img/B18383_15_18.jpg)'
+  id: totrans-137
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 15.18 – 新 ToDo 项目的变量](img/B18383_15_18.jpg)'
+- en: Figure 15.18 – Variable for the new ToDo item
+  id: totrans-138
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 15.18 – 新 ToDo 项目的变量
+- en: 'The task to `POST` the content to the ToDo list requires a few more parameters,
+    as shown here:'
+  id: totrans-139
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 向 ToDo 列表 `POST` 内容的任务需要更多的参数，如下所示：
+- en: '![Figure 15.19 – Adding a new task to the ToDo app via an API call ](img/B18383_15_19.jpg)'
+  id: totrans-140
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 15.19 – 通过 API 调用向 ToDo 应用添加新任务](img/B18383_15_19.jpg)'
+- en: Figure 15.19 – Adding a new task to the ToDo app via an API call
+  id: totrans-141
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 15.19 – 通过 API 调用向 ToDo 应用添加新任务
+- en: 'In the preceding screenshot, we can see the following:'
+  id: totrans-142
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在上面的截图中，我们可以看到以下内容：
+- en: '`status_code: 201`-`201` is the status code for `created`. If you do not mention
+    `status_code`, Ansible will use a value of `200` (default) and the task will show
+    as failed (for example, `"msg": "Status code was 201 and not [200]: OK (unknown
+    bytes)"`).'
+  id: totrans-143
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`status_code: 201` - `201` 是 `created` 的状态码。如果您未提及 `status_code`，Ansible 将使用默认值
+    `200`，并且任务将显示为失败（例如，`"msg": "Status code was 201 and not [200]: OK (unknown bytes)"`）。'
+- en: '`body_format: json`: The default value is `raw`. This is where you are passing
+    the JSON formatted input.'
+  id: totrans-144
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`body_format: json`：默认值是 `raw`。这是您传递 JSON 格式输入的地方。'
+- en: 'The following screenshot shows the sample output for the tasks when you execute
+    the playbook:'
+  id: totrans-145
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下截图显示了执行剧本时任务的示例输出：
+- en: '![Figure 15.20 – Output of the tasks ](img/B18383_15_20.jpg)'
+  id: totrans-146
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 15.20 – 任务输出](img/B18383_15_20.jpg)'
+- en: Figure 15.20 – Output of the tasks
+  id: totrans-147
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 15.20 – 任务输出
+- en: This simple demonstration explains the different ways to interact with an API
+    endpoint using Ansible. Depending on the API endpoint you want to manage, explore
+    more automation use cases and workflows.
+  id: totrans-148
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个简单的演示解释了使用 Ansible 与 API 端点交互的不同方式。根据您要管理的 API 端点，您可以探索更多的自动化用例和工作流。
+- en: Some of the API calls may require you to prepare complex `body` content, and
+    in such cases, use Ansible Jinja2 templates; this will be covered in the next
+    section.
+  id: totrans-149
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一些 API 调用可能需要您准备复杂的 `body` 内容，在这种情况下，可以使用 Ansible Jinja2 模板；这将在下一部分中介绍。
+- en: The Ansible uri Module and REST APIs
+  id: totrans-150
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible uri模块与REST APIs
+- en: The `uri` module is a multipurpose module with parameters available for most
+    API operations, including credentials, certificates, agent configuration, and
+    more. Check out the module documentation at [https://docs.ansible.com/ansible/latest/collections/ansible/builtin/uri_module.xhtml](https://docs.ansible.com/ansible/latest/collections/ansible/builtin/uri_module.xhtml)
+    to learn more.
+  id: totrans-151
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`uri`模块是一个多功能模块，提供了大多数API操作所需的参数，包括凭证、证书、代理配置等。查看模块文档，了解更多信息：[https://docs.ansible.com/ansible/latest/collections/ansible/builtin/uri_module.xhtml](https://docs.ansible.com/ansible/latest/collections/ansible/builtin/uri_module.xhtml)。'
+- en: Interacting with the Akamai API
+  id: totrans-152
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 与Akamai API交互
+- en: Let’s assume there’s a situation where you want to automate a DNS management
+    device such as Akamai and no supported Ansible modules are available. Fortunately,
+    the Akamai device provides a simple API endpoint for managing the DNS entries.
+    Use the same in Ansible to automate the necessary operations.
+  id: totrans-153
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 假设你有一个场景，需要自动化像Akamai这样的DNS管理设备，但没有支持的Ansible模块。幸运的是，Akamai设备提供了一个简单的API端点，用于管理DNS条目。可以在Ansible中使用该端点来自动化所需的操作。
+- en: 'The API needs to be input in a complex body format. For that, a Jinja2 template
+    called `akamai-url-block-format.j2` can be used, as shown here:'
+  id: totrans-154
+  prefs: []
+  type: TYPE_NORMAL
+  zh: API需要以复杂的主体格式输入。为此，可以使用一个名为`akamai-url-block-format.j2`的Jinja2模板，如下所示：
+- en: '![Figure 15.21 – The Jinja2 template for preparing the Akamai API call body
+    ](img/B18383_15_21.jpg)'
+  id: totrans-155
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 15.21 – 用于准备Akamai API调用主体的Jinja2模板](img/B18383_15_21.jpg)'
+- en: Figure 15.21 – The Jinja2 template for preparing the Akamai API call body
+  id: totrans-156
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 15.21 – 用于准备Akamai API调用主体的Jinja2模板
+- en: 'The `akamai-dns-block.yaml` playbook contains a few variables, as shown in
+    the following screenshot:'
+  id: totrans-157
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`akamai-dns-block.yaml`剧本包含一些变量，如下截图所示：'
+- en: '![Figure 15.22 – Variables for Akamai DNS blocking ](img/B18383_15_22.jpg)'
+  id: totrans-158
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 15.22 – 用于Akamai DNS屏蔽的变量](img/B18383_15_22.jpg)'
+- en: Figure 15.22 – Variables for Akamai DNS blocking
+  id: totrans-159
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 15.22 – 用于Akamai DNS屏蔽的变量
+- en: Remember to keep the sensitive items (such as credentials) in encrypted format
+    using Ansible Vault (or **Credentials** in the Ansible automation controller).
+  id: totrans-160
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 记住，要使用Ansible Vault（或**凭证**在Ansible自动化控制器中）以加密格式保存敏感项目（如凭证）。
+- en: 'The list of DNS entries (`dns_list`) can be converted into the desired format
+    using the `template` lookup plugin and passed to the `uri` module (`body: “{{
+    dns_list_templated }}”`), as shown here:'
+  id: totrans-161
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`dns_list`（DNS条目列表）可以通过`template`查找插件转换为所需格式，并传递给`uri`模块（`body: “{{ dns_list_templated
+    }}”`），如下所示：'
+- en: '![Figure 15.23 – The Akamai API call using the uri module ](img/B18383_15_23.jpg)'
+  id: totrans-162
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 15.23 – 使用uri模块的Akamai API调用](img/B18383_15_23.jpg)'
+- en: Figure 15.23 – The Akamai API call using the uri module
+  id: totrans-163
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 15.23 – 使用uri模块的Akamai API调用
+- en: You need to add all validation and verification tasks as required before executing
+    the API POST calls. Refer to the Akamai documentation ([https://techdocs.akamai.com/home/page/products-tools-a-z](https://techdocs.akamai.com/home/page/products-tools-a-z))
+    for the products to learn more.
+  id: totrans-164
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在执行API POST调用之前，你需要添加所有必需的验证和核实任务。参考Akamai文档（[https://techdocs.akamai.com/home/page/products-tools-a-z](https://techdocs.akamai.com/home/page/products-tools-a-z)）了解更多关于产品的信息。
+- en: In this section, you learned how to automate non-supported operations using
+    raw commands and API calls. In the next section, you will explore Ansible modules
+    and the basic steps to create custom modules for Ansible.
+  id: totrans-165
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本节中，你学习了如何使用原始命令和API调用自动化不支持的操作。在下一节中，你将探索Ansible模块以及为Ansible创建自定义模块的基本步骤。
+- en: Creating custom modules for Ansible
+  id: totrans-166
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 为Ansible创建自定义模块
+- en: In the previous sections, you learned how to automate operations if the standard
+    modules are not available for specific tasks. But modules are the standard way
+    of implementing automation and help you develop Ansible playbooks without worrying
+    about the complex operations in the backend. If you know the backend operations
+    and how to execute the tasks in the backend, then create a module for Ansible
+    to execute a specific operation. Finally, contribute it back to the community
+    via Ansible collections. That is the way the open source community grows.
+  id: totrans-167
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在前面的章节中，你学习了如何在标准模块不可用的情况下自动化操作。模块是实现自动化的标准方式，帮助你编写Ansible剧本，而无需担心后台复杂的操作。如果你了解后台操作以及如何执行任务，可以为Ansible创建一个模块来执行特定操作。最后，通过Ansible
+    collections将其贡献回社区。这就是开源社区成长的方式。
+- en: Facts to check before creating a custom Ansible module
+  id: totrans-168
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 创建自定义Ansible模块前需要检查的事实
+- en: 'You can use any programming language (which can be called by the Ansible API,
+    the `ansible` command, or the `ansible-playbook` command), libraries, and methods
+    for your new Ansible module. Most of the Ansible modules that you are using now
+    are written in the Python programming language. Before developing a new module,
+    check yourself on the following facts:'
+  id: totrans-169
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以使用任何编程语言（可以通过 Ansible API、`ansible` 命令或 `ansible-playbook` 命令调用的语言）、库和方法来开发你的新
+    Ansible 模块。你现在使用的大多数 Ansible 模块都是用 Python 编程语言编写的。在开发新模块之前，请确认以下事项：
+- en: If the specific task can be completed using an Ansible role, then develop a
+    role instead of an Ansible module.
+  id: totrans-170
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 如果可以使用 Ansible 角色完成特定任务，则应开发角色，而不是 Ansible 模块。
+- en: If the actual execution is happening on the control node (instead of a managed
+    node) then create an action plugin instead of a module (read *Developing plugins*
+    at [https://docs.ansible.com/ansible/latest/dev_guide/developing_plugins.xhtml](https://docs.ansible.com/ansible/latest/dev_guide/developing_plugins.xhtml)
+    for more details).
+  id: totrans-171
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 如果实际执行发生在控制节点（而不是管理节点）上，则应创建一个动作插件而不是模块（阅读 *开发插件*，详见 [https://docs.ansible.com/ansible/latest/dev_guide/developing_plugins.xhtml](https://docs.ansible.com/ansible/latest/dev_guide/developing_plugins.xhtml)）。
+- en: If there are similar modules available, then modify that module, add features,
+    and contribute it back to the community.
+  id: totrans-172
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 如果有类似的模块可用，则可以修改该模块，增加新功能，并将其贡献回社区。
+- en: If the module you are planning to develop requires a lot of dependencies, then
+    try to create it as an Ansible collection with all the dependencies, custom libraries,
+    and plugins as required.
+  id: totrans-173
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 如果你计划开发的模块依赖项较多，请尝试将其作为 Ansible 集合进行开发，并包含所有必要的依赖项、自定义库和插件。
+- en: Should You Develop an Ansible Module?
+  id: totrans-174
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你应该开发 Ansible 模块吗？
+- en: Refer to the Ansible documentation at [https://docs.ansible.com/ansible/latest/dev_guide/developing_modules.xhtml](https://docs.ansible.com/ansible/latest/dev_guide/developing_modules.xhtml)
+    to learn more.
+  id: totrans-175
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请参考 Ansible 文档 [https://docs.ansible.com/ansible/latest/dev_guide/developing_modules.xhtml](https://docs.ansible.com/ansible/latest/dev_guide/developing_modules.xhtml)
+    了解更多信息。
+- en: 'If you are using your custom module without an Ansible collection (or as a
+    standalone module), then make sure the module script has been copied to the right
+    location. The following are the common locations and methods we can use to store
+    custom modules:'
+  id: totrans-176
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你没有使用 Ansible 集合（或作为独立模块使用自定义模块），请确保模块脚本已被复制到正确的位置。以下是存放自定义模块的常见位置和方法：
+- en: Use `DEFAULT_MODULE_UTILS_PATH` in the Ansible configuration and mention all
+    the directories to look for modules.
+  id: totrans-177
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在 Ansible 配置中使用 `DEFAULT_MODULE_UTILS_PATH`，并指定所有查找模块的目录。
+- en: 'Add the modules to the user’s directory: `~/.ansible/plugins/modules/`.'
+  id: totrans-178
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 将模块添加到用户目录：`~/.ansible/plugins/modules/`。
+- en: 'Add the modules to system directory: `/usr/share/ansible/plugins/modules/`.'
+  id: totrans-179
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 将模块添加到系统目录：`/usr/share/ansible/plugins/modules/`。
+- en: The `ANSIBLE_LIBRARY` environment variable can be configured to set the custom
+    module directory.
+  id: totrans-180
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 可以配置 `ANSIBLE_LIBRARY` 环境变量来设置自定义模块目录。
+- en: 'The following screenshot shows the configured module paths for Ansible:'
+  id: totrans-181
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下截图展示了 Ansible 配置的模块路径：
+- en: '![Figure 15.24 – Ansible module path ](img/B18383_15_24.jpg)'
+  id: totrans-182
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 15.24 – Ansible 模块路径](img/B18383_15_24.jpg)'
+- en: Figure 15.24 – Ansible module path
+  id: totrans-183
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 15.24 – Ansible 模块路径
+- en: If the module is used for a specific Ansible role, then store the module inside
+    the `library` directory of the role. Ansible will automatically detect the module.
+  id: totrans-184
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 如果该模块是为特定的 Ansible 角色使用的，则将模块存放在该角色的 `library` 目录中。Ansible 会自动检测该模块。
+- en: 'If the module is being used by playbooks and different roles, then store it
+    in the `library` directory of the project directory. The following screenshot
+    shows an example of `ansible.cfg` with `library` configured:'
+  id: totrans-185
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 如果该模块被 playbook 和不同角色使用，则将其存放在项目目录的 `library` 目录中。以下截图展示了 `ansible.cfg` 中配置了
+    `library` 的示例：
+- en: '![Figure 15.25 – Library path in ansible.cfg ](img/B18383_15_25.jpg)'
+  id: totrans-186
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 15.25 – ansible.cfg 中的库路径](img/B18383_15_25.jpg)'
+- en: Figure 15.25 – Library path in ansible.cfg
+  id: totrans-187
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 15.25 – ansible.cfg 中的库路径
+- en: Ansible Module Directory Configuration
+  id: totrans-188
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 模块目录配置
+- en: Read the documentation at [https://docs.ansible.com/ansible/latest/dev_guide/developing_locally.xhtml](https://docs.ansible.com/ansible/latest/dev_guide/developing_locally.xhtml)
+    to learn more about adding modules and plugins locally.
+  id: totrans-189
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 阅读 [https://docs.ansible.com/ansible/latest/dev_guide/developing_locally.xhtml](https://docs.ansible.com/ansible/latest/dev_guide/developing_locally.xhtml)
+    中的文档，了解更多有关本地添加模块和插件的内容。
+- en: In the next section, you will learn how to use simple bash scripts for Ansible
+    modules and explore more with Python-based Ansible modules.
+  id: totrans-190
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一节中，您将学习如何使用简单的 bash 脚本为 Ansible 模块，并通过基于 Python 的 Ansible 模块进行更深入的探索。
+- en: Developing Ansible modules using bash scripts
+  id: totrans-191
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 使用 bash 脚本开发 Ansible 模块
+- en: Modules are simply reusable scripts for executing a specific task. Before moving
+    on, you will need to create a simple bash script and use it as an Ansible module.
+  id: totrans-192
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 模块仅仅是用于执行特定任务的可重用脚本。在继续之前，您需要创建一个简单的 bash 脚本并将其用作 Ansible 模块。
+- en: '`library/customhello.sh` is a simple Bash script that displays the operating
+    system, hostname, and a custom message, as shown in the following screenshot:'
+  id: totrans-193
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`library/customhello.sh`是一个简单的 Bash 脚本，它显示操作系统、主机名和自定义消息，如下截图所示：'
+- en: '![Figure 15.26 – Bash script for an Ansible module ](img/B18383_15_26.jpg)'
+  id: totrans-194
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 15.26 – 用于 Ansible 模块的 Bash 脚本](img/B18383_15_26.jpg)'
+- en: Figure 15.26 – Bash script for an Ansible module
+  id: totrans-195
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 15.26 – 用于 Ansible 模块的 Bash 脚本
+- en: Notice the echo line, where the output is formatted as JSON. The module should
+    provide a defined interface (that also accepts arguments) and should return the
+    result or information to Ansible by printing a JSON string to `stdout` before
+    exiting.
+  id: totrans-196
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 注意 echo 行，其中输出格式为 JSON。模块应提供一个定义的接口（也接受参数），并应通过将 JSON 字符串打印到`stdout`来返回结果或信息给
+    Ansible，然后再退出。
+- en: 'We have a playbook with a task for calling this custom module, as shown in
+    the following screenshot:'
+  id: totrans-197
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们有一个 playbook，包含一个调用此自定义模块的任务，如下截图所示：
+- en: '![Figure 15.27 – Ansible playbook with the custom hello module task ](img/B18383_15_27.jpg)'
+  id: totrans-198
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 15.27 – 带有自定义 hello 模块任务的 Ansible playbook](img/B18383_15_27.jpg)'
+- en: Figure 15.27 – Ansible playbook with the custom hello module task
+  id: totrans-199
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 15.27 – 带有自定义 hello 模块任务的 Ansible playbook
+- en: 'When you execute this playbook, the bash script will be executed in the backend,
+    and Ansible will get information from the script, as shown here:'
+  id: totrans-200
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当您执行此 playbook 时，bash 脚本将在后台执行，Ansible 会从脚本中获取信息，如下所示：
+- en: '![Figure 15.28 – Ansible playbook output for the custom module ](img/B18383_15_28.jpg)'
+  id: totrans-201
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 15.28 – 自定义模块的 Ansible playbook 输出](img/B18383_15_28.jpg)'
+- en: Figure 15.28 – Ansible playbook output for the custom module
+  id: totrans-202
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 15.28 – 自定义模块的 Ansible playbook 输出
+- en: This is a very basic concept of an Ansible module and its parameters and variables.
+    Expand it as required.
+  id: totrans-203
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这是 Ansible 模块及其参数和变量的一个非常基础的概念。根据需要进行扩展。
+- en: Developing Ansible Modules
+  id: totrans-204
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 开发 Ansible 模块
+- en: Following the best practices will help you create quality Ansible modules that
+    can be enhanced when required. Refer to the documentation ([https://docs.ansible.com/ansible/latest/dev_guide/developing_modules_general.xhtml](https://docs.ansible.com/ansible/latest/dev_guide/developing_modules_general.xhtml))
+    and Ansible module architecture ([https://docs.ansible.com/ansible/latest/dev_guide/developing_program_flow_modules.xhtml](https://docs.ansible.com/ansible/latest/dev_guide/developing_program_flow_modules.xhtml))
+    to learn more about developing Ansible modules.
+  id: totrans-205
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 遵循最佳实践将帮助您创建高质量的 Ansible 模块，这些模块可以根据需要进行增强。请参考文档（[https://docs.ansible.com/ansible/latest/dev_guide/developing_modules_general.xhtml](https://docs.ansible.com/ansible/latest/dev_guide/developing_modules_general.xhtml)）和
+    Ansible 模块架构（[https://docs.ansible.com/ansible/latest/dev_guide/developing_program_flow_modules.xhtml](https://docs.ansible.com/ansible/latest/dev_guide/developing_program_flow_modules.xhtml)）以了解更多关于开发
+    Ansible 模块的内容。
+- en: In the next section, you will learn more about custom modules by following the
+    Ansible module development guidelines.
+  id: totrans-206
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一节中，您将通过遵循 Ansible 模块开发指南进一步了解自定义模块。
+- en: Developing Ansible modules using Python
+  id: totrans-207
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 使用 Python 开发 Ansible 模块
+- en: When you create a module, follow the best practices as much as possible and
+    increase the reusability of the module by adding appropriate documentation, examples
+    or expected results.
+  id: totrans-208
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 创建模块时，请尽量遵循最佳实践，并通过添加适当的文档、示例或预期结果来提高模块的可重用性。
+- en: 'Check the `library/hello_message.py` file in the `Chapter-15` directory of
+    this book’s GitHub repository and explore the standard module components inside
+    the Python script:'
+  id: totrans-209
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 查看本书 GitHub 仓库中`Chapter-15`目录下的`library/hello_message.py`文件，并探索 Python 脚本中的标准模块组件：
+- en: The script starts with a `ansible_python_interpreter` to work.
+  id: totrans-210
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 脚本以`ansible_python_interpreter`开头，以便运行。
+- en: Add the copyright and other contact information as needed after that.
+  id: totrans-211
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 之后根据需要添加版权和其他联系方式。
+- en: 'The `DOCUMENTATION` block is a very important part of the module since it helps
+    users understand the usages of this module, such as its available parameters,
+    options to use, field types, and so on. The following screenshot shows the documentation
+    portion of our custom `hello_message.py` module:'
+  id: totrans-212
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`DOCUMENTATION` 块是模块中非常重要的一部分，它帮助用户了解该模块的使用方法，例如可用的参数、使用的选项、字段类型等。以下截图展示了我们自定义的
+    `hello_message.py` 模块的文档部分：'
+- en: '![Figure 15.29 – Module documentation ](img/B18383_15_29.jpg)'
+  id: totrans-213
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 15.29 – 模块文档](img/B18383_15_29.jpg)'
+- en: Figure 15.29 – Module documentation
+  id: totrans-214
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 15.29 – 模块文档
+- en: 'The `EXAMPLES` block contains the sample usage of the module:'
+  id: totrans-215
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`EXAMPLES` 块包含模块的示例用法：'
+- en: '![Figure 15.30 – EXAMPLE part of the module ](img/B18383_15_30.jpg)'
+  id: totrans-216
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 15.30 – 模块的 EXAMPLE 部分](img/B18383_15_30.jpg)'
+- en: Figure 15.30 – EXAMPLE part of the module
+  id: totrans-217
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 15.30 – 模块的 EXAMPLE 部分
+- en: 'The `RETURN` block should contain the sample output or result of the module
+    being returned after being executed successfully:'
+  id: totrans-218
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`RETURN` 块应包含模块执行成功后返回的示例输出或结果：'
+- en: '![Figure 15.31 – The module’s RETURN block ](img/B18383_15_31.jpg)'
+  id: totrans-219
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 15.31 – 模块的 RETURN 块](img/B18383_15_31.jpg)'
+- en: Figure 15.31 – The module’s RETURN block
+  id: totrans-220
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 15.31 – 模块的 RETURN 块
+- en: 'Finally, there’s the actual script. This contains all the necessary libraries
+    and dependencies, just like a normal Python script:'
+  id: totrans-221
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 最后是实际的脚本。这包含了所有必需的库和依赖，就像一个普通的 Python 脚本：
+- en: '![Figure 15.32 – The script portion of an Ansible module ](img/B18383_15_32.jpg)'
+  id: totrans-222
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 15.32 – Ansible 模块的脚本部分](img/B18383_15_32.jpg)'
+- en: Figure 15.32 – The script portion of an Ansible module
+  id: totrans-223
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 15.32 – Ansible 模块的脚本部分
+- en: Module Format and Documentation
+  id: totrans-224
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 模块格式与文档
+- en: Following the best practices will help those who are using the module to understand
+    how it’s used. Refer to https://docs.ansible.com/ansible/latest/dev_guide/developing_modules_documenting.xhtml#developing-modules-documenting
+    to learn more about the module format and documentation.
+  id: totrans-225
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 遵循最佳实践将帮助使用该模块的人理解如何使用它。请访问 https://docs.ansible.com/ansible/latest/dev_guide/developing_modules_documenting.xhtml#developing-modules-documenting
+    了解更多关于模块格式和文档的信息。
+- en: 'Verify the module using the `ansible-doc` command, as shown in the following
+    screenshot:'
+  id: totrans-226
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用 `ansible-doc` 命令验证模块，如下所示：
+- en: '![Figure 15.33 – Custom module details after using the ansible-doc command
+    ](img/B18383_15_33.jpg)'
+  id: totrans-227
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 15.33 – 使用 ansible-doc 命令后，自定义模块的详细信息](img/B18383_15_33.jpg)'
+- en: Figure 15.33 – Custom module details after using the ansible-doc command
+  id: totrans-228
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 15.33 – 使用 ansible-doc 命令后，自定义模块的详细信息
+- en: 'When scrolling down using the keyboard, you will see the `EXAMPLES` and `RETURN
+    VALUES` sections of the module’s documentation, as shown here:'
+  id: totrans-229
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当使用键盘向下滚动时，你将看到模块文档中的 `EXAMPLES` 和 `RETURN VALUES` 部分，如下所示：
+- en: '![Figure 15.34 – Ansible custom module documentation details after using the
+    ansible-doc command ](img/B18383_15_34.jpg)'
+  id: totrans-230
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 15.34 – 使用 ansible-doc 命令后，Ansible 自定义模块文档的详细信息](img/B18383_15_34.jpg)'
+- en: Figure 15.34 – Ansible custom module documentation details after using the ansible-doc
+    command
+  id: totrans-231
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 15.34 – 使用 ansible-doc 命令后，Ansible 自定义模块文档的详细信息
+- en: 'Let’s use the module inside the `hello-python.yaml` playbook and pass the `message`
+    and `name` module parameters:'
+  id: totrans-232
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们在 `hello-python.yaml` playbook 中使用该模块，并传递 `message` 和 `name` 模块参数：
+- en: '![Figure 15.35 – Using the hello_message module in the playbook ](img/B18383_15_35.jpg)'
+  id: totrans-233
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 15.35 – 在 playbook 中使用 hello_message 模块](img/B18383_15_35.jpg)'
+- en: Figure 15.35 – Using the hello_message module in the playbook
+  id: totrans-234
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 15.35 – 在 playbook 中使用 hello_message 模块
+- en: 'Execute the playbook and verify its output, as shown here:'
+  id: totrans-235
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 执行 playbook 并验证其输出，如下所示：
+- en: '![Figure 15.36 – Verifying the playbook’s execution and the hello_message module
+    ](img/B18383_15_36.jpg)'
+  id: totrans-236
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 15.36 – 验证 playbook 执行情况及 hello_message 模块](img/B18383_15_36.jpg)'
+- en: Figure 15.36 – Verifying the playbook’s execution and the hello_message module
+  id: totrans-237
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 15.36 – 验证 playbook 执行情况及 hello_message 模块
+- en: Check the `Chapter-15` directory in this book’s GitHub repository to learn more
+    about Ansible custom modules. Also, refer to the *Further reading* section at
+    the end of this chapter for more resources on Ansible custom module development.
+  id: totrans-238
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 检查本书 GitHub 仓库中的 `Chapter-15` 目录，了解更多关于 Ansible 自定义模块的信息。同时，请参考本章末尾的 *进一步阅读*
+    部分，获取更多关于 Ansible 自定义模块开发的资源。
+- en: Using Ansible collections and contributing back
+  id: totrans-239
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 使用 Ansible 集合并进行贡献
+- en: As mentioned in the previous section, store and distribute modules, roles, and
+    libraries as an Ansible collection. This collection can be distributed to the
+    public via Ansible Galaxy ([https://galaxy.ansible.com/](https://galaxy.ansible.com/))
+    or internally using Red Hat Ansible **Private Automation Hub** (**PAH**).
+  id: totrans-240
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如前所述，将模块、角色和库作为 Ansible 集合存储和分发。这个集合可以通过 Ansible Galaxy ([https://galaxy.ansible.com/](https://galaxy.ansible.com/))
+    公共发布，或者通过 Red Hat Ansible **私人自动化中心** (**PAH**) 内部发布。
+- en: In this section, you will learn how to export a collection to Ansible Galaxy.
+  id: totrans-241
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本节中，你将学习如何将集合导出到 Ansible Galaxy。
+- en: Preparing the collection directory
+  id: totrans-242
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 准备集合目录
+- en: 'The following screenshot shows a typical Ansible collection’s directory structure:'
+  id: totrans-243
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下截图显示了一个典型的 Ansible 集合目录结构：
+- en: '![Figure 15.37 – Ansible collection directory structure ](img/B18383_15_37.jpg)'
+  id: totrans-244
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 15.37 – Ansible 集合目录结构](img/B18383_15_37.jpg)'
+- en: Figure 15.37 – Ansible collection directory structure
+  id: totrans-245
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 15.37 – Ansible 集合目录结构
+- en: In our scenario, we will make various adjustments without moving the original
+    playbooks and module directories. (This is only for demonstration purposes; it
+    is possible to keep the collection directories and files in the root of your GitHub
+    repository.)
+  id: totrans-246
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在我们的示例中，我们将进行各种调整，而不移动原始的 playbook 和模块目录。（这仅仅是为了演示目的；也可以将集合目录和文件保存在 GitHub 仓库的根目录中。）
+- en: 'Similar to the `ansible-galaxy role init` command, use the `ansible-galaxy
+    collection init` command to initialize the collection with the base directories
+    and structure. In this example, we will be manually creating the collection and
+    subdirectories to demonstrate the required directory structure and files for the
+    collection. This will also allow us to reuse the existing playbooks and modules:'
+  id: totrans-247
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 类似于 `ansible-galaxy role init` 命令，使用 `ansible-galaxy collection init` 命令来初始化集合，包括基础目录和结构。在这个示例中，我们将手动创建集合及其子目录，以演示集合所需的目录结构和文件。这还将使我们能够重用现有的
+    playbook 和模块：
+- en: Create the `collection` directory.
+  id: totrans-248
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建 `collection` 目录。
+- en: Create the `collection/playbook` directory and copy the playbooks into it.
+  id: totrans-249
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建 `collection/playbook` 目录并将 playbook 复制到该目录。
+- en: Create the `collection/plugins/modules` directory and copy the custom modules
+    into it.
+  id: totrans-250
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建 `collection/plugins/modules` 目录并将自定义模块复制到其中。
+- en: Create `collection/meta/runtime.yml`.
+  id: totrans-251
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建 `collection/meta/runtime.yml`。
+- en: 'Create `collection/galaxy.yml`, as shown in the following screenshot:'
+  id: totrans-252
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建 `collection/galaxy.yml`，如以下截图所示：
+- en: '![Figure 15.38 – galaxy.yml for the Ansible collection ](img/B18383_15_38.jpg)'
+  id: totrans-253
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 15.38 – Ansible 集合的 galaxy.yml 文件](img/B18383_15_38.jpg)'
+- en: Figure 15.38 – galaxy.yml for the Ansible collection
+  id: totrans-254
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 15.38 – Ansible 集合的 galaxy.yml 文件
+- en: 'Create `collection/README.md` with the necessary documentation and details.
+    Add/update the `.gitignore` file (in the root of the GitHub repository) and add
+    the following content (this is for ignoring unwanted files when you sync the content
+    to the GitHub server):'
+  id: totrans-255
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建 `collection/README.md`，并包含必要的文档和详细信息。添加/更新 `.gitignore` 文件（位于 GitHub 仓库根目录），并添加以下内容（用于在同步内容到
+    GitHub 服务器时忽略不需要的文件）：
+- en: '[PRE1]'
+  id: totrans-256
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: Once you have prepared the collection’s content, you must build and publish
+    it to Ansible Galaxy. This will be covered in the next section.
+  id: totrans-257
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦准备好集合的内容，你必须构建并将其发布到 Ansible Galaxy。下一节将详细介绍这一过程。
+- en: Publishing an Ansible collection to Ansible Galaxy
+  id: totrans-258
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 将 Ansible 集合发布到 Ansible Galaxy
+- en: 'Publish the collection to Ansible Galaxy via a GUI or using the CLI. Follow
+    these steps to publish the collection using the CLI:'
+  id: totrans-259
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通过 GUI 或 CLI 将集合发布到 Ansible Galaxy。按照以下步骤使用 CLI 发布集合：
+- en: Log in to Ansible Galaxy and get the Ansible Galaxy API key (token) from [https://galaxy.ansible.com/me/preferences](https://galaxy.ansible.com/me/preferences).
+  id: totrans-260
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 登录 Ansible Galaxy，并从 [https://galaxy.ansible.com/me/preferences](https://galaxy.ansible.com/me/preferences)
+    获取 Ansible Galaxy API 密钥（令牌）。
+- en: 'Export the token to an environment variable:'
+  id: totrans-261
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 将令牌导出到环境变量：
+- en: '[PRE2]'
+  id: totrans-262
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: 'Build the collection archive using the `ansible-galaxy collection build` command:'
+  id: totrans-263
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用 `ansible-galaxy collection build` 命令构建集合归档文件：
+- en: '![Figure 15.39 – Building the Ansible collection archive ](img/B18383_15_39.jpg)'
+  id: totrans-264
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 15.39 – 构建 Ansible 集合归档文件](img/B18383_15_39.jpg)'
+- en: Figure 15.39 – Building the Ansible collection archive
+  id: totrans-265
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 15.39 – 构建 Ansible 集合归档文件
+- en: Use `--force` to overwrite the collection archive if there’s an existing archive
+    with the same version.
+  id: totrans-266
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用 `--force` 来覆盖已有的集合归档文件，如果存在同版本的归档文件。
+- en: 'Now, publish the collection to Ansible Galaxy using the `ansible-galaxy collection
+    publish` command:'
+  id: totrans-267
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在，使用 `ansible-galaxy collection publish` 命令将集合发布到 Ansible Galaxy：
+- en: '![Figure 15.40 – Publishing the collection to Ansible Galaxy ](img/B18383_15_40.jpg)'
+  id: totrans-268
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 15.40 – 将集合发布到 Ansible Galaxy](img/B18383_15_40.jpg)'
+- en: Figure 15.40 – Publishing the collection to Ansible Galaxy
+  id: totrans-269
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 15.40 – 将集合发布到 Ansible Galaxy
+- en: 'Verify the published collection in the Ansible Galaxy portal ([https://galaxy.ansible.com/my-content/namespaces](https://galaxy.ansible.com/my-content/namespaces)),
+    as shown in the following screenshot:'
+  id: totrans-270
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在 Ansible Galaxy 门户中验证发布的集合（[https://galaxy.ansible.com/my-content/namespaces](https://galaxy.ansible.com/my-content/namespaces)），如下所示的截图：
+- en: '![Figure 15.41 – New collection published in Ansible Galaxy ](img/B18383_15_41.jpg)'
+  id: totrans-271
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 15.41 – 在 Ansible Galaxy 中发布的新集合](img/B18383_15_41.jpg)'
+- en: Figure 15.41 – New collection published in Ansible Galaxy
+  id: totrans-272
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 15.41 – 在 Ansible Galaxy 中发布的新集合
+- en: 'Open the collection and view its content:'
+  id: totrans-273
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 打开集合并查看其内容：
+- en: '![Figure 15.42 – Ansible collection content ](img/B18383_15_42.jpg)'
+  id: totrans-274
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 15.42 – Ansible 集合内容](img/B18383_15_42.jpg)'
+- en: Figure 15.42 – Ansible collection content
+  id: totrans-275
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 15.42 – Ansible 集合内容
+- en: In this section, you created a subdirectory (`collection`) where you can keep
+    the collection’s content and build the archive. As I mentioned earlier, keep the
+    collection’s content in the root directory of the GitHub repository. Refer to
+    [https://github.com/ginigangadharan/ansible-collection-custom-modules](https://github.com/ginigangadharan/ansible-collection-custom-modules)
+    to see a sample collection repository.
+  id: totrans-276
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本节中，你创建了一个子目录（`collection`），用来存放集合内容并构建归档文件。如前所述，将集合内容保存在 GitHub 仓库的根目录中。请参考
+    [https://github.com/ginigangadharan/ansible-collection-custom-modules](https://github.com/ginigangadharan/ansible-collection-custom-modules)
+    查看示例集合仓库。
+- en: Summary
+  id: totrans-277
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 总结
+- en: In this chapter, you learned how to use Ansible to automate non-supported and
+    non-standard operations using the Ansible `raw` module. You explored the `raw`
+    command’s execution on servers, network devices, firewall devices, and more.
+  id: totrans-278
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，你学习了如何使用 Ansible 自动化非支持和非标准操作，使用 Ansible `raw` 模块。你探讨了 `raw` 命令在服务器、网络设备、防火墙设备等上的执行。
+- en: Then, you learned how to interact with the devices that provide API-based operations.
+    The Ansible `uri` module was used to interact with a ToDo application; you explored
+    the options for fetching and adding items to the application via APIs. You also
+    learned about the API-based operations for devices and explored some sample usage
+    using the Akamai DNS API.
+  id: totrans-279
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后，你学习了如何与提供 API 操作的设备进行交互。使用 Ansible `uri` 模块与一个待办应用进行交互；你探索了通过 API 获取和添加应用项目的选项。你还了解了设备的基于
+    API 的操作，并通过 Akamai DNS API 探索了一些示例用法。
+- en: In addition to the `raw` command and API-based operations, you learned about
+    Ansible custom modules and how to create custom modules using bash and Python.
+    In the end, you distributed the custom modules to Ansible Galaxy as an Ansible
+    content collection.
+  id: totrans-280
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 除了 `raw` 命令和基于 API 的操作外，你还学习了 Ansible 自定义模块以及如何使用 bash 和 Python 创建自定义模块。最后，你将自定义模块作为
+    Ansible 内容集合分发到 Ansible Galaxy。
+- en: With that, you have explored a common production use case where you can use
+    Ansible as a perfect automation tool and Red Hat Ansible Automation Platform as
+    an enterprise automation solution.
+  id: totrans-281
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 到此，你已经探索了一个常见的生产用例，可以使用 Ansible 作为完美的自动化工具，并将 Red Hat Ansible Automation Platform
+    作为企业自动化解决方案。
+- en: In the next chapter, you will learn about the best practices in Ansible, such
+    as storing playbooks and their content, organizing inventories, the YAML style
+    guide, and more.
+  id: totrans-282
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一章中，你将学习 Ansible 的最佳实践，例如存储 playbook 及其内容、组织清单、YAML 风格指南等。
+- en: Further reading
+  id: totrans-283
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 进一步阅读
+- en: 'To learn more about the topics that were covered in this chapter, take a look
+    at the following resources:'
+  id: totrans-284
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要了解本章涉及的主题，可以查看以下资源：
+- en: '*Network Automation with Ansible*: [https://www.ansible.com/integrations/networks](https://www.ansible.com/integrations/networks)'
+  id: totrans-285
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*使用 Ansible 进行网络自动化*: [https://www.ansible.com/integrations/networks](https://www.ansible.com/integrations/networks)'
+- en: '*Developing Ansible modules*: [https://docs.ansible.com/ansible/latest/dev_guide/developing_modules_general.xhtml](https://docs.ansible.com/ansible/latest/dev_guide/developing_modules_general.xhtml)'
+  id: totrans-286
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*开发 Ansible 模块*: [https://docs.ansible.com/ansible/latest/dev_guide/developing_modules_general.xhtml](https://docs.ansible.com/ansible/latest/dev_guide/developing_modules_general.xhtml)'
+- en: '*Ansible module best practices – conventions, tips, and pitfalls*: [https://docs.ansible.com/ansible/latest/dev_guide/developing_modules_best_practices.xhtml](https://docs.ansible.com/ansible/latest/dev_guide/developing_modules_best_practices.xhtml)'
+  id: totrans-287
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*Ansible 模块最佳实践 – 约定、提示和陷阱*: [https://docs.ansible.com/ansible/latest/dev_guide/developing_modules_best_practices.xhtml](https://docs.ansible.com/ansible/latest/dev_guide/developing_modules_best_practices.xhtml)'
+- en: '*Control your content with a private Automation Hub (Ansible blog)*: [https://www.ansible.com/blog/control-your-content-with-private-automation-hub](https://www.ansible.com/blog/control-your-content-with-private-automation-hub)'
+  id: totrans-288
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*使用私有自动化中心（Ansible博客）*: [https://www.ansible.com/blog/control-your-content-with-private-automation-hub](https://www.ansible.com/blog/control-your-content-with-private-automation-hub)'

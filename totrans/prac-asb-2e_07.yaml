@@ -1,0 +1,1381 @@
+- en: '7'
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '7'
+- en: Creating and Consuming Plugins
+  id: totrans-1
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 创建和使用插件
+- en: Modules have been a very obvious and key part of our journey through Ansible
+    so far. They are used to execute well-defined tasks and can be used either in
+    one-off commands (using ad hoc commands) or as part of a much larger playbook.
+    Plugins are just as important to Ansible, and we have used them in all of our
+    testing so far without even realizing it! While modules are always used to create
+    some kind of task in Ansible, the way that plugins are used depends on their use
+    case. There are many different types of plugins; we will introduce them to you
+    in this chapter and give you an idea of their purpose. But, as a tester, did you
+    realize that when Ansible connects to a remote server using SSH, functionality
+    is provided by a connection plugin? This demonstrates the important role that
+    plugins play.
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 到目前为止，模块已经是我们使用 Ansible 过程中非常显而易见且关键的一部分。它们用于执行明确的任务，可以通过一次性命令（使用临时命令）或作为更大
+    playbook 的一部分来使用。插件对 Ansible 同样重要，我们在所有的测试中都使用了插件，只是没有意识到！虽然模块总是用于在 Ansible 中创建某种任务，但插件的使用方式取决于它们的使用场景。插件有许多不同的类型；我们将在本章中介绍它们，并向你展示它们的用途。但是，作为测试人员，你是否意识到当
+    Ansible 通过 SSH 连接到远程服务器时，是由连接插件提供功能的？这展示了插件在其中扮演的重要角色。
+- en: In this chapter, we will provide you with an in-depth introduction to plugins,
+    as well as show you how to explore the various plugins that come with Ansible.
+    We’ll then expand on this by demonstrating how you can create your own plugins
+    and use them in an Ansible project, in very much the same way as we did with our
+    custom module in the previous chapter. This will hopefully help you understand
+    the limitless possibilities that open source software such as Ansible provides.
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们将为你提供一个关于插件的深入介绍，并向你展示如何探索 Ansible 附带的各种插件。接着，我们将通过演示如何创建自己的插件并在 Ansible
+    项目中使用它们，进一步扩展这一内容，就像我们在上一章中创建自定义模块的方式一样。希望通过这种方式帮助你理解开源软件（如 Ansible）所提供的无限可能性。
+- en: 'In this chapter, we will cover the following topics:'
+  id: totrans-4
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章将涵盖以下主题：
+- en: Discovering the plugin types
+  id: totrans-5
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 发现插件类型
+- en: Finding the included plugins
+  id: totrans-6
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 查找包含的插件
+- en: Creating custom plugins
+  id: totrans-7
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 创建自定义插件
+- en: Technical requirements
+  id: totrans-8
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 技术要求
+- en: This chapter assumes that you have set up your control host with Ansible, as
+    detailed in [*Chapter 1*](B20846_01.xhtml#_idTextAnchor015), *Getting Started
+    with Ansible*, and that you are using the most recent version available. The examples
+    in this chapter have been tested with `ansible-core` version 2.15\. This chapter
+    also assumes that you have at least one additional host to test against; ideally,
+    this should be Linux-based.
+  id: totrans-9
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章假设你已经按照[*第一章*](B20846_01.xhtml#_idTextAnchor015)《Ansible 入门》中的详细说明，设置好了控制主机，并且你正在使用最新版本的
+    Ansible。本章中的示例已在 `ansible-core` 版本 2.15 中进行了测试。本章还假设你至少有一台其他主机进行测试；理想情况下，这台主机应基于
+    Linux。
+- en: Although we will give specific examples of hostnames in this chapter, you are
+    free to substitute them with your own hostname and/or IP addresses, and details
+    of how to do this are provided at the appropriate places. The plugin development
+    work covered in this chapter assumes the presence of a Python 3 development environment
+    on your computer, and that you are running either Linux, FreeBSD, or macOS. Where
+    additional Python modules are needed, their installation is documented. The task
+    of building module documentation has some very specific requirements in Python
+    3.10 or later, so it is assumed you can install a suitable Python environment
+    if you wish to attempt this.
+  id: totrans-10
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 尽管我们将在本章中给出具体的主机名示例，但你可以自由地用自己的主机名和/或 IP 地址进行替换，如何操作的详细信息将在相关部分提供。本章涵盖的插件开发工作假设你的计算机上已经安装了
+    Python 3 开发环境，并且你正在运行 Linux、FreeBSD 或 macOS。需要额外 Python 模块时，我们会提供其安装文档。本章构建模块文档的任务在
+    Python 3.10 或更高版本中有一些非常具体的要求，因此假设你如果愿意尝试，可以安装合适的 Python 环境。
+- en: The code bundle for this chapter is available at [https://github.com/PacktPublishing/Practical-Ansible-Second-Edition/tree/main/Chapter%207](https://github.com/PacktPublishing/Practical-Ansible-Second-Edition/tree/main/Chapter%207).
+  id: totrans-11
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章的代码包可在 [https://github.com/PacktPublishing/Practical-Ansible-Second-Edition/tree/main/Chapter%207](https://github.com/PacktPublishing/Practical-Ansible-Second-Edition/tree/main/Chapter%207)
+    获取。
+- en: Discovering the plugin types
+  id: totrans-12
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 发现插件类型
+- en: Ansible’s code has always been designed to be modular—indeed, this is one of
+    its core strengths. Whether that is through the use of modules to perform tasks
+    or through plugins (as we will see shortly), Ansible’s modular design allows it
+    to be as versatile and powerful as it has demonstrated itself to be so far in
+    this book. As with modules, Ansible plugins are all written in Python and are
+    expected to ingest and return data in a certain well-defined format (more on this
+    later). Ansible’s plugins are often invisible in their function in that you rarely
+    call them by name in your commands or playbooks, yet they are responsible for
+    some of the most important features Ansible has to offer, including SSH connectivity,
+    the ability to parse inventory files (in INI format, YAML, or otherwise), and
+    the ability to run `jinja2` filters on your data.
+  id: totrans-13
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 的代码一直被设计为模块化的——事实上，这是其核心优势之一。无论是通过使用模块执行任务，还是通过插件（如我们稍后将看到的），Ansible
+    的模块化设计使得它能够像本书中所展示的那样具有多功能性和强大能力。与模块一样，Ansible 插件都是用 Python 编写的，并且预期按照某种明确定义的格式来获取和返回数据（稍后我们将详细讨论）。Ansible
+    的插件在功能上通常是隐形的，因为你很少在命令或 playbook 中按名称调用它们，但它们负责 Ansible 提供的一些最重要的功能，包括 SSH 连接能力、解析清单文件（无论是
+    INI 格式、YAML 格式，还是其他格式）的能力，以及在数据上运行 `jinja2` 过滤器的能力。
+- en: 'As ever, let’s validate the presence of a suitably installed version of Ansible
+    on your test machine before proceeding further:'
+  id: totrans-14
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一如既往，让我们在继续之前验证你的测试机上是否安装了合适版本的 Ansible：
+- en: '[PRE0]'
+  id: totrans-15
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: As much work goes into documenting the plugins as it does into documenting the
+    modules, so you will be pleased to know that there is a plugin index available
+    at [https://docs.ansible.com/ansible/latest/plugins/plugins.xhtml](https://docs.ansible.com/ansible/latest/plugins/plugins.xhtml).
+  id: totrans-16
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在文档化插件的工作量和文档化模块的工作量一样多，因此你会很高兴知道可以在 [https://docs.ansible.com/ansible/latest/plugins/plugins.xhtml](https://docs.ansible.com/ansible/latest/plugins/plugins.xhtml)
+    找到插件索引。
+- en: You can also use the `ansible-doc` command as we did before, only you need to
+    add the `-t` with the module’s name, too. Plugins are always placed in an appropriate
+    category as their function is radically different between categories. If you don’t
+    specify the `-t` switch with `ansible-doc`, you end up specifying the `ansible-doc
+    -t` module, which returns a list of the available modules.
+  id: totrans-17
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你也可以像之前一样使用 `ansible-doc` 命令，只不过你需要在模块名称后添加 `-t`。插件总是根据其功能被放置在适当的类别中，因为不同类别之间的功能差异很大。如果你没有在
+    `ansible-doc` 中指定 `-t` 选项，你将会指定 `ansible-doc -t` 模块，这将返回可用模块的列表。
+- en: 'At the time of writing, the following plugin types can be found in Ansible:'
+  id: totrans-18
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在撰写本文时，可以在 Ansible 中找到以下插件类型：
+- en: '`become`: Responsible for enabling Ansible to obtain super-user access (for
+    example, through `sudo`)'
+  id: totrans-19
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`become`：负责启用 Ansible 获取超级用户访问权限（例如，通过 `sudo`）'
+- en: '`cache`: Responsible for caching facts retrieved from backend systems to improve
+    automation performance'
+  id: totrans-20
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`cache`：负责缓存从后台系统检索的事实，以提高自动化性能'
+- en: '`callback`: Allows you to add new behaviors when responding to events – for
+    example, changing the format that data is printed in in the output of an Ansible
+    playbook run'
+  id: totrans-21
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`callback`：允许你在响应事件时添加新行为——例如，在 Ansible playbook 执行的输出中更改数据打印的格式'
+- en: '`cliconf`: Provides abstractions to the command-line interfaces of various
+    network devices, giving Ansible a standard interface to operate on'
+  id: totrans-22
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`cliconf`：为各种网络设备的命令行接口提供抽象，为 Ansible 提供一个标准接口来操作'
+- en: '`connection`: Provides connectivity from Ansible to remote systems (for example,
+    over SSH, WinRM, Docker, and many more)'
+  id: totrans-23
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`connection`：提供从 Ansible 到远程系统的连接（例如，通过 SSH、WinRM、Docker 等）'
+- en: '`httpapi`: Tells Ansible how to interact with a remote system’s API (for example,
+    for a Fortinet firewall)'
+  id: totrans-24
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`httpapi`：告诉 Ansible 如何与远程系统的 API 交互（例如，用于 Fortinet 防火墙）'
+- en: '`inventory`: Provides Ansible with the ability to parse various static and
+    dynamic inventory formats'
+  id: totrans-25
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`inventory`：为 Ansible 提供解析各种静态和动态清单格式的能力'
+- en: '`lookup`: Allows Ansible to look up data from an external source (for example,
+    by reading a flat text file)'
+  id: totrans-26
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`lookup`：允许 Ansible 从外部源查找数据（例如，通过读取纯文本文件）'
+- en: '`netconf`: Provides Ansible with abstractions to enable it to work with NETCONF-enabled
+    networking devices'
+  id: totrans-27
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`netconf`：为 Ansible 提供抽象，使其能够与支持 NETCONF 的网络设备进行交互'
+- en: '`shell`: Provides Ansible with the ability to work with various shells on different
+    systems (for example, `powershell` on Windows versus `sh` on Linux)'
+  id: totrans-28
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`shell`：为 Ansible 提供在不同系统上使用各种 shell 的能力（例如，在 Windows 上使用 `powershell`，在 Linux
+    上使用 `sh`）'
+- en: '`strategy`: Provides plugins to Ansible with different execution strategies
+    (for example, the debug strategy we saw in [*Chapter 4*](B20846_04.xhtml#_idTextAnchor207),
+    *Playbooks* *and Roles*)'
+  id: totrans-29
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`strategy`：为 Ansible 提供不同执行策略的插件（例如，我们在[*第4章*](B20846_04.xhtml#_idTextAnchor207)中看到的调试策略，*剧本*
+    *与角色*）。  '
+- en: '`vars`: Provides Ansible with the ability to source variables from certain
+    sources, such as the `host_vars` and `group_vars` directories we explored in [*Chapter
+    3*](B20846_03.xhtml#_idTextAnchor158), *Defining* *Your Inventory*'
+  id: totrans-30
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`vars`：为 Ansible 提供了从特定来源获取变量的能力，例如我们在[*第3章*](B20846_03.xhtml#_idTextAnchor158)中探索的
+    `host_vars` 和 `group_vars` 目录，*定义* *你的库存*。'
+- en: 'We will leave exploring the plugin documentation on the Ansible website as
+    an exercise for you to complete. However, if you want to explore the various plugins
+    using the `ansible-doc` tool, you would need to run the following commands:'
+  id: totrans-31
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将把探索 Ansible 网站上的插件文档作为练习留给你完成。然而，如果你想使用 `ansible-doc` 工具探索各种插件，你需要运行以下命令：
+- en: 'To use the `ansible-doc` command to list all the plugins available in a given
+    category, you can run the following command:'
+  id: totrans-32
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 要使用 `ansible-doc` 命令列出给定类别中所有可用的插件，你可以运行以下命令：
+- en: '[PRE1]'
+  id: totrans-33
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: 'This will return a textual index of the connection plugins, similar to what
+    we saw when we were looking at the module documentation. The first few lines of
+    the index output are shown here:'
+  id: totrans-34
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这将返回一个关于连接插件的文本索引，类似于我们查看模块文档时看到的索引输出。索引输出的前几行如下所示：
+- en: ￼
+  id: totrans-35
+  prefs: []
+  type: TYPE_NORMAL
+  zh: ￼
+- en: Figure 7.1 – Ansible documentation for connection
+  id: totrans-36
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 7.1 – Ansible 连接插件文档
+- en: 'You can then explore the documentation for a given plugin. For example, if
+    we want to learn about the `paramiko_ssh` plugin, we can issue the following command:'
+  id: totrans-37
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 然后，你可以探索特定插件的文档。例如，如果我们想了解 `paramiko_ssh` 插件，我们可以运行以下命令：
+- en: '[PRE2]'
+  id: totrans-38
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: 'You will find that the plugin documentation takes on a very familiar format,
+    similar to what we saw for the modules in [*Chapter 5*](B20846_05.xhtml#_idTextAnchor279),
+    *Creating and* *Consuming* *Modules*:'
+  id: totrans-39
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你会发现，插件的文档采用了与我们在[*第5章*](B20846_05.xhtml#_idTextAnchor279)中看到的模块文档相似的格式，*创建和*
+    *使用* *模块*：
+- en: ￼
+  id: totrans-40
+  prefs: []
+  type: TYPE_NORMAL
+  zh: ￼
+- en: Figure 7.2 – Ansible documentation for the paramiko_ssh connection
+  id: totrans-41
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 7.2 – Ansible paramiko_ssh 连接插件文档
+- en: Thanks to all the hard work and effort that goes into documenting every area
+    of Ansible, you can easily find out about the plugins that are included with Ansible
+    and how to work with them. So far, we have seen that the documentation for plugins
+    is no less complete than it is for modules. In the next section of this chapter,
+    we’ll dive a bit deeper into how to find the plugin code that accompanies your
+    Ansible distribution.
+  id: totrans-42
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 感谢所有为记录 Ansible 各个领域所付出的辛勤努力，你可以轻松了解 Ansible 附带的插件以及如何使用它们。到目前为止，我们已经看到插件的文档与模块的文档同样完整。在本章的下一部分，我们将深入探讨如何找到与
+    Ansible 发行版一起提供的插件代码。
+- en: Finding included plugins
+  id: totrans-43
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 查找包含的插件
+- en: As we discussed in the preceding section, plugins are not as apparent in Ansible
+    as their module counterparts are, and yet we have been using them behind the scenes
+    in every single Ansible command we’ve issued so far! Let’s build on our work in
+    the previous section, where we looked at the plugin documentation, by looking
+    at where we can find the source code for the plugins. This, in turn, will serve
+    as a precursor to us building a simple plugin of our own.
+  id: totrans-44
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如我们在前一节中讨论的那样，插件在 Ansible 中不像模块那样明显，但我们在迄今为止执行的每个 Ansible 命令中，实际上都在幕后使用了它们！让我们在前一节中查看插件文档的基础上，进一步探讨如何找到插件的源代码。这将为我们构建自己的简单插件奠定基础。
+- en: 'If you installed Ansible on a Linux system using a package manager (that is,
+    via an RPM or DEB package), then the location of your plugins will depend on your
+    OS. For example, on my test CentOS 8 system where I installed Ansible from the
+    official RPM package, I can see the plugins installed here:'
+  id: totrans-45
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你在 Linux 系统上通过包管理器（即通过 RPM 或 DEB 包）安装了 Ansible，那么插件的位置将取决于你的操作系统。例如，在我测试的
+    CentOS 8 系统上，我通过官方 RPM 包安装了 Ansible，我可以在以下位置看到安装的插件：
+- en: '[PRE3]'
+  id: totrans-46
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: 'Notice how the plugins are separated into subdirectories, all named after their
+    categories. If we want to look up the `paramiko_ssh` plugin, which we reviewed
+    the documentation of in the preceding section, we can look in the `connection/`
+    subdirectory:'
+  id: totrans-47
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请注意，插件被分隔到按类别命名的子目录中。如果我们想查找我们在前一节中回顾的 `paramiko_ssh` 插件，我们可以在 `connection/`
+    子目录中查找：
+- en: '[PRE4]'
+  id: totrans-48
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: 'However, in general, I do not recommend that you edit or change the files that
+    are installed from a package as you might all too easily overwrite them when upgrading
+    the package. As one of our goals in this chapter is to write a simple custom plugin,
+    let’s look at how to find the plugins in the official Ansible source code:'
+  id: totrans-49
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，通常情况下，我不推荐你编辑或更改从包安装的文件，因为在升级包时你很容易会覆盖它们。由于本章的目标之一是编写一个简单的自定义插件，我们来看看如何在官方
+    Ansible 源代码中找到插件：
+- en: 'Clone the official Ansible repository from GitHub, as we did previously, and
+    change the directory to the location of your clone:'
+  id: totrans-50
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 从 GitHub 克隆官方 Ansible 仓库，如我们之前所做的，并切换到你的克隆目录：
+- en: '[PRE5]'
+  id: totrans-51
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: 'connection directory:'
+  id: totrans-52
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'connection directory:'
+- en: '[PRE6]'
+  id: totrans-53
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: '[PRE7]'
+  id: totrans-54
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE7]'
+- en: 'The exact contents of this directory will depend on the version of the Ansible
+    source code that you have cloned. At the time of writing, it looks as follows,
+    with one Python file for each plugin (similar to how we saw one Python file for
+    each module in [*Chapter 5*](B20846_05.xhtml#_idTextAnchor279), *Creating and*
+    *Consuming* *Modules*):'
+  id: totrans-55
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个目录的具体内容将取决于你克隆的 Ansible 源代码版本。在写本文时，它看起来如下，每个插件都有一个 Python 文件（类似于我们在[*第 5
+    章*](B20846_05.xhtml#_idTextAnchor279)中看到的，每个模块有一个 Python 文件，*创建和* *使用* *模块*）：
+- en: '[PRE8]'
+  id: totrans-56
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE8]'
+- en: 'You can review the contents of each plugin to learn more about how they work,
+    which is again part of the beauty of open source software:'
+  id: totrans-57
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 你可以查看每个插件的内容，了解它们如何工作，这也是开源软件的一大魅力所在：
+- en: '[PRE9]'
+  id: totrans-58
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE9]'
+- en: 'An example of the beginning of this file is shown in the following code block
+    to give you an idea of the kind of output you should be seeing if this command
+    runs correctly:'
+  id: totrans-59
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本文件开始部分的示例如下所示，给你一个大概的输出样式，帮助你理解如果这个命令正确执行时你应看到的输出：
+- en: '[PRE10]'
+  id: totrans-60
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE10]'
+- en: .
+  id: totrans-61
+  prefs: []
+  type: TYPE_NORMAL
+  zh: .
+- en: ├── hosts
+  id: totrans-62
+  prefs: []
+  type: TYPE_NORMAL
+  zh: ├── hosts
+- en: ├── lookup_plugins
+  id: totrans-63
+  prefs: []
+  type: TYPE_NORMAL
+  zh: ├── lookup_plugins
+- en: │ └── firstchar.py
+  id: totrans-64
+  prefs: []
+  type: TYPE_NORMAL
+  zh: │ └── firstchar.py
+- en: ├── myplugin2.yml
+  id: totrans-65
+  prefs: []
+  type: TYPE_NORMAL
+  zh: ├── myplugin2.yml
+- en: └── testdoc.txt
+  id: totrans-66
+  prefs: []
+  type: TYPE_NORMAL
+  zh: └── testdoc.txt
+- en: '[PRE11]'
+  id: totrans-67
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE11]'
+- en: (c) 2020, James Freeman <james.freeman@example.com>
+  id: totrans-68
+  prefs:
+  - PREF_IND
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: (c) 2020, James Freeman <james.freeman@example.com>
+- en: GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+  id: totrans-69
+  prefs:
+  - PREF_IND
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: GNU 通用公共许可证 v3.0+（请参见 COPYING 或 https://www.gnu.org/licenses/gpl-3.0.txt）
+- en: '[PRE12]'
+  id: totrans-70
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE12]'
+- en: 'def improve_automation(a):'
+  id: totrans-71
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'def improve_automation(a):'
+- en: return a.replace("Puppet", "Ansible")
+  id: totrans-72
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: return a.replace("Puppet", "Ansible")
+- en: '[PRE13]'
+  id: totrans-73
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE13]'
+- en: 'class FilterModule(object):'
+  id: totrans-74
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'class FilterModule(object):'
+- en: '''''''improve_automation filters'''''''
+  id: totrans-75
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '''''''improve_automation 过滤器'''''''
+- en: 'def filters(self):'
+  id: totrans-76
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'def filters(self):'
+- en: 'return {''improve_automation'': improve_automation}'
+  id: totrans-77
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'return {''improve_automation'': improve_automation}'
+- en: '[PRE14]'
+  id: totrans-78
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE14]'
+- en: '---'
+  id: totrans-79
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '---'
+- en: '- name: Play to demonstrate our custom filter'
+  id: totrans-80
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '- name: 演示自定义过滤器的播放'
+- en: 'hosts: frontends'
+  id: totrans-81
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'hosts: frontends'
+- en: 'gather_facts: false'
+  id: totrans-82
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'gather_facts: false'
+- en: 'vars:'
+  id: totrans-83
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'vars:'
+- en: 'statement: "Puppet is an excellent automation tool!"'
+  id: totrans-84
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'statement: "Puppet 是一个优秀的自动化工具！"'
+- en: 'tasks:'
+  id: totrans-85
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'tasks:'
+- en: '- name: make a statement'
+  id: totrans-86
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '- name: 做一个声明'
+- en: 'debug:'
+  id: totrans-87
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'debug:'
+- en: 'msg: "{{ statement | improve_automation }}"'
+  id: totrans-88
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'msg: "{{ statement | improve_automation }}"'
+- en: '[PRE15]'
+  id: totrans-89
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE15]'
+- en: .
+  id: totrans-90
+  prefs: []
+  type: TYPE_NORMAL
+  zh: .
+- en: ├── filter_plugins
+  id: totrans-91
+  prefs: []
+  type: TYPE_NORMAL
+  zh: ├── filter_plugins
+- en: │ ├── custom_filter.py
+  id: totrans-92
+  prefs: []
+  type: TYPE_NORMAL
+  zh: │ ├── custom_filter.py
+- en: ├── hosts
+  id: totrans-93
+  prefs: []
+  type: TYPE_NORMAL
+  zh: ├── hosts
+- en: ├── myplugin.yml
+  id: totrans-94
+  prefs: []
+  type: TYPE_NORMAL
+  zh: ├── myplugin.yml
+- en: '[PRE16]'
+  id: totrans-95
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE16]'
+- en: $ ansible-playbook -i hosts myplugin.yml
+  id: totrans-96
+  prefs: []
+  type: TYPE_NORMAL
+  zh: $ ansible-playbook -i hosts myplugin.yml
+- en: PLAY [Play to demonstrate our custom filter] ***********************************
+  id: totrans-97
+  prefs: []
+  type: TYPE_NORMAL
+  zh: PLAY [演示自定义过滤器的播放] ***********************************
+- en: TASK [make a statement] ********************************************************
+  id: totrans-98
+  prefs: []
+  type: TYPE_NORMAL
+  zh: TASK [做一个声明] ********************************************************
+- en: 'ok: [frt01.example.com] => {'
+  id: totrans-99
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'ok: [frt01.example.com] => {'
+- en: '"msg": "Ansible is an excellent automation tool!"'
+  id: totrans-100
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '"msg": "Ansible 是一个优秀的自动化工具！"'
+- en: '}'
+  id: totrans-101
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '}'
+- en: PLAY RECAP *********************************************************************
+  id: totrans-102
+  prefs: []
+  type: TYPE_NORMAL
+  zh: PLAY RECAP *********************************************************************
+- en: 'frt01.example.com : ok=1 changed=0 unreachable=0 failed=0 skipped=0 rescued=0
+    ignored=0'
+  id: totrans-103
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'frt01.example.com : ok=1 changed=0 unreachable=0 failed=0 skipped=0 rescued=0
+    ignored=0'
+- en: '[PRE17]'
+  id: totrans-104
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE17]'
+- en: (c) 2023, Daniel Oh <daniel.oh@example.com>
+  id: totrans-105
+  prefs:
+  - PREF_IND
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: (c) 2023, Daniel Oh <daniel.oh@example.com>
+- en: (c) 2020, James Freeman <james.freeman@example.com>
+  id: totrans-106
+  prefs:
+  - PREF_IND
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: (c) 2020, James Freeman <james.freeman@example.com>
+- en: (c) 2012, Daniel Hokka Zakrisson <daniel@hozac.com>
+  id: totrans-107
+  prefs:
+  - PREF_IND
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: (c) 2012, Daniel Hokka Zakrisson <daniel@hozac.com>
+- en: (c) 2017 Ansible Project
+  id: totrans-108
+  prefs:
+  - PREF_IND
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: (c) 2017 Ansible Project
+- en: GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+  id: totrans-109
+  prefs:
+  - PREF_IND
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: GNU 通用公共许可证 v3.0+（请参见 COPYING 或 https://www.gnu.org/licenses/gpl-3.0.txt）
+- en: '[PRE18]'
+  id: totrans-110
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE18]'
+- en: from __future__ import (absolute_import, division, print_function)
+  id: totrans-111
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: from __future__ import (absolute_import, division, print_function)
+- en: __metaclass__ = type
+  id: totrans-112
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: __metaclass__ = type
+- en: '[PRE19]'
+  id: totrans-113
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE19]'
+- en: DOCUMENTATION = """
+  id: totrans-114
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: DOCUMENTATION = """
+- en: 'lookup: firstchar'
+  id: totrans-115
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'lookup: firstchar'
+- en: 'author: James Freeman <james.freeman@example.com>'
+  id: totrans-116
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'author: James Freeman <james.freeman@example.com>'
+- en: 'version_added: "2.15"'
+  id: totrans-117
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'version_added: "2.15"'
+- en: 'short_description: read the first character of file contents'
+  id: totrans-118
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'short_description: 读取文件内容的第一个字符'
+- en: 'description:'
+  id: totrans-119
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'description:'
+- en: '- This lookup returns the first character of the contents from a file on the
+    Ansible controller''s file system.'
+  id: totrans-120
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '- 这个查找返回 Ansible 控制器文件系统中文件内容的第一个字符。'
+- en: 'options:'
+  id: totrans-121
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'options:'
+- en: '_terms:'
+  id: totrans-122
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '_terms:'
+- en: 'description: path(s) of files to read'
+  id: totrans-123
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'description: 要读取的文件路径(s)'
+- en: 'required: True'
+  id: totrans-124
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'required: True'
+- en: 'notes:'
+  id: totrans-125
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'notes:'
+- en: '- if read in variable context, the file can be interpreted as YAML if the content
+    is valid to the parser.'
+  id: totrans-126
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '- 如果在变量上下文中读取，则文件可以被解释为 YAML 格式，只要内容符合解析器的有效性要求。'
+- en: '- this lookup does not understand ''globing'', use the fileglob lookup instead.'
+  id: totrans-127
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '- 这个查找不支持 ''globing''，请改用 fileglob 查找。'
+- en: '"""'
+  id: totrans-128
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '"""'
+- en: '[PRE20]'
+  id: totrans-129
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE20]'
+- en: EXAMPLES = """
+  id: totrans-130
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: EXAMPLES = """
+- en: '- debug: msg="the first character in foo.txt is {{lookup(''firstchar'', ''/etc/foo.txt'')
+    }}"'
+  id: totrans-131
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '- debug: msg="foo.txt 文件的第一个字符是 {{lookup(''firstchar'', ''/etc/foo.txt'') }}"'
+- en: '"""'
+  id: totrans-132
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '"""'
+- en: '[PRE21]'
+  id: totrans-133
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE21]'
+- en: RETURN = """
+  id: totrans-134
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: RETURN = """
+- en: '_raw:'
+  id: totrans-135
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '_raw:'
+- en: 'description:'
+  id: totrans-136
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'description:'
+- en: '- first character of content of file(s)'
+  id: totrans-137
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '- 文件内容的第一个字符'
+- en: '"""'
+  id: totrans-138
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '"""'
+- en: '[PRE22]'
+  id: totrans-139
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE22]'
+- en: from ansible.errors import AnsibleError, AnsibleParserError
+  id: totrans-140
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: from ansible.errors import AnsibleError, AnsibleParserError
+- en: from ansible.plugins.lookup import LookupBase
+  id: totrans-141
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: from ansible.plugins.lookup import LookupBase
+- en: from ansible.utils.display import Display
+  id: totrans-142
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: from ansible.utils.display import Display
+- en: display = Display()
+  id: totrans-143
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: display = Display()
+- en: '[PRE23]'
+  id: totrans-144
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE23]'
+- en: 'class LookupModule(LookupBase):'
+  id: totrans-145
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'class LookupModule(LookupBase):'
+- en: 'def run(self, terms, variables=None, **kwargs):'
+  id: totrans-146
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'def run(self, terms, variables=None, **kwargs):'
+- en: ret = []
+  id: totrans-147
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: ret = []
+- en: '[PRE24]'
+  id: totrans-148
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE24]'
+- en: 'for term in terms:'
+  id: totrans-149
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'for term in terms:'
+- en: 'display.debug("File lookup term: %s" % term)'
+  id: totrans-150
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'display.debug("文件查找术语: %s" % term)'
+- en: lookupfile = self.find_file_in_search_path(variables, 'files', term)
+  id: totrans-151
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: lookupfile = self.find_file_in_search_path(variables, 'files', term)
+- en: display.vvvv(u"File lookup using %s as file" % lookupfile)
+  id: totrans-152
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: display.vvvv(u"使用 %s 作为文件进行文件查找" % lookupfile)
+- en: '[PRE25]'
+  id: totrans-153
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE25]'
+- en: 'try:'
+  id: totrans-154
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'try:'
+- en: 'if lookupfile:'
+  id: totrans-155
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'if lookupfile:'
+- en: contents, show_data = self._loader._get_file_contents(lookupfile)
+  id: totrans-156
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: contents, show_data = self._loader._get_file_contents(lookupfile)
+- en: ret.append(contents.rstrip()[0])
+  id: totrans-157
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: ret.append(contents.rstrip()[0])
+- en: 'else:'
+  id: totrans-158
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'else:'
+- en: raise AnsibleParserError()
+  id: totrans-159
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: raise AnsibleParserError()
+- en: 'except AnsibleParserError:'
+  id: totrans-160
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'except AnsibleParserError:'
+- en: 'raise AnsibleError("could not locate file in lookup: %s" % term)'
+  id: totrans-161
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'raise AnsibleError("无法在查找中定位文件: %s" % term)'
+- en: '[PRE26]'
+  id: totrans-162
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE26]'
+- en: return ret
+  id: totrans-163
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 返回 ret
+- en: '[PRE27]'
+  id: totrans-164
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE27]'
+- en: '---'
+  id: totrans-165
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '---'
+- en: '- name: Play to demonstrate our custom lookup plugin'
+  id: totrans-166
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '- name: 播放以演示我们的自定义查找插件'
+- en: 'hosts: frontends'
+  id: totrans-167
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'hosts: frontends'
+- en: 'gather_facts: false'
+  id: totrans-168
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'gather_facts: false'
+- en: 'tasks:'
+  id: totrans-169
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'tasks:'
+- en: '- name: make a statement'
+  id: totrans-170
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '- name: 创建语句'
+- en: 'debug:'
+  id: totrans-171
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'debug:'
+- en: 'msg: "{{ lookup(''firstchar'', ''testdoc.txt'')}}"'
+  id: totrans-172
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'msg: "{{ lookup(''firstchar'', ''testdoc.txt'')}}"'
+- en: '[PRE28]'
+  id: totrans-173
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE28]'
+- en: Hello
+  id: totrans-174
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: Hello
+- en: '[PRE29]'
+  id: totrans-175
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE29]'
+- en: $ ansible-playbook -i hosts myplugin2.yml
+  id: totrans-176
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: $ ansible-playbook -i hosts myplugin2.yml
+- en: PLAY [Play to demonstrate our custom lookup plugin] ****************************
+  id: totrans-177
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: PLAY [播放以演示我们的自定义查找插件] ****************************
+- en: TASK [make a statement] ********************************************************
+  id: totrans-178
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: TASK [创建语句] ********************************************************
+- en: 'ok: [frt01.example.com] => {'
+  id: totrans-179
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'ok: [frt01.example.com] => {'
+- en: '"msg": "H"'
+  id: totrans-180
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '"msg": "H"'
+- en: '}'
+  id: totrans-181
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '}'
+- en: PLAY RECAP *********************************************************************
+  id: totrans-182
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: PLAY RECAP *********************************************************************
+- en: 'frt01.example.com : ok=1 changed=0 unreachable=0 failed=0 skipped=0 rescued=0
+    ignored=0'
+  id: totrans-183
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'frt01.example.com : ok=1 changed=0 unreachable=0 failed=0 skipped=0 rescued=0
+    ignored=0'
+- en: '[PRE30]'
+  id: totrans-184
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE30]'
+- en: 'lookup plugin would go into the lookup plugin’s directory, using a command
+    such as the following:'
+  id: totrans-185
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 查找插件将进入查找插件的目录，使用如下命令：
+- en: '[PRE31]'
+  id: totrans-186
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE31]'
+- en: '[PRE32]'
+  id: totrans-187
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE32]'
+- en: $ . hacking/env-setup
+  id: totrans-188
+  prefs: []
+  type: TYPE_NORMAL
+  zh: $ . hacking/env-setup
+- en: running egg_info
+  id: totrans-189
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 运行 egg_info
+- en: creating lib/ansible.egg-info
+  id: totrans-190
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 创建 lib/ansible.egg-info
+- en: writing requirements to lib/ansible.egg-info/requires.txt
+  id: totrans-191
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 写入依赖关系到 lib/ansible.egg-info/requires.txt
+- en: writing lib/ansible.egg-info/PKG-INFO
+  id: totrans-192
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 写入 lib/ansible.egg-info/PKG-INFO
+- en: writing top-level names to lib/ansible.egg-info/top_level.txt
+  id: totrans-193
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 写入顶级名称到 lib/ansible.egg-info/top_level.txt
+- en: writing dependency_links to lib/ansible.egg-info/dependency_links.txt
+  id: totrans-194
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 写入依赖链接到 lib/ansible.egg-info/dependency_links.txt
+- en: writing manifest file 'lib/ansible.egg-info/SOURCES.txt'
+  id: totrans-195
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 写入清单文件 'lib/ansible.egg-info/SOURCES.txt'
+- en: reading manifest file 'lib/ansible.egg-info/SOURCES.txt'
+  id: totrans-196
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 读取清单文件 'lib/ansible.egg-info/SOURCES.txt'
+- en: reading manifest template 'MANIFEST.in'
+  id: totrans-197
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 读取清单模板 'MANIFEST.in'
+- en: 'warning: no files found matching ''SYMLINK_CACHE.json'''
+  id: totrans-198
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'warning: 未找到匹配 ''SYMLINK_CACHE.json'' 的文件'
+- en: writing manifest file 'lib/ansible.egg-info/SOURCES.txt'
+  id: totrans-199
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 写入清单文件 'lib/ansible.egg-info/SOURCES.txt'
+- en: Setting up Ansible to run out of checkout...
+  id: totrans-200
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 设置 Ansible 以便从检出目录运行...
+- en: PATH=/home/james/ansible/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/root/bin
+  id: totrans-201
+  prefs: []
+  type: TYPE_NORMAL
+  zh: PATH=/home/james/ansible/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/root/bin
+- en: PYTHONPATH=/home/james/ansible/lib
+  id: totrans-202
+  prefs: []
+  type: TYPE_NORMAL
+  zh: PYTHONPATH=/home/james/ansible/lib
+- en: MANPATH=/home/james/ansible/docs/man:/usr/local/share/man:/usr/share/man
+  id: totrans-203
+  prefs: []
+  type: TYPE_NORMAL
+  zh: MANPATH=/home/james/ansible/docs/man:/usr/local/share/man:/usr/share/man
+- en: Remember, you may wish to specify your host file with -i
+  id: totrans-204
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请记住，您可能希望使用 -i 指定您的主机文件
+- en: Done!
+  id: totrans-205
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 完成！
+- en: $ ansible-doc -t lookup firstchar
+  id: totrans-206
+  prefs: []
+  type: TYPE_NORMAL
+  zh: $ ansible-doc -t lookup firstchar
+- en: FIRSTCHAR (/home/james/ansible/lib/ansible/plugins/lookup/firstchar.py)
+  id: totrans-207
+  prefs:
+  - PREF_BQ
+  type: TYPE_NORMAL
+  zh: FIRSTCHAR (/home/james/ansible/lib/ansible/plugins/lookup/firstchar.py)
+- en: This lookup returns the first character of the contents from a
+  id: totrans-208
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个查找返回文件内容的第一个字符
+- en: file on the Ansible controller's file system.
+  id: totrans-209
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 控制节点文件系统上的文件。
+- en: '* This module is maintained by The Ansible Community'
+  id: totrans-210
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '* 该模块由 Ansible 社区维护'
+- en: 'OPTIONS (= is mandatory):'
+  id: totrans-211
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 'OPTIONS (= 是必需的):'
+- en: = _terms
+  id: totrans-212
+  prefs: []
+  type: TYPE_NORMAL
+  zh: = _terms
+- en: path(s) of files to read
+  id: totrans-213
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要读取的文件路径
+- en: '[PRE33]'
+  id: totrans-214
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE33]'
+- en: '$ git clone https://github.complugins/ directory. The copy command used in
+    the following code block is just an example to give you an idea as to what to
+    do – in reality, you should choose the appropriate category subdirectory for your
+    plugin as it won’t necessarily fit into the lookup category. Once you’ve added
+    your Python file, perform a git add command to make Git aware of the new file,
+    and then commit it with a meaningful commit message. Some example commands are
+    shown here:'
+  id: totrans-215
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: $ git clone https://github.complugins/ 目录。以下代码块中使用的复制命令只是一个示例，目的是给你提供一个大致的操作思路——实际上，你应选择适合你插件的子目录，因为它不一定适用于查找类别。一旦你添加了
+    Python 文件，执行 `git add` 命令让 Git 知道这个新文件，然后使用有意义的提交信息进行提交。这里展示了一些示例命令：
+- en: '[PRE34]'
+  id: totrans-216
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE34]'
+- en: '[PRE35]'
+  id: totrans-217
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE35]'
+- en: $ git push
+  id: totrans-218
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: $ git push
+- en: '[PRE36]'
+  id: totrans-219
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE36]'

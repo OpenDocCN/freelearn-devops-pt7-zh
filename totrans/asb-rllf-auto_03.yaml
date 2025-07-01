@@ -1,0 +1,1911 @@
+- en: '3'
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '3'
+- en: Automating Your Daily Jobs
+  id: totrans-1
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 自动化您的日常工作
+- en: Are you struggling to find automation use cases to start with Ansible automation?
+    Your workplace is a great place to start your search for automation use cases.
+    Track the most repeated jobs that you or your team are doing every day and you
+    will see the opportunity to automate these tasks. This can be simple server information
+    gathering, collecting operating system versions, or a simple weekly reboot job.
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 是否在为找到适合 Ansible 自动化的使用案例而苦恼？您的工作场所是寻找自动化使用案例的绝佳起点。跟踪您或您的团队每天重复执行的任务，您会发现自动化这些任务的机会。这些任务可能是简单的服务器信息收集、操作系统版本采集，或者是每周一次的重启工作。
+- en: In this chapter, you will learn how to use the Jinja2 template to create reports
+    and emails with the help of Ansible. You will also learn how to develop Ansible
+    artifacts in a modular way and include tasks and variables dynamically.
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，您将学习如何利用 Jinja2 模板创建报告和电子邮件，并借助 Ansible 完成这些任务。您还将学习如何以模块化的方式开发 Ansible
+    工件，并动态地包括任务和变量。
+- en: 'In this chapter, we will cover the following topics:'
+  id: totrans-4
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章将涵盖以下主题：
+- en: Using Ansible to collect server details
+  id: totrans-5
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用 Ansible 收集服务器详细信息
+- en: Collecting system information
+  id: totrans-6
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 收集系统信息
+- en: System scanning and remediation using Ansible
+  id: totrans-7
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用 Ansible 进行系统扫描与修复
+- en: Automated weekly system reboot using Ansible
+  id: totrans-8
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用 Ansible 实现自动化的每周系统重启
+- en: Automating notifications
+  id: totrans-9
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 自动化通知
+- en: We will start with `ansible_facts` and learn how to extract the data for your
+    system reports. The chapter will explain how to collect data, insert it into an
+    HTML report, and store it on web servers. Then, you will learn how to configure
+    standard system files and automate a server reboot with an email notification.
+  id: totrans-10
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将从 `ansible_facts` 开始，学习如何提取系统报告所需的数据。本章将解释如何收集数据、将其插入到 HTML 报告中，并存储到 Web
+    服务器上。接着，您将学习如何配置标准的系统文件，并通过电子邮件通知自动化服务器重启。
+- en: Technical requirements
+  id: totrans-11
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 技术要求
+- en: 'The following are the technical requirements for this chapter:'
+  id: totrans-12
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是本章的技术要求：
+- en: A Linux machine for the Ansible control node
+  id: totrans-13
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 用于 Ansible 控制节点的 Linux 机器
+- en: Two or more Linux machines with Red Hat repositories configured (if you are
+    using other Linux operating systems instead of **Red Hat Enterprise Linux** (**RHEL**)
+    machines, then make sure you have the appropriate repositories configured to get
+    packages and updates)
+  id: totrans-14
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 配置了 Red Hat 仓库的两台或更多 Linux 机器（如果您使用的是其他 Linux 操作系统而非**Red Hat Enterprise Linux**（**RHEL**）机器，请确保您已经配置了适当的仓库，以便获取包和更新）
+- en: All the Ansible configurations, playbooks, commands, and snippets for this chapter
+    can be found in this book’s GitHub repository at [https://github.com/PacktPublishing/Ansible-for-Real-life-Automation/tree/main/Chapter-03](https://github.com/PacktPublishing/Ansible-for-Real-life-Automation/tree/main/Chapter-03).
+  id: totrans-15
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章的所有 Ansible 配置、playbook、命令和代码片段可以在本书的 GitHub 仓库中找到，地址是：[https://github.com/PacktPublishing/Ansible-for-Real-life-Automation/tree/main/Chapter-03](https://github.com/PacktPublishing/Ansible-for-Real-life-Automation/tree/main/Chapter-03)。
+- en: Using Ansible to collect server details
+  id: totrans-16
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用 Ansible 收集服务器详细信息
+- en: In the previous chapter, you learned how to use Ansible for basic automation
+    by using simple playbooks and tasks. In this chapter, you will learn more by automating
+    the simple day-to-day jobs in your workplace.
+  id: totrans-17
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在上一章中，您学习了如何通过使用简单的 playbook 和任务来利用 Ansible 进行基本的自动化。本章中，您将通过自动化您工作场所中的一些简单的日常任务，进一步加深理解。
+- en: An up-to-date system inventory with easy access is the dream of every system
+    engineer and IT team. In large enterprises, it is common to use **configuration
+    management database** (**CMDB**) software. However, engineers must maintain their
+    spreadsheets to keep the server and device information they are managing. When
+    you have software-defined infrastructures such as virtual machines and virtual
+    appliances, verifying and updating these local spreadsheets will become a tedious
+    task.
+  id: totrans-18
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一个最新的、易于访问的系统清单是每个系统工程师和 IT 团队的梦想。在大型企业中，常常使用**配置管理数据库**（**CMDB**）软件。然而，工程师们必须维护自己的电子表格，以便跟踪他们管理的服务器和设备信息。当您使用虚拟机和虚拟设备等软件定义基础设施时，验证和更新这些本地电子表格将变得非常繁琐。
+- en: 'Maintaining such information can be automated using Ansible, as shown in the
+    following diagram:'
+  id: totrans-19
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用 Ansible 可以自动化维护这些信息，如下图所示：
+- en: '![Figure 3.1 – Maintaining a system information database using Ansible ](img/B18383_03_01.jpg)'
+  id: totrans-20
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 3.1 – 使用 Ansible 维护系统信息数据库](img/B18383_03_01.jpg)'
+- en: Figure 3.1 – Maintaining a system information database using Ansible
+  id: totrans-21
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 3.1 – 使用 Ansible 维护系统信息数据库
+- en: 'Ansible and `ansible_facts` can be used to create and update your system inventory
+    database or your own CMDB. `ansible_facts` provides detailed and informative data
+    that’s gathered from the target nodes (managed nodes) and stored in `setup` module
+    at the beginning of each play in the playbook. If you remember the `chrony` package
+    installation playbook, check the `TASK [Gathering Facts]` line, which shows the
+    `setup` module running in the background:'
+  id: totrans-22
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 和 `ansible_facts` 可以用来创建和更新系统库存数据库或您自己的 CMDB。`ansible_facts` 提供从目标节点（被管理节点）收集的详细和有用的数据，并存储在
+    `setup` 模块中，这个过程发生在每个 play 的开始。如果您还记得 `chrony` 包的安装 playbook，可以查看 `TASK [Gathering
+    Facts]` 行，那里显示了 `setup` 模块在后台运行：
+- en: '![Figure 3.2 – An Ansible fact-gathering task by the setup module ](img/B18383_03_02.jpg)'
+  id: totrans-23
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 3.2 – 由 setup 模块执行的 Ansible 信息收集任务](img/B18383_03_02.jpg)'
+- en: Figure 3.2 – An Ansible fact-gathering task by the setup module
+  id: totrans-24
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 3.2 – 由 setup 模块执行的 Ansible 信息收集任务
+- en: '`ansible_facts` can be used to make decisions inside the playbook, such as
+    skipping the task if the system memory is less than the required value or installing
+    specific packages, depending on the operating system version of the target node.'
+  id: totrans-25
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`ansible_facts` 可用于在 playbook 中做出决策，例如，如果系统内存低于要求的值，则跳过任务，或根据目标节点的操作系统版本安装特定的软件包。'
+- en: Ansible roles
+  id: totrans-26
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: Ansible 角色
+- en: 'An Ansible role is a collection of tasks, handlers, templates, and variables
+    for configuring the target system so that it meets the desired state. Ansible
+    roles enable content sharing without much trouble as we can include the required
+    variables, tasks, templates, and other files in the role directory itself. Ansible
+    roles are meant for reusability and collaborative support in such a way that the
+    same roles can be distributed to teams or the public. Other users can use the
+    roles to achieve the same task:'
+  id: totrans-27
+  prefs: []
+  type: TYPE_NORMAL
+  zh: An Ansible 角色是一个包含任务、处理器、模板和变量的集合，用于配置目标系统，使其达到所需状态。Ansible 角色使得内容共享变得简单，因为我们可以在角色目录中包含所需的变量、任务、模板和其他文件。Ansible
+    角色旨在实现可重用性和协作支持，以便将相同的角色分发给团队或公众。其他用户可以使用这些角色来完成相同的任务：
+- en: With Ansible roles, we can easily share a playbook’s content with other teams
+    by sharing the entire role directory. For example, it is possible to write a role
+    for `install_dbserver` or `setup_webserver` and later share it with the public/other
+    teams.
+  id: totrans-28
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用 Ansible 角色，我们可以轻松地将 playbook 的内容与其他团队共享，只需共享整个角色目录。例如，可以编写 `install_dbserver`
+    或 `setup_webserver` 角色，并在之后将其与公众或其他团队共享。
+- en: Larger projects can be created in a modular way.
+  id: totrans-29
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 更大的项目可以通过模块化的方式进行创建。
+- en: Different users can create different roles in parallel and share the same project.
+    For example, developer 1 writes a role for `install_dbserver` and developer 2
+    focuses on the `setup_webserver` role.
+  id: totrans-30
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 不同的用户可以并行创建不同的角色并共享同一个项目。例如，开发人员 1 编写 `install_dbserver` 角色，开发人员 2 则专注于 `setup_webserver`
+    角色。
+- en: Let us learn about the directory structure of Ansible roles in the next section.
+  id: totrans-31
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来让我们学习 Ansible 角色的目录结构。
+- en: Roles directory structure
+  id: totrans-32
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 角色目录结构
+- en: 'The content of Ansible roles is arranged in an organized way. The top-level
+    directory defines the name of the role itself, as shown in the following screenshot
+    (we will create these roles and their content later in this chapter):'
+  id: totrans-33
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 角色的内容以有组织的方式进行排列。顶层目录定义了角色本身的名称，如下截图所示（我们将在本章稍后创建这些角色及其内容）：
+- en: '![Figure 3.3 – Sample project directory with roles ](img/B18383_03_03.jpg)'
+  id: totrans-34
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 3.3 – 包含角色的示例项目目录](img/B18383_03_03.jpg)'
+- en: Figure 3.3 – Sample project directory with roles
+  id: totrans-35
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 3.3 – 包含角色的示例项目目录
+- en: 'In the preceding screenshot, I have two roles named `deploy-web-server` and
+    `security-baseline-rhel8` under my `roles` directory. Some of the directories
+    contain `main.yml`, which contains tasks, variables, or handlers:'
+  id: totrans-36
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在前面的截图中，我的 `roles` 目录下有两个角色，分别是 `deploy-web-server` 和 `security-baseline-rhel8`。其中一些目录包含
+    `main.yml` 文件，里面包含任务、变量或处理器：
+- en: '`Defaults/main.yml`: This contains variables for the role that can be overwritten
+    when the role is used.'
+  id: totrans-37
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`Defaults/main.yml`：包含角色的变量，在使用该角色时可以被覆盖。'
+- en: '`tasks/main.yml`: This contains the main list of tasks to be executed when
+    using the role.'
+  id: totrans-38
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`tasks/main.yml`：包含使用角色时要执行的主要任务列表。'
+- en: '`vars/main.yml`: This contains internal variables for the role.'
+  id: totrans-39
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`vars/main.yml`：包含角色的内部变量。'
+- en: '`files`: This contains static files that can be referenced from this role.'
+  id: totrans-40
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`files`：包含可以从此角色引用的静态文件。'
+- en: '`templates`: This is the jinja2 templates that can be used via this role.'
+  id: totrans-41
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`templates`：这是可以通过该角色使用的 jinja2 模板。'
+- en: '`handlers/main.yml`: This contains the handler definitions.'
+  id: totrans-42
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`handlers/main.yml`：这包含了处理程序定义。'
+- en: '`meta/main.yml`: This defines some metadata for this role, such as the author,
+    license, platform, and dependencies.'
+  id: totrans-43
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`meta/main.yml`：这定义了此角色的一些元数据，如作者、许可、平台和依赖关系。'
+- en: '`tests`: This is an inventory. `test.yml` file that can be used to test this
+    role.'
+  id: totrans-44
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`tests`：这是一个清单。`test.yml` 文件可以用来测试这个角色。'
+- en: The default variables can be defined under `defaults/main.yml`; additional role
+    variables can be defined inside `vars/main.yml`. However, depending on the location
+    of your variable and variable precedence, Ansible will apply the appropriate value
+    for the variable. Refer to [https://docs.ansible.com/ansible/latest/user_guide/playbooks_variables.xhtml#understanding-variable-precedence](https://docs.ansible.com/ansible/latest/user_guide/playbooks_variables.xhtml#understanding-variable-precedence)
+    to learn and understand more about variable precedence.
+  id: totrans-45
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 默认变量可以在 `defaults/main.yml` 中定义；其他角色变量可以在 `vars/main.yml` 中定义。但是，根据变量的位置和变量优先级，Ansible
+    将应用适当的变量值。参阅 [https://docs.ansible.com/ansible/latest/user_guide/playbooks_variables.xhtml#understanding-variable-precedence](https://docs.ansible.com/ansible/latest/user_guide/playbooks_variables.xhtml#understanding-variable-precedence)
+    以了解更多关于变量优先级的信息。
+- en: Ansible Roles
+  id: totrans-46
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 角色
+- en: There are over 10,000 roles available in Ansible Galaxy ([https://galaxy.ansible.com](https://galaxy.ansible.com))
+    that have been contributed by the community. Users can freely download and use
+    them for their Ansible automation process. If the organization is looking for
+    certified content collections (collections and roles), then we can find them by
+    going to Red Hat Automation Hub (at the [console.redhat.com](http://console.redhat.com)
+    portal). Read [https://docs.ansible.com/ansible/latest/user_guide/playbooks_reuse_roles.xhtml](https://docs.ansible.com/ansible/latest/user_guide/playbooks_reuse_roles.xhtml)
+    to learn more about Ansible roles. Find the official Red Hat roles at [https://galaxy.ansible.com/RedHatOfficial](https://galaxy.ansible.com/RedHatOfficial).
+  id: totrans-47
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 Ansible Galaxy 中有超过 10,000 个角色可供使用（[https://galaxy.ansible.com](https://galaxy.ansible.com)），这些角色由社区贡献。用户可以自由下载并用于
+    Ansible 自动化过程。如果组织需要认证的内容集合（集合和角色），则可以通过访问 Red Hat Automation Hub（在 [console.redhat.com](http://console.redhat.com)
+    门户）来找到它们。阅读 [https://docs.ansible.com/ansible/latest/user_guide/playbooks_reuse_roles.xhtml](https://docs.ansible.com/ansible/latest/user_guide/playbooks_reuse_roles.xhtml)
+    以了解更多关于 Ansible 角色的信息。可以在 [https://galaxy.ansible.com/RedHatOfficial](https://galaxy.ansible.com/RedHatOfficial)
+    找到官方的 Red Hat 角色。
+- en: Ansible Jinja2 templates
+  id: totrans-48
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: Ansible Jinja2 模板
+- en: '`template` module (or the Ansible `template` filter) to convert the Jinja2
+    template into actual content or a file. Ansible will replace the variable with
+    values as needed.'
+  id: totrans-49
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用 `template` 模块（或 Ansible 的 `template` 过滤器）将 Jinja2 模板转换为实际内容或文件。Ansible 将根据需要替换变量的值。
+- en: 'For example, a standard `/etc/motd` file can be deployed to your servers by
+    using the appropriate values dynamically. Your Jinja2 template will look as follows
+    (it may look different, based on your customization):'
+  id: totrans-50
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 例如，标准的 `/etc/motd` 文件可以通过动态地使用适当的值部署到服务器上。你的 Jinja2 模板将如下所示（根据你的自定义可能有所不同）：
+- en: '![Figure 3.4 – Jinja2 template for the motd file ](img/B18383_03_04.jpg)'
+  id: totrans-51
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 3.4 – 用于 motd 文件的 Jinja2 模板](img/B18383_03_04.jpg)'
+- en: Figure 3.4 – Jinja2 template for the motd file
+  id: totrans-52
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 3.4 – 用于 motd 文件的 Jinja2 模板
+- en: 'Inside the playbook, you will `template` the file and transfer it to the target
+    machine using the `template` module (do not use the `copy` module as the templating
+    will not work):'
+  id: totrans-53
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在剧本中，你将 `template` 文件，并使用 `template` 模块将其传输到目标机器（不要使用 `copy` 模块，因为模板化将无法工作）：
+- en: '![Figure 3.5 – Using template module in playbook ](img/B18383_03_05.jpg)'
+  id: totrans-54
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 3.5 – 在剧本中使用模板模块](img/B18383_03_05.jpg)'
+- en: Figure 3.5 – Using template module in playbook
+  id: totrans-55
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 3.5 – 在剧本中使用模板模块
+- en: 'On the target machine, the variables inside the Jinja2 template will be replaced
+    with values, as follows:'
+  id: totrans-56
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在目标机器上，Jinja2 模板中的变量将被替换为相应的值，如下所示：
+- en: '![Figure 3.6 – The /etc/motd file that was created using the Jinja2 template
+    ](img/B18383_03_06.jpg)'
+  id: totrans-57
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 3.6 – 使用 Jinja2 模板创建的 /etc/motd 文件](img/B18383_03_06.jpg)'
+- en: Figure 3.6 – The /etc/motd file that was created using the Jinja2 template
+  id: totrans-58
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 3.6 – 使用 Jinja2 模板创建的 /etc/motd 文件
+- en: Any level of complexity and loops can be used inside the template to create
+    dynamic output files. Some of the use cases generate reports, web server configuration
+    (HTTPS, Nginx), system configuration files (`/etc/hosts`, `/etc/motd`, and `/etc/fstab`),
+    and more.
+  id: totrans-59
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 模板中可以使用任何复杂度和循环来生成动态输出文件。一些使用案例包括生成报告、Web 服务器配置（HTTPS、Nginx）、系统配置文件（`/etc/hosts`、`/etc/motd`
+    和 `/etc/fstab`）等。
+- en: Ansible Jinja2 Templating
+  id: totrans-60
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible Jinja2 模板
+- en: Read more about Ansible Jinja2 templating at [https://docs.ansible.com/ansible/latest/user_guide/playbooks_templating.xhtml](https://docs.ansible.com/ansible/latest/user_guide/playbooks_templating.xhtml).
+  id: totrans-61
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 阅读更多关于 Ansible Jinja2 模板的内容，请访问 [https://docs.ansible.com/ansible/latest/user_guide/playbooks_templating.xhtml](https://docs.ansible.com/ansible/latest/user_guide/playbooks_templating.xhtml)。
+- en: 'In this use case, you will extract the required information using `ansible_facts`
+    from `node1` (and other machines if you have some) and store it as an HTML report
+    inside a web server (`node2`), as shown in the following diagram:'
+  id: totrans-62
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在此使用案例中，您将使用 `ansible_facts` 从 `node1`（如果有其他机器，也可以从它们获取）提取所需的信息，并将其作为 HTML 报告存储在
+    Web 服务器（`node2`）中，如下图所示：
+- en: '![Figure 3.7 – Machines for the Ansible CMDB use case ](img/B18383_03_07.jpg)'
+  id: totrans-63
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 3.7 – 用于 Ansible CMDB 使用案例的机器 ](img/B18383_03_07.jpg)'
+- en: Figure 3.7 – Machines for the Ansible CMDB use case
+  id: totrans-64
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 3.7 – 用于 Ansible CMDB 使用案例的机器
+- en: For the following use case, we need to deploy a web server. We will use Ansible
+    to deploy and configure the web server on `node2`.
+  id: totrans-65
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于以下使用案例，我们需要部署一个 Web 服务器。我们将使用 Ansible 在 `node2` 上部署和配置 Web 服务器。
+- en: 'Follow these steps to deploy a web server using an Ansible role:'
+  id: totrans-66
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 按照以下步骤使用 Ansible 角色部署 Web 服务器：
+- en: 'On your Ansible control node, create a new directory called `Chapter-03` and
+    create an `ansible.cfg` file, as follows:'
+  id: totrans-67
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在您的 Ansible 控制节点上，创建一个名为 `Chapter-03` 的新目录，并创建一个 `ansible.cfg` 文件，如下所示：
+- en: '![Figure 3.8 – The ansible.cfg file ](img/B18383_03_08.jpg)'
+  id: totrans-68
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 3.8 – ansible.cfg 文件 ](img/B18383_03_08.jpg)'
+- en: Figure 3.8 – The ansible.cfg file
+  id: totrans-69
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 3.8 – ansible.cfg 文件
+- en: 'Create a `hosts` file in the same directory as the `node-1` managed node (use
+    the correct IP address as per your lab or environment):'
+  id: totrans-70
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在与 `node-1` 管理节点相同的目录中创建一个 `hosts` 文件（使用您实验室或环境中的正确 IP 地址）：
+- en: '![Figure 3.9 – The Ansible inventory (hosts) file ](img/B18383_03_09.jpg)'
+  id: totrans-71
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 3.9 – Ansible 清单（hosts）文件 ](img/B18383_03_09.jpg)'
+- en: Figure 3.9 – The Ansible inventory (hosts) file
+  id: totrans-72
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 3.9 – Ansible 清单（hosts）文件
+- en: In the preceding screenshot, `[nodes:vars]` is the group variable. The variables
+    will be available for all managed nodes under the `nodes` host group.
+  id: totrans-73
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在上面的截图中，`[nodes:vars]` 是组变量。这些变量将在 `nodes` 主机组下对所有管理节点可用。
+- en: 'Now, create an Ansible role to deploy a web server on `node2` using Apache:'
+  id: totrans-74
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在，创建一个 Ansible 角色，在 `node2` 上使用 Apache 部署 Web 服务器：
+- en: '[PRE0]'
+  id: totrans-75
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: 'Once you have created the `roles` directory, initiate a new Ansible role using
+    the `ansible-galaxy` command. The `ansible-galaxy` command will initiate and create
+    the skeleton directory structure for the role:'
+  id: totrans-76
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 一旦创建了 `roles` 目录，使用 `ansible-galaxy` 命令初始化一个新的 Ansible 角色。`ansible-galaxy` 命令将初始化并创建该角色的骨架目录结构：
+- en: '![Figure 3.10 – Initializing the Ansible role with the ansible-galaxy command
+    ](img/B18383_03_10.jpg)'
+  id: totrans-77
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 3.10 – 使用 ansible-galaxy 命令初始化 Ansible 角色 ](img/B18383_03_10.jpg)'
+- en: Figure 3.10 – Initializing the Ansible role with the ansible-galaxy command
+  id: totrans-78
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 3.10 – 使用 ansible-galaxy 命令初始化 Ansible 角色
+- en: 'Verify the content of the `roles` directory:'
+  id: totrans-79
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 验证 `roles` 目录的内容：
+- en: '![Figure 3.11 – The roles directory’s content ](img/B18383_03_11.jpg)'
+  id: totrans-80
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 3.11 – 角色目录的内容 ](img/B18383_03_11.jpg)'
+- en: Figure 3.11 – The roles directory’s content
+  id: totrans-81
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 3.11 – 角色目录的内容
+- en: 'Add the following tasks to the `roles/deploy-web-server/tasks/main.yml` file
+    to install the `firewalld` and `httpd` packages:'
+  id: totrans-82
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 将以下任务添加到 `roles/deploy-web-server/tasks/main.yml` 文件中，以安装 `firewalld` 和 `httpd`
+    软件包：
+- en: '![Figure 3.12 – Installing httpd and firewalld ](img/B18383_03_12.jpg)'
+  id: totrans-83
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 3.12 – 安装 httpd 和 firewalld ](img/B18383_03_12.jpg)'
+- en: Figure 3.12 – Installing httpd and firewalld
+  id: totrans-84
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 3.12 – 安装 httpd 和 firewalld
+- en: 'Add more tasks to the role to enable the firewall service and permit the `httpd`
+    service in the firewall, as follows:'
+  id: totrans-85
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 向角色中添加更多任务，以启用防火墙服务并允许 `httpd` 服务通过防火墙，如下所示：
+- en: '![Figure 3.13 – Ansible web deploy role – enabling the firewalld service and
+    permitting httpd in the firewall ](img/B18383_03_13.jpg)'
+  id: totrans-86
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 3.13 – Ansible web 部署角色 – 启用 firewalld 服务并允许 httpd 通过防火墙 ](img/B18383_03_13.jpg)'
+- en: Figure 3.13 – Ansible web deploy role – enabling the firewalld service and permitting
+    httpd in the firewall
+  id: totrans-87
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 3.13 – Ansible web 部署角色 – 启用 firewalld 服务并允许 httpd 通过防火墙
+- en: 'Finally, add the task for enabling and starting the `httpd` service, as follows:'
+  id: totrans-88
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 最后，添加启用并启动 `httpd` 服务的任务，如下所示：
+- en: '![Figure 3.14 – Ansible web deploy role – enabling and starting httpd ](img/B18383_03_14.jpg)'
+  id: totrans-89
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 3.14 – Ansible web 部署角色 – 启用并启动 httpd ](img/B18383_03_14.jpg)'
+- en: Figure 3.14 – Ansible web deploy role – enabling and starting httpd
+  id: totrans-90
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 3.14 – Ansible web 部署角色 – 启用并启动 httpd
+- en: The `tasks/main.yml` file will create the `/var/www/html` directory and install
+    the `httpd` and `firewalld` packages. Then, it will start the `httpd` and `firewalld`
+    services and open `httpd` ports in the firewall.
+  id: totrans-91
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`tasks/main.yml`文件将创建`/var/www/html`目录，并安装`httpd`和`firewalld`包。然后，它将启动`httpd`和`firewalld`服务，并在防火墙中打开`httpd`端口。'
+- en: Remove other unwanted directories and files (automatically generated) inside
+    the `deploy-web-server` role directory. In this case, leave it as-is and proceed
+    with the next step.
+  id: totrans-92
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 删除`deploy-web-server`角色目录中其他不需要的目录和文件（自动生成的）。在这种情况下，保持不变并继续进行下一步。
+- en: 'Create a playbook called `Chapter-03/deploy-web.yml` so that you can deploy
+    the web server (remember to go back to the main directory – that is, `Chapter-03`):'
+  id: totrans-93
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建一个名为`Chapter-03/deploy-web.yml`的剧本，这样您就可以部署Web服务器（记得返回到主目录——即`Chapter-03`）：
+- en: '![Figure 3.15 – Ansible playbook to call the role ](img/B18383_03_15.jpg)'
+  id: totrans-94
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图3.15 – 调用角色的Ansible剧本](img/B18383_03_15.jpg)'
+- en: Figure 3.15 – Ansible playbook to call the role
+  id: totrans-95
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图3.15 – 调用角色的Ansible剧本
+- en: 'Now, your directory will contain the following contents:'
+  id: totrans-96
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，您的目录将包含以下内容：
+- en: '![Figure 3.16 – The project directory’s content ](img/B18383_03_16.jpg)'
+  id: totrans-97
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图3.16 – 项目目录内容](img/B18383_03_16.jpg)'
+- en: Figure 3.16 – The project directory’s content
+  id: totrans-98
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图3.16 – 项目目录内容
+- en: 'Execute the `deploy-web.yml` playbook to deploy the web server on `node2`:'
+  id: totrans-99
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 执行`deploy-web.yml`剧本以在`node2`上部署Web服务器：
+- en: '![Figure 3.17 – Executing the web server deployment playbook ](img/B18383_03_17.jpg)'
+  id: totrans-100
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图3.17 – 执行Web服务器部署剧本](img/B18383_03_17.jpg)'
+- en: Figure 3.17 – Executing the web server deployment playbook
+  id: totrans-101
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图3.17 – 执行Web服务器部署剧本
+- en: The same playbook can be executed multiple times and Ansible will execute or
+    skip the operation in the backend based on the desired status. This feature is
+    called **idempotency** in Ansible, by which the Ansible module will check the
+    desired status (for example, installing packages or copying files) and execute
+    the operation only if required.
+  id: totrans-102
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 相同的剧本可以执行多次，Ansible将在后台根据所需的状态执行或跳过操作。这个特性在Ansible中称为**幂等性**，Ansible模块将检查所需的状态（例如，安装包或复制文件），并仅在需要时执行操作。
+- en: Ansible Idempotency
+  id: totrans-103
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible的幂等性
+- en: '*“An operation is idempotent if the result of performing it once is the same
+    as the result of performing it repeatedly without any intervening actions.”* –
+    Ansible Glossary ([https://docs.ansible.com/ansible/latest/reference_appendices/glossary.xhtml](https://docs.ansible.com/ansible/latest/reference_appendices/glossary.xhtml))'
+  id: totrans-104
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '*“一个操作是幂等的，如果执行一次的结果与重复执行多次的结果相同，而中间没有任何干预操作。”* – Ansible词汇表（[https://docs.ansible.com/ansible/latest/reference_appendices/glossary.xhtml](https://docs.ansible.com/ansible/latest/reference_appendices/glossary.xhtml)）'
+- en: 'Let’s execute the same playbook again and check the difference. Here, we can
+    see the `ok` status instead of `changed` (*Figure 3.17*) since Ansible has not
+    executed the operation. This is because the `firewalld` and `httpd` packages have
+    been installed and the services have been started already (the desired state has
+    already been met):'
+  id: totrans-105
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们再次执行相同的剧本并检查差异。在这里，我们可以看到`ok`状态而不是`changed`（*图3.17*），因为Ansible并没有执行该操作。这是因为`firewalld`和`httpd`包已经安装，并且服务已经启动（所需的状态已经满足）：
+- en: '![Figure 3.18 – Executing the deployment playbook again and noticing the ok
+    status instead of changed ](img/B18383_03_18.jpg)'
+  id: totrans-106
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图3.18 – 再次执行部署剧本，并注意到`ok`状态而不是`changed`](img/B18383_03_18.jpg)'
+- en: Figure 3.18 – Executing the deployment playbook again and noticing the ok status
+    instead of changed
+  id: totrans-107
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图3.18 – 再次执行部署剧本，并注意到`ok`状态而不是`changed`
+- en: 'Now, verify the web server by visiting the server IP or **Fully Qualified Domain
+    Name** (**FQDN**) in a web browser (you may see different or similar pages, depending
+    on the operating system and version):'
+  id: totrans-108
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，通过访问服务器IP或**完全限定域名**（**FQDN**）在浏览器中验证Web服务器（根据操作系统和版本的不同，您可能会看到不同或相似的页面）：
+- en: '![Figure 3.19 – Default Apache web page ](img/B18383_03_19.jpg)'
+  id: totrans-109
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图3.19 – 默认Apache网页](img/B18383_03_19.jpg)'
+- en: Figure 3.19 – Default Apache web page
+  id: totrans-110
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图3.19 – 默认Apache网页
+- en: 'Log in to `node2` and remove the default `welcome.conf` file so that you can
+    see the directory content of `/var/www/html`:'
+  id: totrans-111
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 登录到`node2`并删除默认的`welcome.conf`文件，以便您可以查看`/var/www/html`目录的内容：
+- en: '[PRE1]'
+  id: totrans-112
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: This is not the best practice in production, and you need to configure your
+    web server with adequate permissions and directory listing options. The preceding
+    step was mentioned to explain the demo and web server functionality.
+  id: totrans-113
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这在生产环境中不是最佳实践，您需要为Web服务器配置适当的权限和目录列表选项。提到上述步骤是为了演示和说明Web服务器的功能。
+- en: With that, you have deployed a web server using an Ansible role to keep the
+    systems information reports or CMDB.
+  id: totrans-114
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这样，你就使用Ansible角色部署了一个Web服务器，用于存储系统信息报告或CMDB。
+- en: Note
+  id: totrans-115
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 注意
+- en: There are many open source projects that can be used to implement CMDB, such
+    as using Ansible facts such as Ansible-CMDB ([https://ansible-cmdb.readthedocs.io/en/latest/](https://ansible-cmdb.readthedocs.io/en/latest/)).
+    Refer to the project documentation and repository for detailed information.
+  id: totrans-116
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有许多开源项目可以用于实现CMDB，比如使用Ansible facts的Ansible-CMDB（[https://ansible-cmdb.readthedocs.io/en/latest/](https://ansible-cmdb.readthedocs.io/en/latest/)）。请参考项目文档和仓库以获取详细信息。
+- en: Collecting system information
+  id: totrans-117
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 收集系统信息
+- en: In this section, you will extract the required information from `ansible_facts`
+    and generate HTML reports inside the web server that you created in the previous
+    section.
+  id: totrans-118
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本节中，你将从`ansible_facts`中提取所需的信息，并在你在上一节中创建的Web服务器中生成HTML报告。
+- en: '`ansible_facts` contains a lot of information about nested dictionaries and
+    lists. Search and go through the content and find the important information you
+    need for your report.'
+  id: totrans-119
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`ansible_facts`包含关于嵌套字典和列表的很多信息。搜索并浏览内容，找到报告中需要的重要信息。'
+- en: 'To see the content of `ansible_facts`, execute the following ad hoc command:'
+  id: totrans-120
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要查看`ansible_facts`的内容，请执行以下临时命令：
+- en: '![Figure 3.20 – Ansible facts output after using an ad hoc command ](img/B18383_03_20.jpg)'
+  id: totrans-121
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图3.20 – 使用临时命令后的Ansible facts输出](img/B18383_03_20.jpg)'
+- en: Figure 3.20 – Ansible facts output after using an ad hoc command
+  id: totrans-122
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图3.20 – 使用临时命令后的Ansible facts输出
+- en: Using the `less` or `more` commands after the pipe (`|`) symbol will keep the
+    output on top without you having to scroll to the bottom. It is possible to scroll
+    down or up using the arrow keys or find the text by searching for it (`/` + `<text>`).
+  id: totrans-123
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用管道符号（`|`）后的`less`或`more`命令可以将输出保持在顶部，无需滚动到页面底部。你可以使用箭头键向下或向上滚动，或者通过搜索文本来查找它（`/`
+    + `<text>`）。
+- en: Find sample `ansible_facts` details for a Linux machine at [https://github.com/PacktPublishing/Ansible-for-Real-life-Automation/tree/main/Chapter-03/node1-ansible-facts](https://github.com/PacktPublishing/Ansible-for-Real-life-Automation/tree/main/Chapter-03/node1-ansible-facts).
+  id: totrans-124
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在[https://github.com/PacktPublishing/Ansible-for-Real-life-Automation/tree/main/Chapter-03/node1-ansible-facts](https://github.com/PacktPublishing/Ansible-for-Real-life-Automation/tree/main/Chapter-03/node1-ansible-facts)中找到Linux机器的`ansible_facts`详细信息。
+- en: 'Follow these steps to use some of the variables from the preceding `setup`
+    output:'
+  id: totrans-125
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 按照以下步骤，使用前面`setup`输出中的一些变量：
+- en: 'Create a role called `Chapter-03/roles/system-report` to generate the HTML
+    reports, as follows:'
+  id: totrans-126
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建一个名为`Chapter-03/roles/system-report`的角色来生成HTML报告，如下所示：
+- en: '![Figure 3.21 – Creating a new Ansible role for the system report ](img/B18383_03_21.jpg)'
+  id: totrans-127
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图3.21 – 创建一个新的Ansible角色用于系统报告](img/B18383_03_21.jpg)'
+- en: Figure 3.21 – Creating a new Ansible role for the system report
+  id: totrans-128
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图3.21 – 创建一个新的Ansible角色用于系统报告
+- en: 'Create a Jinja2 template file called `roles/system-report/templates/system-information.xhtml.j2`
+    and add the HTML header and other details inside the template file:'
+  id: totrans-129
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建一个名为`roles/system-report/templates/system-information.xhtml.j2`的Jinja2模板文件，并在模板文件中添加HTML头部和其他细节：
+- en: '![Figure 3.22 – Jinja2 template for HTML report ](img/B18383_03_22.jpg)'
+  id: totrans-130
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图3.22 – 用于HTML报告的Jinja2模板](img/B18383_03_22.jpg)'
+- en: Figure 3.22 – Jinja2 template for HTML report
+  id: totrans-131
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图3.22 – 用于HTML报告的Jinja2模板
+- en: 'Find the full Jinja2 template at [https://github.com/PacktPublishing/Ansible-for-Real-life-Automation/blob/main/Chapter-03/roles/system-report/templates/system-information.xhtml.j2](https://github.com/PacktPublishing/Ansible-for-Real-life-Automation/blob/main/Chapter-03/roles/system-report/templates/system-information.xhtml.j2).
+    You may have already noticed the variables that are being used inside the Jinja2
+    template, as follows:'
+  id: totrans-132
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在[https://github.com/PacktPublishing/Ansible-for-Real-life-Automation/blob/main/Chapter-03/roles/system-report/templates/system-information.xhtml.j2](https://github.com/PacktPublishing/Ansible-for-Real-life-Automation/blob/main/Chapter-03/roles/system-report/templates/system-information.xhtml.j2)中找到完整的Jinja2模板。你可能已经注意到模板中使用的变量，如下所示：
+- en: '`{{ ansible_hostname }}`: The hostname of the managed node.'
+  id: totrans-133
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`{{ ansible_hostname }}`：托管节点的主机名。'
+- en: '`{{ ansible_all_ipv4_addresses }}`: The IP address list.'
+  id: totrans-134
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`{{ ansible_all_ipv4_addresses }}`：IP地址列表。'
+- en: '`{{ ansible_architecture }}`: The architecture of the target machine.'
+  id: totrans-135
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`{{ ansible_architecture }}`：目标机器的架构。'
+- en: '`{{ ansible_distribution }}` and `{{ ansible_distribution_version }}`: The
+    operating system’s distribution and version.'
+  id: totrans-136
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`{{ ansible_distribution }}`和`{{ ansible_distribution_version }}`：操作系统的发行版和版本。'
+- en: '`{{ report_admin_email }}`: This is a custom variable you need to define in
+    the playbook.'
+  id: totrans-137
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`{{ report_admin_email }}`：这是一个你需要在剧本中定义的自定义变量。'
+- en: 'Create the `roles/system-report/tasks/main.yml` file with the following content:'
+  id: totrans-138
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建 `roles/system-report/tasks/main.yml` 文件，内容如下：
+- en: '![Figure 3.23 – The task file for the system report role ](img/B18383_03_23.jpg)'
+  id: totrans-139
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 3.23 – 系统报告角色的任务文件](img/B18383_03_23.jpg)'
+- en: Figure 3.23 – The task file for the system report role
+  id: totrans-140
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 3.23 – 系统报告角色的任务文件
+- en: In the preceding example, the `template` module will convert the template into
+    the target HTML file with variables replaced with values. Since the report needs
+    to be saved in the web server path, the task will be delegated to `node2` (the
+    web server).
+  id: totrans-141
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在上述示例中，`template` 模块会将模板转换为目标 HTML 文件，并用相应的值替换变量。由于报告需要保存在 web 服务器路径中，任务将委托给
+    `node2`（即 web 服务器）。
+- en: 'Create the `Chapter-03/system-info.yml` playbook and include the `system-report`
+    role:'
+  id: totrans-142
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建 `Chapter-03/system-info.yml` playbook 并包含 `system-report` 角色：
+- en: '![Figure 3.24 – The Ansible playbook for collecting system information ](img/B18383_03_24.jpg)'
+  id: totrans-143
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 3.24 – 用于收集系统信息的 Ansible playbook](img/B18383_03_24.jpg)'
+- en: Figure 3.24 – The Ansible playbook for collecting system information
+  id: totrans-144
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 3.24 – 用于收集系统信息的 Ansible playbook
+- en: 'Execute the playbook and verify its output:'
+  id: totrans-145
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 执行 playbook 并验证其输出：
+- en: '![Figure 3.25 – Collecting system information ](img/B18383_03_25.jpg)'
+  id: totrans-146
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 3.25 – 收集系统信息](img/B18383_03_25.jpg)'
+- en: Figure 3.25 – Collecting system information
+  id: totrans-147
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 3.25 – 收集系统信息
+- en: 'Check the web server to view the report, as follows:'
+  id: totrans-148
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 检查 web 服务器以查看报告，如下所示：
+- en: '![Figure 3.26 – The report that was generated on the web server ](img/B18383_03_26.jpg)'
+  id: totrans-149
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 3.26 – 在 web 服务器上生成的报告](img/B18383_03_26.jpg)'
+- en: Figure 3.26 – The report that was generated on the web server
+  id: totrans-150
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 3.26 – 在 web 服务器上生成的报告
+- en: 'Click on `node1.xhtml` to see its content, as follows:'
+  id: totrans-151
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击 `node1.xhtml` 查看其内容，如下所示：
+- en: '![Figure 3.27 – System information report generated by Ansible ](img/B18383_03_27.jpg)'
+  id: totrans-152
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 3.27 – Ansible 生成的系统信息报告](img/B18383_03_27.jpg)'
+- en: Figure 3.27 – System information report generated by Ansible
+  id: totrans-153
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 3.27 – Ansible 生成的系统信息报告
+- en: This is a very basic HTML report template that explains the capability of the
+    Jinja2 template and `ansible_facts`. Expand the template with additional items,
+    CSS styles, or even different formats such as Markdown, CSV, or JSON. Also, it
+    is possible to keep the report in alternate locations such as a GitHub server
+    or web server with authentication.
+  id: totrans-154
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这是一个非常基础的 HTML 报告模板，说明了 Jinja2 模板和 `ansible_facts` 的功能。可以通过增加额外的项、CSS 样式，甚至不同的格式（如
+    Markdown、CSV 或 JSON）来扩展模板。此外，也可以将报告保存在其他位置，如 GitHub 服务器或具有认证的 web 服务器。
+- en: System scanning and remediation using Ansible
+  id: totrans-155
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用 Ansible 进行系统扫描和修复
+- en: Security scanning and remediation are critical, and organizations are spending
+    more time and money on this area every year. When there are new features and changes
+    in the operating system and applications, you will have more configurations to
+    check and validate to ensure the best security practices are in place. With the
+    help of Ansible, it is possible to automate the security scanning and remediation
+    tasks for your systems and devices.
+  id: totrans-156
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 安全扫描和修复至关重要，组织每年在这一领域投入更多的时间和金钱。当操作系统和应用程序有新功能和变更时，你将有更多的配置需要检查和验证，以确保最佳的安全实践已到位。在
+    Ansible 的帮助下，能够自动化系统和设备的安全扫描和修复任务。
+- en: In this section, you will automate a few basic security and compliance configurations
+    based on the CIS Red Hat Enterprise Linux 8 Benchmark.
+  id: totrans-157
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本节中，你将基于 CIS Red Hat Enterprise Linux 8 基准，自动化一些基本的安全性和合规性配置。
+- en: CIS Benchmark
+  id: totrans-158
+  prefs: []
+  type: TYPE_NORMAL
+  zh: CIS 基准
+- en: CIS provides the best practices and configurations for systems and platforms
+    to ensure security and compliance. Refer to [https://www.cisecurity.org/cis-benchmarks](https://www.cisecurity.org/cis-benchmarks)
+    to learn more about CIS Benchmarks.
+  id: totrans-159
+  prefs: []
+  type: TYPE_NORMAL
+  zh: CIS 提供了确保系统和平台安全与合规的最佳实践和配置。请参考 [https://www.cisecurity.org/cis-benchmarks](https://www.cisecurity.org/cis-benchmarks)
+    了解更多 CIS 基准的信息。
+- en: 'When we have several tasks in a playbook or role, then we can split the tasks
+    into multiple files and call them using the `include_tasks` module dynamically.
+    For example, different parts of security remediation tasks can be split into different
+    tasks files so that they can be called from `main.yaml`, as shown in the following
+    diagram:'
+  id: totrans-160
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当我们在 playbook 或角色中有多个任务时，可以将任务拆分为多个文件，并使用 `include_tasks` 模块动态调用它们。例如，可以将不同的安全修复任务拆分为不同的任务文件，以便从
+    `main.yaml` 中调用，如下图所示：
+- en: '![Figure 3.28 – Splitting tasks into multiple files ](img/B18383_03_28.jpg)'
+  id: totrans-161
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 3.28 – 将任务拆分为多个文件](img/B18383_03_28.jpg)'
+- en: Figure 3.28 – Splitting tasks into multiple files
+  id: totrans-162
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 3.28 – 将任务拆分为多个文件
+- en: Such methods can help us develop, test, and execute the tasks dynamically and
+    in a modular way.
+  id: totrans-163
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这种方法可以帮助我们以动态和模块化的方式开发、测试和执行任务。
+- en: 'Follow these steps to develop a security remediation use case:'
+  id: totrans-164
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 按照以下步骤开发一个安全修复用例：
+- en: 'Create a new role called `Chapter-03/roles/security-baseline-rhel8`:'
+  id: totrans-165
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建一个名为`Chapter-03/roles/security-baseline-rhel8`的新角色：
+- en: '![Figure 3.29 – Creating a new role for security baselining ](img/B18383_03_29.jpg)'
+  id: totrans-166
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 3.29 – 创建一个新的安全基准角色](img/B18383_03_29.jpg)'
+- en: Figure 3.29 – Creating a new role for security baselining
+  id: totrans-167
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 3.29 – 创建一个新的安全基准角色
+- en: Add the necessary security baseline configurations to `roles/security-baseline-rhel8/tasks/main.yml`.
+  id: totrans-168
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 将必要的安全基准配置添加到`roles/security-baseline-rhel8/tasks/main.yml`。
+- en: 'As I mentioned at the beginning of this section (*Figure 3.28*), in this example,
+    you will learn how to split the tasks into multiple files and develop playbooks
+    in a modular way. Add the following content to `roles/security-baseline-rhel8/tasks/main.yml`:'
+  id: totrans-169
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如我在本节开始时提到的（*图 3.28*），在这个示例中，你将学习如何将任务拆分成多个文件，并以模块化方式开发playbook。将以下内容添加到`roles/security-baseline-rhel8/tasks/main.yml`中：
+- en: '![Figure 3.30 – The main task file for the security baselining role ](img/B18383_03_30.jpg)'
+  id: totrans-170
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 3.30 – 安全基准角色的主任务文件](img/B18383_03_30.jpg)'
+- en: Figure 3.30 – The main task file for the security baselining role
+  id: totrans-171
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 3.30 – 安全基准角色的主任务文件
+- en: 'You have two tasks and both are calling other tasks files via the `include_tasks`
+    module. There is an important line you need to take note of, as follows:'
+  id: totrans-172
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你有两个任务，两个任务都通过`include_tasks`模块调用了其他任务文件。你需要注意其中一行，内容如下：
+- en: '`when: “’01.01’ not in baseline_exclusions”`: This is a mechanism we are adding
+    to the task to control the execution of specific baseline rule using the `when`
+    statement. Ansible will check the condition and execute or skip the tasks based
+    on this condition. In this case, you need to define a list variable called `baseline_exclusions`
+    and add the specific item to exclude from execution. (Use any other string or
+    numbering system; this is just a sample list for this demonstration.)'
+  id: totrans-173
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`when: “’01.01’ not in baseline_exclusions”`：这是我们添加到任务中的一个机制，用于通过`when`语句控制特定基准规则的执行。Ansible会检查条件并根据该条件执行或跳过任务。在这种情况下，你需要定义一个名为`baseline_exclusions`的列表变量，并将特定项目添加到排除执行的列表中。（可以使用任何其他字符串或编号系统，这只是本示范中的一个样例列表。）'
+- en: 'Create a file called `roles/security-baseline-rhel8/tasks/part-01.yml` that
+    contains the following content to install `sudo` and enable `sudo` logging:'
+  id: totrans-174
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建一个名为`roles/security-baseline-rhel8/tasks/part-01.yml`的文件，内容如下，用于安装`sudo`并启用`sudo`日志记录：
+- en: '![Figure 3.31 – part-01.yml for the sudo configuration ](img/B18383_03_31.jpg)'
+  id: totrans-175
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 3.31 – part-01.yml用于sudo配置](img/B18383_03_31.jpg)'
+- en: Figure 3.31 – part-01.yml for the sudo configuration
+  id: totrans-176
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 3.31 – part-01.yml用于sudo配置
+- en: 'The first task will install the `sudo` package, while the second will enable
+    `sudo` logging. There is an important line you need to take note of, as follows:'
+  id: totrans-177
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 第一个任务将安装`sudo`包，而第二个任务将启用`sudo`日志记录。你需要注意其中一行，内容如下：
+- en: '`line: ‘Defaults logfile=”{{ sudo_log }}”’`: You need to define this `sudo_log`
+    variable in the playbook.'
+  id: totrans-178
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`line: ‘Defaults logfile=”{{ sudo_log }}”’`：你需要在playbook中定义这个`sudo_log`变量。'
+- en: 'Create another task file called `roles/security-baseline-rhel8/tasks/part-02.yml`
+    with the following content to deploy the default `/etc/motd` and `/etc/issue`
+    files:'
+  id: totrans-179
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建一个名为`roles/security-baseline-rhel8/tasks/part-02.yml`的任务文件，内容如下，用于部署默认的`/etc/motd`和`/etc/issue`文件：
+- en: '![Figure 3.32 – part-02.yml for the motd configuration ](img/B18383_03_32.jpg)'
+  id: totrans-180
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 3.32 – part-02.yml用于motd配置](img/B18383_03_32.jpg)'
+- en: Figure 3.32 – part-02.yml for the motd configuration
+  id: totrans-181
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 3.32 – part-02.yml用于motd配置
+- en: The first task will deploy default content to `/etc/motd`, while the second
+    will deploy content to the `/etc/issue` file.
+  id: totrans-182
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 第一个任务将部署默认内容到`/etc/motd`，而第二个任务将部署内容到`/etc/issue`文件。
+- en: 'Create the following default content for the `motd` and `issue` files under
+    the `roles/security-baseline-rhel8/files/` directory:'
+  id: totrans-183
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在`roles/security-baseline-rhel8/files/`目录下为`motd`和`issue`文件创建以下默认内容：
+- en: '![Figure 3.33 – The default motd and issue files ](img/B18383_03_33.jpg)'
+  id: totrans-184
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 3.33 – 默认的motd和issue文件](img/B18383_03_33.jpg)'
+- en: Figure 3.33 – The default motd and issue files
+  id: totrans-185
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 3.33 – 默认的motd和issue文件
+- en: 'Verify the files of your Ansible role to ensure all the content is in place,
+    as shown in the following screenshot:'
+  id: totrans-186
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 验证你Ansible角色的文件，以确保所有内容都已到位，如下截图所示：
+- en: '![Figure 3.34 – The content of the security baseline role ](img/B18383_03_34.jpg)'
+  id: totrans-187
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 3.34 – 安全基准角色的内容](img/B18383_03_34.jpg)'
+- en: Figure 3.34 – The content of the security baseline role
+  id: totrans-188
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 3.34 – 安全基准角色的内容
+- en: You can remove other unwanted directories that are not in use. However, in this
+    case, keep everything as-is.
+  id: totrans-189
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以删除其他不再使用的目录。然而，在这种情况下，保持一切如原样。
+- en: 'The variables can be kept in your playbook or even inside the inventory file,
+    but it will not be easy to manage the content when you have more variables to
+    maintain. Create a directory to keep the variables in, as follows:'
+  id: totrans-190
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 变量可以保存在你的剧本中，甚至可以保存在清单文件内，但当你有更多变量需要维护时，管理内容将变得不容易。创建一个目录来存放变量，如下所示：
+- en: '[PRE2]'
+  id: totrans-191
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: 'Create a variable file called `vars/common.yml` to keep the common variables
+    in and add `sudo_log` and other variables there (remember to add the variables
+    and values as needed inside the file):'
+  id: totrans-192
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建一个名为`vars/common.yml`的变量文件，用于存放公共变量，并将`sudo_log`和其他变量添加到该文件中（记得在文件中根据需要添加变量和值）：
+- en: '![Figure 3.35 – Creating a variable file ](img/B18383_03_35.jpg)'
+  id: totrans-193
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 3.35 – 创建一个变量文件](img/B18383_03_35.jpg)'
+- en: Figure 3.35 – Creating a variable file
+  id: totrans-194
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 3.35 – 创建一个变量文件
+- en: 'Create another variable file called `vars/baseline_exclusions.yml` to keep
+    the `baseline_exclusions` variable in:'
+  id: totrans-195
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建另一个名为`vars/baseline_exclusions.yml`的变量文件，用于存放`baseline_exclusions`变量：
+- en: '![Figure 3.36 – Creating a variable file for baseline exclusions ](img/B18383_03_36.jpg)'
+  id: totrans-196
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 3.36 – 为基准排除创建一个变量文件](img/B18383_03_36.jpg)'
+- en: Figure 3.36 – Creating a variable file for baseline exclusions
+  id: totrans-197
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 3.36 – 为基准排除创建一个变量文件
+- en: We can disable the security check by uncommenting the line (for example, `‘01.01’`)
+    so that Ansible will check before executing the task.
+  id: totrans-198
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以通过取消注释该行（例如，`‘01.01’`）来禁用安全检查，以便在执行任务之前让 Ansible 进行检查。
+- en: 'As a best practice, you need to keep the default values for all variables that
+    are used inside the Ansible role in a file. The `roles/security-baseline-rhel8/defaults/main.yml`
+    file can be used for this purpose:'
+  id: totrans-199
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 作为最佳实践，你需要将所有在 Ansible 角色中使用的变量的默认值保存在一个文件中。可以使用`roles/security-baseline-rhel8/defaults/main.yml`文件来实现这个目的：
+- en: '![Figure 3.37 – Default variables for the security-baseline-rhel8 role ](img/B18383_03_37.jpg)'
+  id: totrans-200
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 3.37 – security-baseline-rhel8 角色的默认变量](img/B18383_03_37.jpg)'
+- en: Figure 3.37 – Default variables for the security-baseline-rhel8 role
+  id: totrans-201
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 3.37 – security-baseline-rhel8 角色的默认变量
+- en: 'Now, create the main playbook, `security-compliance-rhel8.yml`, and ensure
+    it contains the following content:'
+  id: totrans-202
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在，创建主剧本`security-compliance-rhel8.yml`，并确保它包含以下内容：
+- en: '![Figure 3.38 – The main playbook – security-compliance-rhel8.yml ](img/B18383_03_38.jpg)'
+  id: totrans-203
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 3.38 – 主剧本 – security-compliance-rhel8.yml](img/B18383_03_38.jpg)'
+- en: Figure 3.38 – The main playbook – security-compliance-rhel8.yml
+  id: totrans-204
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 3.38 – 主剧本 – security-compliance-rhel8.yml
+- en: Note that in the preceding playbook, we are not hardcoding the hosts. Instead,
+    we are using a variable called `NODES`. This variable will be passed to the playbook
+    using the `hosts` to avoid the playbook being executed accidentally on the incorrect
+    servers. (More about `extra-vars` will be covered in the next section.)
+  id: totrans-205
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请注意，在前面的剧本中，我们并没有硬编码主机。相反，我们使用了一个名为`NODES`的变量。这个变量将通过`hosts`传递给剧本，以避免剧本意外地在错误的服务器上执行。（关于`extra-vars`的更多内容将在下一节中讲解。）
+- en: Also, note `vars_files` where we included the two variable files we created
+    earlier. Here, the playbook is calling the `security-baseline-rhel8` role.
+  id: totrans-206
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 同时，注意`vars_files`，我们在其中包含了之前创建的两个变量文件。在这里，剧本正在调用`security-baseline-rhel8`角色。
+- en: 'Execute the playbook and pass the `NODES` details as an extra variable:'
+  id: totrans-207
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 执行剧本并将`NODES`详细信息作为额外变量传递：
+- en: '![Figure 3.39 – Executing the security baseline playbook and ensuring the subtasks
+    are executed ](img/B18383_03_39.jpg)'
+  id: totrans-208
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 3.39 – 执行安全基准剧本并确保子任务被执行](img/B18383_03_39.jpg)'
+- en: Figure 3.39 – Executing the security baseline playbook and ensuring the subtasks
+    are executed
+  id: totrans-209
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 3.39 – 执行安全基准剧本并确保子任务被执行
+- en: 'Log in to `node1` and verify the implemented items (note the login prompt):'
+  id: totrans-210
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 登录到`node1`并验证已实施的项目（注意登录提示）：
+- en: '![Figure 3.40 – Verifying the content of motd on the login screen for node1
+    ](img/B18383_03_40.jpg)'
+  id: totrans-211
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 3.40 – 验证 node1 登录屏幕上 motd 的内容](img/B18383_03_40.jpg)'
+- en: Figure 3.40 – Verifying the content of motd on the login screen for node1
+  id: totrans-212
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 3.40 – 验证 node1 登录屏幕上 motd 的内容
+- en: Enhance your playbook by adding more validations and verifications to the tasks.
+    Also, create reports while executing the job and send or save them for later auditing
+    purposes.
+  id: totrans-213
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通过为任务添加更多的验证和检查来增强你的剧本。同时，在执行作业时生成报告，并发送或保存以备后续审计使用。
+- en: Ansible Integration with Third-Party Security Tools
+  id: totrans-214
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 与第三方安全工具的集成
+- en: It is possible to integrate Ansible with other third-party platforms and tools
+    such as OpenSCAP or Red Hat Insight. In such cases, you need to develop playbooks
+    to control scanning and remediation instead of manually scanning and fixing the
+    configurations on the systems directly. Refer to [https://www.ansible.com/use-cases/security-and-compliance](https://www.ansible.com/use-cases/security-and-compliance)
+    and [https://www.open-scap.org/](https://www.open-scap.org/) for more information.
+  id: totrans-215
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 可以将 Ansible 与其他第三方平台和工具集成，如 OpenSCAP 或 Red Hat Insight。在这种情况下，你需要开发剧本来控制扫描和修复，而不是手动扫描和修复系统上的配置。有关更多信息，请参阅
+    [https://www.ansible.com/use-cases/security-and-compliance](https://www.ansible.com/use-cases/security-and-compliance)
+    和 [https://www.open-scap.org/](https://www.open-scap.org/)。
+- en: Ansible --extra-vars
+  id: totrans-216
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: Ansible --extra-vars
+- en: '`extra-vars` contains the variables that will override all other variables.
+    Using a dynamic extra variable will help you control the playbook based on the
+    values and is also useful when you are using survey forms in Ansible AWX or Ansible
+    Automation Controller, where variables can be defined in the GUI method (survey
+    forms). `--extra-vars` can be passed as a single value, multiple key-value pairs,
+    in JSON format, or read from a variable file, as follows:'
+  id: totrans-217
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`extra-vars` 包含将覆盖所有其他变量的变量。使用动态额外变量有助于根据值控制剧本，并且在你使用 Ansible AWX 或 Ansible
+    Automation Controller 中的调查表单时也非常有用，因为变量可以通过 GUI 方法（调查表单）定义。`--extra-vars` 可以作为单个值、多对键值对、JSON
+    格式传递，或从变量文件读取，如下所示：'
+- en: '![Figure 3.41 – Ansible extra-vars examples ](img/B18383_03_41.jpg)'
+  id: totrans-218
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 3.41 – Ansible extra-vars 示例](img/B18383_03_41.jpg)'
+- en: Figure 3.41 – Ansible extra-vars examples
+  id: totrans-219
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 3.41 – Ansible extra-vars 示例
+- en: Ansible --extra-vars
+  id: totrans-220
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible --extra-vars
+- en: Read more about runtime variables at [https://docs.ansible.com/ansible/latest/user_guide/playbooks_variables.xhtml#defining-variables-at-runtime](https://docs.ansible.com/ansible/latest/user_guide/playbooks_variables.xhtml#defining-variables-at-runtime).
+    Also check out the automation controller survey forms at [https://docs.ansible.com/automation-controller/latest/html/userguide/job_templates.xhtml#surveys](https://docs.ansible.com/automation-controller/latest/html/userguide/job_templates.xhtml#surveys).
+  id: totrans-221
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 阅读更多有关运行时变量的信息，请访问 [https://docs.ansible.com/ansible/latest/user_guide/playbooks_variables.xhtml#defining-variables-at-runtime](https://docs.ansible.com/ansible/latest/user_guide/playbooks_variables.xhtml#defining-variables-at-runtime)。还可以查看自动化控制器调查表单，网址为
+    [https://docs.ansible.com/automation-controller/latest/html/userguide/job_templates.xhtml#surveys](https://docs.ansible.com/automation-controller/latest/html/userguide/job_templates.xhtml#surveys)。
+- en: In the next section, you will learn how to automate scheduled reboot jobs using
+    Ansible.
+  id: totrans-222
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一部分，你将学习如何使用 Ansible 自动化定期重启作业。
+- en: Automated weekly system reboot using Ansible
+  id: totrans-223
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用 Ansible 自动化每周系统重启
+- en: A scheduled and planned system reboot is a standard process in an IT environment
+    to ensure the servers and applications are working well and the environment is
+    stable with service restart operations. The `reboot` command might be simple when
+    it executes but the reboot process and its formalities are not straightforward.
+  id: totrans-224
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 定期和计划的系统重启是 IT 环境中的标准过程，旨在确保服务器和应用程序正常运行，并通过服务重启操作保持环境稳定。尽管执行 `reboot` 命令时很简单，但重启过程及其相关手续并非简单明了。
+- en: 'A generic server reboot activity involves multiple steps, as shown in the following
+    diagram:'
+  id: totrans-225
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通用服务器重启活动涉及多个步骤，如下图所示：
+- en: '![Figure 3.42 – Typical system reboot job workflow ](img/B18383_03_42.jpg)'
+  id: totrans-226
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 3.42 – 典型系统重启作业工作流](img/B18383_03_42.jpg)'
+- en: Figure 3.42 – Typical system reboot job workflow
+  id: totrans-227
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 3.42 – 典型系统重启作业工作流
+- en: Imagine that you have hundreds of servers to reboot every week and your team
+    is too small to handle such critical operations on weekends. It is possible to
+    automate the entire workflow using Ansible by using backup operations before reboot
+    and service verifications after reboot.
+  id: totrans-228
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 想象一下，每周你需要重启数百台服务器，而你的团队规模太小，无法在周末处理如此重要的操作。通过使用 Ansible 自动化整个工作流，可以在重启前进行备份操作，并在重启后进行服务验证。
+- en: The Ansible `reboot` module was introduced in Ansible 2.7 (2018). At the time
+    of writing, this module is part of `ansible-core` and included in all Ansible
+    installations.
+  id: totrans-229
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 的 `reboot` 模块首次出现在 Ansible 2.7（2018年）。在撰写时，该模块是 `ansible-core` 的一部分，包含在所有
+    Ansible 安装中。
+- en: 'Create an Ansible playbook to reboot the machine as follows:'
+  id: totrans-230
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 创建一个 Ansible 剧本以重启机器，具体如下：
+- en: 'Create the `Chapter-03/system-reboot.yml` playbook with the following content:'
+  id: totrans-231
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建 `Chapter-03/system-reboot.yml` 剧本，内容如下：
+- en: '![Figure 3.43 – Ansible playbook for the reboot job ](img/B18383_03_43.jpg)'
+  id: totrans-232
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 3.43 – Ansible 重启作业的剧本](img/B18383_03_43.jpg)'
+- en: Figure 3.43 – Ansible playbook for the reboot job
+  id: totrans-233
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 3.43 – 用于重启任务的 Ansible playbook
+- en: 'Execute the playbook:'
+  id: totrans-234
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 执行 playbook：
+- en: '[PRE3]'
+  id: totrans-235
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: 'Verify the reboot status on `node1`, as follows:'
+  id: totrans-236
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如下所示，验证 `node1` 上的重启状态：
+- en: '![Figure 3.44 – Verifying the reboot status on node1 ](img/B18383_03_44.jpg)'
+  id: totrans-237
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 3.44 – 在 node1 上验证重启状态](img/B18383_03_44.jpg)'
+- en: Figure 3.44 – Verifying the reboot status on node1
+  id: totrans-238
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 3.44 – 在 node1 上验证重启状态
+- en: Enhance the playbook with the snapshot jobs (for example, a VMWare or OpenStack
+    backup) or file backup (for example, `/etc/hosts`, `/etc/motd`, or `/etc/fstab`)
+    before rebooting the system. Also, create additional tasks to verify the required
+    services are running on the server, such as the `httpd` or `mysql` services. If
+    you are using an automation controller or Ansible AWS, then schedule these automation
+    tasks as weekly or daily jobs; the tasks will be executed based on the schedule
+    without any user interaction (refer to [*Chapter 12*](B18383_12.xhtml#_idTextAnchor213),
+    *Integrating Ansible with Your Tools*, for more details).
+  id: totrans-239
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在重启系统之前，增强 playbook，添加快照任务（例如，VMWare 或 OpenStack 备份）或文件备份（例如，`/etc/hosts`、`/etc/motd`
+    或 `/etc/fstab`）。同时，创建额外的任务来验证服务器上所需的服务是否正在运行，例如 `httpd` 或 `mysql` 服务。如果你使用的是自动化控制器或
+    Ansible AWS，那么可以将这些自动化任务设置为每周或每日执行；任务将根据预定计划自动执行，无需任何用户交互（有关更多详细信息，请参考 [*第12章*](B18383_12.xhtml#_idTextAnchor213)，*将
+    Ansible 与工具集成*）。
+- en: Ansible reboot Module
+  id: totrans-240
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 重启模块
+- en: For more information about the Ansible `reboot` module, refer to [https://docs.ansible.com/ansible/latest/collections/ansible/builtin/reboot_module.xhtml](https://docs.ansible.com/ansible/latest/collections/ansible/builtin/reboot_module.xhtml).
+  id: totrans-241
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有关 Ansible `reboot` 模块的更多信息，请参见 [https://docs.ansible.com/ansible/latest/collections/ansible/builtin/reboot_module.xhtml](https://docs.ansible.com/ansible/latest/collections/ansible/builtin/reboot_module.xhtml)。
+- en: Automating notifications
+  id: totrans-242
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 自动化通知
+- en: It is very important to notify the administrators and end users about the changes
+    you are making in the environment. Whether it’s a simple package installation
+    or a system reboot, the end user should be aware of the downtime and changes that
+    are occurring. Instead of sending emails manually, the Ansible `mail` module can
+    be used to automate email notifications. The Ansible `mail` module is powerful
+    and can support most email features, including custom headers, attachments, and
+    security.
+  id: totrans-243
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通知管理员和最终用户你在环境中所做的更改非常重要。无论是简单的软件包安装还是系统重启，最终用户都应该知道停机时间和正在发生的更改。与其手动发送电子邮件，不如使用
+    Ansible 的 `mail` 模块来自动化电子邮件通知。Ansible `mail` 模块功能强大，支持大多数电子邮件功能，包括自定义头信息、附件和安全性。
+- en: Encrypting sensitive data using Ansible Vault
+  id: totrans-244
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 使用 Ansible Vault 加密敏感数据
+- en: If the email server (**SMTP**) is not **open** (configured to send email without
+    authentication), then you need to authenticate the SMTP server with a username
+    and password (app password or secret key). Keeping such sensitive information
+    in plain text is not a best practice, so you need to store it in a safe method.
+    To store such sensitive information, use key vault tools, in which the information
+    will be saved in an encrypted format. Fortunately, there’s an built-in feature
+    in Ansible for storing and managing encrypted content called **Ansible Vault**.
+  id: totrans-245
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果电子邮件服务器（**SMTP**）未 **开放**（未配置为无需身份验证即可发送电子邮件），则需要使用用户名和密码（应用密码或密钥）对 SMTP 服务器进行身份验证。将此类敏感信息以明文存储并不是最佳实践，因此你需要以安全的方式存储它。要存储这类敏感信息，可以使用密钥库工具，信息将在加密格式中保存。幸运的是，Ansible
+    提供了一个内置功能，叫做 **Ansible Vault**，用于存储和管理加密内容。
+- en: Ansible Vault will encrypt the files with the password (vault secret) you are
+    providing and make the sensitive data unreadable to normal users. When Ansible
+    wants to read the data, Ansible will ask for the vault password; you need to provide
+    the password by keystrokes or via a secret file.
+  id: totrans-246
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible Vault 会使用你提供的密码（vault 密码）对文件进行加密，并使敏感数据对普通用户不可读。当 Ansible 想要读取数据时，Ansible
+    会要求输入 vault 密码；你需要通过键盘输入或通过密钥文件提供密码。
+- en: 'Create a vault file using the `ansible-vault create` command. Do not forget
+    the vault password as you will not be able to decrypt the content otherwise:'
+  id: totrans-247
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用 `ansible-vault create` 命令创建一个 vault 文件。请不要忘记 vault 密码，否则你将无法解密内容：
+- en: '![Figure 3.45 – Creating a secret variable file using Ansible Vault ](img/B18383_03_45.jpg)'
+  id: totrans-248
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 3.45 – 使用 Ansible Vault 创建一个秘密变量文件](img/B18383_03_45.jpg)'
+- en: Figure 3.45 – Creating a secret variable file using Ansible Vault
+  id: totrans-249
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 3.45 – 使用 Ansible Vault 创建一个秘密变量文件
+- en: 'Once you’ve done this, a text editor (for example, `vim`) will open so that
+    you can enter the content of your sensitive file. Add your content and save the
+    file:'
+  id: totrans-250
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 完成后，一个文本编辑器（例如`vim`）将打开，以便你输入敏感文件的内容。添加你的内容并保存文件：
+- en: '[PRE4]'
+  id: totrans-251
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: 'If you try to read the file, you will see the encrypted content, as follows:'
+  id: totrans-252
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你尝试读取该文件，你将看到加密的内容，如下所示：
+- en: '![Figure 3.46 – The Ansible Vault file after being encrypted ](img/B18383_03_46.jpg)'
+  id: totrans-253
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 3.46 – Ansible Vault文件加密后的样子](img/B18383_03_46.jpg)'
+- en: Figure 3.46 – The Ansible Vault file after being encrypted
+  id: totrans-254
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 3.46 – Ansible Vault文件加密后的样子
+- en: 'View the content of the file using the `ansible-vault view` command; Ansible
+    will ask for the vault password, as follows:'
+  id: totrans-255
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用`ansible-vault view`命令查看文件内容；Ansible会要求输入vault密码，如下所示：
+- en: '![Figure 3.47 – Viewing the content of the Ansible Vault file ](img/B18383_03_47.jpg)'
+  id: totrans-256
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 3.47 – 查看Ansible Vault文件的内容](img/B18383_03_47.jpg)'
+- en: Figure 3.47 – Viewing the content of the Ansible Vault file
+  id: totrans-257
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 3.47 – 查看Ansible Vault文件的内容
+- en: You will be using this Ansible Vault in the upcoming exercise to keep the SMTP
+    server username and password safe.
+  id: totrans-258
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你将在接下来的练习中使用这个Ansible Vault来保护SMTP服务器的用户名和密码安全。
+- en: We will discuss Ansible Vault in more detail in [*Chapter 13*](B18383_13.xhtml#_idTextAnchor241),
+    *Using Ansible for Secret Management*.
+  id: totrans-259
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将在[*第13章*](B18383_13.xhtml#_idTextAnchor241)中更详细地讨论Ansible Vault，*使用Ansible进行秘密管理*。
+- en: Encrypting Content with Ansible Vault
+  id: totrans-260
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用Ansible Vault加密内容
+- en: You have more options with Ansible Vault, such as edit, encrypt, decrypt, rekey,
+    and more. Refer to [*Chapter 13*](B18383_13.xhtml#_idTextAnchor241), *Using Ansible
+    for Secret Management**,* for more details. Check out the documentation at [https://docs.ansible.com/ansible/latest/user_guide/vault.xhtml](https://docs.ansible.com/ansible/latest/user_guide/vault.xhtml)
+    for more details about Ansible Vault.
+  id: totrans-261
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用Ansible Vault时，你有更多选项，如编辑、加密、解密、更换密钥等。有关更多详细信息，请参考[*第13章*](B18383_13.xhtml#_idTextAnchor241)，*使用Ansible进行秘密管理*，并查看文档[https://docs.ansible.com/ansible/latest/user_guide/vault.xhtml](https://docs.ansible.com/ansible/latest/user_guide/vault.xhtml)了解更多关于Ansible
+    Vault的信息。
+- en: 'In this exercise, you will enhance the previous **weekly reboot** playbook
+    by adding email notifications before and after the system reboot:'
+  id: totrans-262
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本练习中，你将通过在系统重启前后添加电子邮件通知来增强之前的**每周重启**剧本：
+- en: 'Create a new role called `Chapter-03/roles/send-email`:'
+  id: totrans-263
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建一个名为`Chapter-03/roles/send-email`的新角色：
+- en: '![Figure 3.48 – Creating an Ansible role for sending emails ](img/B18383_03_48.jpg)'
+  id: totrans-264
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 3.48 – 创建一个用于发送电子邮件的Ansible角色](img/B18383_03_48.jpg)'
+- en: Figure 3.48 – Creating an Ansible role for sending emails
+  id: totrans-265
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 3.48 – 创建一个用于发送电子邮件的Ansible角色
+- en: 'Add a task inside `roles/send-email/tasks/main.yml`:'
+  id: totrans-266
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在`roles/send-email/tasks/main.yml`中添加一个任务：
+- en: '![Figure 3.49 – The task file for the send-email role ](img/B18383_03_49.jpg)'
+  id: totrans-267
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 3.49 – 发送电子邮件角色的任务文件](img/B18383_03_49.jpg)'
+- en: Figure 3.49 – The task file for the send-email role
+  id: totrans-268
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 3.49 – 发送电子邮件角色的任务文件
+- en: Note
+  id: totrans-269
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 注意
+- en: 'The `delegate_to: localhost` line of the `mail` module needs to be executed
+    on the localhost (the Ansible control node here) rather than the managed node.'
+  id: totrans-270
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`mail`模块的`delegate_to: localhost`行需要在localhost（此处为Ansible控制节点）上执行，而不是在被管理节点上执行。'
+- en: Skip the `username` and `password` variables if your SMTP server has been configured
+    as open and no authentication is required. In this case, you need to create a
+    secret file to keep the username and password in. (The `cc` and `attach` options
+    have been kept here as comments for demonstration purposes. It is possible to
+    enhance the use case by adding those features.)
+  id: totrans-271
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你的SMTP服务器已配置为开放且不需要身份验证，则跳过`username`和`password`变量。在这种情况下，你需要创建一个秘密文件来保存用户名和密码。（这里保留了`cc`和`attach`选项作为注释，供演示使用。通过添加这些功能，完全可以增强该用例。）
+- en: 'Create a new variable file called `vars/smtp_secrets.yml` using Ansible Vault
+    (remember the vault password):'
+  id: totrans-272
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用Ansible Vault创建一个名为`vars/smtp_secrets.yml`的新变量文件（记住vault密码）：
+- en: '![Figure 3.50 – Creating a secret variable file using Ansible Vault ](img/B18383_03_50.jpg)'
+  id: totrans-273
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 3.50 – 使用Ansible Vault创建一个秘密变量文件](img/B18383_03_50.jpg)'
+- en: Figure 3.50 – Creating a secret variable file using Ansible Vault
+  id: totrans-274
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 3.50 – 使用Ansible Vault创建一个秘密变量文件
+- en: 'Add the content of the secret file and save it:'
+  id: totrans-275
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 添加秘密文件的内容并保存它：
+- en: '![Figure 3.51 – Adding a variable to the vault file and saving it (:wq) ](img/B18383_03_51.jpg)'
+  id: totrans-276
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 3.51 – 向Vault文件中添加变量并保存它 (:wq)](img/B18383_03_51.jpg)'
+- en: Figure 3.51 – Adding a variable to the vault file and saving it (:wq)
+  id: totrans-277
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 3.51 – 向Vault文件中添加变量并保存它 (:wq)
+- en: 'Create a new playbook called `Chapter-03/system-reboot-with-email.yml` with
+    the following content (alternatively, copy the previous `system-reboot.yml` file
+    and rename it):'
+  id: totrans-278
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建一个新的剧本 `Chapter-03/system-reboot-with-email.yml`，并包含以下内容（或者，复制之前的 `system-reboot.yml`
+    文件并重命名）：
+- en: '![Figure 3.52 – Ansible playbook for rebooting with an email notification (1)
+    ](img/B18383_03_52.jpg)'
+  id: totrans-279
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 3.52 – 带有电子邮件通知的 Ansible 剧本用于重启（1）](img/B18383_03_52.jpg)'
+- en: Figure 3.52 – Ansible playbook for rebooting with an email notification (1)
+  id: totrans-280
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 3.52 – 带有电子邮件通知的 Ansible 剧本用于重启（1）
+- en: 'Add tasks for the reboot and email, as follows:'
+  id: totrans-281
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 添加重启和电子邮件的任务，如下所示：
+- en: '![Figure 3.53 – Ansible playbook for rebooting with an email notification (2)
+    ](img/B18383_03_53.jpg)'
+  id: totrans-282
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 3.53 – 带有电子邮件通知的 Ansible 剧本用于重启（2）](img/B18383_03_53.jpg)'
+- en: Figure 3.53 – Ansible playbook for rebooting with an email notification (2)
+  id: totrans-283
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 3.53 – 带有电子邮件通知的 Ansible 剧本用于重启（2）
+- en: Note that different values should be used for `email_report_body` and `email_smtp_subject`
+    based on the job (pre-reboot or post-reboot).
+  id: totrans-284
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请注意，`email_report_body` 和 `email_smtp_subject` 的不同值应根据作业（重启前或重启后）使用。
+- en: With that, you have all required variables in the playbook for the `send-email`
+    role except `email_smtp_username` and `email_smtp_password`. This is because they
+    are sensitive and you cannot store them as plain text here; instead, you should
+    include them in your secret variable file (`vars/smtp_secrets.yml`) that’s being
+    encrypted by Ansible Vault.
+  id: totrans-285
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 到此为止，您已经在剧本中包含了 `send-email` 角色所需的所有变量，除了 `email_smtp_username` 和 `email_smtp_password`。这是因为它们是敏感信息，您不能将它们作为明文存储在此；相反，您应将它们包含在您的秘密变量文件（`vars/smtp_secrets.yml`）中，并通过
+    Ansible Vault 加密该文件。
+- en: 'Execute the playbook:'
+  id: totrans-286
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 执行该剧本：
+- en: '![Figure 3.54 – Executing the Ansible playbook without the vault password ](img/B18383_03_54.jpg)'
+  id: totrans-287
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 3.54 – 执行没有 vault 密码的 Ansible 剧本](img/B18383_03_54.jpg)'
+- en: Figure 3.54 – Executing the Ansible playbook without the vault password
+  id: totrans-288
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 3.54 – 执行没有 vault 密码的 Ansible 剧本
+- en: 'Ansible is trying to decrypt the secret file, but no vault secret (vault password)
+    has been provided. Execute the same playbook but add the `--ask-vault-password`
+    switch at the end (Ansible will not ask or prompt for vault secrets by default):'
+  id: totrans-289
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 正在尝试解密密钥文件，但没有提供 vault 密码（vault 密码）。执行相同的剧本，但在末尾添加 `--ask-vault-password`
+    开关（默认情况下，Ansible 不会询问或提示 vault 密码）：
+- en: '![Figure 3.55 – Executing the Ansible playbook with the vault password ](img/B18383_03_55.jpg)'
+  id: totrans-290
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 3.55 – 执行带有 vault 密码的 Ansible 剧本](img/B18383_03_55.jpg)'
+- en: Figure 3.55 – Executing the Ansible playbook with the vault password
+  id: totrans-291
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 3.55 – 执行带有 vault 密码的 Ansible 剧本
+- en: 'Check your inbox (your `email_smtp_to_address`) for an automated email from
+    Ansible:'
+  id: totrans-292
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 检查您的收件箱（您的 `email_smtp_to_address`）是否收到来自 Ansible 的自动电子邮件：
+- en: '![Figure 3.56 – Email notification ](img/B18383_03_56.jpg)'
+  id: totrans-293
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 3.56 – 电子邮件通知](img/B18383_03_56.jpg)'
+- en: Figure 3.56 – Email notification
+  id: totrans-294
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 3.56 – 电子邮件通知
+- en: As an exercise, enhance the playbook by sending consolidated emails for all
+    servers rather than sending an individual email or attaching a job summary report
+    in the email.
+  id: totrans-295
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 作为练习，改进剧本，通过发送所有服务器的合并邮件，而不是单独发送每个邮件或在邮件中附加作业总结报告。
+- en: Send an Email Using Ansible
+  id: totrans-296
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用 Ansible 发送电子邮件
+- en: For more information about the Ansible mail module, refer to [https://docs.ansible.com/ansible/latest/collections/community/general/mail_module.xhtml](https://docs.ansible.com/ansible/latest/collections/community/general/mail_module.xhtml).
+  id: totrans-297
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有关 Ansible 邮件模块的更多信息，请参考 [https://docs.ansible.com/ansible/latest/collections/community/general/mail_module.xhtml](https://docs.ansible.com/ansible/latest/collections/community/general/mail_module.xhtml)。
+- en: Summary
+  id: totrans-298
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 总结
+- en: In this chapter, you learned how to create Ansible roles, Jinja2 templates,
+    and Ansible Vault secrets. You also learned how to collect system information
+    from Ansible facts and use the Jinja2 template to create reports and configurations.
+    The use cases you have practiced were very generic, such as collecting system
+    information, configuring standard system files, rebooting servers, and sending
+    email notifications. As an exercise, enhance the use cases by adding more tasks
+    and validation (such as validating the reboot activity before sending an email
+    and so on).
+  id: totrans-299
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，您学会了如何创建 Ansible 角色、Jinja2 模板和 Ansible Vault 密钥。您还学会了如何从 Ansible 事实收集系统信息，并使用
+    Jinja2 模板来创建报告和配置。您练习的用例非常通用，例如收集系统信息、配置标准系统文件、重启服务器和发送电子邮件通知。作为练习，您可以通过添加更多任务和验证（例如在发送电子邮件之前验证重启活动等）来改进这些用例。
+- en: In the next chapter, you will learn about the importance of **version control
+    systems** (**VCSs**) in Ansible, the best practices to keep your Ansible artifacts
+    safe, and how to enable collaboration and sharing to improve the quality of Ansible
+    artifacts.
+  id: totrans-300
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一章中，你将学习**版本控制系统**（**VCSs**）在 Ansible 中的重要性，保持 Ansible 工件安全的最佳实践，以及如何启用协作与共享，以提高
+    Ansible 工件的质量。
+- en: Further reading
+  id: totrans-301
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 进一步阅读
+- en: 'To learn more about the topics that were covered in this chapter, take a look
+    at the following resources:'
+  id: totrans-302
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要了解本章涉及的更多主题，请查看以下资源：
+- en: '*How to pass extra variables to an Ansible playbook*: [https://www.redhat.com/sysadmin/extra-variables-ansible-playbook](https://www.redhat.com/sysadmin/extra-variables-ansible-playbook)'
+  id: totrans-303
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*如何将额外的变量传递给 Ansible playbook*：[https://www.redhat.com/sysadmin/extra-variables-ansible-playbook](https://www.redhat.com/sysadmin/extra-variables-ansible-playbook)'
+- en: '*Ansible for Security and Compliance*: [https://www.ansible.com/use-cases/security-and-compliance](https://www.ansible.com/use-cases/security-and-compliance)'
+  id: totrans-304
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*Ansible 在安全和合规性方面的应用*：[https://www.ansible.com/use-cases/security-and-compliance](https://www.ansible.com/use-cases/security-and-compliance)'

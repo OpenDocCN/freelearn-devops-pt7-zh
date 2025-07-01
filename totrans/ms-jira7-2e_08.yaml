@@ -1,0 +1,587 @@
+- en: Chapter 8. Configuring JIRA User Directories to Connect with LDAP, Crowd, and
+    JIRA User Server
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 第 8 章：配置 JIRA 用户目录以连接 LDAP、Crowd 和 JIRA 用户服务器
+- en: In companies with thousands of employees, there are several internal tools and
+    systems. There are tools to track time, leave management, and intranet portals.
+    It's very difficult to manage user accounts on multiple applications; companies
+    use **Lightweight Directory Access Protocol** (**LDAP**) servers for user management,
+    where a single user account works on more than one tool and users don't need to
+    remember multiple passwords. JIRA also supports integration with LDAP. This is
+    a great feature; it really helps system administrators to manage users. Apart
+    from LDAP, we will also discuss how to connect JIRA to another JIRA instance for
+    user management, as well as for **Crowd**, which is a single sign-on software
+    from Atlassian.
+  id: totrans-1
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在拥有成千上万员工的公司中，有许多内部工具和系统。包括时间追踪、请假管理和内网门户等工具。很难在多个应用程序中管理用户账户；公司通常使用 **轻量级目录访问协议**（**LDAP**）服务器来进行用户管理，一个用户账户可以在多个工具中使用，用户不需要记住多个密码。JIRA
+    也支持与 LDAP 集成。这是一个非常棒的功能，确实帮助了系统管理员管理用户。除了 LDAP，我们还将讨论如何将 JIRA 连接到另一个 JIRA 实例进行用户管理，以及如何与
+    **Crowd** 集成，Crowd 是 Atlassian 的单点登录软件。
+- en: 'This chapter will cover the following topics:'
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章将涵盖以下主题：
+- en: Authentication mechanism in JIRA
+  id: totrans-3
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: JIRA 的认证机制
+- en: Allowing other applications to connect to JIRA
+  id: totrans-4
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 允许其他应用程序连接到 JIRA
+- en: Synchronizing user and group information
+  id: totrans-5
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 同步用户和组信息
+- en: Authentication mechanism in JIRA
+  id: totrans-6
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: JIRA 的认证机制
+- en: JIRA is a web-based tool used by multiple users, each having different permissions
+    depending on the group they are part of or what role they are performing in the
+    project. JIRA has a built-in authentication mechanism known as **JIRA internal
+    directory**, but it's possible to connect JIRA to external directories as well.
+    Let's take a look at how this is done.
+  id: totrans-7
+  prefs: []
+  type: TYPE_NORMAL
+  zh: JIRA 是一个基于 Web 的工具，被多个用户使用，每个用户的权限取决于他们所属的组或在项目中所扮演的角色。JIRA 拥有一个内建的认证机制，称为 **JIRA
+    内部目录**，但是也可以将 JIRA 连接到外部目录。让我们看看这是如何实现的。
+- en: JIRA internal directory
+  id: totrans-8
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: JIRA 内部目录
+- en: JIRA comes with an internal directory that is enabled by default; the first
+    administrative user is a part of the internal directory, and, until you add another
+    directory, all additional users are added in this internal directory. JIRA stores
+    this in its own database.
+  id: totrans-9
+  prefs: []
+  type: TYPE_NORMAL
+  zh: JIRA 自带一个默认启用的内部目录，第一个管理员用户是内部目录的一部分，直到你添加其他目录之前，所有的附加用户都会被添加到这个内部目录中。JIRA 将此信息存储在它自己的数据库中。
+- en: Configuring LDAP
+  id: totrans-10
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 配置 LDAP
+- en: LDAP is an application protocol to query and modify information in directory
+    services. In medium-to large-scale companies, where there are hundreds or thousands
+    of users, everyone has their e-mails, phone numbers, and other details stored
+    on a directory server. Users can find each other in this directory. Each user's
+    login details are also stored, and various applications can rely on directory
+    services for authentication.
+  id: totrans-11
+  prefs: []
+  type: TYPE_NORMAL
+  zh: LDAP 是一种应用协议，用于查询和修改目录服务中的信息。在中型到大型公司中，拥有数百或数千个用户，每个人的电子邮件、电话号码及其他详细信息都存储在目录服务器上。用户可以在这个目录中查找彼此。每个用户的登录信息也被存储，各种应用程序可以依赖目录服务进行认证。
+- en: 'Instead of JIRA''s internal authentication, it''s possible to connect to existing
+    directory services through LDAP:'
+  id: totrans-12
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 除了 JIRA 的内部认证，还可以通过 LDAP 连接到现有的目录服务：
+- en: Go to JIRA **Administration** | **User management** | **User Directories** (under
+    **USER DIRECTORIES**). You will notice **JIRA Internal Directory** already added
+    there, but after we add additional directories, such as LDAP or Crowd, the order
+    in which the user is searched is defined using the **Order** column. Users may
+    be present in one or more directories, but they will be searched for first in
+    the directory that is listed at the top:![Configuring LDAP](img/image_08_001.jpg)
+  id: totrans-13
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 转到 JIRA **管理** | **用户管理** | **用户目录**（在 **用户目录** 下）。你会注意到 **JIRA 内部目录** 已经添加在这里，但是在我们添加其他目录（如
+    LDAP 或 Crowd）之后，用户搜索的顺序是通过 **顺序** 列来定义的。用户可能存在于一个或多个目录中，但他们会首先在列在顶部的目录中被搜索：![配置
+    LDAP](img/image_08_001.jpg)
+- en: Click on **Add Directory**. A popup will appear. Select **Microsoft Active Directory**
+    and click on **Next**.
+  id: totrans-14
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击 **添加目录**。将弹出一个窗口。选择 **Microsoft Active Directory** 并点击 **下一步**。
+- en: 'In the following screenshot, we need to configure the LDAP user directory.
+    First, fill in the **Server Settings**:'
+  id: totrans-15
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在下图中，我们需要配置 LDAP 用户目录。首先，填写 **服务器设置**：
+- en: Enter the **Name** as `Active Director server` or any other useful name.
+  id: totrans-16
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 输入**名称**，可以命名为 `Active Director server` 或其他有用的名称。
+- en: Select the **Directory Type** as **Microsoft Active Directory**.
+  id: totrans-17
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 选择**目录类型**为**Microsoft Active Directory**。
+- en: Enter the **Hostname** of your LDAP server.
+  id: totrans-18
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 输入你的 LDAP 服务器的**主机名**。
+- en: Enter the **Port** number of your LDAP server.
+  id: totrans-19
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 输入你的 LDAP 服务器的**端口**号。
+- en: Enter the **Username** of your LDAP server. It's usually in a format such as
+    `user@domain.name` or `cn=username,dc=domain,dc=com`.
+  id: totrans-20
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 输入你的 LDAP 服务器的**用户名**。通常格式为 `user@domain.name` 或 `cn=username,dc=domain,dc=com`。
+- en: Enter the **Password**.
+  id: totrans-21
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 输入**密码**。
+- en: '![Configuring LDAP](img/image_08_002.jpg)'
+  id: totrans-22
+  prefs:
+  - PREF_IND
+  type: TYPE_IMG
+  zh: '![配置 LDAP](img/image_08_002.jpg)'
+- en: 'Then, enter the **LDAP Schema** settings:'
+  id: totrans-23
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 然后，输入**LDAP 模式**设置：
+- en: 'Enter **Base DN**; it''s usually in the `dc=domain,dc=local` format. Ask your
+    LDAP administrators for specific information:'
+  id: totrans-24
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 输入**基础 DN**，通常格式为 `dc=domain,dc=local`。请向你的 LDAP 管理员询问具体信息：
+- en: '![Configuring LDAP](img/image_08_003.jpg)'
+  id: totrans-25
+  prefs:
+  - PREF_IND
+  type: TYPE_IMG
+  zh: '![配置 LDAP](img/image_08_003.jpg)'
+- en: Now, set **LDAP Permissions** as **Read Only**, where the user information is
+    only retrieved from the LDAP server. In this case, the password can only be changed
+    from the LDAP server and not from the JIRA application. However, if you want users
+    who are newly logged in to be automatically added to one or more JIRA groups,
+    then select **Read Only, with Local Groups** and enter the name of the groups
+    in the **Default Group Memberships:** field:![Configuring LDAP](img/image_08_004.jpg)
+  id: totrans-26
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在，设置**LDAP 权限**为**只读**，这意味着用户信息只会从 LDAP 服务器中获取。在这种情况下，密码只能从 LDAP 服务器中更改，而不能从
+    JIRA 应用程序中更改。但是，如果你希望新登录的用户自动加入一个或多个 JIRA 组，请选择**只读，带本地组**，并在**默认组成员资格：**字段中输入组名：![配置
+    LDAP](img/image_08_004.jpg)
+- en: Click on the **Save and Test** button to save the configuration.
+  id: totrans-27
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击**保存并测试**按钮以保存配置。
+- en: Now, a new user who is already a part of the LDAP server can log in to the JIRA
+    instance using the same username and password. Also, this user will be added to
+    the additional JIRA groups that we configured previously.
+  id: totrans-28
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，一个已经是 LDAP 服务器成员的新用户，可以使用相同的用户名和密码登录 JIRA 实例。此外，该用户将被添加到我们之前配置的其他 JIRA 组中。
+- en: Understanding Base DN
+  id: totrans-29
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 了解基础 DN
+- en: The LDAP directory used in companies could have thousands of employees; it may
+    not be necessary to give JIRA access to all the users in the company. For instance,
+    consider a scenario when there are users in the U.S. as well as in Asia, and access
+    of JIRA needs to be given only to users in the U.S. Now, LDAP also has its own
+    groups known as domains that can be leveraged to limit access to JIRA.
+  id: totrans-30
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 公司中使用的 LDAP 目录可能包含成千上万的员工；可能不需要为公司中的所有用户提供 JIRA 访问权限。例如，考虑到有美国用户和亚洲用户的情况，JIRA
+    访问权限只需提供给美国用户即可。现在，LDAP 也有自己的组，称为域，可以利用这些域来限制对 JIRA 的访问。
+- en: 'Refer to the following table to understand the possible Base DN for corresponding
+    LDAP domains:'
+  id: totrans-31
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请参阅下表了解相应 LDAP 域的可能基础 DN：
+- en: '| **LDAP domain** | **Base DN** | **Remarks** |'
+  id: totrans-32
+  prefs: []
+  type: TYPE_TB
+  zh: '| **LDAP 域** | **基础 DN** | **备注** |'
+- en: '| `example.com` | `dc=example,dc=com` | All users in the LDAP directory can
+    access JIRA |'
+  id: totrans-33
+  prefs: []
+  type: TYPE_TB
+  zh: '| `example.com` | `dc=example,dc=com` | LDAP 目录中的所有用户都可以访问 JIRA |'
+- en: '| `us.example.com` | `dc=us,dc=example,dc=com` | Only U.S. users can access
+    JIRA |'
+  id: totrans-34
+  prefs: []
+  type: TYPE_TB
+  zh: '| `us.example.com` | `dc=us,dc=example,dc=com` | 只有美国用户可以访问 JIRA |'
+- en: '| `asia.example.com` | `dc=asia,dc=example,dc=com` | Only Asian users can access
+    JIRA |'
+  id: totrans-35
+  prefs: []
+  type: TYPE_TB
+  zh: '| `asia.example.com` | `dc=asia,dc=example,dc=com` | 只有亚洲用户可以访问 JIRA |'
+- en: Contact your JIRA administrator to understand the LDAP domain. Also, make sure
+    that if you are using LDAP, then any user with an active account can log in to
+    JIRA and your license limit can exhaust quickly.
+  id: totrans-36
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 联系你的 JIRA 管理员以了解 LDAP 域。还要确保如果你使用 LDAP，那么任何拥有有效账户的用户都可以登录 JIRA，这样你的许可证限制可能会很快用尽。
+- en: Connecting to Crowd
+  id: totrans-37
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 连接到 Crowd
+- en: Crowd is another application from Atlassian for single sign-on. This application
+    can be used to manage multiple user directories.
+  id: totrans-38
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Crowd 是 Atlassian 的另一款单点登录应用程序。此应用可以用于管理多个用户目录。
+- en: Implementing Atlassian Crowd
+  id: totrans-39
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 实施 Atlassian Crowd
+- en: Crowd supports various types of directory. It can use its own Crowd internal
+    directory or it can also connect to the LDAP directory already used in the organization.
+    As a first step, at least one of these directories should be configured in Crowd.
+    Then, make sure the group that is required to authenticate the users is added
+    in the directory that you add and configure in Crowd. For instance, **jira-software-users**
+    is a group defined in JIRA. Users who are part of this group can login to JIRA.
+    Just make sure this group is also added to your Crowd directory. Finally, to communicate
+    with JIRA an application needs to be created in Crowd. Remember the application
+    name and application password; you will need them when configuring Crowd in JIRA.
+  id: totrans-40
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Crowd 支持多种类型的目录。它可以使用其内部的 Crowd 目录，也可以连接到组织中已使用的 LDAP 目录。作为第一步，至少需要在 Crowd 中配置其中一个目录。然后，确保将用于认证用户的组添加到你在
+    Crowd 中添加和配置的目录中。例如，**jira-software-users** 是在 JIRA 中定义的一个组。属于该组的用户可以登录 JIRA。只需确保该组也已添加到你的
+    Crowd 目录中。最后，为了与 JIRA 通信，需要在 Crowd 中创建一个应用程序。记住该应用程序的名称和应用程序密码；在配置 Crowd 与 JIRA
+    的连接时，你会需要它们。
+- en: 'Organizations with an existing Crowd instance can connect their JIRA to utilize
+    single sign-on:'
+  id: totrans-41
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 已有 Crowd 实例的组织可以将其 JIRA 连接到该实例，以实现单点登录：
+- en: Go to JIRA **Administration** | **User management** | **User Directories** (under
+    **USER DIRECTORIES**).
+  id: totrans-42
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 转到 JIRA **管理** | **用户管理** | **用户目录**（在 **用户目录** 下）。
+- en: Click on the **Add Directory** button and select **Directory Type:** as **Atlassian
+    Crowd**:![Implementing Atlassian Crowd](img/image_08_005.jpg)
+  id: totrans-43
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击 **添加目录** 按钮，并选择 **目录类型** 为 **Atlassian Crowd**：![实现 Atlassian Crowd](img/image_08_005.jpg)
+- en: 'On the next screen, fill in **Server Settings**:'
+  id: totrans-44
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在下一个页面，填写 **服务器设置**：
+- en: Enter the **Name** of the Crowd server
+  id: totrans-45
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 输入 **Crowd 服务器的名称**
+- en: Enter the **Server URL** of your crowd instance
+  id: totrans-46
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 输入你的**服务器 URL**，以连接到 Crowd 实例
+- en: Enter the name of the **Application Name**; this application needs to be created
+    in Crowd by the administrator
+  id: totrans-47
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 输入 **应用程序名称**；该应用程序需要由管理员在 Crowd 中创建
+- en: Provide the **Application Password** given to you by the Crowd administrator
+  id: totrans-48
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 提供由 Crowd 管理员给你的 **应用程序密码**
+- en: Then, select **Crowd Permissions** as **Read/Write** if you want the changes
+    to be applied to the Crowd server, or **Read Only** if you just want to retrieve
+    the information.
+  id: totrans-49
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 然后，选择 **Crowd 权限** 为 **读/写**，如果你希望更改应用到 Crowd 服务器；如果只想检索信息，则选择 **只读**。
+- en: First, click on **Test Settings** and if everything works, then you will be
+    able to **Save and Test** the connection to the Crowd server.
+  id: totrans-50
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 首先，点击 **测试设置**，如果一切正常，你将能够 **保存并测试** 与 Crowd 服务器的连接。
+- en: Connecting to a JIRA user server
+  id: totrans-51
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 连接到 JIRA 用户服务器
+- en: 'In large organizations, there could be more than one instance of JIRA used
+    by various teams or projects. Users may need to access all these instances to
+    track projects; in such cases, separate accounts need to be created for the same
+    person. It''s not only cumbersome for the JIRA administrator, but also difficult
+    for the user to remember one more username and password. JIRA allows you to connect
+    to another JIRA instance for user management:'
+  id: totrans-52
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在大型组织中，可能会有多个 JIRA 实例供不同的团队或项目使用。用户可能需要访问所有这些实例来跟踪项目；在这种情况下，必须为同一个人创建多个账户。这不仅对
+    JIRA 管理员来说繁琐，而且用户也很难记住更多的用户名和密码。JIRA 允许你连接到另一个 JIRA 实例进行用户管理：
+- en: Go to JIRA **Administration** | **User management** | **User Directories** (under
+    **USER DIRECTORIES**).
+  id: totrans-53
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 转到 JIRA **管理** | **用户管理** | **用户目录**（在 **用户目录** 下）。
+- en: Click on the **Add Directory** button and select **Directory Type:** as **Atlassian
+    JIRA**:![Connecting to a JIRA user server](img/image_08_006.jpg)
+  id: totrans-54
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击 **添加目录** 按钮，并选择 **目录类型** 为 **Atlassian JIRA**：![连接到 JIRA 用户服务器](img/image_08_006.jpg)
+- en: 'On the next screen, fill in **Server Settings**:'
+  id: totrans-55
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在下一个页面，填写 **服务器设置**：
+- en: Enter the **Name** of the JIRA server
+  id: totrans-56
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 输入 **JIRA 服务器的名称**
+- en: Enter the **Server URL** of your JIRA instance
+  id: totrans-57
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 输入你的 **JIRA 实例的服务器 URL**
+- en: Enter the name of the **Application Name**; this application needs to be created
+    in JIRA by the administrator
+  id: totrans-58
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 输入 **应用程序名称**；该应用程序需要由管理员在 JIRA 中创建
+- en: Provide the **Application Password** given to you by the JIRA administrator
+  id: totrans-59
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 提供由 JIRA 管理员给你的 **应用程序密码**
+- en: Then, select **JIRA Server Permissions** as **Read/Write** if you want the changes
+    to be applied to the JIRA server, or **Read Only** if you just want to retrieve
+    the information.
+  id: totrans-60
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 然后，选择 **JIRA 服务器权限** 为 **读/写**，如果你希望更改应用到 JIRA 服务器；如果只想检索信息，则选择 **只读**。
+- en: First, click on **Test Settings** and if everything works, then you will be
+    able to **Save and Test** the connection to the JIRA server.
+  id: totrans-61
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 首先，点击 **测试设置**，如果一切正常，你就可以 **保存并测试** 与 JIRA 服务器的连接。
+- en: Allowing other applications to connect to JIRA
+  id: totrans-62
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 允许其他应用程序连接到 JIRA
+- en: 'In the previous section, we connected one JIRA instance to another for user
+    management. The instance used as a JIRA user server needs to have the application
+    created so that other instances can connect to it:'
+  id: totrans-63
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在上一节中，我们将一个 JIRA 实例连接到另一个实例进行用户管理。作为 JIRA 用户服务器使用的实例需要先创建该应用程序，以便其他实例能够连接到它：
+- en: Go to JIRA **Administration** | **User management** | **JIRA User Server**.
+  id: totrans-64
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 前往 JIRA **管理** | **用户管理** | **JIRA 用户服务器**。
+- en: 'Click on the **Add application** button in the top-right corner:'
+  id: totrans-65
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 点击右上角的 **添加应用程序** 按钮：
+- en: '![Allowing other applications to connect to JIRA](img/image_08_007.jpg)'
+  id: totrans-66
+  prefs:
+  - PREF_IND
+  type: TYPE_IMG
+  zh: '![允许其他应用程序连接到 JIRA](img/image_08_007.jpg)'
+- en: On the next screen, enter **Application name** as `jira-user-server` or something
+    meaningful.
+  id: totrans-67
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在下一屏幕上，输入 **应用程序名称**，如 `jira-user-server` 或其他有意义的名称。
+- en: Enter the **Password** for this application.
+  id: totrans-68
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 输入该应用程序的 **密码**。
+- en: Finally, enter the IP address of the actual JIRA server in the **IP Addresses**
+    field. This step is quite important. Without this step, the connection may not
+    work.
+  id: totrans-69
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 最后，在 **IP 地址** 字段中输入实际 JIRA 服务器的 IP 地址。这一步非常重要。如果没有这一步，连接可能无法正常工作。
+- en: The JIRA user server URL, application name, and password are important features
+    to note here and need to be used in the JIRA instance that will connect to it.
+    Allowing other applications from Atlassian, such as Confluence, to connect to
+    JIRA to share the user base is possible because JIRA internally uses a trimmed
+    version of Crowd.
+  id: totrans-70
+  prefs: []
+  type: TYPE_NORMAL
+  zh: JIRA 用户服务器的 URL、应用程序名称和密码是需要注意的重要特征，并且需要在将连接到它的 JIRA 实例中使用。由于 JIRA 内部使用了一个精简版的
+    Crowd，允许 Atlassian 的其他应用程序（如 Confluence）连接到 JIRA 以共享用户库是可能的。
+- en: Synchronizing user and group information
+  id: totrans-71
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 同步用户和组信息
+- en: Now that we have seen how to connect JIRA to LDAP, Crowd, and another JIRA server,
+    it's also important to understand how the user information is synchronized. Any
+    new user who is a part of the directory should be able to log in to a JIRA instance,
+    but all new users who have recently been added to the directory will not be able
+    to access JIRA until the user list is synchronized.
+  id: totrans-72
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经看到了如何将 JIRA 连接到 LDAP、Crowd 和另一个 JIRA 服务器，接下来还需要了解用户信息是如何同步的。任何属于目录的新用户都应该能够登录到
+    JIRA 实例，但所有最近添加到目录中的新用户，在用户列表同步之前都无法访问 JIRA。
+- en: 'Go to JIRA **Administration** | **User management** | **User Directories**
+    (under **USER DIRECTORIES**). Here, you will see the list of user directories
+    added in the instance. There is a **Synchronise** link against each entry:'
+  id: totrans-73
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 前往 JIRA **管理** | **用户管理** | **用户目录**（位于 **用户目录** 下）。在这里，你将看到实例中添加的用户目录列表。每个条目旁边都有一个
+    **同步** 链接：
+- en: '![Synchronizing user and group information](img/image_08_008.jpg)'
+  id: totrans-74
+  prefs: []
+  type: TYPE_IMG
+  zh: '![同步用户和组信息](img/image_08_008.jpg)'
+- en: Click on the **Synchronise** link and JIRA will compare and fetch the list of
+    users from the JIRA server; if there are new users on the server, they will be
+    created in the instance. This will also create the groups in our JIRA instance.
+  id: totrans-75
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 点击 **同步** 链接，JIRA 将比较并获取 JIRA 服务器中的用户列表；如果服务器中有新用户，它们将会在实例中创建。这也会在我们的 JIRA 实例中创建相应的用户组。
+- en: Note that the users created via this synchronization will not be editable, and
+    you cannot delete them if the permission is set in the **Read Only** mode.
+  id: totrans-76
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请注意，通过此同步创建的用户是不可编辑的，如果权限设置为 **只读** 模式，则无法删除这些用户。
+- en: Summary
+  id: totrans-77
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 总结
+- en: In this chapter, you learned how to integrate JIRA with LDAP, Crowd, and a JIRA
+    user server. This way, users don't need to remember multiple logins for different
+    tools, and it's also much easier for the administrators to manage users efficiently
+    from a single place. You also learned how to create the application link on the
+    JIRA server, and discussed the synchronization of user accounts.
+  id: totrans-78
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，你学习了如何将 JIRA 与 LDAP、Crowd 和 JIRA 用户服务器集成。这样，用户无需记住多个工具的登录信息，管理员也可以更轻松地从一个地方有效地管理用户。你还学习了如何在
+    JIRA 服务器上创建应用程序链接，并讨论了用户账户的同步。
+- en: Until now, we have seen the power of JIRA and the flexibility it offers. JIRA
+    can be customized very easily; we know that more functionality can be added to
+    JIRA by installing add-ons from the marketplace. While some of these add-ons are
+    free, others need to be purchased. It's also possible to create your own add-on
+    to bring a new feature in JIRA and modify it. In the next chapter, we will take
+    a look at how to create these add-ons along with some simple examples.
+  id: totrans-79
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 到目前为止，我们已经看到了JIRA的强大功能和它所提供的灵活性。JIRA可以非常轻松地进行自定义；我们知道，可以通过从市场上安装插件来为JIRA添加更多功能。虽然其中一些插件是免费的，但也有一些需要购买。你还可以创建自己的插件，将新功能引入JIRA并对其进行修改。在下一章中，我们将看看如何创建这些插件，并提供一些简单的示例。

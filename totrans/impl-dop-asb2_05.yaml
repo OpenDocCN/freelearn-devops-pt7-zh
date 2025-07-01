@@ -1,0 +1,1301 @@
+- en: Playbooks – Beyond the Fundamentals
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 剧本——超越基础
+- en: In the previous chapter, we outlined and discussed how to construct Ansible
+    playbook's and inventory host files. This knowledge will help us get up and running
+    with Ansible quickly and is a great foundation to build from. We looked at how
+    to leverage these implementations to target groups of infrastructure and began
+    to see some of the power that Ansible provides. While Ansible was designed with
+    simplicity as its core design construct, that does not mean it is not highly scalable
+    and flexible. In many ways, Ansible's real power and scalability comes from its
+    modular design and simplistic implementation standards combined with an effectively
+    customizable playbook and role design pattern.
+  id: totrans-1
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在上一章中，我们概述并讨论了如何构建Ansible剧本和清单主机文件。这些知识将帮助我们快速上手Ansible，并为进一步构建打下良好的基础。我们研究了如何利用这些实现来定位基础设施组，并开始看到Ansible所提供的一些强大功能。虽然Ansible设计时的核心理念是简单性，但这并不意味着它不具备高度的可扩展性和灵活性。在许多方面，Ansible的真正力量和可扩展性来自于其模块化设计和简化的实现标准，再加上高效的可定制剧本和角色设计模式。
+- en: While the implementations we have learned thus far have their place and purpose
+    (as basic constructs, and foundational elements), can you imagine how hard a 10,000-line
+    single file Ansible playbook would be to create and manage? Or what if half of
+    that playbook were designed to simply setup web servers? Could there be a better
+    way? Absolutely! A better way of implementing and managing playbook's is to use
+    Ansible roles and the includes. These scenarios are where moving beyond a simple
+    single-file playbook becomes a reality.
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 尽管我们迄今为止学到的实现方法各有其作用和目的（作为基本构建块和基础元素），你能想象创建和管理一个10,000行的单文件Ansible剧本有多困难吗？或者如果这个剧本的一半只是用来设置web服务器呢？有没有更好的方法？当然有！实现和管理剧本的更好方法是使用Ansible角色和包含。这些场景是超越简单单文件剧本，成为现实的地方。
+- en: 'In this chapter, we are going to expand our Ansible knowledge and learn how
+    to make use of Ansible roles and includes. We will learn how to expand from a
+    single playbook file into a playbook hierarchy structure where multiple files
+    can be combined and reused to provide an **Object Oriented Programming** (**OOP**)
+    playbook implementation. In addition to learning roles and include, we will also
+    learn how registers and other more advanced playbook structures work. The specific
+    learning objectives of this chapter are as follows:'
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们将扩展我们的Ansible知识，学习如何利用Ansible角色和包含。我们将学习如何从单一剧本文件扩展到剧本层次结构，其中多个文件可以组合和重用，以提供**面向对象编程**（**OOP**）的剧本实现。除了学习角色和包含，我们还将学习如何使用注册器以及其他更高级的剧本结构。此章的具体学习目标如下：
+- en: Ansible playbook's and Conditional Logic
+  id: totrans-4
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Ansible剧本和条件逻辑
+- en: Ansible Loops and Iterators
+  id: totrans-5
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Ansible循环和迭代器
+- en: Ansible Includes
+  id: totrans-6
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Ansible包含
+- en: Ansible Roles
+  id: totrans-7
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Ansible角色
+- en: Ansible Registers
+  id: totrans-8
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Ansible注册器
+- en: Error Trapping
+  id: totrans-9
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 错误捕获
+- en: Ansible Handlers
+  id: totrans-10
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Ansible处理器
+- en: playbook's and Conditional Logic
+  id: totrans-11
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 剧本和条件逻辑
+- en: Ansible provides a nice integrated way of performing conditional operations.
+    That is to say, a task can be executed when a given condition is met. Some examples
+    of this type of requirement might be to only execute a task *if* the target system
+    is Ubuntu or only execute a task *if* the target system has a specific processor
+    architecture.
+  id: totrans-12
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible提供了一种很好的集成方式来执行条件操作。也就是说，当满足特定条件时，可以执行任务。这类要求的一些示例可能是，仅在目标系统是Ubuntu时执行任务，或仅在目标系统具有特定处理器架构时执行任务。
+- en: 'Ansible supports conditionals through the implementation of the when operator.
+    In this section, we will take a look at how Ansible manages conditionals and tour
+    through an example of managing tasks through a condition. Let''s start with this
+    code:'
+  id: totrans-13
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible通过实现when操作符来支持条件语句。在本节中，我们将探讨Ansible如何管理条件语句，并通过一个条件管理任务的示例进行演示。我们从这段代码开始：
+- en: '[PRE0]'
+  id: totrans-14
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: 'In this example, we conditionally specify the `Debian` family as the requirement
+    for the task to run. Simple enough, right? In addition to the example using the
+    `Ansible_os_family` implementation, we can also specify variable conditions. Variable
+    conditions let us specify that a variable is set or exists as a requirement to
+    executing the Ansible task. Look at another example of a snippet:'
+  id: totrans-15
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这个例子中，我们有条件地指定`Debian`家族作为任务运行的要求。简单吧？除了使用`Ansible_os_family`实现的示例外，我们还可以指定变量条件。变量条件使我们能够指定一个变量已设置或存在作为执行Ansible任务的要求。看一下另一个代码片段的示例：
+- en: '[PRE1]'
+  id: totrans-16
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: 'In this example, we can see that if the when operator is set to `true`, we
+    tell the user *hello*. Simple enough logic, right? In addition to this implementation,
+    we can also use the inverse of this logic, that is, to execute a task when the
+    operator is not set. Let''s take a look at an example of this in inverse operation
+    in action:'
+  id: totrans-17
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这个示例中，我们可以看到，如果 `when` 操作符设置为 `true`，我们就会向用户说 *hello*。这个逻辑很简单，对吧？除了这种实现方式，我们还可以使用这种逻辑的反向操作，也就是说，当操作符没有设置时执行任务。让我们来看一个反向操作的示例：
+- en: '[PRE2]'
+  id: totrans-18
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: 'While simple logic can be implemented using these solutions, oftentimes we
+    need something a bit more comprehensive. In addition to simple logic conditions
+    Ansible provides, we can also perform more complex implementations. One such implementation
+    is the use of iterators and conditions. Let''s take a look at an example of how
+    to implement this:'
+  id: totrans-19
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 虽然可以使用这些解决方案实现简单的逻辑，但很多时候我们需要一些更全面的实现。除了 Ansible 提供的简单逻辑条件，我们还可以执行更复杂的实现。其中一个实现就是使用迭代器和条件语句。让我们来看一个如何实现这一点的示例：
+- en: '[PRE3]'
+  id: totrans-20
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: 'In this example, we have a simple command of `echo`, which takes an iterator
+    array (`with_items`), and we terminate the loop if the item count gets larger
+    than `7`. The output of this example should be similar to the following screenshot:'
+  id: totrans-21
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这个示例中，我们有一个简单的 `echo` 命令，它接收一个迭代器数组（`with_items`），如果项目数量超过 `7`，我们就终止循环。这个示例的输出应该类似于以下屏幕截图：
+- en: '![](img/7974d04b-b200-4c30-8bb3-be0d708a73b4.png)'
+  id: totrans-22
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/7974d04b-b200-4c30-8bb3-be0d708a73b4.png)'
+- en: 'Great! Now that we know how to do this, let''s take a look at how to use conditionals
+    based on the output of previous commands. Here is an example:'
+  id: totrans-23
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 太棒了！现在我们知道如何做了，让我们看看如何基于之前命令的输出使用条件语句。这里是一个示例：
+- en: '[PRE4]'
+  id: totrans-24
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: 'After the implementation of Ansible 2.0, the kind folks at Ansible provided
+    us with a handy way of adding conditionals to Ansible roles. As a result, we can
+    now use conditional logic directly within our role declarations. This is accomplished
+    via the following syntax:'
+  id: totrans-25
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 Ansible 2.0 实现之后，Ansible 的开发者们为我们提供了一种方便的方式，可以向 Ansible 角色中添加条件语句。因此，我们现在可以直接在角色声明中使用条件逻辑。这是通过以下语法来实现的：
+- en: '[PRE5]'
+  id: totrans-26
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: So we have learned how useful conditionals can be within an Ansible playbook.
+    Now let's move on from conditionals onto iterators and loops. Iterators and loops
+    provide us with a really handy way to reduce the amount of code we write and allow
+    us to perform repetitive operations easily.
+  id: totrans-27
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们已经了解了条件语句在 Ansible playbook 中的实用性。现在让我们从条件语句转到迭代器和循环。迭代器和循环为我们提供了一种非常方便的方式，可以减少编写的代码量，并让我们轻松地执行重复操作。
+- en: Iterators and Loops
+  id: totrans-28
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 迭代器和循环
+- en: In Ansible (and YAML for that matter), there is usually more than one way to
+    accomplish any given automation. Automation actions can be implemented in simple
+    YAML format or can be potentially grouped together by using the `with_items` iterator.
+    In this section, we will take a look at iterators and learn how we can leverage
+    them to reduce the amount of YAML code we need to write and organize our playbook
+    tasks more effectively.
+  id: totrans-29
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 Ansible（以及 YAML 中），通常有不止一种方式来完成任何给定的自动化任务。自动化操作可以用简单的 YAML 格式实现，也可以通过使用 `with_items`
+    迭代器将任务组合在一起。在本节中，我们将了解迭代器，并学习如何利用它们减少需要编写的 YAML 代码量，从而更有效地组织我们的 playbook 任务。
+- en: 'If you are familiar with basic programming concepts, the idea of an iterator
+    is not new or novel. In fact, Ansible supports multiple variations of an iterator:
+    everything from traditional loops to `Do...Until`, numerical iterators, and many
+    more. Iterators in the context of Ansible playbook''s are almost identical in
+    nature as traditional programming implementations of iterators, with a few specific
+    syntax caveats.'
+  id: totrans-30
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你熟悉基本的编程概念，迭代器的概念并不新颖或独特。事实上，Ansible 支持多种类型的迭代器：从传统的循环到 `Do...Until`、数值迭代器等等。在
+    Ansible playbook 中使用的迭代器与传统编程中的迭代器几乎是相同的，只是有一些特定的语法差异。
+- en: In this section, we are going to look at the multiple loop variations that Ansible
+    supports. We will begin by looking at standard basic loops and move onto more
+    complex implementations as we progress through this section. Let's get moving!
+  id: totrans-31
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本节中，我们将研究 Ansible 支持的多种循环方式。我们将从标准的基本循环开始，随着我们逐步深入，本节内容会逐渐转向更复杂的实现。让我们开始吧！
+- en: Basic loops using with_items
+  id: totrans-32
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用 `with_items` 的基本循环
+- en: 'Ansible''s YAML integration supports a basic loop syntax for reducing duplication
+    in code. This can be especially handy when installing packages, copying files,
+    or managing sets of items. The Ansible implementation of this is managed via the
+    `with_items` iterator. Ansible''s `with_items` iterator allows us to specify the
+    task to perform once and a list of items to perform the same task repetitively.
+    Let''s look at a comparison of an Ansible task that uses `with_items` and the
+    same set of tasks that does not use this feature:'
+  id: totrans-33
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 的 YAML 集成支持基本的循环语法，以减少代码中的重复。这在安装软件包、复制文件或管理一组项目时尤其方便。Ansible 实现这一功能是通过
+    `with_items` 迭代器来管理的。Ansible 的 `with_items` 迭代器允许我们指定执行的任务一次，并指定一个项目列表来重复执行相同的任务。让我们来看一下使用
+    `with_items` 的 Ansible 任务与没有使用此功能的相同任务集的对比：
+- en: '[PRE6]'
+  id: totrans-34
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: Based on this example, we can see that we can alleviate some tedium when writing
+    our playbook's by using a `with_items` iterator. The iterator in this case takes
+    a list of items and then repeats the task any number of times with a different
+    item substituted during each iteration.
+  id: totrans-35
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 根据这个例子，我们可以看到，通过使用 `with_items` 迭代器，我们可以减轻编写剧本时的一些繁琐工作。此迭代器在此案例中接受一个项目列表，并在每次迭代时替换不同的项目，重复执行任务。
+- en: 'In addition to specifying `with_items` directly inline in the task, we can
+    also leverage a list defined within a YAML variables file, or the vars section.
+    This can be accomplished like so:'
+  id: totrans-36
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 除了直接在任务中内联指定 `with_items` 外，我们还可以利用在 YAML 变量文件或变量部分中定义的列表。这可以像这样完成：
+- en: '`with_items: "{{ myvarlist }}"`'
+  id: totrans-37
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`with_items: "{{ myvarlist }}"`'
+- en: Nested loops using with_nested
+  id: totrans-38
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用 `with_nested` 的嵌套循环
+- en: 'In addition to the simple loops we described previously, Ansible''s syntax
+    also supports the idea of nested looping. Nested loops in many ways are similar
+    in nature to a set of arrays that would be iterated over using the `with_nested`
+    operator. Nested loops provide us with a succinct way of iterating over multiple
+    lists within a single task. This could be useful in cases where multiple data
+    items are required (such as creating user accounts with different names and details,
+    or maybe seeding a MySQL database). Let''s look at an example:'
+  id: totrans-39
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 除了我们之前描述的简单循环外，Ansible 的语法还支持嵌套循环的概念。在许多方面，嵌套循环类似于一组数组，可以使用 `with_nested` 操作符对其进行迭代。嵌套循环为我们提供了一种简洁的方法，可以在单个任务中迭代多个列表。这在需要多个数据项的情况下非常有用（例如使用不同的名称和详细信息创建用户账户，或者可能是为
+    MySQL 数据库进行数据填充）。让我们来看一个例子：
+- en: '[PRE7]'
+  id: totrans-40
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE7]'
+- en: 'Here is the output from the console when we run this playbook on the command
+    line:'
+  id: totrans-41
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这是我们在命令行运行此剧本时控制台的输出：
+- en: '![](img/48116d26-cb97-4884-9039-74ae1a53ba1e.png)'
+  id: totrans-42
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/48116d26-cb97-4884-9039-74ae1a53ba1e.png)'
+- en: As we can see from this example, we have the ability within our playbook to
+    use arrays and iterate over them by simply referring to them using the `with_items`
+    clause. Neat, right?
+  id: totrans-43
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 从这个例子中我们可以看到，在我们的剧本中，我们可以使用数组并通过简单地使用 `with_items` 子句来迭代它们。是不是很方便？
+- en: Looping over hashes using with_dict
+  id: totrans-44
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用 `with_dict` 迭代哈希
+- en: For those of you who are familiar with programming languages, the idea of a
+    hash is nothing new. For those of you who are not familiar, a hash is simply a
+    set of data points identified by a key. Within a hash can be multiple keys, and
+    each key has an associated value.
+  id: totrans-45
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于熟悉编程语言的朋友们来说，哈希的概念并不陌生。对于不熟悉的人来说，哈希仅仅是一组通过键标识的数据点。在一个哈希中可以有多个键，每个键都有一个关联的值。
+- en: 'Let''s take a look at a basic example of a hash to get a better idea of how
+    this unique but popular data structure works:'
+  id: totrans-46
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们来看一个哈希的基本示例，以便更好地理解这种独特但流行的数据结构是如何工作的：
+- en: '![](img/7eebd00a-36a9-4960-bf31-20a2fcdace64.png)'
+  id: totrans-47
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/7eebd00a-36a9-4960-bf31-20a2fcdace64.png)'
+- en: 'From this, table we can see that a key is simply an identifier, and the value
+    that key represents could be any string or data piece stored in the value table
+    that is associated with that specific key. So how does this apply to Ansible?
+    Ansible provides us a `with_dict` operator, which we can leverage to iterate over
+    key/value pairs. Let''s look at an example:'
+  id: totrans-48
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 从这张表中我们可以看到，键仅仅是一个标识符，而该键所代表的值可以是与该特定键关联的值表中存储的任何字符串或数据项。那么这如何应用到 Ansible 呢？Ansible
+    提供了一个 `with_dict` 操作符，我们可以利用它来迭代键/值对。让我们来看一个例子：
+- en: '[PRE8]'
+  id: totrans-49
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE8]'
+- en: 'This example shows a way to store hash data within an Ansible playbook and
+    then iterate over the results. In this specific case, we iterate over the key,
+    which is our looney''s short name, and the associated value, which is the looney''s
+    full name. When we run this playbook, the output we will see should be something
+    like the following:'
+  id: totrans-50
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个示例展示了一种在 Ansible playbook 中存储哈希数据并遍历结果的方式。在这个具体的例子中，我们遍历的是键，即我们“乐一通”角色的简短名字，以及相应的值，即角色的全名。当我们运行这个
+    playbook 时，看到的输出应该类似于以下内容：
+- en: '![](img/f2a15eda-3136-4ee0-be56-8178628e540a.png)'
+  id: totrans-51
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/f2a15eda-3136-4ee0-be56-8178628e540a.png)'
+- en: So we can see from this screenshot that Ansible will neatly iterate over the
+    data sets we requested and say *hello* to our favorite Looney Tunes character.
+  id: totrans-52
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 所以从这个截图中我们可以看到，Ansible 会整齐地遍历我们请求的数据集，并向我们最喜欢的《乐一通》角色说*你好*。
+- en: Iterating over files using with_file
+  id: totrans-53
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用 with_file 遍历文件
+- en: 'Ansible''s `with_file` operator provides us with a handy way to iterate over
+    the contents of a file. This specific iterator operation provides us with a way
+    to iterate over a single file or multiple files in order. To illustrate how this
+    works, let''s look at an example:'
+  id: totrans-54
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 的 `with_file` 操作符为我们提供了一种便捷的方式来遍历文件内容。这个特定的迭代操作为我们提供了按顺序遍历单个文件或多个文件的方式。为了说明它是如何工作的，我们来看一个例子：
+- en: '`hello.txt`:'
+  id: totrans-55
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`hello.txt`：'
+- en: '[PRE9]'
+  id: totrans-56
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE9]'
+- en: '`favorite_toons.txt`:'
+  id: totrans-57
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`favorite_toons.txt`：'
+- en: '[PRE10]'
+  id: totrans-58
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE10]'
+- en: '`iterator_file_contents.yml`:'
+  id: totrans-59
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`iterator_file_contents.yml`：'
+- en: '[PRE11]'
+  id: totrans-60
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE11]'
+- en: 'From this example, we should be able to at this point understand basically
+    what it is trying to accomplish. The first thing it will do is display the contents
+    of `hello.txt`, and subsequently display the contents of `favorite_toons.txt`.
+    As such, the output should be similar to the following screenshot:'
+  id: totrans-61
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 从这个例子中，我们应该能够基本理解它试图实现的目标。它首先会显示 `hello.txt` 的内容，然后依次显示 `favorite_toons.txt`
+    的内容。因此，输出应该类似于以下截图：
+- en: '![](img/a0d2d93b-6fcd-4c44-a0ef-866c084a97f8.png)'
+  id: totrans-62
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/a0d2d93b-6fcd-4c44-a0ef-866c084a97f8.png)'
+- en: From this screenshot, we can see that the playbook which uses nesting outputs
+    the names of our favorite Looney Toons character, prefaced with a greeting.
+  id: totrans-63
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 从这个截图中，我们可以看到，使用嵌套的 playbook 输出了我们最喜欢的《乐一通》角色的名字，并以问候语作为前缀。
+- en: Iterating over sequential numbers
+  id: totrans-64
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 遍历顺序数字
+- en: 'Counting through a sequential number set is a fundamental programming concept.
+    It involves essentially creating a counter that counts forward or backward sequentially
+    by a given step. That is to say, we can count up or down from a given number using
+    Ansible sequential numerical iterators. We can then pipe the numerical data from
+    Ansible into, say, a shell call or a debug message. Let''s take a quick look at
+    a brief example:'
+  id: totrans-65
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通过顺序数字集计数是一个基础的编程概念。它本质上涉及创建一个计数器，按给定的步长向前或向后顺序计数。也就是说，我们可以使用 Ansible 的顺序数字迭代器从一个给定的数字开始向上或向下计数。然后，我们可以将这些数字数据从
+    Ansible 管道传输到，例如，shell 调用或调试消息。让我们快速看一个简短的例子：
+- en: '[PRE12]'
+  id: totrans-66
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE12]'
+- en: The do until iterator
+  id: totrans-67
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: do until 迭代器
+- en: 'The `Do...Until` iterator has been around for a long time in many programming
+    languages. It is probably one of the most widely implemented iterators that exist.
+    This specific iteration solution provides the developer with the ability to continuously
+    loop through a sequence of code until a specific condition or flag is met. Let''s
+    look at a traditional programming example of a `Do...Until` loop versus an Ansible
+    implementation of the same operator:'
+  id: totrans-68
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`Do...Until` 迭代器在许多编程语言中已经存在了很长时间。它可能是最广泛实现的迭代器之一。这个特定的迭代解决方案为开发者提供了在满足特定条件或标志之前持续循环代码序列的能力。让我们来看一个传统编程中的
+    `Do...Until` 循环与 Ansible 实现的相同操作符的例子：'
+- en: 'VB.NET example:'
+  id: totrans-69
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: VB.NET 示例：
+- en: '[PRE13]'
+  id: totrans-70
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE13]'
+- en: 'Ansible `Do...Until` example:'
+  id: totrans-71
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Ansible `Do...Until` 示例：
+- en: '[PRE14]'
+  id: totrans-72
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE14]'
+- en: This Ansible `Do` example shows how to tail a log and wait for a specific text
+    to appear. This can be really handy when waiting for a system to spin up or an
+    execution to throw something in a log file.
+  id: totrans-73
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个 Ansible `Do` 示例展示了如何尾随一个日志并等待特定文本的出现。当等待一个系统启动或执行某些操作并将信息记录到日志文件中时，这个功能会非常有用。
+- en: Iterating over inventory hosts using play_hosts
+  id: totrans-74
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用 play_hosts 遍历清单主机
+- en: 'Inventory hosts are data items too! Each hostname defined within an inventory
+    file can be iterated upon. This implementation of the kind folks at Ansible can
+    be really handy for performing numerous configuration operations, installation
+    items, and much more. In this section, we will look at how to effectively iterate
+    through an inventory file and perform an operation with the hosts defined. The
+    easiest way to iterate through the inventory is to use the `play_hosts` variable
+    in conjunction with `with_items`. While this may be the easiest method, it is
+    not the only way to achieve this type of iteration. Let''s get started by looking
+    at an example of the `play_hosts` variable in action:'
+  id: totrans-75
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 清单主机也是数据项！每个在清单文件中定义的主机名都可以进行迭代。Ansible 开发者实现的这一功能对于执行大量配置操作、安装项等非常方便。在这一部分中，我们将学习如何有效地迭代清单文件并对定义的主机执行操作。迭代清单的最简单方法是将
+    `play_hosts` 变量与 `with_items` 一起使用。虽然这可能是最简单的方法，但它并不是实现这种迭代的唯一方式。让我们从一个 `play_hosts`
+    变量的示例开始：
+- en: '`hosts.yml`:'
+  id: totrans-76
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`hosts.yml`:'
+- en: '[PRE15]'
+  id: totrans-77
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE15]'
+- en: '`iterating_inventory_ex1.yml`:'
+  id: totrans-78
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`iterating_inventory_ex1.yml`:'
+- en: '[PRE16]'
+  id: totrans-79
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE16]'
+- en: This example shows the user a list of all hosts that are currently targeted
+    by the execution, in this case, the items in the `webserver` group.
+  id: totrans-80
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个示例展示了一个当前被执行目标指向的所有主机的列表，在本例中是 `webserver` 群组中的项。
+- en: 'In addition to the previously shown example, which uses the `play_hosts` variable,
+    we can also implement a similar solution using Ansible group identifiers. Group
+    identifiers are a neat way to access the data (hosts in our case) that Ansible
+    is using as part of this specific run. This implementation is actually in some
+    ways slightly more powerful. The power of this solution comes from the key/value
+    pair definition we can specify in the groups variable. Let''s take a look at an
+    example of how we can use group identifiers to effect the same output as the previous
+    example:'
+  id: totrans-81
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 除了之前展示的使用 `play_hosts` 变量的示例外，我们还可以使用 Ansible 群组标识符实现类似的解决方案。群组标识符是一种很好的方式来访问
+    Ansible 在当前运行中使用的数据（在我们的案例中是主机）。这种实现从某种程度上来说更加强大。这种解决方案的强大之处在于我们可以在群组变量中指定的键值对定义。让我们来看一个使用群组标识符来实现与前一个示例相同输出的例子：
+- en: '[PRE17]'
+  id: totrans-82
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE17]'
+- en: 'As we can see from this example, we can not only target the current hosts targeted
+    by the play, but also any specific group defined within the inventory. For example,
+    we can fetch a list of *all* hosts by simply specifying `{{ groups[''all''] }}`.
+    Or if we wanted to target only the `dbserver` group, we could do something like
+    this:'
+  id: totrans-83
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如我们从这个例子中看到的那样，我们不仅可以针对当前被 play 目标指向的主机，还可以针对清单中定义的任何特定群组。例如，我们可以通过简单地指定 `{{
+    groups['all'] }}` 来获取 *所有* 主机的列表。或者，如果我们只想针对 `dbserver` 群组，我们可以做类似这样的操作：
+- en: '[PRE18]'
+  id: totrans-84
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE18]'
+- en: Includes
+  id: totrans-85
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Includes
+- en: It is completely feasible to create a playbook as a single small or large file.
+    Many new Ansible developers actually begin developing playbook's this way, and
+    generally, this implementation methodology is a perfectly normal way to initially
+    learn Ansible playbook creation. Sooner or later though, learning to reuse portions
+    of a playbook will become something very useful and will help better organize
+    playbook development efforts.
+  id: totrans-86
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 创建一个作为单一小文件或大文件的 playbook 完全是可行的。许多新的 Ansible 开发者实际上都是以这种方式开始开发 playbook 的，通常，这种实现方法是学习
+    Ansible playbook 创建的正常途径。不过，迟早你会发现，学习如何重用 playbook 的部分内容将变得非常有用，并有助于更好地组织 playbook
+    开发工作。
+- en: On a fundamentally simplistic level, using an Ansible include statement allows
+    us to reuse positions of our automation in one or multiple locations. Consider
+    this in some ways like a method or function in programming that we can execute
+    over and over, essentially allowing us to write the automation once and then reuse
+    it many times.
+  id: totrans-87
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 从最基本的角度来看，使用 Ansible 的 include 语句可以让我们在一个或多个位置重用自动化部分。可以将其视为编程中的方法或函数，我们可以反复执行，基本上让我们可以编写一次自动化，然后多次重用。
+- en: This is a far more effective way to reuse automation as it removes the need
+    for repeating the creation of various portions of an automation or configuration
+    management solution. As a result, we can begin to think outside of the scope of
+    *step one, step two—*type automation and instead start thinking in terms of *provision
+    this as a web server, or provision this as a web and database server*.
+  id: totrans-88
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这是一种更有效的重用自动化的方法，因为它消除了重复创建自动化或配置管理解决方案各个部分的需求。因此，我们可以开始从 *第一步、第二步* 类型的自动化思维模式中跳脱出来，而是开始考虑
+    *将其配置为 Web 服务器，或者配置为 Web 和数据库服务器*。
+- en: 'This is a pretty critical concept. We might have a top level playbook that
+    is nothing than a series of includes that are easy to understand and reusable.
+    For example:'
+  id: totrans-89
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这是一个非常关键的概念。我们可能有一个顶级的playbook，它仅仅是一个易于理解和重用的包含系列。例如：
+- en: '`- include: add_users.yml`'
+  id: totrans-90
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`- include: add_users.yml`'
+- en: '`- include: install_httpd.yml`'
+  id: totrans-91
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`- include: install_httpd.yml`'
+- en: '`- include: configure_apache.yml`'
+  id: totrans-92
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`- include: configure_apache.yml`'
+- en: '`- include: setup_firewall.yml`'
+  id: totrans-93
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`- include: setup_firewall.yml`'
+- en: This is the real power of ansible because the first and last steps there would
+    be executed on every box.
+  id: totrans-94
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这就是Ansible的真正强大之处，因为那里的第一个和最后一个步骤将会在每台机器上执行。
+- en: Play-level includes
+  id: totrans-95
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Play级别的包含
+- en: 'One of the most effective ways to modularize and organize an Ansible playbook
+    is to use Ansible `include`. Ansible play includes provide an easy way to embed
+    `play` from other YAML files. This implementation allows us to effectively modularize
+    our playbook''s automation. Let''s take a look at how to leverage a `play` include
+    within an Ansible playbook:'
+  id: totrans-96
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 模块化和组织Ansible playbook的最有效方法之一是使用Ansible的`include`。Ansible的play包含提供了一种简单的方法，将其他YAML文件中的`play`嵌入到当前playbook中。这种实现使我们能够有效地模块化我们的playbook自动化。让我们来看看如何在Ansible
+    playbook中利用`play`包含：
+- en: '[PRE19]'
+  id: totrans-97
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE19]'
+- en: 'In this example, we can see that to implement a `play` include, we can simply
+    add a `- include: <filename>` directive within our playbook, which will embed
+    the contents of an external Ansible playbook (its plays) into the current playbook
+    and execute those contents at the appropriate step. Neat, right? So to sum up,
+    let''s define an Ansible `play` include succinctly: a play-level include allows
+    us to embed additional Ansible plays from external files within our playbook''s
+    using the `-include` directive.'
+  id: totrans-98
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '在这个示例中，我们可以看到，要实现一个`play`包含，我们只需在我们的playbook中简单地添加`- include: <filename>`指令，这将把外部Ansible
+    playbook（其plays）的内容嵌入到当前的playbook中，并在适当的步骤执行这些内容。很整洁吧？所以总结一下，我们可以简洁地定义Ansible的`play`包含：play级别的包含允许我们通过`-include`指令将外部文件中的额外Ansible
+    plays嵌入到我们的playbook中。'
+- en: 'In addition to the *vanilla* implementation of Ansible includes we just looked
+    at, the Ansible `include` directive provides us with the ability to pass parameters
+    to our included files upon execution. This can be handy for handing off variables
+    to the other YAML files we include. Let''s take a look at how to pass parameters
+    using the `include` directive. An example is provided next:'
+  id: totrans-99
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 除了我们刚才查看的Ansible包含的*原始*实现外，Ansible的`include`指令还提供了在执行时向我们包含的文件传递参数的功能。这对于将变量传递给我们包含的其他YAML文件非常有用。接下来我们来看一下如何使用`include`指令传递参数。下面给出了一个示例：
+- en: '[PRE20]'
+  id: totrans-100
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE20]'
+- en: 'Based on the previous example, we can then wield the variable within the target
+    included file using the following syntax `{{user}}`. So a more complete example
+    might look like the following:'
+  id: totrans-101
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 根据前面的示例，我们可以在目标包含的文件中使用以下语法`{{user}}`来调用变量。因此，一个更完整的示例可能如下所示：
+- en: '[PRE21]'
+  id: totrans-102
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE21]'
+- en: Now that we have a grasp of play-level includes, let's take a look at task includes.
+  id: totrans-103
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经掌握了play级别的包含，让我们来看一下任务包含。
+- en: Task-level includes
+  id: totrans-104
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 任务级别的包含
+- en: 'In addition to play includes, Ansible supports an additional implementation
+    of the `include` directive. The second implementation is called a **task include**.
+    Task includes are different from `play` includes, in that the contents of the
+    included file would only be a YAML file containing a static list of tasks to execute.
+    To implement a task include, we must specify the include directive at the task
+    level. Let''s take a look at an example of a task include solution:'
+  id: totrans-105
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 除了play包含，Ansible还支持`include`指令的另一种实现。第二种实现被称为**任务包含**。任务包含不同于`play`包含，因为包含文件的内容仅仅是一个YAML文件，其中包含了一个静态的任务列表。要实现任务包含，我们必须在任务级别指定`include`指令。接下来我们来看一下任务包含的示例解决方案：
+- en: '[PRE22]'
+  id: totrans-106
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE22]'
+- en: From this example, we can see the `include` statement provided would include
+    the contents of the file `additionaltasks.yml`. The important thing to understand
+    here is scope. Play-level includes will need to have a complete play or set of
+    plays within, whereas `task` includes should only have a YAML-formatted list of
+    tasks. Let's look at an example of each for a bit of clarity. Consider the following
+    two files, adequately named `additionaltasks.yml`.
+  id: totrans-107
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 从这个示例中，我们可以看到提供的`include`语句将包括文件`additionaltasks.yml`的内容。这里需要理解的重要概念是作用域。Play级别的包含需要包含一个完整的play或一组plays，而`task`包含应该只有一个YAML格式的任务列表。为了更清楚地理解，来看一下每种情况的示例。请参考以下两个文件，它们被恰当地命名为`additionaltasks.yml`。
+- en: 'The content of `additionaltasks.yml` is illustrated here:'
+  id: totrans-108
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`additionaltasks.yml`的内容在这里说明：'
+- en: '[PRE23]'
+  id: totrans-109
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE23]'
+- en: 'So now, we know that Ansible supports two scopes of the `include` directive:
+    the first imports a set of plays, and the second imports a set of tasks. These
+    two distinctions are important to understand as they are a powerful feature that
+    can be used to modularize automation and configuration management implementations.
+    By effectively using includes, we can create highly feature-rich automation and
+    configuration management solutions without redundancy in code.'
+  id: totrans-110
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 所以现在，我们知道 Ansible 支持 `include` 指令的两种范围：第一种导入一组 plays，第二种导入一组 tasks。理解这两个区分非常重要，因为它们是一个强大的功能，可以用来模块化自动化和配置管理的实现。通过有效使用包含，我们可以创建功能丰富的自动化和配置管理解决方案，避免代码冗余。
+- en: As of Ansible 2, you can develop unlimited levels of includes. This means that
+    one file can include another, and within the second, you can include additional
+    ones. There is no limit to the number of includes supported.
+  id: totrans-111
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 从 Ansible 2 开始，你可以开发无限层级的包含。这意味着一个文件可以包含另一个文件，而第二个文件中又可以包含更多文件。支持的包含数量没有限制。
+- en: Dynamic includes
+  id: totrans-112
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 动态包含
+- en: 'In conjunction with the two basic include types that we mentioned before, Ansible
+    2.0 supports dynamic task-level includes. A dynamic include is simply a variable
+    translation support within an `include`. As a result of this implementation, we
+    should note that the inclusion is not actually evaluated by Ansible until the
+    moment it is set to be executed. This allows adding variables within an include,
+    which was not possible prior to Ansible 2.0\. This implementation can more specifically
+    leverage loops and variable use within the `include` statement. This additional
+    functionality provides us with a significant amount of flexibility within our
+    playbook. Let''s take a look at a few examples of **dynamic includes**:'
+  id: totrans-113
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 配合我们之前提到的两种基本的包含类型，Ansible 2.0 支持动态任务级别的包含。动态包含就是在 `include` 中支持变量转换。由于这种实现，我们需要注意的是，包含直到执行时才会被
+    Ansible 评估。这使得我们可以在包含中添加变量，而在 Ansible 2.0 之前是无法实现的。这个实现更具体地支持在 `include` 语句中使用循环和变量。这个附加功能为我们的
+    playbook 提供了相当大的灵活性。让我们来看看一些 **动态包含** 的例子：
+- en: '[PRE24]'
+  id: totrans-114
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE24]'
+- en: 'This example shows us that it is possible to use variable names within our
+    `include` statement. This can be useful for dynamically specifying the file to
+    include, or having the `include` file be assigned at runtime. Beyond this implementation,
+    we can also use dynamic includes to pass a list of variables between the master
+    playbook and child. An example of this is provided next:'
+  id: totrans-115
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个例子向我们展示了我们可以在 `include` 语句中使用变量名。这对于动态指定要包含的文件，或者在运行时指定 `include` 文件非常有用。除了这种实现，我们还可以使用动态包含将变量列表从主
+    playbook 传递到子 playbook。以下是一个例子：
+- en: '[PRE25]'
+  id: totrans-116
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE25]'
+- en: From this example, we can see we are passing `apples`, `oranges`, and the variable
+    `{{favorite_fruit}}` to our included playbook using the `with_items` notation
+    (more on this later). This should give you a pretty good idea of how to pass information
+    from one playbook to an include file.
+  id: totrans-117
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 从这个例子中，我们可以看到我们通过 `with_items` 语法将 `apples`、`oranges` 和变量 `{{favorite_fruit}}`
+    传递给我们包含的 playbook（稍后会详细介绍）。这应该能帮助你更好地理解如何将信息从一个 playbook 传递到包含文件中。
+- en: Now that we have a pretty good grasp of how Ansible can be more dynamic, let's
+    take a look at Ansible roles and see how those fit into our implementations and
+    development efforts.
+  id: totrans-118
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，我们已经对 Ansible 如何变得更加动态有了很好的理解，接下来让我们看看 Ansible 角色，并了解它们如何融入到我们的实现和开发工作中。
+- en: Ansible Roles
+  id: totrans-119
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Ansible 角色
+- en: Ansible works very well with supporting a single-file 10,000-line long playbook
+    (please don't actually do that). However, when playbook's grow out of control,
+    Ansible provides a very nice way to break automation into multiple files (as illustrated
+    before using includes). Yet, as we start to grow the number of files we need to
+    include, things can become hairy to manage and maintain. So what is an Ansible
+    developer to do? Roles to the rescue! Ansible roles provide us with a really unique
+    way of dividing out our automation into uniquely defined responsibilities.
+  id: totrans-120
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 非常适合支持单文件 10,000 行的 playbook（不过请不要真的这么做）。然而，当 playbook 变得难以控制时，Ansible
+    提供了一种非常好的方式将自动化拆分成多个文件（如前所述，通过使用包含）。然而，当我们需要包含的文件数量越来越多时，管理和维护可能会变得非常复杂。那么，Ansible
+    开发人员该怎么办呢？角色来拯救！Ansible 角色为我们提供了一种独特的方式，将自动化任务分解为独立定义的职责。
+- en: In addition to providing configuration management modularization, Ansible roles
+    provide us with a best-practice approach to organizing automation within a playbook
+    and developing reusable solutions. The Ansible *roles* implementation simply represents
+    an automated, well-structured implementation of an Ansible includes solution (which
+    we discussed in the previous section). This means that the include directives
+    are already defined and implemented so long as the predefined directory structure
+    is honored within the roles implementation.
+  id: totrans-121
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 除了提供配置管理的模块化外，Ansible 角色还为我们提供了一种最佳实践方法，用于在 playbook 中组织自动化并开发可重用的解决方案。Ansible
+    的 *roles* 实现简单地表示了一个自动化、结构良好的 Ansible 包含解决方案（我们在上一节中讨论过）。这意味着只要遵循预定义的目录结构，包含指令就已经被定义和实现。
+- en: 'So to sum up, let''s consider the following definition for Ansible roles:'
+  id: totrans-122
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 总结一下，让我们考虑以下 Ansible 角色的定义：
+- en: A role is a set of Ansible tasks or configuration management automation grouped
+    by a common purpose or responsibility.
+  id: totrans-123
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 角色是按共同目的或责任分组的一组 Ansible 任务或配置管理自动化。
+- en: 'To begin understanding how Ansible roles work on a fundamental level, it is
+    probably best to start with a simple flat-file Ansible playbook that installs
+    and configures a LAMP server (Linux, Apache, MySQL, and PHP) and then implement
+    the same solution using Ansible roles and look at the implementation differences.
+    This will give us a good apples-to-apples comparison of how roles implementations
+    differ from standard playbook''s and how to organize the responsibilities. For
+    this tutorial, we will be using an Ubuntu-based Ansible control server. Let''s
+    get started:'
+  id: totrans-124
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了从根本上理解 Ansible 角色的工作原理，最好从一个简单的扁平化 Ansible playbook 开始，该 playbook 安装和配置 LAMP
+    服务器（Linux、Apache、MySQL 和 PHP），然后使用 Ansible 角色实现相同的解决方案，并查看实现上的差异。这将为我们提供一个很好的苹果对苹果的比较，帮助我们了解角色实现与标准
+    playbook 的区别，以及如何组织职责。对于本教程，我们将使用基于 Ubuntu 的 Ansible 控制服务器。让我们开始吧：
+- en: 'The content of `AnsibleLAMPwithoutRoles.yml` is illustrated here:'
+  id: totrans-125
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`AnsibleLAMPwithoutRoles.yml` 的内容如图所示：'
+- en: '[PRE26]'
+  id: totrans-126
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE26]'
+- en: Based on this playbook, we can see we are instructing Ansible to install and
+    configure a basic LAMP solution via a single playbook. This includes installing
+    Apache2, PHP, MySQL, and so on. With Ansible roles, we can accomplish the same
+    tasks with a bit more elegance and modularity.
+  id: totrans-127
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 基于这个 playbook，我们可以看到我们正在指示 Ansible 通过单个 playbook 安装和配置一个基本的 LAMP 解决方案。这包括安装
+    Apache2、PHP、MySQL 等等。通过 Ansible 角色，我们可以用更优雅和模块化的方式完成相同的任务。
+- en: 'As mentioned earlier, Ansible roles are basically include statements that are
+    pre-baked into the Ansible implementation based on a set of predefined directory
+    structures. Let''s take a look at this same basic configuration management implementation
+    and how the directory structure that makes up Ansible roles would need to be applied.
+    On your local system, replicate the following directory and file structure (leave
+    the file contents blank for the moment):'
+  id: totrans-128
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如前所述，Ansible 角色基本上是包含语句，这些语句已经预先嵌入到 Ansible 实现中，并基于一组预定义的目录结构。让我们来看一下这个基本的配置管理实现，以及组成
+    Ansible 角色的目录结构如何应用。在你的本地系统上，复制以下目录和文件结构（暂时保持文件内容为空）：
+- en: '![](img/184e108a-bef1-46fe-9162-489d23761a1e.png)'
+  id: totrans-129
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/184e108a-bef1-46fe-9162-489d23761a1e.png)'
+- en: 'Once the directory and file structure have been created, the next thing we
+    need to fill in is the top-level `playbook.yml` file, which we will use to specify
+    the roles we want and execute them. Here is the content to add to `playbook.yml`:'
+  id: totrans-130
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦创建了目录和文件结构，接下来我们需要填写的是顶层的 `playbook.yml` 文件，我们将使用这个文件来指定我们希望执行的角色并执行它们。以下是要添加到
+    `playbook.yml` 的内容：
+- en: '[PRE27]'
+  id: totrans-131
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE27]'
+- en: The purpose of this file is to simply act as a pointer to the roles we wish
+    to execute as part of our Ansible run. The `roles` defined within in this case
+    are a `webserver` role and a `dbserver` role. Each role will be defined by naming
+    and folder convention. Let's move on to the roles themselves. In our example,
+    we have two task files that need to be created/modified (the `webserver` tasks
+    file and the `dbserver` tasks file). These are respectively named `main.yml` and
+    reside in the tasks folder. Let's fill in each. The contents for each are provided
+    next.
+  id: totrans-132
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个文件的目的是简单地充当指向我们希望在 Ansible 执行过程中执行的角色的指针。在这个例子中，定义的 `roles` 包括 `webserver`
+    角色和 `dbserver` 角色。每个角色将通过名称和文件夹约定来定义。接下来让我们来看一下这些角色本身。在我们的示例中，我们有两个任务文件需要创建/修改（`webserver`
+    任务文件和 `dbserver` 任务文件）。它们分别命名为 `main.yml`，并位于任务文件夹中。接下来我们来填写每个文件。每个文件的内容如下所示：
+- en: 'The content of `webserver/tasks/main.yml` and `dbserver/tasks/main.yml` is
+    illustrated here:'
+  id: totrans-133
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这里展示了 `webserver/tasks/main.yml` 和 `dbserver/tasks/main.yml` 的内容：
+- en: '[PRE28]'
+  id: totrans-134
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE28]'
+- en: When we run this playbook with our roles defined, we can see that Ansible understands
+    how to traverse the main playbook and execute the roles required to ensure that
+    Apache and MySQL are properly installed and running.
+  id: totrans-135
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当我们运行这个 playbook 并定义了角色时，我们可以看到 Ansible 理解如何遍历主 playbook，并执行所需的角色，以确保 Apache
+    和 MySQL 正常安装并运行。
+- en: Ansible Register Variables
+  id: totrans-136
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Ansible 注册变量
+- en: Ansible registers provide us with a nice way of capturing the results of a given
+    task and executing a set of additional automations based on the captured results.
+    In many ways, this is similar to variable declarations, although registers are
+    more global in nature. Ansible registers provide us with a way of storing this
+    captured data for later and then conditionalizing future tasks based on the results
+    of previous ones.
+  id: totrans-137
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 注册器为我们提供了一种便捷的方式来捕获给定任务的结果，并根据捕获的结果执行一系列额外的自动化操作。在许多方面，这与变量声明类似，尽管注册器的作用更为全局。Ansible
+    注册器为我们提供了一种存储这些捕获数据以供后用的方法，然后可以根据之前任务的结果有条件地执行未来的任务。
+- en: Simple Ansible registers
+  id: totrans-138
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 简单的 Ansible 注册器
+- en: 'The most basic Ansible register implementations require us to only `register`
+    the output of a given operation. An example of how to define a simple register
+    is provided next:'
+  id: totrans-139
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最基本的 Ansible 注册器实现要求我们仅仅对给定操作的输出进行 `register`。接下来将提供一个如何定义简单注册器的示例：
+- en: '[PRE29]'
+  id: totrans-140
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE29]'
+- en: In this example, we use the register operator to capture the last 100 lines
+    of the system's MOTD file and store it in a global `register` variable, `motd_contents`.
+    Ansible registers essentially create a new Ansible fact at runtime, which can
+    be then used later within the play as part of a conditional.
+  id: totrans-141
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这个示例中，我们使用注册操作符捕获系统 MOTD 文件的最后 100 行，并将其存储在全局 `register` 变量 `motd_contents`
+    中。Ansible 注册器本质上在运行时创建了一个新的 Ansible fact，之后可以作为条件的一部分在 play 中再次使用。
+- en: But how exactly do we leverage stored registers later? Good question! Let's
+    explore.
+  id: totrans-142
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 但是，我们究竟如何在后续利用存储的注册器呢？好问题！让我们来探讨一下。
+- en: Accessing registers
+  id: totrans-143
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 访问注册器
+- en: 'Accessing Ansible registers later within the same `play` as they were created
+    can be accomplished fairly easily: all we need to do is use the the `when` conditional.
+    We learned about the basics of how to leverage the `when` conditional earlier
+    in this chapter. But in this context it lets us access registers. Let''s look
+    at an example of how to use the `when` conditional to access our `register`:'
+  id: totrans-144
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在同一个 `play` 中稍后访问 Ansible 注册器，如同它们被创建时一样，可以相当容易地实现：我们所需要做的就是使用 `when` 条件。我们在本章之前学习过如何利用
+    `when` 条件的基础知识。但在这种情况下，它使我们能够访问注册器。让我们来看一个如何使用 `when` 条件来访问我们的 `register` 的示例：
+- en: '[PRE30]'
+  id: totrans-145
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE30]'
+- en: The important line in this playbook is the `when` line (obviously). The interesting
+    portion of it is the idea of `.stdout.find`, which is attached to the end of our
+    register variable. This extension in many ways looks like a set of OOP methods.
+    That would be an accurate way to identify those specific calls.
+  id: totrans-146
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个 playbook 中重要的行是 `when` 行（显然）。其中有趣的部分是 `.stdout.find` 这个概念，它被附加在我们注册变量的末尾。从许多方面看，这个扩展类似于一组面向对象编程（OOP）方法。将这些特定调用识别为
+    OOP 方法是准确的。
+- en: In our example, we told Ansible to look at the contents of `STDOUT` (standard
+    command-line output) and find a specific text. If Ansible were able to properly
+    find the text, only then would the task have been executed. Nifty, right?
+  id: totrans-147
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在我们的示例中，我们告诉 Ansible 查看 `STDOUT`（标准命令行输出）的内容，并找到特定的文本。如果 Ansible 能够正确找到该文本，那么任务才会被执行。很巧妙，对吧？
+- en: Additional conditional logic with registers
+  id: totrans-148
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用注册器的附加条件逻辑
+- en: Ansible registers are not limited only by the find method of `STDOUT`. In addition
+    to basic search criteria, we can also apply many other comparisons. In this section,
+    we will identify the more common methods that can be attached to a `register`
+    variable and learn what other comparisons we can perform.
+  id: totrans-149
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 注册器不仅仅局限于 `STDOUT` 的查找方法。除了基本的搜索条件，我们还可以应用许多其他比较。在这一节中，我们将识别可以附加到 `register`
+    变量上的更常见方法，并了解我们可以执行哪些其他比较。
+- en: Null or empty comparisons
+  id: totrans-150
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 空值或空字符串比较
+- en: 'Null or empty string comparisons are common in most programming languages,
+    and Ansible is no different. Applying a null or empty string check to an Ansible
+    register can be accomplished via the following solution:'
+  id: totrans-151
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 空值或空字符串的比较在大多数编程语言中都是常见的，Ansible 也不例外。对 Ansible 注册器进行空值或空字符串检查可以通过以下方法实现：
+- en: '[PRE31]'
+  id: totrans-152
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE31]'
+- en: In addition to this specific implementation, we can also apply other variables
+    to our conditionals with registers. Let's see how.
+  id: totrans-153
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 除了这个特定实现之外，我们还可以将其他变量应用到带有注册表的条件语句中。让我们看看怎么做。
+- en: Vars and Ansible registers
+  id: totrans-154
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Vars 和 Ansible 注册表
+- en: 'Ansible registers also support the use of regular predefined variable comparisons
+    within an Ansible register `when` clause. This implementation lets us say something
+    like the following:'
+  id: totrans-155
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 注册表也支持在 Ansible 注册 `when` 子句中使用常规预定义变量比较。这个实现让我们可以这样做：
+- en: '[PRE32]'
+  id: totrans-156
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE32]'
+- en: 'This plain English comparison could be represented in Ansible YAML form via
+    something like this:'
+  id: totrans-157
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个简单的英文比较可以通过以下形式在 Ansible YAML 中表示：
+- en: '[PRE33]'
+  id: totrans-158
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE33]'
+- en: This conditional simply specifies that if the contents of `varfoo` exist within
+    the `stdout` of register `varfoo`, then execute the task.
+  id: totrans-159
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个条件语句简单地指定，如果 `varfoo` 的内容存在于注册表 `varfoo` 的 `stdout` 中，则执行任务。
+- en: Iterating over register contents
+  id: totrans-160
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 遍历注册表内容
+- en: 'Finally, the contents of the register can be iterated over to create new things
+    and adapt existing system solutions. This type of implementation might be something
+    like creating a list of directories, touching a set of files, or creating a list
+    of users. Basically, it means we can use the contents of the register as a list.
+    Let''s take a look at a quick example provided by [https://www.Ansible.com/](https://www.ansible.com/):'
+  id: totrans-161
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后，注册表的内容可以被迭代用来创建新事物和调整现有系统解决方案。这种实现方式可能是创建一个目录列表、触摸一组文件，或创建一个用户列表。基本上，这意味着我们可以将注册表的内容当作一个列表来使用。让我们看看
+    [https://www.Ansible.com/](https://www.ansible.com/) 提供的一个快速示例：
+- en: '[PRE34]'
+  id: totrans-162
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE34]'
+- en: Based on this example, we can see that our `with_items` clause is now used to
+    create a set of files and folders. However, the `home_dirs` variable is set through
+    a register instead of a standard Ansible variable.
+  id: totrans-163
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 根据这个例子，我们可以看到我们的 `with_items` 子句现在用于创建一组文件和文件夹。然而，`home_dirs` 变量是通过注册表设置的，而不是标准的
+    Ansible 变量。
+- en: Ansible Handlers
+  id: totrans-164
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Ansible Handlers
+- en: 'Ansible handlers by default are run at the end of the actual execution of a
+    playbook. They are different from registers in that they provide us with a way
+    of creating a set of automation that can be executed once (and only once) at the
+    end of a playbook based on a set of conditions provided during the execution.
+    Logically, this could look something like the following:'
+  id: totrans-165
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 默认情况下，Ansible handlers 在 playbook 实际执行完毕时运行。它们与注册表不同，因为它们为我们提供了一种方法，在 playbook
+    结束时基于执行过程中提供的一组条件，只执行一次（且仅执行一次）自动化任务。从逻辑上讲，这看起来可能是这样的：
+- en: Run role `foo`
+  id: totrans-166
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 运行角色 `foo`
+- en: 'Run role `bar`:'
+  id: totrans-167
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 运行角色 `bar`：
+- en: If role `bar`'s service start failed, trigger a flag
+  id: totrans-168
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 如果角色 `bar` 的服务启动失败，则触发一个标志
+- en: 'Execute handlers:'
+  id: totrans-169
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 执行 handlers：
+- en: If a trigger was flagged, do something
+  id: totrans-170
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 如果触发器被标记，做某事
+- en: While this example may seem similar in some ways to conditionals, it is in many
+    ways very different. That is to say, the handler would only get executed the one
+    time regardless of how many times the flag was tripped. In addition, the other
+    variance would be that a handler is more global in nature. That is to say, regardless
+    of which role tripped the flag of the handler, it would still get executed, thus
+    making the solution non-modular.
+  id: totrans-171
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 尽管这个例子在某些方面看起来与条件语句相似，但在很多方面它实际上是非常不同的。也就是说，handler 只会在一次触发时执行，而不管触发标志的次数。此外，另一个不同之处在于，handler
+    的作用更具全局性。也就是说，不管哪个角色触发了 handler 的标志，它都会执行，从而使得这个解决方案不具模块化。
+- en: 'Confused? Let''s take a look at an example of an Ansible handler:'
+  id: totrans-172
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 迷惑吗？让我们看看一个 Ansible handler 的例子：
+- en: '[PRE35]'
+  id: totrans-173
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE35]'
+- en: 'From this example, we can see we have two new concepts: the `notify` operator
+    and the `handlers` operator. Notify in some ways represents a global event system,
+    which throws an event out when triggered. The handlers on the other hand represent
+    listeners to those events.'
+  id: totrans-174
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 从这个例子中，我们可以看到我们有两个新的概念：`notify` 操作符和 `handlers` 操作符。Notify 在某种程度上代表了一个全局事件系统，当触发时会抛出一个事件。而
+    handlers 则代表监听这些事件的组件。
+- en: So essentially, we can use the `notify` solution to trigger a set of tasks downstream
+    after the main playbook has completed its execution. Nice, right?
+  id: totrans-175
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 所以，本质上，我们可以使用 `notify` 解决方案，在主 playbook 执行完毕后触发一组下游任务。不错吧？
+- en: Summary
+  id: totrans-176
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 总结
+- en: In this chapter, we discovered a number of new techniques of developing and
+    managing playbook's. We learned how to leverage `includes` to modularize our playbook
+    structures and provide us with a level of reusability within our implementations.
+    We learned how to implement conditional logic within our playbook's. We found
+    out how to deal with iterators and loops. We discovered how to implement roles
+    in Ansible and how we can use this structure to organize and better manage complex
+    configuration management and automation tasks. We learned how to best organize
+    our playbook's for reusability. We learned how handlers and registers work and
+    discovered ways we can make our automation solutions more fault tolerant, and
+    we discussed how to effectively enforce basic configuration management implementations.
+  id: totrans-177
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这一章中，我们发现了许多开发和管理 playbook 的新技术。我们学习了如何利用 `includes` 来模块化我们的 playbook 结构，并为我们的实现提供一定程度的可重用性。我们学习了如何在
+    playbook 中实现条件逻辑。我们了解了如何处理迭代器和循环。我们发现了如何在 Ansible 中实现角色，并了解了如何利用这种结构来组织和更好地管理复杂的配置管理和自动化任务。我们学习了如何将我们的
+    playbook 组织得更具可重用性。我们了解了处理程序（handlers）和注册变量（registers）的工作原理，并发现了如何使我们的自动化解决方案更加容错，同时讨论了如何有效地执行基本的配置管理实现。
+- en: This information represents the basic cursory information you will need to become
+    a successful Ansible developer and pave the way for success in configuration management.
+    To assist you on your way, the [https://www.Ansible.com/](https://www.ansible.com/)
+    documentation can be of great use. As such, this resource should become your go-to
+    guide for all things Ansible related.
+  id: totrans-178
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这些信息代表了你成为一名成功的 Ansible 开发人员所需要的基本概况信息，并为配置管理的成功奠定基础。为了帮助你实现这一目标，[https://www.Ansible.com/](https://www.ansible.com/)
+    的文档将是一个非常有用的资源。因此，这个资源应当成为你处理与 Ansible 相关的所有事宜的首选指南。
+- en: In the next chapter, we will discover Jinja2\. Jinja provides Ansible with a
+    huge amount of flexibility as it allows conditionals, loops, variables, and so
+    much more. By the time we complete the next chapter, we should have a pretty good
+    idea of how we can develop playbook's and leverage Jinja to support our implementations.
+  id: totrans-179
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一章中，我们将探索 Jinja2。Jinja 为 Ansible 提供了极大的灵活性，因为它支持条件语句、循环、变量等更多功能。当我们完成下一章时，我们应该能够较好地理解如何开发
+    playbook 并利用 Jinja 来支持我们的实现。

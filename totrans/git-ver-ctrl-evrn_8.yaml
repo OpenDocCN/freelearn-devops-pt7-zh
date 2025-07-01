@@ -1,0 +1,1299 @@
+- en: Chapter 8. Behind the Scenes – Basis of Git Basics
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 第 8 章：幕后 – Git 基础知识的基础
+- en: '*Those who had an awestruck expression on their face after experiencing the
+    awesomeness of Git would probably be wondering about the mechanisms behind the
+    magic.*'
+  id: totrans-1
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '*那些在体验 Git 的强大功能后脸上露出惊叹表情的人，可能会对这背后的机制感到好奇。*'
+- en: 'This chapter is dedicated to users who are serious about getting to know the
+    intricacies of the following operations:'
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章专门为那些希望深入了解以下操作细节的用户而写：
+- en: init
+  id: totrans-3
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: init
+- en: add
+  id: totrans-4
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: add
+- en: commit
+  id: totrans-5
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: commit
+- en: status
+  id: totrans-6
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: status
+- en: clone
+  id: totrans-7
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: clone
+- en: fetch
+  id: totrans-8
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: fetch
+- en: merge
+  id: totrans-9
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: merge
+- en: remote
+  id: totrans-10
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: remote
+- en: pull
+  id: totrans-11
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: pull
+- en: push
+  id: totrans-12
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: push
+- en: tag
+  id: totrans-13
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: tag
+- en: branch
+  id: totrans-14
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: branch
+- en: checkout
+  id: totrans-15
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: checkout
+- en: We begin by understanding the composition of a Git repository, followed by an
+    analysis of the ways in which Git intelligently manages content, and finally take
+    an overview of ways through which Git sees the relation between relations in order
+    to store and transfer content.
+  id: totrans-16
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们首先了解 Git 仓库的组成，然后分析 Git 如何智能地管理内容，最后概述 Git 如何通过关系之间的关系来存储和传输内容。
+- en: 'Two sides of Git: plumbing and porcelain'
+  id: totrans-17
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Git 的两个方面：管道（plumbing）和外壳（porcelain）
+- en: Irrespective of the number of features highlighted in the sales brochure for
+    your swanky new car, it has to have a user friendly interface through which you
+    can really appreciate and enjoy the finer things it has to offer. Though the core
+    work is done inside, the interface outside serves as an enabler.
+  id: totrans-18
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 无论你的新车宣传册中有多少突出显示的特点，它都必须拥有一个用户友好的界面，让你真正能欣赏并享受它所提供的精致功能。虽然核心工作在内部完成，但外部界面起到了启用作用。
+- en: 'Similarly Git works on both the inner and outer levels with the following commands:'
+  id: totrans-19
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 类似地，Git 在内层和外层都使用以下命令：
+- en: '**Plumbing commands**: These commands take care of the low level operations,
+    which form the fundamental base on which Git is built'
+  id: totrans-20
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**管道命令**：这些命令负责低级操作，这些操作构成了 Git 的基础。'
+- en: '**Porcelain commands**: These are the ones that cover the underlying plumbing
+    operations at a high level with easy and appealing names for end users'
+  id: totrans-21
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**外壳命令**：这些命令以易于理解且吸引终端用户的名称，在高层次上涵盖了底层管道操作。'
+- en: The commands that we have learned in earlier chapters are of the porcelain type.
+    Let's look behind the scenes for each one of them.
+  id: totrans-22
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们在前面的章节中学到的命令属于外壳命令类型。让我们深入了解它们的幕后工作。
+- en: Git init
+  id: totrans-23
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Git init
+- en: 'What you know is that this command creates a new subdirectory named `.git`,
+    which is the source of versioning. Let''s move one step further and explore the
+    contents of the `.git` directory, which should have a directory structure as shown
+    in the following screenshot:'
+  id: totrans-24
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你知道这个命令会创建一个名为 `.git` 的新子目录，这是版本控制的源头。我们进一步探讨 `.git` 目录的内容，应该有如下截图所示的目录结构：
+- en: '![Git init](img/7522_08_01.jpg)'
+  id: totrans-25
+  prefs: []
+  type: TYPE_IMG
+  zh: '![Git init](img/7522_08_01.jpg)'
+- en: Hooks
+  id: totrans-26
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: Hooks
+- en: Hooks are customization scripts that can be injected into various Git commands
+    and its operations. It is possible to write our own hook and such a hook has to
+    go into this directory.
+  id: totrans-27
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Hooks 是可以注入到各种 Git 命令和操作中的自定义脚本。我们可以编写自己的钩子，钩子必须放在这个目录中。
+- en: There are a bunch of sample hooks automatically created inside this directory
+    as part of `git init` but not activated until we manually rename `hook_name.sample`
+    to `hook_name`. To learn more about the various hooks present in the directory
+    open up the help document by typing `git help hooks` in your command line.
+  id: totrans-28
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这个目录中，有一些在执行 `git init` 时自动创建的示例钩子，但在我们手动将 `hook_name.sample` 重命名为 `hook_name`
+    之前，它们不会被激活。要了解目录中各种钩子的详细信息，请在命令行中输入 `git help hooks` 查看帮助文档。
+- en: Info
+  id: totrans-29
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: Info
+- en: Additional information about the repository is recorded in this directory. Presently
+    the only file inside would be the one called `exclude`. This file serves as a
+    master list of the files to be excluded from being tracked by Git.
+  id: totrans-30
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 仓库的附加信息记录在此目录中。目前，唯一的文件是名为 `exclude` 的文件。这个文件作为一个主清单，列出了要从 Git 跟踪中排除的文件。
+- en: Sounds familiar, doesn't it? Indeed, the `.gitignore` file performs the same
+    operation except for the fact that any exclusion pattern written in the exclude
+    file is reflected only in the local repository and not in any subsequent clones;
+    whereas when written on `.gitignore`, it becomes a part of your history, which
+    can be subjected to other Git functions such as add, commit, merge, clone, pull,
+    push, and others.
+  id: totrans-31
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 听起来很熟悉，对吧？的确，`.gitignore` 文件执行的操作与此相同，不同之处在于，排除模式写入排除文件时，仅反映在本地仓库中，而不会出现在后续的克隆中；而当写入
+    `.gitignore` 时，它成为历史的一部分，可以接受其他 Git 操作，如 add、commit、merge、clone、pull、push 等。
+- en: Config
+  id: totrans-32
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: Config
+- en: The name conveys it all; this text file is our project/repository-specific configuration
+    file. We would have covered the finer workings of this file in earlier chapters,
+    but the content we'd need to cover would go beyond the scope of this book.
+  id: totrans-33
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个名字说明了一切；这个文本文件是我们项目/仓库特定的配置文件。我们在前面的章节中已经讨论了该文件的更细节的工作原理，但我们需要涵盖的内容超出了本书的范围。
+- en: This is where Git maintains the entries for a remote section to or from wherever
+    the repository is cloned or data is exchanged. It also contains some core settings
+    such as whether the repository is a bare repository or not.
+  id: totrans-34
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这里是 Git 用来维护远程部分条目的地方，无论是从哪里克隆仓库，还是数据交换的来源。它还包含一些核心设置，比如仓库是否为裸仓库等。
+- en: Description
+  id: totrans-35
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 描述
+- en: There is a package called gitweb, which comes with your Git installation and
+    will allow us to set up a web interface for our Git repositories. This means that
+    the repository can be browsed using any web browser.
+  id: totrans-36
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有一个名为 gitweb 的软件包，它随 Git 安装包一起提供，允许我们为 Git 仓库设置 Web 界面。这意味着可以通过任何网页浏览器访问仓库。
+- en: This description file contains a user-defined description of the repository,
+    which is used by the gitweb program to display it to the clients who are requesting
+    a listing of repositories.
+  id: totrans-37
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个描述文件包含了仓库的用户定义描述，供 gitweb 程序使用，以显示给请求仓库列表的客户端。
+- en: Objects
+  id: totrans-38
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 对象
+- en: As you have understood correctly, like any other VCS repository, a Git repository
+    is nothing but a database containing all the data that is needed to retain, reproduce,
+    and manage the revisions and history of your files, but the way Git handles these
+    operations is what makes it stand apart from others.
+  id: totrans-39
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如你正确理解的那样，像任何其他版本控制系统（VCS）仓库一样，Git 仓库实际上是一个数据库，包含了所有必要的数据，用于保留、再现和管理文件的修订历史，但
+    Git 处理这些操作的方式使其与其他版本控制系统有所不同。
+- en: And this is possible because of the way Git considers everything that goes into
+    it as objects. There are four types of objects namely blobs, trees, commits, and
+    tags with which it pulls such a trick.
+  id: totrans-40
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这之所以可能，是因为 Git 以对象的方式处理其所有内容。Git 中有四种类型的对象，分别是 blobs、trees、commits 和 tags，正是通过这些对象，它才能实现这种操作。
+- en: Blob
+  id: totrans-41
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: Blob
+- en: I'm sure that you're familiar with the building blocks game; we've all played
+    it at some point in our lives. When you think about it, you will recollect that
+    irrespective of the type of structure you build, it's basically made up of several
+    independent blocks put together. And when you are done with playing or want to
+    preserve the incomplete structure to continue later on, we put it in a cover or
+    a box and store it safely.
+  id: totrans-42
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我相信你对积木游戏一定很熟悉；我们在生活中的某个时刻都玩过。当你回想起来，你会记得不管你搭建的是哪种结构，它基本上都是由几个独立的积木块拼接而成的。当你完成玩耍或者希望保存尚未完成的结构，以便以后继续时，我们会把它放进一个盒子或封装内，安全存储。
+- en: Similarly when it comes to handling data on a computer, irrespective of whether
+    it's an image, or an audio or video clip, or a PDF document, it's basically constructed
+    from several bits of binary data. A **binary large object** (**blob**) is nothing
+    but a collection of binary data stored inside a box/cover as a single entity for
+    later use.
+  id: totrans-43
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 类似地，当涉及到计算机上的数据处理时，无论是图像、音频或视频剪辑，还是 PDF 文档，它们本质上都是由多个二进制数据位构成的。**二进制大对象**（**blob**）实际上就是一组二进制数据，这些数据被存储在一个盒子/封装内，作为一个整体供以后使用。
+- en: Here, blobs store any type of data irrespective of their structure. They concentrate
+    on the content alone and not on the metadata of that content – not even the location
+    of the file or its name.
+  id: totrans-44
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这里，blob 存储任何类型的数据，无论其结构如何。它们只关注内容，而不关注内容的元数据——甚至不关注文件的位置或名称。
+- en: Trees
+  id: totrans-45
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 树
+- en: Tree objects are Git's internal representation of directories and the structure
+    of your content. They're similar to a directory in your file system, which refers
+    to files and/or other directories. Here, Git tree objects can refer to Git blobs
+    and/or other Git tree objects.
+  id: totrans-46
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 树对象是 Git 对目录及其内容结构的内部表示。它们类似于文件系统中的目录，指向文件和/或其他目录。在这里，Git 树对象可以指向 Git blob 或/和其他
+    Git 树对象。
+- en: Commits
+  id: totrans-47
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 提交
+- en: The commit object holds all the metadata for changes introduced to the repository's
+    content. Metadata includes the author for the change, the committer of the change
+    (yes, it's possible to have two different people) along with their e-mail addresses,
+    the date, and the time.
+  id: totrans-48
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 提交对象保存了所有对仓库内容进行更改时的元数据。元数据包括更改的作者、更改的提交者（是的，可能是两个人不同）以及他们的电子邮件地址、日期和时间。
+- en: Tags
+  id: totrans-49
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 标签
+- en: The tag object carries a human readable name, which can be attached to other
+    objects, usually a commit object for easy retrieval and other reasons that we
+    saw under the tagging topic in previous chapters.
+  id: totrans-50
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 标签对象携带一个人类可读的名称，可以附加到其他对象上，通常是一个提交对象，以便于检索以及我们在之前章节中讨论的标签相关其他原因。
+- en: HEAD
+  id: totrans-51
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: HEAD
+- en: 'HEAD is like a pointer which points the Git engine to the active branch (the
+    branch we are currently working on) for further operations. When opened using
+    a text editor, you will see the following if you are in the master branch:'
+  id: totrans-52
+  prefs: []
+  type: TYPE_NORMAL
+  zh: HEAD就像一个指针，指向Git引擎当前所在的活动分支（我们正在工作的分支）以进行进一步操作。如果使用文本编辑器打开它，并且你当前在主分支（master）上，你将看到如下内容：
+- en: '[PRE0]'
+  id: totrans-53
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: 'And you will see the following if you are presently working on the `test_release`
+    branch, and so on and so forth:'
+  id: totrans-54
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你当前正在`test_release`分支上工作，你将会看到以下内容，依此类推：
+- en: '[PRE1]'
+  id: totrans-55
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: Refs
+  id: totrans-56
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 引用
+- en: 'If you have ever wondered how reaching [google.com](http://google.com) and
+    [173.194.35.39](http://173.194.35.39) from your browser both give you the same
+    Google search page, you will realize that there should be a reference somewhere
+    that maps these two. Another simple example: bring your attendance register where
+    everybody''s name is mapped to a unique employee/student ID, which can be used
+    to identify one person amongst several others with the same name and vice versa.'
+  id: totrans-57
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你曾经好奇过，为什么从浏览器访问[google.com](http://google.com)和[173.194.35.39](http://173.194.35.39)都能得到相同的Google搜索页面，你会意识到应该有某个地方有一个映射关系连接这两者。另一个简单的例子：想象一下你的考勤登记簿，每个人的名字都与一个独特的员工/学生ID绑定，这个ID可以用来在有相同名字的人中识别出某个人，反之亦然。
+- en: Similarly the `refs` directory serves the purpose of referencing for Git on
+    a few operations. It stores the SHA-1 IDs of important points in the repository,
+    such as tags and branches. Metadata for the tags is stored inside another directory
+    situated at `refs/tags` and metadata for branches is stored inside a different
+    directory situated at `refs/heads`.
+  id: totrans-58
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 类似地，`refs`目录的作用是为Git在某些操作中提供引用。它存储仓库中重要节点的SHA-1 ID，如标签和分支。标签的元数据存储在位于`refs/tags`的另一个目录中，而分支的元数据存储在位于`refs/heads`的不同目录中。
+- en: Each branch name is a file inside the `heads` directory, and the content of
+    such files contains the SHA-1 ID of the commit from where that particular branch
+    was created (the parent in Git terms). The same is the case for tags as well –
+    each tag name is a file inside the `tags` directory, which has a single SHA-1
+    ID for its reference.
+  id: totrans-59
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 每个分支名称都是`heads`目录中的一个文件，这些文件的内容包含该分支创建时的提交的SHA-1 ID（在Git术语中是父提交）。标签也是如此——每个标签名称都是`tags`目录中的一个文件，文件中包含一个SHA-1
+    ID作为引用。
+- en: Bumper alert – directories inside heads and tags
+  id: totrans-60
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 警告 – 目录位于`heads`和`tags`中的结构
+- en: We have spoken about files inside both the `tags` and `heads` directory, which
+    represent the tag and branch names that you have created in the repository. Don't
+    get puzzled if you happen to see one or more directory structures inside the `heads`
+    and `tags` directory.
+  id: totrans-61
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们讨论过`tags`和`heads`目录中的文件，它们代表你在仓库中创建的标签和分支名称。如果你在`heads`和`tags`目录中看到一个或多个目录结构，不要感到困惑。
+- en: This is simply a representation of the hierarchically structured name that one
+    would have given for the branch or tag. Things will get much clearer after looking
+    at the following example, which focuses on the branching concept, which is also
+    applicable for tags.
+  id: totrans-62
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这只是分支或标签所赋予的层次结构名称的表示方式。通过查看以下示例，重点关注分支概念，标签也适用，事情会变得更清楚。
+- en: Create a branch with the name `mybranch` (`git branch mybranch`). This will
+    create a file called `mybranch` located at `heads/mybranch`, whereas creating
+    a branch with an hierarchical name like `kamia/kashin` (`git branch kamia/kashin`)
+    will create a file called `kashin` located at `heads/kamia/kashin`.
+  id: totrans-63
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 创建一个名为`mybranch`的分支（`git branch mybranch`）。这将会在`heads/mybranch`创建一个名为`mybranch`的文件，而创建一个具有层次结构名称的分支，如`kamia/kashin`（`git
+    branch kamia/kashin`），将会在`heads/kamia/kashin`创建一个名为`kashin`的文件。
+- en: So far, we have explored the important segments of a freshly initiated (new)
+    Git repository that has no commits as yet. However there is one more key player
+    called index, which gets created as soon as you add content to your repository.
+  id: totrans-64
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 到目前为止，我们探讨了一个新初始化的Git仓库的重要部分，这个仓库尚未进行任何提交。然而，还有一个关键角色叫做索引，当你向仓库添加内容时，它会被创建。
+- en: Index
+  id: totrans-65
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 索引
+- en: The index file is where Git stores your staging area information to be committed.
+    To put it simply, the content of the index file becomes your next commit. In other
+    words this is the place where you keep your files that you want to be committed
+    to your repository.
+  id: totrans-66
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 索引文件是Git存储暂存区信息的地方，待提交。简而言之，索引文件的内容将成为你下次提交的内容。换句话说，这就是你保存希望提交到仓库的文件的地方。
+- en: Git – a content tracking system
+  id: totrans-67
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Git——一个内容跟踪系统
+- en: It's important for us to understand how Git perceives data; it is not through
+    the filename or the file's location in the directory structure; rather, it emphasizes
+    the file's content. This means that when two or more files, irrespective of where
+    they are located inside the repository, have the same content, Git sees the relation
+    between them through their hashes.
+  id: totrans-68
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们理解Git如何看待数据非常重要；它不是通过文件名或文件在目录结构中的位置来识别文件，而是强调文件的内容。这意味着，当两个或多个文件的内容相同，不论它们位于仓库中的哪个位置，Git会通过它们的哈希值来识别它们之间的关系。
+- en: Note
+  id: totrans-69
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: Computing the hash is the first task for Git before storing any data permanently.
+    The hash value for a given content is unique across the globe. This means that
+    the hash value for a file containing "Hello world" in your computer is the same
+    as mine or anyone else's.
+  id: totrans-70
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 计算哈希是Git在永久存储任何数据之前的第一步。给定内容的哈希值在全球范围内是唯一的。这意味着，包含“Hello world”的文件在你我的计算机中的哈希值是相同的，甚至在任何其他人的计算机中也是如此。
+- en: Finding out the similarities, Git puts the content under one single blob object
+    and stores it. Note that only one copy of the content is stored in the background
+    thus minimizing hardware usage and when asked to reproduce, it can bring out the
+    exact storage pattern with the usage of its metadata stored with tree objects.
+  id: totrans-71
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通过找出相似性，Git将内容放入一个单独的blob对象并进行存储。请注意，后台只存储一份内容副本，从而最大程度地减少硬件使用，并且在需要重现时，Git可以利用存储在树对象中的元数据还原出精确的存储模式。
+- en: This hash computing happens whenever required, at various stages, thereby even
+    a small change in one of those files will deliver a new hash, which makes Git
+    store it separately. Since these processes revolve (with major emphasis) around
+    the content irrespective of the file's name or location, Git is often called a
+    content tracking system.
+  id: totrans-72
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这种哈希计算会在需要时发生，在多个阶段中进行，因此，即使其中某个文件发生微小变化，也会生成一个新的哈希值，Git会将其单独存储。由于这些过程（尤其强调）围绕内容进行，而不考虑文件的名称或位置，Git通常被称为内容跟踪系统。
+- en: Git add
+  id: totrans-73
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Git添加
+- en: 'When `add` is executed, Git updates the index using the current content found
+    in the working tree (staging your changes), and prepares the content staged for
+    the next commit, which involves the following steps:'
+  id: totrans-74
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当执行`add`命令时，Git会使用工作树中的当前内容更新索引（暂存你的更改），并为下次提交准备暂存的内容，涉及以下步骤：
+- en: Computing the hash for the content.
+  id: totrans-75
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 计算内容的哈希值。
+- en: Deciding whether to create new content, or link to an existing blob object.
+  id: totrans-76
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 决定是创建新的内容，还是链接到现有的blob对象。
+- en: Actual creation or linking of blob takes place.
+  id: totrans-77
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: blob的实际创建或链接发生在此时。
+- en: Creation of a tree object to track location of the content.
+  id: totrans-78
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建树对象以追踪内容的位置。
+- en: At this point the index is said to hold a snapshot of the content in the working
+    tree for the next commit.
+  id: totrans-79
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 此时，索引被认为持有工作树中内容的快照，准备进行下次提交。
+- en: As you already know, this command can be performed multiple times before a commit.
+    It only adds the content of the specified file(s) at the time the `add` command
+    is run; if you want subsequent changes included in the next commit, you must run
+    `git add` again to add the new content to the index.
+  id: totrans-80
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所知，此命令可以在提交前多次执行。它仅在`add`命令运行时添加指定文件的内容；如果你希望将后续更改包含在下次提交中，必须再次运行`git add`以将新的内容添加到索引中。
+- en: Note
+  id: totrans-81
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: More importance is to be given to the process where both the blob and tree objects
+    get created and linked with their respective hash IDs, as shown in the following
+    figure.
+  id: totrans-82
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 更重要的是，在以下图示中，blob和树对象如何创建并通过各自的哈希ID进行链接的过程。
+- en: '![Git add](img/7522_08_02.jpg)'
+  id: totrans-83
+  prefs: []
+  type: TYPE_IMG
+  zh: '![Git 添加](img/7522_08_02.jpg)'
+- en: 'As discussed earlier, a tree can not only point to a blob but also to another
+    tree forming a hierarchical network, as shown in the following figure:'
+  id: totrans-84
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如之前讨论的，树对象不仅可以指向一个blob，还可以指向另一个树对象，从而形成一个层级网络，如下图所示：
+- en: '![Git add](img/7522_08_03.jpg)'
+  id: totrans-85
+  prefs: []
+  type: TYPE_IMG
+  zh: '![Git 添加](img/7522_08_03.jpg)'
+- en: Git commit
+  id: totrans-86
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Git提交
+- en: 'When the `commit` command is executed, a commit object gets created with the
+    metadata of the content/changes that were added earlier using the `git add` command.
+    The metadata includes the following:'
+  id: totrans-87
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当执行`commit`命令时，会创建一个提交对象，包含之前通过`git add`命令添加的内容/更改的元数据。元数据包括以下内容：
+- en: Name of the person who authored the change and the relevant date and time along
+    with the time zone settings
+  id: totrans-88
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 提交更改的人名、相关的日期和时间以及时区设置
+- en: Name of the person who committed the change and the relevant date and time along
+    with the time zone settings
+  id: totrans-89
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 提交更改的人名、相关的日期和时间以及时区设置
+- en: 'Then the created commit object gets linked to the tree object, which has already
+    linked with the blob thus completing the versioning process as shown in the following
+    figure:'
+  id: totrans-90
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后，创建的提交对象会与已经链接到blob的tree对象进行连接，从而完成版本控制过程，如下图所示：
+- en: '![Git commit](img/7522_08_04.jpg)'
+  id: totrans-91
+  prefs: []
+  type: TYPE_IMG
+  zh: '![Git commit](img/7522_08_04.jpg)'
+- en: Note that the head contains the branch name and not the SHA-1 ID of the commit
+    that it is pointing to. This is because it becomes tough to identify a branch
+    with its commit IDs when the volume and position of commits inside a branch keep
+    changing, hence the statement "branch moves".
+  id: totrans-92
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请注意，HEAD包含的是分支名称，而不是它指向的提交的SHA-1 ID。这是因为当分支中的提交数量和位置不断变化时，很难通过提交ID来识别一个分支，因此才有“分支移动”的说法。
+- en: Note
+  id: totrans-93
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: Do not worry about the blob and tree objects, which are created as a part of
+    the `add` operation when not committed; these are destroyed as part of the garbage
+    collection process after a few months.
+  id: totrans-94
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 不必担心blob和tree对象，这些对象是在未提交时作为`add`操作的一部分创建的；它们会在几个月后作为垃圾回收过程的一部分被销毁。
+- en: Now if you do a `git status` you will see that the changes you staged are not
+    in the staged changes state any longer.
+  id: totrans-95
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，如果你执行`git status`，你会看到你已经暂存的更改不再处于暂存状态。
+- en: Git status
+  id: totrans-96
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Git 状态
+- en: When the `status` command is executed, Git checks for the file's path and size.
+    If there are no differences, it leaves it as it is, but if any differences are
+    found, it goes ahead and computes the hash with which it checks for a relation
+    to other hashes, as we saw earlier.
+  id: totrans-97
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当执行`status`命令时，Git会检查文件的路径和大小。如果没有差异，它将保持原样，但如果发现差异，它会继续计算哈希值，并检查与其他哈希值的关系，就像我们之前看到的那样。
+- en: 'The file path comparison as such happens in the following stages:'
+  id: totrans-98
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 文件路径比较会在以下阶段进行：
+- en: '| Stage number | Comparison | Related status message |'
+  id: totrans-99
+  prefs: []
+  type: TYPE_TB
+  zh: '| 阶段编号 | 比较 | 相关状态信息 |'
+- en: '| --- | --- | --- |'
+  id: totrans-100
+  prefs: []
+  type: TYPE_TB
+  zh: '| --- | --- | --- |'
+- en: '| 1 | File path present in index versus recent commit (HEAD commit) | Changes
+    to be committed |'
+  id: totrans-101
+  prefs: []
+  type: TYPE_TB
+  zh: '| 1 | 索引中的文件路径与最近的提交（HEAD提交）相比 | 待提交的更改 |'
+- en: '| 2 | File path present in index versus working tree | Changes not staged for
+    commit |'
+  id: totrans-102
+  prefs: []
+  type: TYPE_TB
+  zh: '| 2 | 索引中的文件路径与工作区相比 | 更改未暂存以供提交 |'
+- en: '| 3 | Paths in the working tree that are not tracked by Git (and are not ignored
+    by `gitignore` or the exclude file) | Changes not staged for commit |'
+  id: totrans-103
+  prefs: []
+  type: TYPE_TB
+  zh: '| 3 | 工作区中未被Git跟踪的路径（且未被`gitignore`或排除文件忽略） | 更改未暂存以供提交 |'
+- en: The first status denotes changes that have already been added (staged) but not
+    committed. So executing `git commit` would complete the versioning process.
+  id: totrans-104
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 第一个状态表示已经添加（暂存）但未提交的更改。因此，执行`git commit`将完成版本控制过程。
+- en: The second and third statuses denote that the changes are not yet added (staged)
+    for a commit. So to complete the versioning process, we need to add them first
+    using `git add` and then `git commit`.
+  id: totrans-105
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 第二和第三种状态表示更改尚未添加（暂存）以供提交。因此，要完成版本控制过程，我们需要首先使用`git add`添加它们，然后使用`git commit`提交。
+- en: Git clone
+  id: totrans-106
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Git 克隆
+- en: 'When the `clone` command is executed, the internal process order would be as
+    follows:'
+  id: totrans-107
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当执行`clone`命令时，内部过程的顺序如下：
+- en: Create the destination directory if it does not exist and execute `git init`
+    on it.
+  id: totrans-108
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如果目标目录不存在，则创建它，并在其上执行`git init`。
+- en: Set up remote tracking branches in the destination repository for each branch
+    present in the source repository (`git remote`).
+  id: totrans-109
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在目标仓库中为源仓库中的每个分支设置远程追踪分支（`git remote`）。
+- en: Fetch the objects, refs (inside the `.git` directory).
+  id: totrans-110
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 获取对象，引用（位于`.git`目录中）。
+- en: Finally do a checkout.
+  id: totrans-111
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 最后执行检出（checkout）。
+- en: Git remote
+  id: totrans-112
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Git 远程
+- en: 'When the `remote` command is executed, Git lists down all the remotes added
+    to the repository by reading it from the remote section of the local config file
+    located at `.git/config`. An example of the content inside the config file is
+    as follows:'
+  id: totrans-113
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当执行`remote`命令时，Git会通过读取本地配置文件`.git/config`中的远程部分，列出添加到仓库的所有远程仓库。配置文件内容的示例如下：
+- en: '[PRE2]'
+  id: totrans-114
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: 'The name `capsource` was the alias we gave preceding the URL while adding a
+    new remote to the repository. Under this section two reference parameters are
+    captured:'
+  id: totrans-115
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`capsource` 是我们在向仓库添加新远程时给 URL 起的别名。在这一部分，有两个引用参数被捕获：'
+- en: '| Reference parameter | Description |'
+  id: totrans-116
+  prefs: []
+  type: TYPE_TB
+  zh: '| 引用参数 | 描述 |'
+- en: '| --- | --- |'
+  id: totrans-117
+  prefs: []
+  type: TYPE_TB
+  zh: '| --- | --- |'
+- en: '| `url` | This is the URL of the remote repository that you want to track,
+    share, and get content from, within your repository. |'
+  id: totrans-118
+  prefs: []
+  type: TYPE_TB
+  zh: '| `url` | 这是你想要在本地仓库中追踪、共享和获取内容的远程仓库的 URL。 |'
+- en: '| `Fetch` | This is to convey to Git the refs (branches and tags) from the
+    remote that are to be tracked.By default, it tracks all refs from the remote repository
+    specified by `refs/heads/*`. These are placed under your local repository''s directory
+    `capsource` located at `refs/remotes/capsource/*`. |'
+  id: totrans-119
+  prefs: []
+  type: TYPE_TB
+  zh: '| `Fetch` | 这是用来将远程的 refs（分支和标签）传递给 Git 以便进行追踪。默认情况下，它会追踪远程仓库中 `refs/heads/*`
+    下的所有 refs。这些内容被放置在本地仓库目录 `capsource` 下，路径为 `refs/remotes/capsource/*`。 |'
+- en: Git branch
+  id: totrans-120
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Git 分支
+- en: 'When the `branch` command is executed, it performs the following steps:'
+  id: totrans-121
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当执行 `branch` 命令时，Git 会执行以下步骤：
+- en: Collects all branch names from `.git/refs/heads/`.
+  id: totrans-122
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 收集 `.git/refs/heads/` 中的所有分支名称。
+- en: Finds the active/current working branch with the help of the entry in the HEAD
+    located at `.git/HEAD`.
+  id: totrans-123
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 利用位于 `.git/HEAD` 中的条目找到当前活跃的工作分支。
+- en: Displays all the branches in ascending order with an asterisk (*) mark next
+    to the active branch.
+  id: totrans-124
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 以升序显示所有分支，并在活动分支旁边标记一个星号（*）。
+- en: Note that the branches listed this way are only local branches of your repository.
+    When you want all branches listed inclusive of remote tracking branches, which
+    are stored inside `.git/refs/remotes/`, you will use `git branch –a`.
+  id: totrans-125
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请注意，这种列出的分支仅为本地仓库中的分支。当你想列出所有分支，包括存储在 `.git/refs/remotes/` 中的远程追踪分支时，可以使用 `git
+    branch –a`。
+- en: Git tag
+  id: totrans-126
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Git 标签
+- en: 'When the `tag` command is executed, Git performs the following steps:'
+  id: totrans-127
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当执行 `tag` 命令时，Git 会执行以下步骤：
+- en: Gets the SHA-1 ID of the referred commit.
+  id: totrans-128
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 获取引用的提交的 SHA-1 ID。
+- en: Validates the given tag name with the existing tag names.
+  id: totrans-129
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 验证给定的标签名称与现有标签名称的重复性。
+- en: If it's a new name, it validates the name with the naming conventions.
+  id: totrans-130
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如果是新名称，它会根据命名规则验证名称。
+- en: If the name abides by the rules, a tag object gets created with the given name
+    mapped to the acquired SHA-1 ID, which is found inside `.git/refs/tags/`.
+  id: totrans-131
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如果名称符合规则，Git 会创建一个标签对象，并将给定名称映射到获取的 SHA-1 ID，存放在 `.git/refs/tags/` 中。
+- en: 'The following figure shows the association of the tag object along with other
+    objects:'
+  id: totrans-132
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 下图展示了标签对象与其他对象的关联：
+- en: '![Git tag](img/7522_08_05.jpg)'
+  id: totrans-133
+  prefs: []
+  type: TYPE_IMG
+  zh: '![Git tag](img/7522_08_05.jpg)'
+- en: Git fetch
+  id: totrans-134
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Git 拉取
+- en: 'When `fetch` is executed, Git performs the following steps:'
+  id: totrans-135
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当执行 `fetch` 命令时，Git 会执行以下步骤：
+- en: Checks for the URL or remote name, which points to a valid Git repository specified
+    in the command `git fetch remote_name` (or) `url`.
+  id: totrans-136
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 检查 URL 或远程名称，确保它指向在命令 `git fetch remote_name`（或）`url` 中指定的有效 Git 仓库。
+- en: If none is specified, it reads the config file to see if there is any default
+    remote.
+  id: totrans-137
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如果没有指定，它会读取配置文件，查看是否有默认的远程库。
+- en: If found, it fetches the named refs (heads and tags) from the remote repository
+    along with their associated objects.
+  id: totrans-138
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如果找到，它会从远程仓库获取命名的 refs（分支和标签）以及它们相关的对象。
+- en: The retrieved ref names are stored in `.git/FETCH_HEAD` to aid a possible merge
+    operation in the future.
+  id: totrans-139
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 检索到的 ref 名称会存储在 `.git/FETCH_HEAD` 中，以便将来可能的合并操作。
+- en: Git merge
+  id: totrans-140
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Git 合并
+- en: 'While executing the `merge` command, Git will perform the following steps:'
+  id: totrans-141
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在执行 `merge` 命令时，Git 会执行以下步骤：
+- en: Identify both the merge candidates from the `heads` directory based on specified
+    parameters.
+  id: totrans-142
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 根据指定的参数，从 `heads` 目录中识别两个合并候选分支。
+- en: Find the common ancestor of both heads and load all their objects in memory.
+  id: totrans-143
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 查找两个头部的公共祖先，并将它们的所有对象加载到内存中。
+- en: Perform a diff (difference) between the common ancestor and head one.
+  id: totrans-144
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 对公共祖先与头部一进行差异对比（diff）。
+- en: Apply the diff with head two.
+  id: totrans-145
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 应用与头部二的差异。
+- en: If there are changes in common areas across heads, indicate the conflict with
+    markers and inform the user about it (expecting the user to solve the conflict,
+    add the changes, and make a commit).
+  id: totrans-146
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如果在公共区域（分支之间）有变化，Git 会用标记显示冲突并提醒用户解决冲突（期望用户解决冲突，添加更改并提交）。
+- en: If there are no conflicts, merge those contents, and make a merge commit mentioning
+    metadata stating this.
+  id: totrans-147
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如果没有冲突，合并这些内容，并进行一次合并提交，附上元数据说明。
+- en: Git pull
+  id: totrans-148
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Git 拉取
+- en: 'On executing the `pull` command, Git internally performs the following operations:'
+  id: totrans-149
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 执行 `pull` 命令时，Git 会内部执行以下操作：
+- en: '`Git fetch` with the given parameters.'
+  id: totrans-150
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用给定参数执行`Git fetch`。
+- en: Calls `git merge` to merge the retrieved branch head into the current branch.
+  id: totrans-151
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 调用`git merge`将获取的分支头合并到当前分支。
+- en: Git push
+  id: totrans-152
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Git push
+- en: 'On executing the `push` command, Git will perform the following:'
+  id: totrans-153
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 执行`push`命令时，Git将执行以下操作：
+- en: Identify current branch.
+  id: totrans-154
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 确定当前分支。
+- en: Look up the existence of a default remote in the config file (if none is found,
+    it prompts you to provide the remote name or URL as a parameter while executing
+    `git push`).
+  id: totrans-155
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在配置文件中查找默认远程仓库的存在（如果没有找到，它会提示你在执行`git push`时提供远程仓库的名称或URL作为参数）。
+- en: Get to know the remote's URL and the heads (branches) tracked.
+  id: totrans-156
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 了解远程仓库的URL及其跟踪的分支（heads）。
+- en: Check whether the remote has changed since the last time you fetched changes
+    from it.
+  id: totrans-157
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 检查自上次从远程仓库获取更新以来，远程仓库是否发生了变化。
+- en: Get the list of references from the remote repositories (using `git ls-remote`).
+  id: totrans-158
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 获取远程仓库的引用列表（使用`git ls-remote`）。
+- en: Check the existence of the entries from the list with the local history. If
+    the reference from the remote is a part of the local repository's history, it's
+    evident that there are no other changes since the last time you fetched/pulled
+    from the remote. So Git will allow you to directly push your changes to the remote.
+    If it's not a part of your local repository's history, Git understands that the
+    remote repository has undergone some changes since the last time you fetched/pulled
+    from it. So it will ask you to first do a `git fetch` or `git pull` before pushing.
+  id: totrans-159
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 检查本地历史记录中是否有该列表中的条目。如果远程的引用是本地仓库历史的一部分，说明自上次从远程仓库获取/拉取更新以来没有其他变化。因此，Git会允许你直接将更改推送到远程仓库。如果它不是本地仓库历史的一部分，Git会理解自上次从远程仓库获取/拉取更新以来，远程仓库已有所变化。因此，它会要求你先执行`git
+    fetch`或`git pull`，然后再进行推送。
+- en: Git checkout
+  id: totrans-160
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Git checkout
+- en: 'When `checkout` is executed without any parameters, Git performs the following
+    steps:'
+  id: totrans-161
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当执行`checkout`命令时没有任何参数，Git会执行以下步骤：
+- en: Fetches the named paths in the working tree.
+  id: totrans-162
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 获取工作区中命名路径的内容。
+- en: Fetches the related objects from the index.
+  id: totrans-163
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 从索引中获取相关对象。
+- en: Updates the contents of the working tree with the ones from the index.
+  id: totrans-164
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用索引中的内容更新工作区的内容。
+- en: However the behavior changes according to the parameters used.
+  id: totrans-165
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，行为会根据所使用的参数有所变化。
+- en: '| Parameter | Description |'
+  id: totrans-166
+  prefs: []
+  type: TYPE_TB
+  zh: '| 参数 | 描述 |'
+- en: '| --- | --- |'
+  id: totrans-167
+  prefs: []
+  type: TYPE_TB
+  zh: '| --- | --- |'
+- en: '| `-b` | This is used to spawn a new branch from the checked out position mentioned
+    with the commit ID.`git checkout –b <your_branch_name>` is a short form of `git
+    checkout branch` followed `by git checkout <branch_name>`.This command creates
+    a new reference inside `.git/refs/heads/` with that particular commit ID. |'
+  id: totrans-168
+  prefs: []
+  type: TYPE_TB
+  zh: '| `-b` | 用于从指定的提交ID位置创建一个新分支。`git checkout –b <your_branch_name>`是`git checkout
+    branch`后接`git checkout <branch_name>`的简写。这条命令会在`.git/refs/heads/`中创建一个新的引用，指向特定的提交ID。
+    |'
+- en: '| `--track` | This parameter is used to set up the upstream configuration usually
+    while creating a new branch with the `–b` parameter.When executed, a separate
+    section is added to the `.config` file inside the `.git` directory as follows:'
+  id: totrans-169
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '| `--track` | 该参数用于设置上游配置，通常在使用`–b`参数创建新分支时使用。执行时，`.git`目录中的`.config`文件会新增一部分内容，内容如下：
+    |'
+- en: '[PRE3]'
+  id: totrans-170
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: This happens when a command like `git checkout --track -b master origin/master`
+    is executed. |
+  id: totrans-171
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当执行类似`git checkout --track -b master origin/master`的命令时，会发生这种情况。 |
+- en: Relation across relations – Git packfiles
+  id: totrans-172
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 关系之间的关系——Git打包文件
+- en: We saw how Git sees the relation across files through its content and intelligently
+    chooses between whether to create a new blob for the content or have an existing
+    blob referenced to it. We also understood that even a small change in content
+    will cause Git to store a separate blob because the SHA-1 ID will change.
+  id: totrans-173
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们看到了Git如何通过内容识别文件之间的关系，并智能地选择是为内容创建一个新blob，还是引用现有的blob。我们还理解到，即使内容有一点点变化，也会导致Git存储一个独立的blob，因为SHA-1
+    ID会发生变化。
+- en: Think about a situation where you have two text files, 5 MB each, with the same
+    content but in different locations. Git will accordingly create a single blob
+    as the same content will result in the same SHA-1 ID, thus saving space.
+  id: totrans-174
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 假设你有两个文本文件，每个文件5MB，内容相同但存储位置不同。Git会根据情况创建一个单独的blob，因为相同的内容会生成相同的SHA-1 ID，从而节省空间。
+- en: Now, append a line to the content of one of the files. Git will now create a
+    new blob (5+ MB in size) for the second file, which has changed. Observing this
+    behavior of having two nearly identical blobs of 5 MB, a few questions might arise.
+  id: totrans-175
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，向其中一个文件的内容添加一行。Git 将为已更改的第二个文件创建一个新的 blob（大小为 5+ MB）。观察到两个几乎相同的 5 MB 的 blobs，可能会引发一些问题。
+- en: Why does Git create a new blob for the entire content?
+  id: totrans-176
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 为什么 Git 为整个内容创建一个新的 blob？
+- en: Why not still have the same old blob shared between both files, and additionally
+    create a new blob for the difference brought into the second file alone, thus
+    reducing storage and being more efficient?
+  id: totrans-177
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 为什么不保留两个文件之间共享的旧的 blob，并为仅在第二个文件中引入的差异创建一个新的 blob，从而减少存储并提高效率呢？
+- en: Well, these are good questions; Git has an answer that addresses those with
+    something called **packfiles**. The objects created as mentioned in the scenario
+    we just discussed are called loose objects, and automatically but occasionally
+    Git packs up several of these loose objects into a single binary called a packfile.
+  id: totrans-178
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 好的，这些是很好的问题；Git 通过一种叫做**packfiles**的方式提供了答案。我们刚刚讨论的场景中创建的对象被称为松散对象（loose objects），Git
+    会自动地、偶尔地将这些松散对象打包成一个单一的二进制文件，称为 packfile。
+- en: Transferring packfiles
+  id: totrans-179
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 传输 packfiles
+- en: Git not only supports the transferring of refs and their associated plain blob,
+    tree, commit, and tag objects but also packfiles on operations such as clone,
+    fetch, push, and pull. Talking on a higher level, Git has two sets of protocols
+    for transferring data between remotes.
+  id: totrans-180
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git 不仅支持在操作如 clone、fetch、push 和 pull 中传输 refs 及其相关的普通 blob、tree、commit 和 tag
+    对象，还支持传输 packfiles。从更高层次来看，Git 为在远程之间传输数据提供了两套协议。
+- en: One for pushing data from the client to the server
+  id: totrans-181
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 一个用于从客户端向服务器推送数据
+- en: Another for fetching data from the server to the client
+  id: totrans-182
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 另一个用于从服务器获取数据到客户端
+- en: '| Implemented side | Process invoked | Description |'
+  id: totrans-183
+  prefs:
+  - PREF_IND
+  type: TYPE_TB
+  zh: '| 实现方 | 进程调用 | 描述 |'
+- en: '| --- | --- | --- |'
+  id: totrans-184
+  prefs:
+  - PREF_IND
+  type: TYPE_TB
+  zh: '| --- | --- | --- |'
+- en: '| Server side | Upload-pack | Invoked by `git fetch-pack`, it learns what objects
+    the other side is missing, and sends them after packing. |'
+  id: totrans-185
+  prefs:
+  - PREF_IND
+  type: TYPE_TB
+  zh: '| 服务器端 | Upload-pack | 由`git fetch-pack`调用，它了解对方缺少哪些对象，并在打包后发送它们。 |'
+- en: '| Client side | Fetch-pack | This is responsible for receiving missing packages
+    from another repository.This command is usually not called directly by the end
+    user, instead `git fetch`, which is a higher level wrapper of this command, is
+    executed. |'
+  id: totrans-186
+  prefs:
+  - PREF_IND
+  type: TYPE_TB
+  zh: '| 客户端 | Fetch-pack | 负责从另一个仓库接收缺失的包。这个命令通常不是由最终用户直接调用，而是通过一个更高级的封装命令`git fetch`执行。
+    |'
+- en: '| Server side | Receive-pack | Invoked by `git send-pack`, this receives what
+    is pushed into the repository. |'
+  id: totrans-187
+  prefs:
+  - PREF_IND
+  type: TYPE_TB
+  zh: '| 服务器端 | Receive-pack | 由`git send-pack`调用，接收推送到仓库中的内容。 |'
+- en: '| Client side | Send-pack | This is responsible for pushing objects over Git
+    protocol to another repository.This command is usually not called directly by
+    the end user, instead `git push`, which is a higher level wrapper of this command,
+    is executed. |'
+  id: totrans-188
+  prefs:
+  - PREF_IND
+  type: TYPE_TB
+  zh: '| 客户端 | Send-pack | 负责通过 Git 协议将对象推送到另一个仓库。这个命令通常不是由最终用户直接调用，而是通过一个更高级的封装命令`git
+    push`执行。 |'
+- en: Summary
+  id: totrans-189
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 总结
+- en: 'We have learned about the following:'
+  id: totrans-190
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们学习了以下内容：
+- en: The structure of a Git repository and the role each one of them plays in the
+    versioning process
+  id: totrans-191
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Git 仓库的结构以及每个对象在版本控制过程中所扮演的角色
+- en: The different objects and how Git smartly manages the content using those objects
+  id: totrans-192
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 不同的对象以及 Git 如何智能地使用这些对象管理内容
+- en: Additionally, we have also learned in detail about the internals of commands
+    such as `init`, `add`, `commit`, `status`, `clone`, `fetch`, `merge`, `remote`,
+    `pull`, `push`, `tag`, `branch`, and `checkout`, which we have used in earlier
+    chapters to master the versioning concept.
+  id: totrans-193
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 此外，我们还详细了解了像 `init`、`add`、`commit`、`status`、`clone`、`fetch`、`merge`、`remote`、`pull`、`push`、`tag`、`branch`
+    和 `checkout` 等命令的内部实现，这些命令我们在前面的章节中使用过，帮助我们掌握了版本控制的概念。
+- en: Not only that, we also viewed at a high level about how Git not only understands
+    relations between files based on their complete content but also partial content
+    in the form of packfiles.
+  id: totrans-194
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 不仅如此，我们还从更高层次上看到了 Git 如何不仅基于文件的完整内容理解文件之间的关系，还通过 packfiles 以部分内容的形式进行理解。

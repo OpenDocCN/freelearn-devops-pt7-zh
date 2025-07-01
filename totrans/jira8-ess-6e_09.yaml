@@ -1,0 +1,3431 @@
+- en: '9'
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '9'
+- en: Securing Jira
+  id: totrans-1
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 确保Jira的安全性
+- en: In the previous chapters, you learned how to store data in Jira by creating
+    issues. As you can see, as an information system, Jira is all about data. It should
+    come as no surprise to you that security plays a big role in Jira, to ensure that
+    only the right people will get access to your data. This is achieved by providing
+    a flexible and robust way for you to manage access control. It is able to integrate
+    with your existing security practices, such as a password policy, and allows both
+    centrally controlled permissions and delegating and empowering your project owners
+    and users to manage permissions for their own projects.
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在前几章中，您学会了通过创建问题在Jira中存储数据。正如您所看到的，作为一个信息系统，Jira完全是关于数据的。您应该不会感到意外，Jira在确保只有合适的人才能访问您的数据方面扮演着重要角色。这是通过为您提供灵活且强大的访问控制管理方式来实现的。它能够与您现有的安全实践（如密码策略）集成，并允许集中控制权限，同时将权限管理委派给项目负责人和用户，让他们管理自己项目的权限。
+- en: 'By the end of this chapter, you will have learned about the following:'
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章结束时，您将了解以下内容：
+- en: Managing users, groups, and project roles
+  id: totrans-4
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 管理用户、组和项目角色
+- en: User directories and how to connect Jira to the **Lightweight Directory Access
+    Protocol** (**LDAP**)
+  id: totrans-5
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 用户目录及如何将Jira连接到**轻量级目录访问协议**（**LDAP**）
+- en: General access control in Jira
+  id: totrans-6
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Jira中的一般访问控制
+- en: Managing project- and issue-level permission settings
+  id: totrans-7
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 管理项目级别和问题级别的权限设置
+- en: How to troubleshoot permission problems
+  id: totrans-8
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 如何排查权限问题
+- en: Configuring Jira with **Security Assertion Markup Language** (**SAML**) **single
+    sign-on** (**SSO**) and **just-in-time** (**JIT**) user provision
+  id: totrans-9
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 配置Jira与**安全断言标记语言**（**SAML**）**单点登录**（**SSO**）和**即时用户配置**（**JIT**）的集成
+- en: 'Specifically, we will look at the following topics:'
+  id: totrans-10
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 具体来说，我们将关注以下主题：
+- en: Managing users
+  id: totrans-11
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 管理用户
+- en: Managing groups and roles
+  id: totrans-12
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 管理组和角色
+- en: User directories
+  id: totrans-13
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 用户目录
+- en: Understanding Jira permissions
+  id: totrans-14
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 理解Jira权限
+- en: Issue security
+  id: totrans-15
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 问题安全
+- en: Troubleshooting permissions
+  id: totrans-16
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 排查权限问题
+- en: Workflow security
+  id: totrans-17
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 工作流安全
+- en: Password policy
+  id: totrans-18
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 密码策略
+- en: Enabling SSO with SAML
+  id: totrans-19
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 启用带有SAML的SSO
+- en: Auditing system changes
+  id: totrans-20
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 审计系统更改
+- en: The **human resources** (**HR**) project
+  id: totrans-21
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**人力资源**（**HR**）项目'
+- en: Before we delve into the deep end of how Jira handles security, let’s first
+    take a look at how Jira maintains user and group memberships.
+  id: totrans-22
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在深入了解Jira如何处理安全性之前，我们首先来看看Jira如何维护用户和组成员身份。
+- en: Managing users
+  id: totrans-23
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 管理用户
+- en: Each user needs to have an account for them to access Jira unless it is configured
+    to allow anonymous access (refer to the *Permission schemes* section in this chapter
+    for details). Each user is identified by their unique username.
+  id: totrans-24
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 每个用户都需要有一个帐户才能访问Jira，除非配置为允许匿名访问（有关详细信息，请参阅本章的*权限方案*部分）。每个用户通过其唯一的用户名进行标识。
+- en: 'The **user browser** is where you will be able to see a list of all the users
+    in Jira, including their usernames, email addresses, last login attempt, and which
+    user directory they belong to. The user browser also provides you with search
+    capabilities. You will be able to search for users that fit the criteria, such
+    as by username, full name, email address, and group association. Perform the following
+    steps to access the user browser:'
+  id: totrans-25
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**用户浏览器**是您可以查看Jira中所有用户列表的地方，包括他们的用户名、电子邮件地址、最后一次登录尝试以及他们属于哪个用户目录。用户浏览器还提供搜索功能。您可以根据用户名、全名、电子邮件地址和组关联等标准搜索用户。请按照以下步骤访问用户浏览器：'
+- en: Browse to the Jira administration console.
+  id: totrans-26
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 浏览到Jira管理控制台。
+- en: 'Select the **User management** tab and then the **Users** option, to take you
+    to a screen like this:'
+  id: totrans-27
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 选择**用户管理**标签，然后选择**用户**选项，将带您进入如下所示的页面：
+- en: '![Figure 9.1 – User browser'
+  id: totrans-28
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '![图9.1 - 用户浏览器'
+- en: '](img/Figure_9.1_B18644.jpg)'
+  id: totrans-29
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '](img/Figure_9.1_B18644.jpg)'
+- en: Figure 9.1 – User browser
+  id: totrans-30
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图9.1 - 用户浏览器
+- en: By default, the results will be paginated to show 20 users per page, but you
+    can change this setting to show up to 100 users per page. When dealing with large
+    deployments having hundreds of users, these options will become very useful to
+    quickly find the users you need to manage.
+  id: totrans-31
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 默认情况下，结果将分页显示每页20个用户，但您可以更改此设置，将每页显示最多100个用户。在处理拥有数百个用户的大规模部署时，这些选项将非常有用，能够快速找到您需要管理的用户。
+- en: Other than providing the ability for you to effectively search for users, the
+    user browser also lets you add new users to Jira and manage a user’s group/role
+    associations.
+  id: totrans-32
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 除了让您能够有效地搜索用户，用户浏览器还允许您向Jira中添加新用户并管理用户的组/角色关联。
+- en: Adding a user
+  id: totrans-33
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 添加用户
+- en: 'Jira lets you add new users in several ways, such as the following:'
+  id: totrans-34
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Jira 允许您通过多种方式添加新用户，具体方式如下：
+- en: Direct creation by the Jira administrator
+  id: totrans-35
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 由 Jira 管理员直接创建
+- en: Invitation from the Jira administrator to create an account
+  id: totrans-36
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Jira 管理员邀请创建账户
+- en: Synchronization of user accounts from an external user repository, such as LDAP
+  id: totrans-37
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 从外部用户仓库（例如 LDAP）同步用户账户
+- en: By signing up for an account if the public signup option is enabled
+  id: totrans-38
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 如果启用了公共注册选项，通过注册账户即可注册
+- en: The first three options have centralized management, whereby only Jira administrators
+    can create and/or manage user accounts. These options are most applicable to private
+    Jira instances designed to be used by an organization’s internal users.
+  id: totrans-39
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 前三种选项具有集中管理功能，只有 Jira 管理员可以创建和/或管理用户账户。这些选项最适用于仅供组织内部用户使用的私人 Jira 实例。
+- en: 'The last option allows users to sign up for accounts by themselves. This is
+    most useful when you run a public Jira instance, where manually creating user
+    accounts is not scalable enough to handle the volume. We will be looking at how
+    to enable the public signup option and integrate with LDAP in the *User directories*
+    section later. For now, we will examine how administrators can create user accounts
+    manually. Here’s how to do this:'
+  id: totrans-40
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后一种选项允许用户自行注册账户。这在您运行公开的 Jira 实例时最为有用，因为手动创建用户账户无法满足庞大用户量的需求。稍后我们将看到如何在*用户目录*部分启用公共注册选项并与
+    LDAP 集成。现在，我们将研究管理员如何手动创建用户账户。操作方法如下：
+- en: Browse to the **User Browser** page.
+  id: totrans-41
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 进入**用户浏览器**页面。
+- en: Click on the **Create user** button.
+  id: totrans-42
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击**创建用户**按钮。
+- en: Enter a unique username for the new user. Jira will let you know if the username
+    is already taken.
+  id: totrans-43
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 为新用户输入唯一的用户名。如果该用户名已被占用，Jira 会通知您。
+- en: Enter the password, full name, and email address of the user. If you do not
+    enter a password, a random password will be generated. In this case, you should
+    select the **Send notification email** option so that the new user can reset their
+    password.
+  id: totrans-44
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 输入用户的密码、全名和电子邮件地址。如果未输入密码，将生成一个随机密码。在这种情况下，您应该选择**发送通知邮件**选项，以便新用户可以重置他们的密码。
+- en: Select which applications in Jira the new user will have access to. For example,
+    if you are running Jira software, you should check the **Jira Software** option.
+    Doing so will consume one license seat count.
+  id: totrans-45
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 选择新用户可以访问的 Jira 应用程序。例如，如果您正在运行 Jira 软件，则应勾选**Jira 软件**选项。这样会消耗一个许可证座位。
+- en: Click on the **Create user** button to create a new user.
+  id: totrans-46
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击**创建用户**按钮以创建新用户。
+- en: 'Alternatively, administrators can also choose to invite users so that they
+    can create their accounts themselves. This is different than the public signup
+    option since only recipients of invitations will be able to create accounts. For
+    this feature to work, you will need to have an outgoing mail server configured,
+    as invitations will be sent as emails. Perform the following steps to invite users
+    to sign up:'
+  id: totrans-47
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 另外，管理员也可以选择邀请用户，以便他们可以自己创建账户。这与公共注册选项不同，因为只有邀请的接收者才能创建账户。要启用此功能，您需要配置一个外发邮件服务器，因为邀请将以电子邮件形式发送。按照以下步骤邀请用户注册：
+- en: Browse to the **User Browser** page.
+  id: totrans-48
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 进入**用户浏览器**页面。
+- en: Click on the **Invite users** button.
+  id: totrans-49
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击**邀请用户**按钮。
+- en: Specify the email addresses of the people you wish to invite. You can invite
+    multiple people at once.
+  id: totrans-50
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 指定您希望邀请的人的电子邮件地址。您可以一次性邀请多个人。
+- en: Click on the **Invite users** button to send out invitations.
+  id: totrans-51
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击**邀请用户**按钮以发送邀请。
+- en: Enabling public signup
+  id: totrans-52
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 启用公共注册
+- en: 'If your Jira setup is public (for example, an open source project), then creating
+    user accounts individually, as explained earlier, would become a very demanding
+    job for your administrator. For this type of Jira setup, you can enable public
+    signup to allow users to create accounts by themselves. Perform the following
+    steps to enable public signup in Jira:'
+  id: totrans-53
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果您的 Jira 设置是公开的（例如开源项目），那么按前述方式逐个创建用户账户会对管理员造成很大的工作负担。对于这种类型的 Jira 设置，您可以启用公共注册选项，允许用户自行创建账户。按照以下步骤启用
+    Jira 中的公共注册：
+- en: Browse to the Jira administration console.
+  id: totrans-54
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 进入 Jira 管理控制台。
+- en: Select the **System** tab and then the **General configuration** option.
+  id: totrans-55
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 选择**系统**标签页，然后选择**常规配置**选项。
+- en: Click on the **Edit Settings** button.
+  id: totrans-56
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击**编辑设置**按钮。
+- en: Select **Public** for the **Mode** field.
+  id: totrans-57
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在**模式**字段中选择**公共**。
+- en: Click on the **Update** button to apply the change.
+  id: totrans-58
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击**更新**按钮以应用更改。
+- en: 'Once you have set Jira to run in **Public** mode, users will be able to sign
+    up and create their own accounts from the login page, as illustrated in the following
+    screenshot:'
+  id: totrans-59
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦你将 Jira 设置为 **公开** 模式，用户将能够从登录页面注册并创建自己的账户，如下图所示：
+- en: '![Figure 9.2 – Public signup'
+  id: totrans-60
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '![图 9.2 – 公开注册'
+- en: '](img/Figure_9.2_B18644.jpg)'
+  id: totrans-61
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '](img/Figure_9.2_B18644.jpg)'
+- en: Figure 9.2 – Public signup
+  id: totrans-62
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 9.2 – 公开注册
+- en: As you will see in the *Application access* section later in this chapter, once
+    a user signs up for a new account, they will automatically join groups with the
+    Jira user’s global permission. If you have set Jira to run in **Private** mode,
+    then only the administrator will be able to create new accounts.
+  id: totrans-63
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如你将在本章稍后的 *应用访问* 部分看到的，一旦用户注册了新账户，他们将自动加入具有 Jira 用户全局权限的组。如果你将 Jira 设置为 **私有**
+    模式，那么只有管理员才能创建新账户。
+- en: Enabling CAPTCHA
+  id: totrans-64
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 启用 CAPTCHA
+- en: 'If you are running Jira in **Public** mode, you run the risk of having automated
+    spam bots creating user accounts on your system. To counter this, Jira provides
+    the **CAPTCHA** service, where potential users will be required to type a word
+    represented in an image into a text field. Perform the following steps to enable
+    the CAPTCHA service:'
+  id: totrans-65
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你将 Jira 设置为 **公开** 模式，你将面临自动化垃圾邮件机器人创建用户账户的风险。为了解决这个问题，Jira 提供了 **CAPTCHA**
+    服务，要求潜在用户输入图片中的单词。执行以下步骤来启用 CAPTCHA 服务：
+- en: Browse to the Jira administration console.
+  id: totrans-66
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 浏览到 Jira 管理控制台。
+- en: Select the **System** tab and then the **General configuration** option.
+  id: totrans-67
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 选择 **系统** 标签，然后选择 **常规配置** 选项。
+- en: Click on the **Edit Settings** button.
+  id: totrans-68
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击 **编辑设置** 按钮。
+- en: Select **On** for the **CAPTCHA on signup** field.
+  id: totrans-69
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 选择 **开启** 对应的 **注册时启用 CAPTCHA** 选项。
+- en: Click on the **Update** button to apply the change.
+  id: totrans-70
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击 **更新** 按钮以应用更改。
+- en: 'Now, when someone tries to sign up for an account, Jira will present them with
+    a CAPTCHA challenge that must be verified before the account is created, as illustrated
+    in the following screenshot:'
+  id: totrans-71
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，当有人尝试注册账户时，Jira 会向他们展示一个 CAPTCHA 验证挑战，必须通过验证后账户才能创建，如下图所示：
+- en: '![Figure 9.3 – CAPTCHA'
+  id: totrans-72
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '![图 9.3 – CAPTCHA'
+- en: '](img/Figure_9.3_B18644.jpg)'
+  id: totrans-73
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '](img/Figure_9.3_B18644.jpg)'
+- en: Figure 9.3 – CAPTCHA
+  id: totrans-74
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 9.3 – CAPTCHA
+- en: In addition to managing users, we also need to review how groups and roles are
+    managed in Jira. Let’s go through this in the next section.
+  id: totrans-75
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 除了管理用户外，我们还需要回顾如何在 Jira 中管理组和角色。让我们在下一部分中讨论这个内容。
+- en: Managing groups and roles
+  id: totrans-76
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 管理组和角色
+- en: Groups are a common way of managing users in any information system. A group
+    represents a collection of users, usually based on their positions and responsibilities
+    within the organization. In Jira, groups provide an effective way to apply configuration
+    settings, such as permissions and notifications, to users.
+  id: totrans-77
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 组是管理任何信息系统中用户的常见方式。一个组代表了一群用户，通常基于他们在组织中的职位和职责。在 Jira 中，组提供了一种有效的方式来将配置设置（如权限和通知）应用于用户。
+- en: Groups are global in Jira, which is something that should not be confused with
+    project roles (which we will discuss later). This means that if you belong to
+    the `jira-administrators` group, then you will always be in that group regardless
+    of which project you are accessing. You will see in later sections how this is
+    different from project roles.
+  id: totrans-78
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 组在 Jira 中是全局性的，这与项目角色（稍后会讨论）不同。也就是说，如果你属于 `jira-administrators` 组，那么无论你访问哪个项目，你始终都会在该组中。你将在后面的章节中看到这与项目角色的不同之处。
+- en: Managing groups
+  id: totrans-79
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 管理组
+- en: 'As with the user browser, the group browser allows you to search, add, and
+    configure groups within Jira. Here’s how to access this:'
+  id: totrans-80
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 与用户浏览器类似，组浏览器允许你在 Jira 中搜索、添加和配置组。以下是如何访问它：
+- en: Browse to the Jira administration console.
+  id: totrans-81
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 浏览到 Jira 管理控制台。
+- en: 'Select the **User management** tab and then the **Groups** option. This will
+    bring up the **Group Browser** page, as illustrated in the following screenshot:'
+  id: totrans-82
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 选择 **用户管理** 标签，然后选择 **组** 选项。这将打开 **组浏览器** 页面，如下图所示：
+- en: '![Figure 9.4 – Group Browser page'
+  id: totrans-83
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '![图 9.4 – 组浏览页面'
+- en: '](img/Figure_9.4_B18644.jpg)'
+  id: totrans-84
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '](img/Figure_9.4_B18644.jpg)'
+- en: Figure 9.4 – Group Browser page
+  id: totrans-85
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 9.4 – 组浏览页面
+- en: 'Jira comes with a few default groups. These groups are created automatically
+    when you install Jira. For Jira software, we have the following groups:'
+  id: totrans-86
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Jira 附带了一些默认组。这些组在安装 Jira 时会自动创建。对于 Jira 软件，我们有以下几组：
+- en: '| **Group** | **Description** |'
+  id: totrans-87
+  prefs: []
+  type: TYPE_TB
+  zh: '| **组** | **描述** |'
+- en: '| `jira-administrators` | Administrators of Jira. By default, this group lets
+    you access the administration console. |'
+  id: totrans-88
+  prefs: []
+  type: TYPE_TB
+  zh: '| `jira-administrators` | Jira管理员。默认情况下，该组允许你访问管理控制台。 |'
+- en: '| `jira-software-users` | By default, members of this group will have access
+    to the Jira Software application. |'
+  id: totrans-89
+  prefs: []
+  type: TYPE_TB
+  zh: '| `jira-software-users` | 默认情况下，这个组的成员将能够访问Jira Software应用程序。 |'
+- en: Table 9.1 – Default groups
+  id: totrans-90
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 表格9.1 – 默认组
+- en: Other Jira applications, such as Jira Service Desk, will have different sets
+    of default groups.
+  id: totrans-91
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 其他Jira应用程序，如Jira Service Desk，将有不同的默认组设置。
+- en: Adding a group
+  id: totrans-92
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 添加一个组
+- en: 'Other than the three groups that come by default with Jira, you can create
+    your own groups. It is important to note that once you create a group, you cannot
+    change its name. Therefore, make sure that you think about the name of the group
+    carefully before you create it. Follow these steps to create a group:'
+  id: totrans-93
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 除了Jira默认提供的三个组之外，你还可以创建自己的组。需要注意的是，一旦创建了一个组，你不能更改它的名称。因此，在创建组之前，一定要仔细考虑组名。按照以下步骤创建一个组：
+- en: Browse to the **Group Browser** page.
+  id: totrans-94
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 浏览到**组浏览器**页面。
+- en: Enter a unique name for the new group in the **Add group** section.
+  id: totrans-95
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在**添加组**部分输入新组的唯一名称。
+- en: Click on the **Add group** button to create this new group.
+  id: totrans-96
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击**添加组**按钮来创建这个新组。
+- en: After a group is created, it will be empty and will have no members; you will
+    need to manually add users to the group.
+  id: totrans-97
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在创建一个组之后，它将是空的，并且没有成员；你需要手动将用户添加到该组。
+- en: Editing group memberships
+  id: totrans-98
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 编辑组成员
+- en: Often, people move around within an organization, and your Jira setup needs
+    to be kept up to date with such movement. In the group browser, there are two
+    ways to manage group memberships. The first option is to manage the membership
+    on a per-group level, and the second option is to manage several groups at the
+    same time. These options are actually similar, so we will cover them at the same
+    time.
+  id: totrans-99
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通常，人员在组织内部会有变动，你的Jira设置需要随着这些变动保持最新。在组浏览器中，有两种方式来管理组成员。第一种方式是按组级别管理成员，第二种方式是同时管理多个组。这两种方式实际上是相似的，因此我们将同时讲解它们。
+- en: 'Perform the following steps to manage individual groups:'
+  id: totrans-100
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 执行以下步骤以管理单个组：
+- en: Browse to the **Group Browser** page.
+  id: totrans-101
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 浏览到**组浏览器**页面。
+- en: Click on the **Edit members** link for the group you wish to manage members
+    of. This will bring you to the **Bulk Edit Group Members** page.
+  id: totrans-102
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击你希望管理成员的组旁的**编辑成员**链接。这将带你到**批量编辑组成员**页面。
+- en: 'You will notice that both options will take you to the same page. The difference
+    is that if you chose the individual group option, Jira will auto-select the group
+    to update, and if you chose the bulk edit option, then no groups will be selected.
+    However, regardless of which option you choose, you can still select one or all
+    of the groups to apply your changes to, as described in the following screenshot:'
+  id: totrans-103
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你会注意到这两种选择都会带你到同一页面。不同之处在于，如果你选择了单独的组选项，Jira将自动选择要更新的组；如果你选择了批量编辑选项，则不会选择任何组。不过，无论选择哪个选项，你仍然可以选择一个或所有组来应用你的更改，如下截图所示：
+- en: '![Figure 9.5 – Group members'
+  id: totrans-104
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '![图9.5 – 组成员'
+- en: '](img/Figure_9.5_B18644.jpg)'
+  id: totrans-105
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '](img/Figure_9.5_B18644.jpg)'
+- en: Figure 9.5 – Group members
+  id: totrans-106
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图9.5 – 组成员
+- en: 'Perform the following steps to update the membership in one or more groups:'
+  id: totrans-107
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 执行以下步骤以更新一个或多个组的成员：
+- en: Browse to the **Bulk Edit Group Members** page.
+  id: totrans-108
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 浏览到**批量编辑组成员**页面。
+- en: Select one or more groups to update.
+  id: totrans-109
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 选择一个或多个组进行更新。
+- en: Select users from the middle box and click on the **Remove selected users**
+    button to take users out of the groups.
+  id: totrans-110
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 从中间框中选择用户，然后点击**移除选定用户**按钮将用户从组中移除。
+- en: Specify users (by typing usernames) in the right-hand side box and click on
+    the **Add selected users** button to add users to the groups.
+  id: totrans-111
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在右侧框中指定用户（通过输入用户名），然后点击**添加选定用户**按钮将用户添加到组中。
+- en: Deleting a group
+  id: totrans-112
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 删除一个组
+- en: 'If a group has become redundant, you can remove it from Jira by following these
+    steps:'
+  id: totrans-113
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果一个组变得多余，你可以按照以下步骤将其从Jira中删除：
+- en: Browse to the **Group Browser** page.
+  id: totrans-114
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 浏览到**组浏览器**页面。
+- en: Click on the **Delete** link for the group you wish to remove and click on **Delete**
+    again to permanently remove the group.
+  id: totrans-115
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击你希望删除的组旁的**删除**链接，然后再次点击**删除**以永久删除该组。
+- en: Once you remove a group, all users who previously belonged to it will have their
+    group associations updated to reflect the change. However, if you have other configurations
+    using the group, it can have a negative impact if you are not careful. For example,
+    if you are restricting the `developers` in your permission scheme, by deleting
+    the `developers` group, nobody will be able to create issues in projects using
+    the permission scheme.
+  id: totrans-116
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦你移除一个组，所有之前属于该组的用户将会更新其组关联，以反映这一变化。然而，如果你有其他配置使用该组，若不小心，可能会带来负面影响。例如，如果你在权限方案中限制了`developers`组，删除`developers`组后，使用该权限方案的项目中将无法创建问题。
+- en: Important note
+  id: totrans-117
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 重要说明
+- en: Be very careful when deleting a group, as it might be used in other configurations.
+  id: totrans-118
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 删除组时要非常小心，因为它可能在其他配置中被使用。
+- en: Managing roles
+  id: totrans-119
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 管理角色
+- en: As you have seen, groups are collections of users and are applied globally to
+    all projects in Jira. Jira also offers another way of grouping users, which is
+    applied on the project level only.
+  id: totrans-120
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，组是用户的集合，并且在Jira中全球应用于所有项目。Jira还提供了另一种按项目级别进行用户分组的方法。
+- en: Similar to users and groups, project roles are maintained by the Jira administrator
+    through the **Project Role Browser** page. There is a slight difference, however,
+    because since project roles are specific to projects, Jira administrators only
+    define which roles are available in Jira and their default members. Each project’s
+    administrators (discussed in later sections) can further define each role’s membership
+    for their own projects, overriding the default assignment. We will first look
+    at what Jira administrators can control through the **Project Role Browser** page
+    and then look at how project administrators can fine-tune the membership assignment
+    later.
+  id: totrans-121
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 与用户和组类似，项目角色由Jira管理员通过**项目角色浏览器**页面进行维护。然而，有一点不同，因为项目角色是特定于项目的，Jira管理员只定义哪些角色在Jira中可用及其默认成员。每个项目的管理员（在后面的章节中讨论）可以进一步定义每个角色的成员资格，覆盖默认分配。我们将首先了解Jira管理员可以通过**项目角色浏览器**页面控制什么，然后再了解项目管理员如何进一步调整成员分配。
+- en: 'Perform the following steps to access the **Project Role Browser** page:'
+  id: totrans-122
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 执行以下步骤以访问**项目角色浏览器**页面：
+- en: Browse to the Jira administration console.
+  id: totrans-123
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 进入Jira管理控制台。
+- en: 'Select the **System** tab and then the **Project roles** option. This will
+    bring up the **Project Role Browser** page, as illustrated in the following screenshot:'
+  id: totrans-124
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 选择**系统**标签，然后选择**项目角色**选项。这将显示**项目角色浏览器**页面，如下图所示：
+- en: '![Figure 9.6 – Project Role Browser page'
+  id: totrans-125
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '![图9.6 – 项目角色浏览器页面'
+- en: '](img/Figure_9.6_B18644.jpg)'
+  id: totrans-126
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '](img/Figure_9.6_B18644.jpg)'
+- en: Figure 9.6 – Project Role Browser page
+  id: totrans-127
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图9.6 – 项目角色浏览器页面
+- en: Adding a project role
+  id: totrans-128
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 添加项目角色
+- en: 'To start creating your own project roles, you will first need to add the role
+    as a Jira administrator, and then each project administrator will be able to add
+    users to it. Perform the following steps to create a new project role:'
+  id: totrans-129
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要开始创建自己的项目角色，你首先需要作为Jira管理员添加角色，然后每个项目管理员将能够为其添加用户。执行以下步骤创建一个新的项目角色：
+- en: Browse to the **Project Role Browser** page.
+  id: totrans-130
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 进入**项目角色浏览器**页面。
+- en: Enter a unique name for the new project role in the **Add Project Role** section.
+  id: totrans-131
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在**添加项目角色**部分输入新的项目角色的唯一名称。
+- en: Click on the **Add Project Role** button to create this project role.
+  id: totrans-132
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击**添加项目角色**按钮以创建该项目角色。
+- en: Once you add a new project role, it will appear for every project.
+  id: totrans-133
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦你添加了一个新的项目角色，它将出现在每个项目中。
+- en: Managing default members
+  id: totrans-134
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 管理默认成员
+- en: You can assign default members to project roles so that newly created projects
+    will have project roles assigned to them. Default members are an efficient way
+    for Jira administrators to assign project role members automatically, without
+    having to manually manage each new project as it comes in.
+  id: totrans-135
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以为项目角色分配默认成员，以便新创建的项目会自动分配项目角色。默认成员是Jira管理员为项目角色成员自动分配的有效方式，无需手动管理每个新项目。
+- en: For example, by default, users in the `jira-administrators` group will have
+    the **Administrators** project role. This not only increases the efficiency of
+    the setup by creating a baseline for new projects but also offers the flexibility
+    to allow modifications to the default setup to cater to unique requirements.
+  id: totrans-136
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 例如，默认情况下，`jira-administrators`组中的用户将具有**管理员**项目角色。这不仅通过为新项目创建基线来提高设置效率，还提供了灵活性，允许对默认设置进行修改，以满足独特的需求。
+- en: 'Perform the following steps to set default members for a project role:'
+  id: totrans-137
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 执行以下步骤设置项目角色的默认成员：
+- en: Browse to the **Project Role Browser** page.
+  id: totrans-138
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 浏览到**项目角色浏览器**页面。
+- en: Click on the **Manage Default Members** link for the project role you wish to
+    edit.
+  id: totrans-139
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击你希望编辑的项目角色的**管理默认成员**链接。
+- en: 'The following screenshot shows that the `jira-software-users`):'
+  id: totrans-140
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下截图显示了`jira-software-users`：
+- en: '![Figure 9.7 – Default role members'
+  id: totrans-141
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '![图 9.7 – 默认角色成员'
+- en: '](img/Figure_9.7_B18644.jpg)'
+  id: totrans-142
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '](img/Figure_9.7_B18644.jpg)'
+- en: Figure 9.7 – Default role members
+  id: totrans-143
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 9.7 – 默认角色成员
+- en: On this page, you will see all the default members assigned to the selected
+    project role. You can assign default memberships based on individual users or
+    groups.
+  id: totrans-144
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在此页面，你将看到分配到所选项目角色的所有默认成员。你可以根据个人用户或组分配默认成员资格。
+- en: 'Perform the following steps to add a default user/group to a project role:'
+  id: totrans-145
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 执行以下步骤将默认用户/组添加到项目角色：
+- en: Click on the **Edit** link for the default member option (either the user or
+    group).
+  id: totrans-146
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击默认成员选项（用户或组）的**编辑**链接。
+- en: Use the user picker/group picker function to select users/groups you wish to
+    assign to the project role.
+  id: totrans-147
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用用户选择器/组选择器功能，选择你希望分配到项目角色的用户/组。
+- en: 'Click on the `jira-software-users` group is the default group for the `contract-developers`
+    group is to be added:'
+  id: totrans-148
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击`jira-software-users`组，这是要添加的`contract-developers`组的默认组：
+- en: '![Figure 9.8 – Adding a default role member'
+  id: totrans-149
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '![图 9.8 – 添加默认角色成员'
+- en: '](img/Figure_9.8_B18644.jpg)'
+  id: totrans-150
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '](img/Figure_9.8_B18644.jpg)'
+- en: Figure 9.8 – Adding a default role member
+  id: totrans-151
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 9.8 – 添加默认角色成员
+- en: Once added, any new projects created will have the specified users/groups assigned
+    to the project role. It is important to note that changes to default memberships
+    are only applied to new projects. Existing projects will not retrospectively have
+    the new default members applied.
+  id: totrans-152
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦添加，创建的新项目将自动将指定的用户/组分配到项目角色。需要注意的是，默认成员的变更仅适用于新创建的项目，现有项目不会追溯性地应用新的默认成员。
+- en: Assigning project role members
+  id: totrans-153
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 分配项目角色成员
+- en: As you have seen, Jira allows you to assign default members to projects when
+    they are created. This might be sufficient for most projects when they start,
+    but changes will often need to be made due to staff movement during the project
+    life cycle. While it is possible for the Jira administrator to continue maintaining
+    each project’s membership, it can easily become an overwhelming task, and in most
+    cases, since project roles are specific to each project, it makes sense to delegate
+    this responsibility to the owner of each project.
+  id: totrans-154
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，Jira 允许你在创建项目时为其分配默认成员。这对于大多数刚开始的项目可能已经足够，但由于项目生命周期中的人员变动，通常需要进行更改。虽然 Jira
+    管理员可以继续维护每个项目的成员资格，但这很容易变成一项繁重的任务，且在大多数情况下，由于项目角色是特定于每个项目的，因此将此责任委托给每个项目的所有者更为合理。
+- en: In Jira, an owner of a project is someone with the **Administer Projects** permission.
+    By default, members of the **Administrators** project role will have this permission.
+    We will see how to manage permissions in Jira in the *Project permissions* section
+    later.
+  id: totrans-155
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 Jira 中，项目所有者是拥有**管理项目**权限的人。默认情况下，**管理员**项目角色的成员将拥有此权限。稍后我们将在*项目权限*部分看到如何管理
+    Jira 中的权限。
+- en: 'As a project administrator, you will be able to assign members to various project
+    roles for your project. You can assign roles from the project administration page,
+    as follows:'
+  id: totrans-156
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 作为项目管理员，你将能够为你的项目分配成员到不同的项目角色。你可以从项目管理页面分配角色，如下所示：
+- en: Browse to the project administration page for the project you want to update.
+  id: totrans-157
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 浏览到你想要更新的项目的项目管理页面。
+- en: Select the **Users and roles** option from the left-hand panel.
+  id: totrans-158
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 从左侧面板中选择**用户和角色**选项。
+- en: Click on the **Add users to a role** link.
+  id: totrans-159
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击**添加用户到角色**链接。
+- en: Start typing the user’s username or the group’s name. Jira will auto-search
+    for results as you type.
+  id: totrans-160
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 开始输入用户的用户名或组的名称。Jira 会在你输入时自动搜索结果。
+- en: 'Click on the **Add users to a role** button once you have found the user/group
+    you want to add. You can see an overview of this in the following screenshot:'
+  id: totrans-161
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 一旦找到你想要添加的用户/组，点击**添加用户到角色**按钮。你可以在以下截图中查看这个概览：
+- en: '![Figure 9.9 – Adding a role member'
+  id: totrans-162
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '![图 9.9 – 添加角色成员'
+- en: '](img/Figure_9.9_B18644.jpg)'
+  id: totrans-163
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '](img/Figure_9.9_B18644.jpg)'
+- en: Figure 9.9 – Adding a role member
+  id: totrans-164
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 9.9 – 添加角色成员
+- en: Tip
+  id: totrans-165
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 提示
+- en: You should use groups instead of individual users where possible to help with
+    future maintenance.
+  id: totrans-166
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果可能，应该使用组而不是单个用户，以帮助未来的维护。
+- en: The users and groups assigned to a project role will be for the current project
+    only. Each project administrator can configure this for their own projects. In
+    this way, you can maintain project role memberships separately for each project.
+  id: totrans-167
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 分配给项目角色的用户和组仅适用于当前项目。每个项目管理员可以为自己的项目配置此项。通过这种方式，你可以为每个项目单独维护项目角色成员。
+- en: User directories
+  id: totrans-168
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 用户目录
+- en: You might be wondering how and where Jira stores users and groups. User directories
+    are what Jira uses to do this. A user directory is backed by a user repository
+    system, such as LDAP, a database, or a remote user management system, such as
+    Atlassian Crowd. Out of the box, Jira comes with a default internal directory
+    that stores user and group information in the database.
+  id: totrans-169
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可能会想，Jira 是如何以及在哪里存储用户和组的。用户目录就是 Jira 用来执行这项工作的。用户目录由用户存储库系统支持，比如 LDAP、数据库或远程用户管理系统（如
+    Atlassian Crowd）。Jira 默认内置一个内部目录，将用户和组信息存储在数据库中。
+- en: 'You can have multiple user directories in Jira. This allows you to connect
+    your Jira instance to multiple user repositories. For example, you can have an
+    LDAP directory for your internal users and the Jira internal directory using the
+    database for external users. An example is given in the following screenshot,
+    where we have three user directories configured. The first user directory is the
+    built-in Jira internal directory running on the Jira database. The second user
+    directory is connected to Microsoft **Active Directory** (**AD**) in read-only
+    mode. The last user directory is connected to Atlassian Crowd, user identity management
+    software from Atlassian:'
+  id: totrans-170
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以在 Jira 中拥有多个用户目录。这允许你将 Jira 实例连接到多个用户存储库。例如，你可以为内部用户使用 LDAP 目录，为外部用户使用 Jira
+    内部目录（通过数据库）。以下截图展示了一个例子，其中配置了三个用户目录。第一个用户目录是内置的 Jira 内部目录，运行在 Jira 数据库上。第二个用户目录以只读模式连接到
+    Microsoft **Active Directory**（**AD**）。最后一个用户目录连接到 Atlassian Crowd，这是 Atlassian
+    的用户身份管理软件：
+- en: '![Figure 9.10 – User directories'
+  id: totrans-171
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '![图 9.10 – 用户目录'
+- en: '](img/Figure_9.10_B18644.jpg)'
+  id: totrans-172
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '](img/Figure_9.10_B18644.jpg)'
+- en: Figure 9.10 – User directories
+  id: totrans-173
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 9.10 – 用户目录
+- en: 'As a Jira administrator, you can manage user directories by performing these
+    two steps:'
+  id: totrans-174
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 作为 Jira 管理员，你可以通过执行以下两个步骤来管理用户目录：
+- en: Browse to the Jira administration console.
+  id: totrans-175
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 浏览到 Jira 管理控制台。
+- en: Select the **User management** tab and then select the **User Directories**
+    option.
+  id: totrans-176
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 选择**用户管理**标签，然后选择**用户目录**选项。
+- en: From there, you can see a list of user directories you currently have configured
+    in Jira, add new directories, and manually synchronize with the remote user repository.
+  id: totrans-177
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 从这里，你可以看到当前在 Jira 中配置的用户目录列表，添加新目录，并手动与远程用户存储库同步。
+- en: 'When adding a new user directory, you need to first decide on the directory
+    type. There are several different user directory types within Jira, as outlined
+    here:'
+  id: totrans-178
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在添加新用户目录时，首先需要决定目录类型。Jira 中有几种不同的用户目录类型，如下所示：
+- en: '**Jira internal directory**: This is the built-in default user directory when
+    you first install Jira. With this directory, all the user and group information
+    is stored in the Jira database.'
+  id: totrans-179
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**Jira 内部目录**：这是你第一次安装 Jira 时的内置默认用户目录。使用此目录时，所有的用户和组信息都存储在 Jira 数据库中。'
+- en: '**AD/LDAP**: This is used when you want to connect Jira to an LDAP server.
+    With this directory, Jira will use the backend LDAP to query user information
+    and group membership. This is also known as an LDAP connector and should not be
+    confused with internal and LDAP authentication directories.'
+  id: totrans-180
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**AD/LDAP**：当你想将 Jira 连接到 LDAP 服务器时使用此目录。使用此目录时，Jira 会使用后端的 LDAP 查询用户信息和组成员身份。这也被称为
+    LDAP 连接器，不应与内部和 LDAP 认证目录混淆。'
+- en: '**Internal with LDAP authentication**: This is also known as a delegated LDAP.
+    With this directory type, Jira will only use LDAP for authentication and will
+    keep all user information internally in the database (retrieved from LDAP when
+    the user successfully authenticates for the first time). This approach can provide
+    better performance. Since LDAP is only used for authentication, this avoids the
+    need to download larger numbers of groups from LDAP.'
+  id: totrans-181
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**使用 LDAP 认证的内部目录**：这也被称为委托 LDAP。在这种目录类型下，Jira 只会使用 LDAP 进行认证，并将所有用户信息保存在数据库中（在用户首次成功认证时从
+    LDAP 中获取）。这种方法可以提供更好的性能，因为 LDAP 仅用于认证，避免了从 LDAP 下载大量的组信息。'
+- en: '**Atlassian Crowd**: If you are also using Atlassian Crowd, a user management
+    and SSO and identity management solution, you can use this directory type to connect
+    to your crowd instance. With this option, you can also configure your Jira instance
+    to participate in the SSO session. Note that Jira Data Center has SSO support
+    built in, so Atlassian Crowd is not required.'
+  id: totrans-182
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**Atlassian Crowd**：如果你还在使用Atlassian Crowd，它是一个用户管理、单点登录和身份管理解决方案，你可以使用这种目录类型连接到你的Crowd实例。使用此选项，你还可以配置Jira实例以参与SSO会话。需要注意的是，Jira
+    Data Center内置SSO支持，因此不需要Atlassian Crowd。'
+- en: '**Atlassian Jira**: Jira can act as a user repository for other compatible
+    applications. If you have another Jira instance running, you can use this directory
+    type to connect to the other Jira instance and for user information.'
+  id: totrans-183
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**Atlassian Jira**：Jira可以作为其他兼容应用程序的用户存储库。如果你运行着另一个Jira实例，你可以使用这种目录类型连接到另一个Jira实例并获取用户信息。'
+- en: 'When you have multiple user directories configured for Jira, there are a few
+    important points to keep in mind. The order of the user directories is important,
+    as it will directly affect the order Jira will use to search for users and apply
+    changes to users and groups. For example, if you have two user directories and
+    both have a user called `admin` with different passwords, this will have the following
+    effects:'
+  id: totrans-184
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当你为Jira配置了多个用户目录时，有几个重要的注意事项。用户目录的顺序很重要，因为它直接影响Jira查找用户和应用更改的顺序。例如，如果你有两个用户目录，并且两个目录中都有一个名为`admin`的用户，且密码不同，这将产生以下效果：
+- en: When you log in to Jira with the `admin` username, you will be logged in as
+    the `admin` user from the first user directory that is able to validate the password,
+    in the order of listed directories.
+  id: totrans-185
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 当你使用`admin`用户名登录Jira时，你将以第一个能够验证密码的用户目录中的`admin`用户身份登录，按目录列表顺序进行验证。
+- en: After logging in, you will be granted group membership from the directory that
+    has validated your password. Any other directories will be skipped.
+  id: totrans-186
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 登录后，你将获得验证密码的目录中的组成员资格，其他目录将被跳过。
+- en: If you make a change to the `admin` user, such as changing the full name, then
+    the changes will only be applied to the first directory Jira has write access
+    to.
+  id: totrans-187
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 如果你更改了`admin`用户的信息，比如更改全名，这些更改将仅应用于Jira具有写权限的第一个目录。
+- en: Another important point to remember when working with user directories is that
+    you cannot make changes to the user directory when you are logged in with a user
+    account that belongs to the said directory. For example, if you are logged in
+    with an LDAP account, then you will not be able to make changes to Jira’s LDAP
+    user directory settings, since there is the potential for the new change to actually
+    lock you out of Jira.
+  id: totrans-188
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 另一个需要记住的重要事项是，当你登录的用户账户属于某个用户目录时，你无法对该目录进行更改。例如，如果你使用LDAP账户登录，你将无法更改Jira的LDAP用户目录设置，因为新的更改可能会导致你无法再次登录Jira。
+- en: Important note
+  id: totrans-189
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 重要提示
+- en: Always have an active administrator user account ready in the default Jira internal
+    directory—for example, the account created during the initial setup. This will
+    provide you with an administrator account that can help you fix user directory
+    problems, such as the preceding scenario. If you have a user account with the
+    same name in the other user directory, then the internal directory should also
+    be the first one in the list.
+  id: totrans-190
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 始终在默认的Jira内部目录中准备一个有效的管理员用户账户——例如，在初始设置过程中创建的账户。这将为你提供一个管理员账户，帮助你解决用户目录的问题，比如上面提到的场景。如果在其他用户目录中有一个同名的用户账户，那么内部目录应该是列表中的第一个。
+- en: Connecting to LDAP
+  id: totrans-191
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 连接到LDAP
+- en: Jira supports a wide range of LDAP servers, including Microsoft AD and OpenLDAP.
+    If a particular LDAP is not listed as one of the options, then we also have a
+    **Generic Directory Server** option.
+  id: totrans-192
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Jira支持广泛的LDAP服务器，包括Microsoft AD和OpenLDAP。如果某个特定的LDAP没有列为选项之一，我们也提供**通用目录服务器**选项。
+- en: 'When using the AD/LDAP connector directory type, you can choose to connect
+    with one of the following permission options:'
+  id: totrans-193
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用AD/LDAP连接器目录类型时，你可以选择以下权限选项之一：
+- en: '**Read only**: Jira cannot make any modifications to the LDAP server.'
+  id: totrans-194
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**只读**：Jira无法对LDAP服务器进行任何修改。'
+- en: '**Read only, with local groups**: Information retrieved from LDAP will be read-only,
+    but you can also add users to groups created within Jira. These changes will not
+    be reflected in LDAP.'
+  id: totrans-195
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**只读，并带本地组**：从LDAP检索的信息将是只读的，但你也可以将用户添加到Jira中创建的组。这些更改不会反映到LDAP中。'
+- en: '**Read/Write**: Jira will be able to retrieve and make changes to the LDAP
+    server.'
+  id: totrans-196
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**读/写**：Jira 将能够检索并对 LDAP 服务器进行更改。'
+- en: The **Read only** option is the most common option, as **information technology**
+    (**IT**) teams often centrally manage LDAP servers and changes are not allowed.
+    With this option, Jira will only need read access to user data stored in LDAP
+    to verify user credentials and group membership. If you only want to use LDAP
+    as a user repository and for authentication, but still want to have the flexibility
+    to update group membership without having to get the LDAP team involved, then
+    the **Read only, with local groups** option will be the best fit. Lastly, the
+    **Read/Write** option should be avoided, as propagating changes to LDAP, such
+    as group membership, can have an unforeseen impact on other systems also relying
+    on the same LDAP server.
+  id: totrans-197
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**只读**选项是最常见的选项，因为**信息技术**（**IT**）团队通常会集中管理 LDAP 服务器，并且不允许进行更改。选择此选项时，Jira
+    只需要对存储在 LDAP 中的用户数据具有读取权限，以验证用户凭据和组成员身份。如果你只想将 LDAP 用作用户存储库和身份验证，但仍希望能够在不涉及 LDAP
+    团队的情况下更新组成员身份，那么**只读，带本地组**选项将是最佳选择。最后，应该避免使用**读/写**选项，因为对 LDAP 的更改（如组成员身份的变动）可能会对其他依赖于相同
+    LDAP 服务器的系统产生不可预见的影响。'
+- en: 'To connect your Jira setup to LDAP, all you have to do is add a new user directory,
+    as follows:'
+  id: totrans-198
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要将你的 Jira 设置连接到 LDAP，只需添加一个新的用户目录，步骤如下：
+- en: Browse to the **User Directories** page.
+  id: totrans-199
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 浏览到**用户目录**页面。
+- en: Click on the **Add Directory** button and select either **Microsoft Active Directory**
+    or **LDAP** from the **Directory Type** select list, and then click on **Next**.
+  id: totrans-200
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击**添加目录**按钮，然后从**目录类型**下拉列表中选择**Microsoft Active Directory**或**LDAP**，接着点击**下一步**。
+- en: Provide your LDAP server information.
+  id: totrans-201
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 提供你的 LDAP 服务器信息。
+- en: 'Since every LDAP is different, the exact parameters that are required will
+    vary. At a minimum, you need to provide the following information:'
+  id: totrans-202
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于每个 LDAP 都不同，因此所需的具体参数会有所不同。最低要求是提供以下信息：
+- en: '| **Parameter** | **Description** |'
+  id: totrans-203
+  prefs: []
+  type: TYPE_TB
+  zh: '| **参数** | **描述** |'
+- en: '| --- | --- |'
+  id: totrans-204
+  prefs: []
+  type: TYPE_TB
+  zh: '| --- | --- |'
+- en: '| **Name** | This is the name of the user directory. |'
+  id: totrans-205
+  prefs: []
+  type: TYPE_TB
+  zh: '| **名称** | 这是用户目录的名称。 |'
+- en: '| **Directory Type** | This is where you select the flavor of your LDAP. This
+    will help Jira to prefill some of the parameters for you. |'
+  id: totrans-206
+  prefs: []
+  type: TYPE_TB
+  zh: '| **目录类型** | 这是你选择 LDAP 类型的地方。这将帮助 Jira 为你预填一些参数。 |'
+- en: '| **Hostname** | This is the hostname of your LDAP server. |'
+  id: totrans-207
+  prefs: []
+  type: TYPE_TB
+  zh: '| **主机名** | 这是你的 LDAP 服务器的主机名。 |'
+- en: '| **Port** | This is the port number of your LDAP server. Jira will prefill
+    this based on your directory type selection. |'
+  id: totrans-208
+  prefs: []
+  type: TYPE_TB
+  zh: '| **端口** | 这是你的 LDAP 服务器的端口号。Jira 会根据你的目录类型选择预填此项。 |'
+- en: '| **Base DN** | This is the root node for Jira to search for users and groups.
+    |'
+  id: totrans-209
+  prefs: []
+  type: TYPE_TB
+  zh: '| **Base DN** | 这是 Jira 搜索用户和组的根节点。 |'
+- en: '| **LDAP Permissions** | This helps you choose whether Jira should be able
+    to make changes to LDAP. |'
+  id: totrans-210
+  prefs: []
+  type: TYPE_TB
+  zh: '| **LDAP 权限** | 这帮助你选择是否允许 Jira 对 LDAP 进行更改。 |'
+- en: '| **Username** | This is the username that Jira will use to connect to LDAP
+    for user and group information. |'
+  id: totrans-211
+  prefs: []
+  type: TYPE_TB
+  zh: '| **用户名** | 这是 Jira 用来连接到 LDAP 获取用户和组信息的用户名。 |'
+- en: '| **Password** | This is the password that Jira will use to connect to LDAP.
+    |'
+  id: totrans-212
+  prefs: []
+  type: TYPE_TB
+  zh: '| **密码** | 这是 Jira 用来连接到 LDAP 的密码。 |'
+- en: Table 9.2 – User directory parameters
+  id: totrans-213
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 表 9.2 – 用户目录参数
+- en: 'You can see these sections completed in the following screenshot:'
+  id: totrans-214
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以在下面的截图中看到这些部分已完成：
+- en: '![Figure 9.11 – Adding an LDAP user directory'
+  id: totrans-215
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '![图 9.11 – 添加 LDAP 用户目录'
+- en: '](img/Figure_9.11_B18644.jpg)'
+  id: totrans-216
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '](img/Figure_9.11_B18644.jpg)'
+- en: Figure 9.11 – Adding an LDAP user directory
+  id: totrans-217
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 9.11 – 添加 LDAP 用户目录
+- en: 'Apart from the preceding parameters, there are additional advanced settings,
+    such as **User Schema Settings** and **Group Schema Settings**. After filling
+    in the form, you can click on the **Quick Test** button to verify that Jira is
+    able to connect to your LDAP server and authenticate with the username and password
+    provided. Note that this does not test for things such as user lookup. If the
+    initial quick test is successful, then you can go ahead and click on the **Save
+    and Test** button. This will add the user directory and take you to the test page,
+    where you can test the settings with a proper user credential (this will be different
+    than the one used by Jira to connect to LDAP), as illustrated in the following
+    screenshot:'
+  id: totrans-218
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 除了前述参数外，还有一些附加的高级设置，如 **用户架构设置** 和 **组架构设置**。填写完表单后，您可以点击 **快速测试** 按钮，以验证 Jira
+    是否能够连接到您的 LDAP 服务器并使用提供的用户名和密码进行身份验证。请注意，这不会测试诸如用户查找之类的功能。如果初步的快速测试成功，您可以继续点击
+    **保存并测试** 按钮。这将添加用户目录，并带您进入测试页面，在该页面您可以使用正确的用户凭据（这与 Jira 用于连接 LDAP 的凭据不同）进行测试，如下图所示：
+- en: '![Figure 9.12 – Test LDAP user directory'
+  id: totrans-219
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '![图 9.12 – 测试 LDAP 用户目录'
+- en: '](img/Figure_9.12_B18644.jpg)'
+  id: totrans-220
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '](img/Figure_9.12_B18644.jpg)'
+- en: Figure 9.12 – Test LDAP user directory
+  id: totrans-221
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 9.12 – 测试 LDAP 用户目录
+- en: After the new user directory is added, Jira will automatically synchronize with
+    the LDAP server and pull in users and groups. Depending on the size of your LDAP
+    server, this may take some time to complete. After the initial synchronization,
+    Jira will periodically perform incremental synchronization for any changes every
+    60 minutes.
+  id: totrans-222
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 添加新用户目录后，Jira 会自动与 LDAP 服务器同步，并拉取用户和组。根据您的 LDAP 服务器的大小，这可能需要一些时间才能完成。初始同步完成后，Jira
+    将每 60 分钟定期执行增量同步，以同步任何更改。
+- en: Understanding Jira permissions
+  id: totrans-223
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 理解 Jira 权限
+- en: 'Jira manages its permissions in a hierarchical manner. Each level is more fine-grained
+    than the one above it. For a user to gain access to a resource (for example, to
+    view an issue), they need to satisfy all applicable permissions, as follows:'
+  id: totrans-224
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Jira 以分层方式管理其权限。每个级别比上一级更精细。为了使用户能够访问资源（例如查看问题），他们需要满足所有适用的权限，具体如下：
+- en: '**Application access**: This defines the groups that will have access to the
+    various applications in Jira (for example, Jira Software)'
+  id: totrans-225
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**应用程序访问**：此功能定义了将访问 Jira 中各种应用程序的组（例如，Jira 软件）。'
+- en: '**Global permission**: This permission controls access rights functions, such
+    as overall administration'
+  id: totrans-226
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**全局权限**：此权限控制访问权限功能，例如整体管理权限。'
+- en: '**Project-level permission**: This permission controls project-level permissions—for
+    example, creating and editing issues'
+  id: totrans-227
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**项目级权限**：此权限控制项目级别的权限——例如，创建和编辑问题。'
+- en: '**Issue-level security**: This permission controls view access to each individual
+    issue'
+  id: totrans-228
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**问题级别安全**：此权限控制对每个单独问题的查看权限。'
+- en: We will now look at each of the permission levels and how you can configure
+    them to suit your requirements, starting from access to the Jira application.
+  id: totrans-229
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们现在将逐一查看每个权限级别，以及如何配置它们以满足您的需求，从访问 Jira 应用程序开始。
+- en: Application access
+  id: totrans-230
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 应用程序访问
+- en: 'As we have explained in [*Chapter 1*](B18644_01.xhtml#_idTextAnchor014), *Getting
+    Started with Jira Data Center*, the Jira product family includes several applications
+    and you can have them all running together—for example, you can have Jira Software
+    and Jira Service Management running in the same instance. Access to each of the
+    running applications is controlled via the **Application access** feature. To
+    manage application access, perform the following steps:'
+  id: totrans-231
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如我们在 [*第 1 章*](B18644_01.xhtml#_idTextAnchor014)《Jira 数据中心入门》中所解释的那样，Jira 产品家族包括多个应用程序，您可以让它们一起运行——例如，您可以在同一实例中运行
+    Jira 软件和 Jira 服务管理。对每个运行中的应用程序的访问通过 **应用程序访问** 功能进行控制。要管理应用程序访问，请执行以下步骤：
+- en: Browse to the Jira administration console.
+  id: totrans-232
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 浏览到 Jira 管理控制台。
+- en: Select the **Applications** tab and then the **Application access** option.
+  id: totrans-233
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 选择 **应用程序** 标签页，然后选择 **应用程序访问** 选项。
+- en: 'Select a group to grant access to the application. If you check the **Default**
+    option of the group, new users will be added to the group when created. You can
+    see an overview of this in the following screenshot:'
+  id: totrans-234
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 选择一个组以授予该应用程序的访问权限。如果您选中该组的 **默认** 选项，新创建的用户将在创建时自动添加到该组。您可以在下图中看到这一概览：
+- en: '![Figure 9.13 – Application access'
+  id: totrans-235
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '![图 9.13 – 应用程序访问'
+- en: '](img/Figure_9.13_B18644.jpg)'
+  id: totrans-236
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '](img/Figure_9.13_B18644.jpg)'
+- en: Figure 9.13 – Application access
+  id: totrans-237
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 9.13 – 应用程序访问
+- en: You can only assign groups with application access. Once a group is assigned
+    access to an application, all active users in the group will be granted access.
+    Note that each user in the group will also consume a license seat for the application.
+  id: totrans-238
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你只能分配具有应用访问权限的组。一旦某个组被授予访问某个应用的权限，组内的所有活跃用户都将被授予访问权限。请注意，组内的每个用户也将消耗该应用的许可证名额。
+- en: Global permissions
+  id: totrans-239
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 全局权限
+- en: 'Global permissions, as the name suggests, control permissions that are applied
+    globally, such as administrator-level access. Similar to application access, global
+    permissions are applied to groups rather than individual users. The following
+    table lists all permissions and what they control in Jira:'
+  id: totrans-240
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 全局权限顾名思义，控制应用于全局的权限，例如管理员级别的访问权限。与应用访问类似，全局权限是应用于组而非单个用户的。下表列出了所有权限以及它们在 Jira
+    中控制的内容：
+- en: '| **Global permission level** | **Description** |'
+  id: totrans-241
+  prefs: []
+  type: TYPE_TB
+  zh: '| **全局权限级别** | **描述** |'
+- en: '| --- | --- |'
+  id: totrans-242
+  prefs: []
+  type: TYPE_TB
+  zh: '| --- | --- |'
+- en: '| **Jira System Administrators** | This gives permission to perform all Jira
+    administration functions. This is akin to the root mode in other systems. |'
+  id: totrans-243
+  prefs: []
+  type: TYPE_TB
+  zh: '| **Jira 系统管理员** | 这赋予了执行所有 Jira 管理功能的权限。这类似于其他系统中的根模式。'
+- en: '| **Jira Administrators** | This gives permission to perform most Jira administration
+    functions that are not related to system-wide changes (for example, to configure
+    the **Simple Mail Transfer Protocol** (**SMTP**) server and to export/restore
+    Jira data). |'
+  id: totrans-244
+  prefs: []
+  type: TYPE_TB
+  zh: '| **Jira 管理员** | 这赋予了执行大多数与系统范围变更无关的 Jira 管理功能的权限（例如，配置**简单邮件传输协议**（**SMTP**）服务器和导出/恢复
+    Jira 数据）。'
+- en: '| **Browse Users** | This gives permission to view a list of Jira users and
+    groups. This permission is required if the user needs to use the **User Picker**/**Group
+    Picker** function. |'
+  id: totrans-245
+  prefs: []
+  type: TYPE_TB
+  zh: '| **浏览用户** | 这赋予了查看 Jira 用户和组列表的权限。如果用户需要使用**用户选择器**/**组选择器**功能，则需要此权限。'
+- en: '| **Create Shared Object** | This gives permission to share filters and dashboards
+    with other users. |'
+  id: totrans-246
+  prefs: []
+  type: TYPE_TB
+  zh: '| **创建共享对象** | 这赋予了与其他用户共享过滤器和仪表盘的权限。'
+- en: '| **Manage Group Filter Subscriptions** | This gives permission to manage group
+    filter subscriptions. Filters will be discussed in [*Chapter 10*](B18644_10.xhtml#_idTextAnchor292),
+    *Searching, Reporting, and Analysis*. |'
+  id: totrans-247
+  prefs: []
+  type: TYPE_TB
+  zh: '| **管理组过滤器订阅** | 这赋予了管理组过滤器订阅的权限。过滤器将在[*第 10 章*](B18644_10.xhtml#_idTextAnchor292)中讨论，*搜索、报告和分析*。'
+- en: '| **Bulk Change** | This gives permission to perform bulk operations, including
+    the following:'
+  id: totrans-248
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '| **批量更改** | 这赋予了执行批量操作的权限，包括以下操作：'
+- en: Bulk edit
+  id: totrans-249
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 批量编辑
+- en: Bulk move
+  id: totrans-250
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 批量移动
+- en: Bulk delete
+  id: totrans-251
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 批量删除
+- en: Bulk workflow transition
+  id: totrans-252
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 批量工作流转换
+- en: '|'
+  id: totrans-253
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '|'
+- en: '| **Browse Archive** | This gives permission to browser projects and issues
+    that have been archived. |'
+  id: totrans-254
+  prefs: []
+  type: TYPE_TB
+  zh: '| **浏览归档** | 这赋予了浏览已归档项目和问题的权限。'
+- en: Table 9.3 – Global permissions
+  id: totrans-255
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 表 9.3 – 全局权限
+- en: Jira System Administrators versus Jira Administrators
+  id: totrans-256
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: Jira 系统管理员与 Jira 管理员
+- en: For people who are new to Jira, it is often confusing when it comes to distinguishing
+    between the **Jira System Administrators** and **Jira Administrators** global
+    permission. For the most part, they are very similar, and they can carry out most
+    of the administrative functions in Jira.
+  id: totrans-257
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于新接触 Jira 的人来说，区分**Jira 系统管理员**和**Jira 管理员**全局权限通常会让人感到困惑。大多数情况下，它们非常相似，且可以执行
+    Jira 中的大部分管理功能。
+- en: The difference is that Jira administrators cannot access functions that can
+    affect the application environment or network, while a Jira system administrator
+    has access to everything.
+  id: totrans-258
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 区别在于，Jira 管理员无法访问可能影响应用程序环境或网络的功能，而 Jira 系统管理员则可以访问所有内容。
+- en: While it can be useful to separate these two, in most cases, it is not necessary.
+    By default, the `jira-administrators` group has both **Jira System Administrators**
+    and **Jira Administrators** permissions.
+  id: totrans-259
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 虽然将这两者分开可能会有用，但在大多数情况下，实际上并不必要。默认情况下，`jira-administrators` 组同时具有**Jira 系统管理员**和**Jira
+    管理员**权限。
+- en: 'The following list shows examples of system operations that are only available
+    to people with the **Jira System Administrators** permission:'
+  id: totrans-260
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下列表显示了仅具有**Jira 系统管理员**权限的人可以执行的系统操作示例：
+- en: Configuring SMTP server details
+  id: totrans-261
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 配置 SMTP 服务器详细信息
+- en: Configuring the **Concurrent Versions System** (**CVS**) source code repository
+  id: totrans-262
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 配置**并发版本系统**（**CVS**）源代码库
+- en: Configuring listeners
+  id: totrans-263
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 配置监听器
+- en: Configuring services
+  id: totrans-264
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 配置服务
+- en: Configuring where Jira stores index files
+  id: totrans-265
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 配置 Jira 存储索引文件的位置
+- en: Importing data into Jira from an **Extensible Markup Language** (**XML**) backup
+  id: totrans-266
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 从**可扩展标记语言**（**XML**）备份导入数据到 Jira
+- en: Exporting data from Jira to an XML backup
+  id: totrans-267
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 从Jira导出数据到XML备份
+- en: Configuring attachment settings
+  id: totrans-268
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 配置附件设置
+- en: Accessing Jira license details
+  id: totrans-269
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 访问Jira许可证详细信息
+- en: Granting/revoking **Jira System Administrators** global permission
+  id: totrans-270
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 授予/撤销**Jira系统管理员**全局权限
+- en: Deleting users with **Jira System Administrators** global permission
+  id: totrans-271
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 删除具有**Jira系统管理员**全局权限的用户
+- en: Configuring global permissions
+  id: totrans-272
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 配置全局权限
+- en: 'Global permissions are configured and maintained by Jira administrators and
+    Jira system administrators, as follows:'
+  id: totrans-273
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 全局权限由Jira管理员和Jira系统管理员配置和维护，具体如下：
+- en: Browse to the Jira administration console.
+  id: totrans-274
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 浏览到Jira管理控制台。
+- en: 'Select the **System** tab and then the **Global permissions** option to bring
+    up the **Global Permissions** page, as shown in the following screenshot:'
+  id: totrans-275
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 选择**系统**选项卡，然后选择**全局权限**选项，打开**全局权限**页面，如下所示截图：
+- en: '![Figure 9.14 – Global Permissions page'
+  id: totrans-276
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '![图 9.14 – 全局权限页面'
+- en: '](img/Figure_9.14_B18644.jpg)'
+  id: totrans-277
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '](img/Figure_9.14_B18644.jpg)'
+- en: Figure 9.14 – Global Permissions page
+  id: totrans-278
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 9.14 – 全局权限页面
+- en: Important note
+  id: totrans-279
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 重要提示
+- en: Users with the **Jira Administrators** global permission cannot grant themselves
+    the **Jira System Administrators** global permission.
+  id: totrans-280
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 具有**Jira管理员**全局权限的用户不能授予自己**Jira系统管理员**全局权限。
+- en: Granting global permissions
+  id: totrans-281
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 授予全局权限
+- en: 'Global permissions can only be granted to groups. For this reason, you will
+    need to organize your users into logical groups for global permissions to take
+    effect. For example, you will want to have all your administrators belong to a
+    single group, such as the `jira-administrators` group so that you can grant them
+    administration permission. Here’s how to do this:'
+  id: totrans-282
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 全局权限只能授予给组。因此，你需要将用户组织成逻辑组，才能使全局权限生效。例如，你可能希望将所有管理员都归属于一个组，如`jira-administrators`组，这样你就可以授予他们管理员权限。操作步骤如下：
+- en: Browse to the **Global Permissions** page.
+  id: totrans-283
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 浏览到**全局权限**页面。
+- en: Select a permission you wish to assign from the **Add Permission** section.
+  id: totrans-284
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 从**添加权限**部分中选择你希望分配的权限。
+- en: Choose the group to be given the permission.
+  id: totrans-285
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 选择要授予权限的组。
+- en: Click on the **Add** button to add the assignment.
+  id: totrans-286
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击**添加**按钮以添加分配。
+- en: The **Group** drop-down list will list all the groups in Jira. It will also
+    have an extra option called **Anyone on the web**. This option refers to all users,
+    including those that are not needed to log in to access Jira. You cannot select
+    this option when granting the **Jira Users** permission, as they are required
+    to log in, and **Anyone** refers to a non-logged-in user. For a production system,
+    it is recommended to take care when granting any global permission to **Anyone**
+    (non-logged-in users), as this can lead to security and privacy concerns. For
+    example, by granting **Anyone** as the global permission for **Browse Users**,
+    anyone with access to your Jira instance will be able to get your registered users’
+    information.
+  id: totrans-287
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**组**下拉列表将列出所有的Jira组。它还会有一个额外的选项叫做**任何人都可以访问**。此选项指的是所有用户，包括那些不需要登录即可访问Jira的用户。当授予**Jira用户**权限时，无法选择此选项，因为他们需要登录，而**任何人**指的是未登录的用户。对于生产系统，建议在授予任何全局权限给**任何人**（未登录用户）时要小心，因为这可能会导致安全和隐私问题。例如，通过授予**任何人**全局权限来**浏览用户**，任何能够访问你Jira实例的用户都能获取你的注册用户信息。'
+- en: Revoking global permissions
+  id: totrans-288
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 撤销全局权限
+- en: Global permissions can also be revoked. Both Jira system administrators and
+    Jira administrators can revoke global permissions, but Jira administrators cannot
+    revoke the **Jira System Administrators** global permission.
+  id: totrans-289
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 全局权限也可以被撤销。Jira系统管理员和Jira管理员都可以撤销全局权限，但Jira管理员不能撤销**Jira系统管理员**全局权限。
+- en: 'Perform the following steps to delete a global permission from a group:'
+  id: totrans-290
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 执行以下步骤以从组中删除全局权限：
+- en: Browse to the **Global Permissions** page.
+  id: totrans-291
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 浏览到**全局权限**页面。
+- en: Click on the **Delete** link for the group you wish to remove from the global
+    permission.
+  id: totrans-292
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击要从全局权限中移除的组的**删除**链接。
+- en: Click on the **Delete** button to revoke the global permission for the group.
+  id: totrans-293
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击**删除**按钮以撤销该组的全局权限。
+- en: Jira has built-in validation rules to prevent you from accidentally locking
+    yourself out by mistakenly removing the wrong permissions. For example, Jira will
+    not let you delete the last group from **Jira System Administrators** global permissions,
+    as doing so effectively prevent you from adding yourself back (since only Jira
+    system administrators can assign/revoke global permissions).
+  id: totrans-294
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Jira内置了验证规则，以防止你因错误地删除了错误的权限而意外锁定自己。例如，Jira不会让你删除**Jira系统管理员**全局权限中的最后一个组，因为这样做会实质上阻止你将自己重新添加回去（因为只有Jira系统管理员可以分配/撤销全局权限）。
+- en: Project permissions
+  id: totrans-295
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 项目权限
+- en: 'The next level of permission control is project permissions. Jira defines a
+    list of permissions that covers the different operations a user can perform within
+    the context of a project, such as creating new issues and adding comments to issues.
+    Unlike application access and global permissions, which only allow you to use
+    groups, project permissions have a lot more options when it comes to determining
+    who to grant permissions to. A list of project permissions is set out here:'
+  id: totrans-296
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 权限控制的下一个层级是项目权限。Jira定义了一系列权限，涵盖了用户在项目上下文中可以执行的不同操作，比如创建新问题和向问题添加评论。与仅允许使用组的应用访问和全局权限不同，项目权限在决定将权限授予谁时有更多选项。以下是项目权限的列表：
+- en: '**Application access**: This is for any user that has been granted access to
+    the application'
+  id: totrans-297
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**应用访问**：这是指任何被授予访问该应用的用户'
+- en: '**Reporter**: This is the user who submitted the issue'
+  id: totrans-298
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**报告人**：这是提交该问题的用户'
+- en: '**Group**: These are all users that belong to the specified group'
+  id: totrans-299
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**组**：这些是属于指定组的所有用户'
+- en: '**Single user**: This is any user in Jira'
+  id: totrans-300
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**单一用户**：这是指Jira中的任何用户'
+- en: '**Project lead**: This is the lead of the project'
+  id: totrans-301
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**项目负责人**：这是项目的负责人'
+- en: '**Current assignee**: This is the user currently assigned to the issue'
+  id: totrans-302
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**当前分配人**：这是当前被分配给该问题的用户'
+- en: '**Project role**: These are all users that belong to the specified role'
+  id: totrans-303
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**项目角色**：这些是属于指定角色的所有用户'
+- en: '**User custom field value**: This user is specified in a custom field of the
+    type **User Custom Field**'
+  id: totrans-304
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**用户自定义字段值**：这个用户是指定在**用户自定义字段**类型中的'
+- en: '**Group custom field value**: These are users within a specified group in a
+    **Group Custom Field** type'
+  id: totrans-305
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**组自定义字段值**：这些是指定在**组自定义字段**类型中的组内用户'
+- en: Since you will likely have many projects, Jira lets you define your permissions
+    once and apply them to multiple projects, with permission schemes.
+  id: totrans-306
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于你可能有许多项目，Jira允许你一次性定义权限并通过权限方案将其应用于多个项目。
+- en: Permission schemes
+  id: totrans-307
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 权限方案
+- en: Permission schemes are collections of associations between permissions and users.
+    Each permission scheme is a reusable, self-contained entity that can be applied
+    to one or more projects.
+  id: totrans-308
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 权限方案是权限与用户之间关联的集合。每个权限方案是一个可重用的、自包含的实体，可以应用于一个或多个项目。
+- en: As with most schemes, permission schemes are applied on the project level. This
+    allows you to apply fine-grained permissions for each project. Just as with project
+    roles, Jira administrators oversee the creation and configuration of permission
+    schemes, and it is up to each project’s administrator to choose and decide which
+    permission scheme to use. This way, administrators are encouraged to design their
+    permissions so that they can be reused based on the common needs of their organization.
+    With meaningful scheme names and descriptions, project administrators will be
+    able to choose a scheme that will fit their needs the best instead of requesting
+    a new set of permissions to be set up for each project.
+  id: totrans-309
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 与大多数方案一样，权限方案在项目级别应用。这使你可以为每个项目应用细粒度的权限。就像项目角色一样，Jira管理员负责权限方案的创建和配置，每个项目的管理员可以选择并决定使用哪个权限方案。这样，管理员会被鼓励设计出可以根据组织的共同需求重用的权限方案。通过有意义的方案名称和描述，项目管理员将能够选择最符合其需求的方案，而不是为每个项目请求设置一套新的权限。
+- en: There is, however, some level of freedom for project administrators when it
+    comes to configuration workflows and screens used by their own projects, as we
+    have already seen in earlier chapters covering those two topics. If the permission
+    scheme has the **Extended project administration** option enabled, then any projects
+    using that permission scheme will allow project administrators to make changes
+    without having to rely on a Jira administrator.
+  id: totrans-310
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，对于项目管理员而言，在配置工作流和屏幕时有一定的自由度，正如我们在之前的章节中已经看到的那样。如果权限方案启用了**扩展项目管理**选项，那么任何使用该权限方案的项目都允许项目管理员在无需依赖
+    Jira 管理员的情况下进行更改。
+- en: We will first look at how Jira administrators manage and configure permission
+    schemes and then at how project administrators can apply them in their projects.
+  id: totrans-311
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将首先了解 Jira 管理员如何管理和配置权限方案，然后了解项目管理员如何在项目中应用这些方案。
+- en: 'Perform the following steps to start managing permission schemes:'
+  id: totrans-312
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 执行以下步骤开始管理权限方案：
+- en: Browse to the Jira administration console.
+  id: totrans-313
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 浏览到 Jira 管理控制台。
+- en: 'Select the **Issues** tab and then the **Permission schemes** option to bring
+    up the **Permission schemes** page, as illustrated in the following screenshot:'
+  id: totrans-314
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 选择**问题**标签，然后选择**权限方案**选项，打开**权限方案**页面，如下图所示：
+- en: '![Figure 9.15 – Permission schemes page'
+  id: totrans-315
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '![图 9.15 – 权限方案页面'
+- en: '](img/Figure_9.15_B18644.jpg)'
+  id: totrans-316
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '](img/Figure_9.15_B18644.jpg)'
+- en: Figure 9.15 – Permission schemes page
+  id: totrans-317
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 9.15 – 权限方案页面
+- en: On the **Permission schemes** page, you will see a list of all the permission
+    schemes. From there, you will be able to create new schemes and edit and delete
+    existing schemes, as well as configure each scheme’s permission settings.
+  id: totrans-318
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在**权限方案**页面，你将看到所有权限方案的列表。从这里，你可以创建新方案、编辑和删除现有方案，以及配置每个方案的权限设置。
+- en: Configuring permission schemes
+  id: totrans-319
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 配置权限方案
+- en: Unlike other schemes, such as workflow schemes, Jira does not create a project-specific
+    permission scheme when you create a new project, but rather, it uses a preconfigured
+    scheme called the **Default Permission Scheme**. If your project needs to have
+    its permission configuration changed, you can either update the permissions in
+    the Default Permission Scheme (which would apply the changes to all other projects
+    using it) or create a separate permission scheme for your new project.
+  id: totrans-320
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 与其他方案（如工作流方案）不同，Jira 在创建新项目时不会自动创建项目特定的权限方案，而是使用一个名为**默认权限方案**的预配置方案。如果你的项目需要更改其权限配置，你可以更新默认权限方案中的权限（这将应用于所有使用该方案的其他项目），或者为新项目创建一个单独的权限方案。
+- en: Since there are many permissions in a permission scheme, it is often much easier
+    and more efficient to clone the Default Permission Scheme or another existing
+    permission scheme as the base for your new permission scheme and then make the
+    necessary changes, instead of creating a new scheme from scratch.
+  id: totrans-321
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于权限方案中包含许多权限，通常将“默认权限方案”或其他现有权限方案克隆为新权限方案的基础，然后进行必要的修改，比从头开始创建一个新方案更为简单和高效。
+- en: 'Once you have decided to either update an existing permission scheme or have
+    created a new permission scheme, you can then proceed to update its permission
+    settings, as follows:'
+  id: totrans-322
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦你决定更新现有的权限方案或创建一个新的权限方案，你就可以继续更新其权限设置，步骤如下：
+- en: Browse to the **Permission Schemes** page.
+  id: totrans-323
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 浏览到**权限方案**页面。
+- en: Click on the **Permissions** link for a permissions scheme you wish to configure.
+  id: totrans-324
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击你希望配置的权限方案的**权限**链接。
+- en: 'On this page, you will be presented with a list of project-level permissions,
+    along with short descriptions for each, and the users, groups, and roles that
+    are linked to each of the permissions. This is your one-page view of permission
+    settings for projects, and you will also be able to control who will have access
+    to each of the actions defined by the permissions listed. You can see an overview
+    of this page in the following screenshot:'
+  id: totrans-325
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在此页面，你将看到一份项目级权限的列表，并附有每个权限的简短描述，以及与每个权限关联的用户、组和角色。这是项目权限设置的单页视图，你还可以控制谁能够访问由列出权限定义的每项操作。你可以在以下截图中看到此页面的概览：
+- en: '![Figure 9.16 – Configuring a permission scheme'
+  id: totrans-326
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '![图 9.16 – 配置权限方案'
+- en: '](img/Figure_9.16_B18644.jpg)'
+  id: totrans-327
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '](img/Figure_9.16_B18644.jpg)'
+- en: Figure 9.16 – Configuring a permission scheme
+  id: totrans-328
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 9.16 – 配置权限方案
+- en: 'To grant permissions to one or more users, do the following:'
+  id: totrans-329
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要授予一个或多个用户权限，请执行以下操作：
+- en: Click on the **Grant permission** button or the **Edit** link for a specific
+    permission.
+  id: totrans-330
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击**授予权限**按钮或某个特定权限的**编辑**链接。
+- en: Select permissions you wish to grant to the user.
+  id: totrans-331
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 选择您希望授予用户的权限。
+- en: Select who to grant the permission to. Click on the **Show more** link to see
+    more options.
+  id: totrans-332
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 选择要授予权限的对象。点击**显示更多**链接以查看更多选项。
+- en: 'Click on the **Grant** button to grant the selected permission, as illustrated
+    in the following screenshot:'
+  id: totrans-333
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击**授予**按钮以授予所选权限，如下图所示：
+- en: '![Figure 9.17 – Grant permission page'
+  id: totrans-334
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '![图 9.17 – 授予权限页面'
+- en: '](img/Figure_9.17_B18644.jpg)'
+  id: totrans-335
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '](img/Figure_9.17_B18644.jpg)'
+- en: Figure 9.17 – Grant permission page
+  id: totrans-336
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 9.17 – 授予权限页面
+- en: As you can see, unlike global permissions, which only allow you to grant permissions
+    to groups, there are many options available. While each option has its uses, you
+    need to consider how you can maintain your permissions in the long run. For example,
+    although it might be tempting to use the **Single user** option to quickly grant
+    permission to a user who is requesting access quickly, this can easily become
+    a maintenance nightmare if not careful. The most common options are **Group**
+    and **Project Role**. Out of these two, **Project Role** is often the most flexible
+    option, as it allows each project’s administrator to add users or groups to roles
+    with permissions. Groups, on the other hand, often require either the Jira administrator
+    or, in the case of LDAP, another IT administrator to add and remove users from
+    individual groups.
+  id: totrans-337
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如您所见，与只能将权限授予组的全局权限不同，这里有许多可用选项。虽然每个选项都有其用途，但您需要考虑如何长期维护权限。例如，虽然使用**单一用户**选项来快速授予请求访问的用户权限可能很有诱惑力，但如果不小心，这很容易成为维护上的噩梦。最常见的选项是**组**和**项目角色**。在这两者中，**项目角色**通常是最灵活的选项，因为它允许每个项目的管理员将用户或组添加到具有权限的角色中。另一方面，组通常需要Jira管理员或在LDAP情况下，其他IT管理员来添加或移除用户。
+- en: Other options, such as **User custom field value**, are a very flexible way
+    to allow end users to control access. For example, you could have a custom field
+    called **Editors**, and set up your **Edit Issues** permission to allow only users
+    specified in the custom field to be able to edit issues.
+  id: totrans-338
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 其他选项，如**用户自定义字段值**，是一种非常灵活的方式，允许最终用户控制访问。例如，您可以创建一个名为**编辑者**的自定义字段，并设置您的**编辑问题**权限，使得只有在该自定义字段中指定的用户才能编辑问题。
+- en: The custom field does not have to be placed on the usual view/edit screens for
+    the permission to be applied. For example, you can have the custom field appear
+    on a workflow transition called **Submit to Manager**. Once the user has selected
+    the manager, only the manager will have permission to edit the issue.
+  id: totrans-339
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 自定义字段不必出现在权限应用的常规视图/编辑屏幕上。例如，您可以让自定义字段出现在名为**提交给经理**的工作流过渡中。一旦用户选择了经理，只有该经理才有权限编辑该问题。
+- en: 'Revoking permissions is as simple as granting them. Here’s how you can do this:'
+  id: totrans-340
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 撤销权限和授予权限一样简单。以下是操作方法：
+- en: Browse to the **Edit Permissions** page for the permission scheme you wish to
+    configure.
+  id: totrans-341
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 浏览到您希望配置的权限方案的**编辑权限**页面。
+- en: Click on the **Remove** link for the permission you wish to revoke, and click
+    on **Remove** again.
+  id: totrans-342
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击您希望撤销权限的**移除**链接，再次点击**移除**。
+- en: When you are trying to revoke permissions to prevent users from gaining access
+    to certain things, you need to make sure no other options are granted the same
+    permission that might be applied to the same user. For example, if you have both
+    the **Single user** and **Group** options set for the **Browse Projects** permission,
+    then you will need to make sure that you revoke the **Single user** option and
+    also make sure that the user does not belong to the **Group** option selected
+    so that you do not have a loophole in your permission settings.
+  id: totrans-343
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当您尝试撤销权限以防止用户访问某些内容时，您需要确保没有其他选项授予相同权限，且可能适用于同一用户。例如，如果您为**浏览项目**权限设置了**单一用户**和**组**选项，则需要确保撤销**单一用户**选项，并且确保该用户不属于已选择的**组**选项，这样就不会在权限设置中留下漏洞。
+- en: Applying a permission scheme
+  id: totrans-344
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 应用权限方案
+- en: 'Once you have your permission scheme configured, you can apply the scheme to
+    your projects. There really is nothing special involved here. Permission schemes
+    are applied to projects in the same way as notification and workflow schemes.
+    Follow these next steps for instructions on how to configure these:'
+  id: totrans-345
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦配置了权限方案，您可以将该方案应用到您的项目中。这里其实没有什么特殊的操作。权限方案的应用方式与通知和工作流方案类似。请按照以下步骤获取如何配置这些方案的说明：
+- en: Browse to the project administration page you want to apply the permission scheme
+    to.
+  id: totrans-346
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 浏览到您想要应用权限方案的项目管理页面。
+- en: Select the **Permissions** option from the left-hand panel.
+  id: totrans-347
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 从左侧面板中选择**权限**选项。
+- en: Select the **Use a different scheme** option from the **Actions** menu.
+  id: totrans-348
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 从**操作**菜单中选择**使用不同的方案**选项。
+- en: Select a permission scheme you want to use.
+  id: totrans-349
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 选择您想要使用的权限方案。
+- en: Click on the **Associate** button.
+  id: totrans-350
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击**关联**按钮。
+- en: Permission schemes are applied immediately, and you will be able to see the
+    permissions take effect.
+  id: totrans-351
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 权限方案会立即应用，您将能够看到权限生效。
+- en: Issue security
+  id: totrans-352
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 问题安全
+- en: We have seen how Jira administrators can restrict general access to Jira with
+    application access and global permissions, and what project administrators can
+    do to place permissions on individual projects through permission schemes. Jira
+    allows you to take things to yet another level to allow ordinary users to set
+    the security level on issues they are working with, with issue security.
+  id: totrans-353
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们已经看到Jira管理员如何通过应用程序访问和全局权限限制Jira的通用访问，以及项目管理员如何通过权限方案为各个项目设置权限。Jira还允许您进一步提升权限，允许普通用户设置他们所处理问题的安全级别，这就是问题安全。
+- en: Issue security allows users to set view permissions (but not edit them) on issues
+    by selecting one of the preconfigured issue security levels. This is a very powerful
+    feature, as it allows the delegation of security control to the end users and
+    empowers them (to a limited degree) to decide who can view their issues.
+  id: totrans-354
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 问题安全允许用户通过选择预配置的一个问题安全级别来设置问题的查看权限（但不能编辑权限）。这是一个非常强大的功能，因为它允许将安全控制的权限委托给最终用户，并在一定程度上赋予他们决定谁可以查看他们的问题的权力。
+- en: On a high level, issue security works in a similar way to permission schemes.
+    The Jira administrator will start by creating and configuring a set of issue security
+    schemes with security levels set. Project administrators can then apply one of
+    these schemes to their projects, which allows users (with the **Set Issue Security**
+    project permission) to select security levels within the scheme and apply them
+    to individual issues.
+  id: totrans-355
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 从高层次上看，问题安全的工作方式与权限方案类似。Jira管理员将首先创建并配置一组带有安全级别的安全方案。然后，项目管理员可以将这些方案应用到他们的项目中，这使得用户（拥有**设置问题安全**项目权限的用户）能够在方案内选择安全级别，并将其应用到各个问题上。
+- en: Issue security schemes
+  id: totrans-356
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 问题安全方案
+- en: As explained earlier, the starting point of using issue security is issue security
+    schemes. It is the responsibility of the Jira administrator to create and design
+    security levels so that they can be reused as much as possible.
+  id: totrans-357
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如前所述，使用问题安全的起点是问题安全方案。Jira管理员有责任创建和设计安全级别，以便尽可能多地重复使用。
+- en: 'Jira does not come with any predefined issue security schemes, so you will
+    have to create your own from scratch. Perform the following steps to create a
+    new issue security scheme:'
+  id: totrans-358
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Jira没有预定义的问题安全方案，因此您需要从零开始创建自己的方案。请按照以下步骤创建一个新的问题安全方案：
+- en: Browse to the Jira administration console.
+  id: totrans-359
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 浏览到Jira管理控制台。
+- en: 'Select the **Issues** tab and then the **Issue security schemes** option to
+    bring up the **Issue Security Schemes** page, as illustrated in the following
+    screenshot:'
+  id: totrans-360
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 选择**问题**标签，然后选择**问题安全方案**选项，打开**问题安全方案**页面，如下图所示：
+- en: '![Figure 9.18 – Issue Security Schemes page'
+  id: totrans-361
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '![图 9.18 – 问题安全方案页面](img/Figure_9.18_B18644.jpg)'
+- en: '](img/Figure_9.18_B18644.jpg)'
+  id: totrans-362
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '](img/Figure_9.18_B18644.jpg)'
+- en: Figure 9.18 – Issue Security Schemes page
+  id: totrans-363
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 9.18 – 问题安全方案页面
+- en: Click on the **Add issue security scheme** link.
+  id: totrans-364
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击**添加问题安全方案**链接。
+- en: Enter a name and description for the new scheme.
+  id: totrans-365
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 输入新方案的名称和描述。
+- en: Click on the **Add** button to create a new issue security scheme.
+  id: totrans-366
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击**添加**按钮以创建一个新的问题安全方案。
+- en: Since an issue security scheme does not define a set of security levels like
+    a permission scheme, you will need to create your own set of security levels right
+    after you create your scheme.
+  id: totrans-367
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于问题安全方案不像权限方案那样定义一组安全级别，因此在创建方案后，您需要创建自己的安全级别集。
+- en: Configuring an issue security scheme
+  id: totrans-368
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 配置问题安全方案
+- en: Unlike permission schemes, which have a list of predefined permissions, with
+    issue security schemes, you need to define all the security levels you need. Each
+    security level represents the level of security that users need to meet before
+    Jira will allow them access to the requested issue. Note that even though they
+    are called security levels, it does not mean that there are any forms of hierarchy
+    among the set of levels you create.
+  id: totrans-369
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 不同于权限方案具有预定义的权限列表，在问题安全方案中，您需要定义所有需要的安全级别。每个安全级别表示用户需要满足的安全要求，才能让Jira允许他们访问请求的问题。请注意，尽管它们被称为安全级别，但这并不意味着在您创建的级别之间存在任何形式的层级关系。
+- en: 'To add new security levels to your issue security scheme, proceed as follows:'
+  id: totrans-370
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要将新的安全级别添加到问题安全方案中，请按以下步骤操作：
+- en: Browse to the **Issue Security Schemes** page.
+  id: totrans-371
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 浏览到**问题安全方案**页面。
+- en: 'Click on the **Security Levels** link for the issue security scheme you wish
+    to configure. This will take you to the page shown here:'
+  id: totrans-372
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击您希望配置的安全方案的**安全级别**链接。这将带您到如下所示的页面：
+- en: '![Figure 9.19 – Issue security levels'
+  id: totrans-373
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '![图 9.19 – 问题安全级别'
+- en: '](img/Figure_9.19_B18644.jpg)'
+  id: totrans-374
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '](img/Figure_9.19_B18644.jpg)'
+- en: Figure 9.19 – Issue security levels
+  id: totrans-375
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 9.19 – 问题安全级别
+- en: Enter a name and description for the new security level in the **Add Security
+    Level** section.
+  id: totrans-376
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在**添加安全级别**部分输入新安全级别的名称和描述。
+- en: Click on the **Add Security Level** button.
+  id: totrans-377
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击**添加安全级别**按钮。
+- en: You can add as many security levels as you like in a scheme. One good practice
+    is to design and name your security levels based on your team or project roles
+    (for example, **Developers only**).
+  id: totrans-378
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 您可以在方案中添加任意数量的安全级别。一种好的做法是根据团队或项目角色设计并命名您的安全级别（例如，**仅限开发人员**）。
+- en: 'As with permission schemes, once you have your security levels in place, you
+    will need to assign who will have access to each of the security levels. Users
+    assigned to the security level will have permission to view issues with the specified
+    security level. Proceed as follows:'
+  id: totrans-379
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 与权限方案一样，一旦设置了安全级别，您需要分配谁可以访问每个安全级别。分配到安全级别的用户将有权限查看具有指定安全级别的问题。按以下步骤操作：
+- en: Click on the **Add** link for the security level you wish to assign users to.
+  id: totrans-380
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击您希望分配用户的安全级别的**添加**链接。
+- en: Select an option you wish to assign to the security level.
+  id: totrans-381
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 选择您希望分配给安全级别的选项。
+- en: Click on the **Add** button to assign users.
+  id: totrans-382
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击**添加**按钮以分配用户。
+- en: Just as with permission schemes, it is better to use options such as **Project
+    Role and Group**, as they are more flexible and do not tie the security level
+    to individual users, allowing you to control permission with options such as group
+    association.
+  id: totrans-383
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 与权限方案一样，最好使用**项目角色和组**等选项，因为它们更加灵活，不会将安全级别与个别用户绑定，允许您通过诸如组关联等选项来控制权限。
+- en: Setting a default security level
+  id: totrans-384
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 设置默认安全级别
+- en: 'You can set a security level to be the default option for issues if none is
+    selected. This can be a useful feature for projects with a high-security requirement
+    to prevent users (with the **Set Issue Security** permission) from forgetting
+    to assign a security level for their issues. Follow these next steps:'
+  id: totrans-385
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果未选择安全级别，您可以设置一个默认的安全级别。这对于需要高安全性要求的项目非常有用，可以防止用户（拥有**设置问题安全**权限的用户）忘记为其问题分配安全级别。按以下步骤操作：
+- en: Browse to the **Edit Issues Security Levels** page.
+  id: totrans-386
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 浏览到**编辑问题安全级别**页面。
+- en: Click on the **Default** link for the security level you want to set as default.
+  id: totrans-387
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击您希望设置为默认的安全级别的**默认**链接。
+- en: Once set as default, the security level will have **Default** next to its name.
+    Now, when the user creates an issue and does not assign a security level, the
+    default security level will be applied.
+  id: totrans-388
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 设置为默认后，安全级别名称旁将显示**默认**。现在，当用户创建问题且未分配安全级别时，将自动应用默认安全级别。
+- en: Applying an issue security scheme
+  id: totrans-389
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 应用问题安全方案
+- en: 'Just as with permission schemes, project administrators apply issue security
+    schemes to projects. Applying an issue security scheme is similar to applying
+    a workflow scheme, where there is an intermediate migration step involved. This
+    is to ensure that existing issues with set issue security levels can be successfully
+    migrated over to the new security levels in the scheme. Proceed as follows:'
+  id: totrans-390
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 与权限方案一样，项目管理员将问题安全方案应用到项目中。应用问题安全方案类似于应用工作流方案，涉及一个中间迁移步骤。这是为了确保已设置安全级别的问题能够顺利迁移到方案中的新安全级别。按以下步骤操作：
+- en: Browse to the project administration page you want to apply the workflow scheme
+    to.
+  id: totrans-391
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 浏览到你想要应用工作流方案的项目管理页面。
+- en: Select the **Issue Security** option from the left-hand panel.
+  id: totrans-392
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 从左侧面板中选择**问题安全**选项。
+- en: Select the **Use a different scheme** option from the **Actions** menu.
+  id: totrans-393
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 从**操作**菜单中选择**使用不同方案**选项。
+- en: Select a permission scheme to use.
+  id: totrans-394
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 选择要使用的权限方案。
+- en: Click on the **Next** button to move to *step 2* of the process.
+  id: totrans-395
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击**下一步**按钮进入流程的*第二步*。
+- en: Select a new security level to apply to an existing issue that may be affected
+    by this change.
+  id: totrans-396
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 选择一个新的安全级别，应用到可能受此更改影响的现有问题。
+- en: Click on the **Associate** button to apply the new issue security scheme.
+  id: totrans-397
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击**关联**按钮以应用新的问题安全方案。
+- en: Now that we have seen how to apply permissions to projects and issues, let’s
+    take a look at how you can troubleshoot problems you might encounter due to incorrect
+    permission settings.
+  id: totrans-398
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经看到如何将权限应用到项目和问题，让我们来看看如何排查由于权限设置错误而可能遇到的问题。
+- en: Troubleshooting permissions
+  id: totrans-399
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 权限故障排除
+- en: Just as with notifications, it can be very frustrating to troubleshoot permission
+    settings. To help with this, Jira also provides a **Permission Helper** tool to
+    assist administrators with pinpointing settings that prevent users from accessing
+    certain features.
+  id: totrans-400
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 就像通知一样，故障排除权限设置可能非常令人沮丧。为了帮助解决这个问题，Jira 还提供了一个**权限助手**工具，帮助管理员定位阻止用户访问某些功能的设置。
+- en: 'The **Permission Helper** tool works similarly to the **Notification Helper**
+    tool. Here’s how you can use it:'
+  id: totrans-401
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**权限助手**工具的工作方式类似于**通知助手**工具。以下是使用方法：'
+- en: Browse to the Jira administration console.
+  id: totrans-402
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 浏览到 Jira 管理控制台。
+- en: Select the **System** tab and then the **Permission helper** option.
+  id: totrans-403
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 选择**系统**选项卡，然后选择**权限助手**选项。
+- en: Specify the user having access problems in the **User** field.
+  id: totrans-404
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在**用户**字段中指定遇到访问问题的用户。
+- en: Specify the issue to test with.
+  id: totrans-405
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 指定要测试的问题。
+- en: Select the permission the user does not have (for example, **Edit Issues**).
+  id: totrans-406
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 选择用户没有的权限（例如，**编辑问题**）。
+- en: Click on the **Submit** button.
+  id: totrans-407
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击**提交**按钮。
+- en: 'You can see an overview of the process in the following screenshot:'
+  id: totrans-408
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以在以下截图中查看整个流程的概述：
+- en: '![Figure 9.20 – Permission helper page'
+  id: totrans-409
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '![图 9.20 – 权限助手页面'
+- en: '](img/Figure_9.20_B18644.jpg)'
+  id: totrans-410
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '](img/Figure_9.20_B18644.jpg)'
+- en: Figure 9.20 – Permission helper page
+  id: totrans-411
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 9.20 – 权限助手页面
+- en: As shown in the preceding screenshot, the user `DEMO-4` because she does not
+    have the required **Internal Only** issue security level defined by the issue
+    security scheme used by the project and is not in the **Developers** project role
+    needed by the permission scheme.
+  id: totrans-412
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如前面截图所示，用户`DEMO-4`由于没有被项目使用的**问题安全方案**定义的所需**仅限内部**问题安全级别，并且不在权限方案所需的**开发人员**项目角色中，因此无法访问。
+- en: Workflow security
+  id: totrans-413
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 工作流安全
+- en: The security features we have looked at so far are not applied to workflows.
+    When securing your Jira setup, you will also need to consider who will be allowed
+    to perform certain workflow transitions—for example, only users in the **Managers**
+    group will be able to execute the **Authorize** transition on issues. For you
+    to enforce security on workflows, you will have to set it on each transition you
+    have by adding workflow conditions. Refer to [*Chapter 7*](B18644_07.xhtml#_idTextAnchor187),
+    *Workflow and Business Process*, which discusses workflows and conditions in more
+    detail.
+  id: totrans-414
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们到目前为止查看的安全功能不适用于工作流。在配置 Jira 安全性时，你还需要考虑谁可以执行某些工作流转换——例如，只有**经理**组的用户才能在问题上执行**授权**转换。为了在工作流中强制执行安全性，你必须在每个转换上设置安全性，通过添加工作流条件来实现。请参阅[*第
+    7 章*](B18644_07.xhtml#_idTextAnchor187)，*工作流和业务流程*，该章节详细讨论了工作流和条件。
+- en: Password policy
+  id: totrans-415
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 密码策略
+- en: 'In most cases, unless you are using an SSO solution, you will be using a username
+    and password combination to log in to Jira, so you will want users to choose strong
+    passwords that cannot be easily guessed. If your organization is already enforcing
+    a password policy and centrally managing authentication, such as via LDAP, then
+    all you have to do is integrate Jira with it and you are good to go. However,
+    if this is not the case, Jira comes with the ability for you to set a password
+    policy to make sure your users do not choose simple, guessable passwords. To set
+    up a password policy for Jira, perform the following steps:'
+  id: totrans-416
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在大多数情况下，除非您使用 SSO 解决方案，否则您将使用用户名和密码组合登录 Jira，因此您希望用户选择强密码，以防止密码被轻易猜到。如果您的组织已经强制实施密码策略并集中管理认证（例如通过
+    LDAP），那么您只需将 Jira 与其集成即可顺利运行。但是，如果情况并非如此，Jira 提供了设置密码策略的功能，以确保用户不会选择简单易猜的密码。要为
+    Jira 设置密码策略，请执行以下步骤：
+- en: Browse to the Jira administration console.
+  id: totrans-417
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 进入 Jira 管理控制台。
+- en: Select the **System** tab and then **Password Policy**.
+  id: totrans-418
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 选择**系统**标签，然后选择**密码策略**。
+- en: Choose from one of the available options, with the **Custom** option allowing
+    you to specify your own requirements.
+  id: totrans-419
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 从可用选项中选择，**自定义**选项允许您指定自己的要求。
+- en: Click on the **Update** button to apply the policy.
+  id: totrans-420
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击**更新**按钮以应用策略。
+- en: 'After you have applied your new password policy, existing user passwords will
+    not be affected. However, if users try to change their own password, or if you
+    are creating a new user account, Jira will make sure the password meets the requirements
+    of the policy and will display an error message if the requirements are not met,
+    as illustrated in the following screenshot:'
+  id: totrans-421
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在您应用了新的密码策略后，现有用户的密码不会受到影响。但是，如果用户尝试更改自己的密码，或者您正在创建一个新用户帐户，Jira 将确保密码符合策略要求，如果不符合要求，则会显示错误消息，如下截图所示：
+- en: '![Figure 9.21 – Password policy'
+  id: totrans-422
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '![图 9.21 – 密码策略'
+- en: '](img/Figure_9.21_B18644.jpg)'
+  id: totrans-423
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '](img/Figure_9.21_B18644.jpg)'
+- en: Figure 9.21 – Password policy
+  id: totrans-424
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 9.21 – 密码策略
+- en: Next, let’s look at how to enable SSO with SAML.
+  id: totrans-425
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来，我们来看如何启用 SSO 和 SAML。
+- en: Enabling SSO with SAML
+  id: totrans-426
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 启用 SSO 和 SAML
+- en: If your organization uses SAML for SSO, you can also configure Jira to participate
+    in the SAML session so that your users will not need to log in to Jira every time
+    they try to access the application. Also, if you have configured your SAML **identity
+    provider** (**IdP**) with **two-factor authentication** (**2FA**) for additional
+    security, Jira gets that benefit as well.
+  id: totrans-427
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果您的组织使用 SAML 进行 SSO，您还可以配置 Jira 参与 SAML 会话，这样您的用户就无需每次访问应用程序时都登录 Jira。此外，如果您已将**身份提供者**（**IdP**）与**双因素认证**（**2FA**）进行配置以增强安全性，Jira
+    也将享受该安全性。
+- en: The one pre-requisite for enabling SAML SSO with Jira is that you must run Jira
+    on **Hypertext Transfer Protocol Secure** (**HTTPS**). If you have not configured
+    your Jira setup to do so, please refer to [*Chapter 1*](B18644_01.xhtml#_idTextAnchor014),
+    *Getting Started with Jira Data Center*, for details.
+  id: totrans-428
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 启用 SAML SSO 的前提条件是您必须在**安全超文本传输协议**（**HTTPS**）下运行 Jira。如果您尚未配置 Jira 设置，请参考[*第
+    1 章*](B18644_01.xhtml#_idTextAnchor014)，*Jira 数据中心入门*，以获取详细信息。
+- en: 'To enable SAML SSO with Jira, proceed as follows:'
+  id: totrans-429
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要启用 SAML SSO 和 Jira，请按以下步骤操作：
+- en: Browse to the Jira administration console.
+  id: totrans-430
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 进入 Jira 管理控制台。
+- en: 'Select the **System** tab and then **Authentication methods**, which will take
+    you to the page shown here:'
+  id: totrans-431
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 选择**系统**标签，然后选择**认证方法**，这将带您到如下所示的页面：
+- en: '![Figure 9.22 – Authentication methods page'
+  id: totrans-432
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '![图 9.22 – 认证方法页面'
+- en: '](img/Figure_9.22_B18644.jpg)'
+  id: totrans-433
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '](img/Figure_9.22_B18644.jpg)'
+- en: Figure 9.22 – Authentication methods page
+  id: totrans-434
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 9.22 – 认证方法页面
+- en: Click on the **Add configuration** button.
+  id: totrans-435
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击**添加配置**按钮。
+- en: Enter a name for the configuration. It is a good practice to name it after the
+    IdP and authentication method—for example, **Okta SAML**.
+  id: totrans-436
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 输入配置的名称。最好将其命名为 IdP 和认证方法的名称，例如，**Okta SAML**。
+- en: Select the authentication method—in this case, **SAML**.
+  id: totrans-437
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 选择认证方法——在本例中，选择**SAML**。
+- en: After you have selected **SAML** as the authentication method, you will need
+    to enter the details for your SAML configuration. The SAML configurations will
+    be provided by your SAML-compliant IdP, such as Microsoft Azure AD, Okta, and
+    Ping Identity. You will also need to provide **Assertion Consumer Service URL**
+    and **Audience URL (Entity ID)** values to your IdP in order to register Jira
+    as an application or **service provider** (**SP**). Lastly, you need to enter
+    a value for **Login button text**. This is what will be displayed to the end users
+    when they try to log in, so it should be something meaningful—for example, **Log
+    in with SSO**. After you have entered all your configurations, click on the **Save
+    configuration** button.
+  id: totrans-438
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 选择**SAML**作为认证方法后，您需要输入SAML配置的详细信息。SAML配置将由您的SAML兼容IdP提供，例如Microsoft Azure AD、Okta和Ping
+    Identity。您还需要向IdP提供**断言消费者服务URL**和**受众URL（实体ID）**，以将Jira注册为应用程序或**服务提供商（SP）**。最后，您需要输入**登录按钮文本**的值。此文本将在最终用户尝试登录时显示，因此应该具有一定的意义——例如，**使用SSO登录**。输入完所有配置后，点击**保存配置**按钮。
+- en: 'Once you have added your SAML configuration, it will be shown as a login option
+    on the login page, as illustrated in the following screenshot:'
+  id: totrans-439
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦添加了您的SAML配置，它将作为登录选项显示在登录页面上，如以下截图所示：
+- en: '![Figure 9.23 – SAML authentication'
+  id: totrans-440
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '![图9.23 – SAML认证'
+- en: '](img/Figure_9.23_B18644.jpg)'
+  id: totrans-441
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '](img/Figure_9.23_B18644.jpg)'
+- en: Figure 9.23 – SAML authentication
+  id: totrans-442
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图9.23 – SAML认证
+- en: Important note
+  id: totrans-443
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 重要提示
+- en: There is an option to hide the username and password option by toggling the
+    **Show on login page** option for the default username and password authentication
+    method.
+  id: totrans-444
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通过切换默认用户名和密码认证方法的**在登录页面显示**选项，您可以隐藏用户名和密码选项。
+- en: Enabling JIT provisioning
+  id: totrans-445
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 启用JIT配置
+- en: With SAML SSO, you can automatically create user accounts for new users when
+    they first log in to Jira via SSO. Any subsequent logins will also automatically
+    update the user account’s details, keeping the user’s Jira account and account
+    in the IdP in sync.
+  id: totrans-446
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用SAML SSO时，当新用户第一次通过SSO登录Jira时，可以自动为其创建用户账户。任何后续的登录都会自动更新用户账户的详细信息，保持Jira账户和IdP中的账户同步。
+- en: 'This is useful when you only want to create accounts on demand or are not synchronizing
+    with your user directory such as LDAP to pull all your accounts into Jira. To
+    enable JIT provisioning, proceed as follows:'
+  id: totrans-447
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当您只想按需创建账户，或者不与用户目录（如LDAP）同步以将所有账户拉入Jira时，这将非常有用。要启用JIT配置，请按以下步骤操作：
+- en: Select the **Edit** option for your SAML authentication method.
+  id: totrans-448
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 选择**编辑**选项以配置您的SAML认证方法。
+- en: Toggle on the **JIT provisioning** option.
+  id: totrans-449
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 开启**JIT（即时）配置**选项。
+- en: Enter the SAML attributes that should be used for the user’s display name, email,
+    and groups. These are provided by your SAML IdP.
+  id: totrans-450
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 输入应用于用户显示名称、电子邮件和组的SAML属性。这些属性由您的SAML IdP提供。
+- en: Save your configuration.
+  id: totrans-451
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 保存您的配置。
+- en: Once JIT provisioning is enabled, when a new user logs in to Jira via SAML SSO,
+    Jira will create a new account based on the attributes provided by the SAML response.
+    The account will also be updated every time the user logs in.
+  id: totrans-452
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦启用JIT配置，当新用户通过SAML SSO登录到Jira时，Jira将根据SAML响应中提供的属性创建一个新账户。每次用户登录时，账户信息也将被更新。
+- en: Auditing system changes
+  id: totrans-453
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 审计系统变更
+- en: 'When you have more than one Jira administrator managing your Jira instance,
+    it can often lead to a *too many cooks* situation, or you simply would like to
+    keep track of who made which changes and when. Jira tracks and records many changes
+    to many of the key system features and provides you with a full audit log of all
+    the activities that are going on. This helps you diagnose problems and also perform
+    a security audit in your system. To access the audit log, follow these steps:'
+  id: totrans-454
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当有多个Jira管理员管理您的Jira实例时，往往会出现*人多嘴杂*的情况，或者您仅仅想追踪是谁做了哪些更改以及何时做的。Jira会追踪和记录许多关键系统功能的更改，并提供完整的审计日志，记录所有正在进行的活动。这有助于您诊断问题，并且进行系统安全审计。要访问审计日志，请按照以下步骤操作：
+- en: Browse to the Jira administration console.
+  id: totrans-455
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 浏览到Jira管理控制台。
+- en: Select the **System** tab and then the **Audit log** option.
+  id: totrans-456
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 选择**系统**标签，然后选择**审计日志**选项。
+- en: 'As we can see from the following screenshot, the audit log keeps a track of
+    changes such as custom fields, project roles, and more. You can filter the audit
+    log based on the date and type, the person who made the change, and other options
+    to help you narrow down the search:'
+  id: totrans-457
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 从下面的截图中可以看到，审计日志会跟踪诸如自定义字段、项目角色等更改。你可以根据日期、类型、做出更改的人以及其他选项来筛选审计日志，以帮助你缩小搜索范围：
+- en: '![Figure 9.24 – Audit log'
+  id: totrans-458
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '![图 9.24 – 审计日志](img/Figure_9.24_B18644.jpg)'
+- en: '](img/Figure_9.24_B18644.jpg)'
+  id: totrans-459
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '](img/Figure_9.24_B18644.jpg)'
+- en: Figure 9.24 – Audit log
+  id: totrans-460
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 9.24 – 审计日志
+- en: 'You can also configure how and what Jira should track for the audit log. By
+    going to the **Settings** option, you can select how long you want to keep the
+    audit logs and what you want to track, as shown here:'
+  id: totrans-461
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你还可以配置 Jira 应该如何跟踪审计日志的内容。通过访问**设置**选项，你可以选择希望保留审计日志的时长以及希望跟踪的内容，如下所示：
+- en: '![Figure 9.25 – Audit log settings'
+  id: totrans-462
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '![图 9.25 – 审计日志设置](img/Figure_9.25_B18644.jpg)'
+- en: '](img/Figure_9.25_B18644.jpg)'
+  id: totrans-463
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '](img/Figure_9.25_B18644.jpg)'
+- en: Figure 9.25 – Audit log settings
+  id: totrans-464
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 9.25 – 审计日志设置
+- en: By default, Jira tracks all the items under the **Coverage** heading at a base
+    level. If you want Jira to track more details for a particular item, simply change
+    the **Coverage level** option to either **Advanced** or **Full**.
+  id: totrans-465
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 默认情况下，Jira 会跟踪所有在**覆盖范围**标题下的项目。如果你希望 Jira 跟踪某个特定项目的更多详细信息，只需将**覆盖级别**选项更改为**高级**或**完整**。
+- en: The HR project
+  id: totrans-466
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 人力资源项目
+- en: In the previous chapters, you configured your Jira to capture data with customized
+    screens and fields and processed the captured data through workflows. What you
+    need to do now is secure the data you have gathered to make sure that only authorized
+    users can access and manipulate issues.
+  id: totrans-467
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在前面的章节中，你已经配置了 Jira 以通过自定义的屏幕和字段来捕获数据，并通过工作流处理捕获的数据。现在你需要做的是确保你收集的数据的安全性，确保只有授权用户才能访问和操作问题。
+- en: Since your HR project is used by the internal team, what you really need to
+    do is put enough permissions around your issues to ensure that the data they hold
+    does not get modified by other users by mistake. This allows us to mitigate human
+    errors by handling access accordingly.
+  id: totrans-468
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于你的人力资源项目是由内部团队使用的，你真正需要做的是为你的问题设置足够的权限，以确保它们包含的数据不会被其他用户错误修改。这可以通过相应的访问控制来减少人为错误的发生。
+- en: 'To achieve this, you need to have the following requirements:'
+  id: totrans-469
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要实现此目标，你需要具备以下要求：
+- en: You should know who belongs to the HR team
+  id: totrans-470
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 你应该知道谁属于人力资源团队
+- en: Restrict issue assign operations to only the user that has submitted the ticket
+    and members of the HR team
+  id: totrans-471
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 限制问题分配操作，仅限于提交工单的用户和人力资源团队成员
+- en: Do not allow issues to be moved to other projects
+  id: totrans-472
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 不允许将问题移至其他项目
+- en: Limit the assignment of tickets to the reporter and members of the HR team
+  id: totrans-473
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 限制工单的分配，仅限于报告人和人力资源团队成员
+- en: Of course, there are a lot of other permissions we can apply here; the preceding
+    four requirements will be a good starting point for us to build on further.
+  id: totrans-474
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当然，这里还有许多其他权限可以应用；上述四个要求将是我们进一步构建的良好起点。
+- en: Setting up groups
+  id: totrans-475
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 设置组
+- en: 'The first thing you need to do is to set up a new group for your help desk’s
+    team members. This will help you distinguish normal Jira users from your help
+    desk staff. Follow these steps to do this:'
+  id: totrans-476
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 首先，你需要为帮助台团队成员设置一个新组。这有助于你区分普通的 Jira 用户和帮助台工作人员。按照以下步骤操作：
+- en: Browse to the **Group Browser** page.
+  id: totrans-477
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 浏览到**组浏览器**页面。
+- en: Name the new group `hr-team` in the **Add Group** section.
+  id: totrans-478
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在**添加组**部分将新组命名为 `hr-team`。
+- en: Click on the **Add group** button.
+  id: totrans-479
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击**添加组**按钮。
+- en: You can create more groups for other teams and departments for your scenario
+    here. Since anyone can log a ticket in your project, there is no need to make
+    that distinction.
+  id: totrans-480
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你还可以在此处为其他团队和部门创建更多组。由于任何人都可以在你的项目中提交工单，因此无需做出这个区分。
+- en: Setting up user group association
+  id: totrans-481
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 设置用户组关联
+- en: 'With your group set up, you can start assigning members of your team to the
+    new group, as follows:'
+  id: totrans-482
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 设置好你的团队后，你可以开始将团队成员分配到新组，步骤如下：
+- en: Browse to the **Group Browser** page.
+  id: totrans-483
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 浏览到**组浏览器**页面。
+- en: Click on the `hr-team` group.
+  id: totrans-484
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击 `hr-team` 组。
+- en: Select users with the user picker or simply type in usernames separated by a
+    comma. This time, let’s add our `admin` user to the group.
+  id: totrans-485
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用用户选择器选择用户，或直接输入用户名并用逗号分隔。这次，我们将 `admin` 用户添加到该组。
+- en: Click on the **Add selected users** button.
+  id: totrans-486
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击**添加选定用户**按钮。
+- en: Setting up permission schemes
+  id: totrans-487
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 设置权限方案
+- en: 'The next step is to set up permissions for our HR project, so you need to have
+    your own permission scheme. As always, it is more efficient to copy the **Default
+    Permission Scheme** as a baseline and make your modifications on top, since we
+    are only making a few changes here. Proceed as follows:'
+  id: totrans-488
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 下一步是为我们的HR项目设置权限，因此你需要有自己的权限方案。像往常一样，最有效的做法是将**默认权限方案**复制作为基础，并在此基础上进行修改，因为我们这里只做一些小修改。按照以下步骤进行：
+- en: Browse to the **Permission Schemes** page.
+  id: totrans-489
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 浏览到**权限方案**页面。
+- en: Click on the **Copy** link for **Default Permission Scheme**.
+  id: totrans-490
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击**复制**链接以复制**默认权限方案**。
+- en: Rename the new permission scheme **HR Permission Scheme**.
+  id: totrans-491
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 将新的权限方案重命名为**HR权限方案**。
+- en: Change the description to `Permission scheme designed for HR team projects`.
+  id: totrans-492
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 将描述更改为`为HR团队项目设计的权限方案`。
+- en: Now that we have our base permission scheme set up, we can start on the fun
+    part—interpreting requirements and implementing them in Jira.
+  id: totrans-493
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经设置好了基本的权限方案，可以开始进入有趣的部分——解读需求并在Jira中实施。
+- en: Setting up permissions
+  id: totrans-494
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 设置权限
+- en: 'The first thing you need to do when you start setting up permissions is to
+    try to match existing Jira permissions to your requirements. In our case, we want
+    to do the following:'
+  id: totrans-495
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 设置权限时，你需要做的第一件事是尽量将现有的Jira权限与需求匹配。在我们的案例中，我们希望做到以下几点：
+- en: Restrict who can assign issues
+  id: totrans-496
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 限制谁可以分配问题
+- en: Restrict who can be assigned to an issue
+  id: totrans-497
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 限制谁可以被分配到问题上
+- en: Disable issues from being moved
+  id: totrans-498
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 禁止问题被移动
+- en: Looking at the existing list of Jira permissions, you can see that we can match
+    the requirements with the **Assign Issues**, **Assignable Users**, and **Move
+    Issues** permissions, respectively.
+  id: totrans-499
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 查看现有的Jira权限列表，你可以看到我们可以通过分别使用**分配问题**、**可分配用户**和**移动问题**权限来满足要求。
+- en: Once you work out which permissions you need to modify, the next step is to
+    work out a strategy to specify users that should be given the permissions. Restricting
+    the **Move Issue** options is simple. All you have to do is remove the permission
+    for everyone, thus effectively preventing anyone from moving issues in your project.
+  id: totrans-500
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦确定了需要修改的权限，下一步就是制定策略来指定应该授予权限的用户。限制**移动问题**选项非常简单。你只需要移除所有人的权限，从而有效地阻止任何人移动你项目中的问题。
+- en: 'The next two requirements are similar, as they are both granted to the reporter
+    (the user that submitted the ticket) and our new `hr-team` group. Follow the next
+    steps:'
+  id: totrans-501
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来的两个要求是相似的，因为它们都授予了报告人（提交工单的用户）和我们新的`hr-team`组。按照以下步骤操作：
+- en: Browse to the **Permission Schemes** page.
+  id: totrans-502
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 浏览到**权限方案**页面。
+- en: Click on the **Permissions** link for **HR Permission Scheme**.
+  id: totrans-503
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击**权限**链接以访问**HR权限方案**。
+- en: Click on the **Grant permission** button.
+  id: totrans-504
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击**授予权限**按钮。
+- en: Select both the **Assign Issues** and **Assignable Users** permissions.
+  id: totrans-505
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 选择**分配问题**和**可分配用户**权限。
+- en: Select the **Reporter** option.
+  id: totrans-506
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 选择**报告人**选项。
+- en: Click on the **Add** button.
+  id: totrans-507
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击**添加**按钮。
+- en: Repeat the steps and grant the `hr-team` group both permissions.
+  id: totrans-508
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 重复上述步骤，并授予`hr-team`组这两项权限。
+- en: 'By selecting both permissions in one go, you have quickly granted multiple
+    permissions to users. Now, you need to remove all users granted with the **Move
+    Issues** permission. There should be only one granted at the moment, **Any logged
+    in user**, but if you have more than one, you will need to remove all of them.
+    Here’s how you can do this:'
+  id: totrans-509
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通过一次性选择这两项权限，你快速授予了多个权限给用户。现在，你需要移除所有被授予**移动问题**权限的用户。目前应该只有一个用户被授予该权限，**任何登录用户**，但如果你有多个用户被授予权限，你将需要移除所有这些用户。以下是操作步骤：
+- en: Browse to the **Permission Schemes** page.
+  id: totrans-510
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 浏览到**权限方案**页面。
+- en: Click on the **Permissions** link for **HR Permission Scheme**.
+  id: totrans-511
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击**权限**链接以访问**HR权限方案**。
+- en: Click on the **Remove** link for all users that have been granted the **Move
+    Issues** permission.
+  id: totrans-512
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击**移除**链接，移除所有已被授予**移动问题**权限的用户。
+- en: That’s it! You’ve addressed all your permission requirements with just a few
+    clicks.
+  id: totrans-513
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 就这样！你只需要几次点击就完成了所有权限要求。
+- en: Putting it together
+  id: totrans-514
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 将它们整合在一起
+- en: 'Last, but not least, you can now put on your project administrator’s hat and
+    apply your new permission scheme to your HR project, as follows:'
+  id: totrans-515
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后但同样重要的是，现在你可以戴上项目管理员的帽子，将新的权限方案应用到HR项目中，方法如下：
+- en: Browse to the project administration page for your HR project.
+  id: totrans-516
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 浏览到你的HR项目的项目管理页面。
+- en: Click on the **Permissions** option and select your new HR permission scheme.
+  id: totrans-517
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击**权限**选项并选择你的新HR权限方案。
+- en: Click on the **Associate** button.
+  id: totrans-518
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击**关联**按钮。
+- en: By associating the permission scheme with your project, you have applied all
+    your permission changes. Now, if you create a new issue or edit an existing issue,
+    you will notice that the list of assignees will no longer include all the users
+    in Jira.
+  id: totrans-519
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通过将权限方案与项目关联，您已应用了所有权限更改。现在，如果您创建一个新问题或编辑现有问题，您会注意到分配人列表不再包括 Jira 中的所有用户。
+- en: Summary
+  id: totrans-520
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 概述
+- en: In this chapter, we looked at how we can integrate Jira with user repositories,
+    such as LDAP, through user directories, and Jira’s user management options with
+    groups and project roles. Though they are very similar, groups are global, while
+    project roles are specific to each project. We also covered how Jira hierarchically
+    manages permissions. We discussed each permission level in detail and how to manage
+    them. By using the different permission control options Jira provides, we design
+    our permission controls to better manage user access to projects and issues.
+  id: totrans-521
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们探讨了如何通过用户目录将 Jira 与用户仓库（如 LDAP）集成，并介绍了 Jira 的用户管理选项，包括组和项目角色。尽管它们非常相似，组是全局性的，而项目角色是特定于每个项目的。我们还介绍了
+    Jira 如何分层管理权限。我们详细讨论了每个权限级别以及如何管理它们。通过使用 Jira 提供的不同权限控制选项，我们设计了我们的权限控制方案，以更好地管理用户对项目和问题的访问。
+- en: In the next chapter, we will take a different approach and start looking at
+    another powerful use for Jira—getting your data out through reporting.
+  id: totrans-522
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一章中，我们将采取不同的方法，开始探讨 Jira 的另一个强大用途——通过报告提取数据。

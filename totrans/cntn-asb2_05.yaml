@@ -1,0 +1,1389 @@
+- en: Containers at Scale with Kubernetes
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用 Kubernetes 扩展容器规模
+- en: Kubernetes is by far one of the most popular open source projects to take the
+    IT world by storm. It seems like almost everywhere you go, every blog you read,
+    or news article you encounter, tells the tale of how Kubernetes has revolutionized
+    the way DevOps and IT infrastructure are handled. With good reason, Kubernetes
+    has truly taken a firm grasp of the IT landscape and introduced new concepts and
+    ways of looking at infrastructure like no other platform before it. You might
+    be in the camp of IT professionals who have heard of Kubernetes, but you have
+    no idea what it is or how it can really benefit your infrastructure. Or, you could
+    be where most of us are today, in the process of containerizing applications and
+    workloads but don’t want to dabble in the additional complexity and murky water
+    of Kubernetes just yet. Finally, you could be one of those lucky DevOps engineers
+    or IT administrators who have successfully adopted containers and Kubernetes and
+    is able to really reap the reliability and flexibility that Kubernetes provides.
+  id: totrans-1
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Kubernetes 无疑是迄今为止最受欢迎的开源项目之一，它席卷了整个 IT 世界。似乎无论你走到哪里，阅读的每一篇博客或遇到的每一篇新闻文章，都在讲述
+    Kubernetes 如何彻底改变了 DevOps 和 IT 基础设施的管理方式。 Kubernetes 确实牢牢抓住了 IT 领域的主导地位，并引入了全新的概念和看待基础设施的方式，这些是其他平台所无法比拟的。你可能属于那些听说过
+    Kubernetes 但对它是什么以及如何真正为你的基础设施带来益处一无所知的 IT 专业人员。或者，你可能正像我们大多数人一样，正在进行应用程序和工作负载的容器化，但暂时不想涉及
+    Kubernetes 额外的复杂性和模糊的领域。最后，你可能是那些幸运的 DevOps 工程师或 IT 管理员中的一员，已经成功采用了容器和 Kubernetes，并能够真正享受到
+    Kubernetes 所提供的可靠性和灵活性。
+- en: The purpose of this chapter is to provide an overview of what Kubernetes is,
+    how it works (at a high level), and how to deploy your containerized applications
+    to Kubernetes clusters using Ansible Container. Before we dive in too deep, you
+    might ask, what is Kubernetes exactly? Kubernetes is a platform developed by Google
+    for deploying, managing, configuring, and orchestrating containers at both small
+    and large scales. Kubernetes was started as an internal project at Google, known
+    as **Borg**, for managing the automatic deployment and scaling of containers across
+    the vast Google infrastructure footprint. Based on some real-world lessons learned
+    with Borg, Google released Kubernetes as an open source project so that other
+    users and organizations could leverage the same flexibility to deploy containers
+    at scale. Using Kubernetes, one can easily run containerized applications across
+    multiple clustered nodes, automatically maintaining the desired number of replicas,
+    service endpoints, and loadbalancing across the cluster.
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章的目的是提供一个关于 Kubernetes 的概述，介绍它是什么，它是如何工作的（从高层次看），以及如何使用 Ansible Container 将你的容器化应用部署到
+    Kubernetes 集群。在我们深入之前，你可能会问，Kubernetes 到底是什么？Kubernetes 是由 Google 开发的平台，用于在小规模和大规模上部署、管理、配置和编排容器。Kubernetes
+    最初是 Google 的一个内部项目，名为 **Borg**，用于管理跨 Google 广泛基础设施的容器的自动部署和扩展。基于在 Borg 上获得的一些现实世界的经验，Google
+    将 Kubernetes 作为开源项目发布，让其他用户和组织能够利用同样的灵活性来大规模部署容器。通过 Kubernetes，用户可以轻松地在多个集群节点之间运行容器化应用程序，自动维护所需数量的副本、服务端点以及在集群中的负载均衡。
+- en: Throughout this book, we have looked closely at how we can use the Ansible Container
+    platform to quickly and reliably build container images using Ansible Playbooks
+    and run those containers on our local workstation. Since we now understand quite
+    well how to build version control and configuration management inside of our containers,
+    the next step is using configuration management to declare how our applications
+    should run outside of our container. This is the gap that Kubernetes fills. And,
+    yes, it is just as awesome as it sounds. Ready? Let’s get started.
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本书中，我们详细探讨了如何使用 Ansible 容器平台，通过 Ansible Playbooks 快速且可靠地构建容器镜像，并在本地工作站上运行这些容器。由于我们现在已经很好地理解了如何在容器内构建版本控制和配置管理，接下来的步骤是使用配置管理声明我们的应用程序应该如何在容器外部运行。这就是
+    Kubernetes 填补的空白。没错，它确实像听起来那样令人惊叹。准备好了吗？让我们开始吧。
+- en: 'Throughout this chapter, we will cover:'
+  id: totrans-4
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章中，我们将涵盖：
+- en: A brief overview of Kubernetes
+  id: totrans-5
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Kubernetes 简介
+- en: Getting started using Google Cloud Engine
+  id: totrans-6
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用 Google Cloud Engine 入门
+- en: Deploying an application in Kubernetes using kubectl
+  id: totrans-7
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用 kubectl 在 Kubernetes 中部署应用程序
+- en: Writing a Kubernetes manifest
+  id: totrans-8
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 编写 Kubernetes 清单
+- en: Deploying and updating containers in Kubernetes
+  id: totrans-9
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在 Kubernetes 中部署和更新容器
+- en: A brief overview of Kubernetes
+  id: totrans-10
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Kubernetes 简介
+- en: Admittedly, when one thinks of Kubernetes, one might immediately think of the
+    complexity and multifaceted hierarchy of concepts associated with Kubernetes and
+    be quick to think that this chapter will be over the reader's head in terms of
+    how to understand and apply these concepts. Most users who have unsuccessfully
+    attempted to venture into Kubernetes in the past may still feel the scars and
+    be wary about moving forward with Kubernetes. Container automation using Kubernetes
+    can quickly get quite complicated, but the rewards for learning and using Kubernetes
+    are vast. Before we go forward, I must stress to the reader that Kubernetes is
+    quite a complex platform. Attempting to explain in detail every feature and function
+    of Kubernetes would take an entire book, if not longer. In fact, there has been
+    a multitude of books written on container orchestration using Kubernetes that
+    I would direct the reader's attention to should you would want to dig deeper into
+    your understanding of these concepts. The point of this chapter is to introduce
+    the reader to a basic understanding of what Kubernetes is, the primary functionality,
+    and how the reader can quickly get started using it to optimize the deployment
+    of containers. There is a lot more to be said about Kubernetes than the scope
+    of this book has the time to go into, so if the reader wants to learn more about
+    Kubernetes, I would strongly suggest checking out the documentation on the Kubernetes
+    website at [https://kubernetes.io/docs](https://kubernetes.io/docs).
+  id: totrans-11
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 诚然，当人们想到Kubernetes时，可能立刻会想到与Kubernetes相关的复杂性和多层次的概念体系，并迅速认为本章内容可能会让读者感到困惑，难以理解和应用这些概念。大多数曾经尝试进入Kubernetes却未成功的用户，可能仍然心有余悸，对继续学习Kubernetes持谨慎态度。使用Kubernetes进行容器自动化可能会迅速变得相当复杂，但学习和使用Kubernetes的回报是巨大的。在继续之前，我必须强调，Kubernetes是一个相当复杂的平台。尝试详细解释Kubernetes的每个特性和功能，可能需要一本完整的书，甚至更长的时间。事实上，已有许多关于使用Kubernetes进行容器编排的书籍，我建议读者可以参考这些书籍，以便深入理解这些概念。本章的重点是让读者对Kubernetes有一个基本的了解，掌握其主要功能，并能够快速入门，利用Kubernetes优化容器的部署。本书的篇幅无法涵盖关于Kubernetes的所有内容，因此如果读者想要进一步学习Kubernetes，我强烈建议访问Kubernetes官网的文档：[https://kubernetes.io/docs](https://kubernetes.io/docs)。
+- en: Throughout the book so far, we have looked at using Ansible Container to build
+    Docker containers that run on our local workstation or a remote server that has
+    Docker installed and running on it. Docker provides us with a usable container
+    runtime environment that has the functionality to start containers, expose ports,
+    mount system volumes, and provide basic network connectivity using a bridged interface
+    and IP Network Address Translation, or NAT. Docker does a very good job at running
+    containers but does not provide the user with very much functionality beyond that.
+    What happens when your container crashes? What do you do when you need to scale
+    out your application to more nodes, racks, or data centers? What happens when
+    a container on one host needs to access resources in a container running on a
+    separate host? This is the exact type of use case that tools such as Kubernetes
+    address. Think of Kubernetes essentially as a service that uses a scheduler and
+    API to proactively monitor the current state of containers running in Docker (or
+    another container runtime) and continuously attempts to drive it towards the desired
+    state specified by the operator. For example, say you have a 4-node Kubernetes
+    cluster running 3 instances of your application container. If the operator (you)
+    instructs the Kubernetes API that you want the fourth instance of your application
+    container running, Kubernetes will identify that you currently have three running
+    instances and immediately schedule a fourth container to be created. Using a bin-packing
+    algorithm, Kubernetes intrinsically understands that containers should be scheduled
+    to run on separate hosts to provide high availability and make the most use of
+    cluster resources. In the example above, the fourth container scheduled will most
+    likely be scheduled to run on the fourth cluster host, provided no outstanding
+    configuration has been put into place that would prevent new container workloads
+    from running on that host. Furthermore, if one of the hosts in our cluster goes
+    down, Kubernetes is intelligent enough to recognize the disparity and reschedule
+    those workloads to run on different hosts until the downed node has been restored.
+  id: totrans-12
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 到目前为止，本书中我们已经介绍了如何使用 Ansible Container 来构建在本地工作站或安装并运行 Docker 的远程服务器上运行的 Docker
+    容器。Docker 为我们提供了一个可用的容器运行时环境，具备启动容器、暴露端口、挂载系统卷并通过桥接接口和 IP 网络地址转换（NAT）提供基本网络连接的功能。Docker
+    在运行容器方面做得非常好，但未能为用户提供太多其他功能。那么当你的容器崩溃时怎么办？当你需要将应用程序扩展到更多节点、机架或数据中心时该怎么办？当一个主机上的容器需要访问另一个主机上运行的容器的资源时又该怎么办？这正是像
+    Kubernetes 这样的工具所解决的实际问题。可以把 Kubernetes 看作是一个使用调度器和 API 来主动监控在 Docker（或其他容器运行时）中运行的容器当前状态，并持续努力将其引导到操作员指定的期望状态的服务。例如，假设你有一个
+    4 节点的 Kubernetes 集群，运行着 3 个应用容器实例。如果操作员（你）指示 Kubernetes API 启动应用容器的第四个实例，Kubernetes
+    会识别到你当前只有三个正在运行的实例，并立即调度创建第四个容器。Kubernetes 本质上通过使用 bin-packing 算法来理解，容器应当调度在不同主机上运行，以提供高可用性并最大限度地利用集群资源。在上面的例子中，调度的第四个容器很可能会被调度到第四个集群主机上，前提是没有任何阻止新容器工作负载在该主机上运行的配置被应用。此外，如果集群中的某个主机出现故障，Kubernetes
+    足够智能，能够识别这种差异，并重新调度这些工作负载到不同的主机上，直到故障节点被恢复。
+- en: In addition to the flexible configuration management capabilities Kubernetes
+    provides, it is also known for its unique ability to provide resilient networking
+    resources to containers such as service discovery, DNS resolution, and load balancing
+    across containers. In other words, Kubernetes has the innate ability to provide
+    internal DNS resolution based on the services running in the cluster. When new
+    pods are added to the service, Kubernetes will automatically see the new containers
+    and update the DNS endpoints so that the new containers can be served by calling
+    the internal service domain name within the cluster. This ensures that other containers
+    can talk directly to other containerized services by calling internal domain names
+    and cluster IP addresses within the Kubernetes overlay network.
+  id: totrans-13
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 除了 Kubernetes 提供的灵活配置管理功能外，它还以其独特的能力而闻名，能够为容器提供弹性的网络资源，如服务发现、DNS 解析和容器间的负载均衡。换句话说，Kubernetes
+    具有基于集群中运行的服务提供内部 DNS 解析的天生能力。当新 pod 被添加到服务中时，Kubernetes 会自动识别新的容器并更新 DNS 端点，以便新容器可以通过调用集群内的内部服务域名来提供服务。这确保了其他容器可以通过调用
+    Kubernetes 覆盖网络内的内部域名和集群 IP 地址，直接与其他容器化服务进行通信。
+- en: 'Kubernetes incorporates many new concepts that might be somewhat foreign if
+    you come from a background of working with static container deployments. Throughout
+    this chapter, these concepts will be referred to as we learn more about Kubernetes,
+    so it is important to have a grasp of what these terms mean as we go forward:'
+  id: totrans-14
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Kubernetes 引入了许多新概念，如果你来自静态容器部署的背景，这些概念可能会有些陌生。在本章中，我们会不断提及这些概念，因此理解这些术语的含义对于我们继续学习
+    Kubernetes 非常重要：
+- en: '**Pod**: a pod represents one or more application containers running in the
+    Kubernetes cluster. By default, a pod definition names at least one container
+    that the user wishes to run in the cluster, including any additional environment
+    variables, command or entrypoint configuration the user wants the pod to run with.
+    If the pod includes more than one container definition, all containers running
+    in the pod share the pod network and storage resources. For example, you could
+    run a pod that consisted of a web server container as well a caching server. From
+    the perspective of the pod, the web server might run on the localhost port 80,
+    and the cache would likewise run on localhost port `11211`. From the perspective
+    of Kubernetes, the pod itself would have a single IP address internal to the cluster
+    the services would be exposed on, but in reality, would consist of two entirely
+    separate containers.'
+  id: totrans-15
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**Pod**：Pod 表示 Kubernetes 集群中运行的一个或多个应用容器。默认情况下，pod 定义至少会指定一个用户希望在集群中运行的容器，包括用户希望容器运行时的额外环境变量、命令或入口点配置。如果
+    pod 包含多个容器定义，那么 pod 中运行的所有容器共享 pod 的网络和存储资源。例如，你可以运行一个包含 Web 服务器容器和缓存服务器容器的 pod。从
+    pod 的角度来看，Web 服务器可能运行在 localhost 的 80 端口，而缓存也运行在 localhost 的 `11211` 端口。从 Kubernetes
+    的角度来看，pod 本身会有一个在集群内部的单一 IP 地址，服务会通过这个 IP 地址进行暴露，但实际上，这个 pod 会包含两个完全独立的容器。'
+- en: '**Deployment**: A deployment is an object in Kubernetes that defines pods which
+    will be running in the cluster. Deployments consist of a variety of parameters,
+    such as the name of the container image, volume mounts, and the number of replicas
+    to run. In order to delete pods from a Kubernetes cluster, the deployment must
+    be deleted. If you simply attempt to delete pods, you will see that Kubernetes
+    attempts to recreate those pods. This happens due to the fact that the deployment
+    object is informing the cluster that those pods should be running, and the controller
+    manager (more on this later) will attempt to bring the cluster back into the desired
+    state.'
+  id: totrans-16
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**部署**：部署是 Kubernetes 中定义将运行在集群中的 pod 的对象。部署包含各种参数，例如容器镜像的名称、卷挂载以及要运行的副本数。为了从
+    Kubernetes 集群中删除 pod，必须删除该部署。如果你只是尝试删除 pod，你会发现 Kubernetes 会尝试重新创建这些 pod。这是因为部署对象会告知集群这些
+    pod 应该运行，控制器管理器（稍后会介绍）会尝试将集群恢复到期望的状态。'
+- en: '**Labels**: Labels are key-value pairs that can be assigned to almost any object
+    in Kubernetes. Labels can be assigned to objects to organize subsets of resources
+    in the cluster. For example, if you have a cluster that runs multiple deployments
+    of the same pods, they can be labeled differently to indicate different uses.
+    Labels can even be leveraged to by the scheduler to determine where and when pods
+    should be running in across the cluster.'
+  id: totrans-17
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**标签**：标签是可以分配给 Kubernetes 中几乎任何对象的键值对。标签可以用来组织集群中资源的子集。例如，如果你有一个运行多个相同 pod
+    的集群，可以通过不同的标签来指示它们的不同用途。标签甚至可以被调度器利用，来确定在哪些时间和位置运行这些 pod。'
+- en: '**Service**:A service defines a logical subgrouping of pods (usually by a label
+    selector) and the methods by which they should be accessed by other resources
+    in the cluster. For example, you could create a service that exposes a set of
+    pods to the outside world. A selector such as a label could be used to determine
+    which pods should be exposed. Later, if pods are added or removed from the cluster,
+    Kubernetes will automatically scale the service, provided the new pods are running
+    with the same selector.'
+  id: totrans-18
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**服务**：服务定义了 pod 的逻辑子分组（通常通过标签选择器），以及它们应该如何被集群中其他资源访问。例如，你可以创建一个服务，将一组 pod
+    暴露给外部世界。可以使用标签选择器来确定哪些 pod 应该被暴露。如果之后有 pod 被添加或移除，Kubernetes 会自动扩展该服务，只要新 pod
+    使用相同的选择器运行。'
+- en: 'To make this functionality transparent, Kubernetes provides multiple services
+    running in the cluster that work in conjunction to ensure that the cluster and
+    applications are continuously in the desired state. Collectively, these services
+    are known as the Kubernetes Control Plane. The control plane is what allows the
+    function, manage running containers, and maintain the state of  nodes and resources
+    across the cluster. Let’s take a quick look at those now:'
+  id: totrans-19
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要使此功能透明化，Kubernetes 在集群中提供多个服务，这些服务协同工作，确保集群和应用程序持续处于所需状态。总称为 Kubernetes 控制平面。控制平面允许功能操作、管理运行的容器，并在集群中跟踪节点和资源的状态。现在让我们快速看一下这些服务：
+- en: '**KubeCTL**:`kubectl`, (pronounced kube-control), is the command-line tool
+    for interacting with Kubernetes. `Kubectl` gives you direct access to the Kubernetes
+    API to schedule new deployments, interact with Pods, expose deployments, and more.
+    The `kubectl` tool requires a set of credentials in order to access the Kubernetes
+    API.'
+  id: totrans-20
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**KubeCTL**:`kubectl`（发音为 kube-control），是与 Kubernetes 交互的命令行工具。`kubectl` 直接访问
+    Kubernetes API，用于调度新的部署、与 Pod 交互、暴露部署等。`kubectl` 工具需要一组凭据来访问 Kubernetes API。'
+- en: '**Kubernetes API Server**: The Kubernetes API server is responsible for accepting
+    input from the operator, either from the `kubectl` command-line tool or by direct
+    access to the API itself. The Kubernetes API is responsible for coordinating information
+    to the rest of the cluster to execute the desired state. It should also be noted
+    that the Kubernetes API server depends on the ETCD service to store and retrieve
+    information about the cluster nodes and services running in the cluster.'
+  id: totrans-21
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**Kubernetes API 服务器**：Kubernetes API 服务器负责接受来自操作者的输入，可以是来自 `kubectl` 命令行工具，也可以是直接访问
+    API 本身。Kubernetes API 负责协调信息到集群的其余部分，以执行期望的状态。需要注意的是，Kubernetes API 服务器依赖 ETCD
+    服务来存储和检索有关集群节点和运行中服务的信息。'
+- en: '**Kubernetes Scheduler**: The Kubernetes scheduler is responsible for scheduling
+    new workloads across the cluster nodes. Core to this responsibility is monitoring
+    the cluster to ensure that available resources are present in the cluster to run
+    pods, as well as ensuring that servers are available and reachable.'
+  id: totrans-22
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**Kubernetes 调度器**：Kubernetes 调度器负责在集群节点上调度新的工作负载。其核心责任是监控集群，以确保集群中有足够的可用资源来运行
+    Pod，同时确保服务器可用且可达。'
+- en: '**Kubernetes Controller Manager**: The controller manager is primarily concerned
+    with desired state compliance across the cluster. The controller manager service
+    interacts with the ETCD service and watches for new jobs and requests coming in
+    through the API server. When a new request is received and stored in ETCD, the
+    controller manager kicks off a new job in tandem with the scheduler to ensure
+    that the cluster is in the desired state defined by the operator. The controller
+    manager accomplishes this by using control loops to continuously monitor the state
+    of the cluster and immediately correct any discrepancies it sees between the current
+    and desired state. When you delete a Kubernetes pod and a new one automatically
+    gets created, you have the controller manager to thank for that.'
+  id: totrans-23
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**Kubernetes 控制器管理器**：控制器管理器主要关注集群中期望的状态合规性。控制器管理器服务与 ETCD 服务交互，并监视通过 API 服务器进入的新作业和请求。当接收到新请求并存储在
+    ETCD 中时，控制器管理器与调度器协作启动新作业，以确保集群处于操作者定义的期望状态。控制器管理器通过使用控制循环持续监视集群状态，并立即纠正当前状态与期望状态之间的任何差异。当您删除
+    Kubernetes Pod 并自动创建新 Pod 时，感谢控制器管理器。'
+- en: '**ETCD**: ETCD is a distributed key-value store created by CoreOS, which is
+    used to store configuration information across the Kubernetes cluster. As stated
+    previously, ETCD is primarily written to by the Kubernetes API server.'
+  id: totrans-24
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**ETCD**：ETCD 是由 CoreOS 创建的分布式键值存储，用于跨 Kubernetes 集群存储配置信息。如前所述，ETCD 主要由 Kubernetes
+    API 服务器写入。'
+- en: '**Container Networking Interface**: The Container Network Interface project,
+    or CNI, attempts to bring additional network functionality then what comes out
+    of the box with Kubernetes. CNI provides interfaces and plugin support to allow
+    various network plugins to be deployed within Kubernetes clusters. This allows
+    Kubernetes to provide overlay network connectivity to containers distributed across
+    hosts so that containers do not have to rely on the relatively limited networking
+    space provided on the Kubernetes hosts. Common third-party plugins that implement
+    the CNI standard are Flannel, Weave, and Calico.'
+  id: totrans-25
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**容器网络接口**：容器网络接口项目（CNI）旨在提供比Kubernetes自带的网络功能更多的附加功能。CNI提供接口和插件支持，允许各种网络插件在Kubernetes集群中部署。这使得Kubernetes能够为分布在不同主机上的容器提供覆盖网络连接，避免容器依赖Kubernetes主机上提供的相对有限的网络空间。常见的第三方插件，遵循CNI标准的有Flannel、Weave和Calico。'
+- en: '**Kubelet**: Kubelet is a service which runs on every host in the Kubernetes
+    cluster. The Kubelet’s primary responsibility is to leverage the underlying container
+    runtime (Docker or rkt) to create and manage pods on cluster nodes according to
+    the instructions received by the API, the scheduler, and controller manager. The
+    Kubelet service does not manage containers or pods running on the host that were
+    not created by Kubernetes. Think of the Kubelet as the translation layer between
+    Docker and Kubernetes.'
+  id: totrans-26
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**Kubelet**：Kubelet是运行在Kubernetes集群中每个主机上的服务。Kubelet的主要责任是利用底层的容器运行时（Docker或rkt）根据API、调度器和控制器管理器接收到的指令，在集群节点上创建和管理Pod。Kubelet服务不会管理在主机上运行的、非Kubernetes创建的容器或Pod。可以将Kubelet看作是Docker和Kubernetes之间的翻译层。'
+- en: Now that we have an understanding of the Kubernetes platform and how it works,
+    we can start using Kubernetes to run some of the containers we built earlier in
+    this book.
+  id: totrans-27
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经了解了Kubernetes平台及其工作原理，我们可以开始使用Kubernetes运行本书中早些时候构建的一些容器。
+- en: Getting started with the Google Cloud platform
+  id: totrans-28
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 开始使用Google Cloud平台
+- en: Throughout the many chapters in this book, we have worked primarily in a single-node
+    Vagrant lab that comes preloaded with most of the tools and utilities you need
+    to get started using Docker and Ansible Container to initialize, build, run, and
+    destroy containers through the various examples and lab exercises. Unfortunately,
+    due to the complexity of Kubernetes, it is very difficult to run a Kubernetes
+    environment within the Vagrant lab we have used so far. There are methods, but
+    they would require more computing power and explanation that extends beyond the
+    scope of this book. As a solution, I would suggest that the reader signs up for
+    a free-tier account on Google Cloud Platform to quickly spin up a three-node Kubernetes
+    cluster in only a few minutes, which can be used using `kubectl` command-line
+    agent from the single-node Vagrant lab. At the time of writing, Google is offering
+    a free $300.00 credit for signing up for a free-tier Google Cloud account. Once
+    the $300.00 allowance has expired, Google will not charge you for further use
+    without explicit authorization. In and of itself, this is more than enough to
+    run our simple cluster and cover many of the major Kubernetes concepts.
+  id: totrans-29
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本书的多个章节中，我们主要在一个单节点的Vagrant实验环境中进行操作，该环境预加载了你开始使用Docker和Ansible Container所需的大部分工具和实用程序，帮助你通过各种示例和实验来初始化、构建、运行和销毁容器。不幸的是，由于Kubernetes的复杂性，目前我们使用的Vagrant实验环境很难运行Kubernetes环境。虽然有一些方法可以实现，但它们需要更多的计算资源，并且涉及的内容超出了本书的范围。为了解决这个问题，我建议读者注册一个免费的Google
+    Cloud Platform账户，在几分钟内快速启动一个三节点Kubernetes集群，并可以通过`kubectl`命令行工具从单节点Vagrant实验环境中使用。撰写本文时，Google为注册Google
+    Cloud免费账户的用户提供$300.00的免费信用额度。信用额度用完后，Google不会在未明确授权的情况下收费。这个额度足以运行我们简单的集群，并涵盖许多Kubernetes的核心概念。
+- en: If you are unable to sign up for a Google Cloud Platform account, you can spin
+    up a local Kubernetes node on your workstation absolutely free of charge using
+    the Minikube project. Configuring Minikube to work on your laptop with proper
+    reachability for `kubectl` commands to work is fairly straightforward if you are
+    using the Virtualbox hypervisor. If you are interested, you can find more information
+    on Minikube at [https://github.com/kubernetes/minikube](https://github.com/kubernetes/minikube).
+  id: totrans-30
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你无法注册 Google Cloud Platform 账户，你可以使用 Minikube 项目在本地工作站上免费启动一个 Kubernetes 节点。使用
+    Virtualbox 虚拟化管理程序时，将 Minikube 配置为在你的笔记本上正常运行，并确保 `kubectl` 命令能正常工作相对简单。如果你有兴趣，可以在
+    [https://github.com/kubernetes/minikube](https://github.com/kubernetes/minikube)
+    上找到更多关于 Minikube 的信息。
+- en: Before we can proceed with creating our Google Cloud Kubernetes cluster, we
+    need to first sign up for an account at [https://cloud.google.com/free/](https://cloud.google.com/free/).
+  id: totrans-31
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在我们继续创建 Google Cloud Kubernetes 集群之前，我们需要先在 [https://cloud.google.com/free/](https://cloud.google.com/free/)
+    注册一个账户。
+- en: 'Once you have created a free account, it will prompt you to create a new project.
+    You can name your project anything you like, as Google Cloud will assign a unique
+    identifier to it within the console. I named mine `AC-Kubernetes-Demo`. If the
+    signup process does not prompt you to create a new project, from the main console
+    you can select: Projects and click the + sign button to create a new project:'
+  id: totrans-32
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦你创建了一个免费账户，它会提示你创建一个新项目。你可以为你的项目命名任何你喜欢的名字，因为 Google Cloud 会在控制台内为其分配一个唯一的标识符。我把我的命名为
+    `AC-Kubernetes-Demo`。如果注册过程中没有提示你创建新项目，你可以从主控制台选择“项目”并点击 + 按钮创建一个新项目：
+- en: '![](img/8d4b6058-b7cf-49f2-a96e-1ee79f563f02.png)'
+  id: totrans-33
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/8d4b6058-b7cf-49f2-a96e-1ee79f563f02.png)'
+- en: 'Once a project has been created, we can create a Kubernetes cluster using the
+    Google Container Engine. From the main console window, on the left-hand side menu,
+    select Container Engine| Container Clusters from the submenu:'
+  id: totrans-34
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 创建项目后，我们可以使用 Google Container Engine 创建 Kubernetes 集群。在主控制台窗口的左侧菜单中，选择“容器引擎
+    | 容器集群”：
+- en: '![](img/77686a44-c8ad-403c-a4ea-c73236d4a3fa.png)'
+  id: totrans-35
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/77686a44-c8ad-403c-a4ea-c73236d4a3fa.png)'
+- en: 'For the purposes of this example, and also to make the most of the free allowance
+    provided to use the Google Container Engine, we will create a three-node container
+    cluster using the minimum specifications. To do this, from the Container clusters
+    dashboard, select the button Create Cluster. This will drop you into a form that
+    will allow you to select your cluster specifications. I created mine to the following
+    specifications:'
+  id: totrans-36
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了示范的目的，同时也为了最大程度地利用 Google Container Engine 提供的免费配额，我们将使用最小规格创建一个三节点容器集群。为此，在容器集群仪表盘上，点击“创建集群”按钮。这将引导你进入一个表单，允许你选择集群的规格。我按照以下规格创建了我的集群：
+- en: 'Name: Cluster-1'
+  id: totrans-37
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 名称：Cluster-1
+- en: 'Cluster Version: 1.6.9'
+  id: totrans-38
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 集群版本：1.6.9
+- en: 1 vCPU per Node (3 total vCPUs)
+  id: totrans-39
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 每个节点 1 vCPU（总共 3 个 vCPU）
+- en: Container Optimized OS
+  id: totrans-40
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 容器优化操作系统
+- en: Disabled Automatic Upgrades
+  id: totrans-41
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 禁用自动升级
+- en: 'Once the cluster has been created, you should see a cluster that resembles
+    the following screenshot:'
+  id: totrans-42
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦集群创建完成，你应该能够看到一个类似下面截图的集群：
+- en: '![](img/6c791484-ef85-4c0b-aa30-f1c5ca681b9f.png)'
+  id: totrans-43
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/6c791484-ef85-4c0b-aa30-f1c5ca681b9f.png)'
+- en: The most recent versions of the Google Cloud interface may have changed since
+    the time of writing. You may have to set up your Kubernetes cluster using a slightly
+    different set of steps, or customization options. The default settings should
+    be sufficient to create a cluster that isn’t so expensive that it quickly burns
+    through your $300.00 allowance. Remember, the more resources you allocate to your
+    cluster, the faster you will use up your credit!
+  id: totrans-44
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 自本文编写时，Google Cloud 界面的最新版本可能已经有所变化。你可能需要使用稍有不同的步骤或自定义选项来设置你的 Kubernetes 集群。默认设置应该足以创建一个不会迅速消耗掉你
+    $300.00 配额的集群。记住，你分配给集群的资源越多，你的信用额度消耗得就越快！
+- en: 'Once our cluster has been fully deployed, we can connect to it from our Vagrant
+    development lab. To do this, we need to first initialize the `kubectl` tool using
+    the `Gcloud` interface. By default, these packages are not installed in the Vagrant
+    lab to save on time and complexity when provisioning the VM. To enable this functionality,
+    we need to modify the Vagrantfile, located in the `root` directory of the official
+    Git repository for this book. Towards the bottom of the Vagrant file, you will
+    see a section titled: `#Un-Comment this section to Install the Google Cloud SDK`.
+    Un-commenting this section should result in the following changes to the Vagrantfile:'
+  id: totrans-45
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦我们的集群完全部署完成，我们就可以从 Vagrant 开发实验室连接到它。为此，我们需要先使用 `Gcloud` 界面初始化 `kubectl` 工具。默认情况下，这些包并未安装在
+    Vagrant 实验室中，以节省创建虚拟机时的时间和复杂性。要启用此功能，我们需要修改位于本书官方 Git 仓库 `root` 目录中的 Vagrantfile。在
+    Vagrantfile 的底部，你会看到一个标题为 `#Un-Comment this section to Install the Google Cloud
+    SDK` 的部分。取消注释此部分应导致 Vagrantfile 中以下更改：
+- en: '[PRE0]'
+  id: totrans-46
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: 'After making these changes, save the file, and launch the lab VM using the
+    `vagrant up` command. If the lab VM is already running, you can use the `vagrant
+    provision` command to re-provision the running VM, or simply destroy and re-create
+    the VM as follows:'
+  id: totrans-47
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 进行这些更改后，保存文件，并使用 `vagrant up` 命令启动实验室虚拟机。如果实验室虚拟机已经在运行，你可以使用 `vagrant provision`
+    命令重新配置正在运行的虚拟机，或者按照以下步骤摧毁并重新创建虚拟机：
+- en: '[PRE1]'
+  id: totrans-48
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: Once the Vagrant lab VM has the `Google Cloud SDK` and `kubectl` installed,
+    Execute the command `gcloud init` and, when prompted to log in, enter `Y` to confirm
+    and continue logging in.
+  id: totrans-49
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦 Vagrant 实验室虚拟机安装了 `Google Cloud SDK` 和 `kubectl`，执行命令 `gcloud init`，并在提示登录时，输入
+    `Y` 以确认并继续登录。
+- en: '[PRE2]'
+  id: totrans-50
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: The `Gcloud` CLI tool should then return a hyperlink that will allow you to
+    authorize your Vagrant lab with your Google Cloud account. Once you have granted
+    permission to use your Google Cloud account, your web browser should return a
+    code you can enter on the command line to complete the authorization process.
+  id: totrans-51
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后，`Gcloud` CLI 工具会返回一个超链接，允许你使用 Google Cloud 帐户授权你的 Vagrant 实验室。授权使用 Google
+    Cloud 帐户后，你的 web 浏览器应会返回一个代码，你可以在命令行中输入该代码以完成授权过程。
+- en: 'The CLI wizard should then prompt you to select a project. The project you
+    just created should be displayed with a list of options. Select the project we
+    just created:'
+  id: totrans-52
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来，CLI 向导会提示你选择一个项目。你刚刚创建的项目应该会显示在一系列选项中。请选择我们刚刚创建的项目：
+- en: '[PRE3]'
+  id: totrans-53
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: It will then prompt you if you wish to configure the Google Compute Engine.
+    This is not a necessary step, but if you opt to perform it, you will be presented
+    with a list of geographic regions to select from. Select the one closest to you.
+    Finally, your Google Cloud account should be connected to your Vagrant lab.
+  id: totrans-54
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后，它会提示你是否希望配置 Google Compute Engine。这不是必须的步骤，但如果你选择执行此操作，你将看到一个地理区域列表供你选择。请选择离你最近的区域。最后，你的
+    Google Cloud 帐户应已成功连接到你的 Vagrant 实验室。
+- en: 'Now, we can set up connectivity to our Kubernetes cluster using the `kubectl`
+    tool. This can be accomplished by selecting the Connect button on the Container
+    Engine dashboard, next to our cluster. A screen should pop up displaying details
+    on how to connect to our cluster from our initialized Vagrant lab:'
+  id: totrans-55
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，我们可以使用 `kubectl` 工具设置与 Kubernetes 集群的连接。可以通过在容器引擎仪表盘上选择连接按钮，位于我们集群旁边来完成此操作。屏幕应会弹出，显示如何从初始化的
+    Vagrant 实验室连接到集群的详细信息：
+- en: '![](img/7520e02d-5b01-48cf-8c72-854ae11710ab.png)'
+  id: totrans-56
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/7520e02d-5b01-48cf-8c72-854ae11710ab.png)'
+- en: 'Copy and paste that command into your Vagrant environment:'
+  id: totrans-57
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 将该命令复制并粘贴到你的 Vagrant 环境中：
+- en: '[PRE4]'
+  id: totrans-58
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: This should cache the default Kubernetes credentials required for access to
+    our cluster from the `kubectl` command-line tool. `kubectl` will already be installed
+    in the Vagrant lab VM due to the changes made to the Vagrantfile earlier in the
+    chapter.
+  id: totrans-59
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这应该会缓存访问我们集群所需的默认 Kubernetes 凭证，以便从 `kubectl` 命令行工具访问。由于本章早些时候对 Vagrantfile
+    所做的更改，`kubectl` 将已经安装在 Vagrant 实验室虚拟机中。
+- en: 'Since `kubectl` is already installed, we can validate the connectivity to your
+    Kubernetes cluster by executing `kubectl cluster-info` to view details about our
+    running cluster. I censored the IP details for my cluster environment. However,
+    your output will show all the relevant addresses for the core services:'
+  id: totrans-60
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于 `kubectl` 已经安装，我们可以通过执行 `kubectl cluster-info` 来验证与 Kubernetes 集群的连接，并查看正在运行的集群的详细信息。我已经对我的集群环境中的
+    IP 细节进行了屏蔽。不过，你的输出会显示核心服务的所有相关地址：
+- en: '[PRE5]'
+  id: totrans-61
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: 'You can also run `kubectl get nodes` to see an output of the nodes the cluster
+    consists of:'
+  id: totrans-62
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你还可以运行 `kubectl get nodes` 来查看集群中的节点输出：
+- en: '[PRE6]'
+  id: totrans-63
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: Deploying an application in Kubernetes using kubectl
+  id: totrans-64
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 在 Kubernetes 中使用 kubectl 部署应用程序
+- en: KubeCTL or Kube Control is the official command line interface into the Kubernetes
+    API Server and the rest of the Kubernetes Control Plane. Using the `kubectl` tool,
+    you can view the status of pods, access cluster resources, and even exec into
+    running pods for troubleshooting purposes. In this portion of the chapter, we
+    will look at the basics of using `kubectl` to manually describe deployments, scale
+    pods, and create services to access the pods. This is beneficial to understanding
+    the basic concepts of Kubernetes to understand how Ansible Container is able to
+    automate many of these tasks using the native Kubernetes modules available to
+    it.
+  id: totrans-65
+  prefs: []
+  type: TYPE_NORMAL
+  zh: KubeCTL 或 Kube Control 是进入 Kubernetes API Server 和其他 Kubernetes 控制平面的官方命令行接口。通过使用
+    `kubectl` 工具，你可以查看 pods 的状态、访问集群资源，甚至进入运行中的 pods 进行故障排除。在本章的这一部分，我们将了解如何使用 `kubectl`
+    手动描述部署、扩展 pods 并创建服务以访问这些 pods。这对于理解 Kubernetes 的基本概念非常有益，有助于理解 Ansible Container
+    如何利用可用的本地 Kubernetes 模块自动化这些任务。
+- en: 'Let’s take a look at some of the most common `kubectl` options and syntax you
+    are likely to run into working with Kubernetes:'
+  id: totrans-66
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们来看一些在使用 Kubernetes 时最常见的 `kubectl` 选项和语法：
+- en: '`kubectl get`: `kubectl get` is used to return resources that currently exist
+    in the Kubernetes cluster. Commonly, this command is used to get a list of pods
+    currently running or nodes in the cluster. Think of this command as being similar
+    to the docker ps command. Examples of `get` commands are: `kubectl get pods` and
+    `kubectl get deployments`.'
+  id: totrans-67
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`kubectl get`：`kubectl get` 用于返回当前在 Kubernetes 集群中存在的资源。通常，该命令用于获取当前正在运行的 pods
+    或集群中的节点列表。可以将此命令视为类似于 docker ps 命令。`get` 命令的示例包括：`kubectl get pods` 和 `kubectl
+    get deployments`。'
+- en: '`kubectl describe`: `describe` is used to view more verbose details about a
+    particular cluster resource. If you want to know the latest state of a resource
+    or current details about how the resource is running you can use the describe
+    command. `describe` is very helpful since you can call out a specific cluster
+    resource, such as a pod, service, deployment, or replication controller to view
+    the details pertaining directly to that instance. `describe` is also very useful
+    for troubleshooting issues across Kubernetes environments. Examples of `describe`
+    are: `kubectl describe pod`, and `kubectl describe node`.'
+  id: totrans-68
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`kubectl describe`：`describe` 用于查看特定集群资源的详细信息。如果你想知道某个资源的最新状态或当前如何运行，可以使用 describe
+    命令。`describe` 非常有用，因为你可以指定某个集群资源，例如 pod、service、deployment 或 replication controller，来查看直接与该实例相关的详细信息。`describe`
+    也非常适用于在 Kubernetes 环境中进行故障排除。`describe` 的示例包括：`kubectl describe pod` 和 `kubectl
+    describe node`。'
+- en: '`kubectl run`: `kubectl run` functions quite similar to the `docker run` command
+    we explored earlier in this book. Run is primarily used to start a new deployment
+    and get pods up and running quickly in the Kubernetes cluster. The use case for
+    run is rather limited, since more complex deployments are better suited for the
+    `create` and `apply` commands. However, for testing or getting containers running
+    quickly and efficiently, `run` is a fantastic tool.'
+  id: totrans-69
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`kubectl run`：`kubectl run` 的功能与我们之前在本书中探讨过的 `docker run` 命令非常相似。Run 主要用于启动新的部署并快速启动
+    pods。在 Kubernetes 集群中运行。Run 的使用场景比较有限，因为更复杂的部署更适合使用 `create` 和 `apply` 命令。然而，对于测试或快速高效地启动容器，`run`
+    是一个非常棒的工具。'
+- en: '`kubectl create`: Create is used to create new cluster resources such as pods,
+    deployments, namespaces, or services. Create functions very similar to apply and
+    run, with the caveat that it is used solely for launching new objects. Using create,
+    you can use the `-f` flag to pass in a manifest file or direct URL to launch more
+    complex items than you could with `kubectl` `run`.'
+  id: totrans-70
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`kubectl create`：Create 用于创建新的集群资源，如 pods、deployments、namespaces 或 services。Create
+    的功能与 apply 和 run 非常相似，区别在于它仅用于启动新对象。使用 create 时，可以使用 `-f` 标志传入清单文件或直接的 URL，以启动比使用
+    `kubectl` `run` 更复杂的资源。'
+- en: '`kubectl apply`: Apply is often confused with `create` since the syntax and
+    functionality is so similar. Apply is used to update Kubernetes resources that
+    exist in the cluster, whereas `create` is used to create new resources. For example,
+    if you created a series of pods based on a Kubernetes manifest that you launched
+    using `kubectl` create, you could use `kubectl` apply to update any changes you
+    may have made to the manifests. The Kubernetes Control Plane will analyze the
+    manifest an attempt to make the changes necessary to bring the cluster resources
+    into the desired state.'
+  id: totrans-71
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`kubectl apply`：`apply` 常常与 `create` 混淆，因为它们的语法和功能非常相似。`apply` 用于更新 Kubernetes
+    集群中已经存在的资源，而 `create` 用于创建新的资源。例如，如果你通过 `kubectl create` 创建了一系列基于 Kubernetes 清单的
+    pod，你可以使用 `kubectl apply` 来更新你可能对清单所做的任何更改。Kubernetes 控制平面将分析清单并尝试进行必要的更改，以使集群资源达到所需的状态。'
+- en: '`kubectl delete: delete` is rather self-explanatory since the primary function
+    is used to delete objects from the Kubernetes cluster. Similar to create and apply,
+    you can use the `-f` flag to pass in a Kubernetes manifest file that was created
+    or updated previously and use that as an identifier to delete those resources
+    from the cluster.'
+  id: totrans-72
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`kubectl delete`：`delete` 的功能非常直观，主要用于从 Kubernetes 集群中删除对象。与 `create` 和 `apply`
+    类似，你可以使用 `-f` 标志传入之前创建或更新的 Kubernetes 清单文件，并用它作为标识符来从集群中删除这些资源。'
+- en: 'As you will notice, the `kubectl` uses a verb/noun syntax that is quite easy
+    to remember. Everything you do with `kubectl` will take a verb argument (get,
+    describe, create, apply), followed by the objects in kubernetes you wish to act
+    on: (pods, namespaces, nodes, and other specific resources). There are a lot more
+    command options available to you using the `kubectl` tool, but these are by far
+    some of the most common options you are likely to use when starting with Kubernetes.'
+  id: totrans-73
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如你会注意到的，`kubectl` 使用的动词/名词语法相当容易记住。你使用 `kubectl` 执行的每个操作都将带有一个动词参数（如 get、describe、create、apply），后面跟着你希望操作的
+    Kubernetes 对象（如 pod、命名空间、节点和其他特定资源）。使用 `kubectl` 工具有许多其他命令选项，但这些无疑是你在刚开始使用 Kubernetes
+    时最常用的一些选项。
+- en: To view all of the possible parameters that Kubectl takes, you can use `kubectl
+    --help or kubectl` subcommand `--help` to get help on a particular function or
+    subcommand.
+  id: totrans-74
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要查看 Kubectl 支持的所有参数，可以使用 `kubectl --help` 或 `kubectl` 子命令 `--help` 来获取特定功能或子命令的帮助。
+- en: 'Since we now have access to the Kubernetes cluster from our Vagrant lab, we
+    can use the `kubectl` tool to explore the cluster resources and objects. The first
+    command that we will look at is the `kubectl get pods` command. We will use this
+    to return a list of pods that exist in all namespaces across the cluster. Simply
+    typing in `kubectl get pods` will return nothing since Kubernetes resources are
+    separated by namespaces. Namespaces provide a logical separation of Kubernetes
+    resources based on DNS and networking rules, which allow users to have fine-grained
+    control over multiple deployments that simultaneously exist in the same cluster.
+    Currently, everything that exists in the Kubernetes cluster exists as running
+    processes critical to the functionality of the Kubernetes control plane and exist
+    in the `kube-system` namespace. To see a list of everything running in all namespaces,
+    we can use the `kubectl get pods` command, passing in the `--all-namespaces` flag:'
+  id: totrans-75
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 既然我们现在可以通过 Vagrant 实验室访问 Kubernetes 集群，我们可以使用 `kubectl` 工具来探索集群中的资源和对象。我们首先要查看的命令是
+    `kubectl get pods` 命令。我们将使用这个命令返回集群中所有命名空间下的 pod 列表。仅仅输入 `kubectl get pods` 将不会返回任何内容，因为
+    Kubernetes 资源是按命名空间隔离的。命名空间为 Kubernetes 资源提供了基于 DNS 和网络规则的逻辑分隔，使用户能够对同时存在于同一集群中的多个部署进行精细化控制。目前，Kubernetes
+    集群中存在的所有内容都作为运行中的进程，且对于 Kubernetes 控制平面的功能至关重要，位于 `kube-system` 命名空间中。要查看所有命名空间中正在运行的所有内容，我们可以使用
+    `kubectl get pods` 命令，并传入 `--all-namespaces` 标志：
+- en: '[PRE7]'
+  id: totrans-76
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE7]'
+- en: Your list may look slightly different to the output I have provided here, based
+    on the version of Kubernetes your cluster is running and any changes the Google
+    Container Engine platform may have introduced since the time of writing. However,
+    what you will see is a list of containers that are running to support the Kubernetes
+    Control Plane, such as the `kube-proxy`, `kube-dns`, and logging mechanisms using
+    `fluentd`. The default output will show the name of the pods, how long they have
+    been running (the age), the number of running replicas, and the number of times
+    the pods have restarted.
+  id: totrans-77
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你的列表可能与我这里提供的输出略有不同，具体取决于你的集群运行的Kubernetes版本，以及Google容器引擎平台自写作时以来可能引入的任何变化。然而，你会看到一列正在运行的容器，它们支持Kubernetes控制平面，如`kube-proxy`、`kube-dns`和使用`fluentd`的日志机制。默认输出将显示Pod的名称、运行时长（age）、运行副本的数量以及Pod重启的次数。
+- en: You can use the `-o wide` flag to see more details, such as the namespace and
+    overlay network IP addresses assigned to the pods. For example, `kubectl get pods
+    -o wide --all-namespaces`.
+  id: totrans-78
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以使用`-o wide`标志来查看更多细节，例如Pod的命名空间和分配给Pod的覆盖网络IP地址。例如，`kubectl get pods -o wide
+    --all-namespaces`。
+- en: 'Now that we have a firm understanding of listing pods, we can use the `kubectl
+    run` command to start our first deployment. In [Chapter 3](4b15cefb-8d9c-48b7-8927-126501886315.xhtml),
+    *Your First Ansible Container Project* we learned how to build an NGINX container
+    using a community-developed container-enabled role and uploaded it to our personal
+    Docker Hub repository. We can use the `kubectl run` command to download our container,
+    quickly create a new Kubernetes deployment called `nginx-web` and get this pod
+    running in our cluster. In order to pull the pod from our repository, we will
+    need to provide the fully qualified container name in the format: `image-repository/username/containername`.
+    Furthermore, we need to map the port to port `8000` since the community-developed
+    role leveraged that port by default. Finally, we will be launching this deployment
+    in the `default` namespace, so no additional namespace configuration needs to
+    be applied:'
+  id: totrans-79
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经牢固掌握了列出Pod的方法，我们可以使用`kubectl run`命令来启动我们的第一个部署。在[第3章](4b15cefb-8d9c-48b7-8927-126501886315.xhtml)，*你的第一个Ansible容器项目*中，我们学习了如何使用社区开发的容器角色构建一个NGINX容器，并将其上传到我们的个人Docker
+    Hub仓库。我们可以使用`kubectl run`命令来下载我们的容器，快速创建一个名为`nginx-web`的新Kubernetes部署，并让该Pod在我们的集群中运行。为了从我们的仓库拉取Pod，我们需要提供完整的容器名称，格式为：`image-repository/username/containername`。此外，我们需要将端口映射到端口`8000`，因为社区开发的角色默认使用了该端口。最后，我们将在`default`命名空间中启动这个部署，因此无需应用额外的命名空间配置：
+- en: '[PRE8]'
+  id: totrans-80
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE8]'
+- en: 'Now, if we try running `kubectl get pods`, we will see a single NGINX pod running
+    the default namespace:'
+  id: totrans-81
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，如果我们尝试运行`kubectl get pods`，我们将看到在默认命名空间下运行的单个NGINX Pod：
+- en: '[PRE9]'
+  id: totrans-82
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE9]'
+- en: 'Similarly, we can use the `kubctl get deployments` function to see what the
+    current state of deployments for the default namespace looks like:'
+  id: totrans-83
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 类似地，我们可以使用`kubectl get deployments`功能来查看默认命名空间中当前部署的状态：
+- en: '[PRE10]'
+  id: totrans-84
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE10]'
+- en: 'As you can see from the get pods and get deployments output, we have a single
+    deployment called `nginx-web`, which consists of a single pod and a single container
+    within that pod. This is in full agreement with the input we provided into the
+    Kubernetes API server using the `kubectl run` command. If we attempt to delete
+    this pod, there will be a delta between the desired state and the current status
+    of our deployment. Kubernetes will then attempt to bring the cluster back into
+    the desired state by recreating the deleted cluster resource. Let’s try doing
+    a delete on the NGINX pod we created and see what happens. Usually, this happens
+    so quickly, you will need to pay attention to the name of the pod as well as the
+    age to see that the change has occurred:'
+  id: totrans-85
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你从 `get pods` 和 `get deployments` 的输出中看到的，我们有一个名为`nginx-web`的单一部署，它由一个单独的Pod和该Pod内的一个单独容器组成。这与我们通过`kubectl
+    run`命令提供给Kubernetes API服务器的输入完全一致。如果我们尝试删除这个Pod，部署的期望状态和当前状态之间会出现差异。Kubernetes将尝试通过重新创建被删除的集群资源来使集群恢复到期望状态。让我们尝试删除我们创建的NGINX
+    Pod，看看会发生什么。通常，这个过程发生得非常迅速，你需要注意Pod的名称以及运行时长（age），才能看到变化是否已经发生：
+- en: '[PRE11]'
+  id: totrans-86
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE11]'
+- en: 'If we wanted to actually delete the pods from the cluster permanently, we could
+    use the delete command on the deployment itself, using the syntax: `kubectl delete
+    deployment nginx-web ` This would declare a new desired state, namely that we
+    no longer want the deployment `nginx-web` present and all pods in that deployment
+    should likewise be deleted.'
+  id: totrans-87
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果我们想要永久删除集群中的 pod，我们可以在部署本身上使用删除命令，语法为：`kubectl delete deployment nginx-web`。这将声明一个新的期望状态，即我们不再希望部署`nginx-web`存在，且该部署中的所有
+    pod 也应被删除。
+- en: Describing Kubernetes resources
+  id: totrans-88
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 描述 Kubernetes 资源
+- en: Kubernetes can also be used to view detailed information about the pods or other
+    objects we have instantiated in our cluster. We can do this using the `kubectl
+    describe` command. Describe can be used to see a detailed view of almost any resource
+    in our cluster.
+  id: totrans-89
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Kubernetes 也可以用来查看有关我们在集群中实例化的 pod 或其他对象的详细信息。我们可以使用 `kubectl describe` 命令来做到这一点。Describe
+    可以用来查看我们集群中几乎任何资源的详细视图。
+- en: 'Let’s take a moment to describe our NGINX pod and ensure that it is running
+    as expected:'
+  id: totrans-90
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们花点时间描述一下我们的 NGINX pod，并确保它按预期运行：
+- en: '[PRE12]'
+  id: totrans-91
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE12]'
+- en: As you can see describe displays a lot of pertinent information about our cluster,
+    including details such as the namespace the pod is running in, any labels our
+    pod is configured with, the name and location of the container image that is running,
+    as well as the most recent events that have occurred to our pod. The describe
+    output shows us a wealth of information that can help us to troubleshoot or optimize
+    the deployments and containers in our cluster.
+  id: totrans-92
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，describe 命令显示了有关我们集群的许多相关信息，包括 pod 运行的命名空间、pod 配置的标签、正在运行的容器镜像的名称和位置，以及
+    pod 上发生的最新事件。describe 输出提供了丰富的信息，有助于我们排查故障或优化集群中的部署和容器。
+- en: Exposing Kubernetes services
+  id: totrans-93
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 暴露 Kubernetes 服务
+- en: Since we now have a functional NGINX web server running in our cluster, we can
+    expose this service to the outside world so that others can use our shiny new
+    service. In order to do this, we can create a Kubernetes abstraction known as
+    a service to control how our pod is granted outside access. By default, Kubernetes
+    pods are assigned a cluster IP address by the overlay network fabric, which is
+    only reachable within the cluster by other containers and across nodes. This is
+    useful if you have a deployment that should never be directly exposed to the outside
+    world. However, Kubernetes also supports exposing deployments using the service
+    abstraction. Services can expose pods in a variety of ways, from allocating publicly
+    routable IP addresses to the services and load balancing across the cluster to
+    opening a simple node port on the master nodes, from which the service can listen.
+    Google Container Engine provides native support for the `LoadBalancer` service
+    type which can allocate a public virtual IP address to our deployment, making
+    services extremely easy to expose. In order to allow our service to see the outside
+    world, we can use the `kubectl expose deployment` command, providing the service
+    type as `LoadBalancer`. Upon successful completion, you should see the message
+    service `nginx-web` exposed.
+  id: totrans-94
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 既然我们现在在集群中运行着一个功能正常的 NGINX Web 服务器，我们可以将此服务暴露给外部世界，以便他人可以使用我们崭新的服务。为此，我们可以创建一个
+    Kubernetes 抽象对象，称为服务（service），来控制我们的 pod 如何获得外部访问权限。默认情况下，Kubernetes pod 会通过覆盖网络分配一个集群
+    IP 地址，该地址仅能在集群内部的其他容器和节点间访问。如果你有一个不应该直接暴露给外部世界的部署，这非常有用。然而，Kubernetes 也支持使用服务抽象来暴露部署。服务可以通过多种方式暴露
+    pod，从为服务分配可公开路由的 IP 地址、跨集群进行负载均衡，到在主节点上开放一个简单的节点端口，从中监听服务。Google 容器引擎原生支持 `LoadBalancer`
+    服务类型，可以为我们的部署分配一个公共虚拟 IP 地址，极大地简化了服务的暴露过程。为了让我们的服务能够连接到外部世界，我们可以使用 `kubectl expose
+    deployment` 命令，并将服务类型指定为 `LoadBalancer`。成功执行后，你应该会看到信息 `nginx-web` 服务已暴露。
+- en: '[PRE13]'
+  id: totrans-95
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE13]'
+- en: 'We can see our newly created service by running the `kubectl get services`
+    command. You may notice that the `EXTERNAL IP` column may be in the pending state
+    for a moment or two while Kubernetes allocates a public IP for the cluster. If
+    you execute the `kubectl get services` command after a few minutes, you should
+    notice it has an external IP and is ready to be accessed:'
+  id: totrans-96
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以通过运行 `kubectl get services` 命令来查看我们新创建的服务。你可能会注意到，`EXTERNAL IP` 列在 Kubernetes
+    为集群分配公共 IP 时，可能会处于挂起状态一两分钟。如果你在几分钟后再次执行 `kubectl get services` 命令，你应该会看到它已经有了外部
+    IP，并且可以访问了：
+- en: '[PRE14]'
+  id: totrans-97
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE14]'
+- en: 'After a minute or two:'
+  id: totrans-98
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一两分钟后：
+- en: '[PRE15]'
+  id: totrans-99
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE15]'
+- en: In this example, the external IP of `35.202.165.54` has been allocated to our
+    deployment. You can access this IP address in a web browser to actually see the
+    NGINX default web page in action. Remember, you have to access this service on
+    TCP port `8000` since that is how the container-enabled role is configured out
+    of the box. Bonus points if you want to go back and reconfigure your NGINX container
+    to run on port `80`!
+  id: totrans-100
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这个例子中，外部 IP 地址 `35.202.165.54` 已经分配给我们的部署。你可以在网页浏览器中访问这个 IP 地址，实际看到 NGINX 默认的网页效果。记住，你必须通过
+    TCP 端口 `8000` 来访问这个服务，因为容器启用角色的默认配置就是这样。如果你愿意，可以额外加分，返回并重新配置你的 NGINX 容器使其在端口 `80`
+    上运行！
+- en: Google Cloud Platform has native integration with the Google Cloud virtual load
+    balancer resources, which allow Kubernetes to assign external IP addresses to
+    services.  In baremetal environments or clusters running on other clouds, an extra
+    configuration will be required to allow Kubernetes to seamlessly allocate publicly
+    routed IP addresses.
+  id: totrans-101
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Google Cloud Platform 与 Google Cloud 虚拟负载均衡资源有原生集成，允许 Kubernetes 为服务分配外部 IP
+    地址。在裸金属环境或运行在其他云上的集群中，需额外配置以便让 Kubernetes 无缝分配公有路由的 IP 地址。
+- en: Scaling Kubernetes pods
+  id: totrans-102
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 扩展 Kubernetes Pod
+- en: Now that we have pods running in our cluster, we can use the powerful Kubernetes
+    primitives to scale out containers and running services across nodes for high
+    availability. As mentioned previously, as soon as a desire state is declared that
+    involves running more than one replica of a pod, Kubernetes will apply a bin-packing
+    algorithm to the deployment in an effort to determine which nodes the service
+    will run on. If you declare the same number of replicas as you have nodes in your
+    cluster, Kubernetes will run one replica on each node by default. If you have
+    more replicas declared then nodes, Kubernetes will run more than one replica on
+    some of the nodes, and on others, it will run a single replica. This provides
+    us with native high availability out of the box. One of the benefits of using
+    Kubernetes is that, by leveraging these features and functionality, operators
+    no longer worry as much about the underlying infrastructure the containers are
+    running on as much as the cluster abstractions themselves.
+  id: totrans-103
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经在集群中运行了 Pod，我们可以利用强大的 Kubernetes 原语来扩展容器和服务的规模，跨节点运行以实现高可用性。如前所述，一旦声明了希望运行多个副本的期望状态，Kubernetes
+    会应用 bin-packing 算法来确定服务应该在哪些节点上运行。如果你声明的副本数与集群中的节点数相同，Kubernetes 默认会在每个节点上运行一个副本。如果声明的副本数多于节点数，Kubernetes
+    会在一些节点上运行多个副本，而在其他节点上运行单个副本。这为我们提供了开箱即用的原生高可用性。使用 Kubernetes 的一个好处是，通过利用这些特性和功能，操作员不再需要像以前那样过于担心容器所运行的底层基础设施，而更专注于集群抽象本身。
+- en: 'NOTE: Kubernetes can also use labels to control where certain deployments should
+    run. For example, if you have a high compute capacity node, you could label that
+    node as a compute node. You can customize your deployment so that those pods will
+    only run on nodes with that particular label.'
+  id: totrans-104
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 注意：Kubernetes 也可以使用标签来控制某些部署应该运行的位置。例如，如果你有一个高计算能力的节点，你可以将该节点标记为计算节点。你可以自定义部署，使得这些
+    Pod 只会在具有该特定标签的节点上运行。
+- en: 'To demonstrate how powerful of a functionality this is, we use `kubectl` to
+    scale out our existing web server deployment. Since we are currently running a
+    three-node cluster, let’s scale out our NGINX deployment to four replicas. This
+    way, we can best illustrate what decisions Kubernetes is making on where to place
+    our containers. In order to scale our current deployment, we can use the `kubectl
+    scale deployment` command to increase our replica count from one to four:'
+  id: totrans-105
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了展示这一功能的强大，我们使用 `kubectl` 来扩展我们现有的 web 服务器部署。由于我们目前运行的是一个三节点集群，因此我们将 NGINX
+    部署扩展到四个副本。这样，我们可以更好地展示 Kubernetes 在决定将容器放置在哪些节点时所做的决策。为了扩展当前的部署，我们可以使用 `kubectl
+    scale deployment` 命令将副本数从 1 增加到 4：
+- en: '[PRE16]'
+  id: totrans-106
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE16]'
+- en: 'Using `kubectl get deployments`, we can see that Kubernetes is actively reconfiguring
+    our cluster towards the desired state. It might take a few seconds for Kubernetes
+    to get all four pods running, depending on the configuration you have chosen for
+    your cluster. Following we can see the desired number of pods, the current number
+    of pods running in the cluster, the number of pods that update, and the pods that
+    are ready and available to accept traffic. It looks like our cluster is in our
+    desired state:'
+  id: totrans-107
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用`kubectl get deployments`命令，我们可以看到Kubernetes正在积极地重新配置我们的集群以达到期望的状态。根据你为集群选择的配置，Kubernetes可能需要几秒钟才能运行所有四个Pod。接下来我们可以看到期望的Pod数量、当前在集群中运行的Pod数量、正在更新的Pod数量，以及准备好并可接收流量的Pod。看起来我们的集群已经达到了预期的状态：
+- en: '[PRE17]'
+  id: totrans-108
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE17]'
+- en: Running `kubectl get pods` with the `-o wide` flag, we can see that all four
+    NGINX pods are running with different IP addresses allocated and on different
+    cluster nodes. It is important to note that, since we specified four replicas
+    and only have three nodes, Kubernetes made the decision to have two pod replicas
+    running on the same host. Keep in mind that these are two separate and distinct
+    pods with a different IP address, even though they are running the same host.
+  id: totrans-109
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 运行`kubectl get pods`并加上`-o wide`标志后，我们可以看到所有四个NGINX Pod都在不同的IP地址和不同的集群节点上运行。需要注意的是，由于我们指定了四个副本而只有三个节点，Kubernetes决定将两个Pod副本运行在同一主机上。请记住，这两个Pod是独立的，拥有不同的IP地址，即使它们运行在同一主机上。
+- en: '[PRE18]'
+  id: totrans-110
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE18]'
+- en: The preceding output is slightly truncated since the `-o` wide output is difficult
+    to read properly in the context of a book page. Your output will be slightly more
+    verbose than mine.
+  id: totrans-111
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 上述输出略有截断，因为`-o` wide输出格式在书籍页面的上下文中较难阅读。你的输出将比我的稍微冗长一些。
+- en: Accessing the public IP address again will result in the service now load balancing
+    traffic across the pods in the cluster. Since we specified the service type as
+    `LoadBalancer`, Kubernetes will use a round-robin algorithm to pass traffic to
+    our pods with high availability. Unfortunately, this will not be obvious to the
+    reader, since each pod is running the same NGINX test web page. One of the major
+    benefits of Kubernetes is that services are usually tied to deployments. When
+    you scale a deployment, the service will automatically scale and start passing
+    traffic to the new pods!
+  id: totrans-112
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 再次访问公共IP地址将导致服务开始在集群中的Pod之间进行负载均衡。由于我们将服务类型指定为`LoadBalancer`，Kubernetes将使用轮询算法将流量分配给我们的Pod，确保高可用性。不幸的是，读者可能看不到明显的效果，因为每个Pod都在运行相同的NGINX测试网页。Kubernetes的一个主要优势是，服务通常与部署关联。当你扩展一个部署时，服务将自动扩展并开始将流量分配到新的Pod！
+- en: 'Before we move forward to the next exercise, let’s delete the deployment we
+    just created, as well as the exposed service. This will return our cluster to
+    a fresh state:'
+  id: totrans-113
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在我们进行下一个练习之前，让我们删除刚刚创建的部署以及公开的服务。这将使我们的集群恢复到一个干净的状态：
+- en: '[PRE19]'
+  id: totrans-114
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE19]'
+- en: Creating deployments using Kubernetes manifests
+  id: totrans-115
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用Kubernetes清单创建部署
+- en: Along with the ability to create services and other objects directly from the
+    command line, Kubernetes also gives you the ability to describe desired states
+    using a manifest document. Kubernetes manifests give you the freedom to provide
+    more customization options in an easier to read, understand, and repeatable format,
+    as opposed to the command line, which is rather limited in its format. Since this
+    chapter is not designed to be a deep dive into Kubernetes, we will not spend a
+    lot of time going into all of the various configuration options that can be used
+    in a Kubernetes manifest. Rather, my intention is to show the reader what manifests
+    look like and how they work at a basic level.
+  id: totrans-116
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 除了能够直接从命令行创建服务和其他对象外，Kubernetes还允许你通过清单文档来描述期望的状态。Kubernetes清单让你能够在更易于阅读、理解和重复的格式中提供更多自定义选项，而不像命令行那样格式较为有限。由于本章并不是对Kubernetes进行深度探讨，我们不会花太多时间介绍Kubernetes清单中可以使用的各种配置选项。我的目的是向读者展示清单的样子以及它们如何在基本层面上工作。
+- en: 'Since you are already familiar with creating deployments using the `kubectl`
+    command-line tool, let’s demonstrate what our `nginx-web` deployment would look
+    like using a Kubernetes manifest. These examples are available in the official
+    git repository for the book, under the `Kubernetes/nginx-demo` directory. Open
+    your text editor and create a file: `webserver-deployment.yml`. The content of
+    this file should resemble the following. In this example, we are going to continue
+    to use our previously created NGINX container. However, feel free to use other
+    container URLs if you wish to experiment with using other types of services and
+    ports.'
+  id: totrans-117
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于你已经熟悉使用 `kubectl` 命令行工具创建部署，接下来我们将展示如何通过 Kubernetes 清单来描述我们的 `nginx-web` 部署。这些示例可以在本书的官方
+    Git 仓库中找到，位于 `Kubernetes/nginx-demo` 目录下。打开你的文本编辑器并创建一个文件：`webserver-deployment.yml`。这个文件的内容应该类似于以下内容。在这个示例中，我们将继续使用之前创建的
+    NGINX 容器。然而，如果你想尝试使用其他类型的服务和端口，可以自由选择其他容器 URL。
+- en: '[PRE20]'
+  id: totrans-118
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE20]'
+- en: Like all the YAML documents we have looked at thus far, Kubernetes manifest
+    documents begin with three dashes to indicate the start of a YAML file. Kubernetes
+    manifests always begin by specifying the API version, object kind, and metadata.
+    This is colloquially known as the header data and indicates to the Kubernetes
+    API the type of objects this document is going to create. Since we are creating
+    a deployment, we will specify the `kind` parameter as `Deployment` and provide
+    the name of the deployment as the metadata name. Everything listed underneath
+    the `spec` section provides configuration option parameters that are specific
+    to the pod object the document is creating. Since we are basically reverse engineering
+    our previous deployment, we are specifying the number of replicas as `4`. The
+    next few lines specify metadata we are going to configure our pods with, specifically
+    a key-value pair label called, `app:http-webserver`. Keep this label in mind,
+    as we are going to use it when we create the service resource next.
+  id: totrans-119
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 和我们到目前为止看到的所有 YAML 文档一样，Kubernetes 清单文档以三个短横线开始，表示 YAML 文件的开始。Kubernetes 清单总是先指定
+    API 版本、对象类型和元数据。这通常被称为头部数据，用于告诉 Kubernetes API 文档将要创建哪些类型的对象。由于我们正在创建一个部署，我们将
+    `kind` 参数指定为 `Deployment`，并提供部署的名称作为元数据名称。`spec` 部分下列出的一切都提供了特定于文档所创建的 pod 对象的配置参数。由于我们基本上是在逆向工程我们之前的部署，所以我们将副本数指定为
+    `4`。接下来的几行指定了我们将配置 pod 的元数据，具体是一个键值对标签，叫做 `app:http-webserver`。请记住这个标签，因为我们接下来在创建服务资源时会使用它。
+- en: Finally, we have another `spec` section, which lists the containers that are
+    going to run inside our pod. Earlier in the chapter, I mentioned that a pod can
+    be one or more containers running using shared network and cluster resources.
+    Containers in a pod share a pod IP address and localhost namespace. Kubernetes
+    deployments allow you to specify more than one pod under the `containers:` section,
+    passing them in as listed key-value pair items. This example, however, will create
+    a single-pod container known as `webserver-container`. It is here that we will
+    specify the container image version, as well as the container port (`80`).
+  id: totrans-120
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后，我们还有另一个 `spec` 部分，列出了将在 pod 内运行的容器。在本章前面我提到过，pod 可以是一个或多个容器，使用共享的网络和集群资源。pod
+    内的容器共享 pod IP 地址和本地主机命名空间。Kubernetes 部署允许你在 `containers:` 部分指定多个容器，并将它们作为键值对项目传入。然而，在这个示例中，我们将创建一个单容器
+    pod，命名为 `webserver-container`。在这里，我们将指定容器镜像版本以及容器端口（`80`）。
+- en: 'This manifest can be applied using the `kubectl create` command, passing in
+    the `-f` flag, which indicates a manifest object, as well as the path to the manifest:'
+  id: totrans-121
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个清单可以使用 `kubectl create` 命令应用，并传入 `-f` 参数，指明这是一个清单对象，并提供清单的路径：
+- en: '[PRE21]'
+  id: totrans-122
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE21]'
+- en: 'Upon successful completion, you should see the pods getting created using `kubectl
+    get pods`:'
+  id: totrans-123
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 完成成功后，你应该能通过 `kubectl get pods` 查看创建的 pod：
+- en: Creating services using Kubernetes manifests
+  id: totrans-124
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用 Kubernetes 清单创建服务
+- en: 'In a similar way to creating our deployment using Kubernetes manifest, we can
+    create other Kubernetes objects using manifests. The service we created earlier
+    can be described using the following Kubernetes manifest:'
+  id: totrans-125
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 类似于我们使用 Kubernetes 清单创建部署的方式，我们还可以使用清单创建其他 Kubernetes 对象。我们之前创建的服务可以通过以下 Kubernetes
+    清单描述：
+- en: '[PRE22]'
+  id: totrans-126
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE22]'
+- en: 'Notice in this example, we are specifying a different `kind` parameter to be
+    `Service` as opposed to our previous example, which used `Deployment`. This tells
+    the Kubernetes API to expect that the rest of the document will contain specifications
+    that describe services instead of other types of Kubernetes objects. In the metadata
+    section, we will name our service `webserver-service` (creative, no?). For the
+    specification section, we will provide the type of service we are exposing, `LoadBalancer`,
+    and provide the label we assigned to our deployment: `app: http-webserver`. When
+    using `kubectl` to expose deployments, the service you create is inherently tied
+    to the deployment you are exposing. When that deployment scales out, the service
+    will be aware and will adjust according to how many backend pods are running.
+    However, when creating a service using Kubernetes manifests, we can get more creative
+    with how services are tied to the services they are exposing. In this example,
+    we are creating a service that is associated with any pod that has the label `app:
+    http-webserver`. In theory, this could be any number of pods across different
+    namespaces and deployments. This allows for a lot of flexibility when designing
+    applications around a Kubernetes architecture.'
+  id: totrans-127
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '注意，在此示例中，我们指定了不同的 `kind` 参数为 `Service`，而不是我们之前示例中使用的 `Deployment`。这告诉 Kubernetes
+    API，接下来的文档内容将包含描述服务而非其他类型 Kubernetes 对象的规格。在元数据部分，我们将服务命名为 `webserver-service`（有创意吧？）。在规格部分，我们将提供我们暴露的服务类型，`LoadBalancer`，并提供我们为部署指定的标签：`app:
+    http-webserver`。当使用 `kubectl` 暴露部署时，您创建的服务与您暴露的部署紧密关联。当该部署扩展时，服务会自动感知并根据后端 Pod
+    的数量进行调整。然而，使用 Kubernetes 清单文件创建服务时，我们可以更加灵活地将服务与它们所暴露的服务关联。在这个示例中，我们创建了一个与任何具有标签
+    `app: http-webserver` 的 Pod 关联的服务。从理论上讲，这可以是跨不同命名空间和部署的任意数量的 Pod。这为围绕 Kubernetes
+    架构设计应用程序提供了很大的灵活性。'
+- en: The final section of our manifest describes the ports we will perform load balancing
+    across. Remember how our NGINX container uses the fixed port `8000` by virtue
+    of the fact we built this container using the community-written role? Using the
+    load balancer service, we can expose any port we want on the frontend to forward
+    traffic to any port on the backend pods. The protocol we will use will be TCP.
+    The port we want to expose on the virtual IP address will be `80` for standard
+    HTTP requests. Finally, we will list the port that NGINX is listening to internally
+    on our pods to forward traffic to. In this case, `8000`.
+  id: totrans-128
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 清单的最后部分描述了我们将执行负载均衡的端口。还记得我们 NGINX 容器使用固定端口 `8000` 吗？这是因为我们使用社区编写的角色构建了这个容器。通过负载均衡器服务，我们可以在前端暴露任何端口，将流量转发到后端
+    Pod 的任意端口。我们将使用的协议是 TCP。我们希望在虚拟 IP 地址上暴露的端口是 `80`，用于标准的 HTTP 请求。最后，我们将列出 NGINX
+    在 Pod 内部监听的端口，以将流量转发到此端口。在这种情况下是 `8000`。
+- en: 'Using the `kubectl create` command, we can create our service very similar
+    to how we created our initial deployment:'
+  id: totrans-129
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用 `kubectl create` 命令，我们可以像创建初始部署一样创建我们的服务：
+- en: '[PRE23]'
+  id: totrans-130
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE23]'
+- en: 'Using `kubectl get services`, we can see which external virtual IP address
+    gets allocated to our cluster:'
+  id: totrans-131
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用 `kubectl get services`，我们可以看到哪个外部虚拟 IP 地址分配给了我们的集群：
+- en: '[PRE24]'
+  id: totrans-132
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE24]'
+- en: 'Looking at the `PORTS` column, we can see that TCP port `80` is exposed in
+    our cluster. Using a web browser again, we can access our new public IP on port
+    `80` and see whether it’s working:'
+  id: totrans-133
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 查看 `PORTS` 列，我们可以看到 TCP 端口 `80` 在我们的集群中被暴露。再次使用浏览器，我们可以访问新的公共 IP 地址的端口 `80`，查看是否正常工作：
+- en: '![](img/7dc64e1a-eb4f-49b6-88eb-e2a40805e508.png)'
+  id: totrans-134
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/7dc64e1a-eb4f-49b6-88eb-e2a40805e508.png)'
+- en: Using Kubernetes manifests, we can describe in greater detail the ways we want
+    our containerized applications to function. Manifests can easily be modified as
+    well and reapplied using the `kubectl apply -f manifest.yml` command. If at any
+    time, we wanted to update our application to a different version of the container
+    image, or modify exposed ports on the service, `kubectl` apply would only make
+    the changes necessary to bring our application into the desired state. Feel free
+    to tweak these manifests on your own and reapply them to see in what ways you
+    can configure the services to run.
+  id: totrans-135
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用 Kubernetes 清单文件，我们可以更详细地描述我们希望容器化应用程序的功能。清单文件也可以轻松修改，并通过 `kubectl apply -f
+    manifest.yml` 命令重新应用。如果我们在任何时候想要将应用程序更新为不同版本的容器镜像，或修改服务上的暴露端口，`kubectl apply`
+    只会做出必要的更改，以使应用程序达到所需的状态。您可以自由调整这些清单文件并重新应用，查看如何配置服务运行。
+- en: 'Next, we will look at deploying containers to Kubernetes using Ansible Container.
+    Before we move forward, let’s remove the pods in your Kubernetes cluster using
+    the `kubectl delete` command, specifying the Kubernetes manifests we used to create
+    or modify the deployment and service:'
+  id: totrans-136
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来，我们将了解如何使用 Ansible Container 将容器部署到 Kubernetes。在继续之前，让我们使用 `kubectl delete`
+    命令删除 Kubernetes 集群中的 pod，并指定我们用于创建或修改部署和服务的 Kubernetes 清单：
+- en: '[PRE25]'
+  id: totrans-137
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE25]'
+- en: For now, we have finished working work the Kubernets cluster.  If you wish to
+    delete the cluster from Google Cloud, you can do so now.  However, it is important
+    to note that [Chapter 7](ef89f30f-00a9-4f4c-93b9-009474fc3022.xhtml), *Deploying
+    Your First Project* covers deploying projects to Kubernetes. I would suggest you
+    keep your cluster active until you have finished working on the material in [Chapter
+    7](ef89f30f-00a9-4f4c-93b9-009474fc3022.xhtml)*, Deploying Your First Project*.
+  id: totrans-138
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 至此，我们已经完成了 Kubernetes 集群的工作。如果你希望从 Google Cloud 中删除集群，可以现在执行此操作。然而，需要注意的是，[第7章](ef89f30f-00a9-4f4c-93b9-009474fc3022.xhtml)，《*部署你的第一个项目*》涵盖了如何将项目部署到
+    Kubernetes。我建议你在完成 [第7章](ef89f30f-00a9-4f4c-93b9-009474fc3022.xhtml)，《*部署你的第一个项目*》的内容之前，保持集群处于活动状态。
+- en: References
+  id: totrans-139
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 参考资料
+- en: '**Kubernetes Documentation**: [https://kubernetes.io/docs/home/](https://kubernetes.io/docs/home/)'
+  id: totrans-140
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**Kubernetes 文档**: [https://kubernetes.io/docs/home/](https://kubernetes.io/docs/home/)'
+- en: '**Google Cloud Platform**: [https://cloud.google.com](https://cloud.google.com)'
+  id: totrans-141
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**Google Cloud Platform**: [https://cloud.google.com](https://cloud.google.com)'
+- en: '**Running Kubernetes locally with Minikube**:  [https://kubernetes.io/docs/getting-started-guides/minikube/](https://kubernetes.io/docs/getting-started-guides/minikube/)'
+  id: totrans-142
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**使用 Minikube 本地运行 Kubernetes**: [https://kubernetes.io/docs/getting-started-guides/minikube/](https://kubernetes.io/docs/getting-started-guides/minikube/)'
+- en: Summary
+  id: totrans-143
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 总结
+- en: Kubernetes is quickly becoming one of the most robust, flexible, and popular
+    container deployment and orchestration platforms that is taking the IT industry
+    by storm. Throughout this chapter, we have taken a close look at Kubernetes, learning
+    about how it works as a platform and some of the key features that make it so
+    useful and versatile. If you have worked in or around containers for very long,
+    it will be clear to you that Kubernetes is rapidly being adopted by organizations
+    throughout the world due to the extremely sophisticated mechanisms it uses to
+    deploy and manage containers at scale.
+  id: totrans-144
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Kubernetes 正迅速成为最强大、灵活且流行的容器部署与编排平台，正在席卷 IT 行业。在本章中，我们深入了解了 Kubernetes，学习了它作为平台的工作原理以及使其如此有用和多功能的关键特性。如果你曾在容器领域工作过，你会很清楚，Kubernetes
+    正因其部署和管理容器的极其复杂机制，迅速被全球各地的组织所采用。
+- en: Due to the native support for Kubernetes in Ansible Container, we can use the
+    same workflow to build, run, test, and destroy containerized applications that
+    we can deploy to robust services such as Kubernetes. Ansible Container truly provides
+    the right tools to help drive complex deployments using a unified and reliable
+    framework.
+  id: totrans-145
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于 Ansible Container 对 Kubernetes 的原生支持，我们可以使用相同的工作流程来构建、运行、测试和销毁容器化应用程序，这些应用程序可以部署到如
+    Kubernetes 这样的强大服务中。Ansible Container 真正提供了合适的工具，帮助我们使用统一且可靠的框架推动复杂的部署。
+- en: However, Google Cloud and the Kubernetes framework are not the only cloud-based
+    container orchestration solutions on the market in today’s world. OpenShift is
+    quickly gaining popularity as a managed solution built by Red Hat that functions
+    on top of the Kubernetes platform. Next, we will apply the Kubernetes concepts
+    we learned in this chapter to deploy applications to the OpenShift software stack,
+    using the powerful tools offered to us by the Ansible Container platform to drive
+    large-scale application workloads.
+  id: totrans-146
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，Google Cloud 和 Kubernetes 框架并不是当前市场上唯一的基于云的容器编排解决方案。OpenShift 是由 Red Hat
+    构建的快速增长的托管解决方案，基于 Kubernetes 平台之上。接下来，我们将应用本章中学到的 Kubernetes 概念，将应用程序部署到 OpenShift
+    软件堆栈，利用 Ansible Container 平台为我们提供的强大工具，推动大规模应用工作负载。

@@ -1,0 +1,696 @@
+- en: Chapter 1. Getting Started with Gitolite
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 第 1 章：开始使用 Gitolite
+- en: Git is one of the most popular version control systems currently available,
+    and several thousands of projects, new and old, have started using it in the past
+    few years. You might have also used it, and shortly after, realized that Git does
+    not do much for Access Control by itself. You need an access control system that
+    is simple and quick to install and get running, yet flexible and powerful enough
+    for your future needs.
+  id: totrans-1
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git 是目前最流行的版本控制系统之一，过去几年里，数千个新旧项目开始使用它。你可能也使用过它，并很快意识到，Git 本身在访问控制方面并没有做太多工作。你需要一个既简单快速安装又能满足未来需求的灵活强大的访问控制系统。
+- en: This chapter will describe what Gitolite is, and why you might need it. It shows
+    a few examples of the basic features, and also shows you how you can try out Gitolite
+    safely. It assumes that you have some basic knowledge of Git, and have used Git
+    both locally and with a remote repository.
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章将介绍 Gitolite 的概念，以及为什么你可能需要它。它展示了几个基本功能的示例，并向你展示了如何安全地尝试 Gitolite。假设你已经有一定的
+    Git 基础知识，并且曾经在本地和远程仓库中使用过 Git。
+- en: Common Access Control needs
+  id: totrans-3
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 常见的访问控制需求
+- en: Git server administrators face a bit of a challenge. The high uptake rate of
+    Git means that there are thousands of developers who are not really familiar with
+    Git, and who therefore may be running Git commands that cause irreversible or
+    highly disruptive changes to the Git repository. Furthermore, Git itself does
+    not help much with this; whatever access controls it has, apply to the entire
+    repository, and cannot be made more fine-grained.
+  id: totrans-4
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git 服务器管理员面临一定的挑战。Git 的普及意味着有成千上万的开发者并不真正熟悉 Git，因此他们可能会运行一些 Git 命令，导致对 Git 仓库产生不可逆转或高度破坏性的变化。此外，Git
+    本身对此没有太多帮助；它的访问控制仅适用于整个仓库，无法做到更细粒度的控制。
+- en: For instance, the master branch in most projects represents the most stable
+    code. Yet, a junior developer can easily run a command such as `git push origin
+    +master`, (which pushes the developer's local branch onto the server) and thus
+    overwrite weeks or months of hardwork by the rest of the team. People with deeper
+    Git expertise can probably recover the lost commits, but it would certainly take
+    time and effort.
+  id: totrans-5
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 例如，大多数项目中的主分支代表着最稳定的代码。然而，初级开发者可以轻易地运行一个命令，如 `git push origin +master`，（将开发者的本地分支推送到服务器），从而覆盖团队其他成员几周或几个月的辛勤工作。具有较深
+    Git 专业知识的人可能能够恢复丢失的提交，但这无疑需要时间和精力。
+- en: Worse, Git's command syntax sometimes makes it worse. For example, the command
+    to delete the master branch is only slightly different from a normal push, that
+    is, `git push origin :master` (notice the extra colon?).
+  id: totrans-6
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 更糟糕的是，Git 的命令语法有时会使情况变得更糟。例如，删除主分支的命令与正常的推送命令只有一点点区别，即 `git push origin :master`（注意那个额外的冒号？）。
+- en: 'The most common need, therefore, is to prevent these kinds of accidents: overwriting
+    (or rewinding) one or more commits, and deleting a branch or a tag.'
+  id: totrans-7
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 因此，最常见的需求是防止以下类型的事故：覆盖（或回退）一个或多个提交，删除一个分支或标签。
+- en: Git itself does provide some measure of protection. You can set the config items
+    `receive.denyDeletes` and `receive.denyNonFastForwards` to `true`. Unfortunately,
+    this is a bit of a blunt instrument—now no one can delete or rewind *any* branch!
+  id: totrans-8
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git 本身确实提供了一定的保护。你可以将配置项 `receive.denyDeletes` 和 `receive.denyNonFastForwards`
+    设置为 `true`。不幸的是，这种方式有点粗暴——现在任何人都无法删除或回退 *任何* 分支！
+- en: In larger setups with several repositories and several developers, you may also
+    be concerned about allowing everyone to read all repositories. Or it may be that
+    some roles (such as a test engineer) should not need to write to the repository;
+    read-only access is sufficient. Up to a certain point, this problem can be solved
+    with Unix permissions and user/group permissions applied judiciously. Perhaps
+    even POSIX ACLs can be used if you're comfortable with that sort of thing.
+  id: totrans-9
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在有多个仓库和多个开发者的大型设置中，你可能还会担心是否允许每个人访问所有仓库。或者某些角色（例如测试工程师）可能不需要对仓库进行写操作；只读访问就足够了。在一定程度上，这个问题可以通过谨慎应用
+    Unix 权限和用户/组权限来解决。如果你熟悉 POSIX ACL，也许可以使用它来处理。
+- en: 'However, using POSIX ACLs and user/group permissions has several disadvantages:'
+  id: totrans-10
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，使用 POSIX ACL 和用户/组权限存在一些缺点：
+- en: Each Git user needs a corresponding Unix user ID on the server.
+  id: totrans-11
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 每个 Git 用户在服务器上需要一个对应的 Unix 用户 ID。
+- en: Managing access rights can only be done by using the `usermod` and `setfacl`
+    commands.
+  id: totrans-12
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 管理访问权限只能通过使用 `usermod` 和 `setfacl` 命令来实现。
+- en: Checking the current set of permissions is not straightforward. You will need
+    to run multiple commands and correlate their output manually.
+  id: totrans-13
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 检查当前的权限集并不是一件简单的事。你需要运行多个命令，并手动将它们的输出进行关联。
+- en: Auditing changes in permissions over time is impossible because no history is
+    kept by the system.
+  id: totrans-14
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 审计权限变更是不可行的，因为系统不保留历史记录。
+- en: These disadvantages require a lot of effort to manage even a few repositories
+    and users, and even a modestly sized setup would quickly become unmanageable.
+  id: totrans-15
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这些缺点要求即使管理几个仓库和用户也需要大量精力，而即使是一个规模适中的配置，也会迅速变得难以管理。
+- en: Access Control example with Gitolite
+  id: totrans-16
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Gitolite 的访问控制示例
+- en: 'We will see how simple Access Control can be with Gitolite. First, here''s
+    an example where the junior developers (let''s call them Alice and Bob here) should
+    be prevented from rewinding or deleting any branches, while the senior developers
+    (Carol and David) are allowed to do so:'
+  id: totrans-17
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将看到 Gitolite 如何使得访问控制变得简单。首先，来看一个示例，在这个示例中，初级开发人员（我们称他们为 Alice 和 Bob）应该被禁止回滚或删除任何分支，而高级开发人员（Carol
+    和 David）则可以这样做：
+- en: Tip
+  id: totrans-18
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 提示
+- en: We will see this in more detail in later chapters, but Gitolite uses a plain
+    text file to specify the configuration, and these access rules are placed in that
+    file.
+  id: totrans-19
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将在后续章节中更详细地看到这一点，但 Gitolite 使用一个纯文本文件来指定配置，这些访问规则也被放置在该文件中。
+- en: '[PRE0]'
+  id: totrans-20
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: You probably guessed that the `RW` stands for read and write. The `+` in the
+    second rule stands for *force*, just as it does in the `push` command, and allows
+    you to rewind or delete a branch.
+  id: totrans-21
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可能猜到，`RW` 代表读写权限。第二条规则中的 `+` 代表 *强制*，就像在 `push` 命令中一样，允许你回滚或删除分支。
+- en: 'Now, suppose we want the junior developers to have some specific set of branches
+    that they should be allowed to rewind or delete, a sort of "sandbox", if you will.
+    The following command will help you to implement that:'
+  id: totrans-22
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，假设我们希望让初级开发人员拥有一些特定的分支，他们可以回滚或删除，可以理解为一种“沙盒”环境。以下命令将帮助你实现这一点：
+- en: '[PRE1]'
+  id: totrans-23
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: Alice and Bob can now push, rewind, or delete any branches whose names start
+    with `sandbox/`.
+  id: totrans-24
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Alice 和 Bob 现在可以推送、回滚或删除任何名称以 `sandbox/` 开头的分支。
+- en: 'Access Control at the repository level is even easier, and you may even have
+    guessed what that looks like:'
+  id: totrans-25
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在仓库级别进行访问控制甚至更简单，或许你已经猜到它是什么样子了：
+- en: '[PRE2]'
+  id: totrans-26
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: As you can see, you have three users with different access permissions for each
+    of the three repositories. Doing this using the file systems' permissions mechanisms
+    or POSIX ACLs would be doable, but quite cumbersome to set up and to audit/review.
+  id: totrans-27
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，你有三个用户，每个用户对三个仓库的访问权限不同。使用文件系统的权限机制或 POSIX ACLs 来实现这一点是可行的，但设置起来相当繁琐，而且审计/审核也会很麻烦。
+- en: Sampling of Gitolite's power features
+  id: totrans-28
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Gitolite 强大功能的示例
+- en: The access control examples show the most commonly used feature of Gitolite,
+    the repository and branch level access control, but of course Gitolite has many
+    more features. In this section, we will briefly look at a few of them while noting
+    that there are many more waiting in the wings for you to find as you read this
+    book.
+  id: totrans-29
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 访问控制示例展示了 Gitolite 最常用的功能——仓库和分支级别的访问控制，但 Gitolite 当然有更多功能。在这一节中，我们将简要了解其中的一些功能，同时注意到还有许多功能等待你在阅读本书时发现。
+- en: Creating groups
+  id: totrans-30
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 创建用户组
+- en: Gitolite allows you to create groups of users or repositories for convenience.
+    Think back to Alice and Bob, our junior developers. Let's say you had several
+    rules that Alice and Bob needed to be mentioned in. Clearly, this is too cumbersome;
+    every time a new developer joined the team, you'd have to change all the rules
+    to add him or her.
+  id: totrans-31
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Gitolite 允许你创建用户或仓库的组，以提高便利性。回想一下 Alice 和 Bob，我们的初级开发人员。假设你有几个规则需要 Alice 和 Bob
+    被提及。显然，这样做太麻烦了；每当有新开发人员加入团队时，你就得修改所有规则以添加他或她。
+- en: 'Gitolite lets you do this by using the following command:'
+  id: totrans-32
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Gitolite 通过以下命令来实现这一点：
+- en: '[PRE3]'
+  id: totrans-33
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: 'Later, it lets you do this by using the following command:'
+  id: totrans-34
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 后来，它通过以下命令来实现这一点：
+- en: '[PRE4]'
+  id: totrans-35
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: This allows you to add the junior developer in just one place at the top of
+    the configuration file instead of potentially several places all over. More importantly,
+    from the administrator's point of view, it serves as excellent documentation for
+    the rules themselves; isn't it easier to reason about the rules when a descriptive
+    group name is used rather than actual usernames?
+  id: totrans-36
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这使得你可以在配置文件顶部的一个地方添加初级开发人员，而不需要在多个地方添加。更重要的是，从管理员的角度来看，它作为规则本身的优秀文档；当使用描述性组名而不是实际用户名时，推理这些规则不是更容易吗？
+- en: Personal branches
+  id: totrans-37
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 个人分支
+- en: Gitolite allows the administrator to give each developer a unique set of branches,
+    called personal branches, that only he or she can create, push, or delete. This
+    is a very convenient way to allow quick backups of work-in-progress branches,
+    or share code for preliminary review.
+  id: totrans-38
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Gitolite 允许管理员为每个开发者提供一组独特的分支，称为个人分支，只有该开发者才能创建、推送或删除。这是一种非常方便的方式，可以快速备份正在进行的分支，或者共享代码进行初步审核。
+- en: 'We saw how the sandbox area was defined:'
+  id: totrans-39
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们已经看到沙箱区域是如何定义的：
+- en: '[PRE5]'
+  id: totrans-40
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: 'However, this does nothing to prevent one junior developer from accidentally
+    wiping out another''s branches. For example, Alice could delete a branch called
+    `sandbox/bob/work` that Bob may have pushed. You can use the special word `USER`
+    as a directory name to solve this problem:'
+  id: totrans-41
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，这并不能阻止一个初级开发者不小心删除另一个开发者的分支。例如，Alice 可能会删除 Bob 推送的名为`sandbox/bob/work`的分支。你可以使用特殊的词`USER`作为目录名来解决这个问题：
+- en: '[PRE6]'
+  id: totrans-42
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: 'This works as if you had specified each user individually, like this:'
+  id: totrans-43
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这就像你为每个用户单独指定了权限，像这样：
+- en: '[PRE7]'
+  id: totrans-44
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE7]'
+- en: Now, the set of branches that Alice is allowed to push is limited to those starting
+    with `sandbox/alice/`, and she can no longer push or delete a branch called, say,
+    `sandbox/bob/work`.
+  id: totrans-45
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，Alice 被允许推送的分支集合仅限于以 `sandbox/alice/` 开头的分支，她不再能推送或删除名为 `sandbox/bob/work`
+    的分支。
+- en: Personal repositories
+  id: totrans-46
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 个人仓库
+- en: 'With Gitolite, the administrator can choose to let the user create their own
+    repositories, in addition to the ones that the administrator themselves creates.
+    For this example, ignore the syntax, which will be explained in a much later chapter,
+    but just focus on the functionality now:'
+  id: totrans-47
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用 Gitolite 后，管理员可以选择允许用户创建自己的仓库，除了管理员自己创建的仓库。对于这个示例，忽略语法（稍后的章节中会解释），现在只关注功能：
+- en: '[PRE8]'
+  id: totrans-48
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE8]'
+- en: This allows members of the `@staff` group to create repositories whose names
+    match the pattern supplied, which just means `dev/<username>/<anything starting
+    with a lowercase alphabetic character>`. For example, a user called `alice` will
+    be able to create repositories such as `dev/alice/foo` and `dev/alice/bar`.
+  id: totrans-49
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这允许 `@staff` 组的成员创建符合指定模式的仓库名称，模式意味着 `dev/<用户名>/<以小写字母开头的任何内容>`。例如，一个名为 `alice`
+    的用户将能够创建如 `dev/alice/foo` 和 `dev/alice/bar` 的仓库。
+- en: Gitolite and the Git control flow
+  id: totrans-50
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Gitolite 和 Git 控制流程
+- en: 'Conceptually, Gitolite is a very simple program. To see how it controls access
+    to a Git repository, let us first look at how control flows from the client to
+    the server in a normal git operation (say `git fetch`) when using plain `ssh`:'
+  id: totrans-51
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 从概念上讲，Gitolite 是一个非常简单的程序。为了了解它如何控制 Git 仓库的访问，我们首先来看看在正常的 git 操作中（比如 `git fetch`）控制是如何从客户端流向服务器的，假设使用的是普通的
+    `ssh`：
+- en: '![Gitolite and the Git control flow](img/2371OS_01_01.jpg)'
+  id: totrans-52
+  prefs: []
+  type: TYPE_IMG
+  zh: '![Gitolite 和 Git 控制流程](img/2371OS_01_01.jpg)'
+- en: When the user executes a **git clone**, **fetch**, or **push**, the **Git client**
+    invokes `ssh`, passing it a command (either `git-upload-pack` or `git-receive-pack`,
+    depending on whether the user is reading or writing). The local ssh client passes
+    this to the server, and assuming authentication succeeds, that command gets executed
+    on the server.
+  id: totrans-53
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当用户执行**git clone**、**fetch** 或 **push** 时，**Git 客户端**会调用 `ssh`，并传递一个命令（根据用户是读取还是写入，命令为
+    `git-upload-pack` 或 `git-receive-pack`）。本地的 ssh 客户端将这个命令传递给服务器，并且假设认证成功，该命令将在服务器上执行。
+- en: 'With Gitolite installed, the `ssh` daemon does not invoke the `git-upload-pack`
+    or `git-receive-pack` directly. Instead, it calls a program called `gitolite-shell`,
+    which changes the control flow as follows:'
+  id: totrans-54
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 安装了 Gitolite 后，`ssh` 守护进程不会直接调用 `git-upload-pack` 或 `git-receive-pack`。相反，它会调用一个名为
+    `gitolite-shell` 的程序，改变控制流程如下：
+- en: '![Gitolite and the Git control flow](img/2371OS_01_02.jpg)'
+  id: totrans-55
+  prefs: []
+  type: TYPE_IMG
+  zh: '![Gitolite 和 Git 控制流程](img/2371OS_01_02.jpg)'
+- en: First, notice that nothing changes on the **Git client** side in any way; the
+    changes are only on the server side. In fact, unless an access violation happens
+    and an error message needs to be sent to the user, the user may not even *know*
+    that Gitolite is installed!
+  id: totrans-56
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 首先，请注意**Git 客户端**端没有任何变化；变化仅发生在服务器端。实际上，除非发生访问违规并需要向用户发送错误信息，否则用户可能甚至*不知道*已经安装了
+    Gitolite！
+- en: Second, notice the red link from Gitolite's shell program to the `git-upload-pack`
+    program. This call does not happen if Gitolite determines that the user does not
+    have the appropriate access to the repo concerned. This access check happens for
+    both read (that is, `git fetch` and `git clone` commands) and write (`git push`)
+    operations; although for writes, there are more checks that happen later.
+  id: totrans-57
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 第二，注意 Gitolite 的 shell 程序与 `git-upload-pack` 程序之间的红色链接。如果 Gitolite 确定用户没有对相关仓库的适当访问权限，则不会发生此调用。此访问检查适用于读取（即
+    `git fetch` 和 `git clone` 命令）和写入（`git push`）操作；尽管对于写操作，后续会有更多检查。
+- en: Trying out Gitolite
+  id: totrans-58
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 尝试 Gitolite
+- en: It's very easy to try out Gitolite in a safe environment without affecting anything
+    else in the system in any permanent manner. Gitolite has a fairly complete set
+    of test scripts, and the officially supported method of trying out Gitolite simply
+    uses a couple of these test scripts to automatically install and set up Gitolite.
+  id: totrans-59
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在不对系统中的其他任何部分产生永久性影响的情况下，尝试 Gitolite 非常简单。Gitolite 提供了一整套完整的测试脚本，官方支持的尝试 Gitolite
+    的方法只需使用其中几个测试脚本来自动安装和设置 Gitolite。
+- en: At the end of this process, you will have a version of Gitolite all set up and
+    ready to use. You will also have an "admin" user, and six "normal" users, using
+    which you can try out most of the features of Gitolite (with the exception of
+    some advanced features such as mirroring).
+  id: totrans-60
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这个过程结束时，你将拥有一个已设置好并准备使用的 Gitolite 版本。你还将拥有一个“admin”用户和六个“normal”用户，使用这些你可以尝试
+    Gitolite 的大部分功能（除了像镜像这样的高级功能）。
+- en: Preparing for the setup
+  id: totrans-61
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 准备设置
+- en: 'You will need the following in order to try out Gitolite:'
+  id: totrans-62
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要尝试 Gitolite，你需要以下内容：
+- en: A Unix (Linux, BSD, HP-UX, AIX, Solaris, and so on) server
+  id: totrans-63
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 一台 Unix（Linux、BSD、HP-UX、AIX、Solaris 等）服务器
+- en: Git version 1.7.1 or later installed on the server
+  id: totrans-64
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在服务器上安装 Git 1.7.1 或更高版本
+- en: Perl 5.8.8 or later version installed on the server
+  id: totrans-65
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在服务器上安装 Perl 5.8.8 或更高版本
+- en: An OpenSSH-compatible SSH daemon installed and running on the server
+  id: totrans-66
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在服务器上安装并运行一个兼容 OpenSSH 的 SSH 守护进程
+- en: Root access to the server in order to create a new throw away user to do the
+    testing in
+  id: totrans-67
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 需要 root 权限来创建一个新的临时用户进行测试
+- en: At the time of writing this book, Git 1.7.1 is over three years old, and Perl
+    5.8.8 is quite a bit older than that, so almost any recent Linux or BSD system
+    should work fine.
+  id: totrans-68
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本书编写时，Git 1.7.1 已经发布超过三年，Perl 5.8.8 也比这更早，因此几乎任何较新的 Linux 或 BSD 系统都应该可以正常工作。
+- en: Installing and setting up a test instance
+  id: totrans-69
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 安装并设置一个测试实例
+- en: 'With the prerequisites at hand, here''s how you would get yourself a `test`
+    instance of Gitolite to try out:'
+  id: totrans-70
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在具备先决条件后，以下是如何获得一个 `test` 实例来试用 Gitolite 的步骤：
+- en: Log in as root (using whatever commands your OS/distro requires to do that)
+    and create a new throw away user. You can call this anything you want, but we
+    will use the name `gitolite-test` here. *Please do not use an existing user for
+    this!*
+  id: totrans-71
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 以 root 用户登录（使用你的操作系统/发行版要求的任何命令），然后创建一个新的临时用户。你可以随意命名，但我们这里使用 `gitolite-test`。*请不要使用现有的用户！*
+- en: Log in as the `gitolite-test` user.
+  id: totrans-72
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 以 `gitolite-test` 用户登录。
+- en: Get the Gitolite sources from the official repository, `git clone` `git://github.com/gitolite/gitolite`.
+  id: totrans-73
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 从官方仓库获取 Gitolite 源代码，使用 `git clone` `git://github.com/gitolite/gitolite`。
+- en: You can get this from any other clone of the gitolite sources if your server
+    cannot directly access the internet. Just substitute the URL you have in the preceding
+    `clone` command.
+  id: totrans-74
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 如果你的服务器无法直接访问互联网，你可以从其他 Gitolite 源代码的克隆中获取这个。只需将你在前面 `clone` 命令中使用的 URL 替换掉。
+- en: 'Switch to the directory that was just cloned using the following command:'
+  id: totrans-75
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用以下命令切换到刚才克隆的目录：
+- en: '[PRE9]'
+  id: totrans-76
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE9]'
+- en: 'Install and set up Gitolite in test mode using the following command:'
+  id: totrans-77
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用以下命令在测试模式下安装并设置 Gitolite：
+- en: '[PRE10]'
+  id: totrans-78
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE10]'
+- en: 'Go back to the HOME directory:'
+  id: totrans-79
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 返回到 HOME 目录：
+- en: '[PRE11]'
+  id: totrans-80
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE11]'
+- en: This will churn through two of the test scripts. You will see a warning about
+    an `authorized_keys` file being created, which you can ignore, and finally a message
+    saying `All tests successful`, with some statistics on the test run.
+  id: totrans-81
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这将运行两个测试脚本。你会看到有关创建 `authorized_keys` 文件的警告，可以忽略它，最后会显示一条消息，说明“所有测试成功”，并附带一些测试运行的统计信息。
+- en: 'At the end of that process, you should have the following: one "admin" user
+    (called `admin`) and six normal users (named `u1` through `u6`). These users are
+    simulated using an `ssh` feature. If you are familiar with `ssh`, you can look
+    in `~/.ssh/config` to see how this is done.'
+  id: totrans-82
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在该过程结束时，你应该拥有以下内容：一个“管理员”用户（名为 `admin`）和六个普通用户（名为 `u1` 到 `u6`）。这些用户是通过 `ssh`
+    功能进行模拟的。如果你熟悉 `ssh`，可以查看 `~/.ssh/config` 文件，了解如何实现这一点。
+- en: Playing with Gitolite
+  id: totrans-83
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 玩转 Gitolite
+- en: 'You can now use the test setup of gitolite from the previous section. Here''s
+    a sample set of commands with notes to start you off:'
+  id: totrans-84
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，你可以使用上一节中的 Gitolite 测试设置。以下是一些命令示例，并附带说明，帮助你开始使用：
+- en: 'Clone the special `gitolite-admin` repository:'
+  id: totrans-85
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 克隆特殊的 `gitolite-admin` 仓库：
+- en: '[PRE12]'
+  id: totrans-86
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE12]'
+- en: 'Examine the contents of the clone:'
+  id: totrans-87
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 检查克隆的内容：
+- en: '[PRE13]'
+  id: totrans-88
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE13]'
+- en: 'Edit the `conf/gitolite.conf` file and add the following lines, which tell
+    Gitolite to create a new repository called `bar` and allow users `u1` and `u2`
+    all rights to it:'
+  id: totrans-89
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 编辑 `conf/gitolite.conf` 文件，并添加以下几行，指示 Gitolite 创建一个名为 `bar` 的新仓库，并允许用户 `u1`
+    和 `u2` 对该仓库拥有所有权限：
+- en: '[PRE14]'
+  id: totrans-90
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE14]'
+- en: 'Save the file, then add the change (`git add`) and commit the file (`git commit`):'
+  id: totrans-91
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 保存文件后，添加更改（`git add`），然后提交文件（`git commit`）：
+- en: '[PRE15]'
+  id: totrans-92
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE15]'
+- en: As you can see, we've just created a new repository called `bar`. If you look
+    at the output carefully, you might notice, among the familiar output of a `git
+    push` command, a line saying that an empty Git repository was initialized on the
+    server. This is useful because you don't have to log on to the server to create
+    the repository—Gitolite takes care of it.
+  id: totrans-93
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，我们刚刚创建了一个名为 `bar` 的新仓库。如果你仔细查看输出，可能会注意到，在 `git push` 命令的常见输出中，有一行显示在服务器上初始化了一个空的
+    Git 仓库。这非常有用，因为你无需登录服务器来创建仓库——Gitolite 会为你处理这个过程。
+- en: 'Let''s look at some access rights. Running ssh against the server and supplying
+    `info` as the command will show you what repositories you have access to:'
+  id: totrans-94
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们来看一下访问权限。运行 `ssh` 命令连接到服务器并提供 `info` 命令，将显示你有权限访问的仓库：
+- en: '[PRE16]'
+  id: totrans-95
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE16]'
+- en: The preceding command shows you a list of the repositories you have access to,
+    and for each of them, whether you can read and write to the repository, or you
+    have read-only access.
+  id: totrans-96
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 上面的命令显示了你可以访问的仓库列表，并且对每个仓库，显示你是可以读取和写入该仓库，还是仅具有只读访问权限。
+- en: Tip
+  id: totrans-97
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 提示
+- en: '**A note on command and URL syntax**'
+  id: totrans-98
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**关于命令和 URL 语法的说明**'
+- en: Remember that we are running the Gitolite server, as well as simulating the
+    seven different users, on the same Unix user (which is `gitolite-test`). As a
+    result, you are able to use commands such as `git clone admin:gitolite-admin`
+    and `ssh u1` info. In a real setup, you will represent yourself, and the server
+    will be elsewhere. The commands will be of the form `git clone gitolite-test@server:gitolite-admin`
+    and `ssh gitolite-test@server info`.
+  id: totrans-99
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请记住，我们是在同一个 Unix 用户（即 `gitolite-test`）下运行 Gitolite 服务器，并模拟七个不同的用户。因此，你可以使用 `git
+    clone admin:gitolite-admin` 和 `ssh u1 info` 等命令。在实际设置中，你将代表自己，服务器将位于其他地方。命令将是
+    `git clone gitolite-test@server:gitolite-admin` 和 `ssh gitolite-test@server info`。
+- en: Summary
+  id: totrans-100
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 总结
+- en: In this chapter, we learned why Gitolite is useful, saw an example of access
+    control rules, and got a glimpse of some of its features. We also learned the
+    basic ideas behind Gitolite, and created a test instance of Gitolite in order
+    to try it out safely.
+  id: totrans-101
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这一章，我们了解了为什么 Gitolite 很有用，查看了访问控制规则的示例，并对它的一些功能有了初步了解。我们还学习了 Gitolite 的基本概念，并创建了一个
+    Gitolite 测试实例，以便安全地进行尝试。
+- en: In the next chapter, we will install Gitolite properly and learn the basics
+    of administering Gitolite.
+  id: totrans-102
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一章，我们将正确安装 Gitolite 并学习 Gitolite 管理的基本知识。

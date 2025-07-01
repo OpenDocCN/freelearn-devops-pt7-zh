@@ -1,0 +1,3210 @@
+- en: '10'
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '10'
+- en: Keeping History Clean
+  id: totrans-1
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 保持历史清洁
+- en: The previous chapter, *Merging Changes Together*, described how to join changes
+    developed by different people (as described in [*Chapter 6*](B21194_06.xhtml#_idTextAnchor140),
+    *Collaborative Development with Git*), or just developed in a separate feature
+    branch (as shown in [*Chapter 8*](B21194_08_split_000.xhtml#_idTextAnchor196),
+    *Advanced Branching Techniques*). One of the techniques was rebase, which can
+    help bring a branch to be merged to a better state. However, if we are rewriting
+    history, perhaps it would be possible to also modify the rebased commits to be
+    easier for review, making the development steps of a feature clearer. If rewriting
+    is forbidden, can one make history cleaner without it? How do we fix mistakes
+    if we cannot rewrite project history?
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 前一章《*合并变更*》描述了如何将不同人开发的变更（如在[*第6章*](B21194_06.xhtml#_idTextAnchor140)《*使用 Git
+    进行协作开发*》中所述）或仅在单独的功能分支中开发的变更（如在[*第8章*](B21194_08_split_000.xhtml#_idTextAnchor196)《*高级分支技术*》中所示）合并到一起。技术之一是
+    rebase，它有助于将待合并的分支调整到更好的状态。然而，如果我们正在重写历史，是否也可以修改已 rebase 的提交，使其更易于审查，从而使功能的开发步骤更清晰？如果重写历史被禁止，是否可以在不重写历史的情况下清理历史？如果我们不能重写项目历史，如何修正错误？
+- en: 'This chapter will answer all those questions. It will explain why one might
+    want to keep a clean history, when it can and should be done, and how it can be
+    done. Here you will find step-by-step instructions on how to reorder, squash,
+    and split commits. This chapter will also describe how to do large-scale history
+    rewriting (for example, the clean-up after imports from other VCS) and what to
+    do if one cannot rewrite history: in other words, using **reverts**, replacements,
+    and notes.'
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章将解答所有这些问题。它将解释为什么有时需要保持历史清洁，何时可以以及应该这样做，以及如何做到这一点。你将在这里找到逐步指导，了解如何重新排序、压缩和拆分提交。本章还将描述如何进行大规模历史重写（例如，从其他版本控制系统导入后的清理），以及如果无法重写历史该怎么办：换句话说，使用**回退**、替换和注释。
+- en: To really understand some of the topics presented here, and to truly master
+    their use, you need some basics of Git internals. These are presented at the beginning
+    of this chapter.
+  id: totrans-4
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要真正理解本章所介绍的一些主题，并真正掌握其使用方法，你需要了解一些 Git 内部结构的基础。这些内容会在本章的开始部分介绍。
+- en: 'In this chapter, we will cover the following topics:'
+  id: totrans-5
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章将涵盖以下主题：
+- en: The basics of the object model of Git repositories
+  id: totrans-6
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Git 仓库的对象模型基础
+- en: Why you shouldn’t rewrite published history, and how to recover from doing so
+  id: totrans-7
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 为什么不应该重写已发布的历史，以及如何恢复已重写的历史
+- en: 'The interactive rebase: reordering, squashing, splitting, and testing commits'
+  id: totrans-8
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 交互式 rebase：重新排序、压缩、拆分和测试提交
+- en: Large-scale scripted history rewriting
+  id: totrans-9
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 大规模脚本化历史重写
+- en: Reverting a revision, reverting a merge, and re-merging after a reverted merge
+  id: totrans-10
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 回退修订、回退合并，以及回退合并后的重新合并
+- en: Amending history without rewriting with replacements
+  id: totrans-11
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 不通过替换重写历史来修正历史
+- en: Appending additional information to objects with notes
+  id: totrans-12
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 通过注释向对象添加附加信息
+- en: An introduction to Git internals
+  id: totrans-13
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Git 内部结构简介
+- en: To really understand and make good use of at least some of the methods described
+    in this chapter, you will need to understand at least the very basics of Git internals.
+    Among other things, you will need to know how Git stores the information about
+    revisions.
+  id: totrans-14
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要真正理解并有效利用本章所描述的至少部分方法，你需要至少了解 Git 内部结构的基础知识。除此之外，你还需要了解 Git 如何存储版本信息。
+- en: When describing Git internals, it will be useful to create different types of
+    data to later examine. This can be achieved with a set of low-level commands that
+    Git provides as a supplement to user-facing high-level commands. These low-level
+    commands operate on the level of the internal representation instead of using
+    friendly abstractions. That makes those commands very flexible and powerful, though
+    perhaps not user-friendly.
+  id: totrans-15
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在描述 Git 内部结构时，创建不同类型的数据以便后续检查会很有帮助。这可以通过 Git 提供的一组低级命令来实现，作为对用户面对的高级命令的补充。这些低级命令操作的是内部表示层，而不是使用友好的抽象。虽然这些命令非常灵活和强大，但可能不够用户友好。
+- en: Git objects
+  id: totrans-16
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: Git 对象
+- en: In [*Chapter 4*](B21194_04.xhtml#_idTextAnchor083), *Exploring Project History*,
+    you learned that Git represents history as the **Directed Acyclic Graph** (**DAG**)
+    of revisions, where each revision is a graph node represented as a **commit object**.
+    Each commit is identified by the SHA-1 identifier. We can use this identifier
+    (in its full or ambiguous shortened form) to refer to any given version.
+  id: totrans-17
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 [*第 4 章*](B21194_04.xhtml#_idTextAnchor083)，《探索项目历史》中，你了解了 Git 如何将历史表示为**有向无环图**（**DAG**）的修订版本，其中每个修订版本都是一个图节点，表示为**提交对象**。每个提交都有一个
+    SHA-1 标识符。我们可以使用这个标识符（无论是完整形式还是不明确的简化形式）来引用任何给定版本。
+- en: The commit object consists of revision metadata, links to zero or more parent
+    commits, and the snapshot of the project’s files at the revision that it represents.
+    The revision metadata includes information about who made changes and when, who
+    created the commit object (who entered changes into the repository) and when,
+    and of course the commit message.
+  id: totrans-18
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 提交对象由修订元数据、指向零个或多个父提交的链接，以及它所代表的修订版本中的项目文件快照组成。修订元数据包括关于谁做了更改、何时做的、更改由谁（即谁将更改提交到仓库）以及何时提交的，当然还有提交信息。
+- en: Beyond this fact, it is also useful, in some cases, to know how Git internally
+    represents the snapshot of a project’s files at the given revision. Git uses **tree
+    objects** to represent directories, and **Binary Large Objects** (**blobs**) to
+    represent the contents of a file.
+  id: totrans-19
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 除此之外，在某些情况下，了解 Git 如何在内部表示项目在给定修订版本时的文件快照也是非常有用的。Git 使用**树对象**来表示目录，使用**二进制大对象**（**blobs**）来表示文件的内容。
+- en: Aside from the commit, tree, and blobs, there might also be **tag objects**
+    representing annotated and signed tags.
+  id: totrans-20
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 除了提交、树和 blobs 之外，可能还有**标签对象**，表示注释和签名标签。
+- en: 'Each object is identified by the SHA-1 hash function over its contents, or
+    to be more exact, over the type and the size of the object plus its contents.
+    Such a content-based identifier does not require a central naming service. Thanks
+    to this fact, each and every distributed repository of the same project will use
+    the same identifiers, and we do not have to worry about name collisions:'
+  id: totrans-21
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 每个对象都是通过其内容的 SHA-1 哈希函数进行标识的，或者更准确地说，是通过对象的类型和大小加上其内容的哈希。这样的基于内容的标识符不需要中央命名服务。正因为如此，每个分布式的相同项目仓库都会使用相同的标识符，我们无需担心名称冲突：
+- en: '[PRE0]'
+  id: totrans-22
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: Object identifier – SHA-1 to SHA-256 transition
+  id: totrans-23
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对象标识符 – 从 SHA-1 到 SHA-256 的过渡
+- en: Over time, flaws in the SHA-1 hash function have been discovered. Therefore,
+    Git will transition to using SHA-256 while providing interoperability. At the
+    time of writing this, Git was still using SHA-1 by default.
+  id: totrans-24
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 随着时间的推移，SHA-1 哈希函数的缺陷被逐渐发现。因此，Git 将过渡到使用 SHA-256，同时提供兼容性。到本文写作时，Git 默认仍在使用 SHA-1。
+- en: We can say that the Git repository is the content-addressed object database.
+    That is, of course, not all there is; there are also references (branches and
+    tags), various configuration files, and other things.
+  id: totrans-25
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以说 Git 仓库是一个基于内容寻址的对象数据库。当然，这并不是全部；还有引用（分支和标签）、各种配置文件以及其他内容。
+- en: 'Let’s describe Git objects in more detail, starting from the bottom up. We
+    can examine objects with the low-level `git` `cat-file` command:'
+  id: totrans-26
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们更详细地描述 Git 对象，从底层开始。我们可以使用低级的`git` `cat-file`命令来检查对象：
+- en: '**Blob**: These objects store the contents of the file at the given revision.
+    Such an object can be created using the low-level **git hash-object -w** command.
+    Note that if different revisions have the same contents of a file, it is stored
+    only once thanks to content-based addressing:'
+  id: totrans-27
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**Blob**：这些对象存储给定修订版本中文件的内容。这样的对象可以使用低级别的**git hash-object -w**命令创建。请注意，如果不同的修订版本具有相同的文件内容，它只会被存储一次，得益于基于内容的寻址：'
+- en: '[PRE1]'
+  id: totrans-28
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: '[PRE2]'
+  id: totrans-29
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: '[PRE3]'
+  id: totrans-30
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: '**Tree object**: These objects represent directories. Each tree object is a
+    list of entries, sorted by filename. Each entry is composed of combined permissions
+    and type, the name of the file or directory, and the link (that is, SHA-1 identifier)
+    of an object connected with the given path, either the tree object (representing
+    the subdirectory), the blob (representing the file contents), or rarely the commit
+    object (representing the submodule; see [*Chapter 11*](B21194_11.xhtml#_idTextAnchor270),
+    *Managing Subprojects*). Note that if different revisions have the same contents
+    of a subdirectory, it will be stored only once thanks to content-based addressing:'
+  id: totrans-31
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**树对象**：这些对象代表目录。每个树对象是一个按文件名排序的条目列表。每个条目由组合的权限和类型、文件或目录的名称以及与给定路径相关联的对象链接（即
+    SHA-1 标识符）组成，可能是树对象（表示子目录）、blob（表示文件内容），或者偶尔是提交对象（表示子模块；参见 [*第 11 章*](B21194_11.xhtml#_idTextAnchor270)，*管理子项目*）。请注意，如果不同的修订版本具有相同的子目录内容，它将仅存储一次，这是由于基于内容的寻址：'
+- en: '[PRE4]'
+  id: totrans-32
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: '[PRE5]'
+  id: totrans-33
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: '[PRE6]'
+  id: totrans-34
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: '[PRE7]'
+  id: totrans-35
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE7]'
+- en: '[PRE8]'
+  id: totrans-36
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE8]'
+- en: '[PRE9]'
+  id: totrans-37
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE9]'
+- en: '[PRE10]'
+  id: totrans-38
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE10]'
+- en: '[PRE11]'
+  id: totrans-39
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE11]'
+- en: '[PRE12]'
+  id: totrans-40
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE12]'
+- en: '**Commit object**: These objects represent revisions. Each commit is composed
+    of a set of headers (key-value data) that includes zero or more **parent** lines
+    and exactly one tree line with the link to the **tree** object representing a
+    snapshot of the repository contents (the top directory of a project). You can
+    create a commit with a given tree object as a revision snapshot by using the low-level
+    **git commit-tree** command, or by simply using **git commit**:'
+  id: totrans-41
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**提交对象**：这些对象代表修订版本。每个提交由一组头信息（键值对数据）组成，包括零个或多个 **父** 行和恰好一个树行，指向代表仓库内容快照的
+    **树** 对象（项目的顶层目录）。你可以使用低级别的 **git commit-tree** 命令，或者简单地使用 **git commit** 命令，通过给定的树对象来创建一个提交作为修订快照：'
+- en: '[PRE13]'
+  id: totrans-42
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE13]'
+- en: '[PRE14]'
+  id: totrans-43
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE14]'
+- en: '[PRE15]'
+  id: totrans-44
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE15]'
+- en: '[PRE16]'
+  id: totrans-45
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE16]'
+- en: '[PRE17]'
+  id: totrans-46
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE17]'
+- en: '[PRE18]'
+  id: totrans-47
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE18]'
+- en: '[PRE19]'
+  id: totrans-48
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE19]'
+- en: '**Tag object**: These objects represent annotated tags, of which signed tags
+    are a special case. Tags (lightweight and annotated) give a permanent name to
+    a commit (such as **v0.2**) or any object. Tag objects also consist of a series
+    of headers (including links to the tagged object) and the tag message. You can
+    create the tag object with a low-level **git mktag** command, or simply with **git
+    tag**:'
+  id: totrans-49
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**标签对象**：这些对象代表注释标签，其中签名标签是一种特殊情况。标签（轻量级和注释标签）为提交（例如 **v0.2**）或任何对象提供永久名称。标签对象还包含一系列头信息（包括指向被标记对象的链接）和标签消息。你可以通过低级别的
+    **git mktag** 命令或简单地使用 **git tag** 命令来创建标签对象：'
+- en: '[PRE20]'
+  id: totrans-50
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE20]'
+- en: '[PRE21]'
+  id: totrans-51
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE21]'
+- en: '[PRE22]'
+  id: totrans-52
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE22]'
+- en: '[PRE23]'
+  id: totrans-53
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE23]'
+- en: '[PRE24]'
+  id: totrans-54
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE24]'
+- en: '[PRE25]'
+  id: totrans-55
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE25]'
+- en: Internal datetime format
+  id: totrans-56
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 内部日期时间格式
+- en: The Git internal format for the author, the committer, and the tagger dates
+    is **<unix timestamp> <timezone offset>**. The Unix timestamp (POSIX time) is
+    the number of seconds since the Unix epoch, which is 00:00:00 **Coordinated Universal
+    Time** (**UTC**), Thursday, January 1st, 1970 (1970-01-01T00:00:00Z), not counting
+    leap seconds. This denotes when the event took place. You can print the Unix timestamp
+    with **date "%s"** and convert it into other formats with **date --date="@<timestamp>"**.
+  id: totrans-57
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git 内部格式中的作者、提交者和标记者日期是 **<unix 时间戳> <时区偏移>**。Unix 时间戳（POSIX 时间）是自 Unix 纪元以来的秒数，Unix
+    纪元是 1970 年 1 月 1 日星期四的 00:00:00 **协调世界时** (**UTC**)，不包括闰秒。这个时间表示事件发生的时间。你可以使用
+    **date "%s"** 打印 Unix 时间戳，并使用 **date --date="@<timestamp>"** 将其转换为其他格式。
+- en: The timezone offset is a positive or negative offset from UTC, in the **HHMM**
+    (hours, minutes) format. For example, CET (the timezone that is 2 hours ahead
+    of UTC) is +0200\. This can be used to find the local time for an event.
+  id: totrans-58
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 时区偏移是相对于 UTC 的正或负偏移，以 **HHMM**（小时，分钟）格式表示。例如，CET（比 UTC 快 2 小时的时区）是 +0200。这可以用来查找事件的本地时间。
+- en: The relationship between different types of Git objects mentioned here is shown
+    in *Figure 10**.1*. It represents a typical case, with a tag pointing to a commit
+    and with commits sharing the same contents of at least some files.
+  id: totrans-59
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这里提到的不同类型的 Git 对象之间的关系如 *图 10.1* 所示。它代表了一个典型的情况，其中一个标签指向一个提交，且提交共享至少一些文件的相同内容。
+- en: '![Figure 10.1 – The Git repository object model](img/B21194_10_01.jpg)'
+  id: totrans-60
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 10.1 – Git 仓库对象模型](img/B21194_10_01.jpg)'
+- en: Figure 10.1 – The Git repository object model
+  id: totrans-61
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.1 – Git 仓库对象模型
+- en: Some Git commands work on any type of object. For example, you can tag any type
+    of object, not only commits. You can, among other things, tag a blob to keep some
+    unrelated piece of data in the repository and have it available in each clone.
+    Public keys can be such data.
+  id: totrans-62
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一些 Git 命令适用于任何类型的对象。例如，你可以对任何类型的对象进行标记，不仅仅是提交。你可以标记一个 blob，以便将一些无关的数据保存在仓库中，并且在每个克隆中都能使用这些数据。公钥就是这样的数据之一。
+- en: Notes and replacements, which will be described later in this chapter, also
+    work on any type of object.
+  id: totrans-63
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章稍后将介绍的注释和替代项也适用于任何类型的对象。
+- en: Plumbing and porcelain Git commands
+  id: totrans-64
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: Plumbing和Porcelain Git命令
+- en: Git was developed in a bottom-up fashion. This means that its development started
+    from basic blocks and built upward. Many of the user-facing commands were once
+    built as shell scripts utilizing these basic low-level blocks to do their work.
+    Thanks to this, we can distinguish between the two types of Git commands.
+  id: totrans-65
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git是以自下而上的方式开发的。这意味着它的开发从基本模块开始，然后逐步构建。许多面向用户的命令最初是作为shell脚本构建的，利用这些基本的低级模块来完成工作。正因如此，我们能够区分这两种类型的Git命令。
+- en: The better-known type is **porcelain** commands, which are high-level user-facing
+    commands (*porcelain* is a play on words on calling engine-level commands *plumbing*).
+    The output of these commands is intended for the end user. This means that their
+    output can be changed to be more user-friendly. Therefore, their output can be
+    different in different Git versions. The user is smart enough to understand what
+    happens if they are presented with additional information, changed wording, or
+    changed formatting (for example).
+  id: totrans-66
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 更为人知的类型是**porcelain**命令，这是面向用户的高级命令（*porcelain*一词是对称调用引擎级命令*plumbing*的一个双关语）。这些命令的输出是面向最终用户的。这意味着它们的输出可以根据需要更具用户友好性。因此，这些命令的输出在不同的Git版本中可能会有所不同。用户足够聪明，可以理解当他们看到额外信息、措辞变化或格式变化时发生了什么（例如）。
+- en: 'This is not the case for the scripts you may write in this chapter, such as
+    those used for rewriting with `git filter-repo`. Here, you need unchanging output
+    – well, at least for the scripts that are used more than once (as hooks, as `.gitattribute`
+    drivers, and as helpers). You can often find a switch, usually named `--porcelain`,
+    that ensures that the command output is immutable. For other commands, the solution
+    is to specify the format fully. Alternatively, you can use low-level commands
+    intended for scripting: **plumbing** commands. These commands usually do not have
+    user-friendly defaults, not to mention a “do what I mean” quality. Their output
+    also does not depend on the Git configuration; not many of them can be configured
+    via the Git configuration file.'
+  id: totrans-67
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你在本章中可能编写的脚本，例如用于使用`git filter-repo`进行重写的脚本，情况并非如此。在这里，你需要的是不变的输出——至少对于那些多次使用的脚本（作为钩子、`.gitattribute`驱动程序和助手）。你通常可以找到一个开关，通常命名为`--porcelain`，它确保命令的输出是不可变的。对于其他命令，解决方法是完全指定格式。或者，你可以使用专为脚本编写设计的低级命令：**plumbing**命令。这些命令通常没有用户友好的默认设置，更不用说“按我的意思做”的特性了。它们的输出也不依赖于Git配置；其中大多数命令不能通过Git配置文件进行配置。
+- en: The `git(1)` manpage includes a list of all the Git commands, separated into
+    porcelain and plumbing. The distinction between plumbing and porcelain commands
+    was mentioned as a tip in [*Chapter 3*](B21194_03_split_000.xhtml#_idTextAnchor049),
+    *Managing Your* *Worktrees*, when we encountered the first low-level plumbing
+    command without a user-facing and user-friendly porcelain equivalent.
+  id: totrans-68
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`git(1)`的手册页列出了所有Git命令，按**porcelain**和**plumbing**分类。**plumbing**和**porcelain**命令的区别在[*第3章*](B21194_03_split_000.xhtml#_idTextAnchor049)中作为一个提示提到，当时我们遇到了第一个没有用户友好的**porcelain**等效命令的低级**plumbing**命令。'
+- en: Rewriting history
+  id: totrans-69
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 重写历史
+- en: Many times, while working on a project, you may want to revise your commit history.
+    One reason for this could be to make it easier to review before submitting the
+    changes upstream. Another reason would be to take reviewer comments into account
+    in the next improved version of changes. Or perhaps you’d like to have a clear
+    history while finding regressions using bisection, as described in [*Chapter 4*](B21194_04.xhtml#_idTextAnchor083),
+    *Exploring* *Project History*.
+  id: totrans-70
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在许多情况下，当你在一个项目中工作时，你可能想要修改你的提交历史。这样做的一个原因可能是为了在提交更改到上游之前更容易进行审查。另一个原因是考虑审阅者的意见，并在下一版本的更改中加以改进。或者，也许你想在使用二分法查找回归问题时拥有清晰的历史，正如在[*第4章*](B21194_04.xhtml#_idTextAnchor083)中所描述的，*探索*
+    *项目历史*。
+- en: One of the great things about Git is that it makes revising and rewriting history
+    possible while providing a wide set of tools to revise history and make it clean.
+  id: totrans-71
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git的一大优点是它使得重写和修改历史成为可能，并提供了一整套工具来修订历史并使其保持干净。
+- en: Views on rewriting history
+  id: totrans-72
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 关于重写历史的看法
+- en: There are two conflicting views among users of the version control system. One
+    states that history is sacred and that you should show the true history of the
+    development, warts, and all. The other states that you should clean up the new
+    history for better readability before publishing it.
+  id: totrans-73
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在版本控制系统的用户中，有两种对立的观点。一种观点认为历史是神圣的，应该展示开发的真实历史，包含所有的缺陷。另一种观点认为，在发布之前，应该清理新的历史，使其更具可读性。
+- en: An important issue to note is that even though we talk about “rewriting” the
+    history, objects in Git (including commits) are `ORIG_HEAD`). Well, at least they
+    will be there until they get pruned (that is, deleted) as unreferenced and unreachable
+    objects during garbage collection, though this only happens after the reflog expires.
+  id: totrans-74
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 需要注意的一个重要问题是，即使我们谈论的是“重写”历史，Git 中的对象（包括提交）仍然是 `ORIG_HEAD`。不过，至少它们会一直存在，直到它们在垃圾回收过程中被修剪（即被删除）为未引用和不可达的对象，尽管这种情况只有在
+    reflog 过期后才会发生。
+- en: Amending the last commit
+  id: totrans-75
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 修改最后一次提交
+- en: The simplest case of history rewriting is correcting the latest commit on a
+    branch.
+  id: totrans-76
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 历史重写的最简单情况是修正分支上的最新提交。
+- en: Sometimes you might notice a typo (an error) in a commit message, or that you
+    have committed an incomplete change in the last revision. If you have not pushed
+    (published) your changes, you can `--amend` option to the `git` `commit` command.
+  id: totrans-77
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有时你可能会注意到在提交消息中有拼写错误（或者在上一版本中提交了不完整的更改）。如果你还没有推送（发布）你的更改，可以对 `git commit` 命令使用
+    `--amend` 选项。
+- en: The result of amending a commit is shown in *Figure 6* in [*Chapter 2*](B21194_02.xhtml#_idTextAnchor028),
+    *Developing with Git*. Note that there is no functional difference between amending
+    the last commit and changing some commits deeper in the history. In both cases,
+    you are creating a new commit, leaving the old version referenced by the reflog.
+    The difference is in what happens to other commits.
+  id: totrans-78
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 修改提交的结果如 [*第 2 章*](B21194_02.xhtml#_idTextAnchor028) 中的 *图 6* 所示，*使用 Git 开发*。请注意，修改最后一次提交与更改历史中更深层次的某些提交之间没有功能上的区别。在两种情况下，你都在创建一个新提交，旧版本仍然会通过
+    reflog 被引用。不同之处在于其他提交的处理方式。
+- en: Here, the index (that is, the explicit staging area for commits) shows its usefulness
+    again. For example, if you want to simply fix only the commit message and you
+    do not want to make any other changes, you can use `git commit --amend` (note
+    the lack of an `-a` or `--all` option). This works even if you have started work
+    on a new commit – at least, assuming that you didn’t add any changes to the index.
+    If you did, you can put them away temporarily with `git stash`, fix the commit
+    message of the last commit, and then pop stashed changes and restore the index
+    with `git stash` `pop --index`.
+  id: totrans-79
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这里，索引（即明确的提交暂存区）再次显示其重要性。例如，如果你只想修复提交消息，并且不想做其他更改，可以使用 `git commit --amend`（注意没有使用
+    `-a` 或 `--all` 选项）。即使你已经开始工作在新的提交上，这也能正常工作——至少前提是你没有向索引中添加任何更改。如果你添加了更改，你可以使用
+    `git stash` 暂时保存它们，修正最后一次提交的消息，然后再用 `git stash pop --index` 恢复索引和弹出保存的更改。
+- en: If, on the other hand, you realize that you have forgotten some changes, you
+    can just edit the files and use `git commit --amend --all`. If the changes are
+    interleaved, you can use `git add` or its interactive version (utilizing knowledge
+    from [*Chapter 3*](B21194_03_split_000.xhtml#_idTextAnchor049), *Managing Your*
+    *Worktrees*) to create the contents you want to have, finalizing it with `git`
+    `commit --amend`.
+  id: totrans-80
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 另一方面，如果你意识到忘记了一些更改，你可以直接编辑文件并使用 `git commit --amend --all`。如果更改交织在一起，你可以使用 `git
+    add` 或其交互版本（利用来自 [*第 3 章*](B21194_03_split_000.xhtml#_idTextAnchor049)，*管理你的工作树*）来创建你想要的内容，最终使用
+    `git commit --amend` 完成。
+- en: The interactive rebase
+  id: totrans-81
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 交互式变基
+- en: Sometimes you might want to edit commits deeper in the history or reorganize
+    commits into a logical sequence of steps. One of the built-in tools in Git that
+    you can use for this purpose is `git` `rebase --interactive`.
+  id: totrans-82
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有时你可能想要编辑历史中的某些提交，或者将提交重新组织成一系列有逻辑顺序的步骤。在 Git 中，你可以使用 `git rebase --interactive`
+    这一内置工具来完成此任务。
+- en: Here, we will assume that you are working on a feature using a separate topic
+    branch, as well as a topic branch workflow described and recommended in [*Chapter
+    8*](B21194_08_split_000.xhtml#_idTextAnchor196), *Advanced Branching Techniques*.
+    We will also assume that you are doing the work in a series of logical steps rather
+    than in one large commit.
+  id: totrans-83
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这里，我们假设你正在使用单独的主题分支进行功能开发，并且遵循在 [*第 8 章*](B21194_08_split_000.xhtml#_idTextAnchor196)
+    中描述并推荐的主题分支工作流，*高级分支技术*。我们还假设你是按照一系列逻辑步骤进行工作，而不是通过一个大的提交。
+- en: When implementing a new feature, you usually won’t do it perfectly from the
+    very beginning. You would want to introduce it in a series of small self-contained
+    steps (see [*Chapter 15*](B21194_15.xhtml#_idTextAnchor371), *Git Best Practices*)
+    to make code review, code audit, and bisection (finding the cause of regressions
+    bugs) easier. Often, you will only see how to split it better after finishing
+    the work. It is also unreasonable to expect that you would not make mistakes while
+    implementing a new feature.
+  id: totrans-84
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在实现新特性时，你通常不会从一开始就做到完美。你会希望通过一系列小而独立的步骤引入它（参见[*第十五章*](B21194_15.xhtml#_idTextAnchor371)，*Git最佳实践*），以便更容易进行代码审查、代码审计和二分查找（找出回归错误的原因）。通常，只有在完成工作后，你才会发现如何更好地拆分它。期望在实现新特性时不犯错误也是不现实的。
+- en: Before submitting the changes (by either pushing them to the central repository,
+    pushing them to your own public repository and sending pull requests, or using
+    some other workflow described in [*Chapter 6*](B21194_06.xhtml#_idTextAnchor140),
+    *Collaborative Development with Git*), you will often want to update your branch
+    to the up-to-date state of the project to make it easier to merge. By rebasing
+    your changes on top of the current state and having them up-to-date, you will
+    make it easier for the maintainer (the integration manager) to ultimately merge
+    your changes when they are accepted for inclusion into the mainline. **Interactive
+    rebase** allows you to clean up history, as described earlier, while doing this
+    work.
+  id: totrans-85
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在提交变更之前（无论是推送到中央仓库、推送到你自己的公共仓库并发送拉取请求，还是使用[*第六章*](B21194_06.xhtml#_idTextAnchor140)中描述的其他工作流，*Git协作开发*），你通常需要将你的分支更新为项目的最新状态，以便更容易合并。通过将你的变更
+    rebase 到当前状态并使其保持最新，你将使维护者（集成经理）在接受并合并你的变更时更加轻松。**交互式 rebase**允许你在做这些工作时清理历史，正如前面所述。
+- en: Aside from tidying up changes before publishing them, there is also additional
+    use for tools such as interactive rebases. While working on a more involved feature,
+    the very first submission is not always accepted into an upstream and added to
+    the project. Often, the process of patch review finds problems with the code,
+    or with the explanation of the changes. Perhaps something is missing (for example,
+    the feature might lack documentation or tests), some commit needs to be fixed,
+    or the submitted series of patches (or the branch submitted in the pull request)
+    should be split into smaller commits for easy review. In this case, you would
+    also use an interactive rebase (or an equivalent tool) to prepare a new version
+    to submit, taking into account the results of the code inspection.
+  id: totrans-86
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 除了在发布之前整理变更外，像交互式 rebase 这样的工具还有其他用途。在开发一个复杂特性时，首次提交并不总是会被上游接受并添加到项目中。通常，补丁审查过程会发现代码或者变更说明中的问题。可能有一些内容缺失（例如，特性可能缺少文档或测试），某些提交需要修正，或者提交的补丁系列（或拉取请求中提交的分支）应该拆分成更小的提交，以便更容易审查。在这种情况下，你也可以使用交互式
+    rebase（或类似工具）来准备新版本提交，考虑代码检查的结果。
+- en: Reordering, removing, and fixing commits
+  id: totrans-87
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 重新排序、删除和修复提交
+- en: Rebase, as described in [*Chapter 9*](B21194_09.xhtml#_idTextAnchor229), *Merging
+    Changes Together*, consists of taking a series of changes of the commits being
+    rebased and reapplying them on top of a new base (a new commit). In other words,
+    rebase moves changesets, not snapshots. Git starts the interactive rebase by opening
+    the instructions sheet corresponding to those operations of reapplying changes
+    in the editor.
+  id: totrans-88
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Rebase，如[*第九章*](B21194_09.xhtml#_idTextAnchor229)中所描述，*合并变更*，是将被 rebase 的一系列提交的变更提取出来，并重新应用到一个新的基础（一个新的提交）上。换句话说，rebase
+    移动的是变更集，而不是快照。Git 通过打开与这些操作相关的指令文件，在编辑器中启动交互式 rebase。
+- en: Tip
+  id: totrans-89
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 提示
+- en: You can configure the text editor used for editing the rebase instruction file
+    separately from the default editor (which is used, for example, to edit commit
+    messages) with the **sequence.editor** configuration variable, which can in turn
+    be overridden by the **GIT_SEQUENCE_EDITOR** environment variable.
+  id: totrans-90
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以通过**sequence.editor**配置变量，单独配置用于编辑 rebase 指令文件的文本编辑器，该配置变量可以被**GIT_SEQUENCE_EDITOR**环境变量覆盖，而不是使用默认编辑器（例如，用于编辑提交消息的编辑器）。
+- en: 'Like in the case of the template for editing commits, the instruction sheet
+    is accompanied by the comments explaining what you can do with it (note that if
+    you are using older Git, some interactive rebase commands might be missing from
+    this sheet):'
+  id: totrans-91
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 就像编辑提交的模板一样，指令表格会附带注释，解释你可以对其进行的操作（请注意，如果你使用的是旧版本的Git，某些交互式rebase命令可能在此表格中缺失）：
+- en: '[PRE26]'
+  id: totrans-92
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE26]'
+- en: Note that empty commits will be marked with `# empty` at the end of the line.
+    Depending on your version of Git and your configuration, the instruction sheet
+    may include more commands.
+  id: totrans-93
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请注意，空提交将在行尾标记为`# empty`。根据你的Git版本和配置，指令表格中可能包含更多命令。
+- en: As explained in the comments, the instructions are in the order of execution,
+    starting from the instruction on the top to create the first commit (with the
+    new base as its parent) and ending at the bottom with the instruction copying
+    the commit at the tip of the branch being rebased. This means that revisions are
+    listed in an increasing chronological order, with older commits first. This is
+    the reverse order from the `git log` output, with the most recent commit first
+    (unless you are using `git log --reverse`). This is quite understandable; the
+    rebase reapplies changesets in the order in which they were added to the branch,
+    while the log operation shows commits in the order of reachability from the tips.
+  id: totrans-94
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如注释所述，指令的顺序是按执行顺序排列的，从顶部的指令开始，创建第一个提交（将新的基础作为其父提交），并在底部结束，复制正在进行rebase操作的分支末端的提交。这意味着修订按时间顺序排列，较旧的提交排在前面。这与`git
+    log`的输出顺序相反，后者显示最近的提交在前（除非你使用`git log --reverse`）。这很容易理解；rebase重新应用变更集的顺序是按它们被添加到分支中的顺序，而日志操作则显示按可达性顺序排列的提交。
+- en: 'Each line of the instruction sheet consists of three elements, separated by
+    spaces:'
+  id: totrans-95
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 指令表格的每一行由三个元素组成，元素之间用空格分隔：
+- en: First, there is a one-word command. By default, the interactive rebase starts
+    with **pick**. Each command has a one-letter shortcut that you can use instead
+    of the long form, as shown in the comments (for example, you can use **p** in
+    place of **pick**).
+  id: totrans-96
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 首先是一个单词的命令。默认情况下，交互式rebase以**pick**开始。每个命令都有一个单字母的快捷方式，你可以用它代替长格式，如注释中所示（例如，你可以用**p**代替**pick**）。
+- en: Next, there is a uniquely shortened SHA-1 identifier of a commit to be used
+    with the command. Strictly speaking, it is the identifier of a commit being rebased,
+    which it had before the rebase process started. This shortened SHA-1 identifier
+    is used to pick the appropriate commit (for example, when reordering lines of
+    the interactive rebase instruction sheet, which effectively means **reordering
+    commits**).
+  id: totrans-97
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 接下来，是与命令一起使用的提交的唯一缩短版SHA-1标识符。严格来说，它是rebase过程开始之前，正在进行rebase的提交的标识符。这个缩短的SHA-1标识符用于选择适当的提交（例如，在交互式rebase指令表格中重新排序行，这实际上意味着**重新排序提交**）。
+- en: Lastly, there is the description (subject) of a commit. It is taken from the
+    first line of the commit message. More specifically, it is the first paragraph
+    of the commit message with the line breaks removed, where a paragraph is defined
+    as the set of subsequent lines of text, separated from other paragraphs by at
+    least one empty line – that is, two or more end-of-line characters. This is one
+    of the reasons why the first line of the commit message should be a short description
+    of changes (see [*Chapter 15*](B21194_15.xhtml#_idTextAnchor371), *Git Best Practices*).
+    This description is for you to help decide what to do with the commit; Git uses
+    its SHA-1 identifier and ignores the rest of the line.
+  id: totrans-98
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 最后是提交的描述（主题）。它取自提交信息的第一行。更具体来说，它是提交信息的第一段，去除了换行符，其中段落被定义为一组后续的文本行，段落之间至少用一个空行分隔——即两个或更多的换行符。这也是为什么提交信息的第一行应该是简短的更改描述的原因之一（参见
+    [*第15章*](B21194_15.xhtml#_idTextAnchor371)，*Git最佳实践*）。这个描述是为了帮助你决定如何处理该提交；Git使用其SHA-1标识符并忽略其余部分。
+- en: Reordering commits with the interactive rebase is as simple as reordering lines
+    in the instruction sheet. Note, however, that if the changes are not independent,
+    you might need to resolve conflicts, even if there would be no merge conflicts
+    without reordering. In such cases, as instructed by Git, you will need to fix
+    conflicts, mark conflicts as resolved (for example, with `git add`), and then
+    run `git rebase --continue`. Git will remember that you are in the middle of an
+    interactive rebase, so you don’t need to repeat the `--``interactive` option.
+  id: totrans-99
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用交互式 rebase 重排提交就像在指令表中重排行一样简单。但需要注意的是，如果变更之间不是独立的，即使重排后没有合并冲突，仍可能需要解决冲突。在这种情况下，按照
+    Git 的提示，你需要解决冲突，标记冲突已解决（例如使用`git add`），然后运行`git rebase --continue`。Git 会记住你正在进行交互式
+    rebase，因此你无需重复使用`--interactive`选项。
+- en: The other possibility of dealing with a conflict is skipping a commit, rather
+    than resolving a conflict, by running `git rebase --skip`. By default, rebase
+    removes changes that are already present in upstream; you might want to use this
+    command in case the rebase didn’t detect correctly that the commit in question
+    is already there in the branch we are transplanting revisions onto. In other words,
+    do skip a commit if you know that the correct resolution of a conflict is an empty
+    changeset.
+  id: totrans-100
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 另一种处理冲突的方法是跳过某个提交，而不是解决冲突，可以通过运行`git rebase --skip`来实现。默认情况下，rebase 会删除上游已经存在的更改；如果
+    rebase 没有正确检测到待处理提交已存在于我们正在合并的分支中，可以使用此命令。换句话说，如果你知道解决冲突的正确方式是空的变更集，就跳过该提交。
+- en: Tip
+  id: totrans-101
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 提示
+- en: You can also make Git present you with the instruction sheet again at any time
+    when rebase stops for some reason (including an error in the instruction sheet,
+    such as using the **squash** command with the first commit). You can do this with
+    the **git rebase --edit-todo command**. After editing it, you can continue the
+    rebase.
+  id: totrans-102
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你也可以在 Git 因某种原因（包括指令表中的错误，例如将**squash**命令用于第一个提交）停止时，随时通过**git rebase --edit-todo命令**让
+    Git 重新显示指令表。编辑完成后，你可以继续执行 rebase。
+- en: To `drop` command. You can use it to drop failed experiments or to make it easier
+    on the rebase by deleting changesets that you know are already present in the
+    upstream being rebased onto (though perhaps in a different form). Note though
+    that removing the instruction sheet altogether aborts the rebase.
+  id: totrans-103
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用`drop`命令。你可以通过此命令删除失败的实验，或通过删除你知道已经存在于上游（尽管可能形式不同）的变更集来简化 rebase。不过需要注意的是，完全删除指令表会导致
+    rebase 中止。
+- en: To `pick` command preceding the relevant commit in the instruction sheet to
+    `edit` (or just `e`). This would make the rebase stop at this commit, that is,
+    at this step of reapplying changes, similar to what happens in the case of a conflict.
+    To be precise, the interactive rebase applies the commit in question, making it
+    the `HEAD` commit, and then stops the process, giving control to the user . You
+    can then fix this commit as if it were the current one with `git commit --amend`,
+    as described in *Amending the last commit*. After changing it to your liking,
+    run `git rebase --continue`, as explained in the instruction that Git prints.
+  id: totrans-104
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在指令表中，将目标提交前的`pick`命令改为`edit`（或简写为`e`）。这将使 rebase 在该提交处停止，也就是在重新应用更改时停下，类似于发生冲突的情况。具体来说，交互式
+    rebase 会应用该提交，并将其设为`HEAD`提交，然后停止流程，将控制权交给用户。此时，你可以像修改当前提交一样，通过`git commit --amend`来修改该提交，具体操作见*修改上一个提交*。修改完成后，按照
+    Git 输出的指令，运行`git rebase --continue`继续操作。
+- en: Tip
+  id: totrans-105
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 提示
+- en: A proper Git-aware command line prompt, such as the one from the Git **`contrib/`**
+    directory in the Git source code, would tell you when you are in the middle of
+    the rebase (see [*Chapter 13*](B21194_13_split_000.xhtml#_idTextAnchor320), *Customizing
+    and Extending Git*). If you are not using such a prompt, you can always check
+    what’s happening with **git status**, which says that there is a rebase in progress
+    in such cases. You can also find instructions on what you can do next there.
+  id: totrans-106
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一个合适的 Git 命令行提示符，例如 Git 源代码中**`contrib/`**目录下的提示符，能够告诉你是否正在进行 rebase（参见[*第 13
+    章*](B21194_13_split_000.xhtml#_idTextAnchor320)，*自定义和扩展 Git*）。如果你没有使用这样的提示符，你可以随时通过**git
+    status**来查看当前状态，在这种情况下它会提示有 rebase 操作在进行。你也可以在这里找到接下来可以执行的指令。
+- en: Alternatively, you can always go to the state before starting the rebase with
+    the `git rebase --``abort` command.
+  id: totrans-107
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 或者，你也可以随时使用`git rebase --abort`命令回到开始 rebase 前的状态。
+- en: If you only want to change the commit message (for example, to fix a spelling
+    error or to include additional information), you can skip the need to run `git
+    commit --amend` and then `git rebase --continue` by using `reword` (or `r`) instead
+    of `edit`. Git will then automatically open the editor with the commit message.
+    Saving changes and exiting the editor will commit the changes, amend the commit,
+    and continue the rebase.
+  id: totrans-108
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你只想更改提交消息（例如，修正拼写错误或包含额外信息），你可以跳过运行 `git commit --amend` 然后 `git rebase --continue`
+    的需要，而是使用 `reword`（或 `r`）代替 `edit`。Git 将自动打开编辑器以进行提交消息的编辑。保存更改并退出编辑器将提交更改，修正提交并继续重新基础。
+- en: Squashing commits
+  id: totrans-109
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 合并提交
+- en: Sometimes you might need to make one commit out of two or more, squashing them
+    together. Maybe you decided that it didn’t make sense to split the changes and
+    that they are better together.
+  id: totrans-110
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有时，您可能需要将两个或多个提交合并为一个。也许您决定不再将更改分开，而是将它们一起使用会更合理。
+- en: With the interactive rebase you can reorder these commits as needed, so that
+    they are next to each other. Then, keep the `pick` command for the first of the
+    commits to be concatenated together (or change it to the `edit` command). For
+    the rest of the commits, replace the `pick` command with either the `squash` or
+    the `fixup` command. Git will then accumulate the changes and create the commit
+    with all of them together. The suggested commit message for the folded commit
+    is the commit message of the first commit, with the messages of the commits with
+    the `squash` command appended. Commit messages with the `fixup` command are omitted.
+    This means that the `squash` command is useful for squashing changes, while `fixup`
+    is useful for adding fixes. If commits had different authors, the folded commit
+    will be attributed to the author of the first commit. The committer will be you,
+    the person performing the rebase.
+  id: totrans-111
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用交互式 rebase，您可以根据需要重新排序这些提交，以便它们相互靠近。然后，保留第一个要合并的提交的 `pick` 命令（或将其更改为 `edit`
+    命令）。对于其余的提交，请用 `squash` 或 `fixup` 命令替换 `pick` 命令。Git 将累积更改并创建包含所有更改的提交。合并提交的建议提交消息是第一个提交的提交消息，并附加具有
+    `squash` 命令的提交的消息。具有 `fixup` 命令的提交消息将被省略。这意味着 `squash` 命令用于合并更改，而 `fixup` 命令用于添加修复。如果提交具有不同的作者，则折叠提交将归因于第一个提交的作者。提交者将是执行
+    rebase 操作的您。
+- en: Let’s assume that you noticed that you forgot to add some parts of the changes
+    to the commit. Perhaps it is missing tests (or just negative tests) or documentation.
+    The commit is in the past, so you cannot simply add to it by amending it. You
+    could use the interactive rebase or the patch management interface to fix it,
+    but it is often more effective to create the commit with forgotten changes and
+    squash it later.
+  id: totrans-112
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 假设您注意到忘记将某些更改的部分添加到提交中。也许缺少测试（或只是负面测试）或文档。提交已经在过去，因此您不能简单地通过修改来添加。您可以使用交互式 rebase
+    或补丁管理界面进行修复，但通常更有效的方法是创建具有遗漏更改的提交，然后稍后再压缩它。
+- en: Similarly, when you notice that the commit you created a while ago has a bug,
+    instead of trying to edit it immediately, you can create a `fixup` commit with
+    a bug fix to be squashed later.
+  id: totrans-113
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 同样地，当你注意到一段时间前创建的提交存在 bug 时，不要立即尝试编辑它，而是可以创建一个包含 bug 修复的 `fixup` 提交，稍后再压缩它。
+- en: If you use this technique, there might be some delay between noticing the need
+    to make changes or fix a bug and creating the appropriate commit. This gap includes
+    the time taken for the rebase operation.
+  id: totrans-114
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果使用此技术，则在注意到需要进行更改或修复 bug 并创建适当提交之间可能会有一些延迟。此间隔包括重新基础操作所需的时间。
+- en: How do you then mark the commit being created for squashing or fixup? If you
+    use the commit message beginning with the magic `squash! ...` or `fixup! ...`
+    strings, respectively, preceding the description (the first line of the commit
+    message, sometimes called the `rebase -i`. You can request this on an individual
+    basis with the `--autosquash` option, or you can enable this behavior by default
+    with the `rebase.autoSquash` configuration variable. To create an appropriate
+    “magic” commit message, you can use `git commit --squash/--fixup` (when creating
+    the commit to be squashed into or the bugfix commit).
+  id: totrans-115
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 那么如何标记正在创建用于压缩或修复的提交呢？如果你的提交消息以魔术字符串 `squash! ...` 或 `fixup! ...` 开头，则会分别在描述（提交消息的第一行，有时称为
+    `rebase -i` 的部分）之前。您可以通过 `--autosquash` 选项在个别基础上请求此操作，或者您可以通过默认使用 `rebase.autoSquash`
+    配置变量启用此行为。要创建适当的“魔术”提交消息，您可以在创建要压缩到的提交或 bug 修复提交时使用 `git commit --squash/--fixup`。
+- en: Splitting commits
+  id: totrans-116
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 拆分提交
+- en: Sometimes, you might want to make two commits or more out of one commit, splitting
+    it into two or more parts. You may have noticed that the commit is too large,
+    perhaps because it tries to do too much, and should be split into smaller pieces.
+    Or perhaps you have decided that some part of a changeset should be moved from
+    one commit to another, and extracting it into a separate commit is a first step
+    toward accomplishing that.
+  id: totrans-117
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有时，您可能希望将一个提交拆分成两个或更多个提交，将其分割成多个部分。您可能已经注意到，某个提交过于庞大，可能是因为它尝试做了太多事情，应该将其拆分成更小的部分。或者，您可能决定将某个更改集的一部分从一个提交移到另一个提交，提取成单独的提交是实现这一目标的第一步。
+- en: Git does not provide a one-step built-in command for this operation. Nevertheless,
+    splitting commits is possible with the clever use of the interactive rebase.
+  id: totrans-118
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git并没有提供一个一键式的内建命令来执行此操作。然而，借助交互式变基的巧妙使用，拆分提交是可能的。
+- en: To split a given commit, first mark it with the `edit` action. As described
+    earlier, Git will stop at the specified commit and give the control back to the
+    user. In the case of splitting a commit, when returning control to Git with `git
+    rebase --continue`, you would want to have two commits in place of one.
+  id: totrans-119
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要拆分一个给定的提交，首先使用`edit`操作标记它。如前所述，Git将在指定的提交处停下并将控制权交还给用户。在拆分提交的情况下，当通过`git rebase
+    --continue`将控制权交还给Git时，您希望用两个提交代替原来的一个提交。
+- en: The problem of splitting a commit is comparable to the problem of having different
+    changes tangled together in the working directory from [*Chapter 2*](B21194_02.xhtml#_idTextAnchor028),
+    *Developing With Git* (the section about the interactive commit), and [*Chapter
+    3*](B21194_03_split_000.xhtml#_idTextAnchor049), *Managing Your* *Worktrees*.
+    The difference is that in the case of splitting a commit with the interactive
+    rebase, when the rebase stops for editing, the commit is already created and copied
+    from the branch being rebased. This is simple to fix with `git reset HEAD^`; as
+    described in [*Chapter 3*](B21194_03_split_000.xhtml#_idTextAnchor049), *Managing
+    Your* *Worktrees*, this command will keep the working area at the (entangled)
+    state of the commit to be split while moving the `HEAD` pointer and the staging
+    area for the commit to the state before this revision. Then you can interactively
+    add those changes that you want to have in the first commit to the index, by composing
+    the intermediate step in the staging area. Next, you should check whether you
+    have what you want in the index, then create a commit from it using `git commit`
+    without the `-a` or `--all` option. Repeat these last two steps as often as necessary.
+  id: totrans-120
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 拆分提交的问题与工作目录中不同更改混合在一起的问题相似，这在[*第2章*](B21194_02.xhtml#_idTextAnchor028)《使用Git开发》（关于交互式提交的部分）和[*第3章*](B21194_03_split_000.xhtml#_idTextAnchor049)《管理工作树》一章中都有提到。不同之处在于，在使用交互式变基拆分提交时，当变基停下来等待编辑时，提交已经由被变基的分支创建并复制。这可以通过`git
+    reset HEAD^`简单修复；如[*第3章*](B21194_03_split_000.xhtml#_idTextAnchor049)《管理工作树》中所述，该命令将保持工作区处于（交织的）拆分前提交的状态，同时将`HEAD`指针和提交的暂存区移回到该修订之前的状态。然后，您可以通过在暂存区中组合中间步骤，交互式地将您希望包含在第一个提交中的更改添加到索引中。接下来，您应该检查索引中是否包含所需内容，然后使用`git
+    commit`（不带`-a`或`--all`选项）从中创建提交。根据需要重复这最后两步。
+- en: 'For the last commit in the series (which would be the second one, if you are
+    splitting the commit in two), you can do one of two things. The first option is
+    to add everything to the index, making the working copy clean, and create a commit
+    from the index. The other option is to create a commit from the state of the working
+    area (`git commit --all`). If you want to keep or start from the commit message
+    of the original commit to be split, you can provide it with the `--reuse-message=<commit>`
+    or the `--reedit-message=<commit>` option while creating a commit. I think the
+    simplest way of naming a commit that was split (or that is being split) is to
+    use reflog – it will be the `HEAD@{n}` entry just before `reset: moving to HEAD^`
+    in the `git` `reflog` output.'
+  id: totrans-121
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '对于系列中的最后一个提交（如果您将提交拆分为两个，那么它就是第二个提交），您可以做两件事中的任何一件。第一种选择是将所有内容添加到索引，使工作副本干净，然后从索引中创建提交。另一种选择是从工作区的状态中创建提交（`git
+    commit --all`）。如果您希望保留或从原始提交的提交信息开始，您可以在创建提交时使用`--reuse-message=<commit>`或`--reedit-message=<commit>`选项。我认为最简单的拆分提交命名方式是使用reflog——它将是`git
+    reflog`输出中`reset: moving to HEAD^`之前的`HEAD@{n}`条目。'
+- en: Instead of crafting the commit in the staging area (the index) starting from
+    the parent of the commit to be split and adding changes, perhaps interactively,
+    you could start directly from the final state—the commit to be split—and remove
+    the changes intended for the second step. This can be done, for example, with
+    `git reset --patch HEAD^`. Frankly, you can use any combination of techniques
+    from [*Chapter 3*](B21194_03_split_000.xhtml#_idTextAnchor049), *Managing Your*
+    *Worktrees*. I find graphical commit tools such as `git gui` quite useful for
+    this purpose (you can find out about graphical commit tools, including some examples,
+    in [*Chapter 13*](B21194_13_split_000.xhtml#_idTextAnchor320), *Customizing and*
+    *Extending Git*).
+  id: totrans-122
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 与其在暂存区（索引）中从要拆分的提交的父提交开始构建提交并添加更改（可能是交互式的），你可以直接从最终状态——要拆分的提交开始——并删除为第二步准备的更改。例如，可以使用
+    `git reset --patch HEAD^` 来完成。坦率地说，你可以使用来自 [*第 3 章*](B21194_03_split_000.xhtml#_idTextAnchor049)
+    *管理你的工作树* 的任何技术组合。我发现图形化提交工具，如 `git gui`，在这方面非常有用（你可以在 [*第 13 章*](B21194_13_split_000.xhtml#_idTextAnchor320)
+    *定制和扩展 Git* 中了解图形化提交工具，包括一些示例）。
+- en: If you are not absolutely sure that the intermediate revisions you are creating
+    in the index are consistent (they compile, pass the test suite, and so on), you
+    should use `git stash save --keep-index` to stash away the not-yet-committed changes,
+    bringing the working area to the state composed in the index. You can then test
+    the changes and amend the staging area if fixes are necessary.
+  id: totrans-123
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你不完全确定在索引中创建的中间修订是连贯的（它们能编译，能通过测试套件，等等），你应该使用 `git stash save --keep-index`
+    将尚未提交的更改暂存起来，将工作区恢复到索引中所组成的状态。然后你可以测试这些更改，并在必要时修改暂存区。
+- en: Alternatively, you can create the commit from the index and use a plain `git
+    stash` command to save the state of the working area after each commit. You can
+    then test and amend the created intermediate commit if fixes are necessary. In
+    both cases, you need to restore the changes with `git stash pop` before working
+    on a new commit in the split.
+  id: totrans-124
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 另外，你可以从索引中创建提交，并使用普通的 `git stash` 命令在每个提交后保存工作区的状态。然后你可以测试并在必要时修改创建的中间提交。在这两种情况下，在处理拆分中的新提交之前，你需要使用
+    `git stash pop` 恢复更改。
+- en: Testing each rebased commit
+  id: totrans-125
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 测试每个重新基准的提交
+- en: 'A good software development practice is to test each change before committing
+    it. However, this practice is not always followed. Let’s assume that you forgot
+    to test some commit or skipped it because the change seemed trivial and you were
+    pressed for time. The interactive rebase allows you to `exec` (or `x`) action.
+    It is run between steps of rebasing commits. The `exec` command itself is formatted
+    in a different way from the commands described earlier in this chapter: instead
+    of SHA-1 and a summary of a commit, you provide the command to run.'
+  id: totrans-126
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一个好的软件开发实践是，在提交每个更改之前进行测试。然而，这一实践并非总是得到遵循。假设你忘记测试某个提交，或者因为更改看起来微不足道，且你时间紧迫而跳过了它。交互式
+    rebase 允许你使用 `exec`（或 `x`）操作。它在 rebase 提交的步骤之间运行。`exec` 命令本身的格式与本章前面描述的命令不同：它不是提供提交的
+    SHA-1 和摘要，而是提供要运行的命令。
+- en: 'The `exec` command launches the provided command (given by the rest of the
+    line) in a shell: the one specified in the `SHELL` environment variable, or the
+    default shell if `SHELL` is not set. This means that you can use shell feature.
+    For the POSIX shell, this would mean using `cd` to change directories, `>` to
+    redirect command output, `;` and `&&` to sequence multiple commands, and so on.
+    It is important to remember that the command to be executed is run from the root
+    of the working tree, not from the current directory (i.e., not from the subdirectory
+    you were in when starting the interactive rebase).'
+  id: totrans-127
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`exec` 命令在 shell 中启动提供的命令（由该行的其余部分给出）：使用 `SHELL` 环境变量指定的 shell，或者如果未设置 `SHELL`，则使用默认
+    shell。这意味着你可以使用 shell 功能。对于 POSIX shell，这意味着可以使用 `cd` 切换目录，使用 `>` 重定向命令输出，使用 `;`
+    和 `&&` 来顺序执行多个命令，等等。重要的是要记住，执行的命令是从工作树的根目录运行的，而不是从当前目录运行的（即，不是从开始交互式 rebase 时所在的子目录）。'
+- en: 'If you are strict about not publishing untested changes, you might have worried
+    about the fact that rewritten commits rebased on top of the new changes might
+    not pass tests, even if the original commits did. You can, however, make the interactive
+    rebase test each commit with the `--exec` option. Here is an example:'
+  id: totrans-128
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你严格要求不发布未经测试的更改，你可能会担心已经重新基准的提交会在新更改的基础上不通过测试，尽管原始提交是通过的。然而，你可以让交互式 rebase
+    在每个提交上使用 `--exec` 选项进行测试。以下是一个例子：
+- en: '[PRE27]'
+  id: totrans-129
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE27]'
+- en: 'This would modify the starting instruction sheet, inserting `exec make test`
+    after each entry:'
+  id: totrans-130
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这将修改起始指令表，在每个条目后插入`exec make test`：
+- en: '[PRE28]'
+  id: totrans-131
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE28]'
+- en: External tools – patching management interfaces
+  id: totrans-132
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 外部工具 – 补丁管理接口
+- en: You might prefer to fix the old commit immediately at the time when you notice
+    the bug, instead of postponing it until the time when the branch is rebased. The
+    latter is usually done just before the branch is sent for review (to publish it).
+    This might be quite some time after realizing the need to edit the past commit.
+  id: totrans-133
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可能更倾向于在发现 bug 的时候立即修复旧的提交，而不是等到分支重新基础化的时候再修复。后者通常是在分支发送审查（以发布它）之前进行的。这可能是在意识到需要编辑过去的提交后相当长的一段时间。
+- en: Git itself doesn’t make it easy to fix the found bug straight away, or at least,
+    not with built-in tools. You can, however, find third-party external tools that
+    implement the patch management interface on the top of Git. Examples of such tools
+    include **Stacked Git** (**StGit**) and **Git Quilt** (**Guilt**) – the latter
+    is unmaintained, but still usable.
+  id: totrans-134
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git 本身并不容易直接修复已发现的 bug，至少使用内置工具并不容易。然而，你可以找到第三方外部工具，它们在 Git 上实现了补丁管理接口。此类工具的例子包括**Stacked
+    Git**（**StGit**）和**Git Quilt**（**Guilt**）——后者虽然不再维护，但仍可使用。
+- en: These tools provide similar functionality to **Quilt** (that is, pushing or
+    popping patches to and from a stack). With such tools, you have a set of work-in-progress
+    “floating” patches in the Quilt-like stack. You also have accepted changes in
+    the form of proper Git commits. You can convert between **patch** and commit and
+    vice-versa, move and edit patches around, move and edit commits (which is done
+    by turning the commit and its children into patches, reordering or editing patches,
+    and then turning patches back into commits again), squash patches, and so on.
+  id: totrans-135
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这些工具提供了与**Quilt**类似的功能（即将补丁推送到栈中或从栈中弹出）。使用这些工具，你可以在类似 Quilt 的栈中拥有一组正在进行的“浮动”补丁。你还可以有以正确
+    Git 提交形式存在的已接受更改。你可以在**补丁**和提交之间相互转换，移动和编辑补丁，移动和编辑提交（这通过将提交及其子提交转化为补丁、重新排序或编辑补丁，然后再将补丁转回提交来完成），合并补丁等。
+- en: This is, however, an additional tool to install, an additional set of operations
+    to learn (even if they make your work easier), and an additional set of complications
+    coming from the boundary between Git and the tool in question. An interactive
+    rebase is powerful enough nowadays, and, with autosquash, the need for another
+    layer on top of Git is lessened.
+  id: totrans-136
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，这仍然是一个需要安装的额外工具，一组需要学习的额外操作（即使它们可以让你的工作更轻松），以及来自 Git 与该工具之间边界的额外复杂性。如今，交互式
+    rebase 足够强大，并且通过 autosquash，Git 上再加一层工具的需求已大大减少。
+- en: Rewriting project history with Git filter-repo
+  id: totrans-137
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 使用 Git filter-repo 重写项目历史
+- en: In some use cases, you might need to use a more powerful tool for rewriting
+    and cleaning up history than the interactive rebase. You might want something
+    that would rewrite full history non-interactively when given some specified algorithm
+    for doing the rewrite. Such a situation is a task for the `git` `filter-repo`
+    command.
+  id: totrans-138
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在某些使用场景中，你可能需要使用比交互式 rebase 更强大的工具来重写和清理历史。你可能想要某种工具，在给定指定的重写算法时，能够非交互地重写完整历史。这样的情况适合使用`git`
+    `filter-repo`命令。
+- en: This is an external project that needs to be installed in addition to Git. However,
+    as it is a single-file Python script, installing it is trivial in most cases.
+    It is now recommended by the Git project to use `git filter-repo` project instead
+    of the built-in `git filter-branch` command (which is now deprecated).
+  id: totrans-139
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这是一个外部项目，需要在 Git 之外单独安装。然而，由于它是一个单文件的 Python 脚本，安装它在大多数情况下是非常简单的。Git 项目现在建议使用
+    `git filter-repo` 项目来替代内置的 `git filter-branch` 命令（后者已经被弃用）。
+- en: The calling convention of this command is rather different than the convention
+    for the interactive rebase. By default, it operates on the whole history of the
+    project, changing the full graph of revisions, though you can limit the operation
+    to a selected branch or set of branches with the `--``refs` option.
+  id: totrans-140
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 此命令的调用约定与交互式 rebase 的约定有所不同。默认情况下，它作用于项目的整个历史，改变完整的修订图，尽管你可以使用`--refs`选项将操作限制在选择的分支或分支集上。
+- en: 'This command rewrites the Git revision history by applying custom filters on
+    each revision to be rewritten. That’s another difference: rebase works by reapplying
+    changesets, while `filter-branch` works with snapshots. One of the consequences
+    of this is that for `git filter-repo`, a merge is simply a kind of a commit object,
+    while the rebase drops merges and puts commits into a line, at least unless you
+    use the `--``rebase-merges` option.'
+  id: totrans-141
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 该命令通过对每个要重写的修订应用自定义过滤器来重写Git修订历史。这是另一个区别：rebase通过重新应用变更集来工作，而`filter-branch`则与快照一起工作。其后果之一是，对于`git
+    filter-repo`而言，合并仅仅是一种提交对象，而rebase会删除合并并将提交排成一行，除非你使用`--rebase-merges`选项。
+- en: Of course, with `git filter-repo`, you describe how to do the rewrite with appropriate
+    options instead of doing the rewriting interactively. This means that the speed
+    of the operation is not limited by the speed of user interaction but by I/O.
+  id: totrans-142
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当然，使用`git filter-repo`时，你通过适当的选项来描述如何进行重写，而不是进行交互式的重写。这意味着操作的速度不是由用户交互的速度限制，而是由I/O速度决定。
+- en: Safety check
+  id: totrans-143
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 安全检查
+- en: Since **git filter-repo** is usually used for massive rewrites and does irreversible
+    rewriting of the project’s history, it needs to be run from the fresh clone. This
+    means that the user would always have a good backup in the form of a separate
+    clone. If anything goes wrong, you can simply delete your clone and restart.
+  id: totrans-144
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于**git filter-repo**通常用于大量重写，并且会对项目的历史进行不可逆的修改，因此它需要从新的克隆仓库运行。这意味着用户始终会有一个以单独克隆的形式作为良好的备份。如果出现任何问题，你可以简单地删除克隆并重新开始。
+- en: You can make **git filter-repo** ignore the fresh clone check with the **--****force**
+    option.
+  id: totrans-145
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以使用**--force**选项让**git filter-repo**忽略新克隆的检查。
+- en: Running filter-repo without filters
+  id: totrans-146
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 无过滤器运行filter-repo
+- en: If you specify no filters, `filter-repo` will error out unless you specify `--force`.
+    In this case, the commits will be recommitted without any changes. Such usage
+    would normally have no effect, but it is permitted to allow you to compensate
+    for some Git bugs in the future.
+  id: totrans-147
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果未指定过滤器，`filter-repo`会报错，除非你指定`--force`。在这种情况下，提交将重新提交但没有任何更改。通常这种用法不会产生效果，但它被允许用于将来弥补一些Git的bug。
+- en: 'This means that `git filter-repo --force`, without other options, can be used
+    to make effects implemented by replacement refs permanent. This way, you can use
+    the following technique: use `git replace` on specified commits to alter history,
+    ensure that it looks correct, and then make the modification permanent. This is
+    the simplest way to do commit parent rewriting.'
+  id: totrans-148
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这意味着`git filter-repo --force`在没有其他选项的情况下，可以用来使通过替换引用实现的效果永久生效。通过这种方式，你可以使用以下技巧：在指定的提交上使用`git
+    replace`来修改历史，确保它看起来正确，然后将该修改永久化。这是做提交父级重写的最简单方法。
+- en: Important Note
+  id: totrans-149
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 重要说明
+- en: The **git filter-repo** command command respects **replacements** (refs in the
+    **refs/replace/** namespace). Replacements is a technique to affect the history
+    (or rather, a view of it) without rewriting any revisions. It will be explained
+    later in the *Replacements* *mechanism* section.
+  id: totrans-150
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**git filter-repo**命令尊重**替换**（位于**refs/replace/**命名空间中的引用）。替换是一种影响历史（或者更准确地说，是影响其视图）而不重写任何修订的技术。它将在稍后的*替换*
+    *机制*部分中进行说明。'
+- en: Available filter types for filter-repo
+  id: totrans-151
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 可用于`filter-repo`的过滤器类型
+- en: There is a large set of different filtering options to specify how to rewrite
+    history. You can specify more than one option; they are applied in the order in
+    which they are presented.
+  id: totrans-152
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有一组广泛的不同过滤选项，用于指定如何重写历史。你可以指定多个选项，它们将按呈现的顺序应用。
+- en: You can run the command multiple times to achieve your desired results. The
+    `--analyze` option can be used to analyze repository history, creating a directory
+    of reports, which (among other things) mention renames and list object sizes.
+    This information may be useful in choosing how to filter your repo and to verify
+    the changes.
+  id: totrans-153
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以多次运行该命令，以实现你期望的结果。`--analyze`选项可用于分析仓库历史，创建一个报告目录，其中（除了其他内容）提到重命名并列出对象大小。这些信息在选择如何过滤仓库和验证更改时可能很有用。
+- en: 'The `git filter-repo` command supports the following types of filters:'
+  id: totrans-154
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`git filter-repo`命令支持以下类型的过滤器：'
+- en: Filtering based on paths, which specifies the paths to select or exclude. Note
+    that renames are not followed, so you may need to specify both the old and new
+    names of the path.
+  id: totrans-155
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 基于路径的过滤，指定要选择或排除的路径。请注意，重命名不会被跟踪，因此你可能需要同时指定路径的旧名称和新名称。
+- en: Renaming paths, which may be combined with path filtering.
+  id: totrans-156
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 重命名路径，可以与路径过滤结合使用。
+- en: Content editing filters, which involve replacing text in a project’s files,
+    removing large blobs (files), or removing specified blobs (versions of file contents).
+  id: totrans-157
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 内容编辑过滤器，涉及替换项目文件中的文本，删除大型Blob（文件）或删除指定的Blob（文件内容的版本）。
+- en: Filtering commit messages with special support for filtering author names and
+    emails with the help of **.mailmap** or a mailmap-like file.
+  id: totrans-158
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用**.mailmap**或类似的mailmap文件，过滤提交信息，特别是支持过滤作者姓名和邮箱。
+- en: Renaming tags, which involves replacing one tag prefix with another.
+  id: totrans-159
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 重命名标签，涉及将一个标签前缀替换为另一个标签前缀。
+- en: For flexibility, `filter-repo` also allows you to specify functions in Python
+    to further filter all changes using custom API, with various `--<something>-callback`
+    options, such as (for example) `--filename-callback` or `--commit-callback`.
+  id: totrans-160
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了灵活性，`filter-repo`还允许你使用Python函数来进一步过滤所有更改，使用自定义API，并通过各种`--<something>-callback`选项进行操作，例如（例如）`--filename-callback`或`--commit-callback`。
+- en: You can also configure how commits are rewritten and pruned. For example, you
+    can decide whether to re-encode commit message into UTF-8, or whether to prune
+    commits that have become empty (that is, ones that bring no changes to the project).
+  id: totrans-161
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你还可以配置如何重写和修剪提交。例如，你可以决定是否将提交信息重新编码为UTF-8，或者是否修剪那些已变为空的提交（即没有对项目带来任何更改的提交）。
+- en: Examples of using filter-repo
+  id: totrans-162
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 使用filter-repo的示例
+- en: Let’s assume that you committed the wrong file to the repository by mistake,
+    and you want to `git add .`, you included a generated file that was not properly
+    ignored (such as perhaps a large binary file). Alternatively, it might have turned
+    out that you don’t have the distribution rights to a file and you need to have
+    it removed to avoid copyright violations. Using `git rm --cached` would only remove
+    it from future commits. You can also quite easily remove the file from the latest
+    version by amending the commit (as described earlier in this chapter).
+  id: totrans-163
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 假设你错误地提交了一个文件到仓库，并且你想执行`git add .`，但你不小心包括了一个未被正确忽略的生成文件（例如可能是一个大型二进制文件）。或者，可能你没有该文件的分发权，需要将其移除以避免侵犯版权。使用`git
+    rm --cached`只会将其从未来的提交中移除。你还可以通过修订提交（如本章前面所述）轻松地从最新版本中移除该文件。
+- en: 'Let’s assume that the file is called `passwords.txt`. To excise it from the
+    entire history, you can use the following command:'
+  id: totrans-164
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 假设该文件名为`passwords.txt`。要将其从整个历史中删除，你可以使用以下命令：
+- en: '[PRE29]'
+  id: totrans-165
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE29]'
+- en: 'If you want to delete all `.DS_Store` files in any directory (and not only
+    from the top directory of the project), you can use one of two commands. Here
+    is the first option:'
+  id: totrans-166
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你想删除任何目录中的所有`.DS_Store`文件（而不仅仅是项目的顶级目录），你可以使用以下两种命令之一。这里是第一种选择：
+- en: '[PRE30]'
+  id: totrans-167
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE30]'
+- en: 'You can also use the following option:'
+  id: totrans-168
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你还可以使用以下选项：
+- en: '[PRE31]'
+  id: totrans-169
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE31]'
+- en: 'You can use `filter-repo` to `***REMOVED***` if the replacement is not specified).
+    For example, to remove accidentally committed GitHub Personal Access Tokens, you
+    can use the file specifying the list of expressions, one per line. Let’s say that
+    you create an `expressions.txt` file with the following contents:'
+  id: totrans-170
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果未指定替换内容，你可以使用`filter-repo`来`***REMOVED***`。例如，要移除意外提交的GitHub个人访问令牌，你可以使用指定表达式列表的文件，每行一个。假设你创建了一个名为`expressions.txt`的文件，内容如下：
+- en: '[PRE32]'
+  id: totrans-171
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE32]'
+- en: 'Then you need to run the following command:'
+  id: totrans-172
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后你需要运行以下命令：
+- en: '[PRE33]'
+  id: totrans-173
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE33]'
+- en: 'You can use `filter-repo` to permanently `v1.0` tag, you can use the following:'
+  id: totrans-174
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以使用`filter-repo`永久删除`v1.0`标签，使用以下命令：
+- en: '[PRE34]'
+  id: totrans-175
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE34]'
+- en: Another common case is to `git config` to set your name and email address before
+    you started working and Git guessed them incorrectly (if it couldn’t guess, it
+    would ask before allowing a commit). Maybe you want to open the sources of a formerly
+    proprietary closed source program and need to change your internal corporate email
+    to your personal address. We’ll say that you want the change to be permanent instead
+    of relying on the `.``mailmap` file.
+  id: totrans-176
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 另一个常见的情况是你在开始工作之前执行了`git config`来设置你的姓名和邮箱，但Git猜测错误（如果它不能猜出，会在允许提交之前询问）。也许你想打开以前是专有闭源程序的源代码，并且需要将你的公司内部邮箱更改为个人地址。假设你希望这个更改是永久性的，而不是依赖于`.mailmap`文件。
+- en: 'In any case, you can change email addresses in a whole history with `filter-repo`:'
+  id: totrans-177
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 无论如何，你都可以使用`filter-repo`修改整个历史中的电子邮件地址：
+- en: '[PRE35]'
+  id: totrans-178
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE35]'
+- en: 'If you are open-sourcing a project, you could also want to add the `Signed-off-by:`
+    lines for the Digital Certificate of Origin (see [*Chapter 15*](B21194_15.xhtml#_idTextAnchor371),
+    *Git Best Practices*), and add the trailer to the commit message if one is not
+    already present:'
+  id: totrans-179
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你正在开源一个项目，你可能还需要为数字来源证书（见 [*第15章*](B21194_15.xhtml#_idTextAnchor371)，*Git最佳实践*）添加
+    `Signed-off-by:` 行，并在提交消息中添加这个结尾（如果还没有添加的话）：
+- en: '[PRE36]'
+  id: totrans-180
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE36]'
+- en: 'Suppose that you have noticed a typo in the name of a subdirectory, such as
+    `inlude/` instead of `include/`. This can be fixed simply by running the following:'
+  id: totrans-181
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 假设你注意到一个子目录的名称存在拼写错误，例如 `inlude/` 而不是 `include/`。只需运行以下命令即可修复：
+- en: '[PRE37]'
+  id: totrans-182
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE37]'
+- en: 'Often, some part of a larger project will take on a life on its own. In those
+    instances, it begins to make sense to separate the part from the project it started
+    in. We would want to extract the history of this part to make its **subdirectory
+    the new root**. To rewrite history in this way and discard all other history,
+    you can run the following:'
+  id: totrans-183
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通常，较大项目中的某一部分会开始独立发展。在这种情况下，将这一部分与其最初所在的项目分离是有意义的。我们希望提取该部分的历史记录，使其**子目录成为新的根目录**。要以这种方式重写历史并丢弃其他历史记录，可以运行以下命令：
+- en: '[PRE38]'
+  id: totrans-184
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE38]'
+- en: However, perhaps a better solution would be to use a specialized third-party
+    tool, namely `git subtree`. This tool (and its alternatives) will be discussed
+    in [*Chapter 11*](B21194_11.xhtml#_idTextAnchor270), *Managing Subprojects*.
+  id: totrans-185
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，或许一个更好的解决方案是使用一个专业的第三方工具，即 `git subtree`。这个工具（以及它的替代品）将在 [*第11章*](B21194_11.xhtml#_idTextAnchor270)，*管理子项目*
+    中讨论。
+- en: External tools for large-scale history rewriting
+  id: totrans-186
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 用于大规模历史重写的外部工具
+- en: The `git filter-repo` project is not the only solution for a large-scale rewriting
+    of the project’s history. There are other tools that are more specialized, perhaps
+    including lots of predefined clean-up operations or providing some level of interactivity
+    with the ability for scripted rewrites (with a **Read–Evaluate–Print Loop** (**REPL**),
+    similar to interactive shells in some interpreted programming languages).
+  id: totrans-187
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`git filter-repo` 项目并不是重写项目历史的大规模解决方案的唯一选择。还有其他工具，它们更具专业性，可能包括大量预定义的清理操作，或者提供一定程度的交互性，能够进行脚本化重写（具有**读取–评估–打印循环**（**REPL**），类似于某些解释型编程语言中的交互式命令行）。'
+- en: Removing files from the history with the BFG Repo Cleaner
+  id: totrans-188
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 使用BFG Repo Cleaner从历史记录中移除文件
+- en: The BFG Repo Cleaner is a specialized alternative to using `git filter-repo`.
+    It is specialized for the purpose of cleaning bad data out of your Git repository
+    history by removing files and directories and replacing text in files (for example,
+    accidentally committed passwords or API keys with their placeholders). It can
+    use multiple cores with parallel processing – BFG is written in Scala and uses
+    JGit as a Git implementation.
+  id: totrans-189
+  prefs: []
+  type: TYPE_NORMAL
+  zh: BFG Repo Cleaner 是 `git filter-repo` 的一个专业替代工具。它专门用于清理 Git 仓库历史中的不良数据，通过删除文件和目录并替换文件中的文本（例如，意外提交的密码或API密钥及其占位符）。它可以使用多核并行处理——BFG
+    是用 Scala 编写的，使用 JGit 作为 Git 实现。
+- en: BFG provides a set of command-line parameters that are specialized for removing
+    files and fixing them, such as `--delete-files` or `--replace-text`, a “query
+    language” of sorts. It lacks the flexibility of other tools. Nowadays, `filter-repo`
+    can do everything it can. There is even `filter-repo`.
+  id: totrans-190
+  prefs: []
+  type: TYPE_NORMAL
+  zh: BFG 提供了一组专门用于删除文件并修复它们的命令行参数，如 `--delete-files` 或 `--replace-text`，一种“查询语言”。它缺乏其他工具的灵活性。如今，`filter-repo`
+    可以做它所能做的所有事情。甚至还有 `filter-repo`。
+- en: One issue you need to remember is that BFG assumes that you have fixed the contents
+    of your current commit.
+  id: totrans-191
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 需要记住的一个问题是，BFG 假设你已经修复了当前提交的内容。
+- en: Editing the repository history with reposurgeon
+  id: totrans-192
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 使用reposurgeon编辑仓库历史
+- en: The `git fast-import` format, which is a common export and import format among
+    source control systems nowadays thanks to it being version control-agnostic. The
+    `git filter-repo` tool, which was described earlier in this chapter, is also based
+    on processing fast-import streams.
+  id: totrans-193
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`git fast-import` 格式是当前源代码控制系统中常见的导入和导出格式，因为它是版本控制中立的。之前在本章中描述的 `git filter-repo`
+    工具也是基于处理 fast-import 流的。'
+- en: It can be used for history rewriting, including editing past commits and metadata,
+    excising commits, squashing (coalescing) and splitting commits, removing files
+    and directories from history, and splitting and joining history.
+  id: totrans-194
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 它可以用于历史重写，包括编辑过去的提交和元数据、删除提交、合并（合并）和拆分提交、从历史中移除文件和目录、以及拆分和合并历史。
+- en: 'The advantage that `reposurgeon` has over `git filter-repo` is that it can
+    be run in two modes: either as an interactive interpreter, a kind of debugger
+    or editor for history, with command history and tab completion; or in a batch
+    mode to execute commands given as arguments. This allows users to interactively
+    inspect history and test changes, and then batch run them for all the revisions.'
+  id: totrans-195
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`reposurgeon`相对于`git filter-repo`的优势在于，它可以以两种模式运行：一种是交互式解释器，类似于历史调试器或编辑器，带有命令历史记录和标签补全；另一种是批处理模式，可以执行作为参数给出的命令。这使得用户能够交互式地检查历史记录并测试更改，然后对所有修订批量运行它们。'
+- en: The disadvantage is in having to install and then learn to use a separate tool.
+  id: totrans-196
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 缺点在于需要安装并学习使用一个单独的工具。
+- en: The perils of rewriting published history
+  id: totrans-197
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 重写已发布历史的危险
+- en: 'There is, however, a very important principle to know about: you should never
+    (or at least not without a very, very good reason) rewrite *published* history,
+    especially when it comes to those commits that were pushed to the public repository
+    or were otherwise made public. What you can do is change the parts of the graph
+    of revisions that are private.'
+  id: totrans-198
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，有一个非常重要的原则需要知道：你永远不应该（或者至少没有非常非常充分的理由的话）重写*已发布*的历史，尤其是那些已推送到公共仓库或以其他方式公开的提交。你可以做的是更改修订图中的私人部分。
+- en: The reason behind this rule is that rewriting published history could cause
+    trouble for downstream developers if they have based their changes on revisions
+    that were rewritten.
+  id: totrans-199
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这条规则背后的原因是，重写已发布历史可能会给下游开发人员带来麻烦，如果他们基于被重写的修订版本进行了更改。
+- en: This means that it is safe to rewrite and rebuild those public branches that
+    are explicitly stated and documented to be in flux, for example, as a way of showing
+    work in progress (such as `'``proposed-updates``'` type of branch, that is used
+    to test merge all feature branches – see the *Visibility without integration*
+    and *Progressive-stability branches* sections in [*Chapter 8*](B21194_08_split_000.xhtml#_idTextAnchor196)*,
+    Advanced Branching Techniques*). Another possibility for the safe rewriting of
+    a public branch is to do it at specific stages of the project’s life, namely after
+    creating a new release; again, this needs to be documented.
+  id: totrans-200
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这意味着，重写和重建那些明确声明并文档化为处于变动中的公共分支是安全的，例如，作为展示工作进展的一种方式（如`'``proposed-updates``'`类型的分支，用于测试合并所有特性分支——请参阅[*第8章*](B21194_08_split_000.xhtml#_idTextAnchor196)*，《高级分支技术》*中的*可见性不依赖于集成*和*渐进稳定分支*部分）。另一个安全重写公共分支的可能方式是在项目生命周期的特定阶段进行，即在创建新发布版本之后；同样，这需要被文档化。
+- en: The consequences of upstream rewrites
+  id: totrans-201
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 上游重写的后果
+- en: 'Now you will see, in a simple example, the perils of rewriting published history
+    (for example, rebasing) and how it causes trouble. Let’s assume that there are
+    two public branches that are of interest: `master` and `subsys`. The latter is
+    based on (forked from) the former. Let’s also assume that a downstream developer
+    (who might be you) created a new `topic` branch based on the `subsys` branch for
+    their own work, but did not publish it yet; it is only present in their local
+    repository. This situation is shown in *Figure 10**.2* (the revisions below the
+    dashed lines, denoted by darker color, are present only in the local repository
+    of the downstream developer).'
+  id: totrans-202
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，你将在一个简单的示例中看到重写已发布历史（例如，变基）带来的危险，以及它是如何造成麻烦的。假设有两个感兴趣的公共分支：`master`和`subsys`，后者是基于（从）前者创建的。还假设下游开发人员（可能是你）创建了一个新的`topic`分支，基于`subsys`分支用于自己的工作，但尚未发布；它仅存在于他们的本地仓库中。这种情况如*图10.2*所示（虚线下方的修订版本，用较深的颜色表示，只存在于下游开发人员的本地仓库中）。
+- en: '![Figure 10.2 – The state of the local repository of a downstream developer
+    before the rewrite of the published history, with the new local work that was
+    put on a topic branch](img/B21194_10_02.jpg)'
+  id: totrans-203
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图10.2 – 下游开发人员在重写已发布历史之前的本地仓库状态，带有放置在主题分支上的新本地工作](img/B21194_10_02.jpg)'
+- en: Figure 10.2 – The state of the local repository of a downstream developer before
+    the rewrite of the published history, with the new local work that was put on
+    a topic branch
+  id: totrans-204
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图10.2 – 下游开发人员在重写已发布历史之前的本地仓库状态，带有放置在主题分支上的新本地工作
+- en: 'Then, the upstream developer rewrites the `subsys` branch to start from the
+    current (topmost) revision in the `master` branch. This operation is called rebase
+    and was described in [*Chapter 9*](B21194_09.xhtml#_idTextAnchor229), *Merging
+    Changes Together* (the previous chapter). Let’s assume that during the rewrite,
+    one of the commits was dropped; perhaps the same change was already present in
+    `master` and was skipped, perhaps it was dropped for some other reason, or perhaps
+    it was or squashed into the previous commit with the interactive rebase. The public
+    repository now looks as follows:'
+  id: totrans-205
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后，上游开发者将`subsys`分支重写为从`master`分支的当前（最顶端）修订开始。这个操作叫做重基，已在[《第 9 章》](B21194_09.xhtml#_idTextAnchor229)《合并更改》一章中描述（上一章）。假设在重写过程中，某个提交被丢弃了；也许相同的更改已经出现在`master`中并被跳过，或者它因其他原因被丢弃，亦或是它被交互式重基合并到了前一个提交中。现在公共仓库的状态如下：
+- en: '![Figure 10.3 – The state of a public upstream repository after rewrite, with
+    an emphasized old base of the rebased branch, plus a new base and rewritten commits
+    (after the rebase)](img/B21194_10_03.jpg)'
+  id: totrans-206
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 10.3 – 重写后公共上游仓库的状态，突出显示了重基分支的旧基础，以及新的基础和重写的提交（重基后）](img/B21194_10_03.jpg)'
+- en: Figure 10.3 – The state of a public upstream repository after rewrite, with
+    an emphasized old base of the rebased branch, plus a new base and rewritten commits
+    (after the rebase)
+  id: totrans-207
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.3 – 重写后公共上游仓库的状态，突出显示了重基分支的旧基础，以及新的基础和重写的提交（重基后）
+- en: Note that in the default configuration, Git would refuse to push rewritten history
+    (it would deny a non-fast-forward push). You would need to force the push.
+  id: totrans-208
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请注意，在默认配置下，Git 会拒绝推送重写历史（它会拒绝非快进推送）。你需要强制推送。
+- en: The problem is with merging changes based on the pre-rewrite versions of revisions,
+    such as the `topic` branch in this example.
+  id: totrans-209
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 问题在于合并基于重写前修订版本的更改，例如本例中的`topic`分支。
+- en: '![Figure 10.4 – The situation after merging the changes that were based on
+    pre-rewrite revisions into post-rewrite branches](img/B21194_10_04.jpg)'
+  id: totrans-210
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 10.4 – 将基于重写前修订的更改合并到重写后分支后的情况](img/B21194_10_04.jpg)'
+- en: Figure 10.4 – The situation after merging the changes that were based on pre-rewrite
+    revisions into post-rewrite branches
+  id: totrans-211
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.4 – 将基于重写前修订的更改合并到重写后分支后的情况
+- en: Notice that the merge brings the pre-rewrite version of revisions, including
+    commits that were dropped during the rebase.
+  id: totrans-212
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请注意，合并操作带来了重写前版本的修订，包括在重基过程中丢弃的提交。
+- en: If neither the downstream developer nor the upstream one notices that the published
+    history has been rewritten, and one of them merges changes from the `topic` branch
+    into, for example, the `subsys` branch it was based on, the merge would bring
+    about duplicated commits. As we can see in the example in *Figure 10**.3*, after
+    such a merge (denoted by **M13** here), we have both the **C3**, **C4**, and **C5**
+    pre-rewrite commits brought by the topic branch and the **C3’** and **C5’** post-rewrite
+    commits (see *Figure 10**.4*). Note that the **C4** commit that was removed in
+    the rewrite is back – it might have been a security bug!
+  id: totrans-213
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果下游开发者和上游开发者都没有注意到已发布的历史被重写，并且其中一个开发者将来自`topic`分支的更改合并到例如基于`subsys`分支的分支中，合并将导致重复的提交。如在*图
+    10.3*中的示例所示，经过这样的合并（此处标记为**M13**），我们会看到`topic`分支带来的**C3**、**C4** 和 **C5** 的重写前提交，以及**C3’**
+    和 **C5’** 的重写后提交（见*图 10.4*）。注意，在重写中删除的**C4** 提交已经回来了——它可能是一个安全漏洞！
+- en: Recovering from an upstream history rewrite
+  id: totrans-214
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 从上游历史重写中恢复
+- en: However, what can we do if the upstream has rewritten the published history
+    (for example, rebased it)? Can we avoid bringing the abandoned commits back and
+    merging a duplicate or near-duplicate of the rewritten revisions? After all, if
+    the rewrite is published, changing it would be yet another rewrite.
+  id: totrans-215
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，如果上游已经重写了已发布的历史记录（例如，进行了重基操作），我们该怎么办？我们能避免将已废弃的提交带回并合并重写版本的重复或接近重复的修订吗？毕竟，如果重写已经发布，改变它将是另一次重写。
+- en: The solution is to rebase your work to fit with the new version from the upstream,
+    moving it from the pre-rewrite upstream revisions to the post-rewrite ones.
+  id: totrans-216
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 解决方案是将你的工作重基到与上游的新版本匹配，从重写前的上游修订移动到重写后的修订。
+- en: '![Figure 10.5 – The situation after a downstream rebase of a topic branch](img/B21194_10_05.jpg)'
+  id: totrans-217
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 10.5 – 下游主题分支重基后的情况](img/B21194_10_05.jpg)'
+- en: Figure 10.5 – The situation after a downstream rebase of a topic branch
+  id: totrans-218
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.5 – 下游主题分支重基后的情况
+- en: In the case of our example, it would mean rebasing the `topic` branch onto a
+    new (post-rewrite) version of `subsys`, as shown in *Figure 10**.5*.
+  id: totrans-219
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在我们的示例中，这意味着将`topic`分支重新基于`subsys`的一个新（重写后的）版本，如*图 10.5*所示。
+- en: Tip
+  id: totrans-220
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 提示
+- en: You might not have a local copy of the **subsys** branch; in this case, do substitute
+    **subsys** with the respective remote-tracking branch, for example, **origin/subsys**.
+  id: totrans-221
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可能没有`subsys`分支的本地副本；在这种情况下，可以用相应的远程跟踪分支替换`subsys`，例如`origin/subsys`。
+- en: Depending on whether the `topic` branch is public or not, it might mean that
+    you are now breaking the promise of unaltered public history for your downstream.
+    Recovering from an upstream rewrite might then result in a ripple of rebases following
+    the rewrite down the river of downstreams (dependent repositories).
+  id: totrans-222
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 根据`topic`分支是否公开，这可能意味着你现在打破了对下游不修改已发布历史的承诺。恢复上游的重写可能会导致一连串的变基，沿着下游的依赖库（dependent
+    repositories）传播。
+- en: 'An easy case is when `subsys` is simply rebased and the changes remain the
+    same (which means that `topic` on top of its upstream, that is, `subsys`, with
+    the following:'
+  id: totrans-223
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 简单的情况是，`subsys`只是被变基，而且更改保持不变（这意味着`topic`在它的上游，即`subsys`之上，如下所示）：
+- en: '[PRE39]'
+  id: totrans-224
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE39]'
+- en: 'The `topic` part is not necessary if you are currently on it (if `topic` is
+    the current branch). This rebases everything: the old version of `subsys` and
+    your commits in `topic`. This solution, however, relies on the fact that `git
+    rebase` would skip repeated commits (removing **C3**, **C4**, and **C5**, leaving
+    only **C10’** and **C12’**). It might be better and less error-prone to assume
+    the more difficult case.'
+  id: totrans-225
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你当前就在`topic`分支上（即`topic`是当前分支），那么`topic`部分是没有必要的。这会对所有内容进行变基：包括`subsys`的旧版本和你在`topic`中的提交。然而，这种方案依赖于`git
+    rebase`会跳过重复的提交（删除**C3**、**C4**和**C5**，仅保留**C10'**和**C12'**）。假设更复杂的情况可能更好且错误更少。
+- en: 'The hard case is when rewriting `subsys` involved some changes and was not
+    a pure rebase, or when an interactive rebase was used. In this case, it is better
+    to explicitly move just your changes, namely `subsys@{1}..topic` (assuming that
+    the `subsys@{1}` entry in the `subsys` reflog comes from before rewrite), stating
+    that they are moved on top of the new `subsys`. This can be done with the `--``onto`
+    option:'
+  id: totrans-226
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 困难的情况是，当重写`subsys`涉及到一些变更，并且不是纯粹的变基，或者使用了交互式变基。在这种情况下，最好明确仅移动你的更改，即`subsys@{1}..topic`（假设`subsys@{1}`条目来自重写前的`subsys`reflog），并声明它们被移到新的`subsys`之上。这可以通过`--onto`选项来实现：
+- en: '[PRE40]'
+  id: totrans-227
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE40]'
+- en: 'You can make Git use the reflog to find a better common ancestor with the `--fork-point`
+    option with the `git rebase` command, such as in the following example:'
+  id: totrans-228
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以使用`git rebase`命令的`--fork-point`选项，让Git通过reflog找到一个更好的共同祖先，如以下示例所示：
+- en: '[PRE41]'
+  id: totrans-229
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE41]'
+- en: The rebase would then move the changes to `topic`, starting with the result
+    of the `git merge-base --fork-point subsys topic` command. However, if the reflog
+    of the `subsys` branch does not contain necessary information, Git would fall
+    back upstream, here to `subsys`.
+  id: totrans-230
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后，变基会将更改移动到`topic`，从`git merge-base --fork-point subsys topic`命令的结果开始。如果`subsys`分支的reflog不包含必要的信息，Git将回退到上游，这里是`subsys`。
+- en: Important note
+  id: totrans-231
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 重要说明
+- en: You can use the interactive rebase instead of an ordinary rebase like in the
+    narration mentioned earlier for better control at the cost of more work (for example,
+    to drop commits that are already present, but are not detected by the rebase machinery
+    as such).
+  id: totrans-232
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以使用交互式变基（interactive rebase）代替普通的变基，如前面叙述的那样，这样可以获得更好的控制，但代价是需要更多的工作量（例如，删除已经存在但变基机制未能识别的提交）。
+- en: Amending history without rewriting
+  id: totrans-233
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 不重写历史的修改
+- en: What should you do if what you need to fix is in the published part of the history?
+    As described in *The perils of rewriting published history*, changing those parts
+    of the history that were made public can cause problems for downstream developers.
+    You had better not touch this part of the graph of revisions.
+  id: totrans-234
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果需要修复的内容在已发布的历史部分中，你该怎么办？正如在*重写已发布历史的风险*中所描述的，修改已公开的历史部分可能会导致下游开发人员出现问题。你最好不要修改这个版本图的部分。
+- en: There are a few solutions to this problem. The most commonly used one is to
+    put in a new fixup commit with appropriate changes (for example, a typo fix in
+    documentation). If what you need is to remove the changes, deciding that they
+    turned out to be bad to have in the history, you can create a commit to revert
+    the changes.
+  id: totrans-235
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个问题有几种解决方案。最常用的一种是添加一个新的修正提交，并进行适当的更改（例如，修正文档中的拼写错误）。如果你需要的是移除这些更改，认为它们不应该出现在历史中，你可以创建一个提交来撤销这些更改。
+- en: If you fix a commit or revert one, it would be nice to annotate that commit
+    with the information that it was buggy, as well as which commit fixed (or reverted)
+    it. Even though you cannot (and should not) edit the fixed commit to add this
+    information if the commit is public, Git provides the **notes** mechanism to append
+    extra information to existing commits, which is a bit like publishing an addendum,
+    errata, or amendment. However, remember that notes are not published by default;
+    nonetheless, it is easy to publish them (you just need to remember to do it).
+  id: totrans-236
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你修复了一个提交或撤销了一个提交，最好在该提交上加上注释，说明它是有问题的，以及哪个提交修复了（或撤销了）它。尽管你不能（也不应该）编辑已发布的提交来添加这些信息，但Git提供了**notes**机制，可以将额外的信息附加到现有提交上，这有点像发布补充说明、勘误表或修正。然而，记住，注释默认是不会被发布的；不过，发布它们很简单（你只需要记得这样做）。
+- en: Reverting a commit
+  id: totrans-237
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 撤销一个提交
+- en: If you need to back out an existing commit, undoing the changes it brought,
+    you can use `git revert`. As described in [*Chapter 9*](B21194_09.xhtml#_idTextAnchor229),
+    *Merging Changes Together* (see, for example, *Figure 9**.5* in that chapter),
+    the `revert` operation creates a commit with the reverse of any changes. For example,
+    where the original adds a line, reversion removes it; where the original commit
+    removes the line, reversion adds it.
+  id: totrans-238
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你需要撤销一个已存在的提交，撤销它所带来的更改，你可以使用`git revert`。如[《第9章》](B21194_09.xhtml#_idTextAnchor229)中所述，*合并更改*（例如，在该章节的*图9.5*中），`revert`操作会创建一个包含逆向更改的提交。例如，当原始提交添加了一行时，撤销操作会删除该行；当原始提交删除了一行时，撤销操作会添加该行。
+- en: Trivia
+  id: totrans-239
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 趣闻
+- en: Note that different version control systems use the name revert for different
+    operations. In particular, it is often used to mean resetting the changes to a
+    file back to the latest committed version, throwing away uncommitted changes.
+    It is something that **git reset -- <file>** does in Git.
+  id: totrans-240
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 注意，不同的版本控制系统对“撤销”一词有不同的定义。特别是，它通常用来指将文件的更改重置回最新提交的版本，丢弃未提交的更改。这正是**git reset
+    -- <file>**在Git中所做的事情。
+- en: 'This is best shown in an example. Let’s assume that the last commit on the
+    `multiple` branch has the following summary of its changes:'
+  id: totrans-241
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最好通过一个示例来说明这一点。假设`multiple`分支上的最后一次提交有如下的更改总结：
+- en: '[PRE42]'
+  id: totrans-242
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE42]'
+- en: 'Reverting this commit (which requires a clean working directory) would create
+    a new revision. This revision undoes the changes that the reverted commit brought:'
+  id: totrans-243
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 撤销这个提交（需要一个干净的工作目录）将创建一个新的版本。这个版本会撤销被撤销提交所带来的更改：
+- en: '[PRE43]'
+  id: totrans-244
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE43]'
+- en: 'Git would ask for a commit message, which should explain why you reverted the
+    given revision: how it was faulty, and why it needed to be reverted rather than
+    fixed. The default is to give the SHA-1 of the reverted commit:'
+  id: totrans-245
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git会要求输入一个提交信息，解释为什么要撤销该修订版：它是如何出错的，为什么需要撤销而不是修复。默认情况下，会提供被撤销提交的SHA-1：
+- en: '[PRE44]'
+  id: totrans-246
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE44]'
+- en: Compare the summary of changes for the commit and its revert. In the preceding
+    example, the commit has 21 insertions and 5 deletions, while the revert has 5
+    insertions and 21 deletions (where line that changed from one version to the other
+    counts as deletion of the old version and insertion of the new).
+  id: totrans-247
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 比较提交和撤销操作的更改总结。在前面的示例中，提交有21次插入和5次删除，而撤销操作有5次插入和21次删除（其中，从一个版本变到另一个版本的行，算作旧版本的删除和新版本的插入）。
+- en: A common practice is to leave the subject alone (which allows you to easily
+    find reverts) but replace the content with a description of the reasoning behind
+    the revert.
+  id: totrans-248
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一种常见的做法是保留主题不变（这样可以轻松找到撤销操作），但用一个描述撤销原因的内容来替换。
+- en: Reverting a faulty merge
+  id: totrans-249
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 撤销一个错误的合并
+- en: Sometimes, you might need to undo the effect of a merge. Suppose that you have
+    merged changes, but it turned out that they were merged prematurely and that the
+    merge brings regressions.
+  id: totrans-250
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有时，你可能需要撤销一次合并的效果。假设你已经合并了更改，但结果发现它们合并得过早，并且该合并带来了回归问题。
+- en: Let’s say that the branch that was merged is named `topic`, and that you were
+    merging it into the `master` branch. This situation is shown in *Figure 10**.6*.
+  id: totrans-251
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 假设合并的分支名为`topic`，你正在将其合并到`master`分支。这种情况如*图10.6*所示。
+- en: '![Figure 10.6 – An accidental or premature merge commit, a starting point for
+    reverting merges and redoing reverted merges.](img/B21194_10_06.jpg)'
+  id: totrans-252
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图10.6 – 一个意外或过早的合并提交，回退合并和重新做回退合并的起点。](img/B21194_10_06.jpg)'
+- en: Figure 10.6 – An accidental or premature merge commit, a starting point for
+    reverting merges and redoing reverted merges.
+  id: totrans-253
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图10.6 – 一个意外或过早的合并提交，回退合并和重新做回退合并的起点。
+- en: If you didn’t publish this merge commit before you noticed the mistake, and
+    the unwanted merge exists only in your local repository, the easiest solution
+    is to drop this commit with `git reset --hard HEAD^` (see [*Chapter 3*](B21194_03_split_000.xhtml#_idTextAnchor049),
+    *Managing Your* *Worktrees*, for an explanation of the hard mode of `git reset`).
+  id: totrans-254
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果在发现错误之前你没有发布这个合并提交，并且不希望的合并只存在于本地仓库，最简单的解决方案是使用`git reset --hard HEAD^`来删除这个提交（详见[*第3章*](B21194_03_split_000.xhtml#_idTextAnchor049)，*管理你的工作树*，了解`git
+    reset`的硬模式）。
+- en: What do you do if you realize only later that the merge was incorrect, for example
+    after one more commit was created on the `master` branch and published? One possibility
+    is to revert the merge.
+  id: totrans-255
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你后来才意识到合并是错误的，例如在`master`分支上创建并发布了另一个提交，该怎么办？一种可能性是回退该合并。
+- en: 'However, a merge commit has more than one parent, which means more than one
+    delta (or, more than one changeset). To run `revert` on a merge commit, you need
+    to specify which patch you are reverting, or, in other words, which parent is
+    the mainline. In this particular scenario, assuming that there was one more commit
+    after the merge (and that the merge was two commits back in the history), the
+    command to revert the merge would look like this:'
+  id: totrans-256
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，合并提交有多个父提交，这意味着有多个增量（或者说多个变更集）。要对合并提交执行`revert`，你需要指定要回退的补丁，换句话说，就是哪个父提交是主线。在这个特定的场景下，假设合并之后有一个新的提交（且合并距离历史两次提交），回退合并的命令将如下所示：
+- en: '[PRE45]'
+  id: totrans-257
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE45]'
+- en: The situation after reverting a merge is shown in *Figure 10**.7*.
+  id: totrans-258
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 回退合并后的情况如*图10.7*所示。
+- en: '![Figure 10.7  The history from the previous figure after reverting merge;
+    the square boxes attached to selected commits symbolize their changesets in a
+    diff-like format](img/B21194_10_07.jpg)'
+  id: totrans-259
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图10.7  显示了上图中回退合并后的历史；附加在选定提交上的方框表示它们的变更集，以类似差异的格式显示](img/B21194_10_07.jpg)'
+- en: Figure 10.7 The history from the previous figure after reverting merge; the
+    square boxes attached to selected commits symbolize their changesets in a diff-like
+    format
+  id: totrans-260
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图10.7 显示了上图中回退合并后的历史；附加在选定提交上的方框表示它们的变更集，以类似差异的格式显示。
+- en: Starting with the new **!M1** commit (the **!M1** symbol is used to represent
+    negation or reversal of the **M1** commit), it’s as if the merge never happened,
+    at least with regards to the changes.
+  id: totrans-261
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 从新的**!M1**提交开始（**!M1**符号表示对**M1**提交的否定或回退），就好像合并从未发生过，至少就变更而言。
+- en: Recovering from a reverted merge
+  id: totrans-262
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 从回退合并中恢复
+- en: Let’s assume that you continued work on a branch whose merge was reverted. Perhaps
+    it was prematurely merged, but it doesn’t mean that the development on it has
+    stopped. If you continue to work on the same branch, perhaps by creating commits
+    with fixes, they will get ready in some time, and then you will need to be able
+    to merge them correctly into the mainline again. Or perhaps the mainline will
+    mature enough to be able to accept a merge. Trouble lies ahead if you simply try
+    to merge your branch again the same way as last time.
+  id: totrans-263
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 假设你继续在一个已回退合并的分支上工作。或许它是被过早合并的，但这并不意味着该分支上的开发工作已经停止。如果你继续在同一个分支上工作，或许通过创建修复提交，它们将在一段时间后准备就绪，然后你将需要将它们正确地再次合并到主线中。或者，也许主线已经成熟到足以接受合并。如果你仅仅像上次那样简单地再次合并你的分支，就会遇到麻烦。
+- en: '![Figure 10.8 – The unexpectedly erroneous result of trying to simply redo
+    a reverted merge](img/B21194_10_08.jpg)'
+  id: totrans-264
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图10.8 – 尝试简单地重新做回退合并时意外出现的错误结果](img/B21194_10_08.jpg)'
+- en: Figure 10.8 – The unexpectedly erroneous result of trying to simply redo a reverted
+    merge
+  id: totrans-265
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图10.8 – 尝试简单地重新做回退合并时意外出现的错误结果
+- en: 'The unexpected result, as shown in *Figure 10**.8*, is that Git has only brought
+    the changes since the reverted merge. The changes brought by the commits on a
+    side branch, whose merge got reverted, are not here. In other words, you would
+    get a strange result: the new merge would not include the changes that were created
+    on your branch (the side branch) before the merge that got reverted.'
+  id: totrans-266
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如*图 10.8*所示，意外的结果是 Git 只引入了回退合并后的更改。被回退的侧分支上的提交所带来的更改不在这里。换句话说，你会得到一个奇怪的结果：新的合并不会包括在回退的合并之前你分支（侧分支）上创建的更改。
+- en: This is caused by the fact that `git revert` undoes changes (the data), but
+    does not undo the history (the DAG of revisions). This means that the new merge
+    sees **C4**, the commit on the side branch just before the reverted merge, as
+    a common ancestor. Since the default three-way merge strategy looks only at the
+    state of the *ours*, *theirs*, and *base* snapshots, it doesn’t search through
+    the history to find that there was a revert there. It sees that both the common
+    ancestor **C4** and the merged branch (that is, *theirs*) **C6** do include features
+    brought by the **C3** and **C4** commits, namely **f3** and **f4**, while the
+    branch that we are merging into (that is, *ours*) doesn’t have them because of
+    the revert.
+  id: totrans-267
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这是由于 `git revert` 撤销了更改（数据），但并不撤销历史（修订的 DAG）。这意味着新的合并会将**C4**，即回退合并之前的侧分支上的提交，视为共同祖先。由于默认的三方合并策略仅查看
+    *ours*、*theirs* 和 *base* 快照的状态，它不会搜索历史来发现有回退。它看到共同祖先 **C4** 和合并分支（即 *theirs*）**C6**
+    都包括了由 **C3** 和 **C4** 提交带来的功能，具体来说是 **f3** 和 **f4**，而我们正在合并的分支（即 *ours*）由于回退而没有这些更改。
+- en: For the merge strategy, it looks exactly like the case where one branch deleted
+    something, which means that this change (the removal) is the result of the merge
+    (it looks like the case where there was change on only one side). In particular,
+    it looks like the base and the side branch have the feature, but the current branch
+    doesn’t (because of the revert) – so the result doesn’t have it either. You can
+    find an explanation of the merging mechanism in [*Chapter 9*](B21194_09.xhtml#_idTextAnchor229),
+    *Merging* *Changes Together*.
+  id: totrans-268
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于合并策略，它看起来完全像一个分支删除了某些内容的情况，这意味着这个变化（删除）是合并的结果（看起来像是只有一方发生了更改的情况）。特别是，它看起来像基础分支和侧分支有这个特性，但当前分支没有（因为回退）——所以结果也没有这个特性。你可以在
+    [*第 9 章*](B21194_09.xhtml#_idTextAnchor229) 中找到关于合并机制的解释，*将更改合并在一起*。
+- en: There is more than one option to fix this issue and make Git re-merge the `topic`
+    branch correctly, which means including the `proposed-updates` branch with all
+    the topic branches merged in, it is with the understanding that they can and probably
+    will be rewritten.
+  id: totrans-269
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有多个选项可以解决此问题，并使 Git 正确地重新合并 `topic` 分支，这意味着包括所有已合并的 topic 分支在内的 `proposed-updates`
+    分支，理解为这些分支可以并且可能会被重写。
+- en: '![Figure 10.9  The history after re-merging (as M2) a reverted M1 merge, with
+    revering revert !!M1 (replay)](img/B21194_10_09.jpg)'
+  id: totrans-270
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 10.9  在重新合并（作为 M2）一个回退的 M1 合并后，回退回撤 !!M1（重放）的历史](img/B21194_10_09.jpg)'
+- en: Figure 10.9 The history after re-merging (as M2) a reverted M1 merge, with revering
+    revert !!M1 (replay)
+  id: totrans-271
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.9 在重新合并（作为 M2）一个回退的 M1 合并后，回退回撤 !!M1（重放）的历史
+- en: One option is to bring back deleted changes by reverting the revert. The result
+    is shown in *Figure 10**.9*. In this case, you have brought changes to match the
+    recorded history.
+  id: totrans-272
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一种选择是通过回退回撤来恢复已删除的更改。结果如*图 10.9*所示。在这种情况下，你已经带来了与记录历史相符的更改。
+- en: Another option would be to change the view of the history (perhaps temporarily),
+    for example, by amending it with `git replace`, or by changing the `topic`, were
+    published.
+  id: totrans-273
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 另一个选项是改变历史的视图（可能是暂时的），例如，通过使用 `git replace` 修改，或通过更改已发布的 `topic`。
+- en: If the problem was some bugs in the commits being merged (on the `topic` branch),
+    and the branch being merged was not published, you can fix these commits with
+    the interactive rebase, as described earlier. Rebasing changes the history anyway.
+    Therefore, if you additionally ensure that the new history you are creating with
+    the rebase does not have any revision in common with the old history that includes
+    the failed and reverted merge, re-merging the topic branch would pose no challenges.
+  id: totrans-274
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果问题出在提交合并时出现的一些 bug（在`topic`分支上），且要合并的分支尚未发布，你可以按照之前所述通过交互式变基来修复这些提交。变基会改变历史。因此，如果你还确保你通过变基创建的新历史与旧历史中包括失败和回退合并的部分没有任何共同的修订，那么重新合并该
+    topic 分支不会带来挑战。
+- en: '![Figure 10.10 – The history after re-merging the rebased branch, which had
+    its merge reverted](img/B21194_10_10.jpg)'
+  id: totrans-275
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 10.10 – 重新合并已重基分支后的历史，该分支的合并被撤销](img/B21194_10_10.jpg)'
+- en: Figure 10.10 – The history after re-merging the rebased branch, which had its
+    merge reverted
+  id: totrans-276
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.10 – 重新合并已重基分支后的历史，该分支的合并被撤销
+- en: Usually you would rebase a topic branch, `topic` in this case, on top of the
+    current state of the branch it was forked from, which is the `master` branch here.
+    This way, your changes are kept up to date with the current work, which makes
+    a later merge easier. Now that the `topic` branch has a new history, merging it
+    into `master` “again”, like in *Figure 10**.10*, is easy and doesn’t give us any
+    surprises or trouble.
+  id: totrans-277
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通常，你会将一个主题分支（此例中为`topic`）重基到它所分叉的分支的当前状态，这里是`master`分支。这样，你的修改会与当前的工作保持同步，从而使后续的合并变得更容易。现在，由于`topic`分支有了新的历史，将其“再次”合并到`master`中，就像在*图
+    10.10*中所示，变得简单，并且不会带来任何意外或麻烦。
+- en: A more difficult case would be if the `topic` branch is for some reason required
+    to keep its base (such as being able to merge it into the `maint` branch too).
+    This is not more difficult in the sense that there would be problems with re-merging
+    the `topic` branch after the rebase, but in that we need to ensure that the branch
+    doesn’t share history with the reverted merge arc after the rebase. The goal is
+    to have history in the same shape as is shown in *Figure 10*. By default, a rebase
+    tries to fast-forward revisions if they didn’t change (for example, leaving `-f`
+    or `--force-rebase` to force rebasing of unchanged skippable commits (or of `--no-ff`,
+    which is equivalent) as well. The result is shown in *Figure 10**.11*.
+  id: totrans-278
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 更复杂的情况是，如果`topic`分支由于某些原因需要保留其基础（例如，能够将其合并到`maint`分支中）。这并不意味着在重基后重新合并`topic`分支会出现问题，而是意味着我们需要确保该分支在重基后不再与撤销的合并历史共享。目标是让历史呈现出与*图
+    10*中所示相同的形态。默认情况下，重基会尝试快进修订，如果没有变化（例如，保留`-f`或`--force-rebase`强制重基那些可跳过的未更改提交（或者使用`--no-ff`，其效果相同））。结果如*图
+    10.11*所示。
+- en: '![Figure 10.11  The history after re-merging an in-place-rebased topic branch,
+    where a pre-rebase merge was reverted](img/B21194_10_11.jpg)'
+  id: totrans-279
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 10.11  重新合并一个原地重基的主题分支后的历史，其中一个预重基的合并被撤销](img/B21194_10_11.jpg)'
+- en: Figure 10.11 The history after re-merging an in-place-rebased topic branch,
+    where a pre-rebase merge was reverted
+  id: totrans-280
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.11 重新合并一个原地重基的主题分支后的历史，其中一个预重基的合并被撤销
+- en: So, you should not be blindly reverting the revert of a merge. What to do with
+    the problem of re-merging after a reverted merge depends on how you want to handle
+    the branch being merged. If the branch is being rewritten (for example, using
+    an interactive rebase), then reverting the revert would be an actively wrong thing
+    to do because you could bring back errors that were fixed in the rewrite.
+  id: totrans-281
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 因此，你不应该盲目地撤销合并撤销的操作。如何处理在撤销合并后重新合并的问题，取决于你如何处理正在合并的分支。如果该分支正在被重写（例如，使用交互式重基），那么撤销撤销将是一个错误的做法，因为你可能会带回在重写过程中已经修复的错误。
+- en: Storing additional information with notes
+  id: totrans-282
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 使用注释存储附加信息
+- en: The notes mechanism is a way to store additional information for an object,
+    usually a commit, without touching the object itself. You can think of it as an
+    attachment, or an appendix, that is “stapled” to an object. Each note belongs
+    to some category of notes so that notes used for different purposes can be kept
+    separate.
+  id: totrans-283
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 注释机制是一种存储附加信息的方法，通常用于一个对象（通常是一个提交），而不触及该对象本身。你可以将它视为附加在对象上的附件或附录。每个注释都属于某一类别，这样不同用途的注释可以分开存放。
+- en: Adding notes to a commit
+  id: totrans-284
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 向提交添加注释
+- en: Sometimes you want to add extra information to a commit, particularly information
+    that is available only some time after its creation. It might be, for example,
+    a note that there was a bug found in the commit, and perhaps even that it was
+    fixed in some specified future commit (in case of regression). Perhaps we realized
+    after the commit got published that we forgot to add some important information
+    to the commit message, for example, to explain why it was done. Or maybe we realized
+    after the fact that there is another way of doing it and we want to create a note
+    to ensure that we do not forget about it, and for other developers to share the
+    idea.
+  id: totrans-285
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有时你可能想在提交中添加额外的信息，尤其是那些在提交创建后过了一段时间才有的内容。例如，可能是一个关于提交中发现了一个bug的注释，甚至可能是在某个指定的未来提交中修复了该bug（如果是回归问题）。也许我们在提交发布后才意识到，我们忘记在提交信息中添加一些重要内容，例如，解释为什么这么做。或者可能是我们意识到还有另一种做法，并且我们想创建一个注释，以确保我们不会忘记它，并且让其他开发者共享这个想法。
+- en: Since history is immutable in Git, you cannot do this without rewriting the
+    history (creating a modified copy and forgetting the old version of the history).
+    The immutability of history is important; it allows people to sign revisions and
+    trust that, once inspected, history cannot change. What you can do instead is
+    add the extra message as a note.
+  id: totrans-286
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于Git中的历史是不可变的，你不能在不重写历史（创建修改后的副本并忘记旧版本历史）的情况下执行此操作。历史的不可变性非常重要；它允许人们对修订进行签名，并信任一旦检查过，历史就无法更改。你可以做的是将额外的信息作为注释添加。
+- en: 'Let’s assume that codevelopers have switched from `atoi()` to `strtol()` because
+    the former is deprecated. The change was made public since then. However, the
+    commit message didn’t include an explanation of why it was deprecated and why
+    it is worth it to switch, even if the code after the change is longer. Let’s add
+    the information as a note:'
+  id: totrans-287
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 假设协作开发者已经从`atoi()`切换到`strtol()`，因为前者已经被弃用。从那时起，变更已经公开。然而，提交信息并未包含为什么弃用以及为什么值得切换的解释，即使切换后的代码更长。让我们添加作为注释的信息：
+- en: '[PRE46]'
+  id: totrans-288
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE46]'
+- en: 'We have added the note directly from the command line without invoking the
+    editor by using the `-m` flag (the same flag as for `git commit`) to simplify
+    the explanation of this example. The note will be visible when running `git log`
+    or `git show`:'
+  id: totrans-289
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们直接从命令行添加了注释，而没有调用编辑器，使用了`-m`标志（与`git commit`使用的标志相同），以简化此示例的说明。该注释将在运行`git
+    log`或`git show`时可见：
+- en: '[PRE47]'
+  id: totrans-290
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE47]'
+- en: As you can see from the preceding output, our note is shown after the commit
+    message in the `Notes:` section. Displaying notes can be disabled with the `--no-notes`
+    option, and (re)enabled with `--show-notes`.
+  id: totrans-291
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如你从前面的输出中看到的，我们的注释显示在提交信息之后的`Notes:`部分。可以使用`--no-notes`选项禁用显示注释，使用`--show-notes`重新启用显示注释。
+- en: How notes are stored
+  id: totrans-292
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注释是如何存储的
+- en: In Git, notes are stored using extra references in the `refs/notes/` namespace.
+    By default, commit notes are stored using the `refs/notes/commits` ref. This can
+    be changed using the `core.notesRef` configuration variable, which can in turn
+    be overridden with the `GIT_NOTES_REF` environment variable.
+  id: totrans-293
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在Git中，注释是通过`refs/notes/`命名空间中的额外引用存储的。默认情况下，提交注释存储在`refs/notes/commits`引用中。可以通过`core.notesRef`配置变量来更改此行为，该变量可以通过`GIT_NOTES_REF`环境变量进一步覆盖。
+- en: If the given ref does not exist, it is not an error, but it means that no notes
+    should be printed. These variables decide both which type of notes are displayed
+    with the commit after the `Notes:` line and where to write the note created with
+    `git` `notes add`.
+  id: totrans-294
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果给定的引用不存在，这并不是错误，而是意味着不应该打印任何注释。这些变量决定了在`Notes:`行之后，提交的注释显示哪种类型，以及在哪里写入使用`git`
+    `notes add`创建的注释。
+- en: 'You can see that the new type of has reference appeared in the repository:'
+  id: totrans-295
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以看到新的引用类型已经出现在代码库中：
+- en: '[PRE48]'
+  id: totrans-296
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE48]'
+- en: If you examine the new reference, you will see that each note is stored in a
+    file named after the SHA-1 identifier of the annotated object. This means that
+    you can have only one note of the given type for one object. You can always edit
+    the note, append to it (with `git notes append`), or replace its content (with
+    `git notes` `add --force`).
+  id: totrans-297
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你检查新的引用，你会看到每个注释都存储在一个以注释对象的SHA-1标识符命名的文件中。这意味着你只能为一个对象拥有一个给定类型的注释。你可以随时编辑注释，向其中追加内容（使用`git
+    notes append`），或替换其内容（使用`git notes` `add --force`）。
+- en: 'In interactive mode, Git opens the editor with the contents of the note, so
+    edit, append, and replace operations work almost the same interactively. As opposed
+    to commits, notes are mutable, or to be more exact, only the latest version of
+    each note is used:'
+  id: totrans-298
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在交互模式下，Git 会打开包含笔记内容的编辑器，因此编辑、附加和替换操作在交互模式下几乎是一样的。与提交不同，笔记是可变的，或者更准确地说，每条笔记只有最新版本会被使用：
+- en: '[PRE49]'
+  id: totrans-299
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE49]'
+- en: Notes for commits are stored in a separate line of (meta) history, but this
+    need not be the case for the other categories of notes. The notes reference can
+    point directly to the `tree` object instead of the `commit` object such as for
+    `refs/notes/commits`.
+  id: totrans-300
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 提交的笔记存储在一个独立的（元）历史记录行中，但其他类别的笔记不必是这样。笔记引用可以直接指向`tree`对象，而不是指向`commit`对象，如`refs/notes/commits`。
+- en: One important issue that is often overlooked in books and articles is that it
+    is the full path to a file with the note’s contents, not the base name of the
+    file, that identifies the object that the note is attached to. If there are many
+    notes, Git can and will use a fan-out directory hierarchy, for example, storing
+    the preceding note at the `8c/4c/eca59d7402fb24a672c624b7ad816cf04e08` path (note
+    the slashes).
+  id: totrans-301
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一本书籍或文章中常被忽视的一个重要问题是，标识附加到笔记对象上的文件并非文件的基本名称，而是文件的完整路径。若有许多笔记，Git 可以并将使用扇出式目录层级，例如，将前述笔记存储在`8c/4c/eca59d7402fb24a672c624b7ad816cf04e08`路径下（注意斜杠）。
+- en: Other categories and uses of notes
+  id: totrans-302
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 笔记的其他类别和用途
+- en: Notes are usually added to commits. However, even for those notes that are attached
+    to commits, it makes sense, at least in some cases, to store different pieces
+    of information using different categories of notes. This makes it possible to
+    decide which parts of information to display on an individual basis, and which
+    parts to push to the public repository. It also allows us to query for specific
+    parts of information individually.
+  id: totrans-303
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 笔记通常会被添加到提交中。然而，即使是那些附加到提交的笔记，在某些情况下，将不同的信息存储在不同类别的笔记中也是有意义的。这使得我们能够在个人基础上决定显示哪些部分信息，以及哪些部分信息推送到公共仓库。它还允许我们单独查询特定的信息部分。
+- en: 'To create a note in a namespace (category) that is different from the default
+    one (where the default means `notes/commits`, or the value of the configuration
+    variable `core.notesRef` if it is set), you need to specify the category of notes
+    while adding it:'
+  id: totrans-304
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 若要在不同于默认的命名空间（类别）中创建笔记（默认情况下，`notes/commits`，或如果设置了`core.notesRef`配置变量，则为其值），则在添加笔记时需要指定类别：
+- en: '[PRE50]'
+  id: totrans-305
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE50]'
+- en: 'Now, by default, Git will only display the `core.notesRef` category of notes
+    after the commit message. To include other types of notes, you must either select
+    the category to display with `git log --notes=<category>` (where `<category>`
+    is either the unqualified or qualified reference name, or a glob; you can therefore
+    use `--notes=*` to show all categories) or configure which notes to display in
+    addition to the default with the `display.notesRef` configuration variable (or
+    the `GIT_NOTES_DISPLAY_REF` environment variable). You can either specify the
+    configuration variable value multiple times, just like for `remote.<remote-name>.push`
+    (or specify a colon-separated list of pathnames if you are using the environment
+    variable), or you can specify a globing pattern:'
+  id: totrans-306
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，默认情况下，Git 只会在提交信息之后显示`core.notesRef`类别的笔记。要包含其他类型的笔记，您必须使用`git log --notes=<category>`选择要显示的类别（其中`<category>`可以是未限定或限定的引用名称，也可以是通配符；因此，您可以使用`--notes=*`显示所有类别），或者通过`display.notesRef`配置变量（或`GIT_NOTES_DISPLAY_REF`环境变量）配置要显示的笔记类别，除了默认类别外。您可以像`remote.<remote-name>.push`一样多次指定配置变量值（如果使用环境变量，则可以指定以冒号分隔的路径名列表），或者指定一个通配模式：
+- en: '[PRE51]'
+  id: totrans-307
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE51]'
+- en: There are many possible uses of notes. You can, for example, use notes to reliably
+    mark which patches (which commits) were **upstreamed** (**forward-ported** to
+    the development branch) or **downstreamed** (**back-ported** to the more stable
+    branch or the stable repository), even if the upstreamed or downstreamed version
+    is not identical, and mark a patch as being **deferred** if it is not ready for
+    either upstream or downstream.
+  id: totrans-308
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 笔记有很多可能的用途。例如，您可以使用笔记可靠地标记哪些补丁（哪些提交）已被**上游推送**（**前向移植**到开发分支）或**下游推送**（**回溯移植**到更稳定的分支或稳定仓库），即使上游推送或下游推送的版本不完全相同，还可以标记一个补丁为**推迟**，如果它尚未准备好进行上游或下游操作。
+- en: If you require manual input, this is a bit more reliable than relying on the
+    `git patch-id` mechanism to detect when the changeset is already present (which
+    you can do by rebasing, by using `git cherry-pick`, or with the `--cherry`, `--cherry-pick`,
+    or `--cherry-mark` option of `git log`). This is, of course, in case we are not
+    using topic branches from the start, but rather cherry-picking commits.
+  id: totrans-309
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果需要手动输入，这比依赖 `git patch-id` 机制来检测变更集是否已存在更可靠（你可以通过变基、使用 `git cherry-pick`，或者使用
+    `git log` 的 `--cherry`、`--cherry-pick` 或 `--cherry-mark` 选项来实现）。当然，这是指我们没有从一开始就使用主题分支，而是通过挑选提交。
+- en: Notes can also be used to store the results of the post-commit (but pre-merge)
+    **code audit** and to notify other developers of the reason(s) why this version
+    of the patch was used.
+  id: totrans-310
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 备注也可以用来存储提交后（但合并前）**代码审计**的结果，并通知其他开发者该版本补丁使用的原因。
+- en: Notes can also be used to handle **marking bugs and bug fixes**, as well as
+    **verifying** fixes. You will often find bugs in commits long after they get published;
+    that is why you need notes for this purpose. If you find a bug before publishing,
+    you would rewrite the buggy commit instead.
+  id: totrans-311
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 备注还可以用来处理**标记错误和错误修复**，以及**验证**修复。你通常会在提交发布后很久才发现其中的错误；这就是你需要备注来处理这种情况的原因。如果你在发布前发现了错误，你会重写有问题的提交。
+- en: In this case, when the bug gets reported, and if it was a regression, you would
+    first find which revision introduced the bug (for example, with `git bisect`,
+    as described in [*Chapter 4*](B21194_04.xhtml#_idTextAnchor083), *Exploring Project
+    History*). Then you would want to mark this commit, putting the identifier of
+    a bug entry in the issue tracker for the project (which is usually a number, or
+    number preceded by some specific prefix such as `bugs`, `defects`, or `issues`
+    category of notes. Perhaps you would also want to include the description of a
+    bug. If the bug affects security, it might be assigned a vulnerability identifier,
+    for example, a `CVE-IDs` category.
+  id: totrans-312
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这种情况下，当错误被报告时，如果它是回归错误，你首先需要找到是哪个版本引入了该错误（例如，使用 `git bisect`，如 [*第4章*](B21194_04.xhtml#_idTextAnchor083)
+    中所述，*探索项目历史*）。然后你需要标记这个提交，将项目问题追踪器中的错误条目标识符（通常是一个数字，或者是一个带有特定前缀的数字，例如 `bugs`、`defects`
+    或 `issues` 类别的备注）放入其中。也许你还想包括错误的描述。如果这个错误影响了安全性，可能会分配一个漏洞标识符，例如 `CVE-IDs` 类别。
+- en: Then, after some time, the bug will hopefully get fixed. Just like we marked
+    the commit with the information that it contains the bug, we can additionally
+    annotate it with the information on which commit fixes it, such as in a note in
+    the `fixes` category. Unfortunately, it might happen that the first attempt at
+    fixing it doesn’t handle the bug entirely correctly and you have to amend a fix,
+    or perhaps even create a fix for a fix. If you are using bugfix or hotfix branches
+    (topic branches for bugfixes), as described in [*Chapter 8*](B21194_08_split_000.xhtml#_idTextAnchor196),
+    *Advanced Branching Techniques*, it will be easy to find and apply them together
+    by merging the aforementioned bugfix branch. If you are not using this workflow,
+    then it would be a good idea to use notes to annotate fixes that should be cherry-picked
+    together with a supplementary commit, for example by adding a note in the `alsoCherryPick`
+    or `seeAlso` category, or whatever you want to name this category of notes. Perhaps
+    the original submitter, or a Q&A group, would also get to the fix and test that
+    it works correctly. It would be better if the commit was tested before publishing,
+    but it is not always possible, so `refs/notes/tests` it is.
+  id: totrans-313
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后，经过一段时间，错误希望能被修复。就像我们在提交中标注包含错误的信息一样，我们还可以另外注解修复该错误的提交信息，例如在 `fixes` 类别中的备注。不幸的是，第一次修复可能并没有完全解决问题，你可能需要修改修复，或者甚至为修复创建一个修复。如果你使用的是
+    bugfix 或 hotfix 分支（用于修复错误的主题分支），正如在 [*第8章*](B21194_08_split_000.xhtml#_idTextAnchor196)
+    中描述的，*高级分支技巧*，那么通过合并上述 bugfix 分支，找到并一起应用它们会很容易。如果你没有使用这种工作流，那么最好使用备注来标注应该一起挑选的修复以及补充提交，例如通过在
+    `alsoCherryPick` 或 `seeAlso` 类别中添加备注，或者任何你想命名的类别。也许原始提交者，或者一个 Q&A 小组，也会着手修复并测试它是否正常工作。最好是在发布前对提交进行测试，但这并不总是可能的，所以
+    `refs/notes/tests` 就是这样。
+- en: 'Third-party tools use (or could use) notes to store additional `refs/notes/reviews`.
+    This includes the name and email address of the Gerrit user that submitted the
+    change, the time the commit was submitted, the URL to the change review in the
+    Gerrit instance, review labels and scores (including the identity of the reviewer),
+    the name of project and branch, and so on:'
+  id: totrans-314
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 第三方工具使用（或可以使用）笔记来存储额外的 `refs/notes/reviews`。这包括提交更改的 Gerrit 用户的姓名和电子邮件地址、提交提交的时间、Gerrit
+    实例中更改审核的 URL、审核标签和评分（包括审核人的身份）、项目和分支的名称等：
+- en: '[PRE52]'
+  id: totrans-315
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE52]'
+- en: Notes as cache
+  id: totrans-316
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 将笔记作为缓存
+- en: Going to a more exotic example, you can use the notes mechanism to store **the
+    result of a build** (either the archive, the installation package, or just the
+    executable), attaching it to a commit or a tag. Theoretically, you could store
+    a build result in a tag, but you would usually expect a tag to contain a **Pretty
+    Good Privacy** (**PGP**) signature and perhaps also the release highlights. Also,
+    you would, in almost all cases, want to fetch all the tags, while not everyone
+    wants to pay for the cost of disk space for the convenience of pre-build executables.
+    You can select whether you want to fetch the given category of notes (for example
+    to skip pre-built binaries) or not from case to case while you autofollow tags.
+    That is why notes are better than tags for this purpose.
+  id: totrans-317
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 举一个更为复杂的例子，你可以使用笔记机制将**构建结果**（包括归档文件、安装包或仅是可执行文件）附加到提交或标签中。理论上，你可以将构建结果存储在标签中，但通常标签会包含**漂亮的隐私保护**（**PGP**）签名，并且可能还会有发布亮点。而且，几乎在所有情况下，你会希望获取所有标签，而不是每个人都愿意为预构建的可执行文件支付额外的磁盘空间费用。在自动跟踪标签时，你可以选择是否获取某个类别的笔记（例如跳过预构建的二进制文件）。这就是为什么笔记比标签更适合这个目的。
+- en: 'Here, the trouble is to correctly generate a binary note. You can binary-safely
+    create a note with the following trick:'
+  id: totrans-318
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这里的问题是如何正确生成二进制笔记。你可以通过以下技巧安全地创建二进制笔记：
+- en: '[PRE53]'
+  id: totrans-319
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE53]'
+- en: You cannot simply use `-F ./a.out`, as this is not binary-safe – comments (or
+    rather what was misdetected as comments, that is, lines starting with `#`) would
+    be stripped.
+  id: totrans-320
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你不能简单地使用`-F ./a.out`，因为这不是二进制安全的——注释（或更准确地说，错误检测为注释的内容，即以`#`开头的行）会被删除。
+- en: 'The notes mechanism is also used as a mechanism to enable storing cache for
+    the `textconv` filter (see the section on gitattributes in [*Chapter 3*](B21194_03_split_000.xhtml#_idTextAnchor049),
+    *Managing Your* *Worktrees*). All you need to do is configure the filter in question,
+    setting its `true`:'
+  id: totrans-321
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 笔记机制还被用作启用为`textconv`过滤器存储缓存的机制（请参阅[*第 3 章*](B21194_03_split_000.xhtml#_idTextAnchor049)中的
+    gitattributes 部分，*管理你的工作树*）。你需要做的就是配置相关的过滤器，将其设置为 `true`：
+- en: '[PRE54]'
+  id: totrans-322
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE54]'
+- en: Here, notes in the `refs/notes/textconv/jpeg` namespace (named after the filter)
+    are used to attach the text of the conversion to a blob.
+  id: totrans-323
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这里，`refs/notes/textconv/jpeg` 命名空间中的笔记（以过滤器命名）用于将转换后的文本附加到一个 blob 上。
+- en: Notes and rewriting history
+  id: totrans-324
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 笔记与历史重写
+- en: Notes are attached to objects they annotate (usually commits) by their SHA-1
+    identifier. What happens with notes when we are rewriting history then? In the
+    new, rewritten history, SHA-1 identifiers of objects are different in most cases.
+  id: totrans-325
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 笔记通过它们的 SHA-1 标识符附加到它们注释的对象（通常是提交）。那么当我们重写历史时，笔记会怎样呢？在新重写的历史中，绝大多数情况下，对象的 SHA-1
+    标识符会发生变化。
+- en: It turns out that you can configure this quite extensively. First, you can select
+    which categories of notes should be copied along with the annotated object during
+    the rewrite with the `notes.rewriteRef` multi-value configuration variable. This
+    setting can be overridden with the `GIT_NOTES_REWRITE_REF` environment variable
+    with a colon-separated list of fully qualified notes references and globs (denoting
+    reference patterns to match). There is no default value for this setting; you
+    must configure this variable to enable rewriting.
+  id: totrans-326
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 事实证明，你可以进行非常广泛的配置。首先，你可以选择在重写时哪些类别的笔记应与注释的对象一起复制，使用 `notes.rewriteRef` 多值配置变量。此设置可以通过
+    `GIT_NOTES_REWRITE_REF` 环境变量进行覆盖，环境变量值为用冒号分隔的完全限定笔记引用和 glob（表示要匹配的引用模式）。此设置没有默认值；你必须配置该变量以启用重写。
+- en: Second, you can also configure whether to copy a note during rewriting depending
+    on the exact type of the command doing the rewriting (`rebase` and `amend` are
+    currently supported as the value of the command). This can be done with the boolean-valued
+    `notes.rewrite.<command>` configuration variable.
+  id: totrans-327
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 其次，你还可以配置在重写过程中是否复制笔记，具体取决于执行重写的命令类型（目前支持`rebase`和`amend`命令）。这可以通过布尔值配置变量`notes.rewrite.<command>`来完成。
+- en: In addition, you can decide what to do if the target commit already has a note
+    while copying notes during a rewrite, for example, while squashing commits using
+    an interactive rebase. You have to decide between `overwrite` (taking the note
+    from the appended commit), `concatenate` (which is the default value), `cat_sort_uniq`
+    (like `concatenate`, but sorting lines and removing duplicates), and `ignore`
+    (using the note from the original commit being appended to) for the `notes.rewriteMode`
+    configuration variable or the `GIT_NOTES_REWRITE_MODE` environment variable.
+  id: totrans-328
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 此外，你可以决定在重写过程中复制笔记时，如果目标提交已经有笔记该怎么办，例如，在使用交互式变基时压缩提交。你需要在`notes.rewriteMode`配置变量或`GIT_NOTES_REWRITE_MODE`环境变量中选择`overwrite`（从附加提交中获取笔记）、`concatenate`（默认值）、`cat_sort_uniq`（类似于`concatenate`，但对行进行排序并移除重复项）和`ignore`（使用附加到的原始提交中的笔记）之间进行选择。
+- en: Publishing and retrieving notes
+  id: totrans-329
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 发布和获取笔记
+- en: So, we have notes in our own local repository. What do we do if we want to share
+    these notes? How do we make them public? How can we, and other developers, get
+    notes from other public repositories?
+  id: totrans-330
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 所以，我们在本地仓库中有笔记。如果我们想分享这些笔记该怎么办？我们如何将它们公开？我们以及其他开发者如何从其他公共仓库获取笔记？
+- en: We can employ our knowledge of Git here. The *How notes are stored* section
+    explained that notes are stored in the object database of the repository using
+    special references in the `refs/notes/` namespace. The contents of the note is
+    stored as a blob, referenced through this special ref. Commit notes (notes in
+    `refs/notes/commits`) store the history of notes, though Git allows you to store
+    notes without history as well. So, what you need to do is get this special ref.
+    The contents of the notes will follow. This is the usual mechanism of repository
+    synchronization (object transfer).
+  id: totrans-331
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以在这里运用我们对Git的知识。*笔记是如何存储的*一节解释了笔记是如何使用`refs/notes/`命名空间中的特殊引用存储在仓库的对象数据库中的。笔记的内容作为一个blob存储，通过这个特殊引用来引用。提交笔记（存储在`refs/notes/commits`中的笔记）存储笔记的历史记录，尽管Git也允许你存储没有历史记录的笔记。所以，你需要做的是获取这个特殊引用，笔记的内容会随之而来。这是仓库同步（对象传输）的常见机制。
+- en: 'This means that to publish your notes, you need to configure appropriate `push`
+    lines in the appropriate remote repository configuration (see [*Chapter 6*](B21194_06.xhtml#_idTextAnchor140),
+    *Collaborative Development with Git*). Assuming that you are using a separate
+    `public` remote (if you are the maintainer, you will probably simply use `origin`),
+    which is perhaps set as `remote.pushDefault`, and that you would like to publish
+    notes in any category, you can run the following:'
+  id: totrans-332
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这意味着，为了发布你的笔记，你需要在适当的远程仓库配置中配置合适的`push`行（请参见[*第6章*](B21194_06.xhtml#_idTextAnchor140)，*与Git的协作开发*）。假设你使用的是一个单独的`public`远程仓库（如果你是维护者，你可能只使用`origin`），它可能被设置为`remote.pushDefault`，并且你希望发布任何类别的笔记，你可以运行以下命令：
+- en: '[PRE55]'
+  id: totrans-333
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE55]'
+- en: 'If `push.default` is set to `matching` (or Git is old enough to have this as
+    the default behavior), or the `push` lines use special refspecs such as `:` or
+    `+:`, it is enough to push notes refs the first time, as they would be pushed
+    automatically each time after:'
+  id: totrans-334
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果`push.default`设置为`matching`（或者Git足够旧，默认行为是如此），或者`push`行使用了特殊的refspec，例如`:`或`+:`，那么只需第一次推送笔记引用，以后每次都会自动推送：
+- en: '[PRE56]'
+  id: totrans-335
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE56]'
+- en: 'The process of **fetching notes** is only slightly more involved. If you don’t
+    produce specified types of notes yourself, you can fetch notes in the “mirror-like”
+    mode to the ref with the same name:'
+  id: totrans-336
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**获取笔记**的过程稍微复杂一些。如果你自己没有生成指定类型的笔记，可以通过“镜像”模式将笔记获取到具有相同名称的引用：'
+- en: '[PRE57]'
+  id: totrans-337
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE57]'
+- en: However, if there is a possibility of conflict, you would need to fetch notes
+    from the remote into the remote-tracking notes reference, and then use `git notes
+    merge` to join them into your notes. Please see the documentation for details.
+  id: totrans-338
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，如果存在冲突的可能性，你需要将远程的笔记获取到远程跟踪笔记引用中，然后使用`git notes merge`将它们合并到你的笔记中。详细信息请参阅文档。
+- en: Tip
+  id: totrans-339
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 提示
+- en: 'If you want to make it easy to merge Git notes, perhaps even automatically,
+    then following the convention of the **Key: Value** entries on separate lines
+    for the content of notes, with duplicates removed, will help.'
+  id: totrans-340
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '如果你希望更轻松地合并 Git 注释，甚至是自动化合并，那么遵循 **Key: Value** 格式，且每条内容独占一行并移除重复项，会有所帮助。'
+- en: There is no standard naming convention for remote-tracking notes references,
+    but you can use either `refs/notes/origin/*` (so that the shortened `commits`
+    notes category from the `origin` remote is `origin/commits`, and so on), or go
+    whole works and fetch `refs/*` from the `origin` remote into `refs/remotes/origin/refs/*`
+    (so that the `commits` category lands in `refs/remotes/origin/refs/notes/commits`).
+  id: totrans-341
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于远程跟踪注释引用，虽然没有标准的命名约定，但你可以使用`refs/notes/origin/*`（这样，来自`origin`远程的简化`commits`注释类别就是`origin/commits`，依此类推），或者采用更彻底的方法，从`origin`远程获取`refs/*`到`refs/remotes/origin/refs/*`（这样，`commits`类别就会进入`refs/remotes/origin/refs/notes/commits`）。
+- en: Using git replace
+  id: totrans-342
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 使用 git 替换
+- en: The original idea for the replace- or replacement-like mechanism was to make
+    it possible to join the history of two different repositories.
+  id: totrans-343
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 用于替换或类似替换机制的最初想法是使得能够将两个不同仓库的历史记录合并。
+- en: 'The original impulse was to be able to switch from the other version control
+    system to Git by creating two repositories: the first one for the current work,
+    starting with the most recent version in the empty repository, and the second
+    one for the historical data, storing the conversion from the original system.
+    That way, it would be possible to take time doing the faithful conversion of the
+    historical data, and even fix it if the conversion were incorrect, without affecting
+    the current work.'
+  id: totrans-344
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最初的动机是能够通过创建两个仓库来从其他版本控制系统迁移到 Git：第一个用于当前工作，从空仓库开始并且包含最新版本，第二个用于历史数据，存储从原始系统转换来的数据。通过这种方式，就可以花时间对历史数据进行忠实的转换，甚至在转换错误时进行修正，而不影响当前的工作。
+- en: What was needed was some mechanism to connect the histories of those two repositories,
+    to have a full history for inspection going back to the creation of a project
+    (for example, for blame, that is, line-history annotation).
+  id: totrans-345
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 需要的是某种机制来连接这两个仓库的历史，以便进行完整的历史检查，追溯到项目创建的时间（例如，用于 blame，即行历史注释）。
+- en: The replacements mechanism
+  id: totrans-346
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 替换机制
+- en: The modern incarnation of such a tool is a replace (or replacements) mechanism.
+    With it, you can replace any object with any object, or rather create a virtual
+    history (virtual object database of a repository) by creating an overlay, so that
+    most Git commands return a replacement in place of the original object.
+  id: totrans-347
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这种工具的现代体现就是替换（或替换）机制。使用它，你可以将任何对象替换为任何对象，或者通过创建覆盖来创建虚拟历史（虚拟对象数据库），从而使大多数 Git
+    命令返回替换对象而不是原始对象。
+- en: However, the original object is still there, and Git’s behavior with respect
+    to the replacement mechanism was done in such a way as to eliminate the possibility
+    of losing data. You can get the original view with the `--no-replace-objects`
+    option passed to the `git` wrapper, added before the command. You can also use
+    the `GIT_NO_REPLACE_OBJECTS` environment variable, instead. For example, to view
+    the original history, you can use `git --``no-replace-objects log`.
+  id: totrans-348
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，原始对象仍然存在，Git 对替换机制的行为是通过一种方式来消除丢失数据的可能性。你可以使用`--no-replace-objects`选项并传递给`git`命令包装器，以查看原始视图，或者直接使用`GIT_NO_REPLACE_OBJECTS`环境变量。例如，要查看原始历史记录，可以使用`git
+    --no-replace-objects log`。
+- en: The information about replacements is saved in the repository by storing the
+    ref named after the SHA-1 of the replaced object in the `refs/replace/` namespace,
+    with the SHA-1 of replacement as its sole content. However, there is no need to
+    edit it by hand or with low-level plumbing commands – you can use the `git` `replace`
+    command.
+  id: totrans-349
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 替换信息会通过将被替换对象的 SHA-1 名称存储在`refs/replace/`命名空间中，并将替换对象的 SHA-1 作为唯一内容，保存到仓库中。但是不需要手动编辑它或使用低级的管道命令——你可以使用`git
+    replace`命令。
+- en: Almost all the commands use replacements unless they are told not to, as explained
+    previously. The exception is reachability analysis commands. This means that Git
+    would not remove the replaced objects because they are no longer reachable if
+    we take replacement into account. Of course, replacement objects are reachable
+    from the replace refs.
+  id: totrans-350
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 除非特别告知，否则几乎所有命令都会使用替换，正如之前所解释的那样。例外的是可达性分析命令。这意味着，考虑到替换的情况，Git 不会删除已替换的对象，因为它们不再可达。当然，替换对象是通过替换引用可以访问的。
+- en: Important note
+  id: totrans-351
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 重要提示
+- en: Currently, some of the mechanisms that are used to make Git faster for very
+    large repositories (see [*Chapter 12*](B21194_12.xhtml#_idTextAnchor302), *Managing
+    Large Repositories*) don’t work if **git replace** is used.
+  id: totrans-352
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当前，一些用于加速非常大仓库的机制（见[*第12章*](B21194_12.xhtml#_idTextAnchor302)，*管理大仓库*）在使用**git
+    replace**时不起作用。
+- en: You can replace any object with any other object, though changing the type of
+    an object requires telling Git that you know what you are doing with `git replace
+    -f <object> <replacement>`. This is because such a change might lead to troubles
+    with Git, since it was expecting one type of object, and getting another.
+  id: totrans-353
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以用任何其他对象替换任何对象，尽管更改对象的类型需要告诉Git你知道自己在做什么，使用`git replace -f <object> <replacement>`。这是因为这样的更改可能会导致Git出现问题，因为它原本期望的是一种类型的对象，而得到了另一种。
+- en: With `git replace --edit <object>`, you can edit its contents interactively.
+    What really happens is that Git opens the editor with the object contents, and
+    after editing, Git creates a new object and a replacement ref. The object format
+    (in particular, the commit object format, as one would almost always edit commits)
+    was described at the beginning of this chapter. You can change the commit message,
+    commit parents and authorship, and so on.
+  id: totrans-354
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用`git replace --edit <object>`，你可以交互式地编辑其内容。实际上，Git会打开编辑器，显示对象的内容，编辑后，Git会创建一个新对象和一个替换引用。对象格式（特别是提交对象格式，因为几乎总是编辑提交）在本章开头有所描述。你可以更改提交消息、提交父级和作者等。
+- en: Example – joining histories with git replace
+  id: totrans-355
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 示例 – 使用git replace合并历史
+- en: Let’s assume that you have split the repository into two, as described in an
+    earlier section about `filter-repo`, perhaps for performance reasons. However,
+    let’s say that you want to be able to treat the joined history as if it were one.
+  id: totrans-356
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 假设你已经按照前面关于`filter-repo`的部分将仓库拆分为两个，也许是出于性能原因。但是，假设你希望能够将合并后的历史视为一个整体。
+- en: Or perhaps there was a natural history split after changing the version control
+    system to Git, with the fresh repository with the current work (started after
+    switching from the current state of a project, with an empty history) and the
+    converted historical repository kept separate. This could be done to make the
+    switch faster. This technique has the advantage of allowing you to improve the
+    conversion after the split.
+  id: totrans-357
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 或者，可能在将版本控制系统更改为Git后，自然地发生了历史拆分，新仓库包含当前工作（在从项目当前状态切换后开始的仓库，历史为空），而转换后的历史仓库被单独保留。这可以加快切换速度。这种技术的优势在于，它允许你在拆分后改进转换。
+- en: This situation is shown in *Figure 10**.12*, with the historical repository
+    added as a remote to the current work repository (one with new commits).
+  id: totrans-358
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这种情况显示在*图10.12*中，历史仓库作为远程被添加到当前工作仓库中（即包含新提交的仓库）。
+- en: '![Figure 10.12 – The view of a split history, with the replacements turned
+    off (git --no-replace-objects). The shortened SHA-1 in the left upper corner of
+    a commit denotes its identifier.](img/B21194_10_12.jpg)'
+  id: totrans-359
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图10.12 – 一个拆分历史的视图，替换被关闭（git --no-replace-objects）。提交左上角的简短SHA-1表示其标识符。](img/B21194_10_12.jpg)'
+- en: Figure 10.12 – The view of a split history, with the replacements turned off
+    (git --no-replace-objects). The shortened SHA-1 in the left upper corner of a
+    commit denotes its identifier.
+  id: totrans-360
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图10.12 – 一个拆分历史的视图，替换被关闭（git --no-replace-objects）。提交左上角的简短SHA-1表示其标识符。
+- en: In many cases, you might want to create a kind of informational commit on top
+    of the “historical” repository (the one with the older part of the history), for
+    example, adding the notification where one can find the `current work` repository
+    to the `README` file. Such a commit is, for simplicity, not shown in *Figure 10**.12*.
+  id: totrans-361
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在许多情况下，你可能希望在“历史”仓库（包含历史较旧部分的仓库）之上创建一种信息性提交，例如，在`README`文件中添加关于在哪里可以找到`current
+    work`仓库的通知。为了简化起见，这种提交在*图10.12*中没有显示。
+- en: How to join history depends somewhat on whether the history was originally split
+    or joined. If it was originally joined, then split, just tell Git to replace the
+    post-split version with the pre-split version using `git replace <post-split>
+    <pre-split>`. If the repository was split from beginning, use the `--edit` or
+    `--graft` option of `git replace`.
+  id: totrans-362
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如何合并历史依赖于历史是否最初被拆分或合并。如果最初是合并的，然后被拆分，只需告诉Git使用`git replace <post-split> <pre-split>`将拆分后的版本替换为拆分前的版本。如果仓库一开始就是拆分的，请使用`git
+    replace`的`--edit`或`--graft`选项。
+- en: '![Figure 10.13 – The view of a split history, joined using replacements](img/B21194_10_13.jpg)'
+  id: totrans-363
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 10.13 – 使用替代合并后的历史分裂视图](img/B21194_10_13.jpg)'
+- en: Figure 10.13 – The view of a split history, joined using replacements
+  id: totrans-364
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 10.13 – 使用替代合并后的历史分裂视图
+- en: The split history is there, it is just hidden from view. For all Git commands,
+    the history looks like in *Figure 10**.13*. You can, as described earlier, turn
+    it off using replacements; in this case, you would see the history as in *Figure
+    10**.12*.
+  id: totrans-365
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 分裂历史存在，只是被隐藏了。对于所有Git命令来说，历史看起来就像*图 10.13*中的样子。你可以像之前描述的那样，通过替代来关闭它；在这种情况下，你会看到历史就像*图
+    10.12*中的样子。
+- en: Historical note – grafts
+  id: totrans-366
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 历史备注 – grafts
+- en: The first attempt to create a mechanism to make it possible to join lines of
+    history came about in the form of `.git/info/grafts` file with the SHA-1 identifier
+    of the affected commit and its replacement parents in line, separated by spaces.
+  id: totrans-367
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 第一次尝试创建一个机制来实现历史记录行的合并，形式是`.git/info/grafts`文件，文件中包含受影响提交的SHA-1标识符及其替代父提交，且各项之间由空格分隔。
+- en: This mechanism was only for commits, and allowed only to change the parentage
+    of the commit. There was no support for transport, that is, for propagating this
+    information from inside of Git. You could not turn the grafts mechanism off temporarily,
+    at least not easily. Moreover, it was inherently unsafe because there were no
+    exceptions for reachability-checking commands, making it possible for Git to remove
+    needed objects by accident during pruning (garbage collecting).
+  id: totrans-368
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 该机制仅适用于提交，并且仅允许更改提交的父提交关系。它不支持传输，即无法将此信息从Git内部传播。你无法临时关闭grafts机制，至少不容易关闭。此外，它本质上不安全，因为没有对可达性检查命令的例外情况，使得Git在修剪（垃圾回收）过程中可能会意外删除必要的对象。
+- en: However, you can find its use in examples. Nowadays, it is obsolete, especially
+    with the existence of the `git replace --graft` option. If you use grafts, consider
+    replacing them with replacements objects; the `contrib/convert-grafts-to-replace-refs.sh`
+    script can help with this in the Git sources.
+  id: totrans-369
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，你可以在示例中找到它的使用。如今，它已经过时，尤其是在`git replace --graft`选项的存在下。如果你使用grafts，考虑将它们替换为替代对象；Git源码中的`contrib/convert-grafts-to-replace-refs.sh`脚本可以帮助你完成此操作。
+- en: Other graft-like files in Git
+  id: totrans-370
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git中的其他类似graft的文件
+- en: The **shallow clone** (the result of **git clone --depth=<N>**, a clone with
+    the shortened history) is managed with a graft-like **.git/shallow** file. This
+    file is managed by Git, however, not by the user.
+  id: totrans-371
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**浅克隆**（即**git clone --depth=<N>**的结果，一种具有简化历史记录的克隆）通过类似graft的**.git/shallow**文件来管理。这个文件由Git管理，而非用户管理。'
+- en: Publishing and retrieving replacements
+  id: totrans-372
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 发布和获取替代
+- en: How can you publish replacements, and how do you get them from the remote repository?
+    Since replacements use references, this is quite simple.
+  id: totrans-373
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如何发布替代，并且如何从远程仓库获取它们？由于替代使用引用，这相当简单。
+- en: 'Each replacement is a separate reference in the `refs/replaces/` namespace.
+    Therefore, you can get all the replacements with the globing `fetch` or `push`
+    line:'
+  id: totrans-374
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 每个替代都是`refs/replaces/`命名空间中的一个独立引用。因此，你可以使用glob方式的`fetch`或`push`命令获取所有替代：
+- en: '[PRE58]'
+  id: totrans-375
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE58]'
+- en: There can be only one replacement for an object, so there are no problems with
+    merging replacements. You can only choose between one replacement or the other.
+  id: totrans-376
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于一个对象只能有一个替代，因此合并替代时不会出现问题。你只能在两者之间选择其一。
+- en: Theoretically, you could also request individual replacements by fetching (and
+    pushing) individual replacement references instead of using the '*' wildcard.
+  id: totrans-377
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 理论上，你也可以通过获取（和推送）单独的替代引用来请求单个替代，而不是使用`*`通配符。
+- en: Summary
+  id: totrans-378
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 摘要
+- en: This chapter, along with [*Chapter 8*](B21194_08_split_000.xhtml#_idTextAnchor196),
+    *Advanced Branching Techniques*, provided all the tools required to manage a clean,
+    readable, and easy-to-review history of a project.
+  id: totrans-379
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章连同[*第8章*](B21194_08_split_000.xhtml#_idTextAnchor196)，*高级分支技术*，提供了管理项目历史记录的所有工具，确保历史记录简洁、易读且易于审查。
+- en: You learned how to make history cleaner by rewriting it in this chapter. You
+    also learned what rewriting history means in Git, when and why to avoid it, and
+    how to recover from an untimely upstream rewrite. You have learned to use an interactive
+    rebase to delete, reorder, squash and split commits, and how to test each commit
+    during the rebase. You know how to do a large-scale scripted rewrite with `filter-repo`,
+    as well as how to edit commits and commit metadata and how to permanently change
+    history, such as by splitting it in two. You also got to know some third-party
+    external tools, which can help with these tasks.
+  id: totrans-380
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章中，你学到了如何通过重写历史来使历史更加清晰。你还学到了在 Git 中重写历史意味着什么，何时以及为什么要避免重写历史，以及如何从不及时的上游重写中恢复。你学会了使用交互式
+    rebase 删除、重新排序、合并和拆分提交，以及如何在 rebase 过程中测试每个提交。你知道如何使用 `filter-repo` 进行大规模的脚本化重写，以及如何编辑提交和提交元数据，以及如何永久更改历史，例如将其拆分成两个部分。你还了解了一些第三方外部工具，它们可以帮助完成这些任务。
+- en: 'You learned what to do if you cannot rewrite history: how to fix mistakes by
+    creating commits with appropriate changes (for example, with `git revert`), how
+    to add extra information to the existing commits with notes, and how to change
+    the virtual view of the history with replacements. You learned to handle reverting
+    a faulty merge and how to re-merge after a reverted merge. You learned how to
+    fetch and publish both notes and replacements.'
+  id: totrans-381
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你学到了如果不能重写历史时该怎么做：如何通过创建适当更改的提交来修复错误（例如，使用 `git revert`），如何使用备注向现有提交添加额外信息，以及如何通过替换来更改历史的虚拟视图。你学会了如何处理撤销错误的合并以及如何在撤销合并后重新合并。你学会了如何获取并发布备注和替换。
+- en: To really understand advanced history rewriting and the mechanism behind notes
+    and replacements, this chapter explained the basics of Git internals and low-level
+    commands that are usable for scripting (including scripted rewrite).
+  id: totrans-382
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了真正理解高级历史重写及其背后的机制，本章解释了 Git 内部和低级命令的基础知识，这些命令可以用于脚本编写（包括脚本化重写）。
+- en: The following chapter, [*Chapter 11*](B21194_11.xhtml#_idTextAnchor270), *Managing
+    Subprojects*, will explain and show different ways to connect different subprojects
+    in one repository, from submodules to subtrees.
+  id: totrans-383
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来的章节，[*第11章*](B21194_11.xhtml#_idTextAnchor270)，*管理子项目*，将解释并展示在一个仓库中连接不同子项目的多种方式，从子模块到子树。
+- en: In the subsequent chapter, [*Chapter 12*](B21194_12.xhtml#_idTextAnchor302),
+    *Managing Large Repositories*, you will also learn techniques to manage (or mitigate
+    managing) large-size assets inside a repository, or large numbers of files in
+    a repository. Splitting a large project into submodules is one, but not the only,
+    way to handle this issue.
+  id: totrans-384
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在随后的章节，[*第12章*](B21194_12.xhtml#_idTextAnchor302)，*管理大型仓库*，你将学习如何管理（或减轻管理）仓库中的大型资产或大量文件。将大型项目拆分为子模块是一种方式，但不是唯一的方法。
+- en: Questions
+  id: totrans-385
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 问题
+- en: 'Answer the following questions to test your knowledge of this chapter:'
+  id: totrans-386
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 回答以下问题以测试你对本章节的理解：
+- en: When working on a series of commits to implement a feature, how can you mark
+    a bugfix commit for later squashing into the original commit before publishing
+    the series?
+  id: totrans-387
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在一系列提交中实现一个功能时，如何标记一个修复提交，以便在发布系列之前将其合并到原始提交中？
+- en: Why should you not rewrite (rebase or amend) published history if you are using
+    merging to integrate changes?
+  id: totrans-388
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 为什么如果你使用合并来集成更改，就不应该重写（rebase 或 amend）已发布的历史？
+- en: How can you recover from the upstream rebase?
+  id: totrans-389
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如何从上游的 rebase 中恢复？
+- en: What can you do when you notice that you accidentally included some large file
+    that should not be put in version control in a commit?
+  id: totrans-390
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如果你注意到在提交中不小心包含了一些不应该放入版本控制的巨大文件，你该怎么办？
+- en: How can you undo the effect of the commit if you cannot rewrite history?
+  id: totrans-391
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如果你不能重写历史，如何撤销提交的影响？
+- en: What mechanisms exist to amend history, or a view of history, without rewriting
+    it?
+  id: totrans-392
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 存在什么机制可以在不重写历史的情况下修改历史或历史视图？
+- en: Answers
+  id: totrans-393
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 答案
+- en: 'Here are the answers to the questions given above:'
+  id: totrans-394
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是上述问题的答案：
+- en: You can use **git commit --fixup** when creating a bugfix, and then later **git
+    rebase --interactive --autosquash** before publishing the series.
+  id: totrans-395
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 你可以在创建 bug 修复时使用**git commit --fixup**，然后在发布系列之前使用**git rebase --interactive
+    --autosquash**。
+- en: You should not rewrite published history because other developers can do their
+    work based on the version before the changes, and then merging would bring older
+    versions (from before the rewrite) back into existence.
+  id: totrans-396
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 你不应该重写已发布的历史，因为其他开发人员可以基于更改之前的版本进行工作，合并时会将旧版本（来自重写之前）重新带入历史。
+- en: Rebase your own changes on top of the new, rebased version of the upstream.
+  id: totrans-397
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在新的、经过变基的上游版本之上变基你自己的更改。
+- en: If the problem is in the most recent commit, you can amend it with **git commit
+    --amend**. If you need to rewrite the whole history of the project, you can use
+    the **git filter-repo** tool. Note, however, the caveat that comes with rewriting
+    published history, namely that it can cause problems for other developers when
+    they will try to integrate their changes.
+  id: totrans-398
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如果问题出现在最近的提交中，你可以使用**git commit --amend**来修改它。如果你需要重写项目的整个历史，可以使用**git filter-repo**工具。不过，请注意，重写已发布的历史会带来一些问题，特别是其他开发者在尝试集成他们的更改时，可能会遇到麻烦。
+- en: You can use **git revert** to create the commit that undoes changes brought
+    by an unwanted commit.
+  id: totrans-399
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 你可以使用**git revert**来创建一个提交，撤销不需要的提交所带来的更改。
+- en: You can use **git notes** to add extra information to commit objects after the
+    fact, and you can use **git replace** to change the effective shape of the history.
+  id: totrans-400
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 你可以使用**git notes**在提交对象上添加额外的信息，且可以使用**git replace**来改变历史的有效形态。
+- en: Further reading
+  id: totrans-401
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 深入阅读
+- en: 'To learn more about the topics that were covered in this chapter, take a look
+    at the following resources:'
+  id: totrans-402
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要了解本章所涉及的主题，您可以查看以下资源：
+- en: 'Scott Chacon and Ben Straub: *Pro Git, 2nd Edition* (2014) [https://git-scm.com/book/en/v2](https://git-scm.com/book/en/v2).'
+  id: totrans-403
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 'Scott Chacon 和 Ben Straub: *Pro Git, 第二版* (2014) [https://git-scm.com/book/en/v2](https://git-scm.com/book/en/v2).'
+- en: '*Chapter 7.6*, *Git Tools -* *Rewriting History*'
+  id: totrans-404
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*第7.6章*，*Git 工具 - * *重写历史*'
+- en: '*Chapter 7.13*, *Git Tools -* *Replace*'
+  id: totrans-405
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*第7.13章*，*Git 工具 - * *替换*'
+- en: 'Aske Olsson and Rasmus Voss: *Git Version Control Cookbook (2014)*, Packt Publishing
+    Ltd'
+  id: totrans-406
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 'Aske Olsson 和 Rasmus Voss: *Git 版本控制实用手册 (2014)*，Packt Publishing Ltd'
+- en: '*Chapter 5*, *Storing Additional Information in* *Your Repository*'
+  id: totrans-407
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*第5章*，*在* *你的仓库中存储附加信息*'
+- en: '*Chapter 8*, *Recovering* *From Mistakes*'
+  id: totrans-408
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*第8章*，*从错误中恢复*'
+- en: Git Documentation HOWTOs
+  id: totrans-409
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Git 文档 HOWTOs
+- en: '*How to revert a faulty* *merge* [https://github.com/git/git/blob/master/Documentation/howto/revert-a-faulty-merge.txt](https://github.com/git/git/blob/master/Documentation/howto/revert-a-faulty-merge.txt)'
+  id: totrans-410
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*如何撤销一个错误的* *合并* [https://github.com/git/git/blob/master/Documentation/howto/revert-a-faulty-merge.txt](https://github.com/git/git/blob/master/Documentation/howto/revert-a-faulty-merge.txt)'
+- en: '*How to revert an existing* *commit* [https://github.com/git/git/blob/master/Documentation/howto/revert-branch-rebase.txt](https://github.com/git/git/blob/master/Documentation/howto/revert-branch-rebase.txt)'
+  id: totrans-411
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*如何撤销一个现有的* *提交* [https://github.com/git/git/blob/master/Documentation/howto/revert-branch-rebase.txt](https://github.com/git/git/blob/master/Documentation/howto/revert-branch-rebase.txt)'
+- en: 'Tyler Cipriani: *Git Notes: Git’s Coolest, Most Unloved Feature* (2022) [https://tylercipriani.com/blog/2022/11/19/git-notes-gits-coolest-most-unloved-feature/](https://tylercipriani.com/blog/2022/11/19/git-notes-gits-coolest-most-unloved-feature/)'
+  id: totrans-412
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 'Tyler Cipriani: *Git Notes: Git 最酷但最不受欢迎的功能* (2022) [https://tylercipriani.com/blog/2022/11/19/git-notes-gits-coolest-most-unloved-feature/](https://tylercipriani.com/blog/2022/11/19/git-notes-gits-coolest-most-unloved-feature/)'
+- en: 'Elijah Newren: *git* *filter-repo* [https://github.com/newren/git-filter-repo](https://github.com/newren/git-filter-repo)'
+  id: totrans-413
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 'Elijah Newren: *git* *filter-repo* [https://github.com/newren/git-filter-repo](https://github.com/newren/git-filter-repo)'
+- en: 'Stacked Git: *StGit* *Tutorial* [https://stacked-git.github.io/guides/tutorial/](https://stacked-git.github.io/guides/tutorial/)'
+  id: totrans-414
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 'Stacked Git: *StGit* *教程* [https://stacked-git.github.io/guides/tutorial/](https://stacked-git.github.io/guides/tutorial/)'
+- en: 'Jackson Gabbard: *Stacked Diffs Versus Pull Requests* (2018) [https://jg.gg/2018/09/29/stacked-diffs-versus-pull-requests/](https://jg.gg/2018/09/29/stacked-diffs-versus-pull-requests/)'
+  id: totrans-415
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 'Jackson Gabbard: *Stacked Diffs 与 Pull Requests* (2018) [https://jg.gg/2018/09/29/stacked-diffs-versus-pull-requests/](https://jg.gg/2018/09/29/stacked-diffs-versus-pull-requests/)'

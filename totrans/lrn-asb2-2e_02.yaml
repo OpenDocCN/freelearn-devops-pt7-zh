@@ -1,0 +1,1658 @@
+- en: Chapter 2. Automating Simple Tasks
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 第2章：自动化简单任务
+- en: As we have mentioned in the previous chapter, Ansible can be used for both,
+    creating and managing a whole infrastructure, as well as be integrated into an
+    infrastructure that is already working.
+  id: totrans-1
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如我们在上一章中提到的，Ansible 可以用于创建和管理整个基础设施，也可以集成到已经存在的基础设施中。
+- en: 'In this chapter, we will see:'
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这一章中，我们将看到：
+- en: What a playbook is and how it works
+  id: totrans-3
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 什么是 playbook，以及它是如何工作的
+- en: How to create a web server using Ansible
+  id: totrans-4
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 如何使用 Ansible 创建一个 Web 服务器
+- en: A close look at the Jinja2 template engine
+  id: totrans-5
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 深入了解 Jinja2 模板引擎
+- en: But first we will talk about **YAML Ain't Markup Language** (**YAML**), a human-readable
+    data serialization language that is widely used in Ansible.
+  id: totrans-6
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 但首先我们将讨论 **YAML Ain't Markup Language**（**YAML**），这是一种人类可读的数据序列化语言，在 Ansible
+    中被广泛使用。
+- en: YAML
+  id: totrans-7
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: YAML
+- en: 'YAML, like many other data serialization languages (such as JSON), has very
+    few, basic concepts:'
+  id: totrans-8
+  prefs: []
+  type: TYPE_NORMAL
+  zh: YAML 像许多其他数据序列化语言（如 JSON）一样，只有非常少数、基本的概念：
+- en: Declarations
+  id: totrans-9
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 声明
+- en: Lists
+  id: totrans-10
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 列表
+- en: Associative arrays
+  id: totrans-11
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 关联数组
+- en: 'A declaration is very similar to a variable in any other language, that is:'
+  id: totrans-12
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 声明与任何其他编程语言中的变量非常相似，也就是说：
+- en: '[PRE0]'
+  id: totrans-13
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: 'To create a list, we will have to use ''`-`'':'
+  id: totrans-14
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要创建一个列表，我们需要使用 '`-`'：
+- en: '[PRE1]'
+  id: totrans-15
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: 'YAML uses indentation to logically divide parents from children. So if we want
+    to create associative arrays (also known as objects), we would just need to add
+    an indentation:'
+  id: totrans-16
+  prefs: []
+  type: TYPE_NORMAL
+  zh: YAML 使用缩进来逻辑性地划分父子关系。所以，如果我们想要创建关联数组（也称为对象），只需添加缩进：
+- en: '[PRE2]'
+  id: totrans-17
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: 'Obviously, we can mix those together, that is:'
+  id: totrans-18
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 显然，我们可以将这些结合起来，也就是说：
+- en: '[PRE3]'
+  id: totrans-19
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: Those are the basics of YAML. YAML can do much more, but for now this will be
+    enough.
+  id: totrans-20
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这些就是 YAML 的基础。YAML 可以做更多的事情，但目前这些足够了。
+- en: Hello Ansible
+  id: totrans-21
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 你好，Ansible
+- en: As we have seen in the previous chapter, it is possible to use Ansible to automate
+    simple tasks that you probably already perform daily.
+  id: totrans-22
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如我们在上一章所见，Ansible 可以用于自动化你可能每天都会做的简单任务。
+- en: 'Let''s start by checking if a remote machine is reachable; in other words,
+    let''s start by pinging a machine. The simplest way to do this, is to run the
+    following:'
+  id: totrans-23
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们首先检查远程机器是否可达；换句话说，让我们开始 ping 一台机器。最简单的做法是运行以下命令：
+- en: '[PRE4]'
+  id: totrans-24
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: Here, `HOST` is an IP address, the **Fully Qualified Domain Name** (**FQDN**),
+    or an alias of a machine where you have SSH access (you can use a **Kernel-based
+    Virtual Machine** (**KVM**), as we have seen in the previous chapter).
+  id: totrans-25
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这里，`HOST` 是一个 IP 地址、**完全限定域名**（**FQDN**）或你有 SSH 访问权限的机器别名（如我们在上一章所看到的，你可以使用
+    **基于内核的虚拟机**（**KVM**））。
+- en: Tip
+  id: totrans-26
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 提示
+- en: After the "`HOST,`" the comma is mandatory, because otherwise it would not be
+    seen as a list, but as a string.
+  id: totrans-27
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 "`HOST,`" 后面的逗号是必需的，否则它将不会被视为一个列表，而是一个字符串。
+- en: 'In this case, we have performed it against a virtual machine on our system:'
+  id: totrans-28
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这种情况下，我们对系统中的虚拟机进行了操作：
+- en: '[PRE5]'
+  id: totrans-29
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: 'You should receive something like this as a result:'
+  id: totrans-30
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你应该收到如下结果：
+- en: '[PRE6]'
+  id: totrans-31
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: 'Now, let''s see what we did and why. Let''s start from the Ansible help. To
+    query it, we can use the following command:'
+  id: totrans-32
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，让我们看看我们做了什么以及为什么这样做。我们从 Ansible 的帮助开始。查询帮助文档可以使用以下命令：
+- en: '[PRE7]'
+  id: totrans-33
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE7]'
+- en: 'To make it easier to be read, we have removed all the output related to options
+    that we have not used:'
+  id: totrans-34
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了便于阅读，我们删除了所有与未使用的选项相关的输出：
+- en: '[PRE8]'
+  id: totrans-35
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE8]'
+- en: 'So, what we did was:'
+  id: totrans-36
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 所以，我们做的就是：
+- en: We invoked Ansible.
+  id: totrans-37
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 我们调用了 Ansible。
+- en: We instructed Ansible to run on all hosts.
+  id: totrans-38
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 我们指示 Ansible 在所有主机上运行。
+- en: We specified our inventory (also known as the list of the hosts).
+  id: totrans-39
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 我们指定了我们的清单（也就是主机列表）。
+- en: We specified the module we wanted to run (`ping`).
+  id: totrans-40
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 我们指定了我们想要运行的模块（`ping`）。
+- en: Now that we can ping the server, let's `echo hello ansible!`
+  id: totrans-41
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们可以 ping 服务器了，接下来让我们`echo hello ansible!`
+- en: '[PRE9]'
+  id: totrans-42
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE9]'
+- en: 'You should receive something like this as a result:'
+  id: totrans-43
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你应该收到如下结果：
+- en: '[PRE10]'
+  id: totrans-44
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE10]'
+- en: 'In this example, we used an additional option. Let''s check the help to see
+    what it does:'
+  id: totrans-45
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这个示例中，我们使用了一个额外的选项。让我们查看帮助文档，看看它的作用：
+- en: '[PRE11]'
+  id: totrans-46
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE11]'
+- en: As you may have guessed from the context and the name, the `args` options allow
+    you to pass additional arguments to the module. Some modules (like `ping`) do
+    not support any arguments, while others (such as `shell`) will require arguments.
+  id: totrans-47
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如你从上下文和名称中可能已经猜到的那样，`args` 选项允许你将额外的参数传递给模块。一些模块（比如 `ping`）不支持任何参数，而其他模块（如
+    `shell`）则需要参数。
+- en: Working with playbooks
+  id: totrans-48
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用 playbooks
+- en: Playbooks are one of the core features of Ansible and tell Ansible what to execute.
+    They are like a to-do list for Ansible that contains a list of tasks; each task
+    internally links to a piece of code called a **module**. Playbooks are simple,
+    human-readable YAML files, whereas modules are a piece of code that can be written
+    in any language with the condition that its output be in the JSON format. You
+    can have multiple tasks listed in a playbook and these tasks would be executed
+    serially by Ansible. You can think of playbooks as an equivalent of manifests
+    in Puppet, states in Salt, or cookbooks in Chef; they allow you to enter a list
+    of tasks or commands you want to execute on your remote system.
+  id: totrans-49
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Playbook 是 Ansible 的核心功能之一，用于告诉 Ansible 执行什么操作。它们像是 Ansible 的待办事项列表，包含了一系列任务；每个任务内部都链接到一段被称为
+    **模块** 的代码。Playbook 是简单、易读的 YAML 文件，而模块则是一段可以用任何语言编写的代码，前提是其输出必须是 JSON 格式。你可以在
+    Playbook 中列出多个任务，这些任务会被 Ansible 按顺序执行。你可以把 Playbook 看作是 Puppet 中的清单、Salt 中的状态或
+    Chef 中的食谱；它们让你能够列出希望在远程系统上执行的任务或命令。
+- en: Studying the anatomy of a playbook
+  id: totrans-50
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 学习 Playbook 的结构
+- en: Playbooks can have a list of remote hosts, user variables, tasks, handlers,
+    and so on. You can also override most of the configuration settings through a
+    playbook. Let's start looking at the anatomy of a playbook.
+  id: totrans-51
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Playbook 可以包含远程主机列表、用户变量、任务、处理程序等。你还可以通过 Playbook 重写大多数配置设置。让我们开始查看 Playbook
+    的结构。
+- en: 'The purpose of the playbook we are going to consider now, is to ensure that
+    the `httpd` package is installed and the service is **enabled** and **started**.
+    This is the content of the `setup_apache.yaml` file:'
+  id: totrans-52
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们现在要讨论的 Playbook 目的是确保 `httpd` 包已安装，并且服务已 **启用** 且 **启动**。以下是 `setup_apache.yaml`
+    文件的内容：
+- en: '[PRE12]'
+  id: totrans-53
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE12]'
+- en: 'The `setup_apache.yaml` file is an example of a playbook. The file is comprised
+    of three main parts, as follows:'
+  id: totrans-54
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`setup_apache.yaml` 文件是一个 Playbook 的示例。该文件由三个主要部分组成，如下所示：'
+- en: '`hosts`: This lists the host or host group against which we want to run the
+    task. The hosts field is mandatory and every playbook should have it. It tells
+    Ansible on which hosts to run the listed tasks. When provided with a host group,
+    Ansible will take the host group from the playbook and try look for it in an inventory
+    file . If there is no match, Ansible will skip all the tasks for that host group.
+    The `--list-hosts` option along with the playbook (`ansible-playbook <playbook>
+    --list-hosts`) will tell you exactly which hosts the playbook will run against.'
+  id: totrans-55
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`hosts`：这列出了我们希望在哪些主机上执行任务的主机或主机组。`hosts` 字段是必填项，每个 Playbook 都应该有它。它告诉 Ansible
+    在哪些主机上运行列出的任务。当提供了主机组时，Ansible 会从 Playbook 中获取主机组并尝试在库存文件中查找它。如果没有找到匹配项，Ansible
+    会跳过该主机组的所有任务。使用 `--list-hosts` 选项和 Playbook（`ansible-playbook <playbook> --list-hosts`）将告诉你
+    Playbook 会在哪些主机上执行。'
+- en: '`remote_user`: This is one of the configuration parameters of Ansible (consider,
+    for example, `tom -remote_user`) that tells Ansible to use a particular user (in
+    this case, `tom`) while logging into the system.'
+  id: totrans-56
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`remote_user`：这是 Ansible 的配置参数之一（例如，`tom -remote_user`），它告诉 Ansible 在登录系统时使用特定的用户（在此例中为
+    `tom`）。'
+- en: '`tasks`: Finally, we come to tasks. All playbooks should contain tasks. Tasks
+    are a list of actions you want to perform. A tasks field contains the name of
+    the task (that is, the help text for the user about the task), a module that should
+    be executed, and arguments that are required for the module. Let''s look at the
+    single task that is listed in the playbook, as shown in the preceding snippet
+    of code:'
+  id: totrans-57
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`tasks`：最后，我们来讲任务。所有的 Playbook 都应该包含任务。任务是你想要执行的一系列操作。一个任务字段包含任务的名称（即任务的帮助文本）、应该执行的模块以及模块所需的参数。让我们来看一下在
+    Playbook 中列出的单个任务，如前面代码片段所示：'
+- en: Note
+  id: totrans-58
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: All examples in the book would be executed on CentOS, but the same set of examples
+    with a few changes would work on other distributions as well.
+  id: totrans-59
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本书中的所有示例将在 CentOS 上执行，但同一组示例经过一些更改后，也能在其他发行版上运行。
+- en: 'In the preceding case, there are two tasks. The `name` parameter represents
+    what the task is doing and is `present` mainly to improve readability, as we''ll
+    see during the playbook run. The `name` parameter is optional. The `modules`,
+    `yum` and `service`, have their own set of parameters. Almost all modules have
+    the `name` parameter (there are exceptions such as the `debug` module), which
+    indicates what component the actions are performed on. Let''s look at the other
+    parameters:'
+  id: totrans-60
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在上述情况下，有两个任务。`name` 参数表示任务正在执行的操作，`present` 主要是为了提高可读性，正如我们在 playbook 执行过程中会看到的。`name`
+    参数是可选的。`modules`，如 `yum` 和 `service`，有各自的一组参数。几乎所有模块都有 `name` 参数（例如 `debug` 模块是例外），它指示执行操作的组件。让我们来看一下其他参数：
+- en: In the `yum` module's case, the `state` parameter has the latest value and it
+    indicates that the `httpd` latest package should be installed. The command to
+    execute more or less translates to `yum install httpd`.
+  id: totrans-61
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在 `yum` 模块的情况下，`state` 参数的最新值表示应该安装最新的 `httpd` 包。这个命令大致等同于 `yum install httpd`。
+- en: In the `service` module's scenario, the `state` parameter with the started value
+    indicates that the `httpd` service should be started, and it roughly translates
+    to `/etc/init.d/httpd` start. In this module we also have the "`enabled`" parameter
+    that defines whether the service should start at boot or not.
+  id: totrans-62
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在 `service` 模块的场景中，`state` 参数的 `started` 值表示 `httpd` 服务应该启动，这大致等同于 `/etc/init.d/httpd
+    start`。在这个模块中，我们还可以使用 "`enabled`" 参数来定义服务是否在启动时自动启动。
+- en: 'The `become: True` parameter represents the fact that the tasks should be executed
+    with `sudo` access. If the `sudo` user''s file does not allow the user to run
+    the particular command, then the playbook will fail when it is run.'
+  id: totrans-63
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`become: True` 参数表示任务应该以 `sudo` 权限执行。如果 `sudo` 用户的文件不允许该用户运行特定的命令，那么当 playbook
+    执行时，它将失败。'
+- en: Note
+  id: totrans-64
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: You might have questions about why there is no package module that figures out
+    the architecture internally and runs the `yum`, `apt`, or any other package options
+    depending on the architecture of the system. Ansible populates the package manager
+    value into a variable named `ansible_pkg_manager`.
+  id: totrans-65
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可能会有疑问，为什么没有一个包模块可以自动根据系统架构来选择并运行 `yum`、`apt` 或其他包管理选项。Ansible 将包管理器的值填充到一个名为
+    `ansible_pkg_manager` 的变量中。
+- en: In general, we need to remember that the number of packages that have a common
+    name across different operating systems is a small subset of the number of packages
+    that are actually present. For example, the `httpd package` is called `httpd`
+    in Red Hat systems and `apache2` in Debian-based systems. We also need to remember
+    that every package manager has its own set of options that make it powerful; as
+    a result, it makes more sense to use explicit package manager names so that the
+    full set of options are available to the end user writing the playbook.
+  id: totrans-66
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一般来说，我们需要记住，跨不同操作系统的具有通用名称的包的数量仅是实际存在的包的一个小子集。例如，`httpd` 包在 Red Hat 系统中被称为 `httpd`，在基于
+    Debian 的系统中被称为 `apache2`。我们还需要记住，每个包管理器都有一组独特的选项，使其功能强大；因此，使用明确的包管理器名称会更合理，这样就能确保完整的选项集对编写
+    playbook 的最终用户可用。
+- en: Running a playbook
+  id: totrans-67
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 执行 playbook
+- en: 'Now, it''s time (yes, finally!) to run the playbook. To instruct Ansible to
+    execute a playbook instead of a module, we will have to use a different command
+    (`ansible-playbooks`) that has a syntax very similar to the "`ansible`" command
+    we already saw:'
+  id: totrans-68
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，是时候（是的，终于！）运行 playbook 了。为了让 Ansible 执行 playbook 而不是模块，我们需要使用一个不同的命令（`ansible-playbooks`），该命令的语法与我们之前看到的
+    "`ansible`" 命令非常相似：
+- en: '[PRE13]'
+  id: totrans-69
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE13]'
+- en: 'As you can see, aside from the host-pattern (that is specified in the playbook)
+    that has disappeared, and the module option that has been replaced by the playbook
+    name, nothing changed. So to execute this command on my machine, the exact command
+    is:'
+  id: totrans-70
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如你所看到的，除了 playbook 中指定的主机模式（已消失）和被 playbook 名称替代的模块选项外，其他没有变化。所以，要在我的机器上执行这个命令，确切的命令是：
+- en: '[PRE14]'
+  id: totrans-71
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE14]'
+- en: 'The result is the following:'
+  id: totrans-72
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 结果如下：
+- en: '[PRE15]'
+  id: totrans-73
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE15]'
+- en: 'Wow! The example worked. Let''s now check whether the `httpd` package is installed
+    and up-and-running on the machine. To check if HTTPd is installed, the easiest
+    way is to ask `rpm`:'
+  id: totrans-74
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 哇！示例成功了。现在让我们检查一下 `httpd` 包是否已安装并且正在运行。检查 HTTPd 是否安装的最简单方法是使用 `rpm`：
+- en: '[PRE16]'
+  id: totrans-75
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE16]'
+- en: 'If everything worked properly, you should have an output like the following:'
+  id: totrans-76
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果一切正常，你应该看到类似以下的输出：
+- en: '[PRE17]'
+  id: totrans-77
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE17]'
+- en: 'To see the status of the service, we can ask `systemd`:'
+  id: totrans-78
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要查看服务的状态，我们可以询问 `systemd`：
+- en: '[PRE18]'
+  id: totrans-79
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE18]'
+- en: 'The expected result is something like the following:'
+  id: totrans-80
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 预期的结果类似于以下内容：
+- en: '[PRE19]'
+  id: totrans-81
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE19]'
+- en: 'The end state, according to the playbook, has been achieved. Let''s briefly
+    look at exactly what happens during the playbook run:'
+  id: totrans-82
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 根据剧本，最终状态已经实现。我们简要回顾一下剧本运行过程中到底发生了什么：
+- en: '[PRE20]'
+  id: totrans-83
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE20]'
+- en: 'This line advises us that a playbook is going to start here and that it will
+    be executed on "`all`" hosts:'
+  id: totrans-84
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这一行提醒我们，一个剧本将在此处启动，并将在“`all`”主机上执行：
+- en: '[PRE21]'
+  id: totrans-85
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE21]'
+- en: 'The `TASK` lines show the name of the task (`setup` in this case), and their
+    effect on each host. Sometimes people get confused by the `setup` task. In fact,
+    if you look at the playbook, there is no `setup` task. This is because Ansible,
+    before executing the tasks that we have asked it to, will try to connect to the
+    machine and gather information about it that could be useful later. As you can
+    see, the task resulted with a green `ok` state, so it succeeded and nothing was
+    changed on the server:'
+  id: totrans-86
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`TASK`行显示任务的名称（在本例中是`setup`），以及它对每个主机的影响。有时人们会对`setup`任务感到困惑。事实上，如果你查看剧本，会发现并没有`setup`任务。这是因为在执行我们要求的任务之前，Ansible会尝试连接到机器并收集关于它的信息，这些信息可能在后续任务中有用。正如你所见，这个任务的结果是绿色的`ok`状态，说明它成功执行且服务器没有发生任何变化：'
+- en: '[PRE22]'
+  id: totrans-87
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE22]'
+- en: 'These two task''s states are yellow and spell "`changed`". This means that
+    those tasks were executed and have succeeded but have actually changed something
+    on the machine:'
+  id: totrans-88
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这两个任务的状态是黄色，并显示“`changed`”。这意味着这些任务已经执行成功，但实际上改变了机器上的某些内容：
+- en: '[PRE23]'
+  id: totrans-89
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE23]'
+- en: 'Those last few lines are a recapitulation of how the playbook went. Let''s
+    rerun the task now and see the output after both the tasks have actually run:'
+  id: totrans-90
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后几行是对剧本执行过程的总结。现在让我们重新运行任务，看看两个任务实际运行后的输出：
+- en: '[PRE24]'
+  id: totrans-91
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE24]'
+- en: As you would have expected, the two tasks in question give an output of `ok`,
+    which would mean that the desired state was already met prior to running the task.
+    It's important to remember that many tasks such as the **Gathering facts** task
+    obtain information regarding a particular component of the system and do not necessarily
+    change anything on the system; hence, these tasks didn't display the changed output
+    earlier.
+  id: totrans-92
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如你预期的那样，这两个任务的输出是`ok`，这意味着在运行任务之前，期望的状态已经达成。需要记住的是，许多任务（如**Gathering facts**任务）获取有关系统某个组件的信息，并不一定会改变系统上的任何内容；因此，这些任务之前没有显示“已更改”的输出。
+- en: 'The `PLAY RECAP` section in the first and second run are shown as follows.
+    You will see the following output during the first run:'
+  id: totrans-93
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 第一次和第二次运行中的`PLAY RECAP`部分如下所示。你将在第一次运行时看到以下输出：
+- en: '[PRE25]'
+  id: totrans-94
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE25]'
+- en: 'You will see the following output during the second run:'
+  id: totrans-95
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你将在第二次运行时看到以下输出：
+- en: '[PRE26]'
+  id: totrans-96
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE26]'
+- en: As you can see, the difference is that the first task's output shows `changed=2`,
+    which means that the system state changed twice due to two tasks. It's very useful
+    to look at this output, since, if a system has achieved its desired state and
+    then you run the playbook on it, the expected output should be `changed=0`.
+  id: totrans-97
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，区别在于第一个任务的输出显示`changed=2`，这意味着系统状态由于两个任务而发生了两次变化。查看此输出非常有用，因为如果系统已经达到了期望的状态，然后你再次运行剧本，预期的输出应该是`changed=0`。
+- en: If you're thinking of the word **Idempotency** at this stage, you're absolutely
+    right and deserve a pat on the back! Idempotency is one of the key tenets of configuration
+    management. Wikipedia defines Idempotency as an operation that, if applied twice
+    to any value, gives the same result as if it were applied once. The earliest examples
+    of this that you would have encountered in your childhood would be multiplicative
+    operations on the number `1`, where `1*1=1` every single time.
+  id: totrans-98
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果此时你想到**幂等性**这个词，那你完全正确，值得给自己一个赞！幂等性是配置管理的一个关键原则。维基百科定义幂等性为：如果对任何值应用两次操作，结果与应用一次操作时相同。你在童年时期可能会遇到的最早的幂等性例子就是对数字`1`的乘法操作，其中`1*1=1`每次都成立。
+- en: Most of the configuration management tools have taken this principle and applied
+    it to the infrastructure as well. In a large infrastructure, it is highly recommended
+    to monitor or track the number of changed tasks in your infrastructure and alert
+    the concerned tasks if you find oddities; this applies to any configuration management
+    tool in general. In an ideal state, the only time you should see changes is when
+    you're introducing a new change in the form of any **Create**, **Remove**, **Update**,
+    or **Delete** (**CRUD**) operation on various system components. If you're wondering
+    how you can do it with Ansible, keep reading the book and you'll eventually find
+    the answer!
+  id: totrans-99
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 大多数配置管理工具已经采用了这一原则，并将其应用于基础设施。在大型基础设施中，强烈建议监控或跟踪基础设施中已更改任务的数量，并在发现异常时警告相关任务；这一点适用于任何配置管理工具。理想的情况是，只有在你引入新的更改时，才应该看到更改，这些更改形式可能是任何
+    **创建**、**删除**、**更新** 或 **删除**（**CRUD**）操作。如果你在想如何用 Ansible 来实现这一点，继续阅读这本书，你最终会找到答案！
+- en: 'Let''s proceed. You could have also written the preceding tasks as follows
+    but when the tasks are run, from an end user''s perspective, they are quite readable
+    (we will call this file `setup_apache_no_com.yaml`):'
+  id: totrans-100
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们继续。你也可以按如下方式编写之前的任务，但从终端用户的角度来看，任务的可读性非常高（我们将把这个文件称为 `setup_apache_no_com.yaml`）：
+- en: '[PRE27]'
+  id: totrans-101
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE27]'
+- en: 'Let''s run the playbook again to spot any difference in the output:'
+  id: totrans-102
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们重新运行 playbook 以查看输出是否有任何变化：
+- en: '[PRE28]'
+  id: totrans-103
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE28]'
+- en: 'The output would be:'
+  id: totrans-104
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 输出将是：
+- en: '[PRE29]'
+  id: totrans-105
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE29]'
+- en: As you can see, the difference is in the readability. Wherever possible, it's
+    recommended to keep the tasks as simple as possible (the **KISS** principle of
+    **Keep It Simple Stupid**) to allow for maintainability of your scripts in the
+    long run.
+  id: totrans-106
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，区别在于可读性。尽可能地，建议将任务保持简单（**KISS** 原则：**Keep It Simple Stupid**），以便于长期维护脚本。
+- en: Now that we've seen how you can write a basic playbook and run it against a
+    host, let's look at other options that would help you while running playbooks.
+  id: totrans-107
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经了解了如何编写基本的 playbook 并在主机上运行，接下来让我们看看其他可以帮助你在运行 playbooks 时的选项。
+- en: Ansible verbosity
+  id: totrans-108
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Ansible 可见性
+- en: One of the first options anyone picks up is the debug option. To understand
+    what is happening when you run the playbook, you can run it with the **verbose**
+    (`-v`) option. Every extra `v` will provide the end user with more debug output.
+  id: totrans-109
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 第一个常用的选项就是调试选项。为了理解在运行 playbook 时发生了什么，你可以使用 **verbose** (`-v`) 选项运行它。每增加一个
+    `v`，都会为终端用户提供更多的调试输出。
+- en: 'Let''s see an example of using the playbook debug for a single task using the
+    following debug options:'
+  id: totrans-110
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们看一个使用 playbook 调试单个任务的示例，使用以下调试选项：
+- en: The `-v` option provides the default output, as shown in the preceding examples.
+  id: totrans-111
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`-v` 选项提供默认输出，如前面的示例所示。'
+- en: 'The `-vv` option adds a little more information, as shown in the following
+    example:'
+  id: totrans-112
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`-vv` 选项提供稍微多一点的信息，如以下示例所示：'
+- en: '[PRE30]'
+  id: totrans-113
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE30]'
+- en: 'The `-vvv` option adds a lot more information, as shown in the following code.
+    This shows the `ssh` command Ansible uses to create a temporary file on the remote
+    host and run the script remotely:'
+  id: totrans-114
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`-vvv` 选项会提供更多信息，如以下代码所示。这展示了 Ansible 用于在远程主机上创建临时文件并远程运行脚本的 `ssh` 命令：'
+- en: '[PRE31]'
+  id: totrans-115
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE31]'
+- en: Variables in playbooks
+  id: totrans-116
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Playbook 中的变量
+- en: Sometimes it is important to `set` and `get` variables in a playbook.
+  id: totrans-117
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有时在 playbook 中设置和获取变量是很重要的。
+- en: Very often, you'll need to automate multiple similar operations. In those cases,
+    you'll want to create a single playbook that can be called with different variables
+    to ensure code reusability.
+  id: totrans-118
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 很多时候，你需要自动化多个相似的操作。在这种情况下，你会希望创建一个可以通过不同变量调用的单一 playbook，以确保代码的可重用性。
+- en: 'Another case where variables are very important is when you have more than
+    one datacenter and some values will be datacenter-specific. A common example are
+    the DNS servers. Let''s analyze the following simple code that will introduce
+    us to the Ansible way to set and get variables:'
+  id: totrans-119
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 变量非常重要的另一个情况是当你有多个数据中心，并且某些值将是数据中心特定的。一个常见的例子是 DNS 服务器。让我们分析以下简单代码，它将向我们介绍如何在
+    Ansible 中设置和获取变量：
+- en: '[PRE32]'
+  id: totrans-120
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE32]'
+- en: 'Let''s run it in the usual way:'
+  id: totrans-121
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们按常规方式运行它：
+- en: '[PRE33]'
+  id: totrans-122
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE33]'
+- en: 'You should see the following result:'
+  id: totrans-123
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你应该看到如下结果：
+- en: '[PRE34]'
+  id: totrans-124
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE34]'
+- en: If we analyze the code we have just executed, it should be pretty clear what's
+    going on. We set a variable (that in Ansible are called `facts`) and then we print
+    it with the `debug` function.
+  id: totrans-125
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果我们分析刚刚执行的代码，应该很清楚发生了什么。我们设置了一个变量（在 Ansible 中称为 `facts`），然后通过 `debug` 函数将其打印出来。
+- en: Tip
+  id: totrans-126
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 提示
+- en: Variables should always be between quotes when you use this expanded version
+    of YAML.
+  id: totrans-127
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当你使用这种扩展版本的 YAML 时，变量应该始终用引号括起来。
+- en: Ansible allows you to set your variables in many different ways, that is, either
+    by passing a variable file, declaring it in a playbook, passing it to the `ansible-playbook`
+    command using `-e / --extra-vars`, or by declaring it in an inventory file (we
+    will be discussing more in-depth about this in the next chapter).
+  id: totrans-128
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 允许你以多种方式设置变量，也就是通过传递变量文件、在 playbook 中声明变量、通过 `-e / --extra-vars` 传递给
+    `ansible-playbook` 命令，或者在清单文件中声明变量（我们将在下一章中更深入地讨论这个话题）。
+- en: 'It''s now time to start using some metadata that Ansible obtained during the
+    setup phase. Let''s start by looking at the data that is gathered by Ansible.
+    To do this, we will execute:'
+  id: totrans-129
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在是时候开始使用 Ansible 在设置阶段获取的一些元数据了。我们先来看看 Ansible 收集的数据。为此，我们将执行：
+- en: '[PRE35]'
+  id: totrans-130
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE35]'
+- en: 'In our specific case, this means executing the following:'
+  id: totrans-131
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在我们的具体情况下，这意味着执行以下操作：
+- en: '[PRE36]'
+  id: totrans-132
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE36]'
+- en: We can obviously do the same with a playbook, but this way is faster. Also,
+    for the "setup" case, you will need to see the output only during the development
+    to be sure to use the right variable name for your goal.
+  id: totrans-133
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们显然也可以使用 playbook 来实现这一点，但这种方式更快。而且，对于“设置”类的情况，你只需要在开发过程中查看输出，以确保使用正确的变量名来实现你的目标。
+- en: 'The output will be something like this:'
+  id: totrans-134
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 输出将类似于以下内容：
+- en: '[PRE37]'
+  id: totrans-135
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE37]'
+- en: 'As you can see, from this huge list of options, you can gain a huge quantity
+    of information, and you can use them as any other variable. Let''s print the OS
+    name and the version. To do so, we can create a new playbook called `setup_variables.yaml`
+    with the following content:'
+  id: totrans-136
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，从这个庞大的选项列表中，你可以获得大量信息，并且可以像使用其他变量一样使用它们。让我们打印操作系统的名称和版本。为此，我们可以创建一个新的 playbook，名为
+    `setup_variables.yaml`，内容如下：
+- en: '[PRE38]'
+  id: totrans-137
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE38]'
+- en: 'Run it with the following:'
+  id: totrans-138
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用以下方式执行：
+- en: '[PRE39]'
+  id: totrans-139
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE39]'
+- en: 'This will give us the following output:'
+  id: totrans-140
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这将给我们以下输出：
+- en: '[PRE40]'
+  id: totrans-141
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE40]'
+- en: 'As you can see, it printed the OS name and version, as expected. In addition
+    to the methods seen previously, it''s also possible to pass a variable using a
+    command-line argument. In fact, if we look in the Ansible help, we will notice
+    the following:'
+  id: totrans-142
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，它按预期打印了操作系统的名称和版本。除了之前看到的方法，还可以通过命令行参数传递变量。事实上，如果我们查看 Ansible 的帮助文档，我们会注意到以下内容：
+- en: '[PRE41]'
+  id: totrans-143
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE41]'
+- en: 'The same lines are present in the `ansible-playbook` command as well. Let''s
+    make a small playbook called `cli_variables.yaml` with the following content:'
+  id: totrans-144
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这些相同的行也出现在 `ansible-playbook` 命令中。让我们做一个简单的 playbook，叫做 `cli_variables.yaml`，内容如下：
+- en: '[PRE42]'
+  id: totrans-145
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE42]'
+- en: 'Execute it with the following:'
+  id: totrans-146
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用以下方式执行：
+- en: '[PRE43]'
+  id: totrans-147
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE43]'
+- en: 'We will receive the following:'
+  id: totrans-148
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将收到以下内容：
+- en: '[PRE44]'
+  id: totrans-149
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE44]'
+- en: 'In case we forgot to add the additional parameter to specify the variable,
+    we would have executed it as:'
+  id: totrans-150
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果我们忘记添加额外的参数来指定变量，我们将按如下方式执行：
+- en: '[PRE45]'
+  id: totrans-151
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE45]'
+- en: 'We would have received the following output:'
+  id: totrans-152
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将收到以下输出：
+- en: '[PRE46]'
+  id: totrans-153
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE46]'
+- en: Now that we have learned the basics of playbooks, let's create a web server
+    from scratch using them. To do so, let's start from the beginning, creating an
+    Ansible user and then moving forward from there.
+  id: totrans-154
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 既然我们已经学习了 playbook 的基础知识，接下来让我们使用它们从零开始创建一个 Web 服务器。为此，我们从头开始，首先创建一个 Ansible
+    用户，然后再继续进行。
+- en: Creating the Ansible user
+  id: totrans-155
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 创建 Ansible 用户
+- en: 'When you create a machine (or rent one from any hosting company) it arrives
+    only with the `root` user. Let''s start creating a playbook that ensures that
+    an Ansible user is created, it''s accessible with an SSH key, and is able to perform
+    actions on behalf of other users (`sudo`) with no password asked. I often call
+    this playbook, `firstrun.yaml` since I execute it as soon as a new machine is
+    created, but after that, I don''t use it since it uses the root user that I disable
+    for security reasons. Our script will look something like the following:'
+  id: totrans-156
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当你创建一台机器（或从任何托管公司租用一台机器）时，它默认只会有 `root` 用户。让我们开始创建一个 playbook，确保创建一个 Ansible
+    用户，该用户可以通过 SSH 密钥访问，并且能够以其他用户的身份执行操作（`sudo`），且无需输入密码。我通常称这个 playbook 为 `firstrun.yaml`，因为我在创建新机器后立刻执行它，但之后就不再使用它了，因为它使用了出于安全原因禁用的
+    root 用户。我们的脚本将如下所示：
+- en: '[PRE47]'
+  id: totrans-157
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE47]'
+- en: Before running it, let's look at it a little bit. We have used three different
+    modules (`user`, `authorized_key`, and `lineinfile`) that we have never seen.
+    The `user` module, as the name suggests, allows us to make sure a user is present
+    (or absent).
+  id: totrans-158
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在运行之前，我们先看一下它。我们使用了三个不同的模块（`user`、`authorized_key` 和 `lineinfile`），这些模块我们之前从未见过。顾名思义，`user`
+    模块可以确保某个用户存在（或不存在）。
+- en: The `authorized_key` module allows us to ensure that a certain SSH key can be
+    used to login as a specific user on that machine. This module will not substitute
+    all the SSH keys that are already enabled for that user, but will simply add (or
+    remove) the specified key. If you want to alter this behavior, you can use the
+    *exclusive* option, that allows you to delete all the SSH keys that are not specified
+    in this step.
+  id: totrans-159
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`authorized_key` 模块允许我们确保某个 SSH 密钥可以用来作为特定用户登录到该机器。这个模块不会替换该用户已经启用的所有 SSH 密钥，而只是添加（或删除）指定的密钥。如果你想更改此行为，可以使用
+    *exclusive* 选项，它允许你删除所有未在此步骤中指定的 SSH 密钥。'
+- en: 'The `lineinfile` module allows us to alter the content of a file. It works
+    in a very similar way to **sed** (a stream editor), where you specify the regular
+    expression that will be used to match the line, and then specify the new line
+    that will be used to substitute the matched line. If no line is matched, the line
+    is added at the end of the file. Now let''s run it with:'
+  id: totrans-160
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`lineinfile` 模块允许我们修改文件的内容。它的工作方式非常类似于 **sed**（流编辑器），你需要指定将用于匹配行的正则表达式，然后指定将替换匹配行的新行。如果没有匹配的行，将在文件末尾添加该行。现在让我们用以下方式运行它：'
+- en: '[PRE48]'
+  id: totrans-161
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE48]'
+- en: 'This will give us the following result:'
+  id: totrans-162
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这将给我们以下结果：
+- en: '[PRE49]'
+  id: totrans-163
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE49]'
+- en: Configuring a basic server
+  id: totrans-164
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 配置基础服务器
+- en: After we have created the user for Ansible with the necessary privileges, we
+    can go on to make some other small changes to the OS. To make it more clear, we
+    will see how each action is performed and then we'll look at the whole playbook.
+  id: totrans-165
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在为 Ansible 创建了具有必要权限的用户之后，我们可以继续对操作系统进行一些其他小的更改。为了更清楚地了解，我们将逐步查看每个操作的执行方式，然后再来看整个
+    playbook。
+- en: Enabling EPEL
+  id: totrans-166
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 启用 EPEL
+- en: 'EPEL is the most important repository for Enterprise Linux and it contains
+    a lot of additional packages. It''s also a safe repository since no package in
+    EPEL will conflict with packages in the base repository. To enable EPEL in RHEL/CentOS
+    7, it is enough to just install the `epel-release` package. To do so in Ansible,
+    we will use:'
+  id: totrans-167
+  prefs: []
+  type: TYPE_NORMAL
+  zh: EPEL 是企业 Linux 最重要的仓库，它包含了大量额外的包。它也是一个安全的仓库，因为 EPEL 中的任何包都不会与基础仓库中的包发生冲突。要在
+    RHEL/CentOS 7 中启用 EPEL，只需安装 `epel-release` 包即可。为了在 Ansible 中执行此操作，我们将使用：
+- en: '[PRE50]'
+  id: totrans-168
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE50]'
+- en: As you can see, we have used the `yum` module, as we did in one of the first
+    examples of the chapter, specifying the name of the package and that we want it
+    to be present.
+  id: totrans-169
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，我们使用了 `yum` 模块，就像在本章的第一个示例中一样，指定了包名并要求它处于 present 状态。
+- en: Installing Python bindings for SELinux
+  id: totrans-170
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 安装 SELinux 的 Python 绑定
+- en: 'Since Ansible is written in Python and mainly uses the Python bindings to operate
+    on the operating system, we will need to install the Python bindings for SELinux:'
+  id: totrans-171
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于 Ansible 是用 Python 编写的，并且主要使用 Python 绑定来操作操作系统，我们将需要安装 SELinux 的 Python 绑定：
+- en: '[PRE51]'
+  id: totrans-172
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE51]'
+- en: Tip
+  id: totrans-173
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 提示
+- en: This could be written in a shorter way, using a cycle, but we'll see how to
+    do so in the next chapter.
+  id: totrans-174
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这可以用更简短的方式写成，使用一个循环，但我们将在下一章看到如何做到这一点。
+- en: Upgrading all installed packages
+  id: totrans-175
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 升级所有已安装的包
+- en: 'To upgrade all installed packages, we will need to use the `yum` module again,
+    but with a different parameter, in fact we would use:'
+  id: totrans-176
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要升级所有已安装的包，我们需要再次使用 `yum` 模块，但使用不同的参数，实际上我们会使用：
+- en: '[PRE52]'
+  id: totrans-177
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE52]'
+- en: As you can see, we have specified "`*`" as the package name (this stands for
+    a wildcard to match all installed packages) and the `state` is `latest`. This
+    will upgrade all installed packages to the latest version available.
+  id: totrans-178
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，我们将 "`*`" 作为包名（这表示一个通配符，用于匹配所有已安装的包），并且 `state` 是 `latest`。这将把所有已安装的包升级到最新版本。
+- en: If you remember, when we talked about the "`present`" state, we said that it
+    was going to install the last available version. So what's the difference between
+    "`present`" and "`latest`"? Present will install the latest version if the package
+    is not installed, while if the package is already installed (no matter the version)
+    it will go forward without making any change. Latest will install the latest version
+    if the package is not installed, while if the package is already installed will
+    check whether a newer version is available and if it is, Ansible will update the
+    package.
+  id: totrans-179
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你记得，我们在讲解 "`present`" 状态时提到，它会安装最后一个可用版本。那么，"`present`" 和 "`latest`" 有什么区别呢？Present
+    会在包未安装时安装最新版本，而如果包已安装（无论版本如何），它会继续前进，不做任何更改。Latest 会在包未安装时安装最新版本，而如果包已安装，则会检查是否有更新版本，如果有，Ansible
+    将更新该包。
+- en: Ensuring that NTP is installed, configured, and running
+  id: totrans-180
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 确保 NTP 已安装、配置并正在运行
+- en: 'To make sure NTP is present, we use the `yum` module:'
+  id: totrans-181
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了确保 NTP 已安装，我们使用了`yum`模块：
+- en: '[PRE53]'
+  id: totrans-182
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE53]'
+- en: 'Now that we know that NTP is installed, we should ensure that the server is
+    using the `timezone` that we want. To do so, we will create a symbolic link in
+    `/etc/localtime` that will point to the wanted `zoneinfo` file:'
+  id: totrans-183
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们知道 NTP 已经安装，我们应该确保服务器使用的是我们需要的`timezone`。为此，我们将在`/etc/localtime`中创建一个符号链接，指向所需的`zoneinfo`文件：
+- en: '[PRE54]'
+  id: totrans-184
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE54]'
+- en: 'As you can see, we have used the `file` module to tell Ansible, specifying
+    that it needs to be a link (`state: link`).'
+  id: totrans-185
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '正如你所看到的，我们使用了`file`模块告诉 Ansible，指定它需要是一个符号链接（`state: link`）。'
+- en: 'To complete the NTP configuration, we need to start the `ntpd` service and
+    ensure that it will run at every, consequent boot:'
+  id: totrans-186
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了完成 NTP 配置，我们需要启动`ntpd`服务，并确保它在每次启动时都会运行：
+- en: '[PRE55]'
+  id: totrans-187
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE55]'
+- en: Ensuring that FirewallD is present and enabled
+  id: totrans-188
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 确保 FirewallD 已安装并启用
+- en: 'As you can imagine, the first step is to ensure that FirewallD is installed:'
+  id: totrans-189
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所想，第一步是确保 FirewallD 已安装：
+- en: '[PRE56]'
+  id: totrans-190
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE56]'
+- en: 'Since we want to be sure that, when we enable FirewallD we will not lose our
+    SSH connection, we ensure that SSH traffic can always pass through it:'
+  id: totrans-191
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于我们想确保启用 FirewallD 时不会丢失 SSH 连接，我们确保 SSH 流量始终可以通过防火墙：
+- en: '[PRE57]'
+  id: totrans-192
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE57]'
+- en: To do so, we have used the `firewalld` module. This module will take parameters
+    that are very similar to the ones the `firewall-cmd` console would use. You will
+    have to specify the service that is to be authorized to pass the firewall, whether
+    you want this rule to apply immediately, and whether you want the rule to be permanent
+    so that after a reboot the rule will still be present.
+  id: totrans-193
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为此，我们使用了`firewalld`模块。该模块的参数与`firewall-cmd`控制台非常相似。你需要指定允许通过防火墙的服务，是否希望此规则立即生效，以及是否希望此规则是永久性的，以便在重启后规则仍然存在。
+- en: Tip
+  id: totrans-194
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 提示
+- en: You can specify the service name (such as '`ssh`') using the `service` parameter,
+    or you can specify the port (such as '`22/tcp`') using the `port` parameter.
+  id: totrans-195
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以使用`service`参数指定服务名称（例如`'ssh'`），也可以使用`port`参数指定端口（例如`'22/tcp'`）。
+- en: 'Now that we have installed FirewallD and we are sure that our SSH connection
+    will survive, we can enable it as we do any other service:'
+  id: totrans-196
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经安装了 FirewallD，并且确认我们的 SSH 连接会继续保持，我们可以像启用任何其他服务一样启用它：
+- en: '[PRE58]'
+  id: totrans-197
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE58]'
+- en: Adding a customized MOTD
+  id: totrans-198
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 添加定制的 MOTD
+- en: To add the MOTD, we will need a template that will be the same for all servers
+    and a task to use the template.
+  id: totrans-199
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要添加 MOTD，我们需要一个模板，所有服务器都使用相同的模板，并且需要一个任务来使用该模板。
+- en: 'I find it very useful to add a MOTD to every server. It''s even more useful
+    if you use Ansible, because you can use it to warn your users that changes to
+    the system could be overwritten by Ansible. My usual template is called `''motd''`,
+    and has this content:'
+  id: totrans-200
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我发现为每个服务器添加 MOTD 非常有用。如果使用 Ansible，它更加有用，因为你可以用它来提醒用户，系统的更改可能会被 Ansible 覆盖。我的常用模板叫做`'motd'`，内容如下：
+- en: '[PRE59]'
+  id: totrans-201
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE59]'
+- en: 'This is a `jinja2` template and it allows us to use every variable set in the
+    playbooks. This also allows us to use complex syntax for conditionals and cycles
+    that we will see later in this chapter. To populate a file from a template in
+    Ansible, we will need to use:'
+  id: totrans-202
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这是一个`jinja2`模板，它允许我们使用在 playbooks 中设置的所有变量。这也使我们能够使用复杂的条件和循环语法，这些将在本章稍后看到。要使用模板填充文件，我们需要使用：
+- en: '[PRE60]'
+  id: totrans-203
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE60]'
+- en: The template module allows us to specify a local file (`src`) that will be interpreted
+    by `jinja2` and the output of this operation will be saved on the remote machine
+    in a specific path (`dest`), be owned by a specific user (`owner`) and group (`group`),
+    and have a specific access mode (`mode`).
+  id: totrans-204
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`template`模块允许我们指定一个本地文件（`src`），该文件将由`jinja2`解释，并且此操作的输出将保存在远程机器上的特定路径（`dest`），由特定用户（`owner`）和组（`group`）拥有，并具有特定的访问模式（`mode`）。'
+- en: Changing the hostname
+  id: totrans-205
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 更改主机名
+- en: 'To keep things simple, one way I find useful is to set the hostname of a machine
+    to something meaningful. To do so, we can use a very simple Ansible module called
+    `hostname`:'
+  id: totrans-206
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了简化操作，我发现一个有用的方法是将机器的主机名设置为有意义的名称。为此，我们可以使用一个非常简单的 Ansible 模块，名为`hostname`：
+- en: '[PRE61]'
+  id: totrans-207
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE61]'
+- en: Reviewing and running the playbook
+  id: totrans-208
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 审查并运行 playbook
+- en: 'Putting everything together, we now have the following playbook (called `common_tasks.yaml`
+    for simplicity):'
+  id: totrans-209
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 将所有内容整合起来，我们现在有以下 playbook（为简化起见，命名为`common_tasks.yaml`）：
+- en: '[PRE62]'
+  id: totrans-210
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE62]'
+- en: 'Since this `playbook` is pretty complex, we can run the following:'
+  id: totrans-211
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于这个`playbook`相当复杂，我们可以运行以下命令：
+- en: '[PRE63]'
+  id: totrans-212
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE63]'
+- en: 'This asks Ansible to print all the tasks in a shorter form so that we can quickly
+    see what tasks a `playbook` performs. The output should be something like the
+    following:'
+  id: totrans-213
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这要求 Ansible 以简短的形式打印出所有任务，以便我们可以快速查看 `playbook` 执行了哪些任务。输出应该类似于以下内容：
+- en: '[PRE64]'
+  id: totrans-214
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE64]'
+- en: 'We can now run the `playbook` with the following:'
+  id: totrans-215
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们可以使用以下命令运行 `playbook`：
+- en: '[PRE65]'
+  id: totrans-216
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE65]'
+- en: 'We will receive the following output:'
+  id: totrans-217
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将收到以下输出：
+- en: '[PRE66]'
+  id: totrans-218
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE66]'
+- en: Installing and configuring a web server
+  id: totrans-219
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 安装和配置 Web 服务器
+- en: Now that we have made some generic changes to the operating system, let's move
+    on to actually creating a web server. We are splitting those two phases so we
+    can share the first phase between every machine and apply the second only to web
+    servers.
+  id: totrans-220
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经对操作系统做了一些通用的更改，让我们开始实际创建一个 Web 服务器。我们将这两个阶段分开，以便可以在每台机器上共享第一阶段，并仅将第二阶段应用于
+    Web 服务器。
+- en: 'For this second phase, we will create a new playbook called `webserver.yaml`
+    with the following content:'
+  id: totrans-221
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在第二阶段，我们将创建一个名为 `webserver.yaml` 的新 playbook，内容如下：
+- en: '[PRE67]'
+  id: totrans-222
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE67]'
+- en: As you can see, the first two tasks are the same as the ones in the example
+    at the beginning of this chapter, and the last two tasks are used to instruct
+    FirewallD to let HTTP and HTTPS traffic pass.
+  id: totrans-223
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，前两个任务与本章开始时示例中的任务相同，最后两个任务用于指示 FirewallD 允许 HTTP 和 HTTPS 流量通过。
+- en: 'Let''s run this script with the following:'
+  id: totrans-224
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们使用以下命令运行这个脚本：
+- en: '[PRE68]'
+  id: totrans-225
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE68]'
+- en: 'This results in the following:'
+  id: totrans-226
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这将导致以下结果：
+- en: '[PRE69]'
+  id: totrans-227
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE69]'
+- en: Now that we have a web server, let's publish a small single-page static website.
+  id: totrans-228
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们有了 Web 服务器，让我们发布一个小型的单页静态网站。
+- en: Publishing a website
+  id: totrans-229
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 发布一个网站
+- en: 'Since our website will be a simple, single page website, we can easily create
+    it and publish it using a single Ansible task. To make this page a little bit
+    more interesting, we will create it from a template that will be populated by
+    Ansible with a little data about the machine. The script to publish it will be
+    called `deploy_website.yaml` and will have the following content:'
+  id: totrans-230
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于我们的网站将是一个简单的单页网站，我们可以通过一个 Ansible 任务轻松创建并发布它。为了让这个页面更有趣，我们将从一个模板开始，Ansible
+    会用一些关于机器的数据填充该模板。发布这个页面的脚本将被命名为 `deploy_website.yaml`，并具有以下内容：
+- en: '[PRE70]'
+  id: totrans-231
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE70]'
+- en: 'Let''s start with a simple template that we will call `index.html.j2`:'
+  id: totrans-232
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们从一个简单的模板开始，我们将其命名为 `index.html.j2`：
+- en: '[PRE71]'
+  id: totrans-233
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE71]'
+- en: 'Now we can test our website deployment by running the following:'
+  id: totrans-234
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们可以通过运行以下命令测试我们的网站部署：
+- en: '[PRE72]'
+  id: totrans-235
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE72]'
+- en: 'We should receive the following output:'
+  id: totrans-236
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们应该收到以下输出：
+- en: '[PRE73]'
+  id: totrans-237
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE73]'
+- en: If you now go to your test machine IP/FQDN in your browser, you'll find the
+    "Hello World!" page.
+  id: totrans-238
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你现在在浏览器中访问你的测试机器的 IP/FQDN，你将看到 "Hello World!" 页面。
+- en: Jinja2 templates
+  id: totrans-239
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Jinja2 模板
+- en: '**Jinja2** is a widely-used and fully-featured template engine for Python.
+    Let''s look at some syntax that will help us with Ansible. This paragraph does
+    not want to be a replacement for the official documentation, but its goal is to
+    teach you some components that you''ll find very useful when using them with Ansible.'
+  id: totrans-240
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**Jinja2** 是一个广泛使用且功能全面的 Python 模板引擎。我们来看看一些有助于 Ansible 的语法。这个段落并不打算替代官方文档，但其目的是教你一些在使用
+    Ansible 时非常有用的组件。'
+- en: Variables
+  id: totrans-241
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 变量
+- en: As we have seen, we can print variable content simply with the '`{{ VARIABLE_NAME
+    }}`' syntax. If we want to print just an element of an array we can use '`{{ ARRAY_NAME['KEY']
+    }}`', and if we want to print a property of an object, we can use '`{{ OBJECT_NAME.PROPERTY_NAME
+    }}`'.
+  id: totrans-242
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如我们所见，我们可以通过 '`{{ VARIABLE_NAME }}`' 语法简单地打印变量内容。如果我们想打印数组中的某个元素，可以使用 '`{{ ARRAY_NAME['KEY']
+    }}`'，如果我们想打印对象的属性，则可以使用 '`{{ OBJECT_NAME.PROPERTY_NAME }}`'。
+- en: 'So we can improve our previous static page in the following way:'
+  id: totrans-243
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 所以我们可以通过以下方式改进我们之前的静态页面：
+- en: '[PRE74]'
+  id: totrans-244
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE74]'
+- en: Filters
+  id: totrans-245
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 过滤器
+- en: 'From time to time, we may want to change the style of a string a little bit,
+    without writing specific code for it, for example, we may want to capitalize some
+    text. To do so, we can use one of Jinja2''s filters, such as: ''`{{ VARIABLE_NAME
+    | capitalize }}`''. There are many filters available for Jinja2 and you can find
+    the full list at: [http://jinja.pocoo.org/docs/dev/templates/#builtin-filters](http://jinja.pocoo.org/docs/dev/templates/#builtin-filters).'
+  id: totrans-246
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有时我们可能想稍微改变字符串的样式，而不为此编写特定的代码。例如，我们可能希望将某些文本转换为大写。为此，我们可以使用 Jinja2 的一个过滤器，例如：'`{{
+    VARIABLE_NAME | capitalize }}`'。Jinja2 提供了许多过滤器，你可以在以下地址找到完整的过滤器列表：[http://jinja.pocoo.org/docs/dev/templates/#builtin-filters](http://jinja.pocoo.org/docs/dev/templates/#builtin-filters)。
+- en: Conditionals
+  id: totrans-247
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 条件语句
+- en: 'One thing you may often find useful in a template engine is the possibility
+    of printing different strings depending on the content (or existence) of a string.
+    So we can improve our static web page in the following way:'
+  id: totrans-248
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在模板引擎中，你可能经常会发现一个有用的功能，那就是根据字符串的内容（或存在与否）打印不同的字符串。因此，我们可以通过以下方式改善我们的静态网页：
+- en: '[PRE75]'
+  id: totrans-249
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE75]'
+- en: As you can see, we have added the capability to print the main IPv4 address
+    for the `eth0` connection, if the connection is `active`. With conditionals we
+    can also use the tests.
+  id: totrans-250
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，我们已经添加了打印主 IPv4 地址的功能，针对的是 `eth0` 连接，前提是连接为 `active`。使用条件语句时，我们还可以使用这些测试。
+- en: Note
+  id: totrans-251
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: 'For a full list, please refer to: [http://jinja.pocoo.org/docs/dev/templates/#builtin-tests](http://jinja.pocoo.org/docs/dev/templates/#builtin-tests).'
+  id: totrans-252
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如需完整列表，请参考：[http://jinja.pocoo.org/docs/dev/templates/#builtin-tests](http://jinja.pocoo.org/docs/dev/templates/#builtin-tests)。
+- en: 'So to obtain the same result we could also have written the following:'
+  id: totrans-253
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 因此，为了获得相同的结果，我们也可以写出以下内容：
+- en: '[PRE76]'
+  id: totrans-254
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE76]'
+- en: There are a lot of different tests that will really help you to create easy-to-read,
+    effective templates.
+  id: totrans-255
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有许多不同的测试可以帮助你创建易于阅读且有效的模板。
+- en: Cycles
+  id: totrans-256
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 循环
+- en: 'The `jinja2` template system also offers the capability to create cycles. Let''s
+    add a feature to our page that will print the main IPv4 network address for each
+    device instead of only `eth0`. We will then have the following code:'
+  id: totrans-257
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`jinja2` 模板系统还提供了创建循环的功能。让我们在页面中添加一个功能，打印每个设备的主 IPv4 网络地址，而不仅仅是 `eth0`。我们将得到以下代码：'
+- en: '[PRE77]'
+  id: totrans-258
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE77]'
+- en: As you can see, the syntax for cycles is familiar if you already know Python.
+  id: totrans-259
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，如果你已经了解 Python，循环的语法就会很熟悉。
+- en: These few pages on Jinja2 templating were not a substitute for the official
+    documentation. In fact Jinja2 templates are much more powerful than what we have
+    seen here. The goal here is only to give you the basic Jinja2 templates that are
+    most often used in Ansible.
+  id: totrans-260
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这几页关于 Jinja2 模板的内容并不能替代官方文档。事实上，Jinja2 模板比我们所看到的要强大得多。这里的目标仅仅是给你提供一些在 Ansible
+    中最常用的基本 Jinja2 模板。
+- en: Summary
+  id: totrans-261
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 总结
+- en: In this chapter, we started looking at YAML and saw what a playbook is, how
+    it works, and how to use it to create a web server (and a deployment for your
+    static website). We have also seen multiple Ansible modules such as the user,
+    yum, service, FirewalID, lineinfile, and template modules. At the end of the chapter,
+    we focused on templates.
+  id: totrans-262
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们开始了解 YAML，了解了什么是 playbook，它是如何工作的，以及如何使用它来创建一个 web 服务器（以及用于静态网站的部署）。我们还看到了多个
+    Ansible 模块，如 user、yum、service、FirewalID、lineinfile 和 template 模块。在本章结束时，我们重点讨论了模板。
+- en: In the next chapter, we will talk about inventories so that we can easily manage
+    multiple machines.
+  id: totrans-263
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一章，我们将讨论清单，以便我们能够轻松管理多个机器。

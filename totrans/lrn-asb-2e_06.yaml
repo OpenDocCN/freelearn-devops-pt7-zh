@@ -1,0 +1,1219 @@
+- en: '6'
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '6'
+- en: Targeting Multiple Distributions
+  id: totrans-1
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 针对多个发行版
+- en: So far, throughout the previous chapters, we have been targeting a single operating
+    system, Ubuntu, when running on our playbooks.
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 到目前为止，在之前的章节中，我们在运行剧本时一直针对的是单一操作系统——Ubuntu。
+- en: This chapter will examine how to work with multiple Linux distributions within
+    the same roles and playbooks.
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章将探讨如何在相同的角色和剧本中使用多个 Linux 发行版。
+- en: 'We will take the WordPress playbook and the roles we created in [*Chapter 5*](B21620_05.xhtml#_idTextAnchor253),
+    *Deploying WordPress*, and do the following:'
+  id: totrans-4
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将以 [*第 5 章*](B21620_05.xhtml#_idTextAnchor253) 中创建的 WordPress 剧本和角色为基础，*部署
+    WordPress*，并进行以下操作：
+- en: Discover what the difference is between our two target operating systems
+  id: totrans-5
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 发现我们两个目标操作系统之间的区别
+- en: Look at and implement our WordPress roles, making them work on both target operating
+    systems
+  id: totrans-6
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 查看并实现我们的 WordPress 角色，使它们能够在两个目标操作系统上运行
+- en: Discuss and apply best practices for targeting multiple distributions
+  id: totrans-7
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 讨论并应用针对多个发行版的最佳实践
+- en: 'The chapter covers the following topics:'
+  id: totrans-8
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章涵盖以下内容：
+- en: Debian and Red Hat
+  id: totrans-9
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Debian 和 Red Hat
+- en: Multi-distribution considerations
+  id: totrans-10
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 多发行版考虑
+- en: Adapting the roles
+  id: totrans-11
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 适应角色
+- en: Running the playbook
+  id: totrans-12
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 运行剧本
+- en: Technical requirements
+  id: totrans-13
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 技术要求
+- en: Given that we will be launching two different operating systems, we will be
+    changing the approach that we have taken in previous chapters and launching a
+    pair of virtual machines in a cloud provider rather than two different virtual
+    machines on our local machines.
+  id: totrans-14
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 鉴于我们将启动两个不同的操作系统，我们将改变以往章节中的方法，而是在云服务提供商中启动一对虚拟机，而不是在本地机器上启动两台不同的虚拟机。
+- en: The primary reason for this is that Multipass only really supports Ubuntu machines
+    as it was created by Canonical, the creators and maintainers of Ubuntu, to give
+    people a quick, easy, and consistent way to launch an Ubuntu virtual machine across
+    multiple host platforms.
+  id: totrans-15
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这么做的主要原因是 Multipass 只真正支持 Ubuntu 系统，因为它是由 Ubuntu 的创建者和维护者 Canonical 开发的，目的是为用户提供一种快速、简便和一致的方式，在多个主机平台上启动
+    Ubuntu 虚拟机。
+- en: As we will be looking at automating cloud deployments in [*Chapter 9*](B21620_09.xhtml#_idTextAnchor411),
+    *Moving to the Cloud*, we won’t use Ansible to deploy the cloud resources for
+    this chapter.
+  id: totrans-16
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于我们将在 [*第 9 章*](B21620_09.xhtml#_idTextAnchor411) 中讨论自动化云部署，*迁移到云端*，所以本章不会使用
+    Ansible 来部署云资源。
+- en: For this chapter, I would recommend using a cloud provider such as **DigitalOcean**
+    ([https://www.digitalocean.com/](https://www.digitalocean.com/)) or **Linode**
+    ([http://www.linode.com/](http://www.linode.com/)), both of whom support the operating
+    systems we will be covering in this chapter and whose virtual machine costs start
+    at around 5 USD per month.
+  id: totrans-17
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于本章，我建议使用像 **DigitalOcean** ([https://www.digitalocean.com/](https://www.digitalocean.com/))
+    或 **Linode** ([http://www.linode.com/](http://www.linode.com/)) 这样的云服务提供商，它们都支持本章将要介绍的操作系统，并且其虚拟机费用从每月约
+    5 美元起。
+- en: Important note
+  id: totrans-18
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 重要说明
+- en: This chapter will not cover how to launch virtual machines; if you are following
+    along, please review your chosen cloud provider’s documentation. Additionally,
+    for the full working code, please see the GitHub repository at [https://github.com/PacktPublishing/Learn-Ansible-Second-Edition](https://github.com/PacktPublishing/Learn-Ansible-Second-Edition).
+  id: totrans-19
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章不会介绍如何启动虚拟机；如果你正在跟随本书进行操作，请查看你所选择的云服务提供商的文档。此外，完整的工作代码可以在 GitHub 仓库中查看：[https://github.com/PacktPublishing/Learn-Ansible-Second-Edition](https://github.com/PacktPublishing/Learn-Ansible-Second-Edition)。
+- en: Debian and Red Hat
+  id: totrans-20
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Debian 和 Red Hat
+- en: This is where the world of Linux operating systems can get slightly confusing.
+    Although we launch Ubuntu `22.04` and Rocky Linux `9` virtual machines to run
+    our playbooks against, we will reference Debian and Red Hat within the playbook
+    code.
+  id: totrans-21
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这是 Linux 操作系统世界可能变得稍微混乱的地方。尽管我们启动了 Ubuntu `22.04` 和 Rocky Linux `9` 的虚拟机来运行我们的剧本，但我们将在剧本代码中引用
+    Debian 和 Red Hat。
+- en: Why is that? The reason behind this lies in the lineage of Linux distributions.
+    Ubuntu is a descendant of the Debian operating system, inheriting its package
+    management system and many other features. Similarly, Rocky Linux is a descendant
+    of Red Hat, designed to be a downstream, bug-for-bug compatible release with **Red
+    Hat Enterprise** **Linux** (**RHEL**).
+  id: totrans-22
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为什么会这样呢？原因在于 Linux 发行版的血统。Ubuntu 是 Debian 操作系统的后代，继承了其包管理系统及许多其他特性。同样，Rocky
+    Linux 是 Red Hat 的后代，旨在成为与 **Red Hat 企业版** **Linux** (**RHEL**) 完全兼容的发行版。
+- en: So, when we mention Debian and Red Hat in our playbooks, we’re referring to
+    the fundamental bases from which our two operating systems, Ubuntu and Rocky Linux,
+    have evolved.
+  id: totrans-23
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 因此，当我们在剧本中提到Debian和Red Hat时，我们指的是我们的两个操作系统——Ubuntu和Rocky Linux——所基于的基本平台。
+- en: In practical terms, the playbook code will often check the underlying distribution
+    type to determine how to proceed with specific tasks. For example, the commands
+    to install a software package on a Debian-based system such as Ubuntu might differ
+    from those on a Red Hat-based system such as Rocky Linux.
+  id: totrans-24
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在实际操作中，剧本代码通常会检查底层的发行版类型，以决定如何执行特定任务。例如，在基于Debian的系统（如Ubuntu）上安装软件包的命令，可能与在基于Red
+    Hat的系统（如Rocky Linux）上的命令不同。
+- en: Debian-based systems use the Debian package management system, with `dpkg` as
+    the core utility, and often utilize either `apt` or `apt-get`, or in some cases
+    all of them, for user-friendly interactions.
+  id: totrans-25
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 基于Debian的系统使用Debian包管理系统，以`dpkg`作为核心工具，并且通常使用`apt`、`apt-get，或在某些情况下，两者都使用，以便更友好地进行用户交互。
+- en: Red Hat-based systems employ the RPM package management system, using `rpm`
+    as the core utility, often complemented by `yum` or its successor `dnf` for a
+    more user-friendly interface for managing packages.
+  id: totrans-26
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 基于Red Hat的系统采用RPM包管理系统，使用`rpm`作为核心工具，通常辅以`yum`或其后继者`dnf`，以便为包管理提供更友好的界面。
+- en: There are other differences, such as Debian and Red Hat-based systems that have
+    different directory structures and configuration file locations, which can affect
+    the system administration that we must consider in our playbook roles.
+  id: totrans-27
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 还有其他差异，例如Debian和Red Hat基于系统的目录结构和配置文件位置不同，这可能会影响我们在剧本角色中必须考虑的系统管理。
+- en: The biggest, at the time of writing, and most relevant difference between the
+    two is licensing.
+  id: totrans-28
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 目前为止，最重要且最相关的差异是许可证问题。
+- en: Debian is known for its strict adherence to free software principles. In contrast,
+    Red Hat-based systems may incorporate more proprietary or closed-source software,
+    especially in the case of Red Hat Enterprise Linux’s commercial enterprise distribution
+    of Red Hat.
+  id: totrans-29
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Debian以严格遵循自由软件原则而闻名。相比之下，基于Red Hat的系统可能会包含更多的专有或闭源软件，尤其是在Red Hat企业版Linux的商业企业发行版中。
+- en: This came to a head in June 2023 when Red Hat altered its terms, ceasing the
+    public availability of RHEL’s source code and restricting access solely to customers.
+  id: totrans-30
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 2023年6月，Red Hat在修改其条款时达到了高潮，停止了RHEL源代码的公开发布，并限制了仅供客户访问。
+- en: This move impacted downstream projects, relying on RHEL source code to create
+    compatible distributions such as Rocky Linux. The change means that only customers
+    bound by contracts preventing code sharing can access RHEL source code, aligning
+    with the GPL license’s terms, which mandates source code availability only for
+    binary users, who are, essentially, the paying customers in this scenario.
+  id: totrans-31
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这一变动影响了下游项目，这些项目依赖RHEL源代码创建兼容的发行版，例如Rocky Linux。该变更意味着，只有受合同限制并禁止共享代码的客户才能访问RHEL源代码，这符合GPL许可证的条款，后者要求仅为二进制用户提供源代码，二进制用户实际上是付费客户。
+- en: At the time of writing, the fallout from this change is still being felt, and
+    the dust is still settling, although it does seem like distributions such as Rocky
+    Linux have found ways of being compliant; see the *Further reading* section at
+    the end of this chapter for more information.
+  id: totrans-32
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 截至目前，这一变化的后果仍在发酵，局势仍在平稳下来，尽管像Rocky Linux这样的发行版似乎已经找到合规的方式；有关更多信息，请参阅本章末尾的*进一步阅读*部分。
+- en: So, back to our playbook, by referencing either (or both) Debian and Red Hat
+    in the code, we create more adaptable roles that can handle different Linux distributions
+    and their derivatives consistently.
+  id: totrans-33
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 因此，回到我们的剧本，通过在代码中引用Debian和Red Hat（或两者），我们可以创建更具适应性的角色，能够一致地处理不同的Linux发行版及其衍生版。
+- en: Multi-distribution considerations
+  id: totrans-34
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 多发行版的考虑
+- en: Looking at each of the Ansible built-in modules used in the three roles, `stack_install`,
+    `stack_config`, and `wordpress`, we are using a few that will not work on our
+    newly introduced Rocky Linux box.
+  id: totrans-35
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 查看在三个角色（`stack_install`、`stack_config`和`wordpress`）中使用的每个Ansible内置模块，我们正在使用一些在我们新引入的Rocky
+    Linux环境中无法正常工作的模块。
+- en: Let’s quickly work through each module and consider what we need to change or
+    take into account when targeting two different distributions.
+  id: totrans-36
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们快速浏览每个模块，考虑在针对两个不同发行版时需要改变或考虑的事项。
+- en: The Stack Install role
+  id: totrans-37
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 堆栈安装角色
+- en: 'This role uses the following built-in modules:'
+  id: totrans-38
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个角色使用了以下内置模块：
+- en: '`ansible.builtin.apt`'
+  id: totrans-39
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible.builtin.apt`'
+- en: '`ansible.builtin.apt_key`'
+  id: totrans-40
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible.builtin.apt_key`'
+- en: '`ansible.builtin.apt_repository`'
+  id: totrans-41
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible.builtin.apt_repository`'
+- en: We use these modules to update our operating system, add the NGINX mainline
+    repository, and install all the packages we require for our WordPress installation.
+  id: totrans-42
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们使用这些模块来更新我们的操作系统，添加 NGINX 主线仓库，并安装我们的 WordPress 安装所需的所有软件包。
+- en: 'As these modules all deal with package management, we won’t be able to reuse
+    any of these tasks, meaning that we will need to split the role into two parts:
+    one that deals with Debian-based systems and the other for Red Hat systems.'
+  id: totrans-43
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于这些模块都涉及软件包管理，我们将无法重用这些任务，这意味着我们需要将角色分为两部分：一部分处理基于 Debian 的系统，另一部分处理基于 Red
+    Hat 的系统。
+- en: Additionally, we won’t be able to reuse the variables, as there are subtle differences
+    in the package names between the two distributions.
+  id: totrans-44
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 此外，由于两个发行版之间软件包名称的微妙差异，我们将无法重用变量。
+- en: This means that our best approach to this role is to use two different sets
+    of tasks depending on the distribution Ansible is targeting. Luckily, there are
+    built-in Ansible modules that make this approach simple. After reviewing the modules
+    in the two remaining roles, we will cover these in the next section.
+  id: totrans-45
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这意味着我们对这个角色的最佳方法是根据 Ansible 所针对的发行版使用两组不同的任务集。幸运的是，有内置的 Ansible 模块使得这种方法变得简单。在审查了剩余两个角色中的模块后，我们将在下一节中介绍它们。
+- en: The Stack Config role
+  id: totrans-46
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: Stack Config 角色
+- en: This role is slightly different from the previous one in that we don’t need
+    to split the tasks into two here; most of the tasks will work across both our
+    Linux distributions.
+  id: totrans-47
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 与前一个角色稍有不同的是，这里我们不需要将任务分为两部分；大多数任务将在我们的两个 Linux 发行版上运行。
+- en: 'This means that the tasks which make use of the following modules won’t need
+    any changes:'
+  id: totrans-48
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这意味着使用以下模块的任务不需要任何更改：
+- en: '`ansible.builtin.group`: Creating a group is the same for both distributions'
+  id: totrans-49
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible.builtin.group`: 创建组在两个发行版中都是相同的'
+- en: '`ansible.builtin.user`: Creating a user is the same for both distributions'
+  id: totrans-50
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible.builtin.user`: 创建用户在两个发行版中都是相同的'
+- en: '`ansible.builtin.template`: This only renders and copies files to the target
+    hosts'
+  id: totrans-51
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible.builtin.template`: 这仅将文件渲染并复制到目标主机'
+- en: '`ansible.builtin.file`: This only copies files to the target hosts'
+  id: totrans-52
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible.builtin.file`: 这仅将文件复制到目标主机'
+- en: '`ansible.builtin.copy`: This only copies files on the target hosts'
+  id: totrans-53
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible.builtin.copy`: 这仅在目标主机上复制文件'
+- en: '`ansible.builtin.lineinfile`: This only searches for text and, if required,
+    updates it within the files on the target hosts'
+  id: totrans-54
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible.builtin.lineinfile`: 这仅在目标主机的文件中搜索文本，并在需要时更新它'
+- en: '`ansible.builtin.service`: This is supported on both distributions'
+  id: totrans-55
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible.builtin.service`: 这在两个发行版上都受支持'
+- en: '`ansible.builtin.stat`: Only checks for the presence of a file on the host’s
+    file system'
+  id: totrans-56
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible.builtin.stat`: 仅检查主机文件系统上文件的存在'
+- en: '`ansible.builtin.mysql_user`: As this interacts with the database service,
+    it is distribution agnostic'
+  id: totrans-57
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible.builtin.mysql_user`: 由于它与数据库服务交互，因此与发行版无关'
+- en: '`ansible.builtin.mysql_db`: As with the previous task, it interacts with the
+    database service'
+  id: totrans-58
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible.builtin.mysql_db`: 与前一个任务一样，它与数据库服务交互'
+- en: This list is mostly true; however, the file paths will change between the two
+    distributions.
+  id: totrans-59
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个列表基本属实；但是，两个发行版之间的文件路径将会有所改变。
+- en: Still, as we already mentioned in [*Chapter 5*](B21620_05.xhtml#_idTextAnchor253),
+    *Deploying WordPress*, when we looked at the variables for the Stack Config role,
+    we are referencing files that contain the variables we want to load into the playbook
+    run, so we will need to load in an additional set of variables for the distribution
+    as well as the standard ones.
+  id: totrans-60
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 此外，正如我们在 [*第 5 章*](B21620_05.xhtml#_idTextAnchor253) 中已经提到的，即 *部署 WordPress*，当我们查看
+    Stack Config 角色的变量时，我们正在引用包含我们想要加载到 playbook 运行中的变量的文件，因此我们需要加载额外一组变量用于分发以及标准变量。
+- en: We will need to execute some additional tasks as part of adding the second distribution.
+    Some Red Hat distributions come with a firewall enabled out of the box and SELinux
+    enabled, so we will need to perform some Red Hat-only tasks at the end.
+  id: totrans-61
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将需要执行一些额外的任务来添加第二个发行版。一些 Red Hat 发行版默认启用防火墙和启用 SELinux，因此我们需要在最后执行一些仅适用于 Red
+    Hat 的任务。
+- en: '**SELinux**, or to give it its full name, **Security-Enhanced Linux**, is a
+    security module of the Linux kernel that provides a mechanism for supporting access
+    control security policies.'
+  id: totrans-62
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**SELinux**，或者全称为**安全增强型 Linux**，是 Linux 内核的安全模块，提供支持访问控制安全策略的机制。'
+- en: However, we can keep these tasks within the `main.yml` file rather than loading
+    a different set of tasks by getting creative with the conditions when calling
+    the tasks.
+  id: totrans-63
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，我们可以将这些任务保留在 `main.yml` 文件中，而不是通过调用任务时使用条件来加载不同的任务集。
+- en: The WordPress role
+  id: totrans-64
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: WordPress 角色
+- en: 'As the previous two roles have already installed and configured everything
+    that we need to run our WordPress installation, this role is entirely distribution
+    agnostic, and we don’t need to make any changes to the tasks within the role.
+    If you remember, in [*Chapter 5*](B21620_05.xhtml#_idTextAnchor253), *Deploying
+    WordPress*, when we ran the command to configure WordPress, we set the following
+    fact:'
+  id: totrans-65
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于前两个角色已经安装并配置了我们运行 WordPress 安装所需的一切，因此这个角色完全与发行版无关，我们不需要对角色中的任务做任何更改。如果你还记得，在[*第
+    5 章*](B21620_05.xhtml#_idTextAnchor253)，*部署 WordPress*时，我们运行配置 WordPress 的命令时，设置了以下事实：
+- en: '[PRE0]'
+  id: totrans-66
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: This used the facts gathered by Ansible when first connecting to the host to
+    figure out which distribution and version we were connecting to; we will expand
+    on this logic as we dive deeper into the changes outlined in this section for
+    the Stack Install and Config roles.
+  id: totrans-67
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这使用了 Ansible 在首次连接主机时收集的事实来确定我们连接的分发版和版本；我们将在本节中深入探讨 Stack 安装和配置角色中列出的变更。
+- en: Adapting the roles
+  id: totrans-68
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 调整角色
+- en: So, how do we build the logic into our roles to execute only certain parts of
+    them on different operating systems? As we know, the package names will be different.
+    How do we define different sets of variables per operating system?
+  id: totrans-69
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 那么，我们如何将逻辑构建到角色中，以便只在不同操作系统上执行某些部分呢？正如我们所知，软件包名称会不同。我们如何为每个操作系统定义不同的变量集？
+- en: Operating system family
+  id: totrans-70
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 操作系统系列
+- en: We have looked at the `ansible.builtin.setup` module in [*Chapter 1*](B21620_01.xhtml#_idTextAnchor017),
+    *Installing and Running Ansible*; this module gathers facts about our target hosts.
+  id: totrans-71
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们在[*第 1 章*](B21620_01.xhtml#_idTextAnchor017)中看过 `ansible.builtin.setup` 模块，*安装和运行
+    Ansible*；该模块收集了关于目标主机的事实。
+- en: One of these facts is `ansible_os_family`; this tells us the type of operating
+    system we are running.
+  id: totrans-72
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 其中一个事实是 `ansible_os_family`；它告诉我们正在运行的操作系统类型。
+- en: 'To demonstrate this, I have launched two hosts, one running Ubuntu `22.04`,
+    and the second running Rocky Linux `9` as its operating system. I have created
+    an inventory file which looks like the following:'
+  id: totrans-73
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了演示这一点，我启动了两台主机，一台运行 Ubuntu `22.04`，另一台运行 Rocky Linux `9` 作为其操作系统。我创建了如下所示的清单文件：
+- en: '[PRE1]'
+  id: totrans-74
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: Important note
+  id: totrans-75
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 重要提示
+- en: The preceding inventory file is only for illustrative purposes; if you are following
+    along, you will need to update it to consider your host IP addresses, user names,
+    and private key file locations.
+  id: totrans-76
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 上述清单文件仅用于说明目的；如果你在跟随本教程，你需要更新它，以考虑主机 IP 地址、用户名和私钥文件的位置。
+- en: 'With the hosts up and running, we can target each one individually using the
+    following commands:'
+  id: totrans-77
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 主机已启动并运行后，我们可以使用以下命令单独对每台主机进行操作：
+- en: '[PRE2]'
+  id: totrans-78
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: 'Running these two commands should show you something like the following terminal
+    output:'
+  id: totrans-79
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 运行这两个命令应该会显示如下所示的终端输出：
+- en: '![Figure 6.1 – Checking the values of ansible_os_family](img/B21620_06_1.jpg)'
+  id: totrans-80
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 6.1 – 检查 ansible_os_family 的值](img/B21620_06_1.jpg)'
+- en: Figure 6.1 – Checking the values of ansible_os_family
+  id: totrans-81
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 6.1 – 检查 ansible_os_family 的值
+- en: As you can see, each of the two hosts correctly returns the operating system
+    family.
+  id: totrans-82
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如你所看到的，每个主机都正确返回了操作系统系列。
+- en: 'We can take this one step further and update our commands to the following:'
+  id: totrans-83
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以进一步更新我们的命令，如下所示：
+- en: '[PRE3]'
+  id: totrans-84
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: 'This gives the following output:'
+  id: totrans-85
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这将产生以下输出：
+- en: '![Figure 6.2 – Checking the values of ansible_distribution](img/B21620_06_2.jpg)'
+  id: totrans-86
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 6.2 – 检查 ansible_distribution 的值](img/B21620_06_2.jpg)'
+- en: Figure 6.2 – Checking the values of ansible_distribution
+  id: totrans-87
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 6.2 – 检查 ansible_distribution 的值
+- en: As you can see, this gives much more detail on the operating system itself and
+    not just the flavor of Linux; it is based on `RedHat` or `Debian`.
+  id: totrans-88
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，这提供了关于操作系统本身的更多详细信息，而不仅仅是 Linux 的版本；它是基于 `RedHat` 或 `Debian`。
+- en: 'Finally, we run the following command:'
+  id: totrans-89
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后，我们运行以下命令：
+- en: '[PRE4]'
+  id: totrans-90
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: 'This will target both hosts within the same Ansible run and return a terminal
+    output that should look like the following:'
+  id: totrans-91
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这将同时在同一个 Ansible 运行中针对两台主机，并返回如下所示的终端输出：
+- en: '![Figure 6.3 – Checking the values of ansible_distribution in a single run](img/B21620_06_3.jpg)'
+  id: totrans-92
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 6.3 – 在单次运行中检查 ansible_distribution 的值](img/B21620_06_3.jpg)'
+- en: Figure 6.3 – Checking the values of ansible_distribution in a single run
+  id: totrans-93
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 6.3 – 在单次运行中检查 ansible_distribution 的值
+- en: Now that we can identify which operating system is in use on each host, we can
+    start adapting the roles to consider the changes we discussed in the previous
+    section of this chapter.
+  id: totrans-94
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，我们可以识别每台主机上正在使用的操作系统，可以开始调整角色，以考虑我们在本章前一部分讨论的更改。
+- en: The Stack Install role
+  id: totrans-95
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: Stack Install角色
+- en: The first part of the role we will look at is the content of `roles/stack_install/tasks/main.yml`.
+    The previous version of the role contained all of the tasks to install the repos
+    and packages for our Ubuntu server; all of those tasks should be moved to a file
+    called `roles/stack_install/tasks/Debian.yml`, and a new file called `roles/stack_install/tasks/RedHat.yml`
+    should have been created; finally, we should update `roles/stack_install/tasks/main.yml`
+    so that it has the following contents.
+  id: totrans-96
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将要查看的角色的第一部分是`roles/stack_install/tasks/main.yml`文件的内容。角色的先前版本包含了所有的任务，用于为我们的Ubuntu服务器安装仓库和包；所有这些任务应该被移动到名为`roles/stack_install/tasks/Debian.yml`的文件中，并创建一个名为`roles/stack_install/tasks/RedHat.yml`的新文件；最后，我们应该更新`roles/stack_install/tasks/main.yml`，使其包含以下内容。
+- en: 'Here are the three task loads in the variables file for the operating system
+    we are targeting:'
+  id: totrans-97
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这里是为我们目标操作系统加载变量文件的三个任务：
+- en: '[PRE5]'
+  id: totrans-98
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: As you can see, this uses the `ansible.builtin.include_vars` module to load
+    variables from the variables path within the roles folder, which would be `roles/stack_install/vars/`.
+  id: totrans-99
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，这使用了`ansible.builtin.include_vars`模块，从roles文件夹内的变量路径加载变量，该路径是`roles/stack_install/vars/`。
+- en: Then, it loads a file called `RedHat.yml` or `Debian.yml`; these two file names
+    are populated using the `{{ ansible_os_family }}` variable in the task, meaning
+    that the variables relevant to the operating system being targeted are loaded.
+  id: totrans-100
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后，它加载一个名为`RedHat.yml`或`Debian.yml`的文件；这两个文件名是通过任务中的`{{ ansible_os_family }}`变量动态生成的，这意味着将加载与目标操作系统相关的变量。
+- en: If you look in the repository on GitHub, you will notice that, although being
+    subtle, there are differences in the packages listed in the `system_packages`,
+    `extra_packages`, and `stack_packages` package lists.
+  id: totrans-101
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你查看GitHub上的仓库，你会注意到，尽管差异微妙，但在`system_packages`、`extra_packages`和`stack_packages`包列表中列出的包是有差别的。
+- en: 'The next task uses the `when` condition when calling the `ansible.builtin.import_tasks`
+    module, first of all for the Debian-based system:'
+  id: totrans-102
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 下一个任务在调用`ansible.builtin.import_tasks`模块时使用了`when`条件，首先针对基于Debian的系统：
+- en: '[PRE6]'
+  id: totrans-103
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: In our case, this means that when the Ansible playbook is targeting a Debian-based
+    host, it will load the tasks from `roles/stack_install/tasks/Debian.yml`, which
+    are essentially the same as those we discussed at length in [*Chapter 5*](B21620_05.xhtml#_idTextAnchor253),
+    *Deploying WordPress*, and execute them against the host.
+  id: totrans-104
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于我们来说，这意味着当Ansible剧本针对基于Debian的主机时，它将加载来自`roles/stack_install/tasks/Debian.yml`的任务，这些任务与我们在[*第5章*](B21620_05.xhtml#_idTextAnchor253)中详细讨论的内容相同，*部署WordPress*，并将它们应用到主机上。
+- en: 'The next task does the same function, but this time for Red Hat-based hosts,
+    using the tasks listed in the `roles/stack_install/tasks/RedHat.yml` file:'
+  id: totrans-105
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 下一个任务执行相同的功能，但这次是针对基于Red Hat的主机，使用的是`roles/stack_install/tasks/RedHat.yml`文件中列出的任务：
+- en: '[PRE7]'
+  id: totrans-106
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE7]'
+- en: The `roles/stack_install/tasks/RedHat.yml` file contains three tasks, which
+    are pretty much the same as the `Debian.yml` tasks.
+  id: totrans-107
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`roles/stack_install/tasks/RedHat.yml`文件包含三项任务，这些任务与`Debian.yml`中的任务几乎相同。'
+- en: 'We start the role by running an update of all the installed packages:'
+  id: totrans-108
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们通过运行更新所有已安装包的任务来开始角色：
+- en: '[PRE8]'
+  id: totrans-109
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE8]'
+- en: As you can see, this uses the `ansible.builtin.dnf` modules rather than the
+    `ansible.builtin.apt` one.
+  id: totrans-110
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，这使用了`ansible.builtin.dnf`模块，而不是`ansible.builtin.apt`模块。
+- en: 'Next up, we have the task that installs the NGINX mainline repo:'
+  id: totrans-111
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来，我们有一个任务来安装NGINX主线仓库：
+- en: '[PRE9]'
+  id: totrans-112
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE9]'
+- en: Although this uses the `ansible.builtin.yum_repository` module, DNF will pick
+    up the new repo once it is added. This is also the only task we need to run to
+    add the repo, and adding a Yum repository is very different from adding a repository
+    on a Debian-based system.
+  id: totrans-113
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 尽管这使用了`ansible.builtin.yum_repository`模块，但一旦添加了新的仓库，DNF将会自动识别它。这也是我们需要运行的唯一任务来添加仓库，并且在Debian系统上添加仓库与在Red
+    Hat系统上添加仓库是非常不同的。
+- en: 'The final task for Red Hat-based systems is to install all the packages, including
+    the NGINX one from the mainline repository we just enabled by, again, calling
+    the `ansible.builtin.dnf` module:'
+  id: totrans-114
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 针对基于Red Hat的系统的最终任务是安装所有包，包括我们刚刚启用的主线仓库中的NGINX包，再次通过调用`ansible.builtin.dnf`模块：
+- en: '[PRE10]'
+  id: totrans-115
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE10]'
+- en: As you can see, with a little change to the logic in which the tasks are being
+    called, it was relativity painless to update the role to target Debian and Red
+    Hat distributions.
+  id: totrans-116
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，通过对任务调用逻辑进行一些调整，将角色更新为支持Debian和Red Hat发行版是相对轻松的。
+- en: For the next role we need to change, the Stack Config role, we will take a slightly
+    different approach to considering the different operating system distributions.
+  id: totrans-117
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于我们接下来需要更改的角色，即堆栈配置角色，我们将采取一种略有不同的方法来考虑不同操作系统发行版。
+- en: The Stack Config role
+  id: totrans-118
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 堆栈配置角色
+- en: Apart from a single task at the start and half a dozen at the end, the bulk
+    of this role remains as-is.
+  id: totrans-119
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 除了开始时的一个任务和结束时的几个任务外，这个角色的主体部分保持不变。
+- en: 'There are some changes to the default variables file in the `roles/stack_config/default/main.yml`
+    file; first off, the following variables are added:'
+  id: totrans-120
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在`roles/stack_config/default/main.yml`文件中，默认变量文件有了一些更改；首先，添加了以下变量：
+- en: '[PRE11]'
+  id: totrans-121
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE11]'
+- en: As I am sure you can guess from their names, these deal with SELinux and the
+    Firewall.
+  id: totrans-122
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如你从它们的名字中猜到的，这些涉及到SELinux和防火墙。
+- en: The next change is to move the `mysql_socket_path`, `php_fpm_path`, `php_ini_path`,
+    and `php_service_name` variables to distribution-specific files at `roles/stack_config/vars/Debian.yml`
+    and `roles/stack_config/vars/RedHat.yml`.
+  id: totrans-123
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 下一个更改是将`mysql_socket_path`、`php_fpm_path`、`php_ini_path`和`php_service_name`变量移动到`roles/stack_config/vars/Debian.yml`和`roles/stack_config/vars/RedHat.yml`中的发行版特定文件中。
+- en: As we have already discussed, one of the key differences between the two distributions
+    is the paths to both the core files and the configuration files for the services
+    we installed during the Stack Install role.
+  id: totrans-124
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如我们之前讨论的，两个发行版之间的一个关键区别是我们在堆栈安装角色中安装的核心文件和服务配置文件的路径。
+- en: 'In the `roles/stack_config/vars/Debian.yml` file, we have the following:'
+  id: totrans-125
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在`roles/stack_config/vars/Debian.yml`文件中，我们有以下内容：
+- en: '[PRE12]'
+  id: totrans-126
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE12]'
+- en: 'However, for the `roles/stack_config/vars/RedHat.yml` file, we need to define
+    the following:'
+  id: totrans-127
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，对于`roles/stack_config/vars/RedHat.yml`文件，我们需要定义以下内容：
+- en: '[PRE13]'
+  id: totrans-128
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE13]'
+- en: As you can see, at first glance, they look a little similar, but the paths and
+    file names are different.
+  id: totrans-129
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，乍一看，它们看起来有点相似，但路径和文件名是不同的。
+- en: 'These files are called by a task, which is the same as we used at the start
+    of the Stack Install role:'
+  id: totrans-130
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这些文件由一个任务调用，这与我们在堆栈安装角色开始时使用的相同：
+- en: '[PRE14]'
+  id: totrans-131
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE14]'
+- en: From here, all the original tasks we covered in [*Chapter 5*](B21620_05.xhtml#_idTextAnchor253),
+    *Deploying WordPress*, are called and executed, ending with the task that removes
+    the test MySQL database.
+  id: totrans-132
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 从这里开始，我们在[*第5章*](B21620_05.xhtml#_idTextAnchor253)中涵盖的所有原始任务都被调用并执行，最后是删除测试MySQL数据库的任务。
+- en: From here, in the role, we have the tasks that consider the additional steps
+    needed to configure our Red Hat-based host, starting with configuring SELinux;
+    for our role, we need to enable the policy that allows web servers to run, for
+    which, on a lot of Red Hat distributions, is blocked by default.
+  id: totrans-133
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 从这里开始，在该角色中，我们有任务来考虑配置基于Red Hat的主机所需的额外步骤，首先是配置SELinux；对于我们的角色，我们需要启用允许Web服务器运行的策略，而在许多Red
+    Hat发行版中，默认情况下会阻止该策略。
+- en: 'The task to do this looks like the following:'
+  id: totrans-134
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 执行此任务的代码如下：
+- en: '[PRE15]'
+  id: totrans-135
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE15]'
+- en: As you can see, the `when` condition here ensures that the task is only executed
+    when the `selinux.http_permissive` variable is set to `true`, and the `ansible_os_family`
+    is equal to `RedHat`.
+  id: totrans-136
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，这里的`when`条件确保任务只有在`selinux.http_permissive`变量设置为`true`且`ansible_os_family`等于`RedHat`时才会执行。
+- en: While our Debian-based system will meet the `selinux.http_permissive` condition,
+    the task will be skipped on those hosts, as it doesn’t meet the second condition.
+  id: totrans-137
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 虽然我们的Debian系统将满足`selinux.http_permissive`条件，但在这些主机上该任务将被跳过，因为它不满足第二个条件。
+- en: Finally, we have the tasks for configuring the `firewalld` service, which is
+    the default firewall on most modern Red Hat-based distributions.
+  id: totrans-138
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后，我们有配置`firewalld`服务的任务，这是大多数现代Red Hat发行版上的默认防火墙。
+- en: Important note
+  id: totrans-139
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 重要提示
+- en: Although we are using `firewall-cmd` in this section, there is an Ansible module
+    that supports the firewalld service called `ansible.posix.firewalld`. As this
+    is the only instance in the title that we will be targeting a Red Hat-based operating
+    system with, we have, instead, used `ansible.builtin.command` to show how we can
+    meet more complex conditions based on the output commands.
+  id: totrans-140
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 尽管我们在这一部分使用了`firewall-cmd`，但也有一个Ansible模块支持firewalld服务，名为`ansible.posix.firewalld`。由于这是我们在标题中唯一面向Red
+    Hat操作系统的实例，我们改用了`ansible.builtin.command`，以展示如何根据输出命令满足更复杂的条件。
+- en: 'Like some of the roles we have included in other chapters, configuring the
+    firewall is a task we only have to do once. The first thing we will do is check
+    for the presence of a file at `~/firewall-configured` and register the results:'
+  id: totrans-141
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 就像我们在其他章节中包含的某些角色一样，配置防火墙是我们只需要执行一次的任务。我们要做的第一件事是检查 `~/firewall-configured`
+    文件是否存在，并记录结果：
+- en: '[PRE16]'
+  id: totrans-142
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE16]'
+- en: 'Next, we need to check whether `firewalld` is running, but only if it’s a RedHat
+    distribution. To do this, we need to run the `firewall-cmd --state` shell command
+    and the output result is registered in the `fireweall_status` variable:'
+  id: totrans-143
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来，我们需要检查 `firewalld` 是否在运行，但只有在 RedHat 发行版上才需要这样做。为此，我们需要运行 `firewall-cmd
+    --state` shell 命令，并将输出结果注册到 `fireweall_status` 变量中：
+- en: '[PRE17]'
+  id: totrans-144
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE17]'
+- en: 'Now, as the remaining tasks could also be executed on a Debian-based host,
+    we need to take that into account as we now have a variable containing the `stdout`
+    of the command we ran called `fireweall_status`, which won’t be present, resulting
+    in an error that would stop playbook execution on a Debian-based host:'
+  id: totrans-145
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，由于剩余任务也可能在 Debian 系统上执行，因此我们需要考虑这一点，因为我们现在有一个包含我们运行命令的 `stdout` 的变量 `fireweall_status`，它在
+    Debian 系统上不会存在，导致错误并停止 playbook 执行：
+- en: '[PRE18]'
+  id: totrans-146
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE18]'
+- en: As you can see from the preceding task, if `ansible_os_family` is `Debian`,
+    we are setting the `fireweall_status.stdout` variable to `notrunning`.
+  id: totrans-147
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如前面的任务所示，如果 `ansible_os_family` 是 `Debian`，我们将 `fireweall_status.stdout` 变量设置为
+    `notrunning`。
+- en: 'Now we have all of the information we need to make a decision on whether we
+    should run the commands to configure the firewall, the following conditions need
+    to be met:'
+  id: totrans-148
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经拥有了做出是否运行配置防火墙命令的决策所需的所有信息，以下条件需要满足：
+- en: The `firewall-cmd --state` command returns `running`
+  id: totrans-149
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`firewall-cmd --state` 命令返回 `running`'
+- en: The operating system is `RedHat`
+  id: totrans-150
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 操作系统是 `RedHat`
+- en: The `~/firewall-configured` file does not exist
+  id: totrans-151
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`~/firewall-configured` 文件不存在'
+- en: 'If all three of these conditions are met, which are defined in the following
+    task, then the commands to configure the firewall to open and allow traffic on
+    port `80` are executed:'
+  id: totrans-152
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果满足以下任务中定义的三个条件，则会执行配置防火墙、开放端口`80`并允许流量的命令：
+- en: '[PRE19]'
+  id: totrans-153
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE19]'
+- en: 'The final task then creates the `~/firewall-configured` file so that the commands
+    are not executed again:'
+  id: totrans-154
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后一个任务创建 `~/firewall-configured` 文件，以确保命令不会再次执行：
+- en: '[PRE20]'
+  id: totrans-155
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE20]'
+- en: It does this on both distributions, as it doesn’t matter if it is set on Debian-based
+    systems, and we don’t want to run the commands regardless; on Red Hat systems,
+    it will mean that any subsequent executions of the playbook will not be able to
+    meet the three conditions where the commands are executed to configure the firewall
+    service.
+  id: totrans-156
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这在两个发行版上都执行，因为无论在 Debian 系统上如何设置，我们都不希望运行命令；而在 Red Hat 系统上，这将意味着 playbook 的后续执行将无法满足执行防火墙服务配置命令的三个条件。
+- en: The WordPress role
+  id: totrans-157
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: WordPress 角色
+- en: As already mentioned, we do not have to make any changes to this role.
+  id: totrans-158
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如前所述，我们不需要对这个角色进行任何更改。
+- en: Running the playbook
+  id: totrans-159
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 运行 playbook
+- en: 'There are no changes to our `site.yml` file, meaning that we need to run the
+    following command to run the playbook:'
+  id: totrans-160
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们的 `site.yml` 文件没有任何更改，这意味着我们需要运行以下命令来运行 playbook：
+- en: '[PRE21]'
+  id: totrans-161
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE21]'
+- en: 'There is way too much output to cover here, but I will include some of the
+    highlights from the playbook execution, starting with the gathering of the facts:'
+  id: totrans-162
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 输出太多，无法一一涵盖，但我会包括一些 playbook 执行的亮点，从收集事实开始：
+- en: '[PRE22]'
+  id: totrans-163
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE22]'
+- en: 'Now that Ansible knows about our two hosts, it makes a start on running the
+    tasks; here are the updated ones from the Stack Install role:'
+  id: totrans-164
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在 Ansible 知道了我们的两个主机，它开始执行任务；以下是来自 Stack Install 角色的更新任务：
+- en: '[PRE23]'
+  id: totrans-165
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE23]'
+- en: 'As you can see, this was the `apt` one, and the `dnf` one looks like this:'
+  id: totrans-166
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，这个是 `apt`，而 `dnf` 的形式如下：
+- en: '[PRE24]'
+  id: totrans-167
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE24]'
+- en: 'Now, moving onto the Stack Config role, this is where tasks are being run on
+    both distributions:'
+  id: totrans-168
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，进入 Stack Config 角色，这是在两个发行版上运行任务的地方：
+- en: '[PRE25]'
+  id: totrans-169
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE25]'
+- en: 'To update the firewall on just the Red Hat-based distribution, we do the following:'
+  id: totrans-170
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要仅更新 Red Hat 发行版上的防火墙，我们需要执行以下操作：
+- en: '[PRE26]'
+  id: totrans-171
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE26]'
+- en: 'Finally, we complete the playbook run:'
+  id: totrans-172
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后，我们完成了 playbook 的运行：
+- en: '[PRE27]'
+  id: totrans-173
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE27]'
+- en: 'All of which means that I should now have two WordPress installations:'
+  id: totrans-174
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这意味着我现在应该有两个 WordPress 安装：
+- en: '![Figure 6.4 – WordPress running on Ubuntu 22.04](img/B21620_06_4.jpg)'
+  id: totrans-175
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 6.4 – WordPress 在 Ubuntu 22.04 上运行](img/B21620_06_4.jpg)'
+- en: Figure 6.4 – WordPress running on Ubuntu 22.04
+  id: totrans-176
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 6.4 – WordPress 在 Ubuntu 22.04 上运行
+- en: '![Figure 6.5 – WordPress running on Rocky Linux 9.2](img/B21620_06_5.jpg)'
+  id: totrans-177
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 6.5 – WordPress 在 Rocky Linux 9.2 上运行](img/B21620_06_5.jpg)'
+- en: Figure 6.5 – WordPress running on Rocky Linux 9.2
+  id: totrans-178
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 6.5 – WordPress 在 Rocky Linux 9.2 上运行
+- en: While the preceding screens aren’t the most exciting of websites, as you can
+    see, we have WordPress up and running on two different operating systems.
+  id: totrans-179
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 虽然前面的屏幕并不是最令人兴奋的网站，但正如你所看到的，我们已经在两种不同的操作系统上成功运行WordPress。
+- en: At this point, if you have been following along, don’t forget to delete any
+    resources you have deployed to run your playbooks against.
+  id: totrans-180
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这一点上，如果你一直在跟着做，不要忘记删除任何你已部署用来运行playbooks的资源。
+- en: Summary
+  id: totrans-181
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 摘要
+- en: In this chapter, we have adapted the WordPress installation playbook we wrote
+    in [*Chapter 5*](B21620_05.xhtml#_idTextAnchor253), *Deploying WordPress*, to
+    target multiple operating systems. We did this by using Ansible’s built-in auditing
+    module to determine which operating system the playbook is running against and
+    running only the tasks that will work on the two target distributions.
+  id: totrans-182
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们修改了我们在[*第5章*](B21620_05.xhtml#_idTextAnchor253)，*部署WordPress*中编写的WordPress安装playbook，以便针对多个操作系统进行目标定位。我们通过使用Ansible内置的审计模块来确定playbook正在运行的操作系统，并且仅运行适用于这两个目标发行版的任务来实现这一点。
+- en: While targeting multiple Linux distributions is one use for the approach we
+    have taken with the conditions we have been using, I am sure that you will already
+    have some ideas on how you could use some of the logic we used in your projects,
+    such as bootstrapping different software based on the role on a virtual machine
+    host, etc.
+  id: totrans-183
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 尽管我们所采用的方法针对多个Linux发行版是一种应用，但我相信你已经有了一些想法，可以在你的项目中使用我们使用的一些逻辑，比如基于虚拟机主机上的角色引导不同软件等。
+- en: Additionally, this approach is beneficial when publishing your roles to Ansible
+    Galaxy, as discussed in [*Chapter 2*](B21620_02.xhtml#_idTextAnchor080), *Exploring
+    Ansible Galaxy*, by making the operating system agnostic.
+  id: totrans-184
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 此外，通过这种方法将你的角色发布到Ansible Galaxy时也是有益的，正如在[*第2章*](B21620_02.xhtml#_idTextAnchor080)，*探索Ansible
+    Galaxy*中所讨论的，通过使操作系统无关。
+- en: You may have noticed so far that we have been targeting Linux virtual machines;
+    in the next chapter, we will look at Ansible support for Windows-based operating
+    systems.
+  id: totrans-185
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 到目前为止，你可能已经注意到我们一直在针对Linux虚拟机进行目标定位；在下一章中，我们将探讨Ansible对基于Windows的操作系统的支持。
+- en: Further reading
+  id: totrans-186
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 进一步阅读
+- en: '**Red Hat Enterprise** **Linux**: [https://www.redhat.com/en/technologies/linux-platforms/enterprise-linux](https://www.redhat.com/en/technologies/linux-platforms/enterprise-linux)'
+  id: totrans-187
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**Red Hat Enterprise Linux**: [https://www.redhat.com/en/technologies/linux-platforms/enterprise-linux](https://www.redhat.com/en/technologies/linux-platforms/enterprise-linux)'
+- en: '**Debian**: [https://www.debian.org/](https://www.debian.org/)'
+  id: totrans-188
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**Debian**: [https://www.debian.org/](https://www.debian.org/)'
+- en: '**Ubuntu**: [https://ubuntu.com/](https://ubuntu.com/)'
+  id: totrans-189
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**Ubuntu**: [https://ubuntu.com/](https://ubuntu.com/)'
+- en: '**Rocky** **Linux**: [https://rockylinux.org/](https://rockylinux.org/)'
+  id: totrans-190
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**Rocky Linux**: [https://rockylinux.org/](https://rockylinux.org/)'
+- en: '**The Register**, *Red Hat strikes a crushing blow against RHEL* *downstreams*:
+    [https://www.theregister.com/2023/06/23/red_hat_centos_move/](https://www.theregister.com/2023/06/23/red_hat_centos_move/)'
+  id: totrans-191
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**The Register**，*Red Hat打击RHEL分支的重大打击*：[https://www.theregister.com/2023/06/23/red_hat_centos_move/](https://www.theregister.com/2023/06/23/red_hat_centos_move/)'
+- en: '**The Ansible Posix Firewalld** **Module**: [https://docs.ansible.com/ansible/latest/collections/ansible/posix/firewalld_module.html](https://docs.ansible.com/ansible/latest/collections/ansible/posix/firewalld_module.html)'
+  id: totrans-192
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**The Ansible Posix Firewalld模块**: [https://docs.ansible.com/ansible/latest/collections/ansible/posix/firewalld_module.html](https://docs.ansible.com/ansible/latest/collections/ansible/posix/firewalld_module.html)'

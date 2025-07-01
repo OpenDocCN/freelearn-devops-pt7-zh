@@ -1,0 +1,1221 @@
+- en: '10'
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '10'
+- en: Network Automation with Ansible
+  id: totrans-1
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用Ansible进行网络自动化
+- en: Years ago, the standard practice was to configure every single network device
+    by hand. This way of managing devices was possible mainly because the routers
+    and switches were routing the traffic of physical servers, so only a little configuration
+    was needed on each networking device, and changes were slow-paced. In addition,
+    humans were the only ones with enough information on machines to set up networking.
+    Everything was very manual in terms of both planning and execution.
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 多年前，标准做法是手动配置每一个网络设备。这种设备管理方式之所以可行，主要是因为路由器和交换机负责物理服务器的流量路由，因此每个网络设备只需要少量配置，且变更速度较慢。此外，只有人类才拥有足够的信息来设置网络。无论是在规划还是执行方面，一切都非常手动。
+- en: '**Virtualization** changed this paradigm, as it has resulted in thousands of
+    machines being connected to the same switch or router, each with potentially different
+    networking requirements. Changes are fast paced and expected frequently, and with
+    virtual infrastructures defined in code, it becomes a full-time job for a human
+    administrator just to keep up with the changes to the infrastructure. Virtualization
+    orchestration platforms have far better knowledge of the machine’s location and
+    can even generate an inventory for us, as we saw in earlier chapters. Practically
+    speaking, there is no way a human being can memorize or manage a modern, large-scale,
+    virtualized infrastructure. As a result, it becomes clear that automation is required
+    when configuring the network infrastructure.'
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**虚拟化**改变了这一范式，因为它导致成千上万的机器连接到同一个交换机或路由器，每台机器可能有不同的网络需求。变更的速度非常快，且频繁发生，随着虚拟基础设施通过代码定义，管理员仅仅为了跟上基础设施的变化就需要全职工作。虚拟化编排平台对机器的位置有更好的了解，甚至可以为我们生成清单，正如我们在前面的章节中看到的那样。从实际操作来看，人类无法记住或管理现代、大规模的虚拟化基础设施。因此，当配置网络基础设施时，自动化变得显而易见。'
+- en: 'We will learn more about this and what we can do to automate our network in
+    this chapter by covering the following topics:'
+  id: totrans-4
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章将通过以下主题来学习更多关于如何自动化我们的网络：
+- en: Why automate network management?
+  id: totrans-5
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 为什么要自动化网络管理？
+- en: How Ansible manages networking devices
+  id: totrans-6
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Ansible如何管理网络设备
+- en: How to enable network automation
+  id: totrans-7
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 如何启用网络自动化
+- en: The available Ansible networking modules
+  id: totrans-8
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 可用的Ansible网络模块
+- en: Connecting to network devices
+  id: totrans-9
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 连接到网络设备
+- en: Environment variables for network devices
+  id: totrans-10
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 网络设备的环境变量
+- en: Custom conditional statements for networking devices
+  id: totrans-11
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 网络设备的自定义条件语句
+- en: Let’s get started!
+  id: totrans-12
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们开始吧！
+- en: Technical requirements
+  id: totrans-13
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 技术要求
+- en: This chapter assumes that you have set up your control host with Ansible, as
+    detailed in [*Chapter 1*](B20846_01.xhtml#_idTextAnchor015), *Getting Started
+    with Ansible*, and are using the most recent version available – the examples
+    in this chapter were tested with Ansible 2.15\. This chapter also assumes that
+    you have at least one additional host to test against; ideally, this should be
+    Linux-based. Since this chapter is network device-centric, we understand that
+    not everyone will have access to specific networking equipment to test on (for
+    example, Cisco switches).
+  id: totrans-14
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章假设您已经按照[*第1章*](B20846_01.xhtml#_idTextAnchor015)《Ansible入门》中的详细说明设置了控制主机，并且正在使用最新版本——本章中的示例是在Ansible
+    2.15版本上测试的。本章还假设您至少有一台额外的主机进行测试；理想情况下，这应该是基于Linux的。由于本章以网络设备为中心，我们理解并非每个人都能访问特定的网络设备进行测试（例如，思科交换机）。
+- en: Where examples are given, and you have access to such devices, please feel free
+    to explore the examples. However, if you do not have access to any network hardware,
+    we will give an example using the freely available Cumulus VX, which offers a
+    fully-featured demo of Cumulus Networks’ switching environment. Although we will
+    give specific examples of hostnames in this chapter, you are free to substitute
+    them with your hostname and/or IP address. Details of how to do this will be provided
+    in the appropriate places.
+  id: totrans-15
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在给出示例的地方，如果您能够访问相关设备，欢迎您深入探索这些示例。然而，如果您没有网络硬件可用，我们将提供一个使用免费提供的Cumulus VX的示例，它提供了Cumulus
+    Networks交换环境的完整功能演示。尽管本章会给出具体的主机名示例，但您可以自由地用您的主机名和/或IP地址替换它们。如何进行替换的详细信息将在适当的位置提供。
+- en: 'The code bundle for this chapter is available here: [https://github.com/PacktPublishing/Practical-Ansible-2/tree/master/Chapter%2010](https://github.com/PacktPublishing/Practical-Ansible-2/tree/master/Chapter%2010).'
+  id: totrans-16
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章的代码包可以在此处找到：[https://github.com/PacktPublishing/Practical-Ansible-2/tree/master/Chapter%2010](https://github.com/PacktPublishing/Practical-Ansible-2/tree/master/Chapter%2010)。
+- en: Why automate network management?
+  id: totrans-17
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 为什么要自动化网络管理？
+- en: How we design data centers has radically changed in the last 30 years. In the
+    90s, a typical data center was full of physical machines, each with a particular
+    purpose. In many companies, the servers were bought from different vendors based
+    on the purpose of the machine. This meant that every time there was a need for
+    new servers, network devices, and storage devices, those devices were bought,
+    provisioned, configured, and delivered.
+  id: totrans-18
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 过去30年中，我们设计数据中心的方式发生了根本性的变化。在90年代，一个典型的数据中心充满了每个具有特定用途的物理机器。在许多公司中，服务器是根据机器的用途从不同供应商处购买的。这意味着每次需要新的服务器、网络设备和存储设备时，都会购买、配置、设置并交付这些设备。
+- en: The big drawback here was the significant lag between identifying the need for
+    the server and its delivery. At the time, this was acceptable since most companies
+    had very few systems, and they tended to change very rarely. Also, this approach
+    was costly as a lot of devices were underutilized.
+  id: totrans-19
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这里的一个重大缺点是，从识别出服务器需求到实际交付之间的显著延迟。当时，这种方式是可以接受的，因为大多数公司拥有的系统很少，而且这些系统也很少变动。此外，这种方式成本高昂，因为很多设备被低效利用。
+- en: 'With the progress of society and companies in the world of technology, it has
+    become necessary for companies to get more efficiency from their infrastructure
+    and cut their infrastructure deployment time and costs. These new requirements
+    paved the way for a new idea: virtualization. By creating a virtualization cluster,
+    you do not need physical hosts of the right size, so you can provision a number
+    of them upfront, add them to a resource pool, and then create the right-sized
+    machines in your virtualization platform. This decoupling means that when a new
+    server is needed, you can create it with a few clicks and it will be ready in
+    seconds.'
+  id: totrans-20
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 随着全球社会和企业在技术领域的进步，公司必须从其基础设施中获得更高的效率，并减少基础设施的部署时间和成本。这些新需求为一种新思路铺平了道路：虚拟化。通过创建虚拟化集群，你不需要具备合适尺寸的物理主机，因此可以提前配置一批物理主机，将它们添加到资源池中，然后在虚拟化平台中创建合适尺寸的虚拟机。这种解耦意味着，当需要新服务器时，你只需几次点击，就能在几秒钟内创建并启用它。
+- en: This shift also allowed enterprises to move from a per-project infrastructure,
+    with each project being deployed with its unique data center requirements, to
+    one large central infrastructure that can have its behavior defined by software
+    and configuration. This new architecture means that a single network infrastructure
+    can support many projects, regardless of their scale. We call this a **virtual
+    data center infrastructure**; in this infrastructure, we use generic design patterns
+    as much as possible. The virtual data center infrastructure allows enterprises
+    to deploy, switch, and serve infrastructure at a large scale to enable a multitude
+    of projects so that they can be successfully implemented by simply subdividing
+    them (for example, by creating virtual servers).
+  id: totrans-21
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这种转变还使企业能够从按项目配置基础设施的方式转向一个大型中央基础设施，在这种基础设施中，行为可以通过软件和配置进行定义。新的架构意味着单一的网络基础设施可以支持多个项目，无论其规模如何。我们称之为**虚拟数据中心基础设施**；在这种基础设施中，我们尽可能使用通用的设计模式。虚拟数据中心基础设施允许企业大规模部署、切换和服务基础设施，以支持多种项目，从而通过简单的细分（例如，创建虚拟服务器）成功实现它们。
+- en: Another significant advantage of virtualization is the decoupling of workloads
+    and physical hosts. Historically, since a workload was tied to a physical host,
+    if the host died, the workload itself died if not correctly replicated on different
+    hardware. Virtualization solved this problem since the workload is now tied to
+    one or more virtual hosts, but those can be moved freely from one physical host
+    to another by the virtualization controller.
+  id: totrans-22
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 虚拟化的另一个显著优势是工作负载与物理主机的解耦。历史上，由于工作负载与物理主机绑定，如果主机宕机且未正确复制到其他硬件上，工作负载也会丢失。虚拟化解决了这个问题，因为工作负载现在绑定到一个或多个虚拟主机上，而这些虚拟主机可以通过虚拟化控制器自由地从一个物理主机迁移到另一个。
+- en: This ability to provision servers quickly and the ability to move them from
+    one host to another created an issue with networking configuration management.
+    Before, it was acceptable for a human to tweak the configuration details while
+    installing the new machine, but now, machines move from one host to another (and
+    therefore from one physical switch port to another) without any human intervention.
+    This peculiarity means that the system needs to update network configurations
+    as well.
+  id: totrans-23
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这种快速配置服务器的能力，以及将它们从一个主机迁移到另一个主机的能力，带来了网络配置管理的问题。以前，人工在安装新机器时调整配置细节是可以接受的，但现在，机器从一个主机迁移到另一个主机（因此从一个物理交换机端口迁移到另一个）时无需任何人工干预。这种特殊性意味着系统也需要更新网络配置。
+- en: At the same time, and for similar reasons, VLANs affirmed their presence in
+    networking, which allowed the utilization of network devices to be dramatically
+    improved, and its costs to therefore be optimized.
+  id: totrans-24
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 与此同时，出于类似的原因，VLAN 在网络中得到了广泛应用，这使得网络设备的利用率得到了显著提升，因此其成本得以优化。
+- en: Today, we work at an even larger scale, where virtual objects (machines, containers,
+    functions, and so on) move in our data centers, fully managed by software systems,
+    and where humans are less and less involved in the process.
+  id: totrans-25
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如今，我们在更大规模的环境中工作，其中虚拟对象（机器、容器、功能等）在数据中心中移动，完全由软件系统管理，人类的参与越来越少。
+- en: In this kind of environment, automating the network configuration is a crucial
+    part of its success.
+  id: totrans-26
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这种环境下，自动化网络配置是成功的关键部分。
+- en: Today, some companies (the famous *cloud providers*) work at a scale where manual
+    network management is not only impracticable but impossible, even when employing
+    huge teams of network engineers. On the other hand, there are many environments
+    where it would be technically possible to manage network configurations manually,
+    at least partially so, but it’s still impractical.
+  id: totrans-27
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如今，一些公司（著名的*云服务提供商*）在一个规模上工作，其中手动网络管理不仅不可行，甚至是不可能的，即使他们雇用了大量的网络工程师。另一方面，也有许多环境，在技术上至少部分可以手动管理网络配置，但实际上依然不切实际。
+- en: Aside from the time required to configure a network device, the biggest advantage
+    – from my perspective – of network automation is the opportunity to drastically
+    reduce human errors. If a human has to configure a VLAN on 100 devices, chances
+    are they will make a few errors in the process. This is normal but problematic
+    since those configurations must be thoroughly tested and amended. Often, the problem
+    doesn’t stop here because when a device breaks and needs to be replaced, a human
+    has to configure the new device in the same way as the old one was configured.
+    Often – over time – the configurations change, and there is very often no clear
+    way to trace this, so while replacing a faulty network device, there might be
+    problems with some rules that were present in the previous device but are not
+    present in the new one.
+  id: totrans-28
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 除了配置网络设备所需的时间之外，网络自动化的最大优势——从我的角度来看——是能够显著减少人为错误。如果一个人需要在 100 台设备上配置 VLAN，肯定会在过程中犯一些错误。这是正常的，但问题在于，这些配置必须经过彻底测试和修改。问题往往不仅止于此，因为当设备出现故障并需要更换时，人工需要将新设备配置成与旧设备相同的方式。随着时间的推移，配置通常会发生变化，且通常没有清晰的方式追溯这一变化。因此，在更换故障的网络设备时，可能会出现一些规则问题，这些规则在之前的设备中存在，但在新设备中却没有。
+- en: Now that we have discussed the need to automate network management, let’s look
+    at how to manage networking devices with Ansible.
+  id: totrans-29
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 既然我们已经讨论了自动化网络管理的必要性，接下来我们来看看如何使用 Ansible 管理网络设备。
+- en: How Ansible manages networking devices
+  id: totrans-30
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Ansible 如何管理网络设备
+- en: Ansible allows you to manage many different networking devices, including Arista
+    EOS, Cisco ASA, Cisco IOS, Cisco IOS XR, Cisco NX-OS, Dell OS 6, Dell OS 9, Dell
+    OS 10, Extreme EXOS, Extreme IronWare, Extreme NOS, Extreme SLX-OS, Extreme VOSS,
+    F5 BIG-IP, F5 BIG-IQ, Junos OS, Lenovo CNOS, Lenovo ENOS, MikroTik RouterOS, Nokia
+    SR OS, Pluribus Netvisor, and VyOS, as well as all OSs that support NETCONF. As
+    you can imagine, we can make Ansible communicate with them in various ways.
+  id: totrans-31
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 允许你管理许多不同的网络设备，包括 Arista EOS、Cisco ASA、Cisco IOS、Cisco IOS XR、Cisco
+    NX-OS、Dell OS 6、Dell OS 9、Dell OS 10、Extreme EXOS、Extreme IronWare、Extreme NOS、Extreme
+    SLX-OS、Extreme VOSS、F5 BIG-IP、F5 BIG-IQ、Junos OS、Lenovo CNOS、Lenovo ENOS、MikroTik
+    RouterOS、Nokia SR OS、Pluribus Netvisor 和 VyOS，以及所有支持 NETCONF 的操作系统。正如你可以想象的那样，我们可以通过各种方式使
+    Ansible 与这些设备进行通信。
+- en: Also, we have to remember that Ansible networking modules run on the controller
+    host (the one where you issued the `ansible` command), while usually, the Ansible
+    modules run on the target host. This difference is crucial because it allows Ansible
+    to use different connection mechanisms based on the target device type. Remember
+    that even when you have a host with SSH management capabilities (that many switches
+    have), Ansible needs Python to be present on the target host to be able to run
+    modules on it. Since most switches (and embedded hardware) do not have Python,
+    Ansible will often use specific connection protocols. The key ones supported by
+    Ansible for network device management are given here.
+  id: totrans-32
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 此外，我们还必须记住，Ansible 网络模块是在控制主机上运行的（即你执行`ansible`命令的主机），而通常情况下，Ansible 模块是在目标主机上运行的。这一差异至关重要，因为它使得
+    Ansible 可以根据目标设备的类型使用不同的连接机制。请记住，即使你有一台支持 SSH 管理功能的主机（许多交换机都有此功能），Ansible 仍然需要目标主机上存在
+    Python 才能在其上运行模块。由于大多数交换机（和嵌入式硬件）没有 Python，Ansible 通常会使用特定的连接协议。Ansible 支持的用于网络设备管理的主要协议如下。
+- en: 'There are five main connection types that Ansible uses for connecting to those
+    network devices, as follows:'
+  id: totrans-33
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 用于连接这些网络设备的五种主要连接类型如下：
+- en: '`ansible.netcommon.network_cli`'
+  id: totrans-34
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible.netcommon.network_cli`'
+- en: '`ansible.netcommon.netconf`'
+  id: totrans-35
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible.netcommon.netconf`'
+- en: '`ansible.netcommon.httpapi`'
+  id: totrans-36
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible.netcommon.httpapi`'
+- en: '`local`'
+  id: totrans-37
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`local`'
+- en: '`ssh`'
+  id: totrans-38
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ssh`'
+- en: 'When you create a connection with your networking device, you need to choose
+    the connection mechanism based on the ones supported by your devices and your
+    needs:'
+  id: totrans-39
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当你与网络设备建立连接时，你需要根据设备支持的连接机制以及你的需求来选择连接方式：
+- en: '`ansible.netcommon.network_cli` is supported by most modules, and it is the
+    most similar to how Ansible usually works with non-networking modules. This mode
+    uses a CLI via SSH. This protocol creates a persistent connection at the beginning
+    of the execution, which is kept alive for the whole execution so that you don’t
+    have to provide credentials for every task.'
+  id: totrans-40
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible.netcommon.network_cli` 被大多数模块支持，它与 Ansible 通常如何与非网络模块一起工作最为相似。这种模式通过
+    SSH 使用命令行界面（CLI）。此协议在执行开始时创建一个持久连接，并在整个执行过程中保持活动状态，这样你就不必为每个任务提供凭证。'
+- en: '`ansible.netcommon.netconf` is supported by some modules. This mode uses XML
+    via SSH, so it applies XML-based configurations to the device. This protocol creates
+    a persistent connection at the beginning of the execution, which is kept alive
+    for the whole execution so that you don’t have to provide credentials for every
+    task.'
+  id: totrans-41
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible.netcommon.netconf` 被一些模块支持。这种模式通过 SSH 使用 XML，因此它将基于 XML 的配置应用到设备上。此协议在执行开始时创建一个持久连接，并在整个执行过程中保持活动状态，这样你就不必为每个任务提供凭证。'
+- en: '`ansible.netcommon.httpapi` is supported by a few modules. This mode uses the
+    HTTP API that the device publishes. This protocol creates a persistent connection
+    at the beginning of the execution, which is kept alive for the whole execution
+    so that you don’t have to provide credentials for every task.'
+  id: totrans-42
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible.netcommon.httpapi` 被少数模块支持。这种模式使用设备发布的 HTTP API。此协议在执行开始时创建一个持久连接，并在整个执行过程中保持活动状态，这样你就不必为每个任务提供凭证。'
+- en: '`local` is supported by most devices, but it is a deprecated connection mode.
+    This connection mode is vendor-dependent and usually requires some vendor-specific
+    packages to be present on Ansible’s execution host. This mode does not create
+    a persistent connection, so you must provide the credentials at every task. When
+    possible, avoid this mode.'
+  id: totrans-43
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`local` 被大多数设备支持，但它是一种已弃用的连接模式。这种连接模式依赖于厂商，并通常需要在 Ansible 执行主机上安装一些特定厂商的包。此模式不会创建持久连接，因此你必须在每个任务中提供凭证。尽可能避免使用这种模式。'
+- en: '`ssh` must not be forgotten as an option. Although a large number of devices
+    depend upon the connection modes listed before, a new breed of network devices
+    is being created that runs Linux natively on **white box** switch hardware. One
+    such example is Cumulus Networks (now part of NVIDIA), and as its software is
+    Linux-based, all configurations can be performed over SSH as if the switch was
+    just another Linux box.'
+  id: totrans-44
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ssh` 作为一个选项不容忽视。尽管大量设备依赖前述连接模式，但一种新的网络设备类型正在被创造，它在**白盒**交换机硬件上本地运行 Linux。例如
+    Cumulus Networks（现已成为 NVIDIA 的一部分），由于其软件基于 Linux，所有配置都可以通过 SSH 执行，就像该交换机只是另一台
+    Linux 主机一样。'
+- en: Knowing how Ansible connects to and communicates with your networking hardware
+    is essential, as it gives you the understanding you need to build your Ansible
+    playbooks and debug issues when things go wrong.
+  id: totrans-45
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 了解 Ansible 如何连接和与您的网络硬件通信非常重要，因为它为您提供了构建 Ansible 剧本和调试问题时所需的理解。
+- en: In this section, we covered the communication protocols you will come across
+    when working with networking hardware. In the next section, we will build on this
+    by looking at the fundamentals of starting our network automation journey with
+    Ansible.
+  id: totrans-46
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本节中，我们介绍了与网络硬件工作时会遇到的通信协议。在下一节中，我们将继续讨论如何通过 Ansible 开始我们的网络自动化之旅的基础知识。
+- en: How to enable network automation
+  id: totrans-47
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何启用网络自动化
+- en: Before using Ansible for network automation, you must ensure you have everything
+    you need. We need different requirements based on the kind of connection method
+    we will use. For our example, we will use a Cisco IOS device with `network_cli`
+    connectivity.
+  id: totrans-48
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在使用 Ansible 进行网络自动化之前，您必须确保拥有所需的一切。根据我们将使用的连接方式的不同，我们需要不同的要求。以我们的示例为例，我们将使用一台支持
+    `network_cli` 连接的 Cisco IOS 设备。
+- en: 'The only requirements for Ansible network automation to work are as follows:'
+  id: totrans-49
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 网络自动化工作的唯一要求如下：
+- en: Ansible 2.5+
+  id: totrans-50
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Ansible 2.5+
+- en: Proper connectivity with the network device
+  id: totrans-51
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 与网络设备的正常连接
+- en: 'First, we need to check the Ansible version:'
+  id: totrans-52
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 首先，我们需要检查 Ansible 版本：
+- en: 'To ensure that you have a recent Ansible version, you can run the following
+    command:'
+  id: totrans-53
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 为了确保您拥有最新版本的 Ansible，您可以运行以下命令：
+- en: '[PRE0]'
+  id: totrans-54
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: This command will tell you the version of your Ansible installation.
+  id: totrans-55
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 该命令将告诉您 Ansible 安装的版本。
+- en: 'If it’s 2.5 or newer, you can issue the following command (with the appropriate
+    options) to check the connectivity of your network device:'
+  id: totrans-56
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如果版本是 2.5 或更高，可以使用以下命令（带有适当的选项）检查网络设备的连接性：
+- en: '[PRE1]'
+  id: totrans-57
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: This command should return your device’s facts, proving that we can connect.
+    As for any other target, Ansible can retrieve facts, which is usually the first
+    thing Ansible does when interacting with a target.
+  id: totrans-58
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 该命令应返回设备的事实，证明我们能够连接。与任何其他目标一样，Ansible 可以获取事实，这通常是 Ansible 与目标交互时的第一步。
+- en: In this particular case, we are using the `–k` parameter to inform Ansible that
+    we want to be prompted for a password to be used for SSH login.
+  id: totrans-59
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在此特定情况下，我们使用 `–k` 参数告知 Ansible 需要提示输入密码，用于 SSH 登录。
+- en: Retrieving facts is a key step since this allows Ansible to know the current
+    state of the device and act appropriately.
+  id: totrans-60
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 获取事实是一个关键步骤，因为它使 Ansible 能够了解设备的当前状态并采取相应的行动。
+- en: By running the `cisco.ios.ios_facts` module on our target device, we are just
+    executing this first standard step (so no changes are performed), but this confirms
+    that Ansible can connect to the device and perform commands on it.
+  id: totrans-61
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通过在目标设备上运行 `cisco.ios.ios_facts` 模块，我们实际上只是在执行第一步标准操作（因此不会执行任何更改），但这确认了 Ansible
+    能够连接到设备并对其执行命令。
+- en: As you might have imagined, you can only run the preceding command and explore
+    its behavior if you have access to a network device running Cisco IOS. We understand
+    that not everyone has the same networking equipment available for testing purposes
+    (or any at all!). Fortunately for us, a new breed of switches is becoming available
+    – white box switches. These switches are created by various manufacturers and
+    are based on standardized hardware where you can install your network operating
+    system. One such operating system is NVIDIA Cumulus Linux, and a freely available
+    test version of this, called NVIDIA Cumulus VX, is available for you to download.
+  id: totrans-62
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如您所料，只有当您能够访问运行 Cisco IOS 的网络设备时，才能运行上述命令并探索其行为。我们理解并非每个人都能获得相同的网络设备进行测试（甚至没有设备！）。幸运的是，一种新型的交换机已经开始普及——白盒交换机。这些交换机由多个制造商生产，基于标准化硬件，您可以在其上安装自己的网络操作系统。一个这样的操作系统是
+    NVIDIA Cumulus Linux，您可以免费下载其测试版 NVIDIA Cumulus VX。
+- en: Note
+  id: totrans-63
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 注意
+- en: At the time of writing, the download link for NVIDIA Cumulus VX is [https://www.nvidia.com/en-us/networking/ethernet-switching/cumulus-vx/](https://www.nvidia.com/en-us/networking/ethernet-switching/cumulus-vx/).
+    You will need to register to download it, but doing so gives you free access to
+    the world of open networking.
+  id: totrans-64
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在撰写时，NVIDIA Cumulus VX 的下载链接为 [https://www.nvidia.com/en-us/networking/ethernet-switching/cumulus-vx/](https://www.nvidia.com/en-us/networking/ethernet-switching/cumulus-vx/)。您需要注册才能下载，但注册后您可以免费访问开源网络的世界。
+- en: 'Download the image appropriate to your hypervisor (for example, VirtualBox)
+    and then run it just as you would run any other Linux virtual machine. Once you’ve
+    done this, you can connect to the NVIDIA Cumulus VX switch, just like you would
+    any other SSH device. For example, to run an ad hoc command to gather facts about
+    all the switch port interfaces (that are enumerated as `swp1`, `swp2`, and `swpX`
+    on Cumulus VX), you would run the following command:'
+  id: totrans-65
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 下载适合您虚拟化平台（例如，VirtualBox）的镜像文件，然后像运行其他 Linux 虚拟机一样运行它。一旦完成，您可以像连接任何其他 SSH 设备一样连接到
+    NVIDIA Cumulus VX 交换机。例如，要运行一个临时命令以收集所有交换机端口接口的事实（这些接口在 Cumulus VX 上被列为 `swp1`、`swp2`
+    和 `swpX`），您可以运行以下命令：
+- en: '[PRE2]'
+  id: totrans-66
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: 'If successful, this should result in pages of information about the switch
+    port interface for your Cumulus VX-powered virtual switch. On my test system,
+    the first part of this output looks like this:'
+  id: totrans-67
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果成功，这应该会显示关于 Cumulus VX 虚拟交换机的交换机端口接口的详细信息。在我的测试系统中，这些输出的第一部分如下所示：
+- en: '[PRE3]'
+  id: totrans-68
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: As you can see, working with white box switches using an operating system such
+    as NVIDIA Cumulus Linux has the advantage that you can connect using the standard
+    SSH protocol and even use the `ansible.builtin.setup` module to gather facts about
+    it. Working with other proprietary hardware is not much more difficult but requires
+    more parameters to be specified, as we showed earlier in this chapter.
+  id: totrans-69
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如您所看到的，使用像 NVIDIA Cumulus Linux 这样的操作系统与白盒交换机一起工作具有一个优点，那就是您可以使用标准的 SSH 协议进行连接，甚至可以使用
+    `ansible.builtin.setup` 模块来收集关于它的信息。与其他专有硬件一起工作并不更加困难，但需要指定更多的参数，正如我们在本章前面所展示的那样。
+- en: Now that you know the fundamentals of enabling network automation, let’s learn
+    how to discover the appropriate networking modules for our desired automation
+    task in Ansible.
+  id: totrans-70
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在您已经了解了启用网络自动化的基础知识，接下来让我们学习如何在 Ansible 中发现适合的网络模块，以实现我们期望的自动化任务。
+- en: The available Ansible networking modules
+  id: totrans-71
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 可用的 Ansible 网络模块
+- en: 'With the advent of Galaxy and collections, we have seen a huge increase in
+    available Ansible content for networking. Currently, there are more than 150 collections
+    and more than 1,000 roles on Galaxy. You can also find the most important collections
+    on the official Ansible documentation. To find the collections, you should take
+    the following steps:'
+  id: totrans-72
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 随着 Galaxy 和集合的出现，Ansible 网络内容的可用性大大增加。目前，Galaxy 上有超过 150 个集合和超过 1,000 个角色。您还可以在官方的
+    Ansible 文档中找到最重要的集合。要找到这些集合，您应采取以下步骤：
+- en: First of all, check the official documentation. By visiting [https://docs.ansible.com/ansible/latest/network/user_guide/platform_index.xhtml](https://docs.ansible.com/ansible/latest/network/user_guide/platform_index.xhtml),
+    you can find the different device families and which connection types they use.
+  id: totrans-73
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 首先，查看官方文档。通过访问 [https://docs.ansible.com/ansible/latest/network/user_guide/platform_index.xhtml](https://docs.ansible.com/ansible/latest/network/user_guide/platform_index.xhtml)，您可以找到不同设备系列及其使用的连接类型。
+- en: If the device you would like to manage is not on the list, you can search on
+    Galaxy by going to [https://galaxy.ansible.com](https://galaxy.ansible.com) and
+    using the website’s search feature.
+  id: totrans-74
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 如果您希望管理的设备不在列表中，您可以访问 [https://galaxy.ansible.com](https://galaxy.ansible.com)
+    并使用该网站的搜索功能在 Galaxy 上进行搜索。
+- en: The list of collections and modules is way too long and family-specific for
+    us to discuss them in depth. Also, those lists are in constant update, and they
+    tend to get continuously longer.
+  id: totrans-75
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 模块和集合的列表过长且具体到不同的硬件系列，我们无法在此深入讨论。此外，这些列表会不断更新，并且通常会不断增长。
+- en: 'If you are familiar with configuring the device manually, you will quickly
+    find the name of the modules reasonably natural, so it will be easy for you to
+    understand what they do. However, let’s go through a handful of examples from
+    the collection of Cisco IOS modules – specifically, with reference to [https://galaxy.ansible.com/cisco/ios](https://galaxy.ansible.com/cisco/ios):'
+  id: totrans-76
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果您熟悉手动配置设备，您会很快发现模块的名称非常自然，因此您很容易理解它们的功能。然而，让我们通过一些来自 Cisco IOS 模块的示例来了解——特别是参考
+    [https://galaxy.ansible.com/cisco/ios](https://galaxy.ansible.com/cisco/ios)：
+- en: '`cisco.ios.ios_banner`: As the name suggests, this module will allow you to
+    tweak and modify the login banner (which in many systems is called *motd*).'
+  id: totrans-77
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`cisco.ios.ios_banner`：顾名思义，此模块允许您调整和修改登录横幅（在许多系统中称为 *motd*）。'
+- en: '`cisco.ios.ios_bgp`: This module allows you to configure BGP routes.'
+  id: totrans-78
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`cisco.ios.ios_bgp`：此模块允许您配置 BGP 路由。'
+- en: '`cisco.ios.ios_command`: This is the IOS equivalent of the `ansible.builtin.command`
+    module and it allows you to perform many different commands. As for the `ansible.builtin.command`
+    module, this is a very powerful module, but it’s better to use specific modules
+    for the operations we are going to perform if they are available.'
+  id: totrans-79
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`cisco.ios.ios_command`：这是 IOS 版本的 `ansible.builtin.command` 模块，允许执行许多不同的命令。至于
+    `ansible.builtin.command` 模块，这是一个非常强大的模块，但如果有可用的特定模块用于我们要执行的操作，最好使用它们。'
+- en: '`cisco.ios.ios_config`: This module allows us to make any changes to the device’s
+    configuration file. Similarly to the `cisco.ios.ios_command` module, this is a
+    very powerful module, but it’s better to use specific modules for the operation
+    we are going to perform if they are available. The idempotency for this module
+    is only guaranteed if no abbreviated commands are used.'
+  id: totrans-80
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`cisco.ios.ios_config`：此模块允许我们对设备的配置文件进行任何更改。与 `cisco.ios.ios_command` 模块类似，这是一个非常强大的模块，但如果有可用的特定模块用于我们要执行的操作，最好使用它们。该模块的幂等性仅在未使用缩写命令时才有保证。'
+- en: '`cisco.ios.ios_vlan`: This module allows the configuration of VLANs.'
+  id: totrans-81
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`cisco.ios.ios_vlan`：此模块允许配置 VLAN。'
+- en: These are just a few examples, but there are many more modules for Cisco IOS,
+    and if you cannot find a specific module to perform the operation you want, you
+    can always fall back to `cisco.ios.ios_command` and `cisco.ios.ios_config`, which,
+    thanks to their flexibility, will allow you to perform any operation you can think
+    of.
+  id: totrans-82
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这些只是一些示例，但对于 Cisco IOS 还有许多其他模块，如果您找不到执行所需操作的特定模块，您始终可以退回到 `cisco.ios.ios_command`
+    和 `cisco.ios.ios_config`，由于它们的灵活性，您可以执行任何您能想到的操作。
+- en: In contrast, if you are working with a Cumulus Linux switch, you’ll find there
+    are fewer modules since they are more generic.
+  id: totrans-83
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 相比之下，如果您正在使用 Cumulus Linux 交换机，您会发现可用的模块较少，因为它们更加通用。
+- en: As always, the Ansible documentation is your friend, and it should be your first
+    port of call when you are learning how to automate commands on a new class of
+    devices. In this section, we have demonstrated a simple process for finding out
+    which Ansible modules are available for your network device, using Cisco as a
+    specific example (though you could apply these principles to any other device).
+    Now, let’s look at how Ansible connects to network devices.
+  id: totrans-84
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一如既往，Ansible 文档是您的朋友，当您学习如何在新设备类上自动化命令时，它应该是您的首选参考。在本节中，我们展示了一个简单的过程，用于查找可用于您的网络设备的
+    Ansible 模块，使用 Cisco 作为特定示例（虽然您可以将这些原则应用于任何其他设备）。现在，让我们来看一下 Ansible 如何连接到网络设备。
+- en: Connecting to network devices
+  id: totrans-85
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 连接到网络设备
+- en: As we have seen, there are some peculiarities in Ansible networking, so specific
+    configurations are required.
+  id: totrans-86
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如我们所见，Ansible 网络中存在一些特殊性，因此需要进行特定的配置。
+- en: To manage network devices with Ansible, you need to have at least one to test
+    on. Let’s assume we have a Cisco IOS system available to us. It is accepted that
+    not everyone will have such a device to test on, so the following is offered as
+    a hypothetical example only.
+  id: totrans-87
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要使用 Ansible 管理网络设备，您需要至少有一个设备进行测试。假设我们有一个可用的 Cisco IOS 系统。由于并非每个人都会有这样的设备进行测试，因此以下内容仅作为假设性示例提供。
+- en: 'Going by the [https://docs.ansible.com/ansible/latest/network/user_guide/platform_index.xhtml](https://docs.ansible.com/ansible/latest/network/user_guide/platform_index.xhtml)
+    page, we can see that the correct `ansible_network_os` for this device is `cisco.ios.ios`
+    and that we can connect to it using both `network_cli` and `local`. Since `local`
+    is deprecated, we are going to use `network_cli`. Follow these steps to configure
+    Ansible so that you can manage IOS devices:'
+  id: totrans-88
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 根据 [https://docs.ansible.com/ansible/latest/network/user_guide/platform_index.xhtml](https://docs.ansible.com/ansible/latest/network/user_guide/platform_index.xhtml)
+    页面，我们可以看到该设备的正确 `ansible_network_os` 是 `cisco.ios.ios`，并且我们可以使用 `network_cli`
+    和 `local` 两种方式连接它。由于 `local` 已经被弃用，我们将使用 `network_cli`。按照以下步骤配置 Ansible，以便您可以管理
+    IOS 设备：
+- en: 'First, let’s create the inventory file with our devices in the `routers` group:'
+  id: totrans-89
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 首先，让我们创建一个包含 `routers` 组中设备的库存文件：
+- en: '[PRE4]'
+  id: totrans-90
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: 'To know which connection parameters to use, we will set Ansible’s special connection
+    variables so that they define the connection parameters. We’ll do this in a group
+    variables subdirectory of our playbook, so we will need to create the `group_vars/routers.yml`
+    file with the following content:'
+  id: totrans-91
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 为了知道使用哪些连接参数，我们将设置 Ansible 的特殊连接变量，以便它们定义连接参数。我们将在我们的 playbook 的一个 group variables
+    子目录中执行此操作，因此我们需要创建 `group_vars/routers.yml` 文件，并包含以下内容：
+- en: '[PRE5]'
+  id: totrans-92
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: 'Thanks to these special variables, Ansible will know how to connect to your
+    devices. We covered some of these examples earlier in this book, but as a recap,
+    Ansible uses the values of those variables to determine their behavior in the
+    following ways:'
+  id: totrans-93
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 多亏了这些特殊变量，Ansible 将知道如何连接到你的设备。我们在本书的前面部分提到过一些这些示例，但作为回顾，Ansible 使用这些变量的值来以以下方式决定它们的行为：
+- en: '`ansible_connection`: This variable is used by Ansible to decide how to connect
+    to the device. By choosing `network_cli`, we are instructing Ansible to connect
+    to the CLI in SSH mode.'
+  id: totrans-94
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible_connection`：此变量由 Ansible 用于决定如何连接到设备。选择 `network_cli` 时，我们指示 Ansible
+    以 SSH 模式连接到 CLI。'
+- en: '`ansible_network_os`: This variable is used by Ansible to understand the device
+    family of the device we are going to use. By choosing `cisco.ios.ios`, we are
+    instructing Ansible to expect a Cisco IOS device.'
+  id: totrans-95
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible_network_os`：此变量由 Ansible 用于了解我们将使用的设备的设备家族。选择 `cisco.ios.ios` 时，我们指示
+    Ansible 期望连接到 Cisco IOS 设备。'
+- en: '`ansible_become`: This variable is used by Ansible to decide whether to perform
+    privilege escalation on the device or not. By specifying `True`, we are telling
+    Ansible to perform privilege escalation.'
+  id: totrans-96
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible_become`：此变量由 Ansible 用于决定是否在设备上执行特权提升。通过指定 `True`，我们告知 Ansible 执行特权提升。'
+- en: '`ansible_become_method`: There are many different ways to perform privilege
+    escalation on the various devices (normally `sudo` on a Linux server – this is
+    the default setting), and for Cisco IOS, we must set this to `enable`.'
+  id: totrans-97
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible_become_method`：有多种方式可以在不同的设备上执行特权提升（通常在 Linux 服务器上使用 `sudo` —— 这是默认设置），对于
+    Cisco IOS，我们必须将其设置为 `enable`。'
+- en: With that, you have learned the necessary steps to connect to network devices.
+  id: totrans-98
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有了这些，你已经学会了连接到网络设备所需的步骤。
+- en: 'To validate that the connection is working as expected (assuming you have access
+    to a router running Cisco IOS), you can run this simple playbook, called `ios_facts.yaml`:'
+  id: totrans-99
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了验证连接是否按预期工作（假设你可以访问运行 Cisco IOS 的路由器），你可以运行这个简单的 playbook，名为 `ios_facts.yaml`：
+- en: '[PRE6]'
+  id: totrans-100
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: 'You can run this using a command such as the following:'
+  id: totrans-101
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以通过使用如下命令运行此操作：
+- en: '[PRE7]'
+  id: totrans-102
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE7]'
+- en: If it returns successfully, this means that your configuration is correct and
+    you’ve been able to give Ansible the necessary authorization to manage your IOS
+    device.
+  id: totrans-103
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果返回成功，这意味着你的配置是正确的，并且你已经成功地授权 Ansible 管理你的 IOS 设备。
+- en: 'Similarly, if you wanted to connect to a Cumulus VX device, you could add another
+    group variables file called `group_vars/cumulusvx.yml` containing the following
+    code:'
+  id: totrans-104
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 类似地，如果你想连接到 Cumulus VX 设备，你可以添加另一个名为 `group_vars/cumulusvx.yml` 的组变量文件，文件内容如下：
+- en: '[PRE8]'
+  id: totrans-105
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE8]'
+- en: 'An analogous playbook that returns all the facts about our Cumulus VX switches
+    could look like this:'
+  id: totrans-106
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一个类似的 playbook，将返回有关我们 Cumulus VX 交换机的所有事实，可能如下所示：
+- en: '[PRE9]'
+  id: totrans-107
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE9]'
+- en: 'You can run this in a normal manner by using a command such as the following:'
+  id: totrans-108
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以通过使用如下命令以正常方式运行：
+- en: '[PRE10]'
+  id: totrans-109
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE10]'
+- en: 'If successful, you should see the following output from your playbook run:'
+  id: totrans-110
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果成功，你应该会看到 playbook 运行的以下输出：
+- en: '[PRE11]'
+  id: totrans-111
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE11]'
+- en: This demonstrates the techniques for connecting to two different types of network
+    devices in Ansible, including one you can test by yourself without access to any
+    special hardware.
+  id: totrans-112
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这展示了在 Ansible 中连接两种不同类型网络设备的技巧，其中一种你可以自己测试，而无需特殊硬件。
+- en: Now, let’s build on this by looking at how to set environment variables for
+    network devices in Ansible.
+  id: totrans-113
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，让我们继续探讨如何在 Ansible 中为网络设备设置环境变量。
+- en: Environment variables for network devices
+  id: totrans-114
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 网络设备的环境变量
+- en: Very often, the complexity of networks is high, and the network systems are
+    very varied. For those reasons, Ansible has many variables that can help you tweak
+    it to make Ansible fit your environment.
+  id: totrans-115
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 网络的复杂性通常较高，而且网络系统非常多样化。由于这些原因，Ansible 提供了许多变量，可以帮助你进行调整，使 Ansible 适应你的环境。
+- en: Let’s suppose you have two different networks (one for computing and one for
+    network devices) that can’t communicate directly but have to pass through a bastion
+    host to reach one from the other. Since we have Ansible in the computing network,
+    we must jump networks using the bastion host to configure an IOS router in the
+    management network. Also, our target switch needs a proxy set to reach the internet.
+  id: totrans-116
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 假设你有两个不同的网络（一个用于计算，另一个用于网络设备），它们无法直接通信，但必须通过跳板主机才能相互访问。由于我们在计算网络中有 Ansible，我们必须通过跳板主机跳跃网络，以配置管理网络中的
+    IOS 路由器。同时，我们的目标交换机需要设置代理才能访问互联网。
+- en: 'To connect to the IOS router in the management network, we will need to create
+    a new group for our network devices, which are on a separate network. For this
+    example, this might be specified as follows:'
+  id: totrans-117
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要连接到管理网络中的 IOS 路由器，我们需要为网络设备创建一个新组，这些设备位于单独的网络中。对于此示例，可能需要如下指定：
+- en: '[PRE12]'
+  id: totrans-118
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE12]'
+- en: 'Following the creation of our updated inventory, we can create a new group
+    variables file, such as `group_vars/bastion_routers.yaml`, with the following
+    content:'
+  id: totrans-119
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在创建更新后的清单之后，我们可以创建一个新的组变量文件，例如 `group_vars/bastion_routers.yaml`，内容如下：
+- en: '[PRE13]'
+  id: totrans-120
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE13]'
+- en: 'We can also do the same for our Cumulus VX switches if they are behind a bastion
+    server by creating a `group_vars/bastion_cumulusvx.yml` file:'
+  id: totrans-121
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果我们的 Cumulus VX 交换机位于堡垒服务器后面，我们也可以对它们执行相同的操作，方法是创建一个 `group_vars/bastion_cumulusvx.yml`
+    文件：
+- en: '[PRE14]'
+  id: totrans-122
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE14]'
+- en: 'In addition to the options we discussed in the previous section, we now have
+    two additional options:'
+  id: totrans-123
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 除了我们在上一节讨论的选项外，我们现在有两个额外的选项：
+- en: '`ansible_ssh_common_args`: This is a very powerful option that allows us to
+    add additional options to the SSH connections to tweak their behavior. These options
+    should be pretty straightforward to identify since you are already using them
+    in your SSH configurations to simply SSH to the target machine. In this specific
+    case, we are adding `ProxyCommand`, which is the SSH directive to perform a jump
+    to a host (usually a bastion host) so that we can enter the target host securely.'
+  id: totrans-124
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible_ssh_common_args`：这是一个非常强大的选项，允许我们在 SSH 连接中添加额外的选项来调整其行为。这些选项应该很容易识别，因为你已经在
+    SSH 配置中使用它们，仅仅是为了通过 SSH 连接到目标机器。在此特定情况下，我们添加了 `ProxyCommand`，这是一个 SSH 指令，用于跳转到一个主机（通常是堡垒主机），以便我们可以安全地进入目标主机。'
+- en: '`http_proxy`: This option, which is below the `proxy_env` option, is key in
+    environments where network isolation is strong, and therefore your machines can’t
+    interact with the internet unless they use a proxy.'
+  id: totrans-125
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`http_proxy`：此选项位于 `proxy_env` 选项下，在网络隔离较强的环境中至关重要，因此，除非使用代理，否则你的机器无法与互联网互动。'
+- en: 'Assuming you have set up passwordless (for example, SSH key-based) access to
+    your bastion host, you should be able to run an ad hoc Ansible `ping` command
+    against your Cumulus VX host, as follows:'
+  id: totrans-126
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 假设你已经设置了无密码访问（例如，基于 SSH 密钥的访问）到你的堡垒主机，你应该能够对你的 Cumulus VX 主机运行一个临时的 Ansible
+    `ping` 命令，如下所示：
+- en: '[PRE15]'
+  id: totrans-127
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE15]'
+- en: Note that using the bastion server becomes transparent – you can automate with
+    Ansible as if you were on the same flat network. If you have access to a Cisco
+    IOS-based device, you should be able to run a similar command against the `bastion_routers`
+    group and achieve similarly positive results.
+  id: totrans-128
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请注意，使用堡垒服务器变得透明——你可以像在同一局域网中一样使用 Ansible 自动化。如果你能访问一个基于 Cisco IOS 的设备，你应该能够对
+    `bastion_routers` 组运行类似的命令，并获得相似的良好结果。
+- en: Now that you have learned the necessary steps to set environment variables for
+    network devices and access them with Ansible, even when they are on isolated networks,
+    let’s learn how to set conditional statements for networking devices.
+  id: totrans-129
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在你已经学会了如何为网络设备设置环境变量并通过 Ansible 访问它们，即使它们位于隔离网络中，接下来我们将学习如何为网络设备设置条件语句。
+- en: Custom conditional statements for networking devices
+  id: totrans-130
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 针对网络设备的自定义条件语句
+- en: Although there are no networking-specific Ansible conditionals, conditionals
+    frequently come into play in networking-related Ansible usage.
+  id: totrans-131
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 尽管没有专门针对网络的 Ansible 条件语句，但在与网络相关的 Ansible 使用中，条件语句经常发挥作用。
+- en: In networking, it’s common to enable and disable ports. To have data be able
+    to pass through the cable, both ports at the ends of the cable should be enabled,
+    resulting in a connected state (some vendors will use different names for this,
+    but the idea is the same).
+  id: totrans-132
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在网络中，启用和禁用端口是常见的操作。为了让数据能够通过电缆传输，电缆两端的端口都应该启用，从而实现连接状态（一些供应商会使用不同的名称，但基本概念相同）。
+- en: Let’s suppose we have two Arista Networks EOS devices, and we issued the ON
+    status on the ports and need to wait for the connection to be up before proceeding.
+  id: totrans-133
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 假设我们有两台 Arista Networks EOS 设备，并且我们在端口上设置了 ON 状态，需要等待连接建立后才能继续。
+- en: 'To wait for the `Ethernet4` interface to be enabled, we will need to add the
+    following task to our playbook:'
+  id: totrans-134
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要等待 `Ethernet4` 接口启用，我们需要在我们的剧本中添加以下任务：
+- en: '[PRE16]'
+  id: totrans-135
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE16]'
+- en: '`arista.eos.eos_command` is the module that allows us to issue free-formed
+    commands to an Arista Networks EOS device. The command itself needs to be specified
+    in an array in the `commands` option. With the `wait_for` option, we can specify
+    a condition and Ansible will reiterate on the specified task until the condition
+    is satisfied. Since the command’s output is redirected to the `json` utility,
+    the output will be a JSON, so we can traverse its structure using Ansible’s ability
+    to manipulate JSON data.'
+  id: totrans-136
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`arista.eos.eos_command`是一个模块，它允许我们向Arista Networks EOS设备发布自由格式的命令。命令本身需要在`commands`选项中以数组形式指定。通过`wait_for`选项，我们可以指定一个条件，Ansible将反复执行指定的任务，直到条件满足为止。由于命令的输出被重定向到`json`实用工具，因此输出将是JSON格式，我们可以利用Ansible处理JSON数据的能力来遍历其结构。'
+- en: 'We can achieve similar results on Cumulus VX – for example, we can query the
+    facts gathered from the switch to see whether the `swp2` port is enabled. If it
+    is not, then we will enable it; however, if it is enabled, we will skip the command.
+    We can do this with a simple playbook, as follows:'
+  id: totrans-137
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以在Cumulus VX上实现类似的结果——例如，我们可以查询从交换机收集到的事实，查看`swp2`端口是否已启用。如果没有启用，则启用该端口；如果已经启用，则跳过该命令。我们可以通过一个简单的剧本来实现，如下所示：
+- en: '[PRE17]'
+  id: totrans-138
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE17]'
+- en: 'Notice the use of the `when` clause in our task, meaning we should only issue
+    the configuration directive if `swp2` is not active. If we were to run this playbook
+    for the first time on an unconfigured Cumulus Linux switch, we should see an output
+    similar to the following:'
+  id: totrans-139
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请注意我们任务中`when`子句的使用，意味着只有在`swp2`端口未激活时，我们才会发布配置指令。如果我们首次在未配置的Cumulus Linux交换机上运行此剧本，我们应该看到类似以下的输出：
+- en: '[PRE18]'
+  id: totrans-140
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE18]'
+- en: 'As we can see, the `Enable swp2` task, if it is disabled based on the `community.network.nclu`
+    module, returned a `changed` state, which means that it changed the switch configuration.
+    However, if we were to run the playbook a second time, the output should be more
+    like this:'
+  id: totrans-141
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如我们所见，`Enable swp2`任务如果在`community.network.nclu`模块的基础上被禁用，会返回`changed`状态，这意味着它更改了交换机的配置。然而，如果我们第二次运行该剧本，输出应该更像这样：
+- en: '[PRE19]'
+  id: totrans-142
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE19]'
+- en: This time, the task was skipped as the Ansible facts show that the `swp2` port
+    is already enabled. This example is elementary, but it shows how you can work
+    with conditionals on a network device, as you have already seen conditionals being
+    used on Linux servers earlier in this book.
+  id: totrans-143
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这次任务被跳过了，因为Ansible的事实显示`swp2`端口已经启用。这个例子虽然简单，但展示了如何在网络设备上使用条件语句，就像你在本书前面看到的Linux服务器上的条件语句一样。
+- en: That concludes our brief look at network device automation with Ansible – more
+    in-depth work would require a look at network configurations and necessitate more
+    hardware, which is beyond the scope of this book. However, I hope this information
+    demonstrates that Ansible can be used effectively to automate and configure a
+    wide array of network devices.
+  id: totrans-144
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这就是我们对使用Ansible进行网络设备自动化的简要介绍——更深入的工作需要查看网络配置，并且需要更多的硬件，这超出了本书的范围。不过，我希望这些信息能展示Ansible如何有效地用于自动化和配置各种网络设备。
+- en: Summary
+  id: totrans-145
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 总结
+- en: Modern large-scale infrastructures that change rapidly necessitate the automation
+    of network tasks. Fortunately, Ansible supports a wide array of network devices,
+    from proprietary hardware such as Cisco IOS-based devices, to open standards such
+    as white box switches that run operating systems such as Cumulus Linux. Ansible
+    is a powerful and supportive tool to manage your network configuration and allows
+    you to implement changes quickly and safely. You can even replace entire devices
+    in your network and be confident in your ability to put the correct configuration
+    on the new device, thanks to your Ansible playbooks.
+  id: totrans-146
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现代大规模基础设施的快速变化需要网络任务的自动化。幸运的是，Ansible支持多种网络设备，从专有硬件如基于Cisco IOS的设备，到开放标准如运行Cumulus
+    Linux操作系统的白盒交换机。Ansible是一个强大且支持广泛的工具，帮助管理网络配置，并能够快速、安全地实施更改。通过Ansible剧本，你甚至可以替换网络中的整个设备，并确保能够将正确的配置应用到新设备上。
+- en: In this chapter, you learned about the reasons for automating network management.
+    You then looked at how Ansible manages network devices, how to enable network
+    automation in Ansible, and how to locate the Ansible modules necessary to perform
+    the automation tasks you wish to complete. Then, through practical examples, you
+    learned how to connect to network devices, set environment variables (and connect
+    to isolated networks via bastion hosts), and apply conditional statements to Ansible
+    tasks for network device configuration.
+  id: totrans-147
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，你了解了自动化网络管理的原因。接着，你学习了Ansible如何管理网络设备，如何在Ansible中启用网络自动化，以及如何找到执行所需自动化任务的Ansible模块。然后，通过实际示例，你学习了如何连接到网络设备，设置环境变量（并通过堡垒主机连接到隔离的网络），以及如何在Ansible任务中应用条件语句来配置网络设备。
+- en: In the next chapter, we will learn how to manage Linux containers and cloud
+    infrastructures using Ansible.
+  id: totrans-148
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一章中，我们将学习如何使用Ansible管理Linux容器和云基础设施。
+- en: Questions
+  id: totrans-149
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 问题
+- en: Which of these is NOT one of the four major connection types that Ansible uses
+    for connecting to network devices?
+  id: totrans-150
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 以下哪一项**不是**Ansible用于连接网络设备的四种主要连接类型之一？
+- en: '`netconf`'
+  id: totrans-151
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: '`netconf`'
+- en: '`network_cli`'
+  id: totrans-152
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: '`network_cli`'
+- en: '`local`'
+  id: totrans-153
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: '`local`'
+- en: '`netstat`'
+  id: totrans-154
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: '`netstat`'
+- en: '`httpapi`'
+  id: totrans-155
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: '`httpapi`'
+- en: 'True or false: The `ansible_network_os` variable is used by Ansible to understand
+    the device family of the device we are going to use.'
+  id: totrans-156
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 对还是错：`ansible_network_os`变量被Ansible用来了解我们将要使用的设备系列。
+- en: 'True'
+  id: totrans-157
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 正确
+- en: 'False'
+  id: totrans-158
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 错误
+- en: 'True or false: To connect to an IOS router in a separate network, you need
+    to specify the special connection variables for the host, possibly as inventory
+    group variables.'
+  id: totrans-159
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 对还是错：要连接到一个位于独立网络中的IOS路由器，你需要为主机指定特殊的连接变量，可能作为清单组变量。
+- en: 'True'
+  id: totrans-160
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 正确
+- en: 'False'
+  id: totrans-161
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 错误
+- en: Further reading
+  id: totrans-162
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 进一步阅读
+- en: 'The official documentation about Ansible networking is available here: [https://docs.ansible.com/ansible/latest/network/index.xhtml](https://docs.ansible.com/ansible/latest/network/index.xhtml).'
+  id: totrans-163
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 关于Ansible网络的官方文档可以在这里查看：[https://docs.ansible.com/ansible/latest/network/index.xhtml](https://docs.ansible.com/ansible/latest/network/index.xhtml)。

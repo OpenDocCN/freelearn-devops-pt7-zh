@@ -1,0 +1,771 @@
+- en: '3'
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '3'
+- en: Planning the Deployment
+  id: totrans-1
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 部署规划
+- en: In this chapter, we will dive into the important stage of planning the deployment
+    of our **Infrastructure as Code** workload. Before we can deploy our infrastructure,
+    it is crucial to have an understanding of what we are deploying and how we want
+    to approach the deployment process. This will ensure that our deployment is efficient,
+    streamlined, and free of errors.
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们将深入探讨部署我们**基础设施即代码**工作负载的关键阶段。在我们部署基础设施之前，必须了解我们要部署的内容以及我们希望如何进行部署。这将确保我们的部署高效、简洁且没有错误。
+- en: We will start by introducing the workload that we will be deploying in the following
+    two chapters. This will give us a clear understanding of what we are trying to
+    achieve and what resources we need to deploy.
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将首先介绍在接下来的两章中要部署的工作负载。这将使我们清楚地了解我们想要实现的目标以及部署所需的资源。
+- en: Next, we will discuss how to approach the deployment of our infrastructure.
+    This will include a step-by-step guide on how to plan and execute the deployment
+    process in a smooth and effective manner. We will also discuss best practices
+    and tips for ensuring a successful deployment.
+  id: totrans-4
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来，我们将讨论如何进行基础设施的部署。这将包括一个逐步指南，帮助我们以平稳和高效的方式规划和执行部署过程。我们还将讨论一些最佳实践和技巧，以确保成功的部署。
+- en: Finally, we will examine the high-level architecture of our infrastructure.
+    This will give us an overview of how the various components of our infrastructure
+    will fit together and interact with each other.
+  id: totrans-5
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后，我们将审视我们基础设施的高层架构。这将为我们提供一个关于基础设施各个组件如何结合并相互作用的概览。
+- en: With this understanding of our workload and deployment approach, we can move
+    forward confidently to [*Chapter 4*](B19537_04.xhtml#_idTextAnchor151)*, Deploying
+    to Microsoft Azure*, and [*Chapter 5*](B19537_05.xhtml#_idTextAnchor268)*, Deploying
+    to Amazon Web Services*, where we go into the low-level design and deployment
+    code.
+  id: totrans-6
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在了解了我们的工作负载和部署方法后，我们可以自信地继续前进，进入[*第4章*](B19537_04.xhtml#_idTextAnchor151)《部署到
+    Microsoft Azure》和[*第5章*](B19537_05.xhtml#_idTextAnchor268)《部署到 Amazon Web Services》，在这两章中我们将深入探讨低级设计和部署代码。
+- en: Planning the deployment of our workload
+  id: totrans-7
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 工作负载的部署规划
+- en: When coming up with sample workloads for projects, it is sometimes difficult
+    to find something that isn’t too complex, but also not so simple that the example
+    is simply a case of following steps 1 through 10 and you are done. To ensure that
+    the project we are going to be covering is both exciting and has the sort of considerations
+    you will need to make in your projects, but also is something that most of you
+    will have had some experience with at one point or another, I have chosen to use
+    **WordPress**.
+  id: totrans-8
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在为项目设定样本工作负载时，有时很难找到既不太复杂，又不至于简单到只是按照步骤1到10完成就可以的例子。为了确保我们将要涵盖的项目既令人兴奋，又能涵盖你们在项目中需要做出的考虑，同时又是大多数人都曾有过一定经验的内容，我决定选择**WordPress**作为示例。
+- en: 'WordPress is an open source **content management system** (**CMS**), hosted
+    using PHP and MySQL, that enables you to build websites and blogs. It was developed
+    in 2003 and has grown to be one of the most popular CMS platforms in the world,
+    running millions of websites. WordPress is renowned for its simplicity and flexibility,
+    which makes it a great choice for users of all skill levels. I can hear what you
+    are thinking: *But WordPress has its famous five-minute installation, which is
+    just a case of following a few simple steps!* However, in our case, we are going
+    to look at deploying WordPress across multiple hosts as well as using services
+    native to each of the public clouds we are going to be targeting for the database,
+    storage, and networking layers.'
+  id: totrans-9
+  prefs: []
+  type: TYPE_NORMAL
+  zh: WordPress是一个开源的**内容管理系统**（**CMS**），基于PHP和MySQL进行托管，允许用户建立网站和博客。它于2003年开发，并已成为世界上最流行的CMS平台之一，支撑着数百万个网站。WordPress因其简便性和灵活性而闻名，使其成为所有技能水平用户的理想选择。我知道你们在想什么：*但WordPress有著名的五分钟安装，只需要按几个简单的步骤进行就行了！*然而，在我们的案例中，我们将着眼于如何在多个主机上部署WordPress，并使用每个公共云提供的原生服务来管理数据库、存储和网络层。
+- en: One of the key features of WordPress is its use of themes, which allow users
+    to easily change the look and feel of their website without having to modify the
+    underlying code. This makes it simple for users to produce professional-looking
+    websites without having any knowledge of web design or programming. In addition
+    to WordPress having a large and active community of users and developers, there
+    are always new features and updates being released. This, in combination with
+    its open source nature, makes it an excellent choice for anybody looking to develop
+    a website or blog.
+  id: totrans-10
+  prefs: []
+  type: TYPE_NORMAL
+  zh: WordPress 的一个关键特点是其主题的使用，允许用户轻松地改变网站的外观和风格，而无需修改底层代码。这使得用户可以轻松制作专业外观的网站，而不需要具备网页设计或编程知识。除了
+    WordPress 拥有庞大且活跃的用户和开发者社区外，平台上不断推出新的功能和更新。这与其开源性质相结合，使其成为任何想要开发网站或博客的人的绝佳选择。
+- en: Before we progress any further, a word of warning.
+  id: totrans-11
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在我们继续之前，先提醒一句。
+- en: Information
+  id: totrans-12
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 信息
+- en: While we will be deploying WordPress across multiple instances, this approach
+    is being taken to give an example of the considerations you need to make tackling
+    your own Infrastructure as Code projects; please do not use it as a guide for
+    deploying and managing your own highly available WordPress installations.
+  id: totrans-13
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 尽管我们将把 WordPress 部署到多个实例上，但这样做是为了给出一个关于如何处理自己的基础设施即代码（Infrastructure as Code）项目的示例；请不要将其作为部署和管理自己高可用性
+    WordPress 安装的指南。
+- en: So, now that we have an idea of what we are going to be deploying, let us look
+    at answering some of the questions that you may have to give an idea of how we
+    are going to be approaching the deployment.
+  id: totrans-14
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们大致了解了将要部署的内容，让我们来解答一些可能出现的问题，以便更好地理解我们将如何进行部署。
+- en: How to approach the deployment of our infrastructure
+  id: totrans-15
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 如何部署我们的基础设施
+- en: 'First, as we have already mentioned, WordPress runs on top of PHP and MySQL;
+    to be more explicit, it has the following requirements:'
+  id: totrans-16
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 首先，正如我们之前提到的，WordPress 基于 PHP 和 MySQL 运行；更具体地说，它有以下要求：
+- en: A piece of web server software such as Apache or NGINX
+  id: totrans-17
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 一款 Web 服务器软件，如 Apache 或 NGINX
+- en: PHP version 7.4 or greater
+  id: totrans-18
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: PHP 版本 7.4 或更高版本
+- en: MySQL version 5.7 or greater, or MariaDB version 10.3 or greater
+  id: totrans-19
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: MySQL 版本 5.7 或更高版本，或 MariaDB 版本 10.3 或更高版本
+- en: Information
+  id: totrans-20
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 信息
+- en: Please note that, at the time of writing, PHP 8 only has beta support in WordPress
+    version 6.1; because of this, we will be installing PHP 7 in our example deployment.
+  id: totrans-21
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请注意，在写作时，PHP 8 仅在 WordPress 6.1 版本中提供 beta 支持；因此，在我们的示例部署中，我们将安装 PHP 7。
+- en: Deployment considerations
+  id: totrans-22
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 部署考虑
+- en: So, we know from our requirements that we are going to need a web server and
+    PHP installed on something, while all the cloud services we are going to be looking
+    at in the next two chapters offer some sort of application hosting as a service.
+    For our project, we are going to use **virtual machine instances** running Ubuntu.
+  id: totrans-23
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 因此，结合我们的需求，我们知道我们需要在某个地方安装 Web 服务器和 PHP，而在接下来的两章中我们将查看的所有云服务都提供某种形式的应用托管服务。对于我们的项目，我们将使用运行
+    Ubuntu 的**虚拟机实例**。
+- en: Rather than launching a single host, which would be a single point of failure,
+    let’s look at launching a minimum of two virtual machine instances to run WordPress
+    on. This approach introduces some complexity as WordPress really likes to run
+    as a fixed point, so what considerations do we need to make when running WordPress
+    across more than a single virtual machine instance?
+  id: totrans-24
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 与其启动一个单一的主机（这将是单点故障），不如考虑启动至少两个虚拟机实例来运行 WordPress。此方法引入了一些复杂性，因为 WordPress 更倾向于作为一个固定点运行。那么，在跨多个虚拟机实例运行
+    WordPress 时，我们需要考虑哪些问题呢？
+- en: Shared storage across our hosts – all the WordPress code and files should be
+    stored on a filesystem that is available across all the virtual machine instances
+    we are running. As we are running Ubuntu Linux, this should be NFS rather than
+    Samba or a Windows File share – this should be a **Platform-as-a-Service** offering
+    from the cloud provider.
+  id: totrans-25
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 跨主机共享存储——所有的 WordPress 代码和文件应该存储在一个所有虚拟机实例都可以访问的文件系统中。由于我们使用的是 Ubuntu Linux，因此应选择
+    NFS，而不是 Samba 或 Windows 文件共享——这应该是云服务提供商提供的**平台即服务**（PaaS）。
+- en: When installing WordPress using our Infrastructure as Code scripts, we should
+    look at only doing this from a single virtual machine instance and only once –
+    let’s refer to this as our **admin host**. All other hosts, or web hosts, should
+    have all the packages needed to run WordPress installed and configured, and then
+    mount the NFS share once WordPress has been successfully bootstrapped.
+  id: totrans-26
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在使用基础设施即代码脚本安装 WordPress 时，我们应该只从单一虚拟机实例进行操作，且仅执行一次——我们称之为 **管理主机**。所有其他主机或
+    Web 主机都应该安装并配置好运行 WordPress 所需的所有软件包，待 WordPress 成功启动后，再挂载 NFS 共享。
+- en: As well as needing a way of distributing traffic across our multiple virtual
+    machine instances, we are also going to have to think about how we will be serving
+    traffic for the WordPress administration section of our website.
+  id: totrans-27
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 除了需要一个分配流量到我们多个虚拟机实例的方式外，我们还需要考虑如何为我们网站的 WordPress 管理部分提供流量。
+- en: 'What about the **database**? As both the cloud services we are going to be
+    targeting offer MySQL as a service, we will be utilizing these with our deployments.
+    *Great*, you may be thinking to yourself – yes, it is one less resource we need
+    to manage on our virtual machine instances – but there are also some considerations
+    we need to make here as well, quite big ones:'
+  id: totrans-28
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**数据库**怎么办？由于我们将使用的云服务提供 MySQL 作为服务，我们将在部署中利用这些服务。*很好*，你可能会想——是的，这样就少了一个我们需要在虚拟机实例上管理的资源——但是我们也需要在这里做一些考虑，还是有一些需要注意的关键点：'
+- en: We will need to know the endpoint of the database host and the credentials we
+    need to access it before we do the initial bootstrap of WordPress.
+  id: totrans-29
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在初步启动 WordPress 之前，我们需要知道数据库主机的端点以及访问它所需的凭据。
+- en: We would want to lock down our database endpoint to only our virtual machine
+    instances, as these will be the only things that will need access to it.
+  id: totrans-30
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 我们希望将数据库端点锁定为仅允许我们的虚拟机实例访问，因为只有这些实例需要访问数据库。
+- en: We should also set up database backups!
+  id: totrans-31
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 我们还应该设置数据库备份！
+- en: 'Like the database-as-a-service and as already mentioned, we should be using
+    an as-a-service for our **shared storage** running NFS; there are some considerations
+    to make there too:'
+  id: totrans-32
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 和数据库即服务一样，正如前面提到的，我们应该为我们的 **共享存储** 使用 NFS 作为服务；这里也有一些考虑事项：
+- en: We need to know the NFS endpoints so they can be mounted before we bootstrap
+    WordPress, as we are going to need WordPress to be correctly installed before
+    we launch the additional virtual machine instances
+  id: totrans-33
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 我们需要知道 NFS 端点，以便在启动 WordPress 之前将其挂载，因为在启动额外的虚拟机实例之前，我们需要确保 WordPress 已经正确安装。
+- en: Again, like the database, the NFS service needs to be locked down to only allow
+    trusted virtual machine instances to be able to connect to it – we don’t want
+    just anyone to be able to connect randomly and be able to browse/download the
+    contents of our filesystem
+  id: totrans-34
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 同样地，像数据库一样，NFS 服务需要被限制为仅允许受信任的虚拟机实例连接——我们不希望任何人都能够随意连接并浏览/下载我们的文件系统内容。
+- en: 'There are other aspects we also need to think about in our deployment:'
+  id: totrans-35
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在部署过程中，我们还需要考虑其他方面：
+- en: '**Private networking**: As we want to lock things down, we will need some sort
+    of internal network to launch our resources into'
+  id: totrans-36
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**私有网络**：由于我们希望对资源进行限制，我们将需要某种内部网络来启动我们的资源。'
+- en: '**Load balancing**: We need a Layer 7 load-balancing service to distribute
+    traffic across our backend services'
+  id: totrans-37
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**负载均衡**：我们需要一个第七层负载均衡服务，将流量分配到我们的后端服务。'
+- en: '**Bootstrapping**: We will need to bootstrap both the software stack and WordPress
+    itself on the virtual machine instances'
+  id: totrans-38
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**启动**：我们需要在虚拟机实例上启动软件栈和 WordPress 本身。'
+- en: Now that we are aware of the key considerations, let’s look at the specific
+    tasks that we will need to perform for deployment.
+  id: totrans-39
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经了解了关键的考虑事项，让我们来看一下需要执行的具体部署任务。
+- en: Performing deployment tasks
+  id: totrans-40
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 执行部署任务
+- en: 'Based on the information in the previous section, we have a rough idea of what
+    needs to happen and in which order. This all starts with launching the resources
+    in our preferred cloud provider. To deploy our workload using Infrastructure as
+    Code, we will need to perform the following tasks:'
+  id: totrans-41
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 基于上一节的信息，我们大致了解了需要发生的事情以及执行的顺序。这一切都从在我们首选的云服务提供商中启动资源开始。为了使用基础设施即代码部署我们的工作负载，我们需要执行以下任务：
+- en: Launch and configure resources required for our private network.
+  id: totrans-42
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 启动并配置我们私有网络所需的资源。
+- en: Launch and configure the database as a service.
+  id: totrans-43
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 启动并配置数据库即服务。
+- en: Launch and configure the NFS filesystem as a service.
+  id: totrans-44
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 启动并配置 NFS 文件系统作为服务。
+- en: Launch and configure the load balancer service.
+  id: totrans-45
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 启动并配置负载均衡器服务。
+- en: 'Now that we have the core resources in our cloud provider, we can perform the
+    following tasks:'
+  id: totrans-46
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们在云服务提供商那边已经有了核心资源，我们可以执行以下任务：
+- en: Gather information on the services and resources we have launched so far in
+    our cloud provider.
+  id: totrans-47
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 收集我们在云服务提供商中已启动的服务和资源的信息。
+- en: Dynamically generate the script needed to bootstrap the admin virtual machine
+    instance.
+  id: totrans-48
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 动态生成启动管理员虚拟机实例所需的脚本。
+- en: Dynamically generate the script needed to bootstrap the web virtual machine
+    instance(s).
+  id: totrans-49
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 动态生成启动 Web 虚拟机实例所需的脚本。
+- en: Once we have the scripts, we can continue to launch our workload.
+  id: totrans-50
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦我们有了脚本，就可以继续启动我们的工作负载。
+- en: 'Launch the admin virtual machine instance, attaching the script we generated;
+    this should then do the following, once it is executed when the instance first
+    boots:'
+  id: totrans-51
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 启动管理员虚拟机实例，附加我们生成的脚本；在实例首次启动时执行后，应该执行以下操作：
+- en: Run an operating system update
+  id: totrans-52
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 执行操作系统更新。
+- en: Download, install, and configure Apache, PHP, and the MySQL clients and NFS
+    clients
+  id: totrans-53
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 下载、安装并配置 Apache、PHP、MySQL 客户端和 NFS 客户端。
+- en: Configure the remote NFS share by creating the mount points, setting it to mount
+    on boot, and also ensuring that the NFS share is mounted before progressing any
+    further
+  id: totrans-54
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 通过创建挂载点、设置开机挂载，并确保在继续之前 NFS 共享已挂载，来配置远程 NFS 共享。
+- en: Download WordPress, bootstrap the database, and configure the site
+  id: totrans-55
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 下载 WordPress，初始化数据库，并配置网站。
+- en: Start the webserver and make sure that all the services we have installed and
+    configured are configured to start after a reboot
+  id: totrans-56
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 启动 Web 服务器并确保我们安装和配置的所有服务都已配置为在重启后自动启动。
+- en: 'Now that the admin virtual machine instance has been launched, we hopefully
+    have a working copy of WordPress stored on our NFS share, meaning we can progress
+    with the remaining web virtual machine instances:'
+  id: totrans-57
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在管理员虚拟机实例已经启动，我们希望在我们的 NFS 共享上有一个工作中的 WordPress 副本，这意味着我们可以继续配置其余的 Web 虚拟机实例：
+- en: 'Launch the web virtual machine instances, attaching the script we generated;
+    this should then do the following, once it is executed when the instance boots:'
+  id: totrans-58
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 启动 Web 虚拟机实例，附加我们生成的脚本；在实例启动时执行后，应该执行以下操作：
+- en: Run an operating system update
+  id: totrans-59
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 执行操作系统更新。
+- en: Download, install, and configure Apache, PHP, and the MySQL clients and NFS
+    clients
+  id: totrans-60
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 下载、安装并配置 Apache、PHP、MySQL 客户端和 NFS 客户端。
+- en: Configure the remote NFS share by creating the mount points, setting it to mount
+    on boot, and ensuring that the NFS share is mounted before progressing any further
+  id: totrans-61
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 通过创建挂载点、设置开机挂载并确保 NFS 共享在继续之前已挂载，来配置远程 NFS 共享。
+- en: Start the webserver and ensure all the services we have installed and configured
+    will start after a reboot
+  id: totrans-62
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 启动 Web 服务器并确保我们安装和配置的所有服务在重启后会自动启动。
+- en: We should now have – if everything has gone as planned – a working WordPress
+    installation across a small number of virtual machine instances, which leaves
+    us with one last task.
+  id: totrans-63
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果一切按计划进行，我们现在应该有一个工作中的 WordPress 安装，分布在少数几个虚拟机实例上，这也只剩下最后一个任务。
+- en: Register all the virtual machine instances with the load balancer so they can
+    start receiving traffic.
+  id: totrans-64
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 将所有虚拟机实例注册到负载均衡器，以便它们开始接收流量。
+- en: There are a few other cloud provider-specific tasks, which we will get into
+    in the next few chapters as we get lower into the design and start to write our
+    Infrastructure as Code; that sums up the tasks we will need to complete in the
+    rough order they need to be executed.
+  id: totrans-65
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 还有一些云服务提供商特定的任务，我们将在接下来的几章中讨论，当我们深入设计并开始编写基础设施即代码时；这总结了我们需要按大致顺序完成的任务。
+- en: Back in [*Chapter 2*](B19537_02.xhtml#_idTextAnchor085)*, Ansible and Terraform
+    beyond the Documentation*, one of the points we mentioned was that Terraform isn’t
+    really designed to be used to deploy and configure the software – it’s not that
+    straightforward for it to SSH into a virtual machine host to install and configure
+    the software stack, so how are we going to do that?
+  id: totrans-66
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在[*第2章*](B19537_02.xhtml#_idTextAnchor085)*《Ansible 和 Terraform 超越文档》*中，我们提到过一个观点，那就是
+    Terraform 并不完全设计用于部署和配置软件——它并不那么简单，不能直接 SSH 进入虚拟机主机来安装和配置软件栈，那么我们该如何做到呢？
+- en: Let’s answer that now, by using a tool called **cloud-init**.
+  id: totrans-67
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们现在回答这个问题，使用一个叫做**cloud-init**的工具。
+- en: Introducing cloud-init
+  id: totrans-68
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 引入 cloud-init。
+- en: In *steps 6* and *7* of the tasks we listed in the previous section, we talk
+    about generating a script – this will be a `cloud-init` script. This is a cloud
+    and Linux operating system-agnostic tool used for bootstrapping instances as they
+    boot.
+  id: totrans-69
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在上一节中列出的*第6步*和*第7步*中，我们讨论了生成一个脚本——这将是一个 `cloud-init` 脚本。这是一个与云和 Linux 操作系统无关的工具，用于在实例启动时进行引导。
+- en: It is supported on both Microsoft Azure and Amazon Web Services, and we will
+    be using our Infrastructure as Code tools to populate a base template with the
+    information gathered on the resources that have been launched, such as SQL and
+    NFS endpoints, and then attach the output to the virtual machine instances when
+    they are launched.
+  id: totrans-70
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 它在 Microsoft Azure 和 Amazon Web Services 上都受支持，我们将使用基础设施即代码工具根据已启动资源（如 SQL 和
+    NFS 端点）收集的信息填充一个基础模板，然后在启动虚拟机实例时将输出附加到这些实例。
+- en: 'What follows is an example `cloud-init` script, which, when deployed with a
+    virtual machine instance, will do the following tasks:'
+  id: totrans-71
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是一个示例 `cloud-init` 脚本，部署到虚拟机实例时将执行以下任务：
+- en: Update all of the packages which are already installed on the virtual machine
+    to ensure we are fully patched.
+  id: totrans-72
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 更新虚拟机上已安装的所有软件包，以确保我们已完全打上补丁。
+- en: Install NGINX.
+  id: totrans-73
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 安装 NGINX。
+- en: Create a default NGINX site.
+  id: totrans-74
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建一个默认的 NGINX 站点。
+- en: Create an example `index.html` file and place it in the root of the default
+    NGINX site we configured in *step 2*.
+  id: totrans-75
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建一个示例 `index.html` 文件，并将其放置在我们在*第2步*中配置的默认 NGINX 站点根目录中。
+- en: Restart the NGINX service to pick up the new configuration.
+  id: totrans-76
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 重启 NGINX 服务以加载新的配置。
+- en: 'To action these steps, the script looks like the following:'
+  id: totrans-77
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 执行这些步骤的脚本如下所示：
+- en: '[PRE0]'
+  id: totrans-78
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: As you can see, it is relatively straightforward to read and follow along with
+    what is happening; the one we will be using to deploy WordPress is a little more
+    complicated as it is going to do a lot more than the example we have just given
+    – but more on that in [*Chapter 4*](B19537_04.xhtml#_idTextAnchor151), *Deploying
+    to Microsoft Azure*, and [*Chapter 5*](B19537_05.xhtml#_idTextAnchor268), *Deploying
+    to Amazon* *Web Services*.
+  id: totrans-79
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如你所看到的，阅读和跟随发生的事情相对简单；我们将用于部署 WordPress 的方法要复杂一些，因为它将执行比我们刚刚给出的示例更多的操作——但更多内容会在[*第4章*](B19537_04.xhtml#_idTextAnchor151)，“*部署到
+    Microsoft Azure*” 和 [*第5章*](B19537_05.xhtml#_idTextAnchor268)，“*部署到 Amazon* *Web
+    Services*”中介绍。
+- en: Information
+  id: totrans-80
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 信息
+- en: Please note that while the example above used NGINX as the webserver, we will
+    use Apache for the web server in our Wordpress deployment.
+  id: totrans-81
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请注意，虽然上面的示例使用了 NGINX 作为 Web 服务器，但我们将在 WordPress 部署中使用 Apache 作为 Web 服务器。
+- en: This means that we will still be able to use the programmatic parts of Terraform
+    to configure our virtual machine instances without having to SSH into them. For
+    Ansible, in [*Chapter 6*](B19537_06.xhtml#_idTextAnchor350), *Building upon the
+    Foundations*, we will be taking a slightly different approach where we will use
+    SSH to log in to our virtual machine to be able to make changes to the software
+    stack and its configuration.
+  id: totrans-82
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这意味着我们仍然可以使用 Terraform 的程序化部分配置虚拟机实例，而无需通过 SSH 进入它们。对于 Ansible，在[*第6章*](B19537_06.xhtml#_idTextAnchor350)，“*在基础之上构建*”中，我们将采取稍微不同的方法，通过
+    SSH 登录到虚拟机，以便对软件堆栈及其配置进行更改。
+- en: Now that we know the steps we are going to be taking to deploy our workload,
+    let’s visualize what it is going to look like.
+  id: totrans-83
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们知道了要采取的部署工作负载的步骤，让我们直观地了解它将如何呈现。
+- en: Exploring the high-level architecture
+  id: totrans-84
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 探索高层次架构
+- en: 'Now that we know what we are going to be deploying, we should have a good idea
+    of what the high-level architecture is going to look like. The following diagram
+    shows a cloud-agnostic overview of how the resources we are going to be deploying
+    across the next two chapters are going to hang together:'
+  id: totrans-85
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们知道了要部署的内容，我们应该对高层次架构有一个清晰的了解。以下图表展示了我们将在接下来两章中部署的资源如何结合在一起的云无关概览：
+- en: '![Figure 3.1 – An overview of our high-level cloud architecture](img/Figure_3.01_B19537.jpg)'
+  id: totrans-86
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 3.1 – 我们高层次云架构的概述](img/Figure_3.01_B19537.jpg)'
+- en: Figure 3.1 – An overview of our high-level cloud architecture
+  id: totrans-87
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 3.1 – 我们高层次云架构的概述
+- en: 'From a software stack perspective, each of the virtual machine instances will
+    look like the following:'
+  id: totrans-88
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 从软件堆栈的角度来看，每个虚拟机实例将如下所示：
+- en: '![Figure 3.2 – An overview of our high-level software architecture](img/Figure_3.02_B19537.jpg)'
+  id: totrans-89
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 3.2 – 我们高层次软件架构的概述](img/Figure_3.02_B19537.jpg)'
+- en: Figure 3.2 – An overview of our high-level software architecture
+  id: totrans-90
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 3.2 – 我们高层次软件架构的概述
+- en: While this is not the most verbose high-level design, we now have a good idea
+    of what it is we need to code to deploy our WordPress-based workload.
+  id: totrans-91
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 虽然这并不是最详尽的高层设计，但我们已经大致了解了为部署基于WordPress的工作负载需要编写哪些代码。
+- en: Summary
+  id: totrans-92
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 总结
+- en: In this chapter, we have spoken about the example project we are going to look
+    at deploying into Microsoft Azure and Amazon Web Services in the next two chapters
+    using both Terraform and Ansible. While we have kept the discussion at a high
+    level and aimed to be as cloud-agnostic as possible, we know the tasks we need
+    to follow and roughly how we will get around the limitation of Terraform not really
+    being a tool you can use to manage your application deployment.
+  id: totrans-93
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们讨论了即将在接下来的两章中，使用Terraform和Ansible将示例项目部署到微软Azure和亚马逊Web服务的情况。尽管我们保持了较高的讨论层次，并尽可能地做到云平台中立，但我们已经清楚需要执行的任务，并大致了解如何绕过Terraform作为工具在应用程序部署管理上的局限性。
+- en: Now that we know what our cloud and software architecture is going to look like,
+    as well as having an idea of the order in which we need to deploy the resources,
+    we can make a start on getting into the low-level design and the actual deployments.
+    In our next chapter, we will look at deploying the workload discussed to Microsoft
+    Azure.
+  id: totrans-94
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经知道了云和软件架构的总体情况，并且对资源部署的顺序有了一定的了解，我们可以开始进行低层设计和实际的部署工作。在下一章中，我们将开始部署到微软Azure上讨论的工作负载。
+- en: Further reading
+  id: totrans-95
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 深入阅读
+- en: 'You can find more details on the software we have mentioned in this chapter
+    at the following URLs:'
+  id: totrans-96
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以在以下网址找到更多我们在本章提到的软件的详细信息：
+- en: 'WordPress: [https://wordpress.org/](https://wordpress.org/)'
+  id: totrans-97
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 'WordPress: [https://wordpress.org/](https://wordpress.org/)'
+- en: 'PHP: [https://www.php.net/](https://www.php.net/)'
+  id: totrans-98
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 'PHP: [https://www.php.net/](https://www.php.net/)'
+- en: 'MySQL: [https://www.mysql.com/](https://www.mysql.com/)'
+  id: totrans-99
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 'MySQL: [https://www.mysql.com/](https://www.mysql.com/)'
+- en: 'NGINX: [https://nginx.org/](https://nginx.org/)'
+  id: totrans-100
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 'NGINX: [https://nginx.org/](https://nginx.org/)'
+- en: '`cloud-init`: [https://cloud-init.io/](https://cloud-init.io/)'
+  id: totrans-101
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`cloud-init`: [https://cloud-init.io/](https://cloud-init.io/)'
+- en: 'Part 2: Getting Hands-On with the Deployment'
+  id: totrans-102
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 第二部分：动手部署
+- en: Now that we have an understanding of the tools we are going to be using and
+    also have an idea of the tasks we need to execute to deploy our example workload,
+    it is time to roll up our sleeves and make a start on the code and deploy it.
+  id: totrans-103
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经了解了将要使用的工具，并且对需要执行的任务有了初步的认识，接下来是时候卷起袖子，开始编写代码并进行部署了。
+- en: In this part, we will be deploying the workload using Terraform and Ansible
+    in Microsoft Azure and Amazon Web Services and discussing how we could build upon
+    the scripts.
+  id: totrans-104
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本部分中，我们将使用Terraform和Ansible在微软Azure和亚马逊Web服务中部署工作负载，并讨论如何在脚本上进行扩展。
+- en: 'This part has the following chapters:'
+  id: totrans-105
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本部分包含以下章节：
+- en: '[*Chapter 4*](B19537_04.xhtml#_idTextAnchor151)*, Deploying to Microsoft Azure*'
+  id: totrans-106
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '[*第4章*](B19537_04.xhtml#_idTextAnchor151)*，部署到微软Azure*'
+- en: '[*Chapter 5*](B19537_05.xhtml#_idTextAnchor268)*, Deploying to Amazon Web Services*'
+  id: totrans-107
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '[*第5章*](B19537_05.xhtml#_idTextAnchor268)*，部署到亚马逊Web服务*'
+- en: '[*Chapter 6*](B19537_06.xhtml#_idTextAnchor350)*, Building upon the Foundations*'
+  id: totrans-108
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '[*第6章*](B19537_06.xhtml#_idTextAnchor350)*，在基础上构建*'

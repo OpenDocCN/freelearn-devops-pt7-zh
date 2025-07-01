@@ -1,0 +1,1143 @@
+- en: Chapter 2. Simple Playbooks
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 第 2 章。简单的剧本
+- en: Ansible can be used as a command-line tool for making small changes. However,
+    its real power lies in its scripting abilities. While setting up machines, we
+    almost always need to do more than one thing at a time. Ansible uses a concept
+    named **playbook** to do this. Using playbooks, we can perform many actions at
+    once, and across multiple systems. They provide a way to orchestrate deployments,
+    ensure a consistent configuration, or simply perform a common task.
+  id: totrans-1
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 可以用作命令行工具来进行小改变。但是，它的真正力量在于其脚本能力。在设置机器时，我们几乎总是需要同时做多件事情。Ansible 使用名为**剧本**的概念来实现此目的。使用剧本，我们可以一次执行多个操作，并跨多个系统执行。它们提供了一种协调部署、确保一致配置或简单执行常见任务的方法。
+- en: Playbooks are expressed in **YAML,** and for the most part, Ansible uses a standard
+    YAML parser. This means that we have all the features of YAML available to us
+    as we write them. For example, we can use the same commenting system in playbook
+    as we would in YAML. Many lines of a playbook can also be written and represented
+    in YAML data types. See [http://www.yaml.org/](http://www.yaml.org/) for more
+    information.
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 剧本以**YAML**表示，大部分情况下，Ansible 使用标准的 YAML 解析器。这意味着我们在编写时可以利用 YAML 提供给我们的所有功能。例如，在剧本中我们可以像在
+    YAML 中一样使用相同的注释系统。许多剧本的行也可以用 YAML 数据类型编写和表示。更多信息请参阅 [http://www.yaml.org/](http://www.yaml.org/)。
+- en: Playbooks also open up many opportunities. They allow us to carry the state
+    from one command to the other. For example, we can grab the content of a file
+    on one machine, register it as a variable, and then use the value on another machine.
+    This allows us to make complex deployment mechanisms that will be impossible with
+    the Ansible command alone. Additionally, since each module tries to be idempotent,
+    we should be able to run a playbook several times and changes will only be made
+    if they need to be.
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 剧本还打开了许多机会。它们允许我们在一个命令到另一个命令之间传递状态。例如，我们可以在一台机器上获取文件的内容，将其注册为变量，然后在另一台机器上使用该值。这使我们能够创建使用
+    Ansible 命令单独无法实现的复杂部署机制。此外，由于每个模块都试图是幂等的，我们应该能够多次运行剧本，只有在需要时才会进行更改。
+- en: 'The command to execute a playbook is `ansible-playbook`. It accepts arguments
+    similar to the Ansible command-line tool. For example, `-k` (`--ask-pass`) and
+    `-K` (`--ask-sudo`) make Ansible prompt for the SSH and sudo passwords, respectively;
+    `-u` can be used to set the user to use for SSH. However, these options can also
+    be set inside the playbooks themselves in the target section. For example, to
+    use the play named `example-play.yml`, we can use the following command:'
+  id: totrans-4
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 执行剧本的命令是 `ansible-playbook`。它接受类似 Ansible 命令行工具的参数。例如，`-k`（`--ask-pass`）和`-K`（`--ask-sudo`）使
+    Ansible 分别提示 SSH 和 sudo 密码；`-u` 可用于设置用于 SSH 的用户。但是，这些选项也可以在剧本自身的目标部分中设置。例如，要使用名为
+    `example-play.yml` 的播放，我们可以使用以下命令：
+- en: '[PRE0]'
+  id: totrans-5
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: 'The Ansible playbooks are made up of one or more plays. A play consists of
+    three sections:'
+  id: totrans-6
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 剧本由一个或多个播放组成。一个播放包括三个部分：
+- en: The **target section** defines the hosts on which the play will be run, and
+    how it will be run. This is where we set the SSH username and other SSH-related
+    settings.
+  id: totrans-7
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**目标部分** 定义了将在其上运行播放的主机以及如何运行。这是我们设置 SSH 用户名和其他 SSH 相关设置的地方。'
+- en: The **variable section** defines variables, which will be made available to
+    the play while running.
+  id: totrans-8
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**变量部分** 定义了在运行时将提供给剧本的变量。'
+- en: The **task section** lists all the modules in the order we want them to be run
+    by Ansible.
+  id: totrans-9
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**任务部分** 按我们希望 Ansible 运行的模块顺序列出所有模块。'
+- en: We can include as many plays as we want in a single YAML file. YAML files start
+    with `---` and contain many key values and lists. In YAML line indentation is
+    used to indicate variable nesting to the parser, which also makes the file easier
+    to read.
+  id: totrans-10
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以在单个 YAML 文件中包含尽可能多的剧本。YAML 文件以`---`开头，包含许多键值和列表。在 YAML 中，行缩进用于指示变量的嵌套给解析器，这也使文件更易于阅读。
+- en: 'A full example of an Ansible play looks like the following code snippet:'
+  id: totrans-11
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 完整的 Ansible 播放示例如下代码片段所示：
+- en: '[PRE1]'
+  id: totrans-12
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: In the next few sections, we will examine each section and explain in detail
+    how they work.
+  id: totrans-13
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在接下来的几节中，我们将检查每个部分，并详细解释它们的工作方式。
+- en: The target section
+  id: totrans-14
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 目标部分
+- en: 'The target section looks like the following code snippet:'
+  id: totrans-15
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 目标部分看起来像以下的代码片段：
+- en: '[PRE2]'
+  id: totrans-16
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: This is an incredibly simple version, but likely to be all we need in most cases.
+    Each play exists within a list. As per the YAML syntax, the line must start with
+    a dash. The hosts that a play will be run on must be set in the value of `hosts`.
+    This value uses the same syntax as the one used when selecting hosts using the
+    Ansible command line, which we discussed in the previous chapter. The host-pattern-matching
+    features of Ansible were also discussed in the previous chapter. In the next line,
+    the user tells the Ansible playbook which user to connect to the machine as.
+  id: totrans-17
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这是一个非常简单的版本，但在大多数情况下可能足够使用。每个播放都存在于一个列表中。根据YAML语法，该行必须以破折号开始。播放将运行的主机必须在`hosts`的值中设置。该值使用与在前一章中讨论的Ansible命令行中选择主机时相同的语法。Ansible的主机模式匹配功能也在前一章中讨论过。在下一行中，用户告诉Ansible剧本以哪个用户身份连接到机器。
+- en: 'The other lines that we can provide in this section are as follows:'
+  id: totrans-18
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以在此部分提供的其他行如下：
+- en: '| Name | Description |'
+  id: totrans-19
+  prefs: []
+  type: TYPE_TB
+  zh: '| 名称 | 描述 |'
+- en: '| --- | --- |'
+  id: totrans-20
+  prefs: []
+  type: TYPE_TB
+  zh: '| --- | --- |'
+- en: '| `sudo` | Set this to `yes` if you want Ansible to use `sudo` to become the
+    root once it is connected to the machines in the play. |'
+  id: totrans-21
+  prefs: []
+  type: TYPE_TB
+  zh: '| `sudo` | 如果希望Ansible在连接到播放中的机器后使用`sudo`成为root用户，请将其设置为`yes`。 |'
+- en: '| `user` | This defines the username to connect to the machine originally,
+    before running `sudo` if configured. |'
+  id: totrans-22
+  prefs: []
+  type: TYPE_TB
+  zh: '| `user` | 这定义了最初连接到机器的用户名，然后如果已配置`sudo`，将运行`sudo`。 |'
+- en: '| `sudo_user` | This is the user that Ansible will try and become using `sudo`.
+    For example, if we set `sudo` to `yes` and `user` to `daniel`, setting `sudo_user`
+    to `kate` will cause Ansible to use `sudo` to get from `daniel` to `kate` once
+    logged in. If you were doing this in an interactive SSH session, we could use
+    `sudo -u kate` while you are logged in as `daniel`. |'
+  id: totrans-23
+  prefs: []
+  type: TYPE_TB
+  zh: '| `sudo_user` | 这是Ansible尝试使用`sudo`切换为的用户。例如，如果我们将`sudo`设置为`yes`，并将`user`设置为`daniel`，将`sudo_user`设置为`kate`，则会导致Ansible在登录后使用`sudo`从`daniel`切换到`kate`。如果你在交互式SSH会话中进行此操作，我们可以在以`daniel`登录时使用`sudo
+    -u kate`。 |'
+- en: '| `connection` | This allows us to tell Ansible what transport to use to connect
+    to the remote host. We will mostly use `ssh` or `paramiko` for remote hosts. However,
+    we could also use `local` to avoid a connection overhead when running things on
+    the `localhost`. Most of the time we will be using either `local`, `winrm` or
+    `ssh` here. |'
+  id: totrans-24
+  prefs: []
+  type: TYPE_TB
+  zh: '| `connection` | 这允许我们告诉Ansible使用何种传输方式连接远程主机。对于远程主机，我们通常使用`ssh`或`paramiko`。不过，我们也可以使用`local`来避免在运行`localhost`时产生连接开销。通常，我们会在此使用`local`、`winrm`或`ssh`。
+    |'
+- en: '| `gather_facts` | Ansible will automatically run the setup module on the remote
+    hosts unless we tell it not to. If we don''t need the variables from the setup
+    module, we could set this now and save some time. |'
+  id: totrans-25
+  prefs: []
+  type: TYPE_TB
+  zh: '| `gather_facts` | 除非我们告诉它不要，否则Ansible将自动在远程主机上运行setup模块。如果我们不需要来自setup模块的变量，可以现在设置此项并节省一些时间。
+    |'
+- en: The variable section
+  id: totrans-26
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 变量部分
+- en: Here, we can define variables that apply to the entire play on all machines.
+    We can also make Ansible prompt for variables if they weren't supplied on the
+    command line. This allows us to make easily maintainable plays, and prevents us
+    from changing the same thing in several parts of the play. This also allows us
+    to have the entire configuration for the play stored at the top, where we can
+    easily read and modify it without worrying about what the rest of the play does.
+  id: totrans-27
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这里，我们可以定义适用于所有机器的整个播放的变量。如果在命令行中未提供变量，Ansible还可以提示用户输入变量。这使得我们可以轻松维护播放，避免在多个地方更改相同的内容。它还允许我们将整个配置存储在播放的顶部，在这里我们可以轻松阅读和修改它，而不必担心播放的其他部分。
+- en: Variables in this section of a play can be overridden by machine facts (those
+    that are set by modules), but they themselves override the facts we set in our
+    inventory. So they are useful to define defaults that we might collect in a module
+    later, but they can't be used to keep defaults for inventory variables as they
+    will override those defaults.
+  id: totrans-28
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 该部分的变量可以被机器事实（由模块设置的事实）覆盖，但它们本身会覆盖我们在清单中设置的事实。因此，它们用于定义我们可能在以后通过模块收集的默认值，但不能用于保持清单变量的默认值，因为它们会覆盖这些默认值。
+- en: 'Variable declarations, which happen in the `vars` section, look like the values
+    in the target section and contain a YAML dictionary or a list. An example looks
+    like the following code snippet:'
+  id: totrans-29
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 变量声明发生在`vars`部分，类似目标部分中的值，并包含一个YAML字典或列表。示例如下所示的代码片段：
+- en: '[PRE3]'
+  id: totrans-30
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: Variables can also be loaded from external YAML files by giving Ansible a list
+    of variable files to load. This is done in a similar way using the `vars_files`
+    directive. Then simply provide the name of another YAML file that contains its
+    own dictionary. This means that instead of storing the variables in the same file,
+    they can be stored and distributed separately, allowing us to share our playbook
+    with others.
+  id: totrans-31
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 变量也可以通过提供要加载的变量文件列表从外部 YAML 文件加载。这通过类似的方式使用 `vars_files` 指令完成。然后简单地提供另一个包含自己字典的
+    YAML 文件的名称。这意味着，我们可以将变量存储并分别分发，而不是将它们存储在同一个文件中，这样我们就可以与他人共享我们的 playbook。
+- en: 'Using `vars_files`, the files look like the following code snippet in our playbook:'
+  id: totrans-32
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用 `vars_files`，这些文件在我们的 playbook 中看起来类似于以下代码片段：
+- en: '[PRE4]'
+  id: totrans-33
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: 'In the previous example, Ansible looks for `country-AU.yml`, `datacenter-SYD.yml`,
+    and `cluster-mysql.yml` in the `conf` folder relative to the playbook path. Each
+    YAML file looks similar to the following code snippet:'
+  id: totrans-34
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在之前的示例中，Ansible 会在相对于 playbook 路径的 `conf` 文件夹中查找 `country-AU.yml`、`datacenter-SYD.yml`
+    和 `cluster-mysql.yml`。每个 YAML 文件看起来类似于以下代码片段：
+- en: '[PRE5]'
+  id: totrans-35
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: Finally, we can make Ansible ask the user for each variable interactively. This
+    is useful when we have variables that we don't want to make available for automation,
+    and instead require human input. One example where this is useful is when prompting
+    for the passphrases used to decrypt secret keys for the HTTPS servers.
+  id: totrans-36
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后，我们可以让 Ansible 以交互方式向用户询问每个变量。这在我们有一些不希望用于自动化的变量时非常有用，而是需要人工输入。一个有用的例子是当需要提示用户输入解密
+    HTTPS 服务器的密钥密码时。
+- en: 'We can instruct Ansible to prompt for variables with the following code snippet:'
+  id: totrans-37
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以通过以下代码片段指示 Ansible 提示输入变量：
+- en: '[PRE6]'
+  id: totrans-38
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: In the previous example, `https_passphrase` is where the entered data will be
+    stored. The user will be prompted with `Key Passphrase`, and because `private`
+    is set to `yes`, the value will not be printed on the screen as the user enters
+    it.
+  id: totrans-39
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在之前的示例中，`https_passphrase` 是输入的数据存储的位置。系统会提示用户输入 `Key Passphrase`，由于 `private`
+    设置为 `yes`，用户输入的值将不会在屏幕上显示。
+- en: We can use variables, facts, and inventory variables with the help of `{{ variablename
+    }}`. We can even refer to complex variables, such as dictionaries, with a dotted
+    notation. For example a variable named `httpd`, with a key in it named `maxclients`,
+    will be accessed as `{{ httpd.maxclients }}`. This works with facts from the setup
+    module too. For example, we can get the IPv4 address of a network interface named
+    `eth0` using `{{ ansible_eth0.ipv4.address }}`.
+  id: totrans-40
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以使用 `{{ variablename }}` 来引用变量、事实和库存变量。我们甚至可以通过点表示法引用复杂的变量，例如字典。例如，一个名为 `httpd`
+    的变量，其键为 `maxclients`，可以通过 `{{ httpd.maxclients }}` 进行访问。这对于来自 setup 模块的事实也同样适用。例如，我们可以使用
+    `{{ ansible_eth0.ipv4.address }}` 获取名为 `eth0` 的网络接口的 IPv4 地址。
+- en: Variables that are set in the variable section do not survive between different
+    plays in the same playbook. However, facts gathered by the setup module or set
+    by `set_fact` do. This means if we are running a second play on the same machines,
+    or a subset of the machines in an earlier play, we can set `gather_facts` in the
+    target section to `false`. The `setup` module can sometimes take a while to run,
+    so this can dramatically speed up plays, especially in plays where the serial
+    is set to a low value.
+  id: totrans-41
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在变量部分设置的变量不会在同一个 playbook 中的不同 plays 之间保留。然而，通过 setup 模块收集的事实或通过 `set_fact`
+    设置的事实会保留。这意味着，如果我们在同一台机器或先前 play 中的一部分机器上运行第二个 play，我们可以在目标部分将 `gather_facts`
+    设置为 `false`。`setup` 模块有时需要较长时间运行，因此这可以显著加快 plays 的速度，特别是在 serial 设置为较小值的 plays
+    中。
+- en: The task section
+  id: totrans-42
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 任务部分
+- en: 'The task section is the last section of each play. It contains a list of actions
+    that we want Ansible to perform in the order we want them to be performed. There
+    are several styles in which we can express each module''s arguments. We suggest
+    you try to stick with one as much as possible, and use the others only when required.
+    This makes our playbooks easier to read and maintain. The following code snippet
+    is what a task section looks like with all three styles shown:'
+  id: totrans-43
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 任务部分是每个 play 的最后一个部分。它包含我们希望 Ansible 按顺序执行的操作列表。我们可以以几种不同的方式表示每个模块的参数。建议尽可能坚持使用一种方式，只有在需要时才使用其他方式。这样可以使我们的
+    playbooks 更容易阅读和维护。以下代码片段展示了任务部分的三种风格：
+- en: '[PRE7]'
+  id: totrans-44
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE7]'
+- en: Here we see the three different styles of syntax being used to install, configure,
+    and start the Apache web server as it will look on a CentOS machine. The first
+    task shows us how to install Apache using the original syntax, which requires
+    us to call the module as the first keyword inside an `action` key. The second
+    task copies Apache's configuration file into place using the second style of the
+    task. In this style, use the module name in place of the `action` keyword and
+    its value simply becomes its argument. Finally, the last task, the third style,
+    shows how to use the service module to restart Apache. In this style, we use the
+    module name as the key, as usual, but we supply the arguments as a YAML dictionary.
+    This can come in handy when we are providing a large number of arguments to a
+    single module, or if the module wants the arguments in a complex form, such as
+    the cloud formation module. The latter style is quickly becoming the preferred
+    way of writing playbooks, as an increasing number of modules require complex arguments.
+    In this book, we will be using this style in order to save space for the examples
+    and prevent line wrapping.
+  id: totrans-45
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这里，我们看到使用三种不同的语法样式来安装、配置并启动 Apache Web 服务器的方式，所展示的是在 CentOS 机器上的表现。第一个任务展示了如何使用原始语法安装
+    Apache，这需要我们将模块作为 `action` 键中的第一个关键字调用。第二个任务使用第二种任务样式将 Apache 配置文件复制到位。在这种样式中，模块名称取代
+    `action` 关键字，其值直接成为模块的参数。最后，第三个任务展示了如何使用服务模块重启 Apache。在这种样式中，我们像往常一样将模块名称用作键，但我们将参数提供为
+    YAML 字典。当我们向单个模块提供大量参数，或模块需要复杂形式的参数时（如云形成模块），这种样式会特别有用。随着越来越多的模块需要复杂的参数，后一种样式正迅速成为编写
+    playbook 的首选方式。在本书中，为了节省示例空间并避免行换行，我们将使用这种样式。
+- en: Note that names are not required for tasks. However, they make good documentation
+    and allow us to refer to each task later on, if required. This will become useful
+    especially when we come to handlers. The names are also outputted to the console
+    when the playbook is run, so that the user can tell what is happening. If we don't
+    provide a name, Ansible will just use the action line of the task or the handler.
+  id: totrans-46
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请注意，任务名称不是必需的。然而，它们有助于良好的文档记录，并允许我们在需要时引用每个任务。尤其是在处理程序部分，这将变得非常有用。当 playbook
+    执行时，任务名称也会输出到控制台，用户可以看到正在发生什么。如果我们没有提供名称，Ansible 将使用任务或处理程序的操作行。
+- en: Note
+  id: totrans-47
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: Unlike other configuration management tools, Ansible does not provide a fully
+    featured dependency system. This is a blessing and a curse; with a complete dependency
+    system, we can get to a point where we are never quite sure what changes will
+    be applied to a particular machine. Ansible, however, does guarantee that our
+    changes will be executed in the order they are written. So, if one module depends
+    on another module that is executed before it, simply place one before the other
+    in the playbook.
+  id: totrans-48
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 与其他配置管理工具不同，Ansible 不提供完整的依赖系统。这既是一个祝福也是一个诅咒；拥有完整的依赖系统，我们可能会陷入一个困境，即始终不确定哪些更改会应用到特定机器上。然而，Ansible
+    确保我们的更改会按照编写的顺序执行。因此，如果一个模块依赖于另一个在其之前执行的模块，只需在 playbook 中将一个模块放在另一个之前即可。
+- en: The handlers section
+  id: totrans-49
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 处理程序部分
+- en: The handlers section is syntactically the same as the task section and supports
+    the same format for calling modules. Handlers are called only when the task they
+    were called from, records that something changed during execution. To trigger
+    a handler, add a notify key to the task with the value set to the name of the
+    task.
+  id: totrans-50
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 处理程序部分在语法上与任务部分相同，并支持相同的调用模块格式。只有当调用该处理程序的任务记录了执行过程中某些内容发生了变化时，处理程序才会被调用。要触发处理程序，在任务中添加一个
+    `notify` 键，并将值设置为任务的名称。
+- en: 'Handlers are run if previously triggered when Ansible has finished running
+    the task list. They are run in the order that they are listed in the handlers
+    section, and even if they are called multiple times in the task section, they
+    will run only once. This is often used to restart daemons after they have been
+    upgraded and configured. The following play demonstrates how we will upgrade an
+    **ISC** **DHCP** (**Dynamic Host Configuration Protocol**) server to the latest
+    version, configure it, and set it to start at boot. If this playbook is run on
+    a server where the ISC DHCP daemon is already running the latest version and the
+    config files are not changed, the handler will not be called and DHCP will not
+    be restarted. Consider the following code for example:'
+  id: totrans-51
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 Ansible 完成任务列表执行后，如果之前触发过的处理程序（handlers）会被运行。它们的执行顺序是根据在 handlers 部分中列出的顺序，尽管它们在任务部分可能被多次调用，但每个处理程序只会执行一次。这通常用于在升级和配置完守护进程后重启它们。以下的
+    playbook 示例演示了如何将 **ISC** **DHCP**（**动态主机配置协议**）服务器升级到最新版本，进行配置并设置为开机启动。如果此 playbook
+    在一个已运行最新版本 ISC DHCP 守护进程且配置文件未更改的服务器上运行，则处理程序不会被调用，DHCP 也不会重启。考虑以下代码示例：
+- en: '[PRE8]'
+  id: totrans-52
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE8]'
+- en: 'Each handler can only be a single module, but we can notify a list of handlers
+    from a single task. This allows us to trigger many handlers from a single step
+    in the task list. For example, if we have just checked out a newer version of
+    any Django application, we can set a handler to migrate the database, deploy the
+    static files, and restart Apache. We can do this by simply using a YAML list on
+    the notify action. This might look something like the following code snippet:'
+  id: totrans-53
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 每个处理程序只能是一个单独的模块，但我们可以从单个任务中通知多个处理程序。这允许我们从任务列表中的一个步骤触发多个处理程序。例如，如果我们刚刚检出了任何
+    Django 应用程序的更新版本，我们可以设置一个处理程序来迁移数据库、部署静态文件并重启 Apache。我们只需在 notify 动作中使用 YAML 列表即可实现。这可能类似于以下代码片段：
+- en: '[PRE9]'
+  id: totrans-54
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE9]'
+- en: We can see that the `git` module is used to check out some public GitHub code,
+    and if that caused anything to change, it triggers the `migrate db`, `generate
+    static`, and `restart httpd` actions.
+  id: totrans-55
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以看到 `git` 模块用于检出一些公共 GitHub 代码，如果这导致了任何更改，它将触发 `migrate db`、`generate static`
+    和 `restart httpd` 动作。
+- en: The playbook modules
+  id: totrans-56
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: playbook 模块
+- en: Using modules in playbooks is a little bit different from using them in the
+    command line. This is mainly because we have many facts available from the previous
+    modules and the `setup` module. Certain modules don't work in the Ansible command
+    line because they require access to those variables. Other modules will work in
+    the command-line version, but are able to provide enhanced functionalities when
+    used in a playbook.
+  id: totrans-57
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 playbook 中使用模块与在命令行中使用它们略有不同。这主要是因为我们有很多来自先前模块和 `setup` 模块的事实（facts）。某些模块在
+    Ansible 命令行中无法使用，因为它们需要访问这些变量。其他模块则可以在命令行版本中使用，但在 playbook 中使用时，能够提供更强大的功能。
+- en: The template module
+  id: totrans-58
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 模板模块
+- en: 'One of the most frequently used examples of a module that requires facts from
+    Ansible is the `template` module. This module allows us to design an outline of
+    a configuration file and then have Ansible insert values in the right places.
+    To perform this, Ansible uses the Jinja2 templating language. In reality, the
+    Jinja2 templates can be much more complicated than this, including things such
+    as conditionals, `for` loops, and macros. The following is an example of a Jinja2
+    configuration template for configuring BIND:'
+  id: totrans-59
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一个经常使用的需要 Ansible 事实的模块示例是 `template` 模块。这个模块允许我们设计配置文件的框架，然后让 Ansible 在正确的位置插入值。为了实现这一点，Ansible
+    使用 Jinja2 模板语言。实际上，Jinja2 模板可以比这更复杂，包括条件判断、`for` 循环和宏等。以下是一个用于配置 BIND 的 Jinja2
+    配置模板示例：
+- en: '[PRE10]'
+  id: totrans-60
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE10]'
+- en: 'By convention, Jinja2 templates are named with the file extension of `.j2`;
+    however, this is not strictly required. Now let''s break this example down into
+    its parts. The example starts with the following line of code:'
+  id: totrans-61
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 按约定，Jinja2 模板的文件扩展名为 `.j2`，但这并非严格要求。现在让我们将这个示例拆解成各个部分。示例从以下代码行开始：
+- en: '[PRE11]'
+  id: totrans-62
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE11]'
+- en: This line adds a comment at the top of the file that shows which template the
+    file came from, the host, modification time of the template, and the owner. Putting
+    this somewhere in the template as a comment is a good practice, and it ensures
+    that people know what they should edit if they wish to alter it permanently.
+  id: totrans-63
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这一行在文件顶部添加了注释，显示该文件来自哪个模板、主机、模板的修改时间以及所有者。将这些信息作为注释放在模板中是一个好习惯，它确保了人们知道如果想要永久修改它，应该编辑哪些部分。
+- en: 'Later, on the fifth line, there is a `for` loop:'
+  id: totrans-64
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来，在第五行有一个 `for` 循环：
+- en: '[PRE12]'
+  id: totrans-65
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE12]'
+- en: '`For` loops go through all the elements of a list once for each item in the
+    list. They optionally assign the item to the variable of our choice so that we
+    can use it inside the loop. This one loops across all the values in `ansible_all_ipv4_addresses`,
+    which is a list provided by the `setup` module that contains all the IPv4 addresses
+    that the machine has. Inside the `for` loop, it simply adds each of them into
+    the configuration to make sure BIND will listen on that interface.'
+  id: totrans-66
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`For` 循环会遍历列表中的所有元素，对于列表中的每一项都会执行一次循环。它可以选择将当前项赋值给我们选择的变量，这样我们就可以在循环内使用它。这个循环遍历的是
+    `ansible_all_ipv4_addresses` 中的所有值，这是 `setup` 模块提供的一个列表，包含了机器的所有 IPv4 地址。在 `for`
+    循环内，它会将每个地址添加到配置中，确保 BIND 会在该接口上监听。'
+- en: 'Comments are also possible in templates such as the one on line 24:'
+  id: totrans-67
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 模板中也可以添加注释，例如第24行的示例：
+- en: '[PRE13]'
+  id: totrans-68
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE13]'
+- en: Anything in between `{#` and `#}` is simply ignored by the Jinja2 template processor.
+    This allows us to add comments in the template that do not make it into the final
+    file. This is especially handy if we are doing something complicated, setting
+    variables within the template, or if the configuration file does not allow comments.
+  id: totrans-69
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`{#` 和 `#}` 之间的内容会被 Jinja2 模板处理器忽略。这使我们能够在模板中添加注释，而这些注释不会出现在最终的文件中。如果我们正在做一些复杂的操作、在模板中设置变量，或者如果配置文件不允许注释，这特别有用。'
+- en: 'The next few lines are part of an `if` statement, which sets up `zone_type`
+    and `zone_dir` variables for use later in the template:'
+  id: totrans-70
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来的几行是一个 `if` 语句的一部分，它设置了 `zone_type` 和 `zone_dir` 变量，以便在模板中后续使用：
+- en: '[PRE14]'
+  id: totrans-71
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE14]'
+- en: Anything between `{% if %}` and `{% else %}` is ignored if the statement in
+    the `if` tag is `false`. Here we check whether the value `authorativenames` is
+    in the list of group names that apply to this host. If this is `true`, the next
+    two lines are set two custom variables. `zone_type` is set to master and `zone_dir`
+    is set to data. If this host is not in the `authorativenames` group, `zone_type`
+    and `zone_dir` will be set to `slave` and `slaves`, respectively.
+  id: totrans-72
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`{% if %}` 和 `{% else %}` 之间的内容会在 `if` 标签中的语句为 `false` 时被忽略。在这里，我们检查 `authorativenames`
+    是否在适用于该主机的组名列表中。如果为 `true`，接下来的两行将分别设置两个自定义变量。`zone_type` 被设置为 master，`zone_dir`
+    被设置为 data。如果该主机不在 `authorativenames` 组中，`zone_type` 和 `zone_dir` 将分别设置为 `slave`
+    和 `slaves`。'
+- en: 'Finally, starting at line 33, we provide the actual configuration for the zone:'
+  id: totrans-73
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后，从第33行开始，我们提供了区域的实际配置：
+- en: '[PRE15]'
+  id: totrans-74
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE15]'
+- en: We set the type to the `zone_type` variable we created earlier, and the location
+    to `zone_dir`. Finally we check whether the zone type is a slave, and if it is,
+    we configure its master to a particular IP address.
+  id: totrans-75
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将类型设置为之前创建的 `zone_type` 变量，并将位置设置为 `zone_dir`。最后，我们检查 zone 类型是否为 slave，如果是的话，我们会将它的主服务器配置为特定的
+    IP 地址。
+- en: To get this template to set up an authoritative nameserver, we need to create
+    a group in our inventory file named `authorativenames` and add some hosts under
+    it. How to do this was discussed back in [Chapter 1](part0014.xhtml "Chapter 1. Getting
+    Started with Ansible"), *Getting Started with Ansible*.
+  id: totrans-76
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了让这个模板设置一个权威的 DNS 服务器，我们需要在清单文件中创建一个名为 `authorativenames` 的组，并在其下添加一些主机。如何做到这一点在[第1章](part0014.xhtml
+    "第1章 开始使用 Ansible")，*开始使用 Ansible* 中有讨论过。
+- en: 'We can simply call the `templates` module and the facts from the machines will
+    be sent through, including the groups the machine is in. This is as simple as
+    calling any other module. The `template` module also accepts similar arguments
+    to the `copy` module such as owner, group, and mode. Consider the following code
+    for example:'
+  id: totrans-77
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以简单地调用 `templates` 模块，机器的事实信息会被传递过来，包括该机器所在的组。这和调用其他任何模块一样简单。`template` 模块也接受与
+    `copy` 模块类似的参数，比如 owner、group 和 mode。例如，考虑以下代码：
+- en: '[PRE16]'
+  id: totrans-78
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE16]'
+- en: The set_fact module
+  id: totrans-79
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: set_fact 模块
+- en: The `set_fact` module allows us to build our own facts on the machine inside
+    an Ansible play. These facts can then be used inside templates or as variables
+    in the playbook. Facts act just like arguments that come from modules such as
+    the `setup` module, in that they work on a per-host basis. We should use this
+    to avoid putting complex logic into templates. For example, if we are trying to
+    configure a buffer to take a certain percentage of RAM, we should calculate the
+    value in the playbook.
+  id: totrans-80
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`set_fact` 模块允许我们在 Ansible play 中为机器构建我们自己的事实。然后这些事实可以在模板中使用，或者作为 playbook
+    中的变量。事实就像是来自 `setup` 模块等模块的参数一样，在主机级别起作用。我们应该使用这个模块来避免将复杂的逻辑写入模板中。例如，如果我们要配置一个缓冲区来占用一定比例的内存，我们应该在
+    playbook 中进行计算。'
+- en: 'The following example shows how to use `set_fact` to configure a MySQL server
+    to have an InnoDB buffer size of approximately half of the total RAM available
+    on the machine:'
+  id: totrans-81
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下示例展示了如何使用 `set_fact` 配置 MySQL 服务器，使其 InnoDB 缓冲区大小约为机器总内存的一半：
+- en: '[PRE17]'
+  id: totrans-82
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE17]'
+- en: The first task here simply installs MySQL using yum. The second task creates
+    a fact by getting the total memory of the managed machine, dividing it by two,
+    losing any non-integer remainder, and putting it in a fact called `innodb_buffer_pool_size_mb`.
+    The next line then loads a template into `/etc/my.cnf` to configure MySQL. Finally,
+    MySQL is started and set to start at boot time. A handler is also included to
+    restart MySQL when its configuration changes.
+  id: totrans-83
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这里的第一个任务仅仅是通过 yum 安装 MySQL。第二个任务通过获取管理机的总内存，将其除以二，去掉任何非整数的余数，并将结果存入名为 `innodb_buffer_pool_size_mb`
+    的事实中。接下来的一行将一个模板加载到 `/etc/my.cnf` 中来配置 MySQL。最后，MySQL 被启动并设置为开机自启。还包括了一个处理程序，用于在
+    MySQL 配置更改时重新启动 MySQL。
+- en: 'The template then only needs to get the value of `innodb_buffer_pool_size`
+    and place it into the configuration. This means we can re-use the same template
+    in places where the buffer pool should be one-fifth of the RAM, or one-eighth,
+    and simply change the playbook for those hosts. In this case, the template will
+    look something like the following code snippet:'
+  id: totrans-84
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 模板只需要获取 `innodb_buffer_pool_size` 的值，并将其放入配置中。这意味着我们可以在需要将缓冲池大小设置为内存的五分之一或八分之一的地方重用相同的模板，并仅仅改变这些主机的剧本。在这种情况下，模板可能会像以下代码片段一样：
+- en: '[PRE18]'
+  id: totrans-85
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE18]'
+- en: We can see that in the previous template, we are simply putting the variables
+    we get from the play into the template. If the template doesn't see the `innodb_buffer_pool_size_mb`
+    fact, it simply uses a default of `128`.
+  id: totrans-86
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以看到，在之前的模板中，我们只是将从剧本中获得的变量放入模板中。如果模板没有看到 `innodb_buffer_pool_size_mb` 事实，它将使用默认值
+    `128`。
+- en: The pause module
+  id: totrans-87
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: '`pause` 模块'
+- en: The `pause` module stops the execution of a playbook for a certain period of
+    time. We can configure it to wait for a particular period, or we can make it prompt
+    for the user to continue. While effectively useless when used from the Ansible
+    command line, it can be very handy when used inside a playbook.
+  id: totrans-88
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`pause` 模块会停止剧本的执行一段时间。我们可以配置它等待特定的时间，或者让它提示用户继续。虽然在从 Ansible 命令行使用时它基本上没有用，但在剧本内部使用时它非常方便。'
+- en: Generally, the `pause` module is used when we want the user to provide confirmation
+    to continue, or if manual intervention is required at a particular point. For
+    example, if we have just deployed a new version of a web application to a server,
+    and we need to have the user check manually to make sure it looks okay before
+    we configure them to receive production traffic, we can put a pause there. It
+    is also handy to warn the user of a possible problem and give them the option
+    of continuing. This will make Ansible print out the names of the servers and ask
+    the user to press *Enter* to continue. If used with the serial key in the target
+    section, it will ask once for each group of hosts that Ansible is running on.
+    This way we can give the user the flexibility of running the deployment at our
+    own pace while they interactively monitor the progress.
+  id: totrans-89
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通常，当我们希望用户提供确认继续，或者在某个特定点需要人工干预时，会使用 `pause` 模块。例如，如果我们刚刚将新版本的 Web 应用程序部署到服务器上，并且需要让用户手动检查确保一切正常，然后再配置它们接收生产流量，我们可以在这里加入暂停。它还可以用来警告用户可能存在的问题，并让他们选择是否继续。这将使
+    Ansible 打印出服务器名称并要求用户按 *Enter* 键继续。如果与目标部分的 serial 键一起使用，它会对 Ansible 正在运行的每组主机询问一次。通过这种方式，我们可以让用户在互动监控进度的同时，以自己的节奏运行部署。
+- en: 'Less usefully, this module can simply wait for a specified period of time.
+    This is not useful always as we usually don''t know how long a particular action
+    might take, and guessing might have disastrous outcomes. We should not use it
+    for waiting for networked daemons to start up; instead we should use the `wait_for`
+    module (described in the next section) for this task. The following play demonstrates
+    using the `pause` module first in the user interactive mode and then in the timed
+    mode:'
+  id: totrans-90
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 不太有用的是，这个模块可以简单地等待指定的时间。通常它并不是很有用，因为我们通常不知道某个特定操作需要多长时间，猜测可能会导致灾难性的后果。我们不应该使用它来等待网络守护进程启动；相反，我们应该使用
+    `wait_for` 模块（在下一节中描述）来完成这个任务。以下剧本展示了先在用户交互模式下使用 `pause` 模块，然后在定时模式下使用的例子：
+- en: '[PRE19]'
+  id: totrans-91
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE19]'
+- en: The wait_for module
+  id: totrans-92
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: '`wait_for` 模块'
+- en: The `wait_for` module is used to poll a particular TCP port and not continue
+    until that port accepts a remote connection. The polling is done from the remote
+    machine. If we only provide a port, or set the host argument to `localhost`, the
+    poll will try to connect to the managed machine. We can utilize `local_action`
+    to run the command from the controller machine and use the `ansible_hostname`
+    variable as our host argument to make it try and connect to the managed machine
+    from the controller machine.
+  id: totrans-93
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`wait_for`模块用于轮询特定的TCP端口，并且直到该端口接受远程连接时才会继续。轮询是从远程机器执行的。如果我们只提供端口，或者将host参数设置为`localhost`，轮询会尝试连接到管理机。我们可以利用`local_action`从控制机运行命令，并使用`ansible_hostname`变量作为主机参数，让它尝试从控制机连接到管理机。'
+- en: 'This module is particularly useful for daemons that can take a while to start,
+    or things that we want to run in the background. Apache Tomcat ships with an init
+    script, which immediately returns when we try to start it, leaving Tomcat starting
+    in the background. Depending on the application that Tomcat is configured to load,
+    it might take anywhere between two seconds to 10 minutes to fully start up and
+    be ready for connections. We can time our application''s start up and use the
+    `pause` module. However, the next deployment might take longer or shorter, and
+    this will break our deployment mechanism. With the `wait_for` module, we have
+    Ansible to recognize when Tomcat is ready to accept connections. The following
+    is a play that does exactly this:'
+  id: totrans-94
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个模块对于需要较长时间才能启动的守护进程，或我们希望在后台运行的程序特别有用。Apache Tomcat附带一个初始化脚本，在我们尝试启动它时会立即返回，Tomcat则在后台启动。根据Tomcat配置加载的应用程序，它的启动时间可能从两秒到十分钟不等，直到完全启动并准备好接受连接。我们可以为应用程序的启动时间设置计时，并使用`pause`模块。然而，下次部署可能会需要更长或更短的时间，这会破坏我们的部署机制。使用`wait_for`模块，Ansible能够识别Tomcat何时准备好接受连接。下面是一个完全实现这一点的play：
+- en: '[PRE20]'
+  id: totrans-95
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE20]'
+- en: After the completion of this play, Tomcat should be installed, started, and
+    ready to accept requests. We can append further modules to this example and depend
+    on Tomcat being available and listening.
+  id: totrans-96
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 完成此play后，Tomcat应该已安装、启动并准备好接受请求。我们可以在这个例子中添加更多模块，依赖于Tomcat已经可用并在监听。
+- en: The assemble module
+  id: totrans-97
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: assemble模块
+- en: 'The `assemble` module combines several files on the managed machine and saves
+    them to another file on the managed machine. This is useful in playbooks when
+    we have a `config` file which does not allow includes or globbing in its includes.
+    This is useful for the `authorized_keys` file for say, the root user. The following
+    play will send a bunch of SSH public keys to the managed machine, then make it
+    assemble them all together and place it in the root user''s home directory:'
+  id: totrans-98
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`assemble`模块将管理机上的多个文件合并，并保存到管理机上的另一个文件中。在playbook中，当我们有一个`config`文件，该文件不允许在其包含的内容中使用includes或glob时，这个功能非常有用。比如，对于root用户的`authorized_keys`文件，这个模块就很有用。下面的play将把一组SSH公钥发送到管理机，然后将它们组合在一起并放到root用户的主目录中：'
+- en: '[PRE21]'
+  id: totrans-99
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE21]'
+- en: By now, this should all look familiar. We might note the `with_items` key in
+    the task that copies the keys over, and the `{{ items }}` variable. These will
+    be explained later in [Chapter 3](part0028.xhtml "Chapter 3. Advanced Playbooks"),
+    *Advanced Playbooks*, but all we need to know now is that whatever item we supply
+    to the `with_items` key is substituted into the `{{ items }}` variable, similar
+    to how a `for` loop works. This simply lets us easily copy many files to the remote
+    host at once.
+  id: totrans-100
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 到目前为止，这一切应该看起来很熟悉。我们可以注意到在复制密钥的任务中有`with_items`键和`{{ items }}`变量。这些将在[第3章](part0028.xhtml
+    "第3章 高级Playbook")中进一步解释，*高级Playbook*，但现在我们需要知道的是，我们提供给`with_items`键的任何项都会替换成`{{
+    items }}`变量，类似于`for`循环的工作方式。这让我们能够轻松地一次性将多个文件复制到远程主机。
+- en: The last task shows the usage of the `assemble` module. We pass the directory
+    containing the files to be concatenated into the output as the `src` argument,
+    and then pass `dest` as the output file. It also accepts many of the same arguments
+    (`owner`, `group`, and `mode`) as the other modules that create files. It also
+    combines the files in the same order as the `ls -1` command lists them. This means
+    we can use the same approach as `udev` and `rc.d`, and prepend numbers to the
+    files to ensure that they end up in the correct order.
+  id: totrans-101
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后的任务展示了`assemble`模块的用法。我们将包含要合并文件的目录作为`src`参数传递给输出，然后将`dest`作为输出文件。它还接受许多与其他创建文件的模块相同的参数（`owner`、`group`和`mode`）。它还会按`ls
+    -1`命令列出的顺序合并文件。这意味着我们可以像`udev`和`rc.d`那样使用相同的方法，给文件前加上数字，以确保它们按正确的顺序排列。
+- en: The add_host module
+  id: totrans-102
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: add_host模块
+- en: The `add_host` module is one of the most powerful modules that are available
+    in playbooks. `add_host` lets us dynamically add new machines inside a play. We
+    can do this using the `uri` module to get a host from our **Configuration Management
+    Database** (**CMDB**) and then adding it to the current play. This module will
+    also add our host to a group, dynamically creating that group if it does not already
+    exist.
+  id: totrans-103
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`add_host`模块是playbooks中最强大的模块之一。`add_host`让我们可以动态地在play中添加新机器。我们可以使用`uri`模块从我们的**配置管理数据库**（**CMDB**）中获取一个主机，然后将其添加到当前play中。该模块还将我们的主机添加到一个组中，如果该组尚不存在，则会动态创建该组。'
+- en: The module simply takes a `name` and a `groups` argument, which are rather self-explanatory,
+    and sets the hostname and groups. We can also send extra arguments, and these
+    are treated in the same way in which extra values in the inventory file are treated.
+    This means we can set `ansible_ssh_user`, `ansible_ssh_port`, and so on.
+  id: totrans-104
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 该模块简单地接受`name`和`groups`参数，这些参数相当直观，并设置主机名和组。我们还可以传递额外的参数，这些参数的处理方式与inventory文件中的额外值处理方式相同。这意味着我们可以设置`ansible_ssh_user`、`ansible_ssh_port`等。
+- en: 'If we are using a cloud provider, such as RackSpace or Amazon EC2, there are
+    modules available in Ansible that will let us manage our compute resources. We
+    might decide to create machines at the start of the play, if we can''t find them
+    in the inventory. If we do this, we can use this module to add the machines to
+    the inventory so that we can configure them later. Here is an example of using
+    Google Compute Modules to do this:'
+  id: totrans-105
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果我们使用云服务提供商，如RackSpace或Amazon EC2，Ansible中有可用的模块可以让我们管理计算资源。如果我们在inventory中找不到它们，我们可能决定在play开始时创建机器。如果这样做，我们可以使用该模块将机器添加到inventory中，以便稍后进行配置。下面是一个使用Google
+    Compute模块的示例：
+- en: '[PRE22]'
+  id: totrans-106
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE22]'
+- en: The group_by module
+  id: totrans-107
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: '`group_by`模块'
+- en: In addition to creating hosts dynamically in our play, we can also create groups.
+    The `group_by` module can create groups based on the facts about the machines,
+    including the ones we set up ourselves using the `add_fact` module explained earlier.
+    The `group_by` module accepts one argument, `key`, which takes the name of a group
+    the machine will be added to. By combining this with the use of variables, we
+    can make the module add a server to a group based on its operating system, virtualization
+    technology, or any other fact that we have access to. We can then use this group
+    in the target section of any subsequent plays, or in templates.
+  id: totrans-108
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 除了在play中动态创建主机外，我们还可以创建组。`group_by`模块可以根据机器的事实信息来创建组，包括我们使用前面提到的`add_fact`模块自行设置的事实。`group_by`模块接受一个参数`key`，它接受机器将被添加到的组的名称。通过将其与变量的使用结合起来，我们可以使该模块根据主机的操作系统、虚拟化技术或任何其他可访问的事实将服务器添加到一个组中。然后，我们可以在任何后续play的目标部分或模板中使用该组。
+- en: 'So if we want to create a group that groups the hosts by the operating system,
+    we will call the module as follows:'
+  id: totrans-109
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 所以，如果我们想要创建一个按操作系统对主机进行分组的组，我们将按照以下方式调用该模块：
+- en: '[PRE23]'
+  id: totrans-110
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE23]'
+- en: 'We can then use these groups to install packages using the right packager.
+    In practice, this is often used to avoid Ansible outputting lots of "skipped"
+    messages while it is executing. Instead of adding `when` clauses to each task
+    that needs to be skipped, we can create a group for machines where the action
+    should happen and then use a separate play to configure those machines separately.
+    Here is an example of installing an ssl private key across Debian and RedHat machines
+    without using a `when` clause:'
+  id: totrans-111
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后我们可以使用这些组来通过正确的打包工具安装软件包。在实际操作中，这通常用于避免Ansible在执行时输出大量的“跳过”消息。我们可以通过创建一个组来为需要执行操作的机器配置，而不是为每个需要跳过的任务添加`when`条件。然后，我们可以使用一个单独的play来分别配置这些机器。下面是一个在Debian和RedHat机器上安装SSL私钥的示例，而没有使用`when`条件：
+- en: '[PRE24]'
+  id: totrans-112
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE24]'
+- en: The slurp module
+  id: totrans-113
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: slurp模块
+- en: The `slurp` module grabs a file from the remote system, encodes it with base
+    64, and then returns the result. We can utilize the register keyword in order
+    to place the contents into a fact. When using the `slurp` module to fetch files,
+    we should be wary of the file size. This module loads the entire file into memory,
+    so using `slurp` with large files can consume all available RAM and cause our
+    system to crash. Files also need to be transferred from the managed machine to
+    the controller machine, and for large files, this could take a considerable amount
+    of time.
+  id: totrans-114
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`slurp` 模块从远程系统获取文件，使用 base64 编码后返回结果。我们可以利用 register 关键字将文件内容放入 fact 中。当使用
+    `slurp` 模块获取文件时，应注意文件的大小。此模块会将整个文件加载到内存中，因此使用 `slurp` 处理大文件可能会消耗所有可用的内存，导致系统崩溃。文件还需要从被管理机器传输到控制机，对于大文件，这可能需要相当长的时间。'
+- en: 'Combining this module with the copy module provides a way to copy files between
+    two machines. This is demonstrated in the following playbook:'
+  id: totrans-115
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 将该模块与 copy 模块结合使用，可以实现两台机器之间的文件复制。以下是该 playbook 的示例：
+- en: '[PRE25]'
+  id: totrans-116
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE25]'
+- en: Note
+  id: totrans-117
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: Note that because the `slurp` module encodes the data with base 64, we have
+    to use the jinja2 filter named `b64decode` to decode the data before the copy
+    module can use it. Filters will be covered in more detail in [Chapter 3](part0028.xhtml
+    "Chapter 3. Advanced Playbooks"), *Advanced Playbooks*.
+  id: totrans-118
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请注意，由于 `slurp` 模块使用 base64 编码数据，我们必须使用名为 `b64decode` 的 jinja2 过滤器解码数据，才能让 copy
+    模块使用它。过滤器将在 [第 3 章](part0028.xhtml "第 3 章 高级 Playbooks") *高级 Playbooks* 中更详细地介绍。
+- en: Windows playbook modules
+  id: totrans-119
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Windows playbook 模块
+- en: Windows support is new to Ansible and as such, there aren't many modules available
+    for it. Modules that are windows only are named beginning with `win_`. There are
+    also a few modules available, which work on both Windows and Unix systems such
+    as the `slurp` module, which we covered earlier.
+  id: totrans-120
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Windows 支持是 Ansible 的新特性，因此目前可用的模块不多。专门针对 Windows 的模块以 `win_` 开头命名。此外，还有一些既适用于
+    Windows 又适用于 Unix 系统的模块，例如我们之前提到的 `slurp` 模块。
+- en: 'Extra care should be taken in Windows modules to quote the path strings. Backslashes
+    are an important character in both YAML, where they escape characters and in windows
+    paths, where they denote directories. Because of this, YAML might confuse parts
+    of our paths for escape sequences. To prevent this, we use single quotes on our
+    strings. Additionally, if our path is a directory itself, we should leave off
+    the trailing backspace so that YAML doesn''t confuse the end of the string with
+    an escape sequence. If we have to end our path with a backslash, make it a double
+    backslash, and the second one will be ignored. The following are some examples
+    of correct and incorrect strings:'
+  id: totrans-121
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在使用 Windows 模块时，应该特别小心路径字符串的引号。反斜杠在 YAML 中是一个重要字符，用于转义字符，在 Windows 路径中也表示目录。因此，YAML
+    可能会将路径的一部分误认为转义序列。为避免这种情况，我们在字符串中使用单引号。此外，如果路径本身是一个目录，我们应去掉结尾的反斜杠，以免 YAML 将字符串的结尾误认为转义序列。如果必须以反斜杠结束路径，应使用双反斜杠，第二个反斜杠会被忽略。以下是一些正确和错误字符串的示例：
+- en: '[PRE26]'
+  id: totrans-122
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE26]'
+- en: Cloud Infrastructure modules
+  id: totrans-123
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 云基础设施模块
+- en: Infrastructure modules allow us to not only manage the setup of our machines,
+    but also the creation of those machines themselves. Apart from this, we can also
+    automate much of the infrastructure surrounding them. This can be used as a simple
+    replacement for services such as Amazon Cloud Formation.
+  id: totrans-124
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 基础设施模块不仅可以管理我们机器的配置，还可以创建这些机器本身。除此之外，我们还可以自动化它们周围的大部分基础设施。这可以作为 Amazon Cloud
+    Formation 等服务的简单替代方案。
+- en: When creating machines that we want to manage in a later play in the same playbook,
+    we will want to use the `add_hosts` module that we discussed earlier in the chapter
+    to add the machine to the in-memory inventory so that it can be the target of
+    further plays. We might also wish to run the `group_by` module to arrange them
+    into groups as we would arrange other machines. The `wait_for` module should also
+    be used to check that the machine is responding to SSH connections before trying
+    to manage it.
+  id: totrans-125
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在创建我们希望在同一个 playbook 中后续 play 中进行管理的机器时，我们需要使用前面章节中讨论的 `add_hosts` 模块，将机器添加到内存中的库存中，以便它成为后续
+    play 的目标。我们还可能希望运行 `group_by` 模块，将它们按组排列，就像我们排列其他机器一样。还应该使用 `wait_for` 模块检查机器是否响应
+    SSH 连接，以便在尝试管理它之前确认连接是否正常。
+- en: The Cloud Infrastructure modules can be a bit complicated to use, so we will
+    be showing how to setup and install the Amazon modules. For details on how to
+    configure the other modules, see their documentation using `ansible-doc`.
+  id: totrans-126
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 云基础设施模块可能有点复杂，因此我们将展示如何设置和安装 Amazon 模块。有关如何配置其他模块的详细信息，请使用`ansible-doc`查看它们的文档。
+- en: The AWS modules
+  id: totrans-127
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: AWS 模块
+- en: The AWS modules work similar to how most AWS tools work. This is because they
+    use the python **boto** library, which is popular with many other tools and follows
+    the conventions of the original AWS tools that were released by Amazon.
+  id: totrans-128
+  prefs: []
+  type: TYPE_NORMAL
+  zh: AWS 模块的工作方式类似于大多数 AWS 工具的工作方式。这是因为它们使用 python **boto** 库，许多其他工具也使用该库，并且遵循 Amazon
+    发布的原始 AWS 工具的惯例。
+- en: 'It is best to install boto the same way that we installed Ansible. For most
+    use cases, we will be running the module on the managed machine, so we will only
+    need to install the boto module there. We can install the boto library in the
+    following ways:'
+  id: totrans-129
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最好以与安装 Ansible 相同的方式安装 boto。对于大多数使用场景，我们将在受管机器上运行模块，因此只需要在那里安装 boto 模块即可。我们可以通过以下方式安装
+    boto 库：
+- en: 'Centos/RHEL/Fedora: `yum install python-boto`'
+  id: totrans-130
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 'Centos/RHEL/Fedora: `yum install python-boto`'
+- en: 'Ubuntu: `apt-get install python-boto`'
+  id: totrans-131
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 'Ubuntu: `apt-get install python-boto`'
+- en: 'Pip: `pip install boto`'
+  id: totrans-132
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 'Pip: `pip install boto`'
+- en: 'Then we need to setup the correct environment variables. The easiest way to
+    do this is by running the modules using the localhost connection on our local
+    machine. If we do this, then the variables from our shell are passed through and
+    automatically become available to the Ansible module. Here, are the variables
+    that the boto library uses to connect to AWS:'
+  id: totrans-133
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后我们需要设置正确的环境变量。最简单的方法是通过在本地机器上使用 localhost 连接运行模块。如果我们这样做，shell 中的变量将被传递并自动对
+    Ansible 模块可用。以下是 boto 库用于连接 AWS 的变量：
+- en: '| Variable Name | Description |'
+  id: totrans-134
+  prefs: []
+  type: TYPE_TB
+  zh: '| 变量名称 | 描述 |'
+- en: '| --- | --- |'
+  id: totrans-135
+  prefs: []
+  type: TYPE_TB
+  zh: '| --- | --- |'
+- en: '| `AWS_ACCESS_KEY` | This is the access key for a valid IAM account |'
+  id: totrans-136
+  prefs: []
+  type: TYPE_TB
+  zh: '| `AWS_ACCESS_KEY` | 这是有效 IAM 账户的访问密钥 |'
+- en: '| `AWS_SECRET_KEY` | This is the secret key corresponding to the access key
+    above |'
+  id: totrans-137
+  prefs: []
+  type: TYPE_TB
+  zh: '| `AWS_SECRET_KEY` | 这是与上面的访问密钥对应的密钥 |'
+- en: '| `AWS_REGION` | This is the default region to use unless overridden |'
+  id: totrans-138
+  prefs: []
+  type: TYPE_TB
+  zh: '| `AWS_REGION` | 这是默认的区域，除非被覆盖 |'
+- en: 'We can set these environment variables in our example using the following code:'
+  id: totrans-139
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以在示例中使用以下代码设置这些环境变量：
+- en: '[PRE27]'
+  id: totrans-140
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE27]'
+- en: 'These are just example credentials and will not work. Once we have these set,
+    we can then use the AWS modules. In the next block of code, we combine several
+    modules from this chapter to create a machine and add it to the inventory. Several
+    features not yet discussed, such as `register` and `delegate_to`, are used in
+    the following example, which will be covered in [Chapter 3](part0028.xhtml "Chapter 3. Advanced
+    Playbooks"), *Advanced Playbooks*:'
+  id: totrans-141
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这些只是示例凭证，无法使用。设置好这些后，我们可以开始使用 AWS 模块。在接下来的代码块中，我们结合了本章中的几个模块来创建一台机器并将其添加到清单中。以下示例使用了尚未讨论的几个功能，如
+    `register` 和 `delegate_to`，这些将在[第3章](part0028.xhtml "第3章 高级 Playbooks") *高级 Playbooks*
+    中讨论：
+- en: '[PRE28]'
+  id: totrans-142
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE28]'
+- en: Summary
+  id: totrans-143
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 总结
+- en: In this chapter, we covered the sections that are available in the playbook
+    file. We also learned how to use variables to make our playbooks maintainable,
+    how to trigger handlers when changes have been made, and finally, we looked at
+    how certain modules are more useful when used inside a playbook. You can explore
+    further modules provided with Ansible using the official documentation at [http://docs.ansible.com/modules_by_category.html](http://docs.ansible.com/modules_by_category.html).
+  id: totrans-144
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们覆盖了 playbook 文件中可用的部分。我们还学习了如何使用变量使 playbook 可维护，如何在做出更改时触发处理程序，最后，我们查看了某些模块在
+    playbook 中使用时的优势。你可以通过官方文档进一步探索 Ansible 提供的其他模块，[http://docs.ansible.com/modules_by_category.html](http://docs.ansible.com/modules_by_category.html)。
+- en: In the next chapter, we will be looking into the more complex features of playbooks.
+    This will allow us to build more complex playbooks capable of deploying and configuring
+    entire systems.
+  id: totrans-145
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一章中，我们将深入研究 playbook 的更复杂功能。这将使我们能够构建更复杂的 playbook，能够部署和配置整个系统。

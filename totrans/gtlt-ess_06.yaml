@@ -1,0 +1,686 @@
+- en: Chapter 6. Getting Started with Access Control
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 第6章：开始使用访问控制
+- en: By now, you know how to add new users to the Gitolite system, as well as how
+    to create new repositories or bring existing repositories into Gitolite control.
+    It's time to tie those together now and look at *access control*, which is, for
+    most sites, the main reason to install Gitolite.
+  id: totrans-1
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 到现在为止，你已经知道如何将新用户添加到Gitolite系统中，以及如何创建新仓库或将现有仓库纳入Gitolite的控制。现在是时候将这些内容结合起来，了解*访问控制*，这是大多数网站安装Gitolite的主要原因。
+- en: Basic access control examples
+  id: totrans-2
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 基本访问控制示例
+- en: 'The aspect of access control that first comes to mind, for any Git administrator,
+    is the ability to prevent people from accessing repositories. We''ll start with
+    some simple examples before describing the syntax. Here''s a very simple set of
+    rules for a repository called `foo`:'
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 任何Git管理员首先想到的访问控制方面，是防止某些人访问仓库的能力。我们将从一些简单的例子开始，然后再描述语法。这里是一个非常简单的规则集，适用于一个名为`foo`的仓库：
+- en: '[PRE0]'
+  id: totrans-4
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: These rules establish what operations Alice, Bob, Carol, and any other Gitolite
+    users are allowed to execute against this repository. As you might guess from
+    the simple R permission given to Alice (or, to put it another way, the lack of
+    a `W` in her permission string), she is only allowed to read the repository, which
+    means she can use the `git clone`, `git fetch`, and `git ls-remote` commands,
+    but cannot use `git push` in any form.
+  id: totrans-5
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这些规则规定了Alice、Bob、Carol以及其他任何Gitolite用户可以对该仓库执行哪些操作。正如你从Alice的简单R权限中可能猜到的（或者换句话说，正是因为她的权限字符串中没有`W`），她仅被允许读取该仓库，这意味着她可以使用`git
+    clone`、`git fetch`和`git ls-remote`命令，但不能以任何形式使用`git push`。
+- en: Bob and Carol are both allowed to push changes to the repository. As before,
+    you probably guessed this from the `W` character in each of their permission lines.
+    What may not be immediately obvious is the significance of the `+` character in
+    Carol's permission string. This extra character allows Carol to *force* a push,
+    that is, push a new object to a ref even if the new object is not a descendant
+    of the old object. This is called a non-fast forward push in Git parlance, and,
+    even in normal Git use (that is, even without an access control system in place),
+    requires explicit action on the user's part in order to succeed. If you're not
+    familiar with this, please consult man `git-push` and other Git resources.
+  id: totrans-6
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Bob和Carol都被允许向仓库推送更改。和之前一样，你可能从他们权限行中的`W`字符中猜到了这一点。可能不那么显而易见的是Carol权限字符串中`+`字符的意义。这个额外的字符允许Carol进行*强制*推送，即使新对象不是旧对象的后代，她也可以将新对象推送到引用中。在Git术语中，这叫做非快进推送，即使在没有访问控制系统的普通Git使用中，也需要用户明确采取操作才能成功。如果你不熟悉这个概念，请参考man
+    `git-push`和其他Git文档。
+- en: The `+` character was chosen because it is a reminder of the `+` you have to
+    use in the `git push` command to selectively force-push some refs. (Please refer
+    to the description of the `refspec` field in the man page for the `git push` command
+    for more details). Although we will not encounter this use case in this chapter,
+    for the sake of completeness, we should also mention that the `+` character also
+    allows a user to *delete* a ref, even though the corresponding syntax in the `git
+    push` command does not use a `+` sign.
+  id: totrans-7
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 选择`+`字符是因为它提醒你在`git push`命令中使用`+`来选择性地强制推送某些引用（refs）。(有关更多细节，请参考`git push`命令man页面中的`refspec`字段描述)。尽管我们在本章中不会遇到这种用例，但为了完整性，我们还是应该提到，`+`字符还允许用户*删除*引用，尽管在`git
+    push`命令中对应的语法并没有使用`+`符号。
+- en: For a lot of installations, this basic example serves all their needs—namely,
+    to distinguish people who are only allowed to read but not to write, and among
+    those that are allowed to write, prevent some from dangerously force-pushing (or
+    worse, deleting) an important branch or tag.
+  id: totrans-8
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于许多安装来说，这个基本的例子已能满足所有需求——即区分那些只能读取但不能写入的人，并且在允许写入的人中，防止某些人进行危险的强制推送（或者更糟的是，删除一个重要的分支或标签）。
+- en: Basic branch level access control
+  id: totrans-9
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 基本分支级别访问控制
+- en: 'The next example will show another very common need: that of restricting some
+    people (perhaps junior developers or interns) to being able to push only branches
+    in a specific namespace. This is a fairly common situation, where the most important
+    branches (such as master, or maybe next, or whatever your branch naming and workflow
+    uses), can only be changed by trusted developers, who presumably have reviewed
+    the code and found it to be acceptable. Code written by junior developers and/or
+    interns is not deemed to be automatically acceptable, and it is often useful to
+    *sandbox* them in some way.'
+  id: totrans-10
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 下一个示例将展示另一个非常常见的需求：限制某些人（也许是初级开发者或实习生）只能推送特定命名空间中的分支。这是一个相当常见的情况，其中最重要的分支（例如master，或者也许是next，或者你工作流中使用的任何分支命名）只能由受信任的开发者修改，这些开发者大概已经审核了代码并认为它是可以接受的。初级开发者和/或实习生编写的代码通常不会被视为自动可接受，通常很有必要以某种方式对他们进行*沙盒*限制。
+- en: Tip
+  id: totrans-11
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 提示
+- en: Interestingly, this particular use case appears to be more about developer trust
+    and maturity than about security per se. However, in terms of controlling or preventing
+    such behavior, there is no difference between someone accidentally overwriting
+    the master branch, and someone doing it with malicious intent.
+  id: totrans-12
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有趣的是，这个特定的用例似乎更多地与开发者的信任和成熟度有关，而非单纯的安全问题。然而，在控制或防止此类行为方面，意外覆盖主分支和恶意覆盖主分支之间没有区别。
+- en: 'Here''s an example of an access control rule set that achieves such a restriction:'
+  id: totrans-13
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这是一个实现此类限制的访问控制规则集示例：
+- en: '[PRE1]'
+  id: totrans-14
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: This allows Carol to read the repository as well as to push to it, but it prevents
+    her from pushing anything except branches whose names start with `dev/`. In contrast,
+    Bob whose access rule does not specify anything after the permission field, can
+    push any branch.
+  id: totrans-15
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这允许Carol读取该仓库并向其推送，但它阻止她推送任何除以`dev/`开头的分支之外的内容。相比之下，Bob的访问规则在权限字段后没有指定任何内容，因此他可以推送任何分支。
+- en: Lexical syntax of the conf file
+  id: totrans-16
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 配置文件的词法语法
+- en: Now that we've seen a couple of useful, and immediately usable, examples, it
+    is time to look at the **lexical** syntax of the `conf/gitolite.conf` file (often
+    called, in Gitolite, *the conf file*).
+  id: totrans-17
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经看到了几个有用且可立即使用的示例，是时候查看`conf/gitolite.conf`文件的**词法**语法了（在Gitolite中，通常称其为*配置文件*）。
+- en: The conf file is a plain text file, whose overall syntax is governed by a few
+    simple rules.
+  id: totrans-18
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 配置文件是一个纯文本文件，其整体语法遵循一些简单的规则。
+- en: Gitolite usernames (in our example, `alice`, `bob`, and so on) must start with
+    an alphanumeric character, and contain alphanumerics, periods, hyphens, underscores,
+    or the `@` sign. If an `@` sign is present, it must be followed by a domain name
+    (that is, something that has at least one period in it). This allows e-mail addresses
+    to be used as usernames, which is arguably very useful when you have several John
+    Smith in your organization!
+  id: totrans-19
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Gitolite用户名（例如`alice`、`bob`等）必须以字母数字字符开头，并包含字母数字字符、句点、连字符、下划线或`@`符号。如果存在`@`符号，它后面必须跟着一个域名（即包含至少一个句点的内容）。这使得可以使用电子邮件地址作为用户名，这在组织中有多个John
+    Smith时非常有用！
+- en: Repository names must start with an alphanumeric character, and contain alphanumerics,
+    periods, hyphens, underscores, or slashes. However, they must not start with a
+    slash or end with a slash.
+  id: totrans-20
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 仓库名称必须以字母数字字符开头，并包含字母数字字符、句点、连字符、下划线或斜杠。然而，它们不能以斜杠开头或以斜杠结尾。
+- en: Comments are allowed; the syntax is the same as the shell, perl, and so on.
+    Anything following a `#` sign is taken to be a comment and discarded.
+  id: totrans-21
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 允许使用注释；语法与shell、perl等相同。任何以`#`符号开头的内容都被视为注释并被丢弃。
+- en: Tip
+  id: totrans-22
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 提示
+- en: Continuation lines (in the C-style) are not allowed by default. However, by
+    editing the `$HOME/.gitolite.rc` file, which we will see in more detail in [Chapter
+    7](ch07.html "Chapter 7. Advanced Access Control and Configuration"), *Advanced
+    Access Control and Configuration*, you can enable this feature.
+  id: totrans-23
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 默认情况下不允许使用续行（C风格）。但是，通过编辑`$HOME/.gitolite.rc`文件（我们将在[第7章](ch07.html "Chapter 7. Advanced
+    Access Control and Configuration")《高级访问控制与配置》中详细讨论），你可以启用此功能。
+- en: The syntax of access control rules
+  id: totrans-24
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 访问控制规则的语法
+- en: 'The access control list has a simple structure. Briefly, it is structured like
+    this:'
+  id: totrans-25
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 访问控制列表有一个简单的结构。简而言之，它的结构如下：
+- en: '[PRE2]'
+  id: totrans-26
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: A conf file has one or more `repo` lines. Each repo line contains the word `repo`,
+    followed by one or more repository names or repository-group names (we'll discuss
+    groups later in this chapter). These repository or group names must all be on
+    the same line.
+  id: totrans-27
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一个配置文件有一个或多个`repo`行。每个repo行包含单词`repo`，后跟一个或多个仓库名称或仓库组名称（我们将在本章稍后讨论组）。这些仓库或组名称必须都在同一行。
+- en: 'Each `repo` line is followed by one or more *access rules* that apply to this
+    set of repositories or groups. An access rule consists of the following:'
+  id: totrans-28
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 每个`repo`行后面跟着一个或多个适用于该仓库或组的*访问规则*。访问规则包括以下内容：
+- en: A permission field (for example, R, RW, and so on)
+  id: totrans-29
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 一个权限字段（例如，R、RW等）
+- en: Zero or more *refexes* (refexes are detailed in the next section, but one example
+    refex you have already seen is `dev/`)
+  id: totrans-30
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 零个或多个*引用模式*（引用模式在下一节会详细讲解，但你已经见过的一个例子是`dev/`）
+- en: An `=` sign to serve as a separator
+  id: totrans-31
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 一个`=`符号作为分隔符
+- en: And finally a list of users or user-group names
+  id: totrans-32
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 最后是一个用户或用户组名称的列表
+- en: Branch level access control and refexes
+  id: totrans-33
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 分支级别的访问控制和引用模式
+- en: This section will talk about a very important part of Gitolite—specifying who
+    can make changes to which branch or tag. As a matter of historical interest, the
+    lack of this feature, in what was at that time the most popular tool for Git server
+    administration, was the sole motivation for Gitolite being created.
+  id: totrans-34
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本节将讨论Gitolite中一个非常重要的部分——指定谁可以对哪个分支或标签进行更改。作为历史背景，缺乏这个功能，正是当时最流行的Git服务器管理工具无法提供这一功能的唯一原因，进而促使了Gitolite的诞生。
+- en: Tip
+  id: totrans-35
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 提示
+- en: This section assumes some familiarity with *regular expressions*.
+  id: totrans-36
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本节假设读者对*正则表达式*有一定了解。
+- en: To understand branch level access control and how to specify them in Gitolite,
+    we should first have a quick refresher of related concepts in Git itself, to make
+    things easier to understand.
+  id: totrans-37
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要理解分支级别的访问控制以及如何在Gitolite中指定它们，我们应该首先快速回顾Git本身的相关概念，以便更容易理解。
+- en: Git uses the word `ref` to refer to both branches and tags. Branch names are
+    usually of the form `refs/heads/something`, while tag names are of the form `refs/tags/something`.
+    When a user pushes to a Gitolite managed repository, Gitolite helps you determine
+    whether the *refs* being updated are allowed to be updated by this user or not.
+  id: totrans-38
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git使用`ref`一词来指代分支和标签。分支名称通常为`refs/heads/某个名称`，而标签名称则为`refs/tags/某个名称`。当用户推送到Gitolite管理的仓库时，Gitolite帮助你判断是否允许该用户更新正在更新的*引用*。
+- en: 'Thus, to allow Bob to push the branch called master, you might write:'
+  id: totrans-39
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 因此，为了允许Bob推送名为master的分支，你可以写下：
+- en: '[PRE3]'
+  id: totrans-40
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: When a user pushes to the repository, Git supplies Gitolite with the name of
+    the ref being pushed. Gitolite then matches the ref with each of the refexes in
+    the access rule lines. If there is a match, and the user is also listed on the
+    right side of the `=` sign, then the push is allowed.
+  id: totrans-41
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当用户推送到仓库时，Git会将推送的引用名称提供给Gitolite。Gitolite随后会将该引用与访问规则行中的每个引用模式（refex）进行匹配。如果匹配成功，并且用户也出现在`=`符号的右侧，那么该推送将被允许。
+- en: 'However, due to the fact that branches are far more frequently access controlled
+    than tags, Gitolite assumes anything that does not start with `refs/` to be prefixed
+    with `refs/heads/`. Thus, you can just say:'
+  id: totrans-42
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，由于分支比标签更频繁地进行访问控制，Gitolite假设任何不以`refs/`开头的内容都应被视为以`refs/heads/`为前缀。因此，你可以直接这样写：
+- en: '[PRE4]'
+  id: totrans-43
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: and that would be taken as `refs/heads/master`.
+  id: totrans-44
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这将被视为`refs/heads/master`。
+- en: To be strictly accurate, the preceding data allows Bob to push any branch with
+    a name that starts with `master`. To restrict the rule to just `master`, you should
+    actually write the refex as `master$`. In practice, however, this is rarely required.
+  id: totrans-45
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 严格来说，前述数据允许Bob推送任何以`master`开头的分支名称。要将规则限制为仅`master`，实际上应该将引用模式写为`master$`。但在实际应用中，这种情况很少需要。
+- en: 'Controlling tags is just as easy. Let us say you want to allow a user to push
+    any tag with a name starts with the letter v, followed by a digit, optionally
+    followed by anything else. Here''s the rule for it:'
+  id: totrans-46
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 控制标签同样简单。假设你想允许用户推送任何以字母v开头，后跟数字，后面可选地跟着其他内容的标签。以下是该规则：
+- en: '[PRE5]'
+  id: totrans-47
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: The regular expression pattern `[0-9]` represents the notion of any character
+    between `0` and `9` inclusive.
+  id: totrans-48
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正则表达式模式`[0-9]`表示从`0`到`9`之间的任意字符（包括0和9）。
+- en: Gitolite anchors this regex at the beginning only, not at the end. In regex
+    terms, this means a `^` character is implicitly added at the start, but a `$`
+    character is not added at the end. This allows Bob to push tags like `v1`, `v2.2`,
+    `v3.4.5`, and so on, but not `new-v1` and `next-v2`.
+  id: totrans-49
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Gitolite 仅在开头锚定这个正则表达式，而不是在结尾。在正则表达式的术语中，这意味着在开始处隐式添加了一个 `^` 字符，但结尾处并没有添加 `$`
+    字符。这使得 Bob 可以推送类似 `v1`、`v2.2`、`v3.4.5` 等标签，但不能推送 `new-v1` 和 `next-v2`。
+- en: 'Thus we come to the definition of a *refex*: a refex is a regex (that is, a
+    regular expression) that is used to match the ref being pushed.'
+  id: totrans-50
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 因此，我们来定义一下*refex*：refex 是一个正则表达式（即正则表达式），用于匹配正在推送的引用。
+- en: Using deny rules
+  id: totrans-51
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 使用拒绝规则
+- en: So far, the rules we have seen allow you to specify which branches or tags a
+    user is allowed to push. However, we often need to be able to specify, for example,
+    that a user is allowed to push *all branches except master*.
+  id: totrans-52
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 到目前为止，我们看到的规则允许你指定用户可以推送哪些分支或标签。然而，我们通常需要能够指定，例如，允许用户推送*所有分支，除了 master*。
+- en: 'To do that, we need to use what Gitolite calls *deny* rules. Here''s how you
+    might implement the above restriction for a user:'
+  id: totrans-53
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了做到这一点，我们需要使用 Gitolite 所称的*拒绝*规则。以下是你如何为用户实施上述限制的示例：
+- en: '[PRE6]'
+  id: totrans-54
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: Gitolite checks rules in sequence when attempting to determine whether a branch
+    is allowed to be pushed or not. When Bob pushes a branch called `next` (that is,
+    `refs/heads/next`) to this repository, the first rule does not match at all, since
+    `refs/heads/master` is not a pattern that matches the string `refs/heads/next`.
+    Gitolite then checks the next rule. Since this rule does not specify a refex,
+    all refs will match, and since the permission field is `RW+`, the push is allowed.
+  id: totrans-55
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当 Gitolite 尝试确定是否允许推送某个分支时，它按顺序检查规则。当 Bob 将名为 `next`（即 `refs/heads/next`）的分支推送到此仓库时，第一个规则完全不匹配，因为
+    `refs/heads/master` 不是与 `refs/heads/next` 字符串匹配的模式。然后 Gitolite 检查下一个规则。由于此规则没有指定
+    refex，因此所有引用都将匹配，并且由于权限字段为 `RW+`，推送被允许。
+- en: However, when Bob pushes `refs/heads/master`, the ref matches the refex in the
+    first rule, and since the rule is a deny rule, the push is denied.
+  id: totrans-56
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，当 Bob 推送 `refs/heads/master` 时，引用匹配第一个规则中的正则表达式，由于该规则是拒绝规则，因此推送被拒绝。
+- en: 'Observant readers will notice that the sequence of the rules is very important
+    here. Reversing the order of the two rules we looked at would remove the restriction
+    we want to implement. The first rule encountered will be:'
+  id: totrans-57
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 细心的读者会注意到，规则的顺序在这里非常重要。如果我们交换这两个规则的顺序，那么我们想要实施的限制将会被移除。首先遇到的规则将是：
+- en: '[PRE7]'
+  id: totrans-58
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE7]'
+- en: This does not specify a refex and thus matches all refs. As a result, the operation
+    is allowed to proceed. In other words, the deny rule is never even checked!
+  id: totrans-59
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这不指定 refex，因此会匹配所有引用。因此，操作可以继续进行。换句话说，拒绝规则根本不会被检查！
+- en: The permission field
+  id: totrans-60
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 权限字段
+- en: We have now seen examples of the four most common permissions used in access
+    rules, so it is a good idea to summarize them.
+  id: totrans-61
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们现在已经看到了四种最常见的权限示例，因此总结它们是个好主意。
+- en: The `R` permission allows the user to read (clone, fetch) the repository, but
+    not push. `RW` allows the user to push, but only if it is a fast-forward push
+    or a new branch is being created. Non-fast forward pushes and deletions are not
+    allowed. And `RW+` allows non-fast forward pushes and deletions too.
+  id: totrans-62
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`R` 权限允许用户读取（克隆、获取）仓库，但不允许推送。`RW` 允许用户推送，但仅在快速前进推送或创建新分支时允许。非快速前进推送和删除是不允许的。而
+    `RW+` 也允许非快速前进推送和删除。'
+- en: As long as your rule set contains only these three types of rules, it does not
+    matter which order they appear in. However, as you saw in the previous section,
+    the sequence of rules becomes important when you use the fourth kind of rule—a
+    deny rule, denoted by a single minus sign.
+  id: totrans-63
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 只要你的规则集仅包含这三种类型的规则，它们的顺序并不重要。然而，正如你在上一节中看到的，当你使用第四种规则——拒绝规则（由单个减号表示）时，规则的顺序就变得很重要。
+- en: Tip
+  id: totrans-64
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 提示
+- en: While these are the most commonly used permissions, they are not all there are.
+    There are a few more permissions which will appear in the section *Types of Write
+    Operations* in [Chapter 7](ch07.html "Chapter 7. Advanced Access Control and Configuration"),
+    *Advanced Access Control and Configuration*.
+  id: totrans-65
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 虽然这些是最常用的权限，但并非全部。还有一些其他权限将在[第7章](ch07.html "第7章. 高级访问控制和配置")的*写操作类型*一节中出现，*高级访问控制和配置*。
+- en: Defining user and repo groups
+  id: totrans-66
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 定义用户和仓库组
+- en: 'Gitolite allows you to define groups of users or repositories for convenience.
+    The syntax is very simple, and does not distinguish between a user group and a
+    repository group. For example, take a look at the deny rule example in the previous
+    section:'
+  id: totrans-67
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Gitolite 允许你定义用户组或仓库组以便于管理。语法非常简单，并且不区分用户组和仓库组。例如，看看前一节中的拒绝规则示例：
+- en: '[PRE8]'
+  id: totrans-68
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE8]'
+- en: 'Let''s say that, instead of just Bob, you had several more users who must be
+    prevented from pushing the `master` branch, perhaps because they are all junior
+    developers. One way is to add each of their usernames on both the rule lines,
+    after Bob''s username, like this:'
+  id: totrans-69
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 假设，现在不仅仅是 Bob，你还有几个用户必须被阻止推送到 `master` 分支，也许是因为他们都是初级开发者。一个方法是将他们每个用户的用户名添加到两条规则的后面，紧接着
+    Bob 的用户名，像这样：
+- en: '[PRE9]'
+  id: totrans-70
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE9]'
+- en: But this gets cumbersome, and will only get worse if there are more rules to
+    be applied to the same group of people.
+  id: totrans-71
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 但这样会变得繁琐，而且如果有更多规则应用到同一组人身上，情况只会更糟。
+- en: 'With groups, however, you can do this:'
+  id: totrans-72
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，使用组时，你可以这样做：
+- en: '[PRE10]'
+  id: totrans-73
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE10]'
+- en: As you can see, this is far more convenient, and also less error-prone. Even
+    more importantly, the group name can often serve as important documentation for
+    the ruleset—a future administrator may not know who Bob, Carol, and Dave are,
+    and may puzzle over why they were restricted, but the group name, if chosen well,
+    makes things very clear.
+  id: totrans-74
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，这要方便得多，而且也更不容易出错。更重要的是，组名通常可以作为规则集的重要文档——未来的管理员可能不知道 Bob、Carol 和 Dave 是谁，也许会困惑他们为什么会被限制，但组名如果选得好，就能让一切变得非常清晰。
+- en: 'You can use group names for repositories also, for example:'
+  id: totrans-75
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你也可以为仓库使用组名，例如：
+- en: '[PRE11]'
+  id: totrans-76
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE11]'
+- en: While in this case it may not look as critical, because the group name is being
+    used to replace only one occurrence of the repository names, it is still a lot
+    cleaner. Also, as with the user group names, the repository group name serves
+    as additional documentation of the nature of those repositories.
+  id: totrans-77
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 虽然在这种情况下，可能看起来不那么重要，因为组名仅替代了仓库名中的一次出现，但它仍然更简洁。而且，就像用户组名一样，仓库组名也能作为这些仓库性质的附加文档。
+- en: Working with large groups
+  id: totrans-78
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 与大组合作
+- en: 'Sometimes you need a group which contains several members—far more than can
+    fit on one line comfortably to edit. To make this easier (and because Gitolite
+    does not, by default, allow continuation lines), Gitolite treats every definition
+    of a group as cumulative. This means that if the group was already defined earlier,
+    the new members are added to it rather than replacing the existing member list.
+    This allows you to say:'
+  id: totrans-79
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有时候你需要一个包含多个成员的组——成员数量远超一个行内可以轻松编辑的数量。为了使这更容易（并且因为 Gitolite 默认不允许续行），Gitolite
+    将每个组的定义视为累积的。这意味着，如果该组已经在之前定义过，新的成员将被添加到其中，而不是替换现有的成员列表。这使得你可以这样写：
+- en: '[PRE12]'
+  id: totrans-80
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE12]'
+- en: This would have the same effect as the single line definition we saw earlier
+    in this section.
+  id: totrans-81
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这将与我们在本节前面看到的单行定义产生相同的效果。
+- en: The special @all group
+  id: totrans-82
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 特殊的 @all 组
+- en: 'Gitolite also has a special, built-in group called @all, which refers to all
+    repositories, or all users, depending on where it is used. A common use for this
+    is to allow certain privileged users access to all repositories, perhaps as follows:'
+  id: totrans-83
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Gitolite 还有一个特殊的内置组叫 @all，它指代所有的仓库或所有的用户，具体取决于它的使用位置。一个常见的用途是允许某些特权用户访问所有仓库，可能是如下所示：
+- en: '[PRE13]'
+  id: totrans-84
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE13]'
+- en: 'For another example, let us consider a situation where only Adam and Dave are
+    allowed to push the `master` branch. Here''s how you might do that:'
+  id: totrans-85
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 另一个示例，让我们考虑一个只有 Adam 和 Dave 被允许推送 `master` 分支的情况。你可能会这样做：
+- en: '[PRE14]'
+  id: totrans-86
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE14]'
+- en: We have a *deny* rule here, so again, notice that the order of rules is important.
+    If we had placed the *deny* rule first, then—because Adam and Dave are implicitly
+    members of @all—they would also be denied rights to push the master branch.
+  id: totrans-87
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这里有一个*拒绝*规则，所以再次提醒，规则的顺序很重要。如果我们将*拒绝*规则放在前面，那么——因为 Adam 和 Dave 隐式地是 @all 的成员——他们也会被拒绝推送到主分支的权限。
+- en: The include statement
+  id: totrans-88
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 包含语句
+- en: 'You can also split up your access rules and group definitions into multiple
+    files, and *include* them into the main conf file (`conf/gitolite.conf` in your
+    gitolite-admin repository). For example, you can keep all group information (that
+    is, which users are members of which groups) in a separate file and include that.
+    The syntax is very simple; here''s an example:'
+  id: totrans-89
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你还可以将访问规则和组定义分拆到多个文件中，并将它们*包含*到主配置文件（在你的 gitolite-admin 仓库中的 `conf/gitolite.conf`）中。例如，你可以将所有组信息（即哪些用户是哪些组的成员）保存在一个单独的文件中并包含它。语法非常简单，下面是一个示例：
+- en: '[PRE15]'
+  id: totrans-90
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE15]'
+- en: This will look for a file called `groups.conf` in the `conf` directory and include
+    its contents at that point.
+  id: totrans-91
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这将会在 `conf` 目录下查找一个名为 `groups.conf` 的文件，并在此处包含其内容。
+- en: 'Advanced users may note that this command also accepts wildcards. For example,
+    you might have several individual conf files in a subdirectory of `conf` called
+    `foss`. If you don''t want to name each of them separately, you can say:'
+  id: totrans-92
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 高级用户可能注意到，这个命令也支持通配符。例如，你可能在 `conf` 目录下的一个子目录中有几个单独的配置文件，名为 `foss`。如果你不想单独列出它们，你可以这样写：
+- en: '[PRE16]'
+  id: totrans-93
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE16]'
+- en: Rule accumulation and delegation
+  id: totrans-94
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 规则汇总和委托
+- en: Gitolite allows you to split up access rules for repositories into multiple
+    chunks which are not necessarily contiguous. It will then combine all these chunks
+    (in the order they were read) and apply the combined set of rules to the repository
+    in question.
+  id: totrans-95
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Gitolite 允许你将仓库的访问规则拆分为多个不一定是连续的部分。然后，它会将所有这些部分（按读取顺序）组合在一起，并将合并后的规则集应用到相关的仓库中。
+- en: There's a very good use for this behavior. Combining groups, that include statement,
+    and rule accumulation, makes Gitolite administration easier than it already is.
+    Here's an example, with some comments, to give you some idea of what can be done.
+  id: totrans-96
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这种行为有很好的应用场景。将组、包含语句和规则汇总结合起来，使得 Gitolite 管理比之前更为简便。以下是一个示例，带有一些注释，帮助你理解可以做哪些操作。
+- en: '[PRE17]'
+  id: totrans-97
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE17]'
+- en: As you can see, a repository can appear in any or all of the include files that
+    the main conf file pulls in. If we required all the rules for each repository
+    to be in one place, it would be impossible to organize your rules in this sort
+    of manner.
+  id: totrans-98
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，仓库可以出现在主配置文件加载的任何或所有包含文件中。如果我们要求每个仓库的所有规则都集中在一个地方，那么以这种方式组织规则就变得不可能。
+- en: Summary
+  id: totrans-99
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 总结
+- en: We've now seen most of Gitolite's basic access control features, including various
+    types of access rules, the syntax of the conf file, and some convenient features
+    that make managing this easier. In the next chapter, we will discuss some advanced
+    access control features, such as personal branches and **VREFs**.
+  id: totrans-100
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们现在已经了解了 Gitolite 的大多数基本访问控制功能，包括各种类型的访问规则、配置文件的语法，以及一些便捷的功能来简化管理。下一章，我们将讨论一些高级访问控制功能，如个人分支和**VREFs**。

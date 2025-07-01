@@ -1,0 +1,636 @@
+- en: Ansible Vault
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Ansible Vault
+- en: Modern day encryption solutions have come a long way since the initial concepts
+    of encryption were invented and implemented back in the early days of computer
+    science. Encryption and security are both hotbed topics within modern mainstream
+    news outlets, as notable security breaches have initiated a heightened awareness
+    of security fallacies and there has been an increase in guarding of sensitive
+    data. With applications and customer's sensitive data moving toward the cloud,
+    the necessity for an increased level of control and security is now greater than
+    ever.
+  id: totrans-1
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现代加密解决方案自计算机科学早期加密概念的发明和实现以来已经取得了长足的进展。加密和安全性是现代主流新闻媒体中的热点话题，因为著名的安全漏洞引发了对安全错误的高度关注，同时对敏感数据的保护也有所增加。随着应用程序和客户的敏感数据逐步迁移到云端，对控制和安全性的需求比以往任何时候都更加迫切。
+- en: Modern **Infrastructure as Code** (**IaC**) solutions have paved the way for
+    configuration management solutions to be stored within modern source control solutions.
+    Managing and tracking infrastructure changes via a source control solution is
+    highly valuable as it provides the ability for teams to ensure that IaC solutions
+    are tracked through version control, and revisions are notated and backed up.
+    In addition to these value points storing Ansible playbook's and related automation
+    version control ensures teams can collaborate to create useful automation, Configuration
+    Management solutions, and deployment tasks.
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现代 **基础设施即代码**（**IaC**）解决方案为将配置管理解决方案存储在现代源代码控制解决方案中铺平了道路。通过源代码控制解决方案管理和跟踪基础设施变更具有很高的价值，因为它为团队提供了确保
+    IaC 解决方案通过版本控制进行跟踪的能力，且修订版本被注释和备份。除了这些价值点，存储 Ansible playbook 和相关自动化的版本控制还确保团队能够协作创建有用的自动化、配置管理解决方案和部署任务。
+- en: Creating playbook's and storing them within a modern source control solution
+    makes a lot of sense and is a best practice. What does not make a lot of sense
+    is storing sensitive data within source control. This is because it allows ANYONE
+    with access to the source control solution to pry into potentially confidential
+    information. Enter Ansible vault. It promises the ability to hide such sensitive
+    data, to encrypt what is meant to be encrypted, and continues to allow playbook
+    developers to store their playbooks in source control. Awesome right?
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 创建 playbook 并将其存储在现代源代码控制解决方案中是非常有意义的，也是最佳实践。与此相反，将敏感数据存储在源代码控制中就显得不太合适了，因为这允许任何有权限访问源代码控制的人员查看可能包含机密信息的数据。于是，Ansible
+    vault 应运而生。它承诺能够隐藏这些敏感数据，对需要加密的数据进行加密，并继续允许 playbook 开发人员将其 playbook 存储在源代码控制中。是不是很棒？
+- en: 'In this chapter, we will discover the Ansible vault. It provides us with a
+    secure, easy-to-use solution to encrypt and store sensitive data within our playbook''s
+    or in a variables vault file. Specifically, in this chapter, we will cover the
+    following subjects:'
+  id: totrans-4
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这一章节中，我们将探索 Ansible vault。它为我们提供了一个安全、易于使用的解决方案，用于加密并存储我们 playbook 中的敏感数据或存储在变量
+    vault 文件中的数据。具体来说，在这一章节中，我们将涵盖以下主题：
+- en: The Ansible vault architecture
+  id: totrans-5
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Ansible vault 架构
+- en: Basic vault usage
+  id: totrans-6
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 基本的 vault 使用方法
+- en: How data can be encrypted with Ansible vault
+  id: totrans-7
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 如何使用 Ansible vault 加密数据
+- en: How to create, edit, and encrypt variable files
+  id: totrans-8
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 如何创建、编辑和加密变量文件
+- en: How to decrypt files in a secure manner
+  id: totrans-9
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 如何以安全的方式解密文件
+- en: How to embed encrypted data within a YAML playbook
+  id: totrans-10
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 如何将加密数据嵌入 YAML playbook 中
+- en: Running a playbook and decrypting data on the fly
+  id: totrans-11
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 运行 playbook 并即时解密数据
+- en: Tips and tricks to best use Ansible vault
+  id: totrans-12
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用 Ansible vault 的技巧与窍门
+- en: Let's get started!
+  id: totrans-13
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们开始吧！
+- en: The Ansible Vault Architecture
+  id: totrans-14
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Ansible Vault 架构
+- en: 'Ansible vault is designed for playbook developers, system administrators, and
+    related personnel to store sensitive data within a playbook, variable file, or
+    directory structure. The encryption system employed by Ansible vault is based
+    on the **Symmetrical Key Advanced Encryption System** or **AES Symmetrical Key**
+    solution. The AES Symmetrical Key encryption provides us with an easy-to-use way
+    of using the same key to encrypt data as well as decrypt data. The following diagram
+    provides an illustration of **AES Symmetrical Key Encryption**:'
+  id: totrans-15
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible vault 旨在为 playbook 开发人员、系统管理员和相关人员提供将敏感数据存储在 playbook、变量文件或目录结构中的解决方案。Ansible
+    vault 使用的加密系统基于 **对称密钥高级加密系统** 或 **AES 对称密钥** 解决方案。AES 对称密钥加密为我们提供了一种易于使用的方式，使用相同的密钥对数据进行加密和解密。下图展示了
+    **AES 对称密钥加密**：
+- en: '![](img/5e2f1f6c-e41f-41e2-b20b-883dfb0b29b4.png)'
+  id: totrans-16
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/5e2f1f6c-e41f-41e2-b20b-883dfb0b29b4.png)'
+- en: The Ansible vault solution has been designed to provide encryption services
+    for any structured data file supported by Ansible. This means we can encrypt `group_vars/,
+    AND host_vars/..` inventory variable directories. It also means we can encrypt
+    variable files loaded within the `include_vars/vars_files`. As we can see from
+    the preceding, the supported supported by Ansible's vault solution is vast. Basically
+    in the end it means we can encrypt ANY and ALL data we want using the vault EXCEPT
+    playbook's themselves.
+  id: totrans-17
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible Vault 解决方案的设计旨在为任何 Ansible 支持的结构化数据文件提供加密服务。这意味着我们可以加密 `group_vars/`
+    和 `host_vars/..` 库存变量目录。它还意味着我们可以加密在 `include_vars/vars_files` 中加载的变量文件。从前述内容可以看出，Ansible
+    的 Vault 解决方案支持的范围非常广泛。基本上，这意味着我们可以加密任何和所有我们希望加密的数据，唯一的例外是 playbook 本身。
+- en: Version 2.3 of Ansible includes a feature that supports encrypting single variable
+    values within an Ansible YAML file. This is accomplished using the `!vault` tag.
+    The result of this special tag allows us to inform Ansible to decrypt the value
+    when processing the facts of the file.
+  id: totrans-18
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 版本 2.3 引入了一项功能，支持在 Ansible YAML 文件中加密单个变量值。这是通过使用 `!vault` 标签实现的。此特殊标签的结果允许我们在处理文件的事实时，通知
+    Ansible 解密该值。
+- en: In addition to the ability to encrypt variables and variable files, the entire
+    playbook can be encrypted. More so, Ansible also supports the encryption of binary
+    files, data files, and much more. These files can then be decrypted on the fly
+    using `copy_file`. In addition to the copy file option, there are many others
+    that are supported by Ansible vault. In the next sections, we will look at some
+    examples of how to encrypt, decrypt, and rekey vault files on the fly and how
+    we can leverage Ansible's vault later in the chapter. Before we dig into that,
+    let's take a look at how to use the basic implementation of the Ansible vault
+    and how to encrypt, decrypt, and rekey vault files.
+  id: totrans-19
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 除了能够加密变量和变量文件之外，还可以加密整个 playbook。更重要的是，Ansible 还支持加密二进制文件、数据文件以及更多其他文件。这些文件可以通过
+    `copy_file` 命令即时解密。除了复制文件选项，Ansible Vault 还支持许多其他选项。在接下来的章节中，我们将查看一些如何即时加密、解密和重新设置
+    Vault 文件密钥的示例，并展示我们如何在本章后续内容中利用 Ansible 的 Vault 功能。在深入了解这些之前，让我们先看看如何使用 Ansible
+    Vault 的基本实现以及如何加密、解密和重新设置 Vault 文件的密钥。
+- en: Basic Vault Usage
+  id: totrans-20
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Vault 基本用法
+- en: Ansible vault's most basic implementation is a simple AES Symmetric Key encryption
+    solution (as we discussed earlier). The implementation of this is managed through
+    the command-line interface, specifically the `ansible-vault` command. Using this
+    command, we have the ability to encrypt, decrypt, rekey, and edit vault specific
+    files. The syntax of each of these commands along with a description and example
+    is provided next.
+  id: totrans-21
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible Vault 最基本的实现是一个简单的 AES 对称密钥加密解决方案（如前所述）。这个实现通过命令行界面进行管理，具体是通过 `ansible-vault`
+    命令。使用此命令，我们可以加密、解密、重新设置密钥并编辑 Vault 特定的文件。接下来将提供这些命令的语法、描述和示例。
+- en: Encrypting an Ansible vault YAML file
+  id: totrans-22
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 加密 Ansible Vault YAML 文件
+- en: This command syntax allows us to encrypt the contents of a YAML file. Upon executing,
+    it will prompt the user for the key they wish to use in order to encrypt it.
+  id: totrans-23
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个命令语法允许我们加密 YAML 文件的内容。执行时，它会提示用户输入希望使用的密钥来进行加密。
+- en: 'The content of the `my_vault.yml` file is shown here:'
+  id: totrans-24
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`my_vault.yml` 文件的内容如下所示：'
+- en: '[PRE0]'
+  id: totrans-25
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: 'Then, in order to encrypt the file, execute the following command:'
+  id: totrans-26
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后，为了加密文件，执行以下命令：
+- en: '[PRE1]'
+  id: totrans-27
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: 'The output of the command execution is shown next:'
+  id: totrans-28
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 命令执行的输出如下所示：
+- en: '[PRE2]'
+  id: totrans-29
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: 'Once the file is encrypted, we can see the encryption via the `cat` command,
+    as shown next:'
+  id: totrans-30
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦文件被加密，我们可以通过 `cat` 命令查看加密结果，如下所示：
+- en: '![](img/86931c42-81c4-4ca8-8f6a-0915ca447659.png)'
+  id: totrans-31
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/86931c42-81c4-4ca8-8f6a-0915ca447659.png)'
+- en: 'This example shows a simple way to encrypt and decrypt data using Ansible vault.
+    This tactic is useful from a command line and manual input perspective, but it
+    adds a human element to our automation execution that we may not always want.
+    Encrypting files can also be done via a single command-line entry, as shown here:'
+  id: totrans-32
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本示例展示了一个使用 Ansible Vault 加密和解密数据的简单方法。这个策略在命令行和手动输入方面非常有用，但它为我们的自动化执行增加了一个人为的元素，这可能并不是我们总是想要的。文件加密也可以通过单个命令行输入完成，如下所示：
+- en: '[PRE3]'
+  id: totrans-33
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: In this example, we can see that Ansible vault has the option of taking in a
+    password file. The `vault_pass.txt` is simply a flat text file that contains the
+    Ansible vault password. This command-line instructs Ansible to use the password
+    in the text file instead of prompting for a password. This option makes automating
+    the vault a lot easier as there is no required human intervention.
+  id: totrans-34
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这个例子中，我们可以看到 Ansible vault 有接受密码文件的选项。`vault_pass.txt` 只是一个包含 Ansible vault
+    密码的纯文本文件。此命令行指示 Ansible 使用文本文件中的密码，而不是提示输入密码。这个选项使得自动化管理 vault 更加容易，因为不再需要人工干预。
+- en: To decrypt
+  id: totrans-35
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 解密
+- en: The `decrypt` option of Ansible vault decrypts the contents of a previously
+    encrypted YAML vault file. Upon executing it, Ansible vault will prompt the user
+    for the vault password to decrypt the file. Once the password has been inputted,
+    Ansible uses AES Symmetric Key encryption to decrypt the file (if the correct
+    key was entered). Let's look at an example.
+  id: totrans-36
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible vault 的 `decrypt` 选项可以解密先前加密的 YAML vault 文件。在执行时，Ansible vault 会提示用户输入
+    vault 密码来解密文件。一旦输入密码，Ansible 会使用 AES 对称密钥加密算法解密文件（如果输入了正确的密钥）。让我们看一个例子。
+- en: 'First, let''s start with our encrypted file that we created in the previous
+    section on encrypting using Ansible vault. A screenshot of the encrypted vault
+    file is provided next:'
+  id: totrans-37
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 首先，让我们从我们在前一部分中创建的加密文件开始。以下是加密的 vault 文件的截图：
+- en: '![](img/7d9ba786-67ee-4b23-bb4d-07561b6111b9.png)'
+  id: totrans-38
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/7d9ba786-67ee-4b23-bb4d-07561b6111b9.png)'
+- en: 'Then, decrypt the file using the following command:'
+  id: totrans-39
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后，使用以下命令解密文件：
+- en: '[PRE4]'
+  id: totrans-40
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: 'The output of the execution of this command would be the following:'
+  id: totrans-41
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 执行此命令的输出将如下所示：
+- en: '[PRE5]'
+  id: totrans-42
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: 'Once the file is decrypted, we can see the decrypted file as such:'
+  id: totrans-43
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦文件被解密，我们可以看到解密后的文件，如下所示：
+- en: '![](img/3228a93f-5ea3-4e09-950c-7bd95ab3ece6.png)'
+  id: totrans-44
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/3228a93f-5ea3-4e09-950c-7bd95ab3ece6.png)'
+- en: 'Similar to the encryption mechanism we talked about earlier, we can also specify
+    the vault key in the keyfile form on the command line. This will help us better
+    automate things and remove the need for us to manually type the password. An example
+    is shown next:'
+  id: totrans-45
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 类似于我们之前讨论的加密机制，我们也可以在命令行中使用密钥文件形式指定 vault 密钥。这将帮助我们更好地自动化流程，并避免手动输入密码。下文是一个示例：
+- en: '[PRE6]'
+  id: totrans-46
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: To rekey an Ansible vault file
+  id: totrans-47
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 为 Ansible vault 文件重新设置密钥
+- en: 'Changing the key that Ansible vault uses to encrypt/decrypt a vault file is
+    a fairly simplistic task. It simply involves using the `rekey` operator within
+    the Ansible vault command-line context. In the following example, the `rekey`
+    command syntax is shown:'
+  id: totrans-48
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 更改 Ansible vault 用于加密/解密 vault 文件的密钥是一个相当简单的任务。只需在 Ansible vault 命令行上下文中使用 `rekey`
+    操作符即可。以下示例展示了 `rekey` 命令的语法：
+- en: '[PRE7]'
+  id: totrans-49
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE7]'
+- en: 'Upon running the previous command, we will be prompted for the existing key
+    and a new key. The output (if the `rekey` was a success) should look something
+    like the following:'
+  id: totrans-50
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 运行前面的命令后，我们将被提示输入现有密钥和新密钥。输出（如果 `rekey` 成功）应该类似于以下内容：
+- en: '![](img/dfb00d6b-d17e-4c16-af3e-fb9dc56df8ae.png)'
+  id: totrans-51
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/dfb00d6b-d17e-4c16-af3e-fb9dc56df8ae.png)'
+- en: Editing in place
+  id: totrans-52
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 就地编辑
+- en: 'The Ansible vault solution provides a handy way of editing vault encrypted
+    information on the fly using the default system editor. Within the context of
+    a Linux operating system, the default editor can be set on the command line using
+    the following command syntax:'
+  id: totrans-53
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible vault 解决方案提供了一种便捷的方式，使用默认系统编辑器实时编辑加密的 vault 信息。在 Linux 操作系统中，可以通过以下命令语法在命令行设置默认编辑器：
+- en: '[PRE8]'
+  id: totrans-54
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE8]'
+- en: In the previous code, we set the editor to be `vi`; however, you can set it
+    to any editor of your preference [`nano`, `pico`, `vi`, `vim`, and so on).
+  id: totrans-55
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在前面的代码中，我们将编辑器设置为 `vi`；然而，你可以将其设置为你喜欢的任何编辑器（`nano`、`pico`、`vi`、`vim` 等）。
+- en: Usually on Linux systems, the default editor is usually set to `vi`.
+  id: totrans-56
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 Linux 系统上，默认编辑器通常设置为 `vi`。
+- en: 'Now that we have the default editor in place, we can edit our Ansible vault
+    data by issuing the `edit` command option in conjunction with the `ansible-vault`
+    command. Let''s look at an example:'
+  id: totrans-57
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经设置好默认编辑器，可以通过在 `ansible-vault` 命令中使用 `edit` 命令选项来编辑我们的 Ansible vault 数据。让我们看一个例子：
+- en: '[PRE9]'
+  id: totrans-58
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE9]'
+- en: Decrypting the vault when running a playbook
+  id: totrans-59
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 在运行 playbook 时解密 vault
+- en: Encrypting, decrypting, and rekeying Ansible vault data manually is one thing;
+    using this information on the fly within the context of playbook execution is
+    what we really want to achieve. In this section, we will cover how to decrypt
+    the Ansible vault encrypted data within the context of playbook execution.
+  id: totrans-60
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 手动加密、解密和重新设置 Ansible Vault 数据是一回事；在 playbook 执行过程中动态使用这些信息才是我们真正想要实现的目标。在本节中，我们将介绍如何在
+    playbook 执行过程中解密 Ansible Vault 加密数据。
+- en: There are two ways to automatically decrypt the vault data embedded within a
+    playbook or variables file. The first is by storing the vault key within a flat
+    text file and then passing this key file to the `ansible-playbook` command. The
+    second is to use the `--ask-vault-pass` command-line option to prompt the user
+    for the vault password. Let's take a look at how each of these options works.
+  id: totrans-61
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有两种方式可以自动解密嵌入在 playbook 或变量文件中的 Vault 数据。第一种是将 Vault 密钥存储在纯文本文件中，然后将该密钥文件传递给
+    `ansible-playbook` 命令。第二种是使用 `--ask-vault-pass` 命令行选项提示用户输入 Vault 密码。我们来看看这两种方式是如何工作的。
+- en: Automatically decrypting using password files
+  id: totrans-62
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用密码文件自动解密
+- en: 'The most desirable way to decrypt Ansible vaulted data is to do so without
+    user intervention. This option opens the door for a more flexible automation approach
+    (initiating it through Jenkins, CircleCI, Bamboo, or whatever). To implement this
+    solution, the trick is to store the Ansible vault password within a password file.
+    For example, if we were to have a `vars` file, we would encrypt it using the `encrypt`
+    option and then store the key we used to encrypt it in the flat text file. Then,
+    when running the `ansible-playbook` command, we could pass the `vault-password-file`
+    directly. The syntax of this is shown next:'
+  id: totrans-63
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 解密 Ansible Vault 数据的最理想方式是无需用户干预。这个选项为更灵活的自动化方法打开了大门（可以通过 Jenkins、CircleCI、Bamboo
+    等发起）。为了实现这一解决方案，诀窍是将 Ansible Vault 密码存储在密码文件中。例如，如果我们有一个 `vars` 文件，我们将使用 `encrypt`
+    选项加密它，然后将用来加密它的密钥存储在纯文本文件中。然后，在运行 `ansible-playbook` 命令时，我们可以直接传递 `vault-password-file`。其语法如下所示：
+- en: '[PRE10]'
+  id: totrans-64
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE10]'
+- en: The password should be a string stored as a single line in the file.
+  id: totrans-65
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 密码应存储为文件中的单行字符串。
+- en: Manually decrypting vault data
+  id: totrans-66
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 手动解密 Vault 数据
+- en: 'The alternative approach to decrypting Ansible vaulted data would be to have
+    Ansible prompt the user for the password upon executing the playbook. This can
+    be accomplished in a simple manner as well. The following command syntax shows
+    how to instruct Ansible to prompt the user for the vault password prior to executing
+    a playbook:'
+  id: totrans-67
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 解密 Ansible Vault 数据的另一种方法是让 Ansible 在执行 playbook 时提示用户输入密码。这也可以通过简单的方式来实现。以下命令语法演示了如何指示
+    Ansible 在执行 playbook 前提示用户输入 Vault 密码：
+- en: '[PRE11]'
+  id: totrans-68
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE11]'
+- en: Real-world Ansible Vault Workflow
+  id: totrans-69
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 真实世界中的 Ansible Vault 工作流
+- en: The Ansible vault implementation is a really robust solution designed to provide
+    security for sensitive information. The implementation (as you learned already)
+    allows us to encrypt, decrypt, rekey, and edit private data with ease. As easy
+    as the vault is to use, finding a maintainable way to utilize the Ansible vault
+    is not always easily apparent. As such, within this section, we will discuss some
+    tips and tricks that can make your Ansible vault experience a bit more enjoyable.
+  id: totrans-70
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible Vault 的实现是一个非常强大的解决方案，旨在为敏感信息提供安全保护。正如你已经学习过的，它允许我们轻松地加密、解密、重新设置密钥和编辑私密数据。虽然
+    Vault 的使用非常简单，但要找到一种可维护的方式来使用 Ansible Vault 并不总是显而易见的。因此，在本节中，我们将讨论一些小技巧，帮助你让
+    Ansible Vault 的使用体验更加愉快。
+- en: Ansible vault with roles
+  id: totrans-71
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 带有角色的 Ansible Vault
+- en: The Ansible vault implementation is best leveraged in conjunction with roles.
+    Roles (as we discussed earlier) allow us to modularize our playbooks and reuse
+    functionality within them. The specific area of the roles implementation we are
+    going to look at would be the vars folder. The vars folder is where we define
+    our variables and data points that are then used by the tasks and plays.
+  id: totrans-72
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible Vault 的实现最好与角色一起使用。角色（正如我们之前讨论的）允许我们将 playbook 模块化，并在其中重用功能。我们将要关注的角色实现特定领域是
+    vars 文件夹。vars 文件夹是我们定义变量和数据点的地方，这些变量和数据点随后被任务和 play 使用。
+- en: 'To begin with this tutorial, let''s start by creating an Ansible playbook with
+    the following folder and file structure (the contents of the files can be blank
+    for now, as we will fill in the details in just a moment):'
+  id: totrans-73
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了开始本教程，我们先创建一个 Ansible playbook，并采用以下文件夹和文件结构（文件内容可以暂时为空，我们将在稍后填写详细信息）：
+- en: '![](img/1f088786-a35a-48ac-ab46-9551d3790482.png)'
+  id: totrans-74
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/1f088786-a35a-48ac-ab46-9551d3790482.png)'
+- en: 'Once created, there are a few things that should become immediately apparent.
+    The first is that the playbook we are creating is a simple vault test with a single
+    role and a `sensitive_data` variable''s implementation. Also, as you may have
+    guessed, we will be using the `sensitive_data.yml` file to store our super secret
+    information. The contents of this file should reflect the following:'
+  id: totrans-75
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦创建了这些文件，有几点应该立即显现出来。首先，我们正在创建的playbook是一个简单的Vault测试，包含一个角色和一个`sensitive_data`变量的实现。此外，正如你可能已经猜到的，我们将使用`sensitive_data.yml`文件来存储我们超级机密的信息。该文件的内容应该如下所示：
+- en: '[PRE12]'
+  id: totrans-76
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE12]'
+- en: As we can see from the provided file content, we have a simple vars file with
+    a variable defined within, titled `secret_text`.
+  id: totrans-77
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 从提供的文件内容中，我们可以看到一个简单的vars文件，其中定义了一个名为`secret_text`的变量。
+- en: The YAML syntax supports multi-line variable implementations. This is accomplished
+    via the `|` or pipe character, which is provided at the end of the line.
+  id: totrans-78
+  prefs: []
+  type: TYPE_NORMAL
+  zh: YAML语法支持多行变量实现。这是通过在行尾添加`|`符号来完成的。
+- en: 'Now that sensitive data has been created, let''s encrypt our vars file using
+    the Ansible vault encrypt command. This is accomplished via the following command-line
+    entry:'
+  id: totrans-79
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，敏感数据已经创建，我们来使用Ansible Vault加密命令加密我们的vars文件。这可以通过以下命令行输入完成：
+- en: '[PRE13]'
+  id: totrans-80
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE13]'
+- en: 'Now that the file is encrypted, we can create our role file, call it the `main.yml`
+    file, and populate our role information. The contents of `main.yml` should look
+    like the following:'
+  id: totrans-81
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在文件已经加密，我们可以创建我们的角色文件，命名为`main.yml`，并填写我们的角色信息。`main.yml`的内容应如下所示：
+- en: '[PRE14]'
+  id: totrans-82
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE14]'
+- en: 'Finally, let''s create our `playbook.yml` file. These files are going to be
+    really simple and only point to a single role (`vaulttest`). Let''s take a look
+    at the contents of these files:'
+  id: totrans-83
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后，我们来创建我们的`playbook.yml`文件。这些文件将非常简单，只会指向一个单一的角色（`vaulttest`）。让我们来看看这些文件的内容：
+- en: '[PRE15]'
+  id: totrans-84
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE15]'
+- en: 'Now that we have all our files created, let''s go ahead and `commit` our code
+    to source control (if applicable) and test it out. The command to run the solution
+    is provided next:'
+  id: totrans-85
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经创建了所有的文件，接下来让我们将代码`commit`到版本控制系统（如果适用）并进行测试。运行解决方案的命令如下：
+- en: '[PRE16]'
+  id: totrans-86
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE16]'
+- en: 'The following is the output you should see when running it:'
+  id: totrans-87
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 运行时，你应该看到以下输出：
+- en: '![](img/16b8d073-ba3b-4b9e-a8fa-ba245ac6b060.png)'
+  id: totrans-88
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/16b8d073-ba3b-4b9e-a8fa-ba245ac6b060.png)'
+- en: Summary
+  id: totrans-89
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 摘要
+- en: In this chapter, you learned about Ansible vault. You also learned how to encrypt
+    files, decrypt them, rekey an encrypted file, edit them on the fly, and use the
+    data within a playbook. Ansible vault provides us with a really simple way to
+    encrypt and store encrypted data. As we saw through examples, the encrypting and
+    decrypting of files within the ansible vault architecture does not need to be
+    complex or complicated. The techniques we discussed within this chapter have wide
+    applicable use within an IT operations- or DevOps-oriented organization.
+  id: totrans-90
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，你了解了Ansible Vault。你还学会了如何加密文件、解密文件、重新密钥加密文件、动态编辑文件，并在playbook中使用这些数据。Ansible
+    Vault为我们提供了一种非常简单的方式来加密和存储加密数据。正如我们通过示例看到的，Ansible Vault架构中的文件加密和解密并不需要复杂或繁琐。我们在本章讨论的技巧在IT运维或DevOps导向的组织中有着广泛的应用。
+- en: In the next chapter, we will talk about Ansible's wide arrange of module and
+    libraries. This chapter will help us identify some of the more popular modules
+    and libraries that Ansible provides to integrate it with other tools. Let's proceed.
+  id: totrans-91
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一章中，我们将讨论Ansible的广泛模块和库。本章将帮助我们识别一些Ansible提供的流行模块和库，以便将其与其他工具集成。让我们继续前进。

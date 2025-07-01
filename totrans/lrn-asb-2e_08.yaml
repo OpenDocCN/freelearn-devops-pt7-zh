@@ -1,0 +1,820 @@
+- en: '8'
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '8'
+- en: Ansible Network Modules
+  id: totrans-1
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Ansible 网络模块
+- en: Welcome to [*Chapter 8*](B21620_08.xhtml#_idTextAnchor386); this chapter will
+    look at an often-overlooked use case for Ansible and delve into Ansible’s expansive
+    community of networking modules.
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 欢迎来到[*第8章*](B21620_08.xhtml#_idTextAnchor386)；本章将探讨 Ansible 的一个常被忽视的使用案例，并深入了解
+    Ansible 庞大的网络模块社区。
+- en: In this chapter, instead of a deep dive into every collection—which could be
+    an entire book—we’ll provide an overview, highlighting these modules’ capabilities
+    and flexibilities.
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章将提供一个概述，而不是深入探讨每个集合——因为那可能需要一本完整的书——重点介绍这些模块的功能和灵活性。
+- en: 'The chapter covers the following topic:'
+  id: totrans-4
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章讨论以下内容：
+- en: Manufacturer and device support
+  id: totrans-5
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 制造商和设备支持
+- en: Manufacturer and device support
+  id: totrans-6
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 制造商和设备支持
+- en: So far, we have been looking at modules that interact with servers. In our case,
+    they have mostly been running locally. In the upcoming chapters, we will be communicating
+    more with remotely cloud-hosted servers. But, before interacting with remote servers,
+    we should cover the core network modules.
+  id: totrans-7
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 到目前为止，我们一直在关注与服务器交互的模块。在我们的案例中，这些模块大多数是本地运行的。在接下来的章节中，我们将更多地与远程云托管的服务器进行通信。但是，在与远程服务器交互之前，我们应该先了解核心网络模块。
+- en: These modules have all been designed to interact with and manage the configuration
+    of various network devices, from your traditional top-of-rack switches and fully
+    virtualized network infrastructure to firewalls and load balancers. Ansible supports
+    many devices, from open source virtual appliances to hardware solutions, some
+    of which could have a starting price of over USD 500,000, depending on your configuration.
+  id: totrans-8
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这些模块的设计旨在与各种网络设备交互并管理其配置，从传统的机架顶部交换机和完全虚拟化的网络基础设施，到防火墙和负载均衡器。Ansible 支持许多设备，从开源虚拟设备到硬件解决方案，其中一些设备的起始价格可能超过
+    50 万美元，具体取决于你的配置。
+- en: So, what do all these collections and modules have in common?
+  id: totrans-9
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 那么，这些集合和模块有什么共同点呢？
+- en: Well, they all interact with what are traditionally complex to configure devices,
+    which, in most deployments and environments, are both the core and critical elements;
+    after all, everything connected to them needs some level of network connectivity.
+  id: totrans-10
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这些模块的共同点是，它们都与传统上配置复杂的设备进行交互，而这些设备在大多数部署和环境中，既是核心也是关键元素；毕竟，所有与它们连接的设备都需要某种程度的网络连接性。
+- en: These modules give you a standard interface, i.e., Ansible, for many of these
+    devices and remove the need for engineers to access these devices directly. They
+    can, instead, run Ansible playbooks, which run roles created by experienced network
+    engineers to configure them in a controlled and consistent way by just changing
+    a few variables.
+  id: totrans-11
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这些模块为许多设备提供了一个标准接口，即 Ansible，避免了工程师直接访问这些设备的需要。相反，他们可以运行 Ansible playbook，这些
+    playbook 由经验丰富的网络工程师创建角色，以受控且一致的方式配置设备，只需更改几个变量。
+- en: The only downside of using Ansible to manage this critical core infrastructure
+    is that the host running Ansible requires a line of sight to the management interface
+    or API running on the devices, which may sometimes raise some security concerns.
+    Hence, Ansible’s instructions on how to manage your network devices need some
+    serious thought.
+  id: totrans-12
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用 Ansible 管理这些关键核心基础设施的唯一缺点是，运行 Ansible 的主机需要能够访问设备上的管理接口或 API，这有时会引发一些安全问题。因此，Ansible
+    提供的关于如何管理网络设备的指南需要经过深思熟虑。
+- en: The collections
+  id: totrans-13
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 这些集合
+- en: The following list of collections is in the order of the namespaces and then
+    the collection name; this is listed at the end of each item as **[namespace.collection-name]**.
+  id: totrans-14
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是按命名空间顺序列出的集合；每个条目末尾列出了**[命名空间.集合名称]**。
+- en: Apstra Extensible Operating System (EOS) [arista.eos]
+  id: totrans-15
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: Apstra 可扩展操作系统 (EOS) [arista.eos]
+- en: There are over 30 modules that allow you to manage your devices running EOS.
+    These modules let you operate **access control lists** (**ACLs**) interfaces,
+    configure **border gateway protocol** (**BGP**) settings, run arbitrary commands
+    on devices, manage hostname, interface configurations, logging, and more. A module
+    also allows you to gather facts from each device.
+  id: totrans-16
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有超过 30 个模块可以让你管理运行 EOS 的设备。这些模块可以让你操作**访问控制列表**（**ACLs**）接口，配置**边界网关协议**（**BGP**）设置，在设备上运行任意命令，管理主机名、接口配置、日志记录等。此外，还有一个模块允许你从每个设备收集事实数据。
+- en: Additionally, there are plugins for command line and HTTP API interactions.
+  id: totrans-17
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 此外，还提供了用于命令行和 HTTP API 交互的插件。
+- en: Check Point [check_point.mgmt]
+  id: totrans-18
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: Check Point [check_point.mgmt]
+- en: The Ansible collection for Check Point Management comprises many modules; at
+    the time of writing, there are over 250 modules.
+  id: totrans-19
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Check Point 管理的 Ansible 集合包含许多模块；截至写作时，已有超过 250 个模块。
+- en: Each manages different aspects of your Check Point device, such as access layers,
+    rules, administrators, or network feeds on your Check Point firewall using the
+    Web Services API. They provide functionalities ranging from fetching facts and
+    adding or managing objects to workflow features such as approving and publishing
+    sessions on your Check Point firewall.
+  id: totrans-20
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 每个模块管理你 Check Point 设备的不同方面，如访问层、规则、管理员或通过 Web 服务 API 管理 Check Point 防火墙上的网络流量源。它们提供的功能包括从获取事实和添加或管理对象，到工作流功能，如批准和发布
+    Check Point 防火墙上的会话。
+- en: Cisco
+  id: totrans-21
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: Cisco
+- en: Given the number of Cisco device types and classes, there are several collections
+    in the Cisco namespace.
+  id: totrans-22
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 考虑到 Cisco 设备类型和类别的数量，Cisco 命名空间中有多个集合。
+- en: Cisco Application Centric Infrastructure (ACI) [cisco.aci]
+  id: totrans-23
+  prefs:
+  - PREF_H4
+  type: TYPE_NORMAL
+  zh: Cisco 应用程序中心基础设施（ACI）[cisco.aci]
+- en: The 150+ ACI modules are used to manage all aspects of Cisco’s ACI, which is
+    to be expected of Cisco’s next-generation API-driven networking stack.
+  id: totrans-24
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 150 多个 ACI 模块用于管理 Cisco ACI 的各个方面，这是 Cisco 下一代 API 驱动网络堆栈的预期功能。
+- en: There are modules for managing various aspects of the Cisco ACI, such as AAAA
+    records (these are address records that store IPv6 addresses), roles, users, certificates,
+    Access SPAN configurations, **bridge domains** (**BDs**) and subnets, BGP route
+    reflectors, and many more. There are modules for managing Cloud Application Profiles
+    and Cloud AWS Provider configurations.
+  id: totrans-25
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有多个模块可用于管理 Cisco ACI 的不同方面，如 AAAA 记录（这些是存储 IPv6 地址的地址记录）、角色、用户、证书、访问 SPAN 配置、**桥接域**（**BDs**）和子网、BGP
+    路由反射器等。还有用于管理云应用程序配置文件和云 AWS 提供商配置的模块。
+- en: Cisco Adaptive Security Appliance (ASA) [cisco.asa]
+  id: totrans-26
+  prefs:
+  - PREF_H4
+  type: TYPE_NORMAL
+  zh: Cisco 自适应安全设备（ASA）[cisco.asa]
+- en: With the five ASA modules, you can manage access lists, run commands, and manage
+    the configuration of physical and virtual Cisco ASA-powered devices.
+  id: totrans-27
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通过五个 ASA 模块，你可以管理访问控制列表、运行命令并管理物理和虚拟 Cisco ASA 设备的配置。
+- en: Cisco DNA Center (DNAC) [cisco.dnac]
+  id: totrans-28
+  prefs:
+  - PREF_H4
+  type: TYPE_NORMAL
+  zh: Cisco DNA Center (DNAC) [cisco.dnac]
+- en: The Ansible collection for the Cisco DNAC comprises nearly 400 modules to manage
+    different aspects of your Cisco DNAC deployment. The modules cover a range of
+    functionalities, from fetching the configuration details of access points, managing
+    application policies, assigning devices to sites, importing authentication certificates,
+    and running compliance checks to managing configuration templates.
+  id: totrans-29
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Cisco DNAC 的 Ansible 集合包括近 400 个模块，用于管理 Cisco DNAC 部署的不同方面。这些模块涵盖了从获取接入点配置详情、管理应用策略、将设备分配到站点、导入认证证书、运行合规性检查，到管理配置模板等多个功能。
+- en: Cisco IOS and IOS XR [cisco.ios and cisco.iosxr]
+  id: totrans-30
+  prefs:
+  - PREF_H4
+  type: TYPE_NORMAL
+  zh: Cisco IOS 和 IOS XR [cisco.ios 和 cisco.iosxr]
+- en: These two collections contain modules that allow you to manage your Cisco IOS
+    and IOS XR-powered devices. You can gather facts on your devices and configure
+    users, interfaces, logging, banners, and more with them.
+  id: totrans-31
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这两个集合包含用于管理 Cisco IOS 和 IOS XR 驱动的设备的模块。你可以使用它们收集设备信息，并配置用户、接口、日志、横幅等。
+- en: Identity Services Engine (ISE) [cisco.ise]
+  id: totrans-32
+  prefs:
+  - PREF_H4
+  type: TYPE_NORMAL
+  zh: 身份服务引擎（ISE）[cisco.ise]
+- en: This collection manages your ISE; it comprises a variety of modules for managing
+    settings and configurations, such as handling ACI bindings and settings, managing
+    Active Directory settings, handling allowed protocols, administering ANC endpoints
+    and policies, managing backup configurations and schedules, handling certificates,
+    and more.
+  id: totrans-33
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 该集合管理你的 ISE；它包含多个模块，用于管理设置和配置，例如处理 ACI 绑定和设置、管理 Active Directory 设置、处理允许的协议、管理
+    ANC 端点和策略、管理备份配置和计划、处理证书等。
+- en: Cisco Meraki [cisco.meraki]
+  id: totrans-34
+  prefs:
+  - PREF_H4
+  type: TYPE_NORMAL
+  zh: Cisco Meraki [cisco.meraki]
+- en: Here, we have just short of 500 modules that manage the different elements of
+    your Meraki deployment, such as administered identities, device details, camera
+    settings, cellular gateway configurations, and sensor relationships. Each module
+    is designed to fetch information or modify settings, which helps you manage your
+    Cisco Meraki devices by using automation.
+  id: totrans-35
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这里，我们有近 500 个模块，用于管理 Meraki 部署的不同元素，如管理的身份、设备详情、摄像头设置、蜂窝网关配置和传感器关系。每个模块都旨在获取信息或修改设置，帮助你通过自动化管理
+    Cisco Meraki 设备。
+- en: Cisco Network Services Orchestrator (NSO) [cisco.nso]
+  id: totrans-36
+  prefs:
+  - PREF_H4
+  type: TYPE_NORMAL
+  zh: Cisco 网络服务编排器（NSO）[cisco.nso]
+- en: A handful of modules allow you to interact with your Cisco NSO-managed devices.
+    You can execute NSO actions, query data from your installation, and verify your
+    configuration alongside service synchronization and configuration.
+  id: totrans-37
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一些模块允许你与 Cisco NSO 管理的设备进行交互。你可以执行 NSO 操作、查询你的安装数据，并验证你的配置，同时进行服务同步和配置。
+- en: Cisco Network Operating System Software (NX-OS) [cisco.nxos]
+  id: totrans-38
+  prefs:
+  - PREF_H4
+  type: TYPE_NORMAL
+  zh: Cisco 网络操作系统软件 (NX-OS) [cisco.nxos]
+- en: As you can imagine, there are a lot of modules for managing devices running
+    Cisco NXOS; there are over 80 that cover a range of functions such as managing
+    AAA server configurations, ACLs, BGP configurations, executing arbitrary commands,
+    managing interfaces, and handling various other configurations and settings on
+    Cisco NX-OS devices.
+  id: totrans-39
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所想，管理运行 Cisco NXOS 的设备的模块非常多；有超过 80 个模块，涵盖了诸如管理 AAA 服务器配置、ACL、BGP 配置、执行任意命令、管理接口以及处理
+    Cisco NX-OS 设备上的各种其他配置和设置等功能。
+- en: Cisco Unified Computing System (UCS) [cisco.ucs]
+  id: totrans-40
+  prefs:
+  - PREF_H4
+  type: TYPE_NORMAL
+  zh: Cisco 统一计算系统 (UCS) [cisco.ucs]
+- en: While not strictly a networking device, the modules to manage Cisco’s unified
+    computing, storage, and network system include one that allows you to manage DNS
+    servers, IP address pools, LAN connectivity policies, MAC address pools, QoS settings,
+    VLANs, and vNICs. The rest of the modules allow you to programmatically manage
+    computing and storage across your blades and chassis.
+  id: totrans-41
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 尽管这些模块不严格属于网络设备，但管理 Cisco 统一计算、存储和网络系统的模块包括一个允许你管理 DNS 服务器、IP 地址池、局域网连接策略、MAC
+    地址池、QoS 设置、VLAN 和 vNIC 的模块。其余模块允许你以编程方式管理刀片和机箱中的计算和存储。
+- en: F5 BIG-IP Imperative [F5Networks.F5_Modules]
+  id: totrans-42
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: F5 BIG-IP 命令式 [F5Networks.F5_Modules]
+- en: There are 160 modules, all prefixed with BIG-IP, that allow you to manage all
+    aspects of your F5 BIG-IP Application Delivery Controller.
+  id: totrans-43
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有 160 个模块，所有模块都以 BIG-IP 为前缀，允许你管理 F5 BIG-IP 应用交付控制器的各个方面。
+- en: Fortinet
+  id: totrans-44
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: Fortinet
+- en: There are just two collections in the Fortinet namespace, but, as you can see
+    from the number of modules in each, they are very feature-rich.
+  id: totrans-45
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Fortinet 命名空间中只有两个集合，但正如你从每个集合中的模块数量中看到的，它们功能非常丰富。
+- en: Fortinet FortiManager [fortinet.fortimanager]
+  id: totrans-46
+  prefs:
+  - PREF_H4
+  type: TYPE_NORMAL
+  zh: Fortinet FortiManager [fortinet.fortimanager]
+- en: There are over 1,100 modules (yes, you read that correctly), including configuring
+    antivirus profiles and options, managing AP local configuration profiles and command
+    lists, configuring custom application signatures and firewall application groups,
+    managing internet service applications, and more.
+  id: totrans-47
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 总共有超过 1,100 个模块（没错，你没看错），包括配置防病毒配置文件和选项、管理 AP 本地配置文件和命令列表、配置自定义应用程序签名和防火墙应用程序组、管理互联网服务应用程序等。
+- en: Fortinet FortiOS v6 (fortinet.fortios)
+  id: totrans-48
+  prefs:
+  - PREF_H4
+  type: TYPE_NORMAL
+  zh: Fortinet FortiOS v6 (fortinet.fortios)
+- en: While this has fewer modules than the FortiManager collection, there are still
+    over 650 modules for configuring antivirus settings, application control lists,
+    authentication schemes, and certificate settings.
+  id: totrans-49
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 尽管这个集合的模块比 FortiManager 集合少，但仍有超过 650 个模块用于配置防病毒设置、应用程序控制列表、身份验证方案和证书设置。
+- en: Free Range Routing (FRR) [Frr.Frr]
+  id: totrans-50
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: Free Range Routing (FRR) [Frr.Frr]
+- en: 'There are just two modules here: one that allows you to configure BGP, and
+    the other lets you gather facts about devices running FRR.'
+  id: totrans-51
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这里只有两个模块：一个允许你配置 BGP，另一个让你收集运行 FRR 的设备的事实数据。
+- en: Juniper Networks Junos [junipernetworks.junos]
+  id: totrans-52
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: Juniper Networks Junos [junipernetworks.junos]
+- en: A total of 40 modules enable you to interact with Juniper devices running Junos
+    from within your playbooks. These range from the standard command, configuration,
+    and fact-gathering modules to those that allow you to install packages and copy
+    files to your devices.
+  id: totrans-53
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 总共有 40 个模块使你能够在播放本中与运行 Junos 的 Juniper 设备进行交互。这些模块包括标准的命令、配置和事实收集模块，也包括允许你安装包并将文件复制到设备上的模块。
+- en: Open vSwitch [Openvswitch.Openvswitch]
+  id: totrans-54
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: Open vSwitch [Openvswitch.Openvswitch]
+- en: The four modules in the namespace allow you to manage bonds, bridges, ports,
+    and databases on your OVS virtual switches.
+  id: totrans-55
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 该命名空间中的四个模块允许你管理 OVS 虚拟交换机上的绑定、桥接、端口和数据库。
+- en: VyOS [vyos.vyos]
+  id: totrans-56
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: VyOS [vyos.vyos]
+- en: The VyOS collection includes modules for managing various configurations and
+    resources on VyOS devices. Some of these modules include managing multiline banners,
+    configuring BGP global and address family settings, running commands, managing
+    firewall settings, interface configurations, logging, NTP, OSPF, SNMP, static
+    routes, system commands, user management, and VLAN configurations, among others.
+  id: totrans-57
+  prefs: []
+  type: TYPE_NORMAL
+  zh: VyOS 集合包括用于管理 VyOS 设备上各种配置和资源的模块。 其中一些模块包括管理多行横幅、配置 BGP 全局设置和地址族设置、运行命令、管理防火墙设置、接口配置、日志记录、NTP、OSPF、SNMP、静态路由、系统命令、用户管理和
+    VLAN 配置等。
+- en: The Community Network Collection [Community.Network]
+  id: totrans-58
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 社区网络集合 [Community.Network]
+- en: This collection is a catch-all for all other network modules without dedicated
+    namespace or development teams; the module prefix is now in the square brackets.
+  id: totrans-59
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 此集合是所有没有专用命名空间或开发团队的其他网络模块的集合；模块前缀现在在方括号中。
+- en: A10 Networks [a10]
+  id: totrans-60
+  prefs:
+  - PREF_H4
+  type: TYPE_NORMAL
+  zh: A10 Networks [a10]
+- en: The A10 modules support A10 Networks AX, SoftAX, Thunder, and vThunder devices.
+    These are all application delivery platforms that provide load balancing.
+  id: totrans-61
+  prefs: []
+  type: TYPE_NORMAL
+  zh: A10 模块支持 A10 Networks 的 AX、SoftAX、Thunder 和 vThunder 设备。 这些都是提供负载均衡的应用交付平台。
+- en: Cisco AireOS [aireos]
+  id: totrans-62
+  prefs:
+  - PREF_H4
+  type: TYPE_NORMAL
+  zh: Cisco AireOS [aireos]
+- en: The two AireOS modules allow you to interact with the Cisco Wireless LAN Controllers
+    running AireOS. One of the modules will enable you to run commands directly on
+    the devices, and the other is for managing the configuration.
+  id: totrans-63
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 两个 AireOS 模块允许您与运行 AireOS 的 Cisco 无线局域网控制器进行交互。 其中一个模块将使您能够直接在设备上运行命令，另一个用于管理配置。
+- en: APCON [apcon]
+  id: totrans-64
+  prefs:
+  - PREF_H4
+  type: TYPE_NORMAL
+  zh: APCON [apcon]
+- en: A single module that allows you to run commands on your APCON device.
+  id: totrans-65
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一个模块允许您在 APCON 设备上运行命令。
+- en: Aruba Mobility Controller [aruba]
+  id: totrans-66
+  prefs:
+  - PREF_H4
+  type: TYPE_NORMAL
+  zh: Aruba 移动控制器 [aruba]
+- en: There are just two Aruba modules. These allow you to manage the configuration
+    and execute commands on the Aruba Mobility Controllers from Hewlett Packard.
+  id: totrans-67
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 只有两个 Aruba 模块。 这些模块允许您管理 Hewlett Packard 的 Aruba 移动控制器的配置并执行命令。
+- en: Avi Networks [avi]
+  id: totrans-68
+  prefs:
+  - PREF_H4
+  type: TYPE_NORMAL
+  zh: Avi Networks [avi]
+- en: There are a total of 65 Avi modules that allow you to interact with all aspects
+    of the Avi application services platform, including the load-balancing and **web
+    application firewall** (**WAF**) features.
+  id: totrans-69
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 总共有 65 个 Avi 模块，允许您与 Avi 应用服务平台的所有方面进行交互，包括负载均衡和 **Web 应用防火墙** (**WAF**) 功能。
+- en: Big Cloud Fabric and Big Switch Network [bcf + bigmon]
+  id: totrans-70
+  prefs:
+  - PREF_H4
+  type: TYPE_NORMAL
+  zh: Big Cloud Fabric 和 Big Switch Network [bcf + bigmon]
+- en: There are three Big Switch Network modules. **Big Cloud Fabric** (**BCF**) allows
+    you to create and delete BCF switches. The other two modules enable you to create
+    **Big Monitoring Fabric** (**Big Mon**) service chains and policies.
+  id: totrans-71
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有三个 Big Switch Network 模块。**Big Cloud Fabric** (**BCF**) 允许您创建和删除 BCF 交换机。其余两个模块使您能够创建
+    **Big Monitoring Fabric** (**Big Mon**) 服务链和策略。
+- en: Huawei Cloud Engine [ce]
+  id: totrans-72
+  prefs:
+  - PREF_H4
+  type: TYPE_NORMAL
+  zh: Huawei Cloud Engine [ce]
+- en: Over 75 Cloud Engine modules allow you to manage all aspects of these robust
+    switches from Huawei, including BGP, access control lists, MTU, static routes,
+    VXLANs, and SNMP configuration.
+  id: totrans-73
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 超过 75 个 Cloud Engine 模块使您能够管理来自华为的这些强大交换机的所有方面，包括 BGP、访问控制列表、MTU、静态路由、VXLAN
+    和 SNMP 配置。
+- en: Lenovo CNOS [cnos]
+  id: totrans-74
+  prefs:
+  - PREF_H4
+  type: TYPE_NORMAL
+  zh: Lenovo CNOS [cnos]
+- en: There are nearly 30 modules that allow you to manage devices running the CNOS
+    operating system from Lenovo; they enable you to configure everything from BGP
+    and port aggregation to VLAG, VLANs, and factory reset devices, should you need
+    to.
+  id: totrans-75
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有近30个模块，允许您管理运行 Lenovo CNOS 操作系统的设备；它们使您能够配置从 BGP 和端口聚合到 VLAG、VLAN 以及在需要时恢复出厂设置的设备。
+- en: Arista Cloud Vision [cv]
+  id: totrans-76
+  prefs:
+  - PREF_H4
+  type: TYPE_NORMAL
+  zh: Arista Cloud Vision [cv]
+- en: A single module lets you provision an Arista Cloud Vision server port using
+    a configlet.
+  id: totrans-77
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一个模块允许您使用配置文件配置 Arista Cloud Vision 服务器端口。
+- en: illumos [dladm + flowadm + ipadm]
+  id: totrans-78
+  prefs:
+  - PREF_H4
+  type: TYPE_NORMAL
+  zh: illumos [dladm + flowadm + ipadm]
+- en: illumos is a fork of the Open Solaris operating system. Its powerful networking
+    features make it the perfect candidate for deploying as a self-built router or
+    firewall. These modules allow you to manage the interfaces, NetFlow, and tunnels.
+    Additionally, as illumos is a fork of Open Solaris, your playbook should work
+    on Open Solaris-based operating systems.
+  id: totrans-79
+  prefs: []
+  type: TYPE_NORMAL
+  zh: illumos 是 Open Solaris 操作系统的一个分支。其强大的网络功能使其成为作为自建路由器或防火墙部署的完美候选。 这些模块使您能够管理接口、NetFlow
+    和隧道。此外，由于 illumos 是 Open Solaris 的一个分支，您的剧本应该也适用于基于 Open Solaris 的操作系统。
+- en: Ubiquiti EdgeOS [edgeos + edgeswitch]
+  id: totrans-80
+  prefs:
+  - PREF_H4
+  type: TYPE_NORMAL
+  zh: Ubiquiti EdgeOS [edgeos + edgeswitch]
+- en: The modules for EdgeOS enable you to manage configurations, execute ad hoc commands,
+    and collect facts on EdgeOS-running devices, such as the Ubiquiti Edge Router.
+  id: totrans-81
+  prefs: []
+  type: TYPE_NORMAL
+  zh: EdgeOS 模块使您能够管理配置、执行临时命令并收集运行 EdgeOS 设备（如 Ubiquiti Edge 路由器）上的事实。
+- en: There are also a few modules for Edge Switches.
+  id: totrans-82
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 也有一些模块用于Edge交换机。
+- en: Lenovo Enterprise Networking Operating System [enos]
+  id: totrans-83
+  prefs:
+  - PREF_H4
+  type: TYPE_NORMAL
+  zh: 联想企业网络操作系统 [enos]
+- en: There are three modules for the Lenovo ENOS. Like other devices, these allow
+    you to gather facts, execute commands, and manage the configuration.
+  id: totrans-84
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有三个模块用于Lenovo ENOS。像其他设备一样，它们允许你收集信息、执行命令并管理配置。
+- en: Ericsson [eccli]
+  id: totrans-85
+  prefs:
+  - PREF_H4
+  type: TYPE_NORMAL
+  zh: Ericsson [eccli]
+- en: This single module allows you to run commands on devices running the Ericsson
+    command-line interface.
+  id: totrans-86
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个单一模块允许你在运行爱立信命令行界面的设备上执行命令。
+- en: ExtremeXOS [exos + nos + slxos]
+  id: totrans-87
+  prefs:
+  - PREF_H4
+  type: TYPE_NORMAL
+  zh: ExtremeXOS [exos + nos + slxos]
+- en: These half-a dozen modules allow you to interact with the ExtremeXOS, Extreme
+    Networks SLX-OS, and Extreme Networks NOS software on Extreme Networks switches.
+  id: totrans-88
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这六个模块允许你与Extreme Networks交换机上的ExtremeXOS、Extreme Networks SLX-OS和Extreme Networks
+    NOS软件进行交互。
+- en: Cisco Firepower Threat Defense [ftd]
+  id: totrans-89
+  prefs:
+  - PREF_H4
+  type: TYPE_NORMAL
+  zh: Cisco Firepower威胁防御 [ftd]
+- en: A few modules allow you to configure and upload/download files to a Cisco Firepower
+    Threat Defense device.
+  id: totrans-90
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一些模块允许你配置并上传/下载文件到Cisco Firepower威胁防御设备。
+- en: Itential Automation Platform [iap]
+  id: totrans-91
+  prefs:
+  - PREF_H4
+  type: TYPE_NORMAL
+  zh: Itential自动化平台 [iap]
+- en: A few modules allow you to interact with workflows hosted on the Itential Automation
+    Platform, as well as low-code automation and orchestration for hybrid cloud networks.
+  id: totrans-92
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一些模块允许你与托管在Itential自动化平台上的工作流进行交互，以及为混合云网络提供低代码自动化和编排。
+- en: Ruckus ICX 7000 [icx]
+  id: totrans-93
+  prefs:
+  - PREF_H4
+  type: TYPE_NORMAL
+  zh: Ruckus ICX 7000 [icx]
+- en: These modules allow you to configure your Ruckus ICX 7000 series campus switches.
+  id: totrans-94
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这些模块允许你配置Ruckus ICX 7000系列校园交换机。
+- en: Ingate Session Border Controllers [ig]
+  id: totrans-95
+  prefs:
+  - PREF_H4
+  type: TYPE_NORMAL
+  zh: Ingate会话边界控制器 [ig]
+- en: While these are mainly used for **SIP**, or to give its full name, **session
+    initiation protocol** services, there are a few modules to help configure the
+    network elements.
+  id: totrans-96
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 虽然这些主要用于**SIP**，或者说它的全名是**会话启动协议**服务，但也有一些模块帮助配置网络元素。
+- en: NVIDIA Network Command Line Utility [nclu]
+  id: totrans-97
+  prefs:
+  - PREF_H4
+  type: TYPE_NORMAL
+  zh: NVIDIA网络命令行工具 [nclu]
+- en: A single module that allows you to manage network interfaces using the NVIDIA
+    Network Command Line Utility on compatible devices.
+  id: totrans-98
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一个单一模块允许你在兼容设备上使用NVIDIA网络命令行工具管理网络接口。
+- en: Nokia NetAct [netact]
+  id: totrans-99
+  prefs:
+  - PREF_H4
+  type: TYPE_NORMAL
+  zh: 诺基亚NetAct [netact]
+- en: A single module that allows you to upload and apply your Nokia NetAct-powered
+    core and radio networks.
+  id: totrans-100
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 单个模块允许你上传并应用由诺基亚NetAct驱动的核心和无线网络。
+- en: Citrix Netscaler [netscaler]
+  id: totrans-101
+  prefs:
+  - PREF_H4
+  type: TYPE_NORMAL
+  zh: Citrix Netscaler [netscaler]
+- en: These modules are designed to manage and configure various aspects of Netscaler
+    devices. They cover functionalities such as content switching, **Global Server
+    Load-Balancing** (**GSLB**), load-balancing, issuing Nitro API requests, and saving
+    configurations, as well as managing server configurations, services, service groups,
+    and SSL certificate keys.
+  id: totrans-102
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这些模块旨在管理和配置Netscaler设备的各个方面。它们涵盖的功能包括内容交换、**全球服务器负载均衡**（**GSLB**）、负载均衡、发出Nitro
+    API请求、保存配置，以及管理服务器配置、服务、服务组和SSL证书密钥。
+- en: Nokia Nuage Networks Virtualized Services Platform (VSP) [nuage]
+  id: totrans-103
+  prefs:
+  - PREF_H4
+  type: TYPE_NORMAL
+  zh: 诺基亚Nuage网络虚拟化服务平台（VSP）[nuage]
+- en: There is a single module that allows you to manage enterprises on your Nokia
+    Nuage Networks VSP.
+  id: totrans-104
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有一个单一模块允许你管理诺基亚Nuage网络VSP上的企业。
+- en: OpenSwitch [opx]
+  id: totrans-105
+  prefs:
+  - PREF_H4
+  type: TYPE_NORMAL
+  zh: OpenSwitch [opx]
+- en: A single module that performs the specified action on the YANG object, utilizing
+    the CPS API on the networking device operating OpenSwitch.
+  id: totrans-106
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一个单一模块，通过利用CPS API在运行OpenSwitch的网络设备上对YANG对象执行指定操作。
+- en: Ordnance Virtual Routers [ordnance]
+  id: totrans-107
+  prefs:
+  - PREF_H4
+  type: TYPE_NORMAL
+  zh: Ordnance虚拟路由器 [ordnance]
+- en: 'There are two modules: one to manage configuration and the other to collect
+    facts on Ordnance Virtual Routers.'
+  id: totrans-108
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有两个模块：一个用于管理配置，另一个用于收集Ordnance虚拟路由器的信息。
+- en: Pluribus Networks Netvisor OS [pn]
+  id: totrans-109
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: Pluribus Networks Netvisor OS [pn]
+- en: These 40 modules allow you to manage your **Pluribus Networks** (**PN**) Netvisor
+    OS-powered devices, from creating clusters and routers to running commands on
+    your white-box switches.
+  id: totrans-110
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这40个模块允许你管理你的**Pluribus Networks**（**PN**）Netvisor OS驱动的设备，从创建集群和路由器到在白盒交换机上执行命令。
+- en: Nokia Networks Service Router Operating System [sros]
+  id: totrans-111
+  prefs:
+  - PREF_H4
+  type: TYPE_NORMAL
+  zh: 诺基亚网络服务路由器操作系统 [sros]
+- en: There are three modules that let you run commands against, configure, and roll
+    back changes to your Nokia Networks SROS devices.
+  id: totrans-112
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有三个模块可以让你对诺基亚网络的SROS设备执行命令、配置以及回滚更改。
+- en: Radware [vidrect]
+  id: totrans-113
+  prefs:
+  - PREF_H4
+  type: TYPE_NORMAL
+  zh: Radware [vidrect]
+- en: A small number of modules that allow you to manage your Radware devices via
+    a vDirect server.
+  id: totrans-114
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 少量模块允许你通过vDirect服务器管理Radware设备。
+- en: Ansible Net Common [ansible.netcommon]
+  id: totrans-115
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: Ansible Net Common [ansible.netcommon]
+- en: The final collection is a set of modules that could be considered tools to help
+    support all the devices we have covered in this chapter. There are modules that
+    can ping targets and run generic commands using custom prompts and answers.
+  id: totrans-116
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最终的集合是一组模块，可以视为帮助支持本章中所有设备的工具。这些模块能够 ping 目标并使用自定义提示和答案运行通用命令。
+- en: Summary
+  id: totrans-117
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 总结
+- en: I suspect most of you would not have heard of a lot of the devices we have listed
+    in this chapter, and for the ones you have heard of—such as the Cisco ones—you
+    will probably not have had direct access to them, leaving any configuration to
+    your network administrators.
+  id: totrans-118
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我怀疑你们中的大多数人可能没听说过本章列出的许多设备，对于你们听说过的设备——比如思科的设备——你们可能也没有直接接触过它们，所有的配置工作都交给了网络管理员。
+- en: When we speak about triggering Ansible using CI/CD in [*Chapter 15*](B21620_15.xhtml#_idTextAnchor641),
+    *Using Ansible with GitHub Actions and Azure DevOps*, and [*Chapter 16*](B21620_16.xhtml#_idTextAnchor716),
+    *Introducing Ansible AWX and Red Hat Ansible Automation Platform*, we will learn
+    about some deployment options that could help alleviate the concerns we mentioned
+    at the start of the chapter, e.g., those about a host running your Ansible playbooks
+    needing a line of sight of the potentially critical core infrastructure.
+  id: totrans-119
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当我们在[*第15章*](B21620_15.xhtml#_idTextAnchor641)，“*使用 GitHub Actions 和 Azure DevOps
+    调用 Ansible*”以及[*第16章*](B21620_16.xhtml#_idTextAnchor716)，“*介绍 Ansible AWX 和 Red
+    Hat Ansible 自动化平台*”中讨论通过 CI/CD 触发 Ansible 时，我们将了解一些部署选项，这些选项可能有助于缓解我们在章节开头提到的一些问题，比如关于运行
+    Ansible playbook 的主机需要与潜在的核心基础设施保持视距的问题。
+- en: Before we get to those chapters, we will look at moving our workloads to the
+    cloud, a journey that starts in the next chapter.
+  id: totrans-120
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在我们进入这些章节之前，我们将探讨如何将工作负载迁移到云端，这一过程将在下一章开始。
+- en: Further reading
+  id: totrans-121
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 进一步阅读
+- en: '**The Ansible Collection** **index**: [https://docs.ansible.com/ansible/latest/collections/index.html](https://docs.ansible.com/ansible/latest/collections/index.html)'
+  id: totrans-122
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**Ansible 集合** **索引**：[https://docs.ansible.com/ansible/latest/collections/index.html](https://docs.ansible.com/ansible/latest/collections/index.html)'

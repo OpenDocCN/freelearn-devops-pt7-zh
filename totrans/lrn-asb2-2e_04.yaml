@@ -1,0 +1,1958 @@
+- en: Chapter 4.  Handling Complex Deployment
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 第4章  处理复杂的部署
+- en: You must be wondering why the chapter is named the way it is. The reason for
+    this is so far, we've not yet reached a stage where you can deploy the playbooks
+    in production, especially in complex situations. Complex situations include those
+    where you have to interact with several (hundred or thousand) machines where each
+    group of machines is dependent on another group or groups of machines. These groups
+    may be dependent on each other for all or some transactions, to perform secure
+    complex data backups and replications with master and slaves. In addition, there
+    are several interesting and rather compelling features of Ansible that we've not
+    yet looked at. In this chapter, we will cover all of them with examples. Our aim
+    is that, by the end of this chapter, you should have a clear idea of how to write
+    playbooks that can be deployed in production from a configuration management perspective.
+    The following chapters will add to what we've learned to enhance the experience
+    of using Ansible.
+  id: totrans-1
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你一定在想，为什么这章会取这样的名字。原因是到目前为止，我们还没有进入可以在生产环境中部署 playbook 的阶段，尤其是在复杂的情况下。复杂情况包括那些你需要与多个（几百或几千）台机器进行交互的情况，其中每组机器可能依赖于另一组或多组机器。这些组之间可能在所有或部分事务上相互依赖，执行安全的复杂数据备份和主从复制。此外，还有一些
+    Ansible 的有趣且非常吸引人的特性，我们还没有探讨。在本章中，我们将通过示例来讲解这些特性。我们的目标是，在本章结束时，你应该清楚如何编写可以从配置管理角度部署到生产环境中的
+    playbook。接下来的章节将基于我们学到的内容，进一步增强使用 Ansible 的体验。
+- en: 'To do so, we''ll start with a feature that can come in handy for some occasions:
+    the `local_action`.'
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为此，我们将从一个可能在某些情况下派上用场的功能开始：`local_action`。
+- en: Working with the local_action feature
+  id: totrans-3
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用 `local_action` 功能
+- en: The `local_action` feature of Ansible is a powerful one, especially when we
+    think of Orchestration. This feature allows you to run certain tasks locally on
+    the machine that runs Ansible.
+  id: totrans-4
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 的 `local_action` 功能非常强大，尤其是在我们考虑编排时。这个功能允许你在运行 Ansible 的机器上本地执行某些任务。
+- en: 'Consider the following situations:'
+  id: totrans-5
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 考虑以下情况：
+- en: Spawning a new machine or creating a JIRA ticket
+  id: totrans-6
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 启动一台新机器或创建一个 JIRA 工单
+- en: Managing your command center(s) in terms of installing packages and setting
+    up configurations
+  id: totrans-7
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 管理你的指挥中心(s)，包括安装软件包和配置设置
+- en: Calling a load balancer API to disable a certain web server entry from the load
+    balancer
+  id: totrans-8
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 调用负载均衡器 API 以从负载均衡器中禁用某个 Web 服务器条目
+- en: These are tasks that can be run on the same machine that runs the `ansible-playbook`
+    command rather than logging in to a remote box and running these commands.
+  id: totrans-9
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这些任务可以在运行 `ansible-playbook` 命令的同一机器上执行，而无需登录到远程主机并运行这些命令。
+- en: 'Let''s look at an example. Suppose you want to run a shell module on your local
+    system where you are running your Ansible playbook. The `local_action` option
+    comes into the picture in such situations. If you pass the module name and the
+    module argument to `local_action`, it will run that module locally. Let''s see
+    how this option works with the `shell` module. Consider the following code that
+    shows the output of the `local_action` option:'
+  id: totrans-10
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们看一个例子。假设你想在本地系统上运行一个 shell 模块，那里正在运行你的 Ansible playbook。在这种情况下，`local_action`
+    选项发挥了作用。如果你将模块名称和模块参数传递给 `local_action`，它将在本地运行该模块。让我们看看这个选项如何与 `shell` 模块一起工作。考虑以下代码，显示了
+    `local_action` 选项的输出：
+- en: '[PRE0]'
+  id: totrans-11
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: 'We can now save it as `local_action.yaml` and run it with the following:'
+  id: totrans-12
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们可以将其保存为 `local_action.yaml` 并用以下命令运行：
+- en: '[PRE1]'
+  id: totrans-13
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: 'We receive the following result:'
+  id: totrans-14
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们收到以下结果：
+- en: '[PRE2]'
+  id: totrans-15
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: 'As you can see, the two commands provided us different numbers since they have
+    been executed on different hosts. You can run any module with `local_action`,
+    and Ansible will make sure that the module is run locally on the box where the
+    `ansible-playbook` command is run. Another simple example you can (and should!)
+    try is running two tasks:'
+  id: totrans-16
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，提供的两个命令给出了不同的数字，因为它们在不同的主机上执行。你可以使用`local_action`运行任何模块，Ansible 会确保该模块在运行
+    `ansible-playbook` 命令的机器上本地执行。另一个你可以（并且应该！）尝试的简单示例是运行两个任务：
+- en: '`uname` on the remote machine (`db01` in the preceding case)'
+  id: totrans-17
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 远程机器（如上例中的 `db01`）上的 `uname`
+- en: '`uname` on the local machine but with local_action enabled'
+  id: totrans-18
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 本地机器上的 `uname`，但启用了 `local_action`
+- en: This will crystallize the idea of `local_action` further.
+  id: totrans-19
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这将进一步明确 `local_action` 的概念。
+- en: 'Ansible provides another method to delegate certain actions to a specific (or
+    different) machine: the `delegate_to` system.'
+  id: totrans-20
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 提供了另一种将某些操作委托给特定（或不同）机器的方法：`delegate_to` 系统。
+- en: Delegating a task
+  id: totrans-21
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 委托任务
+- en: 'Sometimes you want to execute an action on a different system. This could be,
+    for instance, a database node while you are deploying something on an application
+    server node or to the local host. To do so, you can just add the ''`delegate_to:
+    HOST`'' property to your task and it will be run on the proper node. Let''s rework
+    the previous example to achieve this:'
+  id: totrans-22
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '有时，你可能希望在不同的系统上执行操作。例如，当你在应用服务器节点或本地主机上部署某些内容时，可能需要在数据库节点上执行某个操作。为此，你只需要在任务中添加
+    `delegate_to: HOST` 属性，它将会在适当的节点上运行。让我们重新调整前面的示例来实现这一点：'
+- en: '[PRE3]'
+  id: totrans-23
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: 'Saving it as `delegate_to.yaml`, we can run it with the following:'
+  id: totrans-24
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 将其保存为 `delegate_to.yaml`，然后可以使用以下命令运行：
+- en: '[PRE4]'
+  id: totrans-25
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: 'We will receive the same output as the previous example:'
+  id: totrans-26
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将得到与之前示例相同的输出：
+- en: '[PRE5]'
+  id: totrans-27
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: Working with conditionals
+  id: totrans-28
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用条件语句
+- en: Until now, we have only seen how playbooks work and how tasks are executed.
+    We also saw that Ansible executes all these tasks sequentially. However, this
+    would not help you while writing an advanced playbook that contains tens of tasks
+    and have to execute only a subset of these tasks. For example, let's say you have
+    a playbook that will install Apache HTTPd server on the remote host. Now, the
+    Apache HTTPd server has a different package name for a Debian-based operating
+    system, and it's called `apache2`; for a Red-Hat-based operating system, it's
+    called `httpd`.
+  id: totrans-29
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 到目前为止，我们只看到了剧本如何工作以及任务如何执行。我们还看到 Ansible 按顺序执行所有任务。然而，这对你在编写包含数十个任务的高级剧本时并没有帮助，因为你可能只希望执行其中的一部分任务。例如，假设你有一个剧本，它将在远程主机上安装
+    Apache HTTPd 服务器。现在，Apache HTTPd 服务器在基于 Debian 的操作系统中的包名不同，叫做 `apache2`；而在基于 Red-Hat
+    的操作系统中，包名是 `httpd`。
+- en: 'Having two tasks, one for the `httpd` package (for Red-Hat-based systems) and
+    the other for the `apache2` package (for Debian-based systems) in a playbook,
+    will make Ansible install both packages, and this execution will fail, as `apache2`
+    will not be available if you''re installing on a Red-Hat-based operating system.
+    To overcome such problems, Ansible provides conditional statements that help run
+    a task only when a specified condition is met. In this case, we do something similar
+    to the following pseudocode:'
+  id: totrans-30
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在剧本中拥有两个任务，一个用于 `httpd` 包（适用于基于 Red-Hat 的系统），另一个用于 `apache2` 包（适用于基于 Debian
+    的系统），这将导致 Ansible 安装两个包，而执行会失败，因为如果你在基于 Red-Hat 的操作系统上安装，`apache2` 包将不可用。为了解决这类问题，Ansible
+    提供了条件语句，帮助在指定条件满足时才执行任务。在这种情况下，我们做的操作类似于以下伪代码：
+- en: '[PRE6]'
+  id: totrans-31
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: 'While installing `httpd` on a Red-Hat-based operating system, we first check
+    whether the remote system is running a Red-Hat-based operating system, and if
+    it is, we then install the `httpd` package; otherwise, we skip the task. Without
+    wasting your time, let''s dive into an example playbook called `conditional_httpd.yaml`
+    with the following content:'
+  id: totrans-32
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 Red-Hat 系统上安装 `httpd` 时，我们首先检查远程系统是否运行的是基于 Red-Hat 的操作系统，如果是，我们就安装 `httpd`
+    包；否则，跳过此任务。为了不浪费时间，让我们直接进入一个名为 `conditional_httpd.yaml` 的示例剧本，其内容如下：
+- en: '[PRE7]'
+  id: totrans-33
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE7]'
+- en: 'Run it with the following:'
+  id: totrans-34
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用以下命令运行：
+- en: '[PRE8]'
+  id: totrans-35
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE8]'
+- en: 'This is the result:'
+  id: totrans-36
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这是结果：
+- en: '[PRE9]'
+  id: totrans-37
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE9]'
+- en: As you can see, I've created a new server (`ws03`) for this example that is
+    Debian-based. As expected, the installation of the `httpd` package was performed
+    on the two CentOS nodes, while the installation of the `apache2` package was performed
+    on the Debian node.
+  id: totrans-38
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，我为这个例子创建了一个新的服务器（`ws03`），它是基于 Debian 的。正如预期的那样，`httpd` 包在两个 CentOS 节点上被安装，而
+    `apache2` 包则在 Debian 节点上安装。
+- en: Tip
+  id: totrans-39
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 提示：
+- en: Ansible only distinguishes between a few families (AIX, Alpine, Altlinux, Archlinux,
+    Darwin, Debian, FreeBSD, Gentoo, HP-UX, Mandrake, Red Hat, Slackware, Solaris,
+    and Suse at the time of writing this book), for this reason a CentOS machine has
+    an `ansible_os_family` value; '`RedHat`'.
+  id: totrans-40
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 只区分少数几个操作系统家族（AIX、Alpine、Altlinux、Archlinux、Darwin、Debian、FreeBSD、Gentoo、HP-UX、Mandrake、Red
+    Hat、Slackware、Solaris 和 Suse，本文写作时如此），因此 CentOS 机器的 `ansible_os_family` 值为 `'RedHat'`。
+- en: Likewise, you can match for different conditions as well. Ansible supports equal
+    to (`==`), different than (`!=`), bigger than (`>`), smaller than (`<`), bigger
+    than or equal to (`>=`), and smaller than or equal to (`<=`).
+  id: totrans-41
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 同样，你也可以匹配不同的条件。Ansible 支持等于（`==`）、不等于（`!=`）、大于（`>`）、小于（`<`）、大于或等于（`>=`）以及小于或等于（`<=`）等条件。
+- en: The operators we have seen so far will match the entire content of the variable,
+    but what if you just want to check whether a particular character or a string
+    is present in a variable? To perform these kinds of checks, Ansible provides the
+    in and not operators. You can also match multiple conditions using the `AND` and
+    `OR` operators. The `AND` operator will make sure that all conditions are matched
+    before executing this task, whereas the `OR` operator will make sure that at least
+    one of the conditions there is a match for at least one of the conditions, for
+    example, you can use `foo >= 0` and `foo <= 5`.
+  id: totrans-42
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 到目前为止，我们看到的运算符会匹配变量的整个内容，但如果你只想检查一个特定的字符或字符串是否出现在变量中呢？为了执行这些检查，Ansible 提供了 `in`
+    和 `not` 运算符。你还可以使用 `AND` 和 `OR` 运算符匹配多个条件。`AND` 运算符会确保所有条件都匹配后才执行任务，而 `OR` 运算符则确保至少有一个条件匹配。例如，你可以使用
+    `foo >= 0` 和 `foo <= 5`。
+- en: Boolean conditionals
+  id: totrans-43
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 布尔条件语句
+- en: Apart from string matching, you can also check whether a variable is `True`.
+    This type of validation will be useful when you want to check whether a variable
+    was assigned a value or not. You can even execute a task based on the Boolean
+    value of a variable.
+  id: totrans-44
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 除了字符串匹配外，你还可以检查一个变量是否为 `True`。这种类型的验证在你想要检查变量是否被赋值时非常有用。你甚至可以根据变量的布尔值来执行任务。
+- en: 'For example, let''s put the following code in a file called `crontab_backup.yaml`:'
+  id: totrans-45
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 例如，假设我们将以下代码放在名为 `crontab_backup.yaml` 的文件中：
+- en: '[PRE10]'
+  id: totrans-46
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE10]'
+- en: 'If we execute it with the following:'
+  id: totrans-47
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果我们使用以下命令执行：
+- en: '[PRE11]'
+  id: totrans-48
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE11]'
+- en: 'We will obtain the following:'
+  id: totrans-49
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将获得以下结果：
+- en: '[PRE12]'
+  id: totrans-50
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE12]'
+- en: 'But if we change the command slightly, to:'
+  id: totrans-51
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 但如果我们稍微修改命令为：
+- en: '[PRE13]'
+  id: totrans-52
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE13]'
+- en: 'We will receive this output:'
+  id: totrans-53
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将收到以下输出：
+- en: '[PRE14]'
+  id: totrans-54
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE14]'
+- en: As you can see, in the first case the operation has been executed, while in
+    the second case it was skipped. We could have overwritten the backup value using
+    a configuration file, a `host` variable, or a `group` variable.
+  id: totrans-55
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，在第一种情况下，操作已执行，而在第二种情况下，它被跳过了。我们本可以使用配置文件、`host` 变量或 `group` 变量来覆盖备份值。
+- en: Tip
+  id: totrans-56
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 提示
+- en: If checked in this way and if the variable is not set, Ansible will assume it
+    to be `False`.
+  id: totrans-57
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果以这种方式检查并且变量未设置，Ansible 将假设它为 `False`。
+- en: Checking if a variable is set
+  id: totrans-58
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 检查变量是否已设置
+- en: 'Sometimes you find yourself having to use a variable in a command. Every time
+    you do so, you have to ensure that the variable is *set*. This is because some
+    commands could be catastrophic if called with an *unset* variable (that is: if
+    you execute `rm -rf $VAR/*` and `$VAR` is not set or empty, it will nuke your
+    machine). To do so, Ansible provides a way to check whether a variable is defined
+    or not.'
+  id: totrans-59
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有时你可能需要在命令中使用一个变量。每次这样做时，你都需要确保变量已*设置*。这是因为如果使用*未设置*的变量调用某些命令，可能会导致灾难性后果（例如：如果执行
+    `rm -rf $VAR/*` 且 `$VAR` 未设置或为空，它将摧毁你的机器）。为此，Ansible 提供了一种检查变量是否已定义的方法。
+- en: 'We could improve the previous example in the following way:'
+  id: totrans-60
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以通过以下方式改进前面的示例：
+- en: '[PRE15]'
+  id: totrans-61
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE15]'
+- en: As you can see, we have used the `fail` module that allows us to put the Ansible
+    playbook in a failure state in case the `backup_folder` variable is not set.
+  id: totrans-62
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，我们使用了 `fail` 模块，这可以让我们在 `backup_folder` 变量未设置时将 Ansible 剧本置于失败状态。
+- en: Working with include
+  id: totrans-63
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用 include
+- en: The `include` feature helps you to reduce duplicity while writing tasks. This
+    also allows us to have smaller playbooks by including reusable code in separate
+    tasks using the **Don't Repeat Yourself** (**DRY**) principle.
+  id: totrans-64
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`include` 功能有助于减少编写任务时的重复性。这也使我们能够通过使用**不要重复自己**（**DRY**）原则，将可重用代码包含在独立的任务中，从而拥有更小的剧本。'
+- en: 'To trigger the inclusion of another file, you need to put the following under
+    the tasks object:'
+  id: totrans-65
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要触发另一个文件的包含，你需要将以下内容放在任务对象下：
+- en: '[PRE16]'
+  id: totrans-66
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE16]'
+- en: 'You can also pass some variables to the included file. To do so, we can specify
+    them in the following way:'
+  id: totrans-67
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你还可以将一些变量传递给包含的文件。为此，我们可以以以下方式指定它们：
+- en: '[PRE17]'
+  id: totrans-68
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE17]'
+- en: 'In addition of passing variables, you can also use conditionals to include
+    a file only when certain conditions are matched, for instance to include the `redhat.yaml`
+     file only if the machine is running an OS in the Red Hat family using the following
+    code:'
+  id: totrans-69
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 除了传递变量，你还可以使用条件语句，仅在满足特定条件时包含文件，例如，仅在机器运行 Red Hat 系列操作系统时，使用以下代码包含 `redhat.yaml`
+    文件：
+- en: '[PRE18]'
+  id: totrans-70
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE18]'
+- en: Working with handlers
+  id: totrans-71
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 与处理程序一起使用
+- en: In many situations, you will have a task or a group of tasks that change certain
+    resources on the remote machines, which need to trigger an event to become effective.
+    For example, when you change a service configuration, you will need to restart
+    or reload the service itself. In Ansible you can trigger this event using the
+    `notify` action.
+  id: totrans-72
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在许多情况下，你会有一个任务或一组任务，改变远程机器上的某些资源，这些任务需要触发一个事件才能生效。例如，当你更改服务配置时，需要重新启动或重新加载该服务。在
+    Ansible 中，你可以使用 `notify` 动作触发这个事件。
+- en: 'Every handler task will run at the end of the playbook if notified. For example,
+    you changed your HTTPd server configuration multiple times and you want to restart
+    the HTTPd service so that the changes are applied. Now, restarting HTTPd every
+    single time you make a configuration change is not a good practice; it is not
+    a good practice to restart the server even if no changes has been made to its
+    configurations. To deal with such a situation, you can notify Ansible to restart
+    the HTTPd service on every configuration change, but Ansible will make sure that
+    no matter how many times you notify it for the HTTPd restart, it will call that
+    task just once after all other tasks complete. Let''s change the `webserver.yaml`
+    file we created in the previous chapters a little bit, in the following way:'
+  id: totrans-73
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 每个处理任务在收到通知后将在 playbook 执行的最后运行。例如，你多次更改了 HTTPd 服务器的配置，并且你希望重启 HTTPd 服务以应用这些更改。现在，每次做出配置更改时重启
+    HTTPd 并不是一个好做法；即使配置没有更改，也不应该随便重启服务器。为了解决这种情况，你可以通知 Ansible 在每次配置更改时重启 HTTPd 服务，但
+    Ansible 会确保无论你多少次通知它重启 HTTPd，它只会在所有其他任务完成后执行该任务一次。我们来稍微修改一下之前章节中创建的 `webserver.yaml`
+    文件，修改方式如下：
+- en: '[PRE19]'
+  id: totrans-74
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE19]'
+- en: 'Run this script with:'
+  id: totrans-75
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用以下命令运行此脚本：
+- en: '[PRE20]'
+  id: totrans-76
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE20]'
+- en: 'We will have the following output:'
+  id: totrans-77
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将得到以下输出：
+- en: '[PRE21]'
+  id: totrans-78
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE21]'
+- en: 'In this case, the handler has been triggered from the configuration file change.
+    But if we run it a second time, the configuration will not change and therefore
+    we will have the following result:'
+  id: totrans-79
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这种情况下，处理器是通过配置文件的更改被触发的。但是，如果我们第二次运行它，配置不会改变，因此我们将得到以下结果：
+- en: '[PRE22]'
+  id: totrans-80
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE22]'
+- en: Note
+  id: totrans-81
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: 'When using handlers, those are triggered only a single time, even if they are
+    called multiple times during the playbook execution. By default, handlers are
+    executed at the end of the playbook execution, but you can force them to be run
+    when you want using the `meta` task with the `flush_handlers` option like: `-
+    meta: flush_handlers`'
+  id: totrans-82
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '当使用处理器时，即使它们在 playbook 执行过程中被多次调用，它们也只会触发一次。默认情况下，处理器会在 playbook 执行结束时执行，但你可以使用
+    `meta` 任务并加上 `flush_handlers` 选项来强制它们按需运行，例如：`- meta: flush_handlers`'
+- en: Working with roles
+  id: totrans-83
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用角色
+- en: We have seen how we can automate simple tasks, but what we have seen up till
+    now will not solve all your problems. This is because playbooks are very good
+    at executing operations, but are not very good for configuring huge amounts of
+    machines, because they will soon become messy. To solve this, Ansible has roles.
+  id: totrans-84
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们已经看到了如何自动化一些简单的任务，但到目前为止，我们所看到的并不能解决所有问题。这是因为 playbook 非常擅长执行操作，但不适合配置大量机器，因为它们很快就会变得凌乱。为了解决这个问题，Ansible
+    引入了角色（roles）。
+- en: My definition of a role is a set of playbooks, templates, files, or variables
+    to achieve a specific goal. For instance, we could have a database role and a
+    web server role so that those configurations stay cleanly separated.
+  id: totrans-85
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我对角色的定义是：一组 playbook、模板、文件或变量，用于实现特定目标。例如，我们可以有一个数据库角色和一个 Web 服务器角色，这样这些配置就能保持清晰的分离。
+- en: Before starting to look inside a role, let's talk about a project organization.
+  id: totrans-86
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在开始查看角色的内部内容之前，我们先来谈谈项目的组织结构。
+- en: Project organization
+  id: totrans-87
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 项目组织结构
+- en: In the last few years, I've worked on multiple Ansible repositories for multiple
+    organizations and many of them were very chaotic. To ensure that your repository
+    is easy to manage, I'm going to give you a template that I always use.
+  id: totrans-88
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在过去几年里，我为多个组织的多个 Ansible 仓库工作过，其中许多都非常混乱。为了确保你的仓库易于管理，我将给你一个我总是使用的模板。
+- en: 'First of all, I always create three files in the `root` folder:'
+  id: totrans-89
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 首先，我总是会在 `root` 文件夹中创建三个文件：
+- en: '`ansible.cfg`: A small configuration file to explain to Ansible where to find
+    the files in our folder structure'
+  id: totrans-90
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible.cfg`：一个小的配置文件，用来告诉 Ansible 在我们的文件夹结构中哪里可以找到相关文件'
+- en: '`hosts`: The hosts file we have already seen in the previous chapters'
+  id: totrans-91
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`hosts`：我们在之前章节中已经看到的 hosts 文件'
+- en: '`master.yaml`: A playbook that aligns the whole infrastructure'
+  id: totrans-92
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`master.yaml`：一个用于对齐整个基础架构的 playbook'
+- en: 'In addition to those three files, I create two folders:'
+  id: totrans-93
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 除了那三个文件，我还创建了两个文件夹：
+- en: '`playbooks`: This will contain the playbooks and a folder called *groups* for
+    groups management'
+  id: totrans-94
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`playbooks`：这个文件夹将包含所有的 playbooks 以及一个名为 *groups* 的文件夹，用于群组管理。'
+- en: '`roles`: This will contain all the roles we need'
+  id: totrans-95
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`roles`：这个文件夹将包含我们需要的所有角色'
+- en: 'To clarify this, let''s use the Linux `tree` command to see the structure of
+    an Ansible repository for a simple web application needing web servers and database
+    servers:'
+  id: totrans-96
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了澄清这一点，让我们使用 Linux 的 `tree` 命令，查看一个简单的 Web 应用的 Ansible 仓库结构，该应用需要 Web 服务器和数据库服务器：
+- en: '[PRE23]'
+  id: totrans-97
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE23]'
+- en: As you can see, I've added a `common` role as well. This is very useful for
+    putting in all the things that should be performed for every server. Usually,
+    I configure NTP, motd, and other similar services in this role, as well as the
+    machine hostname.
+  id: totrans-98
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，我还添加了一个 `common` 角色。这对于放置每个服务器都必须执行的任务非常有用。通常，我在这个角色中配置 NTP、motd 和其他类似的服务，以及机器的主机名。
+- en: We will now see how to structure a role.
+  id: totrans-99
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们来看一下如何构建一个角色。
+- en: Anatomy of a role
+  id: totrans-100
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 角色的结构
+- en: The structure of folders in a role is standard and you cannot change it much.
+  id: totrans-101
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 角色中的文件夹结构是标准的，你不能做太多改变。
+- en: The most important folder within the role is the `tasks` folder because this
+    is the only mandatory folder in it. It has to contain a `main.yaml` file that
+    will be the list of tasks to be executed. Other folders that are often present
+    in the roles are templates and files. The first one will be used to store templates
+    used by the **template task**, while the second will be used to store files that
+    are used by the **copy task**.
+  id: totrans-102
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 角色中最重要的文件夹是 `tasks` 文件夹，因为它是唯一一个必需的文件夹。它必须包含一个 `main.yaml` 文件，其中列出了需要执行的任务。角色中常见的其他文件夹包括
+    templates 和 files。第一个用于存放 **template task** 使用的模板，而第二个用于存放 **copy task** 使用的文件。
+- en: Transforming your playbooks in a full Ansible project
+  id: totrans-103
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 将你的 playbooks 转换为一个完整的 Ansible 项目
+- en: Let's see how to transform the three playbooks we used to set up our web infrastructure
+    (`common_tasks.yaml`, `firstrun.yaml`, and `webserver.yaml`) to fit this file
+    organization. We have to remember that we also used two files (`index.html.j2`
+    and `motd`) in those roles, so we have to place these files properly too.
+  id: totrans-104
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们来看看如何将我们用来设置 Web 基础设施的三个 playbooks（`common_tasks.yaml`、`firstrun.yaml` 和
+    `webserver.yaml`）转换为适合这种文件组织方式。我们还需要记住，我们在这些角色中使用了两个文件（`index.html.j2` 和 `motd`），所以我们也要正确地放置这些文件。
+- en: First, we are going to create the folder structure we have seen in the previous
+    paragraph.
+  id: totrans-105
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 首先，我们将创建在前一段中看到的文件夹结构。
+- en: The easiest playbook to port is the `firstrun.yaml` since we only need to copy
+    it into the playbooks folder. This playbook will remain a playbook because it's
+    a set of operations that will have to be run just one time for each server.
+  id: totrans-106
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最容易移植的 playbook 是 `firstrun.yaml`，因为我们只需要将它复制到 playbooks 文件夹中。这个 playbook 将保持为
+    playbook，因为它是一组只需要在每台服务器上执行一次的操作。
+- en: We now move to the `common_tasks.yaml` playbook, which will need a little bit
+    of rework to match the role paradigm.
+  id: totrans-107
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们现在进入 `common_tasks.yaml` playbook，它需要一些修改，以符合角色的范式。
+- en: Transforming a playbook into a role
+  id: totrans-108
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 将 playbook 转换为角色
+- en: 'The first thing we need is to create the `roles/common/tasks` and `roles/common/templates`
+    folders. In the first one we will add the following `main.yaml` file:'
+  id: totrans-109
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们需要做的第一件事是创建 `roles/common/tasks` 和 `roles/common/templates` 文件夹。在第一个文件夹中，我们将添加以下
+    `main.yaml` 文件：
+- en: '[PRE24]'
+  id: totrans-110
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE24]'
+- en: 'As you can see, this is very similar to our `common_tasks.yaml` playbooks.
+    In fact, there are only two differences:'
+  id: totrans-111
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，这与我们的 `common_tasks.yaml` playbooks 非常相似。事实上，只有两个区别：
+- en: The lines; `hosts`, `remote_user`, and `tasks` (lines 2,3, and 4) have been
+    deleted
+  id: totrans-112
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`hosts`、`remote_user` 和 `tasks`（第 2、3、4 行）已经被删除'
+- en: The indentation of the rest of the file has been fixed accordingly
+  id: totrans-113
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 文件其余部分的缩进已相应修正
+- en: In this role, we used the template task to create a `motd` file on the server
+    with the IP of the machine and other interesting information. For this reason,
+    we need to create `roles/common/templates` and put the `motd` template in it.
+  id: totrans-114
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这个角色中，我们使用了模板任务来创建一个包含机器 IP 和其他有用信息的 `motd` 文件。因此，我们需要创建 `roles/common/templates`
+    文件夹，并将 `motd` 模板放在其中。
+- en: 'At this point, our common task will have this structure:'
+  id: totrans-115
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 到此为止，我们的公共任务将具有以下结构：
+- en: '[PRE25]'
+  id: totrans-116
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE25]'
+- en: We now need to instruct Ansible on the machines that will need to perform all
+    the tasks specified in the `common` role. To do so, we should look at the `playbooks/groups`
+    directory. In this directory, it is handy to have one file for each group of logically
+    similar machines (that is, machines that are performing the same kind of operation).
+    In our case, database and web server.
+  id: totrans-117
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，我们需要指导Ansible在哪些机器上执行`common`角色中指定的所有任务。为此，我们应该查看`playbooks/groups`目录。在这个目录中，为每组逻辑上相似的机器（即执行相同操作的机器）创建一个文件是非常方便的。在我们的案例中，分别是数据库和Web服务器。
+- en: 'So, let''s create a `database.yaml` file in `playbooks/groups` with the following
+    content:'
+  id: totrans-118
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 所以，让我们在`playbooks/groups`中创建一个`database.yaml`文件，内容如下：
+- en: '[PRE26]'
+  id: totrans-119
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE26]'
+- en: 'Create a `webserver.yaml` file in the same folder with the following content:'
+  id: totrans-120
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在同一个文件夹中创建一个`webserver.yaml`文件，内容如下：
+- en: '[PRE27]'
+  id: totrans-121
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE27]'
+- en: As you can see, those files specify the group of hosts that we want to operate
+    on, the remote user to use on those hosts, and the roles that we want to execute.
+  id: totrans-122
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，这些文件指定了我们希望操作的主机组、在这些主机上使用的远程用户以及我们希望执行的角色。
+- en: Helper files
+  id: totrans-123
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 辅助文件
+- en: 'When we created the `hosts` file in the previous chapter, we noticed that it
+    helps to simplify our command lines. So, let''s start copying the hosts files
+    we previously used in the `root` folder of our Ansible repository. Up to now,
+    we have always specified the path of this file on the command line. This is no
+    longer necessary if we create an `ansible.cfg` file that tells Ansible the location
+    of our `hosts` file. For this reason, let''s create an `ansible.cfg` file in the
+    root of our Ansible repository with the following content:'
+  id: totrans-124
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当我们在上一章创建`hosts`文件时，我们注意到它帮助简化了我们的命令行。所以，现在我们开始将之前在Ansible仓库的`root`文件夹中使用的hosts文件复制过来。到目前为止，我们总是在命令行中指定这个文件的路径。如果我们创建一个`ansible.cfg`文件来告诉Ansible我们`hosts`文件的位置，那么就不再需要这样做了。因此，让我们在Ansible仓库的根目录下创建一个`ansible.cfg`文件，内容如下：
+- en: '[PRE28]'
+  id: totrans-125
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE28]'
+- en: In this file, we have also specified another two variables in addition to the
+    `hostfile` one that we already talk about, and those are `host_key_checking` and
+    `roles_path`.
+  id: totrans-126
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这个文件中，我们除了之前提到的`hostfile`变量外，还指定了另外两个变量，它们分别是`host_key_checking`和`roles_path`。
+- en: The `host_key_checking` flag is useful to not require the verification of the
+    remote system SSH key. This is not suggested for use in production, since the
+    usage of a public key propagation system is suggested for such environments, but
+    is very handy in testing environments since it will help you to reduce the time
+    Ansible hangs waiting for user input.
+  id: totrans-127
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`host_key_checking`标志有助于避免要求验证远程系统的SSH密钥。这不建议在生产环境中使用，因为建议在此类环境中使用公共密钥传播系统，但在测试环境中非常有用，因为它将帮助你减少Ansible等待用户输入的时间。'
+- en: The `roles_path` is used to tell Ansible where to find the roles for our playbooks.
+  id: totrans-128
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`roles_path`用于告诉Ansible在哪里查找我们剧本的角色。'
+- en: 'I usually add one additional file, which is `master.yaml`. I find it very useful
+    as you will often need to keep your infrastructure aligned with your Ansible code.
+    To do it in a single command, you''ll need a file that will run all of the files
+    in `playbooks/groups`. So, let''s create a `master.yaml` file in the Ansible repository
+    `root` folder with the following content:'
+  id: totrans-129
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我通常会添加一个额外的文件，叫做`master.yaml`。我发现这个文件非常有用，因为你通常需要将基础设施与Ansible代码保持一致。为了通过一个命令完成这件事，你需要一个文件来运行`playbooks/groups`中的所有文件。因此，让我们在Ansible仓库的根文件夹中创建一个`master.yaml`文件，内容如下：
+- en: '[PRE29]'
+  id: totrans-130
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE29]'
+- en: 'At this point, we can execute the following:'
+  id: totrans-131
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 此时，我们可以执行以下操作：
+- en: '[PRE30]'
+  id: totrans-132
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE30]'
+- en: 'The result will be the following:'
+  id: totrans-133
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 结果如下所示：
+- en: '[PRE31]'
+  id: totrans-134
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE31]'
+- en: As you can see, the actions listed in the `common` role have been executed on
+    the node in the `database` group first and then on the nodes in the `webserver`
+    group.
+  id: totrans-135
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，`common`角色中列出的动作首先在`database`组的节点上执行，然后在`webserver`组的节点上执行。
+- en: Transforming the webserver role
+  id: totrans-136
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 转换`webserver`角色
+- en: As we transformed the `common` playbook into the `common` role, we can do the
+    same for the `webserver` role.
+  id: totrans-137
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当我们将`common`剧本转换为`common`角色时，我们可以对`webserver`角色做同样的事情。
+- en: 'In roles, we need to have the `webserver` folder with the `tasks` subfolder
+    inside it. In this folder, we have to put the `main.yaml` file containing the
+    `tasks` copied from the playbooks, that should look like:'
+  id: totrans-138
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在角色中，我们需要有一个`webserver`文件夹，并在其中创建`tasks`子文件夹。在这个文件夹里，我们需要放置一个`main.yaml`文件，其中包含从剧本中复制过来的`tasks`，它应该如下所示：
+- en: '[PRE32]'
+  id: totrans-139
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE32]'
+- en: 'In this role, we have used multiple tasks that will need additional resources
+    to work properly, more specifically we need to:'
+  id: totrans-140
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这个角色中，我们使用了多个任务，这些任务需要额外的资源才能正常工作，更具体地说，我们需要：
+- en: Put the `website.conf` file in `roles/webserver/files`
+  id: totrans-141
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 将`website.conf`文件放入`roles/webserver/files`中
+- en: Put the `index.html.j2` template in `roles/webserver/templates`
+  id: totrans-142
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 将`index.html.j2`模板放入`roles/webserver/templates`中
+- en: Create the `Restart HTTPd` handler
+  id: totrans-143
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 创建`Restart HTTPd`处理程序
+- en: 'The first two should be pretty straightforward. The first one, in fact, is
+    an empty file (we have not yet put anything in it since the default configuration
+    was good enough for our use) and the `index.html.j2` file should contain the following
+    content:'
+  id: totrans-144
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 前两个应该是相当直接的。事实上，第一个是一个空文件（我们还没有在其中放入任何内容，因为默认配置已经足够适合我们的使用），而`index.html.j2`文件应包含以下内容：
+- en: '[PRE33]'
+  id: totrans-145
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE33]'
+- en: Handlers in roles
+  id: totrans-146
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 角色中的处理程序
+- en: 'The last thing we need to do to complete this role is to create the handler
+    for the `Restart HTTPd` notification. To do so, we will need to create a `main.yaml`
+    file in `roles/webserver/handlers` with the following content:'
+  id: totrans-147
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 完成此角色所需的最后一件事是创建`Restart HTTPd`通知的处理程序。为此，我们需要在`roles/webserver/handlers`中创建一个`main.yaml`文件，内容如下：
+- en: '[PRE34]'
+  id: totrans-148
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE34]'
+- en: As you may notice, this is very similar to the handler we used in the playbook
+    if not for the file location and indentation.
+  id: totrans-149
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所注意到的，这与我们在剧本中使用的处理程序非常相似，只是文件位置和缩进不同。
+- en: 'The only thing that we still need to do to make our role applicable is to add
+    the entry in the `playbooks/groups/webserver.yaml` file so that Ansible is informed
+    that the servers in the `webserver` group should apply the `webserver` role as
+    well as the common role. Our `playbooks/groups/webserver.yaml` will need to be
+    like the following:'
+  id: totrans-150
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了使我们的角色适用，我们仍然需要做的唯一事情是添加条目到`playbooks/groups/webserver.yaml`文件中，这样Ansible就知道`webserver`组中的服务器应该应用`webserver`角色以及公共角色。我们的`playbooks/groups/webserver.yaml`文件需要如下所示：
+- en: '[PRE35]'
+  id: totrans-151
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE35]'
+- en: 'We could now execute the `master.yaml` again to apply the `webserver` role
+    to the relevant servers, but we can also just execute the `playbooks/groups/webserver.yaml`,
+    since the change we just did is relevant only to this group of servers. To do
+    so we run:'
+  id: totrans-152
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们现在可以再次执行`master.yaml`来将`webserver`角色应用到相关的服务器，但我们也可以只执行`playbooks/groups/webserver.yaml`，因为我们刚刚做的更改仅与这组服务器相关。为此，我们运行：
+- en: '[PRE36]'
+  id: totrans-153
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE36]'
+- en: 'We should receive an output similar to the following:'
+  id: totrans-154
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们应该收到类似以下的输出：
+- en: '[PRE37]'
+  id: totrans-155
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE37]'
+- en: As you can see, both the `common` and the `webserver` roles has been applied
+    to the `webserver` nodes.
+  id: totrans-156
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，`common`和`webserver`角色已经应用于`webserver`节点。
+- en: It's very important to apply all roles concerning a specific node and not just
+    the one you changed because more often than not, when there is a problem on one
+    or more nodes in a group but not on other nodes of the same group, the problem
+    is some roles have been applied unequally in the group. Only by applying all concerned
+    roles to a group, will it grant you the equality of the nodes of that group.
+  id: totrans-157
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 应用所有与特定节点相关的角色非常重要，而不仅仅是你更改过的角色，因为通常情况下，当一个或多个节点出现问题，而同一组中的其他节点没有问题时，问题通常是因为组内某些角色的应用不均衡。只有将所有相关角色应用于一个组，才能确保该组中节点的平等性。
+- en: Execution strategies
+  id: totrans-158
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 执行策略
+- en: Before Ansible 2, every task needed to be executed (and completed) on each machine
+    before Ansible issued a new task to all machines. This meant that if you are performing
+    tasks on a hundred machines and one of them is under-performing, all machines
+    will go at the under-performing machine's speed.
+  id: totrans-159
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在Ansible 2之前，每个任务都需要在每台机器上执行（并完成）后，Ansible才会向所有机器发布新任务。这意味着如果你在一百台机器上执行任务，而其中一台机器性能较差，所有机器都会以性能较差的机器的速度运行。
+- en: 'With Ansible 2, the execution strategies have been made modular and therefore
+    you can now choose which execution strategy you prefer for your playbooks. You
+    can also write custom execution strategies, but this is beyond the scope of this
+    book. At the moment (in Ansible 2.1) there are only three execution strategies:
+    **linear**, **serial**, and **free**:'
+  id: totrans-160
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在Ansible 2中，执行策略已被模块化，因此你现在可以选择自己偏好的执行策略。你还可以编写自定义的执行策略，但这超出了本书的范围。目前（在Ansible
+    2.1中）只有三种执行策略：**线性**、**串行**和**自由**：
+- en: '**Linear execution**: This strategy behaves exactly as Ansible did prior to
+    version 2\. This is the default strategy.'
+  id: totrans-161
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**线性执行**：此策略与Ansible 2之前的行为完全相同。这是默认的执行策略。'
+- en: '**Serial execution**: This strategy will take a subset of hosts (the default
+    is five) and execute all tasks against those hosts before moving to the next subset
+    and starting from the beginning. This kind of execution strategy could help you
+    to work on a limited number of hosts so that you always have some hosts that are
+    available to your users. If you are looking for this kind of deployment, you will
+    need a load balancer in front of your hosts that needs to be informed about which
+    nodes are in maintenance at every given moment.'
+  id: totrans-162
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**串行执行**：此策略将选取一部分主机（默认是五台），并对这些主机执行所有任务，完成后再移至下一个子集并从头开始。此类执行策略可以帮助你在有限数量的主机上工作，以便始终保持一些主机可供用户使用。如果你需要这种类型的部署，你将需要在主机前放置负载均衡器，并实时通知负载均衡器哪些节点处于维护状态。'
+- en: '**Free execution**: This strategy will serve a new task to each host as soon
+    as that host has completed the previous task. This will allow faster hosts to
+    complete the playbook before slower nodes. If you choose this execution strategy
+    you have to remember that some tasks could require a previous task to be completed
+    on all nodes (for instance, clustering databases require all database nodes to
+    have the database installed and running) and in this case they will probably fail.'
+  id: totrans-163
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**自由执行**：此策略将在每个主机完成前一个任务后立即将新任务分配给该主机。这将允许更快的主机在较慢的节点之前完成剧本。如果你选择此执行策略，你必须记住某些任务可能需要所有节点完成前一个任务（例如，集群数据库要求所有数据库节点都安装并运行数据库），在这种情况下，它们可能会失败。'
+- en: Tasks blocks
+  id: totrans-164
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 任务块
+- en: 'In Ansible 2.0 blocks have been made available. Blocks allow you to group tasks
+    in a logical way and they can also help for a better error handling. The majority
+    of properties you can add to a standard task, you can also add it to the blocks.
+    You may need to perform a yum task to install NTPd and enable of the service only
+    if the machine is CentOS. To do so, the following code can be used:'
+  id: totrans-165
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在Ansible 2.0中，任务块已经被引入。任务块允许你以逻辑方式对任务进行分组，并且它们也有助于更好的错误处理。你可以添加到标准任务的多数属性，你也可以将它们添加到任务块中。如果机器是CentOS，你可能需要执行一个yum任务来安装NTPd并启用该服务。为此，可以使用以下代码：
+- en: '[PRE38]'
+  id: totrans-166
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE38]'
+- en: As you can notice, the when clause has been applied to the block so all tasks
+    within the block will be performed only if the when clause will be true.
+  id: totrans-167
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，`when`子句已应用于任务块，因此只有在`when`子句为真时，块中的所有任务才会执行。
+- en: The Ansible template - Jinja filters
+  id: totrans-168
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Ansible模板 - Jinja过滤器
+- en: We have seen in the second chapter that templates allow you to dynamically complete
+    your playbook and place files on servers based on dynamic data such as `host`
+    and `group` variables. In this section, we will move forward and see how Jinja2
+    filters work with Ansible.
+  id: totrans-169
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们在第二章中已经看到，模板允许你根据动态数据（如`host`和`group`变量）动态地完成你的剧本并将文件放置在服务器上。在本节中，我们将继续前进，看看Jinja2过滤器如何与Ansible一起工作。
+- en: 'Jinja2 filters are simple Python functions that take some arguments, process
+    them, and return the result. For example, consider the following command:'
+  id: totrans-170
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Jinja2过滤器是简单的Python函数，它们接收一些参数，处理这些参数并返回结果。例如，考虑以下命令：
+- en: '[PRE39]'
+  id: totrans-171
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE39]'
+- en: 'In the preceding example, `myvar` is a variable; Ansible will pass `myvar`
+    to the Jinja2 filter as an argument. The Jinja2 filter will then process it and
+    return the resulting data. Jinja2 filters even accept additional arguments as
+    follows:'
+  id: totrans-172
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在前面的例子中，`myvar`是一个变量；Ansible将`myvar`作为参数传递给Jinja2过滤器。然后，Jinja2过滤器将处理它并返回结果数据。Jinja2过滤器甚至接受如下的额外参数：
+- en: '[PRE40]'
+  id: totrans-173
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE40]'
+- en: In this example, Ansible will now pass two arguments, that is, `myvar` and `2`.
+    Likewise, you can pass multiple arguments to filters separated by commas.
+  id: totrans-174
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这个例子中，Ansible现在将传递两个参数，即`myvar`和`2`。同样，你可以通过逗号分隔来传递多个参数给过滤器。
+- en: Ansible supports a wide variety of Jinja2 filters, we will see some of the important
+    Jinja2 filters that you might need to use while writing your playbook.
+  id: totrans-175
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible支持各种各样的Jinja2过滤器，我们将看到一些在编写剧本时可能需要使用的重要Jinja2过滤器。
+- en: Formatting data using filters
+  id: totrans-176
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 使用过滤器格式化数据
+- en: 'Ansible supports Jinja2 filters to format data to JSON or YAML. You pass a
+    dictionary variable to this filter, and it will format your data into JSON or
+    YAML. For example, consider the following command-line:'
+  id: totrans-177
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible支持Jinja2过滤器将数据格式化为JSON或YAML。你将一个字典变量传递给该过滤器，它将把数据格式化为JSON或YAML。例如，考虑以下命令行：
+- en: '[PRE41]'
+  id: totrans-178
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE41]'
+- en: 'In the preceding example, `users` is the variable and `to_nice_json` is the
+    Jinja2 filter. As we saw earlier, Ansible will internally pass `users` as an argument
+    to the Jinja2 filter `to_nice_json`. Likewise, you can format your data into YAML
+    as well by using the following command:'
+  id: totrans-179
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在前面的示例中，`users`是变量，`to_nice_json`是Jinja2过滤器。正如我们之前看到的，Ansible会将`users`作为参数传递给Jinja2过滤器`to_nice_json`。同样，你也可以使用以下命令将数据格式化为YAML：
+- en: '[PRE42]'
+  id: totrans-180
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE42]'
+- en: Using filters with conditionals
+  id: totrans-181
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 使用带有条件语句的过滤器
+- en: 'You can use Jinja2 filters with conditionals for checking if the status of
+    a task is failed, changed, success, or skipped. Let''s start creating a file in
+    our `playbooks` folder with the following content:'
+  id: totrans-182
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以使用Jinja2过滤器结合条件语句来检查任务的状态是失败、已更改、成功还是跳过。让我们开始在`playbooks`文件夹中创建一个文件，内容如下：
+- en: '[PRE43]'
+  id: totrans-183
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE43]'
+- en: In the preceding example, we first checked whether the `httpd` service was running
+    and stored the output of that module in the `httpd_result` variable. We then checked
+    whether the previous task failed using the Jinja2 filter, `httpd_result|failed`.
+    Ansible will skip this task if the when condition fails, that is, if the previous
+    task passed. Likewise, you can use changed, success, or skipped filters.
+  id: totrans-184
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在前面的示例中，我们首先检查了`httpd`服务是否正在运行，并将该模块的输出存储在`httpd_result`变量中。然后，我们使用Jinja2过滤器`httpd_result|failed`检查前一个任务是否失败。如果`when`条件失败，即前一个任务通过，Ansible将跳过此任务。同样，你可以使用`changed`、`success`或`skipped`过滤器。
+- en: 'We can now check that the previous `playbook` executed as expected, running
+    it as:'
+  id: totrans-185
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们现在可以检查之前的`playbook`是否按预期执行，执行它的方法是：
+- en: '[PRE44]'
+  id: totrans-186
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE44]'
+- en: 'I''ve stopped HTTPd on the `ws01.fale.io` server with the command, `systemctl
+    stop httpd` and running it will give me the following result:'
+  id: totrans-187
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我已经在`ws01.fale.io`服务器上停止了HTTPd服务，命令是`systemctl stop httpd`，执行它将给我以下结果：
+- en: '[PRE45]'
+  id: totrans-188
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE45]'
+- en: Defaulting undefined variables
+  id: totrans-189
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 默认未定义的变量
+- en: 'We have seen in the previous sections, that it is always wise to check if a
+    variable is defined before using it. We can set a `default` value for the variable
+    so that instead of failing, Ansible will use that value if the variable is not
+    defined. To do so, we use:'
+  id: totrans-190
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们在前面的章节中看到，在使用变量之前，检查变量是否已定义总是明智的做法。我们可以为变量设置一个`default`值，这样如果变量未定义，Ansible将使用该值，而不会失败。要做到这一点，我们使用：
+- en: '[PRE46]'
+  id: totrans-191
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE46]'
+- en: 'This filter will not assign the `default` value to the variable; it will only
+    pass the `default` value to the current task where it is being used. Let''s look
+    at a few more examples of Jinja filters themselves before closing this section:'
+  id: totrans-192
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 此过滤器不会将`default`值赋给变量；它只会将`default`值传递给当前正在使用它的任务。在关闭这一部分之前，让我们看几个Jinja过滤器的更多示例：
+- en: 'Using random number filters: To find a random number, character, or string
+    out of a list, you can use the random filter:'
+  id: totrans-193
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用随机数过滤器：要从列表中查找一个随机的数字、字符或字符串，你可以使用随机过滤器：
+- en: 'Execute this to get a random character from a list:'
+  id: totrans-194
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 执行此命令以从列表中获取一个随机字符：
+- en: '[PRE47]'
+  id: totrans-195
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE47]'
+- en: 'Execute this to get a random number from 0 to 100:'
+  id: totrans-196
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 执行此命令以获取0到100之间的随机数字：
+- en: '[PRE48]'
+  id: totrans-197
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE48]'
+- en: 'Execute this to get a random number from 10 to 50:'
+  id: totrans-198
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 执行此命令以获取10到50之间步长为10的随机数：
+- en: '[PRE49]'
+  id: totrans-199
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE49]'
+- en: 'Execute this to get a random number from 20 to 50 in steps of 10:'
+  id: totrans-200
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 执行此命令以获取20到50之间步长为10的随机数字：
+- en: '[PRE50]'
+  id: totrans-201
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE50]'
+- en: 'Concatenating a list to the string using filters: Jinja2 filters allow you
+    to concatenate a list to a string using the join filter. This filter takes a separator
+    as an extra argument. If you do not specify a separator, then the filter will
+    combine all elements of the list together without any separation. Consider the
+    following example:'
+  id: totrans-202
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用过滤器将列表连接到字符串：Jinja2过滤器允许你使用`join`过滤器将列表连接到字符串。此过滤器需要一个分隔符作为额外的参数。如果你没有指定分隔符，过滤器将会将列表的所有元素组合在一起，没有任何分隔符。考虑以下示例：
+- en: '[PRE51]'
+  id: totrans-203
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE51]'
+- en: The preceding filter will result in a This is a string output. You can specify
+    any separator you want instead of a white space.
+  id: totrans-204
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 上述过滤器将输出一个字符串。你可以指定任何分隔符，而不是空格。
+- en: 'Encoding or decoding data using filters: You can encode or decode data using
+    filters as follows:'
+  id: totrans-205
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用过滤器编码或解码数据：你可以使用过滤器来编码或解码数据，如下所示：
+- en: 'Encode your data to `base64` using the `b64encode` filter:'
+  id: totrans-206
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用`b64encode`过滤器将数据编码为`base64`：
+- en: '[PRE52]'
+  id: totrans-207
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE52]'
+- en: 'Decode an encoded `base64` string using the `b64decode` filter:'
+  id: totrans-208
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用`b64decode`过滤器解码一个已编码的`base64`字符串：
+- en: '[PRE53]'
+  id: totrans-209
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE53]'
+- en: Security management
+  id: totrans-210
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 安全管理
+- en: The last section in this chapter is about security management. If you tell your
+    sysadmin that you want to introduce a new feature or a tool, one of the first
+    questions they would ask you would be; "what security feature(s) are present with
+    your tool?". We'll try to answer these questions from an Ansible perspective in
+    this section. Let's look at them in greater detail.
+  id: totrans-211
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章的最后一节讲的是安全管理。如果您告诉您的系统管理员您想引入一个新功能或工具，他们首先会问的一个问题是：“您的工具有哪些安全功能？”我们将在本节中从Ansible的角度尝试回答这些问题。让我们更详细地看一下它们。
+- en: Using Ansible vault
+  id: totrans-212
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 使用Ansible vault
+- en: Ansible vault is an exciting feature of Ansible that was introduced in Ansible
+    version 1.5\. This allows you to have encrypted passwords as part of your source
+    code. A recommended practice is to NOT have passwords (as well as any other sensitive
+    information such as private keys, SSL certificates, and so on.) in plain text
+    as part of your repository because anyone who checks out your repository can view
+    your passwords. Ansible vault can help you to secure your confidential information
+    by encrypting and decrypting them on your behalf.
+  id: totrans-213
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible vault是Ansible的一个令人兴奋的功能，首次出现在Ansible版本1.5中。它允许您将加密的密码作为源代码的一部分。推荐的做法是不将密码（以及任何其他敏感信息，如私钥、SSL证书等）以明文形式存储在代码库中，因为任何检出您代码库的人都可以查看您的密码。Ansible
+    vault可以通过加密和解密内容来帮助您保护机密信息。
+- en: Ansible vault supports an interactive mode in which it will ask you for the
+    password, or a non-interactive mode where you will have to specify the file containing
+    the password and Ansible vault will read it directly.
+  id: totrans-214
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible vault支持交互模式，在该模式下它会要求您输入密码，或者支持非交互模式，您需要指定包含密码的文件，Ansible vault将直接读取该文件。
+- en: 'For these examples, we will use the password `ansible`, so let''s start creating
+    a hidden file called `.password` with the string `ansible` in it. To do so, let''s
+    execute:'
+  id: totrans-215
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这些示例中，我们将使用密码`ansible`，所以让我们开始创建一个名为`.password`的隐藏文件，文件内容为`ansible`。为此，让我们执行：
+- en: '[PRE54]'
+  id: totrans-216
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE54]'
+- en: 'We can now create an `ansible-vault` both in the interactive and non-interactive
+    modes. If we want to do it in interactive mode, we will need to execute:'
+  id: totrans-217
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们现在可以在交互模式和非交互模式下创建`ansible-vault`。如果我们想在交互模式下进行，我们需要执行：
+- en: '[PRE55]'
+  id: totrans-218
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE55]'
+- en: 'Ansible will ask us for the vault password and then confirm it. Later it will
+    open the default text editor (in my case **vi**) to add the content in clear.
+    I have used the password `ansible` and the text is This is a password protected
+    file. We can now save and close the editor and check that `ansible-vault` has
+    encrypted our content, in fact if we run:'
+  id: totrans-219
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible将要求我们输入vault密码并确认。然后，它会打开默认的文本编辑器（在我的情况下是**vi**），以明文方式添加内容。我使用的密码是`ansible`，文本内容是“这是一个受密码保护的文件”。我们现在可以保存并关闭编辑器，检查`ansible-vault`是否加密了我们的内容，事实上，如果我们运行：
+- en: '[PRE56]'
+  id: totrans-220
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE56]'
+- en: 'This will output the following:'
+  id: totrans-221
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这将输出以下内容：
+- en: '[PRE57]'
+  id: totrans-222
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE57]'
+- en: 'In the same way, we can invoke the `ansible-vault` command with the - `vault-password-file=VAULT_PASSWORD_FILE`
+    option to specify our `.password` file. We can, for instance, edit our `secret.yaml`
+    file with the command:'
+  id: totrans-223
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 同样，我们可以使用`vault-password-file=VAULT_PASSWORD_FILE`选项调用`ansible-vault`命令，来指定我们的`.password`文件。例如，我们可以使用以下命令编辑我们的`secret.yaml`文件：
+- en: '[PRE58]'
+  id: totrans-224
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE58]'
+- en: This will open your default text editor where you'll be able to change the file
+    as if it was a plain file. When you save the file, Ansible vault will perform
+    the encryption before saving it, assuring the confidentiality of your content.
+  id: totrans-225
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这将打开您的默认文本编辑器，您可以像编辑普通文件一样修改文件。当您保存文件时，Ansible vault将在保存之前执行加密，确保您的内容的机密性。
+- en: 'Sometimes you need to look at the content of a file but you don''t want to
+    open it in a text editor, so you usually use `cat` command. Ansible vault has
+    a similar feature called `view`, so you can run:'
+  id: totrans-226
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有时您需要查看文件的内容，但又不想在文本编辑器中打开它，所以通常使用`cat`命令。Ansible vault有一个类似的功能，叫做`view`，您可以运行：
+- en: '[PRE59]'
+  id: totrans-227
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE59]'
+- en: 'Ansible vault allows you to decrypt a file, replacing its encrypted content
+    with its plain text content. To do so, you can execute:'
+  id: totrans-228
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible vault允许您解密一个文件，将其加密内容替换为明文内容。要执行此操作，您可以运行：
+- en: '[PRE60]'
+  id: totrans-229
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE60]'
+- en: 'At this point, we can the `cat` command on the `secret.yaml` file and the result
+    is the following:'
+  id: totrans-230
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 此时，我们可以在`secret.yaml`文件上运行`cat`命令，结果如下：
+- en: '[PRE61]'
+  id: totrans-231
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE61]'
+- en: 'Ansible vault also gives you the capability to encrypt files that already exist.
+    This is particularly useful if you want to develop all your files on a trusted
+    machine (for instance your own local machine) in a clear text to improve your
+    efficiency and then encrypt all sensible files afterward. To do so, you can execute:'
+  id: totrans-232
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible vault 还允许你加密已经存在的文件。如果你希望在一个受信任的机器上（例如你自己的本地机器）以明文形式开发所有文件，以提高效率，然后再加密所有敏感文件，这特别有用。为此，你可以执行：
+- en: '[PRE62]'
+  id: totrans-233
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE62]'
+- en: You can now check that the `secret.yaml` file is now encrypted again.
+  id: totrans-234
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在你可以检查 `secret.yaml` 文件是否已经再次加密。
+- en: 'The last option of the Ansible vault is very important since it''s a `rekey`
+    function. This function will allow you to change the encryption key in a single
+    command. You could perform the same operation with two commands (decrypt the `secret.yaml`
+    file with the **old key** and then encrypt it with the **new key**) but being
+    able to perform it in a single step has major advantages since the file in its
+    clear-text form will not be stored on the disk at any moment of the process. To
+    do so we need a file containing the new password (in our case, the file called
+    `.newpassword` and containing the string `ansible2`), and you need to execute
+    the following command:'
+  id: totrans-235
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible vault 的最后一个选项非常重要，因为它是一个 `rekey` 功能。此功能允许你通过一个命令更改加密密钥。你可以通过两个命令执行相同的操作（用
+    **旧密钥** 解密 `secret.yaml` 文件，然后用 **新密钥** 加密），但是能够在单个步骤中完成这项操作有重大优势，因为在整个过程中，文件的明文形式不会存储在磁盘上。为此，我们需要一个包含新密码的文件（在我们这里，文件名为
+    `.newpassword`，内容为字符串 `ansible2`），然后需要执行以下命令：
+- en: '[PRE63]'
+  id: totrans-236
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE63]'
+- en: 'We can now use the `cat` command on to the `secret.yaml` file and we will see
+    the following output:'
+  id: totrans-237
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们可以使用 `cat` 命令查看 `secret.yaml` 文件，输出结果如下：
+- en: '[PRE64]'
+  id: totrans-238
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE64]'
+- en: This is very different from the previous one we had.
+  id: totrans-239
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这与我们之前的方法非常不同。
+- en: Vaults and playbooks
+  id: totrans-240
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 保险库和 playbooks
+- en: 'You can also use vaults with `ansible-playbook`. You''ll need to decrypt the
+    file on-the-fly using a command such as the following:'
+  id: totrans-241
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你也可以在 `ansible-playbook` 中使用保险库。你需要使用类似以下的命令即时解密文件：
+- en: '[PRE65]'
+  id: totrans-242
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE65]'
+- en: 'There is yet another option that allows you to decrypt files using a script,
+    which can then look up some other source and decrypt the file. This can also be
+    a useful option to provide more security. However, make sure that the `get_password.py`
+    script has executable permissions:'
+  id: totrans-243
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 还有另一个选项，允许你使用脚本解密文件，然后脚本可以查找其他来源并解密文件。这也可以作为一个有用的选项，以提供更多的安全性。然而，确保 `get_password.py`
+    脚本具有可执行权限：
+- en: '[PRE66]'
+  id: totrans-244
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE66]'
+- en: Before closing this chapter, I'd like to speak a little bit about the password
+    file. This file needs to be present on the machine where you execute your playbooks,
+    in a location and with permissions so that is readable by the user who is executing
+    the playbook. You can create the `.password` file at startup. The '`.`' character
+    in the `.password` filename is to make sure that the file is hidden by default
+    when you look for it. This is not directly a security measure, but could help
+    mitigate cases where an attacker does not know exactly what he is looking for.
+  id: totrans-245
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在结束本章之前，我想稍微谈谈密码文件。此文件需要存在于你执行 playbooks 的机器上，并且存放在具有适当权限的位置，以便执行 playbook 的用户可以读取。你可以在启动时创建
+    `.password` 文件。`.password` 文件名中的 `.` 字符是为了确保文件在查找时默认是隐藏的。这并不直接是一种安全措施，但可以帮助缓解攻击者不清楚自己在寻找什么的情况。
+- en: The `.password` file content should be a password or key that is secure and
+    accessible only to folks who have permission to run Ansible playbooks.
+  id: totrans-246
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`.password` 文件的内容应该是一个密码或密钥，确保只有有权限运行 Ansible playbooks 的人员可以访问。'
+- en: Finally, make sure that you're not encrypting every file that's available! Ansible
+    vault should be used only for important information that needs to be secure.
+  id: totrans-247
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后，确保你不会加密每一个可用的文件！Ansible vault 应该仅用于需要安全保护的重要信息。
+- en: Note
+  id: totrans-248
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: Every time you'll save an encrypted file, no matter if changes have been applied
+    or not, the file will be re-encrypted and therefore will change in encrypted content.
+    This will cause your SCM tool to mark the file as modified.
+  id: totrans-249
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 每次保存加密文件时，不管是否已应用更改，文件都会重新加密，因此加密内容会发生变化。这会导致你的 SCM 工具标记该文件为已修改。
+- en: Encrypting user passwords
+  id: totrans-250
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 加密用户密码
+- en: 'Ansible vault takes care of passwords that are checked in and helps you handle
+    them while running Ansible playbooks or commands. However, when Ansible plays
+    are run, at times you might need your users to enter passwords. You also want
+    to make sure that these passwords don''t appear in the comprehensive Ansible logs
+    (the default location: `/var/log/ansible.log`) or on `stdout`.'
+  id: totrans-251
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible Vault负责处理已检查的密码，并帮助你在运行Ansible剧本或命令时管理它们。然而，在运行Ansible play时，有时你可能需要用户输入密码。你还想确保这些密码不会出现在全面的Ansible日志（默认位置：`/var/log/ansible.log`）或`stdout`中。
+- en: 'Ansible uses `Passlib`, which is a password hashing library for Python, to
+    handle encryption for prompted passwords. You can use any of the following algorithms
+    supported by `Passlib`:'
+  id: totrans-252
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible使用`Passlib`，它是一个Python的密码哈希库，用于处理提示密码的加密。你可以使用`Passlib`支持的以下任意算法：
+- en: '`des_crypt`: DES Crypt'
+  id: totrans-253
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`des_crypt`: DES Crypt'
+- en: '`bsdi_crypt`: BSDi Crypt'
+  id: totrans-254
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`bsdi_crypt`: BSDi Crypt'
+- en: '`bigcrypt`: BigCrypt'
+  id: totrans-255
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`bigcrypt`: BigCrypt'
+- en: '`crypt16`: Crypt16'
+  id: totrans-256
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`crypt16`: Crypt16'
+- en: '`md5_crypt`: MD5 Crypt'
+  id: totrans-257
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`md5_crypt`: MD5 Crypt'
+- en: '`bcrypt`: BCrypt'
+  id: totrans-258
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`bcrypt`: BCrypt'
+- en: '`sha1_crypt`: SHA-1 Crypt'
+  id: totrans-259
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`sha1_crypt`: SHA-1 Crypt'
+- en: '`sun_md5_crypt`: Sun MD5 Crypt'
+  id: totrans-260
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`sun_md5_crypt`: Sun MD5 Crypt'
+- en: '`sha256_crypt`: SHA-256 Crypt'
+  id: totrans-261
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`sha256_crypt`: SHA-256 Crypt'
+- en: '`sha512_crypt`: SHA-512 Crypt'
+  id: totrans-262
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`sha512_crypt`: SHA-512 Crypt'
+- en: '`apr_md5_crypt`: Apache''s MD5-Crypt variant'
+  id: totrans-263
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`apr_md5_crypt`: Apache的MD5-Crypt变种'
+- en: '`phpass`: PHPass'' Portable Hash'
+  id: totrans-264
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`phpass`: PHPass的便携式哈希'
+- en: '`pbkdf2_digest`: Generic PBKDF2 Hashes'
+  id: totrans-265
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`pbkdf2_digest`: 通用PBKDF2哈希'
+- en: '`cta_pbkdf2_sha1`: Cryptacular''s PBKDF2 hash'
+  id: totrans-266
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`cta_pbkdf2_sha1`: Cryptacular的PBKDF2哈希'
+- en: '`dlitz_pbkdf2_sha1`: Dwayne Litzenberger''s PBKDF2 hash'
+  id: totrans-267
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`dlitz_pbkdf2_sha1`: Dwayne Litzenberger的PBKDF2哈希'
+- en: '`scram`: SCRAM Hash'
+  id: totrans-268
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`scram`: SCRAM哈希'
+- en: '`bsd_nthash`: FreeBSD''s MCF-compatible `nthash` encoding'
+  id: totrans-269
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`bsd_nthash`: FreeBSD的MCF兼容`nthash`编码'
+- en: 'Let''s now see how encryption works with a variable prompt:'
+  id: totrans-270
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在让我们来看一下如何使用变量提示进行加密：
+- en: '[PRE67]'
+  id: totrans-271
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE67]'
+- en: In the preceding snippet, `vars_prompt` is used to prompt users for some data.
+    The `vars_prompt` is not a task but is another section at the same level as the
+    `tasks:` one.
+  id: totrans-272
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在前面的代码片段中，`vars_prompt`用于提示用户输入一些数据。`vars_prompt`不是任务，而是与`tasks:`同一级别的另一个部分。
+- en: 'The `name` module indicates the actual variable name where Ansible will store
+    the user password, as shown in the following command:'
+  id: totrans-273
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`name`模块表示Ansible将存储用户密码的实际变量名称，如下命令所示：'
+- en: '[PRE68]'
+  id: totrans-274
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE68]'
+- en: 'We are using the `prompt` utility to prompt users for the password as follows:'
+  id: totrans-275
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们使用`prompt`工具提示用户输入密码，如下所示：
+- en: '[PRE69]'
+  id: totrans-276
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE69]'
+- en: 'We are explicitly asking Ansible to hide the password from `stdout` by using
+    `private` module; this works like any other password prompt on a Unix system.
+    The `private` module is accessed as follows:'
+  id: totrans-277
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们明确要求Ansible通过使用`private`模块从`stdout`中隐藏密码；这就像任何Unix系统上的密码提示一样。`private`模块的访问方式如下：
+- en: '[PRE70]'
+  id: totrans-278
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE70]'
+- en: 'We are using the `md5_crypt` algorithm over here with a salt size of `7`:'
+  id: totrans-279
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们在这里使用`md5_crypt`算法，并且盐值大小为`7`：
+- en: '[PRE71]'
+  id: totrans-280
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE71]'
+- en: 'Moreover, Ansible will prompt for the password twice and compare both passwords:'
+  id: totrans-281
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 此外，Ansible将提示用户输入两次密码并进行比较：
+- en: '[PRE72]'
+  id: totrans-282
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE72]'
+- en: Hiding passwords
+  id: totrans-283
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 隐藏密码
+- en: 'Ansible, by default, filters output that contains the `login_password` key,
+    the `password` key, and the `user:pass` format. For example, if you are passing
+    a password in your module using `login_password` or the `password` key, then Ansible
+    will replace your password with `VALUE_HIDDEN`. Let''s now see how you can hide
+    a password using the `password` key:'
+  id: totrans-284
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 默认情况下，Ansible会过滤包含`login_password`键、`password`键以及`user:pass`格式的输出。例如，如果你通过`login_password`或`password`键在模块中传递密码，Ansible将用`VALUE_HIDDEN`替换你的密码。现在我们来看一下如何使用`password`键隐藏密码：
+- en: '[PRE73]'
+  id: totrans-285
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE73]'
+- en: In the preceding `shell` task, we use the `password` key to pass passwords.
+    This will allow Ansible to hide it from `stdout` and its log file.
+  id: totrans-286
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在前面的`shell`任务中，我们使用`password`键传递密码。这将允许Ansible隐藏密码，不显示在`stdout`和其日志文件中。
+- en: 'Now, when you run the preceding task in the *verbose* mode, you should not
+    see your `mypass` password; instead Ansible, with `VALUE_HIDDEN`, will replace
+    it as follows:'
+  id: totrans-287
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，当你在*详细*模式下运行上述任务时，你应该看不到`mypass`密码；相反，Ansible将用`VALUE_HIDDEN`替代它，如下所示：
+- en: '[PRE74]'
+  id: totrans-288
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE74]'
+- en: Note
+  id: totrans-289
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: Ansible will protect the strings you declared as password even if they are being
+    used in a different context. For instance, if you have another variable that contains
+    the string `my_password`, if you are going to print it, `HIDDEN_VALUE` will appear,
+    even if that specific variable has not been declared as the password.
+  id: totrans-290
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible会保护你声明为密码的字符串，即使它们在其他上下文中使用。例如，如果你有另一个变量包含字符串`my_password`，如果你将其打印出来，`HIDDEN_VALUE`将会出现，即使该特定变量没有被声明为密码。
+- en: Using no_log
+  id: totrans-291
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 使用no_log
+- en: Ansible will hide your passwords only if you are using a specific set of keys.
+    However, this might not be the case every time; moreover, you might also want
+    to hide some other confidential data. The `no_log` feature of Ansible will hide
+    your entire task from logging it to the `syslog` file. It will still print your
+    task on `stdout` and log it to other Ansible logfiles.
+  id: totrans-292
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 只会在你使用特定的密钥集时才会隐藏你的密码。然而，这并不总是如此；此外，你可能还希望隐藏一些其他的机密数据。Ansible 的 `no_log`
+    功能将隐藏整个任务，不会将其记录到 `syslog` 文件中。它仍然会在 `stdout` 上打印你的任务，并将其记录到其他 Ansible 日志文件中。
+- en: Note
+  id: totrans-293
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: At the time of writing this book, Ansible did not support hiding tasks from
+    `stdout` using `no_log`.
+  id: totrans-294
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在编写本书时，Ansible 不支持使用 `no_log` 隐藏来自 `stdout` 的任务。
+- en: Another way to prevent Ansible from logging is to set in the `ansible.cfg` file,
+    in the `[defaults]` section, `log_path` with the value `/dev/null` so that all
+    logs are saved in `/dev/null`, and therefore lost.
+  id: totrans-295
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 另一种防止 Ansible 记录日志的方法是在 `ansible.cfg` 文件的 `[defaults]` 部分设置 `log_path` 为 `/dev/null`，这样所有日志都会被保存到
+    `/dev/null`，因此会丢失。
+- en: 'Let''s now see how you can hide an entire task with `no_log` as follows:'
+  id: totrans-296
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在让我们来看一下如何使用 `no_log` 隐藏整个任务，如下所示：
+- en: '[PRE75]'
+  id: totrans-297
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE75]'
+- en: 'By passing `no_log`: True to your task, Ansible will prevent the entire task
+    from hitting syslog.'
+  id: totrans-298
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '通过将 `no_log`: True 传递给任务，Ansible 将防止整个任务被记录到 syslog 中。'
+- en: Summary
+  id: totrans-299
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 总结
+- en: In this chapter, we have seen a very large number of Ansible features. We started
+    with `local_actions` for performing operations on a machine, then we moved to
+    the delegation for performing the task on a third machine. We then moved to conditionals
+    and include for making playbooks more flexible. We learned about roles and how
+    they can help you keep your system aligned and learned how to organize an Ansible
+    repository properly, making the most of Ansible and Git. Later, we covered execution
+    strategies and Jinja filters for more flexible executions.
+  id: totrans-300
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们学习了大量的 Ansible 功能。我们从 `local_actions` 开始，用于在一台机器上执行操作，然后转向委托，在第三台机器上执行任务。接着，我们介绍了条件语句和包含功能，使
+    playbook 更加灵活。我们了解了角色及其如何帮助你保持系统的一致性，并学习了如何正确组织 Ansible 仓库，最大限度地利用 Ansible 和 Git。随后，我们讨论了执行策略和
+    Jinja 过滤器，以实现更灵活的执行。
+- en: We ended this chapter with Ansible vault and many other tips to make your Ansible
+    execution safer.
+  id: totrans-301
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章最后，我们介绍了 Ansible vault 和其他许多提高 Ansible 执行安全性的技巧。
+- en: In the next chapter, we will be looking at how to use Ansible to create infrastructures
+    and more specifically, how to do it using the cloud providers, AWS and DigitalOcean.
+  id: totrans-302
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一章，我们将学习如何使用 Ansible 创建基础设施，更具体地说，如何使用云服务提供商 AWS 和 DigitalOcean 来完成这一任务。

@@ -1,0 +1,1530 @@
+- en: '8'
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '8'
+- en: Coding Best Practices
+  id: totrans-1
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 编码最佳实践
+- en: Ansible can help you automate almost all your daily IT tasks, from mundane tasks,
+    such as applying patches or deploying configuration files, to deploying entirely
+    new infrastructure as code. The use of, and engagement with, Ansible has been
+    growing year by year as more and more people realize its power and simplicity.
+    You will find many examples of Ansible playbooks, roles, blog articles, and so
+    on across the internet, and combined with resources such as this book, you will
+    become proficient at writing your own Ansible playbooks.
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 可以帮助您自动化几乎所有的日常 IT 任务，从应用补丁或部署配置文件等琐事，到部署全新的基础架构作为代码。随着越来越多的人认识到其强大和简单，Ansible
+    的使用和参与每年都在增长。您将在互联网上找到许多 Ansible playbook、角色、博客文章等示例，并结合像本书这样的资源，您将能够熟练编写自己的 Ansible
+    playbook。
+- en: Yet, how can you tell whether an example you found on the internet is actually
+    a good way of doing things? In this chapter, we will take you through a practical
+    guide of the best practices in Ansible, showing you what is currently considered
+    good practice when it comes to directory structure and playbook layout, how to
+    make effective use of inventories (especially on the cloud), and how best to differentiate
+    your environments. By the end of this chapter, you should be able to proceed with
+    confidence in writing everything from small single-task playbooks to large-scale
+    playbooks for complex environments.
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，您如何判断在互联网上找到的示例实际上是做事情的好方法？在本章中，我们将为您介绍 Ansible 最佳实践的实际指南，向您展示目录结构和 playbook
+    布局的最佳实践，如何有效利用清单（特别是在云上），以及如何最好地区分您的环境。通过本章的学习，您应该能够自信地编写从小型单任务 playbook 到复杂环境的大规模
+    playbook。
+- en: 'In this chapter, we will cover the following topics:'
+  id: totrans-4
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们将涵盖以下主题：
+- en: The preferred directory layout
+  id: totrans-5
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 首选的目录布局
+- en: Differentiating between different environment types
+  id: totrans-6
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 区分不同的环境类型
+- en: The proper approach to defining group and host variables
+  id: totrans-7
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 定义组和主机变量的正确方法
+- en: Using top-level playbooks
+  id: totrans-8
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用顶级 playbook
+- en: Leveraging version control tools
+  id: totrans-9
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 利用版本控制工具
+- en: Setting OS and distribution variances
+  id: totrans-10
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 设置 OS 和分发差异
+- en: Porting between Ansible versions
+  id: totrans-11
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在 Ansible 版本之间移植
+- en: Technical requirements
+  id: totrans-12
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 技术要求
+- en: This chapter assumes that you have set up your control host with Ansible, as
+    in [*Chapter 1*](B20846_01.xhtml#_idTextAnchor015), *Getting Started with Ansible*,
+    and that you are using the most recent version available; the examples in this
+    chapter were tested on Ansible 2.15\. This chapter also assumes that you have
+    at least one additional host to test against; ideally, this should be Linux-based.
+    Although we will give specific examples of hostnames in this chapter, you are
+    welcome to substitute them with your own hostname and/or IP addresses, and details
+    of how to do this are provided in the appropriate places.
+  id: totrans-13
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章假设您已经像在[*第1章*](B20846_01.xhtml#_idTextAnchor015)中所述那样使用 Ansible 设置了控制主机，并且您正在使用最新版本；本章中的示例是在
+    Ansible 2.15 上测试过的。本章还假设您至少有一个额外的主机进行测试；理想情况下，这应该是基于 Linux 的。尽管本章中我们将给出主机名的具体示例，但您可以用您自己的主机名和/或
+    IP 地址进行替换，如何替换这些内容的详细信息在适当的地方提供。
+- en: The code bundle used in this chapter is available at [https://github.com/PacktPublishing/Practical-Ansible-Second-Edition/tree/main/Chapter%208](https://github.com/PacktPublishing/Practical-Ansible-Second-Edition/tree/main/Chapter%208).
+  id: totrans-14
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章中使用的代码包可在 [https://github.com/PacktPublishing/Practical-Ansible-Second-Edition/tree/main/Chapter%208](https://github.com/PacktPublishing/Practical-Ansible-Second-Edition/tree/main/Chapter%208)
+    获取。
+- en: The preferred directory layout
+  id: totrans-15
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 首选的目录布局
+- en: As we have explored Ansible throughout this book, we have shown many times that
+    the more your playbook grows in size and scale, the more likely you are to want
+    to divide it up into multiple files and directories. A great example of this is
+    roles, which we covered in [*Chapter 4*](B20846_04.xhtml#_idTextAnchor207), *Playbooks
+    and Roles*, where we defined roles to not only enable us to reuse common automation
+    code but also to split up what could potentially be a massive, single playbook
+    into smaller, logically organized, manageable chunks. We also looked, in [*Chapter
+    3*](B20846_03.xhtml#_idTextAnchor158), *Defining Your Inventory*, at the process
+    of defining your inventory file and how you can also split this up across multiple
+    files and directories. What we have not looked at, however, is how we can put
+    all of this together. All of this is documented in the official Ansible documentation
+    at [https://docs.ansible.com/ansible/latest/user_guide/playbooks_best_practices.xhtml#content-organization](https://docs.ansible.com/ansible/latest/user_guide/playbooks_best_practices.xhtml#content-organization).
+  id: totrans-16
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如我们在本书中多次探索的那样，随着你的剧本在大小和规模上的增长，你会更有可能希望将它分成多个文件和目录。一个很好的例子是角色（roles），我们在[*第4章*](B20846_04.xhtml#_idTextAnchor207)中讲解过的，*剧本与角色*，我们定义了角色，不仅可以让我们重用公共的自动化代码，还能将原本可能庞大的单一剧本分割成更小、更有逻辑组织的可管理的部分。我们还在[*第3章*](B20846_03.xhtml#_idTextAnchor158)中讲解过了，*定义清单*，即如何定义清单文件，并且也可以将其拆分成多个文件和目录。然而，我们尚未探讨的是，如何将这些内容组合在一起。所有这些都可以在官方的Ansible文档中找到：[https://docs.ansible.com/ansible/latest/user_guide/playbooks_best_practices.xhtml#content-organization](https://docs.ansible.com/ansible/latest/user_guide/playbooks_best_practices.xhtml#content-organization)。
+- en: However, in this chapter, let’s get started with a practical example of this
+    to show you a great way of setting up your directory structure for a simple role-based
+    playbook that has two different inventories—one for a development environment
+    and one for a production environment (you would want to keep these separate in
+    any real-world use case; although, ideally, you should be able to execute the
+    same plays on both for consistency and for testing purposes).
+  id: totrans-17
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，在本章中，让我们通过一个实际示例开始，向你展示如何为一个简单的基于角色的剧本设置目录结构，该剧本具有两个不同的清单——一个用于开发环境，一个用于生产环境（在任何实际使用案例中，你会希望将它们分开；虽然理想情况下，你应该能够在两个环境中执行相同的剧本，以确保一致性和进行测试）。
+- en: 'Let’s get started by building the directory structure:'
+  id: totrans-18
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们从构建目录结构开始：
+- en: 'Create a directory tree for your development inventory with the following commands:'
+  id: totrans-19
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用以下命令为你的开发清单创建目录树：
+- en: '[PRE0]'
+  id: totrans-20
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: '[app]'
+  id: totrans-21
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '[app]'
+- en: app01.dev.example.com
+  id: totrans-22
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: app01.dev.example.com
+- en: app02.dev.example.com
+  id: totrans-23
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: app02.dev.example.com
+- en: '[PRE1]'
+  id: totrans-24
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: 'To further our example, we’ll add a group variable to our app group. As discussed
+    in [*Chapter 3*](B20846_03.xhtml#_idTextAnchor158), *Defining Your Inventory*,
+    create a file called `app.yml` in the `group_vars` directory we created in the
+    previous step:'
+  id: totrans-25
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 为了进一步完善我们的示例，我们将为我们的app组添加一个组变量。如[*第3章*](B20846_03.xhtml#_idTextAnchor158)中讨论的那样，*定义清单*，在我们在前一步创建的`group_vars`目录中创建一个名为`app.yml`的文件：
+- en: '[PRE2]'
+  id: totrans-26
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: 'Next, create a `production` directory structure using the same method:'
+  id: totrans-27
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 接下来，使用相同的方法创建一个`production`目录结构：
+- en: '[PRE3]'
+  id: totrans-28
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: '[app]'
+  id: totrans-29
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '[app]'
+- en: app01.prod.example.com
+  id: totrans-30
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: app01.prod.example.com
+- en: app02.prod.example.com
+  id: totrans-31
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: app02.prod.example.com
+- en: '[PRE4]'
+  id: totrans-32
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: 'Now, we’ll define a different value for the `http_port` group variable for
+    our `production` inventory. Add the following contents to `inventories/production/group_vars/app.yml`:'
+  id: totrans-33
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在，我们将为我们的`production`清单定义一个不同的`http_port`组变量。将以下内容添加到`inventories/production/group_vars/app.yml`中：
+- en: '[PRE5]'
+  id: totrans-34
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: 'That completes our inventory definition. Next, we will add any custom modules
+    or plugins that we might find useful for our playbook. Suppose we want to use
+    the `remote_filecopy.py` module we created in [*Chapter 5*](B20846_05.xhtml#_idTextAnchor279),
+    *Creating and Consuming* *Modules*. Just as we discussed in that chapter, we first
+    create the directory for this module:'
+  id: totrans-35
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这完成了我们的清单定义。接下来，我们将添加可能对我们的剧本有用的任何自定义模块或插件。假设我们想使用在[*第5章*](B20846_05.xhtml#_idTextAnchor279)中创建的`remote_filecopy.py`模块，*创建与使用*
+    *模块*。正如我们在那一章中讨论的那样，我们首先为此模块创建目录：
+- en: '[PRE6]'
+  id: totrans-36
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: Then, we add the `remote_filecopy.py` module to this library. We won’t relist
+    the code here to save space, but you can copy it from the section called *Developing
+    custom modules* from [*Chapter 5*](B20846_05.xhtml#_idTextAnchor279), *Creating
+    and Consuming* *Modules*, or take advantage of the example code that accompanies
+    this book on GitHub.
+  id: totrans-37
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来，我们将`remote_filecopy.py`模块添加到这个库中。为了节省空间，我们不在这里重新列出代码，但你可以从[*第五章*](B20846_05.xhtml#_idTextAnchor279)中的*开发自定义模块*部分复制它，或者使用本书随附的GitHub示例代码。
+- en: 'The same can be done for the plugins; if we also want to use the `filter` plugin
+    that we created in [*Chapter 6*](B20846_06.xhtml#_idTextAnchor318), *Creating
+    and Consuming* *Plugins*, we would create an appropriately named directory:'
+  id: totrans-38
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于插件，同样的操作也可以进行；如果我们还想使用在[*第六章*](B20846_06.xhtml#_idTextAnchor318)中创建的`filter`插件，*创建和使用*
+    *插件*，我们将创建一个适当命名的目录：
+- en: '[PRE7]'
+  id: totrans-39
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE7]'
+- en: Then, copy the `filter` plugin code into this directory.
+  id: totrans-40
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后，将`filter`插件代码复制到该目录中。
+- en: 'Finally, we’ll create a role to use in our new playbook structure. Naturally,
+    you will have many roles, but we’ll create one as an example and then you can
+    repeat the process for each role. We’ll call our role `installapp` and use the
+    `ansible-galaxy` command (covered in [*Chapter 4*](B20846_04.xhtml#_idTextAnchor207),
+    *Playbooks and Roles*) to create the directory structure for us:'
+  id: totrans-41
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后，我们将创建一个角色，用于我们新的playbook结构。当然，你将有许多角色，但我们先创建一个作为示例，然后你可以为每个角色重复这个过程。我们将角色命名为`installapp`，并使用`ansible-galaxy`命令（在[*第四章*](B20846_04.xhtml#_idTextAnchor207)中讲解，*Playbooks和角色*）来为我们创建目录结构：
+- en: '[PRE8]'
+  id: totrans-42
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE8]'
+- en: 'Then, in our `roles/installapp/tasks/main.yml` file, we’ll add the following
+    contents:'
+  id: totrans-43
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后，在我们的`roles/installapp/tasks/main.yml`文件中，我们将添加以下内容：
+- en: '[PRE9]'
+  id: totrans-44
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE9]'
+- en: In the preceding code, we’ve reused a number of examples from earlier chapters
+    of this book. You can also define the handlers, variables, default values, and
+    so on to the role, as discussed previously, but for our example, this will suffice.
+  id: totrans-45
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在前面的代码中，我们重复使用了本书前几章中的一些示例。你也可以根据之前的讨论，将处理程序、变量、默认值等定义到角色中，但对于我们的示例来说，这样就足够了。
+- en: 'The final stage in creating our best practice directory structure is to add
+    a top-level playbook to run. By convention, this will be called `site.yml` and
+    it will have the following simple contents (note that the directory structure
+    we have built takes care of many things, allowing the top-level playbook to be
+    incredibly simple):'
+  id: totrans-46
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 创建最佳实践目录结构的最后一步是添加一个顶层playbook来运行。按照约定，这个playbook会被命名为`site.yml`，并且它将包含以下简单内容（注意，我们所构建的目录结构处理了许多事情，使得顶层playbook变得非常简单）：
+- en: '[PRE10]'
+  id: totrans-47
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE10]'
+- en: 'For the purpose of clarity, your resulting directory structure should look
+    as follows:'
+  id: totrans-48
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了清晰起见，最终的目录结构应该如下所示：
+- en: '[PRE11]'
+  id: totrans-49
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE11]'
+- en: 'Now, we can simply run our playbook in the normal manner. For example, to run
+    it on the `development` inventory, execute the following:'
+  id: totrans-50
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，我们可以以正常的方式运行我们的playbook。例如，要在`development`清单上运行它，请执行以下命令：
+- en: '[PRE12]'
+  id: totrans-51
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE12]'
+- en: 'Similarly, run the following for the `production` inventory:'
+  id: totrans-52
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 同样地，针对`production`清单运行以下命令：
+- en: '[PRE13]'
+  id: totrans-53
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE13]'
+- en: Notice how the appropriate hosts and associated variables are picked up for
+    each inventory and how tidy and well organized our directory structure is. This
+    is the ideal way for you to lay out your playbooks and will ensure that they can
+    be scaled up to whatever size you need them to be, without them becoming unwieldy
+    and difficult to manage or troubleshoot. In the next section, we will explore
+    differentiating between different environment types.
+  id: totrans-54
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 注意，如何为每个清单选择适当的主机和相关变量，以及我们的目录结构是如何井井有条的。这是你布局playbook的理想方式，它将确保你可以根据需要扩展它们的规模，而不会让它们变得臃肿、难以管理或排除故障。在下一节中，我们将探讨如何区分不同的环境类型。
+- en: Differentiating between different environment types
+  id: totrans-55
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 区分不同环境类型
+- en: In almost every business, you will need to split your technology environment
+    by type. For example, you will almost certainly have a development environment,
+    where all the testing and development work is performed, and a production environment,
+    where all of the stable test code is run. The environments should (in a best-case
+    scenario) make use of the same Ansible playbooks—after all, the logic is that
+    if you can successfully deploy and test an application in your development environment,
+    then you should be able to deploy it in the same way in a production environment
+    and have it work just as well. However, there are always differences between the
+    two environments, not just in the hostnames but also sometimes in the parameters,
+    the load balancer names, the port numbers, and so on—the list can seem endless.
+  id: totrans-56
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在几乎每个企业中，你都需要根据类型拆分你的技术环境。例如，你几乎肯定会有一个开发环境，在那里进行所有的测试和开发工作，还有一个生产环境，在那里运行所有稳定的测试代码。这些环境应该（在最佳情况下）使用相同的
+    Ansible playbooks——毕竟，逻辑是，如果你能在开发环境中成功部署和测试一个应用，那么你应该能够在生产环境中以相同的方式部署它并且同样成功运行。然而，两个环境之间总是存在差异，不仅仅是在主机名上，有时还包括参数、负载均衡器名称、端口号等等——这些差异似乎无穷无尽。
+- en: 'In the *The preferred directory layout* section of this chapter, we covered
+    a way of differentiating between a development and production environment using
+    two separate inventory directory trees. This is how you should proceed when it
+    comes to differentiating these environments; obviously, we won’t repeat the examples,
+    but it’s important to note that when working with multiple environments, your
+    goals should be as follows:'
+  id: totrans-57
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章的*首选目录布局*部分，我们介绍了一种使用两个独立的清单目录树来区分开发和生产环境的方法。对于区分这些环境，你应该按照这种方式进行；显然，我们不会重复这些示例，但需要注意的是，当处理多个环境时，你的目标应该是：
+- en: Try and reuse the same playbooks for all of your environments that run the same
+    code. For example, if you deploy a web app in your development environment, you
+    should be confident that your playbooks will deploy the same app in the production
+    environment (and your **Quality Assurance** (**QA**) environment, as well as any
+    others that it might need to be deployed in).
+  id: totrans-58
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 尝试为所有运行相同代码的环境重用相同的 playbooks。例如，如果你在开发环境中部署了一个 web 应用，你应该确信你的 playbooks 能够在生产环境中部署相同的应用（以及在**质量保证**（**QA**）环境中，或其他可能需要部署的环境中）。
+- en: This means that not only are you testing your application deployments and code
+    but you are also testing your Ansible playbooks and roles as part of your overall
+    testing process.
+  id: totrans-59
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 这意味着，你不仅在测试应用程序的部署和代码，还在将你的 Ansible playbooks 和角色作为整体测试过程的一部分进行测试。
+- en: Your inventories for each environment should be kept in separate directory trees
+    (as we saw in the *The preferred directory layout* section of this chapter), but
+    all roles, playbooks, plugins, and modules (if used) should be in the same directory
+    structure (this should be the case for both environments).
+  id: totrans-60
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 每个环境的清单应该保存在不同的目录树中（正如我们在本章的*首选目录布局*部分中看到的那样），但所有的角色、playbooks、插件和模块（如果使用的话）应该放在相同的目录结构中（这应该适用于两个环境）。
+- en: It is normal for different environments to require different authentication
+    credentials; you should keep these separate not only for security but also to
+    ensure that playbooks are not accidentally run in the wrong environment.
+  id: totrans-61
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 不同的环境需要不同的认证凭证是正常的；你应该将这些凭证分开存储，不仅为了安全性，还为了确保 playbooks 不会在错误的环境中意外执行。
+- en: Your playbooks should be in your version control system, just as your code is.
+    This enables you to track changes over time and ensure that everyone is working
+    from the same copy of the automation code.
+  id: totrans-62
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 你的 playbooks 应该像你的代码一样存储在版本控制系统中。这使你能够跟踪变化，并确保每个人都在使用同一份自动化代码。
+- en: If you pay attention to these simple pointers, you will find that your automation
+    workflow becomes a real asset to your business and ensures reliability and consistency
+    across all of your deployments. Conversely, failure to follow these pointers puts
+    you at risk of experiencing the dreaded, *it worked in development but it doesn’t
+    work in production* deployment failures that so often plague the technology industry.
+    Let’s now build on this discussion in the next section by looking at best practices
+    when handling host and group variables—something that, as we saw in the *The preferred
+    directory layout* section, you need to apply, especially when working with multiple
+    environments.
+  id: totrans-63
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你注意到这些简单的提示，你会发现你的自动化工作流程会成为你业务的真正资产，并确保你所有部署的可靠性和一致性。相反，如果不遵循这些提示，你将面临那些令人生畏的*在开发中可以工作，但在生产中无法工作的*部署失败，这种问题经常困扰着科技行业。接下来，我们将继续在下一节中讨论如何处理主机和组变量的最佳实践——正如我们在*首选目录布局*部分中所看到的，你需要应用这些最佳实践，特别是在处理多个环境时。
+- en: The proper approach to defining group and host variables
+  id: totrans-64
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 定义组变量和主机变量的正确方法
+- en: 'When working with group and host variables, you can split them up using the
+    directory-based approach we used in the *The preferred directory layout* section.
+    However, there are a few additional pointers to managing this that you should
+    be aware of. First and foremost, you should always pay attention to variable precedence.
+    A detailed list of variable precedence order can be found at [https://docs.ansible.com/ansible/latest/user_guide/playbooks_variables.xhtml#variable-precedence-where-should-i-put-a-variable](https://docs.ansible.com/ansible/latest/user_guide/playbooks_variables.xhtml#variable-precedence-where-should-i-put-a-variable).
+    However, the key takeaways for working with multiple environments are as follows:'
+  id: totrans-65
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在处理组和主机变量时，你可以使用我们在*首选目录布局*部分中使用的基于目录的方法将它们拆分开。然而，在管理这些变量时，有一些额外的注意事项需要你留意。首先，最重要的是，你应当始终注意变量的优先级。关于变量优先级顺序的详细列表可以在[https://docs.ansible.com/ansible/latest/user_guide/playbooks_variables.xhtml#variable-precedence-where-should-i-put-a-variable](https://docs.ansible.com/ansible/latest/user_guide/playbooks_variables.xhtml#variable-precedence-where-should-i-put-a-variable)中找到。然而，处理多个环境时的关键要点如下：
+- en: Host variables are always of a higher order of precedence than group variables,
+    so you can override any group variable with a host variable. This behavior is
+    useful if you take advantage of it in a controlled manner, but can yield unexpected
+    results if you are not aware of it.
+  id: totrans-66
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 主机变量的优先级总是高于组变量的，因此你可以用主机变量覆盖任何组变量。如果你以受控方式利用这一行为，它是很有用的，但如果你没有意识到这一点，可能会导致意想不到的结果。
+- en: There is a special group variables definition called `all`, which is applied
+    to all inventory groups. This has a lower order of precedence than specifically
+    defined group variables.
+  id: totrans-67
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 有一个特别的组变量定义，叫做`all`，它适用于所有库存组。它的优先级低于专门定义的组变量。
+- en: What happens if you define the same variable twice in two groups? If this happens,
+    both groups have the same order of precedence, so which one wins? To demonstrate
+    this (and our earlier examples), we will create a simple practical example for
+    you to follow.
+  id: totrans-68
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 如果你在两个组中定义相同的变量会发生什么？如果发生这种情况，两个组的优先级顺序是相同的，那么哪个会生效呢？为了演示这一点（以及我们之前的例子），我们将为你创建一个简单的实际示例。
+- en: 'To get started, let’s create a directory structure for our inventories. To
+    keep this example as concise as possible, we will only create a development environment.
+    However, you are free to expand on these concepts by building on the more complete
+    example we covered in the *The preferred directory layout* section of this chapter:'
+  id: totrans-69
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了开始，我们将为我们的库存创建一个目录结构。为了使这个例子尽可能简洁，我们只会创建一个开发环境。然而，你可以自由地扩展这些概念，构建在本章*首选目录布局*部分中我们涵盖的更完整的例子之上：
+- en: 'Create an inventory directory structure with the following commands:'
+  id: totrans-70
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用以下命令创建一个库存目录结构：
+- en: '[PRE14]'
+  id: totrans-71
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE14]'
+- en: '[app]'
+  id: totrans-72
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '[app]'
+- en: app01.dev.example.com
+  id: totrans-73
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: app01.dev.example.com
+- en: app02.dev.example.com
+  id: totrans-74
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: app02.dev.example.com
+- en: '[PRE15]'
+  id: totrans-75
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE15]'
+- en: 'Now, let’s create a special group variable file for all the groups in the inventory;
+    this file will be called `inventories/development/group_vars/all.yml` and should
+    contain the following content:'
+  id: totrans-76
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在，让我们为库存中的所有组创建一个特殊的组变量文件；该文件将命名为`inventories/development/group_vars/all.yml`，并应包含以下内容：
+- en: '[PRE16]'
+  id: totrans-77
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE16]'
+- en: 'Finally, let’s create a simple playbook called `site.yml` to query and print
+    the value of the variable we just created:'
+  id: totrans-78
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 最后，让我们创建一个简单的playbook，名为`site.yml`，用来查询并打印我们刚刚创建的变量的值：
+- en: '[PRE17]'
+  id: totrans-79
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE17]'
+- en: 'Now, if we run this playbook, we’ll see that the variable (which we only defined
+    in one place) takes the value we would expect:'
+  id: totrans-80
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在，如果我们运行这个 playbook，我们会看到该变量（我们只在一个地方定义的）将会得到我们预期的值：
+- en: '[PRE18]'
+  id: totrans-81
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE18]'
+- en: '---'
+  id: totrans-82
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '---'
+- en: 'http_port: 8081'
+  id: totrans-83
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'http_port: 8081'
+- en: '[PRE19]'
+  id: totrans-84
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE19]'
+- en: 'We have now defined the same variable twice—once in a special group called
+    `all` and once in the `app` group (which both servers in our `development` inventory
+    belong to). So, what happens if we now run our playbook? The output should appear
+    as follows:'
+  id: totrans-85
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 我们现在定义了相同的变量两次——一次是在一个名为`all`的特殊组中，另一次是在`app`组中（我们`development`清单中的两个服务器都属于该组）。那么，如果我们现在运行我们的
+    playbook，会发生什么呢？输出应该如下所示：
+- en: '[PRE20]'
+  id: totrans-86
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE20]'
+- en: '[app]'
+  id: totrans-87
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '[app]'
+- en: app01.dev.example.com
+  id: totrans-88
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: app01.dev.example.com
+- en: app02.dev.example.com
+  id: totrans-89
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: app02.dev.example.com
+- en: '[centos:children]'
+  id: totrans-90
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '[centos:children]'
+- en: app
+  id: totrans-91
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: app
+- en: '[newcentos:children]'
+  id: totrans-92
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '[newcentos:children]'
+- en: app
+  id: totrans-93
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: app
+- en: '[PRE21]'
+  id: totrans-94
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE21]'
+- en: 'Now, let’s redefine the `http_port` variable for the `centos` group by creating
+    a file called `inventories/development/group_vars/centos.yml`, which contains
+    the following content:'
+  id: totrans-95
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在，让我们通过创建一个名为`inventories/development/group_vars/centos.yml`的文件，重新定义`centos`组的`http_port`变量，该文件包含以下内容：
+- en: '[PRE22]'
+  id: totrans-96
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE22]'
+- en: 'Just to add to the confusion, let’s also define this variable for the `newcentos`
+    group in `inventories/development/group_vars/newcentos.yml`, which will contain
+    the following content:'
+  id: totrans-97
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 进一步增加困惑的是，让我们还在`inventories/development/group_vars/newcentos.yml`中为`newcentos`组定义这个变量，该文件将包含以下内容：
+- en: '[PRE23]'
+  id: totrans-98
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE23]'
+- en: 'We’ve now defined the same variable four times at the group level! Let’s rerun
+    our playbook and see which value comes through:'
+  id: totrans-99
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 我们现在在组级别定义了相同的变量四次！让我们重新运行我们的 playbook，看看哪个值会生效：
+- en: '[PRE24]'
+  id: totrans-100
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE24]'
+- en: '---'
+  id: totrans-101
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '---'
+- en: 'http_port: 9090'
+  id: totrans-102
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 'http_port: 9090'
+- en: '[PRE25]'
+  id: totrans-103
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE25]'
+- en: 'Now, if we run our playbook one final time, we will see that the value we defined
+    at the host level completely overrides any value that we set at the group level
+    for `app01.dev.example.com`. `app02.dev.example.com` is unaffected as we did not
+    define a host variable for it, so the next highest level of precedence—the group
+    variable from the `newcentos` group—won:'
+  id: totrans-104
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在，如果我们最后一次运行我们的 playbook，我们会看到在主机级别定义的值完全覆盖了在`app01.dev.example.com`的组级别设置的任何值。`app02.dev.example.com`没有受到影响，因为我们没有为它定义主机变量，因此优先级次高的——来自`newcentos`组的组变量——生效了。
+- en: '[PRE26]'
+  id: totrans-105
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE26]'
+- en: With this knowledge, you can now make advanced decisions about how to structure
+    your variables within your inventory to make sure you achieve the desired results
+    at both a host and group level. It’s important to know about variable precedence
+    ordering, as these examples have demonstrated, but following the documented order
+    will also allow you to produce powerful, flexible playbook inventories that work
+    well across multiple environments. Now, you may have noticed that, throughout
+    this chapter, we have used a top-level playbook in our directory structure, called
+    `site.yml`. We will look at this playbook in greater detail in the next section.
+  id: totrans-106
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有了这些知识，你现在可以做出更高级的决策，关于如何在你的清单中组织变量，确保在主机和组级别都能达到预期的结果。了解变量优先级顺序很重要，正如这些示例所展示的那样，但遵循文档中的顺序还将使你能够生成强大、灵活的
+    playbook 清单，在多个环境中都能良好工作。现在，你可能已经注意到，在整个章节中，我们在目录结构中使用了一个顶级 playbook，名为`site.yml`。我们将在下一节中更详细地查看这个
+    playbook。
+- en: Using top-level playbooks
+  id: totrans-107
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用顶级 playbooks
+- en: In all of the examples so far, we have built out using the best practice directory
+    structure recommended by Ansible and continually referred to a top-level playbook,
+    typically called `site.yml`. The idea behind this playbook (and, indeed, its common
+    name across all of our directory structures) is so that it can be used across
+    your entire server estate—that is to say, your **site**.
+  id: totrans-108
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在到目前为止的所有示例中，我们都使用了 Ansible 推荐的最佳实践目录结构，并且持续引用了一个顶级的 playbook，通常称为`site.yml`。这个
+    playbook（以及它在我们所有目录结构中常见的名称）的目的是能够在整个服务器环境中使用，也就是说，它适用于你的**站点**。
+- en: Of course, this is not to say that you have to use the same set of playbooks
+    across every server in your infrastructure or for every single function; rather,
+    it means only you can make the best decision as to what suits your environment
+    best. However, the whole aim of Ansible automation is that the created solution
+    is simple to run and operate. Imagine handing a playbook directory structure with
+    100 different playbooks to a new system administrator—how would they know which
+    ones to run and in which circumstances? The task of training someone to use the
+    playbooks would be immense and would simply move complexity from one area to another.
+  id: totrans-109
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当然，这并不是说你必须在你的基础设施中的每个服务器或每个功能上使用相同的剧本集；相反，这仅仅意味着你可以根据自己的环境做出最佳决策。然而，Ansible
+    自动化的整个目标是创建一个简单易运行和操作的解决方案。试想一下，将包含100个不同剧本的剧本目录结构交给一位新的系统管理员——他们如何知道在哪些情况下运行哪些剧本呢？培训某人使用剧本的任务将是巨大的，只会将复杂性从一个领域转移到另一个领域。
+- en: At the other end of the spectrum, you could make use of the `when` clauses with
+    facts and inventory grouping, such that your playbook knows exactly what to run
+    on each server in every possible circumstance. This, of course, is unlikely to
+    happen, and the truth is that your automation solution will end up somewhere in
+    the middle.
+  id: totrans-110
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在另一个极端，你可以利用`when`子句与事实和清单分组，使得剧本在每种可能的情况下都能精确地知道在每台服务器上运行什么。当然，这种情况不太可能发生，事实是，你的自动化解决方案最终会处于某个中间状态。
+- en: The most important thing is that, on receipt of a new playbook directory structure,
+    a new operator at least knows what the starting point for both running the playbooks
+    and understanding the code is. If the top-level playbook they encounter is always
+    `site.yml`, then at least everyone knows where to start. Through the clever use
+    of roles and the `import_*` and `include_*` statements, you can split your playbook
+    up into logical portions of reusable code, as we previously discussed, all from
+    one playbook file.
+  id: totrans-111
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最重要的是，当收到新的剧本目录结构时，一个新的操作员至少知道运行剧本和理解代码的起点是什么。如果他们遇到的顶层剧本始终是`site.yml`，那么至少每个人都知道从哪里开始。通过巧妙地使用角色以及`import_*`和`include_*`语句，你可以将剧本拆分为可重用代码的逻辑部分，就像我们之前讨论的那样，所有这些都来自一个剧本文件。
+- en: Now that you have learned about the importance of top-level playbooks, let’s
+    take a look, in the next section, at how to take advantage of version control
+    tools to ensure good practices are adhered to when it comes to centralizing and
+    maintaining your automation code.
+  id: totrans-112
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在你已经了解了顶层剧本的重要性，接下来我们将在下一节中讨论如何利用版本控制工具来确保在集中和维护自动化代码时遵循最佳实践。
+- en: Leveraging version control tools
+  id: totrans-113
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 利用版本控制工具
+- en: As we discussed earlier in this chapter, it is vital that you version control
+    and test not only your code but also your Ansible automation code. This should
+    include inventories (or dynamic inventory collections), any custom modules, plugins,
+    roles, and playbook code. The reason for this is simple—the ultimate goal of Ansible
+    automation is likely to be to deploy an entire environment using a playbook (or
+    set of playbooks). This might even involve deploying infrastructure as code, especially
+    if you are deploying to a cloud environment.
+  id: totrans-114
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如我们在本章早些时候讨论的那样，至关重要的是，你不仅要对代码进行版本控制和测试，还要对你的Ansible自动化代码进行版本控制和测试。这应包括清单（或动态清单集合）、任何自定义模块、插件、角色和剧本代码。原因很简单——Ansible自动化的最终目标很可能是使用剧本（或一组剧本）部署整个环境。这甚至可能涉及将基础设施作为代码进行部署，特别是如果你正在部署到云环境中。
+- en: Any changes to your Ansible code could mean big changes to your environment
+    and possibly even determine whether an important production service works or not.
+    As a result, it is vital that you maintain a version history of your Ansible code
+    and that everyone works from the same version. You are free to choose the version
+    control system that suits you best; most corporate environments will already have
+    some kind of version control system in place. However, if you haven’t worked with
+    version control systems before, we recommend that you sign up for a free account
+    somewhere such as GitHub or GitLab, which both offer version control repositories
+    for free, along with more advanced paid-for plans.
+  id: totrans-115
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对你 Ansible 代码的任何修改都可能对你的环境产生重大影响，甚至决定一个重要的生产服务是否正常运行。因此，保持 Ansible 代码的版本历史记录，并确保每个人都使用相同版本至关重要。你可以自由选择最适合你的版本控制系统；大多数企业环境已经有了某种版本控制系统。然而，如果你以前没有使用过版本控制系统，建议你注册一个免费的账户，例如
+    GitHub 或 GitLab，它们都提供免费的版本控制仓库，同时也有更高级的付费计划。
+- en: A complete discussion of version control with Git is beyond the scope of this
+    book, but there are entire books devoted to the subject. However, we will take
+    you through the simplest possible use case. It is assumed, in the following examples,
+    that you are using a free account on GitHub, but if you are using a different
+    provider, simply change the URLs to match those given to you by your version control
+    repository host.
+  id: totrans-116
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 版本控制与 Git 的完整讨论超出了本书的范围，但有许多专门的书籍讲解这个话题。然而，我们会带你了解最简单的用例。在以下示例中，假设你使用的是 GitHub
+    的免费账户，但如果你使用的是其他提供商，只需将 URL 更改为与你的版本控制仓库主机提供给你的 URL 相匹配即可。
+- en: In addition to this, you will need to install the command-line Git tools on
+    your Linux host.
+  id: totrans-117
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 此外，你还需要在 Linux 主机上安装命令行 Git 工具。
+- en: 'On CentOS, you would install these as follows:'
+  id: totrans-118
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 CentOS 上，你可以通过如下方式安装这些工具：
+- en: '[PRE27]'
+  id: totrans-119
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE27]'
+- en: 'On Ubuntu, the process is similarly straightforward:'
+  id: totrans-120
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 Ubuntu 上，过程同样简单：
+- en: '[PRE28]'
+  id: totrans-121
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE28]'
+- en: 'On macOS, you can use the `brew` package manager to install Git tools as follows:'
+  id: totrans-122
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 macOS 上，你可以使用`brew`包管理器按如下方式安装 Git 工具：
+- en: '[PRE29]'
+  id: totrans-123
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE29]'
+- en: Once the tools are installed and your account is set up, your next task is to
+    clone a Git repository to your machine. If you want to start working with your
+    own repository, you will need to set this up with your provider—excellent documentation
+    is provided by both GitHub and GitLab and you should follow this to set up your
+    first repository.
+  id: totrans-124
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 工具安装并设置好账户后，接下来的任务是将 Git 仓库克隆到你的机器上。如果你想开始使用自己的仓库，你需要通过你的提供商设置它——GitHub 和 GitLab
+    都提供了优秀的文档，你应该按照这些文档设置你的第一个仓库。
+- en: 'Once it is set up and initialized, you can clone a copy to your local machine
+    to make changes to your code. This local copy is called a working copy, and you
+    can work through the process of cloning it and making changes as follows (note
+    that these are purely hypothetical examples to give you an idea of the commands
+    you will need to run; you should adapt them for your own use case):'
+  id: totrans-125
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 设置并初始化后，你可以克隆一份代码到本地机器进行修改。这个本地副本称为工作副本，你可以按如下步骤进行克隆并修改（请注意，这些完全是假设的示例，旨在让你了解需要运行的命令；你应根据自己的用例进行调整）：
+- en: 'Clone your `git` repository to your local machine to create a working copy
+    using a command such as the following:'
+  id: totrans-126
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用如下命令将你的 `git` 仓库克隆到本地机器，创建一个工作副本：
+- en: '[PRE30]'
+  id: totrans-127
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE30]'
+- en: 'Change to the directory of the code you cloned (the working copy) and make
+    any code changes you need to make:'
+  id: totrans-128
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 切换到你克隆的代码目录（工作副本），并进行所需的代码更改：
+- en: '[PRE31]'
+  id: totrans-129
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE31]'
+- en: 'Be sure to test your code and, when you are happy with it, add the changed
+    files that are ready for committing a new version using a command such as the
+    following:'
+  id: totrans-130
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 确保测试你的代码，当你对其满意时，使用如下命令将已修改的文件添加到待提交的新版本中：
+- en: '[PRE32]'
+  id: totrans-131
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE32]'
+- en: $ git commit -m 'Added new spongle-widget deployment to myplaybook.yml'
+  id: totrans-132
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: $ git commit -m '已将新的 spongle-widget 部署添加到 myplaybook.yml'
+- en: '[master ed14138] Added new spongle-widget deployment to myplaybook.yml'
+  id: totrans-133
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '[master ed14138] 已将新的 spongle-widget 部署添加到 myplaybook.yml'
+- en: 'Committer: Daniel Oh <doh@danieloh.redhat.com>'
+  id: totrans-134
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 提交者：Daniel Oh <doh@danieloh.redhat.com>
+- en: Your name and email address were configured automatically based
+  id: totrans-135
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 你的姓名和电子邮件地址已自动配置
+- en: on your username and hostname. Please check that they are accurate.
+  id: totrans-136
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在你的用户名和主机名上。请检查它们是否准确。
+- en: You can suppress this message by setting them explicitly. Run the
+  id: totrans-137
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 你可以通过显式设置它们来抑制此消息。运行以下命令：
+- en: following command and follow the instructions in your editor to edit
+  id: totrans-138
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 执行以下命令并按照编辑器中的提示进行编辑
+- en: 'your configuration file:'
+  id: totrans-139
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 你的配置文件：
+- en: git config --global --edit
+  id: totrans-140
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: git config --global --edit
+- en: 'After doing this, you may fix the identity used for this commit with:'
+  id: totrans-141
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 完成此操作后，你可以使用以下命令修复此提交使用的身份：
+- en: git commit --amend --reset-author
+  id: totrans-142
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: git commit --amend --reset-author
+- en: 1 file changed, 1 insertion(+), 1 deletion(-)
+  id: totrans-143
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 1 个文件已更改，1 个插入（+），1 个删除（-）
+- en: '[PRE33]'
+  id: totrans-144
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE33]'
+- en: 'Right now, all of these changes live solely in the working copy on your local
+    machine. This is good by itself, but it would be better if the code was available
+    to everyone who needs to view it on the version control system. To push your updated
+    commits back to (for example) GitHub, run the following command:'
+  id: totrans-145
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 目前，所有这些更改仅存在于本地机器上的工作副本中。这本身是好的，但如果代码能够在版本控制系统中供需要查看的所有人访问，那会更好。若要将更新的提交推送回（例如）GitHub，请运行以下命令：
+- en: '[PRE34]'
+  id: totrans-146
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE34]'
+- en: That’s all there is to it!
+  id: totrans-147
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 就是这么简单！
+- en: 'Now, other collaborators can clone your code just as we did in *Step 1*. Alternatively,
+    if they already have a working copy of your repository, they can update their
+    working copy using the following command (you can also do this if you want to
+    update your working copy to see changes made by someone else):'
+  id: totrans-148
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在，其他协作者可以像我们在*步骤1*中做的那样克隆你的代码。或者，如果他们已经有了你的仓库的工作副本，他们可以使用以下命令更新他们的工作副本（如果你想更新你的工作副本以查看其他人做的更改，你也可以这样做）：
+- en: '[PRE35]'
+  id: totrans-149
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE35]'
+- en: There are some incredibly advanced topics and use cases for Git that are beyond
+    the scope of this book. However, you will find that roughly 80% of the time, the
+    preceding commands are all the Git command-line knowledge you need. There are
+    also a number of graphical frontends to Git, as well as code editors and **Integrated
+    Development Environments** (**IDEs**), that integrate with Git repositories and
+    can assist you further in taking advantage of them. With that complete, let’s
+    take a look at how to ensure you can use the same playbook (or role) across multiple
+    hosts, even though they might have different OSs and versions.
+  id: totrans-150
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git有一些非常高级的话题和使用案例，超出了本书的范围。然而，你会发现，大约80%的时间，前面提到的命令就是你所需要的所有Git命令行知识。也有许多图形化的Git前端工具，以及与Git仓库集成的代码编辑器和**集成开发环境**（**IDEs**），它们可以进一步帮助你充分利用Git。完成这些后，让我们来看一下如何确保你可以在多个主机上使用相同的剧本（或角色），即使它们可能有不同的操作系统和版本。
+- en: Setting OS and distribution variances
+  id: totrans-151
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 设置操作系统和发行版的差异
+- en: As stated earlier, our goal is to try to use the same automation code as widely
+    as possible. However, as much as we try to standardize our technology environments,
+    variants always creep in. For example, it is impossible to simultaneously perform
+    a major upgrade on all your servers in one go, so when a major new OS version
+    comes out, such as **Red Hat Enterprise Linux** (**RHEL**) 8 or Ubuntu Server
+    20.04, it is inevitable that some machines will remain on older versions as others
+    are upgraded. Similarly, an environment might be standardized on Ubuntu, but then
+    an application is introduced that has only been certified to run on CentOS. In
+    short, as important as standardization is, variances will always creep in.
+  id: totrans-152
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如前面所述，我们的目标是尽可能广泛地使用相同的自动化代码。然而，尽管我们尽力标准化技术环境，但总会有变种悄然出现。例如，无法一次性对所有服务器进行重大升级，因此，当新的操作系统版本发布时，例如**Red
+    Hat Enterprise Linux**（**RHEL**）8或Ubuntu Server 20.04，一些机器在其他机器升级时不可避免地会保持旧版本。类似地，一个环境可能已经标准化为Ubuntu，但随后引入的某个应用程序只能在CentOS上运行。总之，尽管标准化非常重要，但差异总是会悄然出现。
+- en: When writing Ansible playbooks, especially roles, your goal should be for them
+    to be as widely applicable as possible throughout your environment. A classic
+    example of this is package management—let’s say you are writing a role to install
+    the Apache 2 web server. If you have to support both Ubuntu and CentOS with this
+    role, not only do you have different package managers to deal with (`yum` and
+    `apt`) but you also have different package names (`httpd` and `apache2`).
+  id: totrans-153
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在编写Ansible剧本时，尤其是角色时，你的目标应该是让它们尽可能广泛地适用于你的环境。一个经典的例子是包管理——假设你正在编写一个安装Apache
+    2 web服务器的角色。如果你必须同时支持Ubuntu和CentOS，不仅需要处理不同的包管理工具（`yum`和`apt`），而且还有不同的包名（`httpd`和`apache2`）。
+- en: In [*Chapter 4*](B20846_04.xhtml#_idTextAnchor207), *Playbooks and Roles*, we
+    looked at how to apply conditions to tasks using the `when` clause, along with
+    facts gathered by Ansible, such as `ansible_distribution`. However, there is another
+    way of running tasks on specific hosts that we haven’t yet looked at. In the same
+    chapter, we also looked at the concept of defining multiple plays in one playbook—there
+    is a special module that can create inventory groups for us based on Ansible facts,
+    and we can leverage this along with multiple plays to create a playbook that runs
+    the appropriate tasks on each host based on its type. This is best explained by
+    a practical example, so let’s get started.
+  id: totrans-154
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 [*第4章*](B20846_04.xhtml#_idTextAnchor207)，*Playbooks 和 Roles* 中，我们学习了如何使用
+    `when` 子句应用任务条件，并结合 Ansible 收集的事实（例如 `ansible_distribution`）。然而，还有另一种方法可以在特定主机上运行任务，我们还没有看过。在同一章节中，我们还讨论了如何在一个
+    playbook 中定义多个 plays——有一个特殊的模块可以根据 Ansible 事实为我们创建库存组，我们可以将其与多个 plays 结合使用，创建一个在每个主机上根据其类型运行适当任务的
+    playbook。通过一个实际的例子来解释这一点最为清晰，所以我们开始吧。
+- en: 'Assume that we are using the following simple inventory file for this example,
+    which has two hosts in a single group called `app`:'
+  id: totrans-155
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 假设我们为这个例子使用以下简单的库存文件，该文件中有两个主机，位于一个名为 `app` 的单一组中：
+- en: '[PRE36]'
+  id: totrans-156
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE36]'
+- en: Let’s now build a simple playbook that demonstrates how you can group the groups
+    using an Ansible fact so that the OS distribution determines which play in a playbook
+    is run.
+  id: totrans-157
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在让我们构建一个简单的 playbook，演示如何使用 Ansible 事实将组进行分组，使得操作系统分发决定 playbook 中运行哪个 play。
+- en: 'Follow these steps to create this playbook and observe its operation:'
+  id: totrans-158
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 按照以下步骤创建此 playbook，并观察其操作：
+- en: 'Start by creating a new playbook—we’ll call it `osvariants.yml`—with the following
+    `Play` definition. It will also contain a single task, as shown:'
+  id: totrans-159
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 首先创建一个新的 playbook——我们将其命名为 `osvariants.yml`——并使用以下 `Play` 定义。它还将包含一个单独的任务，如下所示：
+- en: '[PRE37]'
+  id: totrans-160
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE37]'
+- en: The playbook structure will be, by now, incredibly familiar to you. However,
+    the use of the `group_by` module is new. It dynamically creates new inventory
+    groups based on the key that we specify—in this example, we are creating groups
+    based on a key comprising the `os_` fixed string, followed by the OS distribution
+    fact obtained from the `Gathering Facts` stage. The original inventory group structure
+    is preserved and unmodified, but all the hosts are also added to the newly created
+    groups according to their facts.
+  id: totrans-161
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 目前，playbook 结构应该对你来说非常熟悉。然而，`group_by` 模块的使用是新的。它根据我们指定的键动态创建新的库存组——在这个例子中，我们根据一个由
+    `os_` 固定字符串和 `Gathering Facts` 阶段获取的操作系统分发事实组成的键来创建组。原始的库存组结构得以保留且未被修改，但所有主机也根据它们的事实被添加到新创建的组中。
+- en: So, the two servers in our simple inventory remain in the `app` group, but if
+    they are based on Ubuntu, they will be added to a newly created inventory group
+    called `os_Ubuntu`. Similarly, if they are based on CentOS, they will be added
+    to a group called `os_CentOS`.
+  id: totrans-162
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 因此，我们简单库存中的两个服务器仍然保留在 `app` 组中，但如果它们基于 Ubuntu，它们将被添加到一个新创建的名为 `os_Ubuntu` 的库存组中。同样，如果它们基于
+    CentOS，它们将被添加到一个名为 `os_CentOS` 的组中。
+- en: 'Armed with this information, we can go ahead and create additional plays based
+    on the newly created groups. Let’s add the following `Play` definition to the
+    same playbook file to install Apache on CentOS:'
+  id: totrans-163
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 有了这些信息，我们可以继续创建基于新创建组的额外 plays。让我们将以下 `Play` 定义添加到相同的 playbook 文件中，以在 CentOS
+    上安装 Apache：
+- en: '[PRE38]'
+  id: totrans-164
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE38]'
+- en: This is a perfectly normal `Play` definition that uses the `yum` module to install
+    the `httpd` package (as required on CentOS). The only thing that differentiates
+    it from our earlier work is the `hosts` definition at the top of the play. This
+    uses the newly created inventory group created by the `group_by` module in the
+    first play.
+  id: totrans-165
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这是一个完全正常的 `Play` 定义，使用 `yum` 模块安装 `httpd` 包（在 CentOS 上需要）。唯一与我们之前的工作不同的是 play
+    顶部的 `hosts` 定义。这个定义使用了第一步中 `group_by` 模块创建的新的库存组。
+- en: 'Similarly, we can add a third `Play` definition—this time, for installing the
+    `apache2` package on Ubuntu using the `apt` module:'
+  id: totrans-166
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 类似地，我们可以添加第三个 `Play` 定义——这次使用 `apt` 模块在 Ubuntu 上安装 `apache2` 包：
+- en: '[PRE39]'
+  id: totrans-167
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE39]'
+- en: 'If our environment is based on CentOS servers and we run this playbook, the
+    results are as follows:'
+  id: totrans-168
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如果我们的环境基于 CentOS 服务器，并且运行此 playbook，结果如下：
+- en: '[PRE40]'
+  id: totrans-169
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE40]'
+- en: Notice how the task to install Apache on CentOS was run. It was run this way
+    because the `group_by` module created a group called `os_CentOS` and our second
+    play only runs on hosts in the group called `os_CentOS`. As there were no servers
+    running on Ubuntu in the inventory, the `os_Ubuntu` group was never created and
+    so the third play does not run. We receive a warning about the fact that there
+    is no host pattern that matches `os_Ubuntu`, but the playbook does not fail—it
+    simply skips this play.
+  id: totrans-170
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 注意安装Apache到CentOS的任务是如何执行的。它是这样执行的，因为`group_by`模块创建了一个名为`os_CentOS`的组，而我们的第二个play仅在名为`os_CentOS`的组中的主机上运行。由于在库存中没有运行Ubuntu的服务器，`os_Ubuntu`组从未创建，因此第三个play不会运行。我们收到关于没有与`os_Ubuntu`匹配的主机模式的警告，但playbook并没有失败——它只是跳过了这一部分。
+- en: We provided this example to show you another way of managing the inevitable
+    variance in OS types that you will come across in your automation coding. At the
+    end of the day, it is up to you to choose the coding style most appropriate to
+    you. You can make use of the `group_by` module, as detailed here, or write your
+    tasks in blocks and add a `when` clause to the blocks so that they only run when
+    a certain fact-based condition is met (for example, the OS distribution is CentOS)—or
+    perhaps even a combination of the two. The choice is ultimately yours, and these
+    different examples are provided to empower you with multiple options that you
+    can choose between to create the best possible solution for your scenario.
+  id: totrans-171
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们提供了这个例子，展示了另一种管理自动化编码中不可避免的操作系统类型差异的方法。最终，选择最适合你的编码风格是由你来决定的。你可以使用这里详细说明的`group_by`模块，或者将任务写成块，并为这些块添加`when`条件，以便仅在满足某些基于事实的条件时执行（例如，操作系统发行版是CentOS）——或者也可以两者结合使用。最终的选择是你的，这些不同的示例旨在为你提供多种选择，帮助你为你的场景创建最佳解决方案。
+- en: Finally, let’s round off this chapter with a look at porting your automation
+    code between Ansible versions.
+  id: totrans-172
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后，让我们通过查看如何在不同版本的Ansible之间移植自动化代码来结束本章。
+- en: Porting between Ansible versions
+  id: totrans-173
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 在Ansible版本之间移植
+- en: Ansible is a fast-moving project, and with releases and new features added,
+    new modules (and module enhancements) are released and the inevitable bugs that
+    come with the software are fixed. There is no doubt that you will end up writing
+    your code against one version of Ansible only to need to run it on a newer version
+    again at some point. By way of example, when we started writing the second edition,
+    the current release of Ansible was 2.15.
+  id: totrans-174
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible是一个快速发展的项目，随着版本发布和新功能的增加，新模块（以及模块增强）也会发布，软件中不可避免的bug也会被修复。毫无疑问，你最终会在一个版本的Ansible上编写代码，然后在某个时刻需要将它运行在更新的版本上。举个例子，当我们开始编写第二版时，当前发布的Ansible版本是2.15。
+- en: 'Often, you will find that your code from an earlier version *just about works*
+    when you upgrade it, but this isn’t always a given. Modules are sometimes deprecated
+    (although usually not without warning) and features do change. You can find more
+    details on the 2.15 release notes here: [https://github.com/ansible/ansible/blob/v2.15.2/changelogs/CHANGELOG-v2.15.rst](https://github.com/ansible/ansible/blob/v2.15.2/changelogs/CHANGELOG-v2.15.rst).'
+  id: totrans-175
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通常，当你升级代码时，你会发现早期版本的代码*勉强能够运行*，但这并不总是能保证的。模块有时会被弃用（虽然通常会有警告），功能也会发生变化。你可以在这里找到更多关于2.15版本发布说明的细节：[https://github.com/ansible/ansible/blob/v2.15.2/changelogs/CHANGELOG-v2.15.rst](https://github.com/ansible/ansible/blob/v2.15.2/changelogs/CHANGELOG-v2.15.rst)。
+- en: So, the question remains—how can you ensure that your playbooks, roles, modules,
+    and plugins still work when you update your Ansible installation?
+  id: totrans-176
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 所以，问题依然存在——如何确保在更新Ansible安装时，你的playbooks、roles、modules和plugins仍然可以正常工作？
+- en: 'The first part of the answer is to establish which version of Ansible you are
+    starting from. For example, let’s say you are preparing for the release of Ansible
+    2.10\. If you query the version of Ansible you already have installed and see
+    something like the following, then you know you are starting from Ansible release
+    2.15.0:'
+  id: totrans-177
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 答案的第一部分是确定你从哪个版本的Ansible开始。例如，假设你正在为Ansible 2.10的发布做准备。如果你查询已经安装的Ansible版本，并看到如下所示的内容，那么你就知道你是从Ansible
+    2.15.0版本开始的：
+- en: '[PRE41]'
+  id: totrans-178
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE41]'
+- en: So, your first port of call should be to review the porting guide for the Ansible
+    release; a porting guide is normally written for every major release (such as
+    2.10, 8, and so on). Note that Ansible 8 includes Ansible Core 2.15.
+  id: totrans-179
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 所以，你的第一个步骤应该是查看Ansible版本的移植指南；通常，每个主要版本（如2.10、8等）都会有一份移植指南。请注意，Ansible 8包含Ansible
+    Core 2.15。
+- en: The guide for Ansible 8 can be found at [https://docs.ansible.com/ansible/latest/porting_guides/porting_guide_8.xhtml](https://docs.ansible.com/ansible/latest/porting_guides/porting_guide_8.xhtml).
+  id: totrans-180
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 8的指南可以在[https://docs.ansible.com/ansible/latest/porting_guides/porting_guide_8.xhtml](https://docs.ansible.com/ansible/latest/porting_guides/porting_guide_8.xhtml)找到。
+- en: If we review this document, we can see that there are a number of changes coming—whether
+    they are significant to you really depends on the code you are running. For example,
+    if we review the *Added Collections* section of the guide, we can see that the
+    `grafana.grafana` (version `2.0.0`) collection has been added.
+  id: totrans-181
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果我们回顾一下这份文档，可以看到有一些即将到来的变化——这些变化是否对你重要，实际上取决于你运行的代码。例如，如果我们回顾指南中的*添加的集合*部分，我们可以看到`grafana.grafana`（版本`2.0.0`）集合已被添加。
+- en: 'As seen in the preceding link, there are several known issues in the eight
+    releases of Ansible. To that end, it is also important to note that the porting
+    guides are written from the perspective of an upgrade from the previous major
+    release. If you query your Ansible version and it returns the following, you are
+    porting from Ansible 2.8:'
+  id: totrans-182
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如前面的链接所示，Ansible的八个版本中存在一些已知问题。为此，同样需要注意的是，迁移指南是从上一个主要版本的升级角度编写的。如果你查询你的Ansible版本并返回以下信息，则说明你正在从Ansible
+    2.8进行迁移：
+- en: '[PRE42]'
+  id: totrans-183
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE42]'
+- en: If you move straight to Ansible 8 (Core 2.15), then you need to review the porting
+    guides for both 2.9 (which covers the changes required to your code between releases
+    2.8 and 2.9) and 2.10 (which covers the changes required to upgrade from 2.9 to
+    2.10). An index of all the porting guides can be found on the official Ansible
+    website at [https://docs.ansible.com/ansible/devel/porting_guides/porting_guides.xhtml](https://docs.ansible.com/ansible/devel/porting_guides/porting_guides.xhtml).
+  id: totrans-184
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你直接迁移到Ansible 8（Core 2.15），那么你需要查看2.9和2.10的迁移指南。2.9的指南涵盖了2.8和2.9版本之间代码所需的更改，而2.10的指南则涵盖了从2.9升级到2.10所需的更改。所有迁移指南的索引可以在Ansible官方网站找到，地址为[https://docs.ansible.com/ansible/devel/porting_guides/porting_guides.xhtml](https://docs.ansible.com/ansible/devel/porting_guides/porting_guides.xhtml)。
+- en: Another great source of information, especially more fine-grained information,
+    on the changes between releases is the changelogs. These are released and updated
+    for every minor release and can currently be found in the official Ansible GitHub
+    repository on the `stable` branch for the release you wish to query. For example,
+    if you wish to review all the changelogs for Ansible 2.15, you would need to go
+    to [https://github.com/ansible/ansible/blob/stable-2.15/changelogs/CHANGELOG-v2.15.rst](https://github.com/ansible/ansible/blob/stable-2.15/changelogs/CHANGELOG-v2.15.rst).
+  id: totrans-185
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 另一个非常重要的信息来源，特别是关于版本之间变化的更详细信息，就是更新日志（changelogs）。这些日志会在每个次要版本发布时更新，并且可以在你想要查询的版本的`stable`分支上找到，位于官方的Ansible
+    GitHub仓库中。例如，如果你想查看Ansible 2.15的所有更新日志，你需要访问[https://github.com/ansible/ansible/blob/stable-2.15/changelogs/CHANGELOG-v2.15.rst](https://github.com/ansible/ansible/blob/stable-2.15/changelogs/CHANGELOG-v2.15.rst)。
+- en: The trick to porting code between Ansible releases (if, indeed, you can call
+    it a trick) is simply to read the excellent documentation released by the Ansible
+    project team. A lot of effort goes into creating this documentation, so you are
+    advised to make good use of it. That concludes our look at the best practices
+    for working with Ansible. We hope you have found this chapter valuable.
+  id: totrans-186
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 将代码从一个Ansible版本迁移到另一个版本的技巧（如果你能称之为技巧的话）就是阅读Ansible项目团队发布的优秀文档。创建这些文档付出了大量努力，因此建议你充分利用它。以上就是我们对使用Ansible的最佳实践的总结。希望你在这一章中获得了有价值的信息。
+- en: Summary
+  id: totrans-187
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 摘要
+- en: Ansible automation projects often start out small, but as people come to realize
+    the power and simplicity of Ansible, both the code and the inventories tend to
+    grow at an exponential pace (at least in my experience). It is important that
+    in the push for greater automation, the Ansible automation code and the infrastructure
+    itself don’t become another headache. By embedding a few good practices early
+    on and applying them consistently throughout your automation journey with Ansible,
+    you will find that managing your Ansible automation is easy and is a true benefit
+    to your technology infrastructure.
+  id: totrans-188
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible自动化项目通常从小规模开始，但随着人们逐渐认识到Ansible的强大和简易，代码和清单通常会以指数级的速度增长（至少根据我的经验）。在推动更大规模的自动化时，重要的是确保Ansible的自动化代码和基础设施本身不会变成另一个麻烦。通过在早期嵌入一些良好的实践，并在整个Ansible自动化过程中始终如一地应用它们，你会发现管理Ansible自动化是轻松的，并且会对你的技术基础设施带来真正的益处。
+- en: In this chapter, you learned new ways of differentiating environments by OS
+    type, as well as more about variable precedence and how to leverage it when working
+    with host and group variables. You then explored the importance of the top-level
+    playbook, before looking at how to make use of version control tools to manage
+    your automation code. Finally, you explored the new techniques for creating single
+    playbooks that will manage servers of different OS versions and distributions,
+    before finally looking at the important topic of porting your code to new Ansible
+    versions.
+  id: totrans-189
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，你学习了按操作系统类型区分环境的新方法，还了解了变量优先级及其在处理主机和组变量时的应用。接着，你探索了顶级 playbook 的重要性，之后学习了如何利用版本控制工具来管理自动化代码。最后，你研究了创建单个
+    playbook 的新技术，这些 playbook 将管理不同操作系统版本和发行版的服务器，最后你学习了将代码迁移到新的 Ansible 版本这一重要话题。
+- en: In the next chapter, we will look at some of the more advanced ways that you
+    can use Ansible to take care of some special cases that may arise on your automation
+    journey.
+  id: totrans-190
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一章，我们将介绍一些更高级的使用 Ansible 的方法，以处理在自动化过程中可能出现的特殊情况。
+- en: Questions
+  id: totrans-191
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 问题
+- en: What is a safe and easy way to manage (that is, modify, fix, and create) code
+    changes continuously and share them with others?
+  id: totrans-192
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 有什么安全且简单的方法来持续管理（即修改、修复和创建）代码变更，并与他人共享？
+- en: Playbook revision
+  id: totrans-193
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: Playbook 修订
+- en: Task history
+  id: totrans-194
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 任务历史
+- en: Ad hoc creation
+  id: totrans-195
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 临时创建
+- en: With a Git repository
+  id: totrans-196
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用 Git 仓库
+- en: Log management
+  id: totrans-197
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 日志管理
+- en: 'True or false? Ansible Galaxy supports sharing roles with other users from
+    a central, community-supported repository:'
+  id: totrans-198
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 对还是错？Ansible Galaxy 支持从中央社区支持的仓库与其他用户共享角色：
+- en: 'True'
+  id: totrans-199
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 正确
+- en: 'False'
+  id: totrans-200
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 错误
+- en: 'True or false? Ansible modules are guaranteed to be available in all future
+    releases of Ansible:'
+  id: totrans-201
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 对还是错？Ansible 模块在所有未来版本的 Ansible 中都能保证可用：
+- en: 'True'
+  id: totrans-202
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 正确
+- en: 'False'
+  id: totrans-203
+  prefs:
+  - PREF_IND
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 错误
+- en: Further reading
+  id: totrans-204
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 深入阅读
+- en: 'Manage multiple repositories, versions, or tasks by creating branches and tags
+    to control multiple versions effectively. Refer to the following links for more
+    details:'
+  id: totrans-205
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通过创建分支和标签来管理多个仓库、版本或任务，以有效控制多个版本。有关更多详情，请参阅以下链接：
+- en: 'How to use Git tagging: [https://git-scm.com/book/en/v2/Git-Basics-Tagging](https://git-scm.com/book/en/v2/Git-Basics-Tagging%0D)'
+  id: totrans-206
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 如何使用 Git 标签：[https://git-scm.com/book/en/v2/Git-Basics-Tagging](https://git-scm.com/book/en/v2/Git-Basics-Tagging%0D)
+- en: 'How to use Git branches: [https://git-scm.com/docs/git-branch](https://git-scm.com/docs/git-branch)'
+  id: totrans-207
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 如何使用 Git 分支：[https://git-scm.com/docs/git-branch](https://git-scm.com/docs/git-branch)

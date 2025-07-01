@@ -1,0 +1,4664 @@
+- en: Git Fundamentals - Working Locally
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Git 基础 - 本地工作
+- en: In this chapter, we will dive deep into some of the fundamentals of Git; it
+    is essential to understand well how Git thinks about files, its way of tracking
+    the history of commits, and all the basic commands that we need to master, in
+    order to become proficient.
+  id: totrans-1
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们将深入探讨 Git 的一些基础知识；了解 Git 如何处理文件，它跟踪提交历史的方式，以及我们需要掌握的所有基本命令，这些都是成为熟练使用
+    Git 的关键。
+- en: Digging into Git internals
+  id: totrans-2
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 深入挖掘 Git 内部结构
+- en: In this second edition of *Git Essentials*, I slightly changed my approach in
+    explaining how Git works; instead of explaining with words and figures, this time
+    I want to show you how Git works internally with only the help of the shell, allowing
+    you to follow all the steps on your computer and hoping that these will be clear
+    enough for you to understand.
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本版 *Git 基础* 的第二版中，我稍微改变了我解释 Git 工作方式的方法；这次我不再用文字和图示解释，而是通过仅使用 shell 来展示 Git
+    是如何内部工作的，允许你在自己的电脑上跟随这些步骤，希望这些能足够清晰，帮助你理解。
+- en: Once you know the fundamentals of the Git working system, I think the rest of
+    the commands and patterns will be clearer, allowing you to accomplish proficiently
+    your daily work, getting out of trouble when needed.
+  id: totrans-4
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦你掌握了 Git 工作系统的基础，我认为剩下的命令和模式会变得更清晰，让你能够熟练地完成日常工作，在需要时解决问题。
+- en: So, it's time to start digging inside the true nature of Git; in this chapter,
+    we will get in touch with the essence of this powerful tool.
+  id: totrans-5
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 所以，现在是时候深入了解 Git 的真正本质了；在本章中，我们将接触到这个强大工具的核心。
+- en: Git objects
+  id: totrans-6
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Git 对象
+- en: In [Chapter 1](831d785f-1ea2-4ea1-b175-21a22d9fb26a.xhtml), *Getting Started
+    with Git*, we created an empty folder (in `C:\Repos\MyFirstRepo`) and then we
+    initialized a new Git repository, using the `git init` command.
+  id: totrans-7
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在[第 1 章](831d785f-1ea2-4ea1-b175-21a22d9fb26a.xhtml)，*Git 入门*，我们创建了一个空文件夹（在
+    `C:\Repos\MyFirstRepo`），然后使用 `git init` 命令初始化了一个新的 Git 仓库。
+- en: Let's create a new repository to refresh our memory and then start learning
+    a little bit more about Git.
+  id: totrans-8
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们创建一个新的仓库来刷新一下记忆，然后开始学习更多关于 Git 的知识。
+- en: 'In this example, we use Git to track our shopping list before going to the
+    grocery; so, create a new grocery folder, and then initialize a new Git repository:'
+  id: totrans-9
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这个例子中，我们使用 Git 来追踪去超市前的购物清单；所以，创建一个新的购物文件夹，然后初始化一个新的 Git 仓库：
+- en: '[PRE0]'
+  id: totrans-10
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: 'As we have already seen before, the result of the `git init` command is the
+    creation of a `.git` folder, where Git stores all the files it needs to manage
+    our repository:'
+  id: totrans-11
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如我们之前所见，`git init` 命令的结果是创建一个 `.git` 文件夹，Git 在这里存储它管理仓库所需的所有文件：
+- en: '[PRE1]'
+  id: totrans-12
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: 'So, we can move this `grocery` folder wherever we want, and no data will be
+    lost. Another important thing to highlight is that we don''t need any server:
+    we can create a repository locally and work with it whenever we want, even with
+    no LAN or internet connection. We only need them if we want to share our repository
+    with someone else, directly or using a central server.'
+  id: totrans-13
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 所以，我们可以把这个 `grocery` 文件夹移动到任何地方，数据不会丢失。另一个重要的点是，我们不需要任何服务器：我们可以在本地创建一个仓库，并随时使用它，甚至在没有局域网或互联网连接的情况下。只有在我们想要与他人共享仓库时，才需要它们，无论是直接共享还是通过中央服务器。
+- en: In fact, during this example, we won't use any remote server, as it is not necessary.
+  id: totrans-14
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 事实上，在这个例子中，我们不会使用任何远程服务器，因为这并非必要。
+- en: 'Go on and create a new `README.md` file to remember the purpose of this repository:'
+  id: totrans-15
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 继续创建一个新的 `README.md` 文件来记住这个仓库的目的：
+- en: '[PRE2]'
+  id: totrans-16
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: 'Then add a banana to the shopping list:'
+  id: totrans-17
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后将一根香蕉添加到购物清单中：
+- en: '[PRE3]'
+  id: totrans-18
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: 'At this point, as you already know, before doing a commit, we have to add files
+    to the *staging area*; add both the files using the shortcut `git add .`:'
+  id: totrans-19
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 此时，正如你已经知道的那样，在执行 commit 之前，我们必须将文件添加到 *暂存区*；使用快捷命令 `git add .` 将两个文件添加进去：
+- en: '[PRE4]'
+  id: totrans-20
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: With this trick (the dot after the `git add` command), you can add all the new
+    or modified files in one shot.
+  id: totrans-21
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用这个技巧（`git add` 命令后的点），你可以一次性将所有新增或修改的文件添加进来。
+- en: 'At this point, if you didn''t set up a global username and email like we did
+    in [Chapter 1](831d785f-1ea2-4ea1-b175-21a22d9fb26a.xhtml), *Getting Started with
+    Git*, this is a thing that could happen:'
+  id: totrans-22
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 此时，如果你没有像在[第 1 章](831d785f-1ea2-4ea1-b175-21a22d9fb26a.xhtml)，*Git 入门*中那样设置全局的用户名和电子邮件，那么可能会发生以下情况：
+- en: '[PRE5]'
+  id: totrans-23
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: First of all, take a look at the second line, where Git says something like
+    **`root commit`**; this means this is **the first commit** of your repository,
+    and this is like a root in a tree (or a root on a disk partition; maybe you nerds
+    will understand this better). Later we will come back to this concept.
+  id: totrans-24
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 首先，看看第二行，Git 会显示类似 **`root commit`** 的内容；这意味着这是你仓库的**第一次提交**，就像树的根（或者磁盘分区的根；或许你们这些极客能更好地理解这个比喻）。稍后我们会回到这个概念。
+- en: 'Then, Git shows a message that says: "*You didn''t set a global username and
+    email; I used ones I found configured in your system, but if you don''t like it,
+    you can go back and remake your commit with another pair of data*".'
+  id: totrans-25
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后，Git 会显示一条信息：“*你没有设置全局用户名和电子邮件；我使用了在你的系统中找到的配置，如果你不喜欢的话，你可以回去重新提交，使用另一组数据*”。
+- en: 'I prefer not to set up a global username and password in Git, as I usually
+    work on different repositories using different usernames and emails; if I don''t
+    pay attention, I end up doing a job commit with my hobby profile or vice versa,
+    and this is annoying. So, I prefer setting up usernames and emails per repository;
+    in Git, you can set up your config variables at three levels: *repository* (with
+    the `--local` option, the default one), *user* (with the `--global` option), and
+    *system-wide* (with the `--system` option). Later we will learn something more
+    about configuration, but this is what you need for now to go on with.'
+  id: totrans-26
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我不喜欢在 Git 中设置全局的用户名和密码，因为我通常在不同的仓库中使用不同的用户名和电子邮件；如果我不注意，我最终可能会用我的个人资料做了工作提交，或者反过来，这非常烦人。所以，我更喜欢为每个仓库单独设置用户名和电子邮件；在
+    Git 中，你可以在三个层级设置配置变量：*仓库级别*（使用 `--local` 选项，默认选项）、*用户级别*（使用 `--global` 选项）和 *系统级别*（使用
+    `--system` 选项）。稍后我们会进一步学习配置内容，但现在你只需要知道这些就可以继续操作。
+- en: 'So, let''s change these settings and *amend* our commit (amending a commit
+    is a way to redo the last commit and fix up some little mistakes, such as adding
+    a forgotten file, changing the message or the author, as we are going to do; later
+    we will learn in detail what this means):'
+  id: totrans-27
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 那么，让我们来更改这些设置并*修改*我们的提交（修改提交是一种重新做上次提交并修正一些小错误的方法，比如添加一个遗忘的文件、更改提交信息或作者，正如我们接下来要做的那样；稍后我们会详细学习这是什么意思）：
+- en: '[PRE6]'
+  id: totrans-28
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: As I didn't specify the config level, these parameters will be set at *repository
+    level* (the same as `--local`); from now on, all the commits I will do in this
+    repository will be signed by `"Ferdinando Santacroce"`, with the `ferdinando.santacroce@gmail.com`
+    email (now you know how to get in touch with me, just in case).
+  id: totrans-29
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 因为我没有指定配置级别，所以这些参数将在 *仓库级别* 设置（也就是 `--local`）；从现在开始，我在这个仓库中做的所有提交都会由 `"Ferdinando
+    Santacroce"` 签名，电子邮件为 `ferdinando.santacroce@gmail.com`（现在你知道怎么联系我了，万一有需要的话）。
+- en: 'Now it''s time to type this command, `git commit --amend --reset-author`. When
+    amending a commit this way, Git opens the default editor to let you change even
+    the commit message, if you like; as we have seen in [Chapter 1](831d785f-1ea2-4ea1-b175-21a22d9fb26a.xhtml),
+    *Getting Started with Git*, in Windows the default editor is *Vim*. For the purpose
+    of this exercise, please leave the message as it is, press *Esc*, and then input
+    the `:wq` (or `:x`) command and press *Enter* to save and exit:'
+  id: totrans-30
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在是时候输入这个命令了，`git commit --amend --reset-author`。当以这种方式修改提交时，Git 会打开默认编辑器，让你更改提交信息（如果你愿意的话）；正如我们在[第
+    1 章](831d785f-1ea2-4ea1-b175-21a22d9fb26a.xhtml)《Git 入门》中所看到的，在 Windows 中，默认的编辑器是
+    *Vim*。为了这个练习，请保持信息不变，按 *Esc* 键，然后输入 `:wq`（或 `:x`）命令并按 *Enter* 键保存并退出：
+- en: '[PRE7]'
+  id: totrans-31
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE7]'
+- en: Okay, now I have a commit with the right author and email.
+  id: totrans-32
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 好的，现在我已经有了一个正确的作者和电子邮件的提交。
+- en: Commits
+  id: totrans-33
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 提交
+- en: Now it's time to start investigating commits.
+  id: totrans-34
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在是时候开始研究提交了。
+- en: 'To verify the commit we have just created, we can use the `git log` command:'
+  id: totrans-35
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要验证我们刚刚创建的提交，我们可以使用 `git log` 命令：
+- en: '[PRE8]'
+  id: totrans-36
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE8]'
+- en: As you can see, `git log` shows the commit we did in this repository; `git log`
+    shows all the commits, in reverse chronological order; we have only a commit for
+    now, but next we will see this behavior in action.
+  id: totrans-37
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，`git log` 显示了我们在这个仓库中所做的提交；`git log` 会按时间倒序显示所有的提交；目前我们只有一个提交，但接下来我们会看到这一行为是如何在实际操作中体现的。
+- en: The hash
+  id: totrans-38
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 哈希值
+- en: It is now time to analyze the information provided. The first line contains
+    the commit's **SHA-1** ([https://en.wikipedia.org/wiki/SHA-1](https://en.wikipedia.org/wiki/SHA-1)),
+    an alphanumeric sequence of 40 characters representing a hexadecimal number. This
+    *code*, or **hash**, as it is usually called, uniquely identifies the commit within
+    the repository, and it's thanks to it that from now on we can refer to it doing
+    some actions.
+  id: totrans-39
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在是时候分析提供的信息了。第一行包含了提交的**SHA-1**（[https://en.wikipedia.org/wiki/SHA-1](https://en.wikipedia.org/wiki/SHA-1)），这是一个包含40个字符的字母数字序列，表示一个十六进制数字。这个*代码*，或通常称为**哈希**，唯一标识了仓库中的提交，正是由于它，从现在起我们可以通过它执行一些操作来引用该提交。
+- en: The author and the commit creation date
+  id: totrans-40
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 作者和提交创建日期
+- en: We already talked about authors just a couple of paragraphs before; the **author**
+    is who performed the commit, and the **date** is the full date when the commit
+    was generated. Since that instance, this commit is part of the repository.
+  id: totrans-41
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们在前几段已经谈到了作者；**作者**是执行提交的人，**日期**是提交生成时的完整日期。自那时起，这个提交成为了仓库的一部分。
+- en: The commit message
+  id: totrans-42
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 提交消息
+- en: Just under the author and date, after a blank line, we can see the message we
+    attached to the commit we made; even the message is part of the commit itself.
+  id: totrans-43
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在作者和日期下方，空一行后，我们可以看到附加到我们所做提交上的消息；实际上，消息本身也是提交的一部分。
+- en: 'But there''s something more under the hood; let''s try to use the `git log`
+    command with the `--format=fuller` option:'
+  id: totrans-44
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 但还有更多的东西，我们来尝试使用`git log`命令并加上`--format=fuller`选项：
+- en: '[PRE9]'
+  id: totrans-45
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE9]'
+- en: The committer and the committing date
+  id: totrans-46
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 提交者和提交日期
+- en: 'Other than the author, a commit preserves even the **committer**, and the **committing
+    date**; what''s the difference compared to author and author date? First of all,
+    don''t worry too much about this: 99% of commits in your repository will have
+    the same values for the author and committer, and the same dates.'
+  id: totrans-47
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 除了作者外，提交还保留了**提交者**和**提交日期**；与作者和作者日期相比，有什么不同呢？首先，不用太担心：在你的仓库中，99%的提交会有相同的作者和提交者信息，以及相同的日期。
+- en: In some situations, such as the *cherry-pick*, you carry an existing commit
+    on top of another branch, making a brand-new commit that applies the same changes
+    of the previous. In this case, the author and author date will remain the same,
+    while the committer and the committing date will be related to the person who
+    performed this operation and the date they did it. Later we will get in touch
+    with this useful Git command.
+  id: totrans-48
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在某些情况下，例如*cherry-pick*，你会将一个已有的提交应用到另一个分支上，形成一个全新的提交，应用之前提交的相同更改。在这种情况下，作者和作者日期将保持不变，而提交者和提交日期将与执行此操作的人以及他们执行该操作的日期相关。稍后我们将接触到这个有用的Git命令。
+- en: Going deeper
+  id: totrans-49
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 深入分析
+- en: We analyzed a commit, and the information supplied by a simple `git log`; but
+    we are not yet satisfied, so go deeper and see what's inside.
+  id: totrans-50
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们分析了一个提交，并通过简单的`git log`获取了相关信息；但我们还不满意，接下来深入了解一下里面的内容。
+- en: 'Using the `git log` command again, we can enable x-ray vision using the `--format=raw`
+    option:'
+  id: totrans-51
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 再次使用`git log`命令，我们可以通过启用`--format=raw`选项来获得透视视图：
+- en: '[PRE10]'
+  id: totrans-52
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE10]'
+- en: 'This time the output format is different; we can see the author and committer,
+    as we saw before, but in a more compact form; then there is the commit message,
+    but something new appears: it''s a *tree*. Please be patient, we will talk about
+    trees in a couple of paragraphs.'
+  id: totrans-53
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这次输出格式有所不同；我们可以看到作者和提交者的信息，和之前看到的一样，不过是以更紧凑的形式呈现；接下来是提交信息，但有些新东西出现了：它是一个*树*。请耐心等待，我们将在接下来的段落中讨论树。
+- en: What I want to show now is another command, this time a little bit more obscure;
+    it's `git cat-file -p`.
+  id: totrans-54
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我想展示另一个命令，这次稍微有点难懂；它是`git cat-file -p`。
+- en: Let's try this command. To make it work, we need to specify the **object** we
+    want to investigate; we can use the hash of the object, our first commit in this
+    case. You don't need to specify the entire hash, but the first five-six characters
+    are enough for small repositories. Git is smart enough to understand what's the
+    object even with less than the 40 characters; the minimum is four characters,
+    and the number increases as the total amount of Git objects in the repository
+    increases. Just to give you an idea, the Linux kernel is currently 15 million
+    lines of code, with millions of tracked files and folders; in that Git repository[1],
+    you need to specify 12 characters to get the right object.
+  id: totrans-55
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们尝试这个命令。为了使其生效，我们需要指定我们要调查的**对象**；在这种情况下，我们可以使用对象的哈希值，也就是我们的第一次提交。你不需要指定完整的哈希值，但对于小型仓库来说，前五到六个字符就足够了。Git足够聪明，即使哈希值不到40个字符，它也能理解是什么对象；最少需要四个字符，随着仓库中Git对象的数量增多，这个数字会增加。举个例子，Linux内核目前有1500万行代码，成千上万的已跟踪文件和文件夹；在这个Git仓库中[1]，你需要指定12个字符才能获取正确的对象。
+- en: When in need, I usually try typing only the first five characters; if they are
+    not sufficient to make Git aware of the object I need, it will warn me to input
+    a character or two more.
+  id: totrans-56
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在需要时，我通常只尝试输入前五个字符；如果它们不足以让Git识别我需要的对象，Git会提示我再输入一两个字符。
+- en: 'Back on topic; type the command, specifying the first characters of the commit''s
+    hash (`a57d7` in my case):'
+  id: totrans-57
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 话题回到正题；输入命令，指定提交哈希值的前几个字符（在我的例子中是`a57d7`）：
+- en: '[PRE11]'
+  id: totrans-58
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE11]'
+- en: Okay, as you can see, the output is the same of `git log --format=raw`.
+  id: totrans-59
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 好的，正如你所看到的，输出与`git log --format=raw`相同。
+- en: 'This is not unusual in Git: there are different commands and options that end
+    up doing the same thing; this is a common *feature* of Git, and it''s due to its
+    organic growth across the years. Git changed (and changes) continuously, so the
+    developers have to guarantee some backward compatibility when introducing new
+    commands; this is one of the side effects.'
+  id: totrans-60
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这在Git中并不罕见：有不同的命令和选项，最终做的是相同的事情；这是Git的一个常见*特性*，源于其多年来的有机发展。Git不断地变化（和更改），因此开发人员在引入新命令时必须保证一定的向后兼容性；这就是其中的一个副作用。
+- en: I introduced this command only to have the chance of introducing another peculiarity
+    of Git, the separation between *porcelain commands* and *plumbing commands*.
+  id: totrans-61
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我引入这个命令只是为了有机会介绍Git的另一个特点，即*瓷器命令*与*管道命令*之间的区分。
+- en: Porcelain commands and plumbing commands
+  id: totrans-62
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 瓷器命令与管道命令
+- en: Git, as we know, has a myriad of commands, some of which are practically never
+    used by the average user; as by example, the previous `git cat-file`. These commands
+    are called **plumbing commands**, while those we have already learned about, such
+    as `git add`, `git commit`, and so on, are among the so-called **porcelain commands**.
+  id: totrans-63
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git，如我们所知，拥有大量的命令，其中一些几乎从不被普通用户使用；例如，之前的`git cat-file`。这些命令被称为**管道命令**，而我们已经学过的命令，如`git
+    add`、`git commit`等，则属于所谓的**瓷器命令**。
+- en: The metaphor originates directly from the fervent imagination of Linus Torvalds,
+    the dad of Git, and has to do with plumbers. They, as is well known, also take
+    care of the maintenance of the toilets; here Linus refers to the toilet bowl.
+    The bowl is a porcelain artifact, which makes us sit comfortably; using then a
+    series of pipes and devices, it allows us a correct discharge of what you know
+    down into the sewerage system.
+  id: totrans-64
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个比喻直接来源于Git之父Linus Torvalds的丰富想象力，与管道工有关。众所周知，管道工也负责维修厕所；在这里，Linus指的是马桶。马桶是一个瓷器制品，使我们能够舒适地坐下；然后，通过一系列的管道和设备，它能够将我们知道的废物正确地排放到下水道系统中。
+- en: Linus has used this refined metaphor to divide the Git commands into two families,
+    the highest-level ones, comfortable for a user interested in the most common operations
+    (*porcelain*) and those used internally by the same (but usable at the discretion
+    of the more experienced users) to perform lower-level operations (*plumbing*).
+  id: totrans-65
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Linus利用这个精妙的比喻，将Git命令分为两类：一种是高阶命令，适合用户进行常见操作（*瓷器命令*），另一种是内部使用的命令（但经验更丰富的用户可以根据需要使用）来执行低级操作（*管道命令*）。
+- en: We can, therefore, consider porcelain commands as *interface* commands to the
+    user, while the plumbing works at a *low level*. This also means that porcelain
+    commands stay more *stable* over time (usage patterns and options vary with more
+    caution and delayed time), as they are used directly, but are also implemented
+    in numerous graphic tools, editors, and so on, while plumbing generally evolves
+    with less restrictions.
+  id: totrans-66
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 因此，我们可以把 porcelain 命令看作是面向用户的*接口*命令，而 plumbing 命令则是在*底层*工作的。这也意味着，porcelain
+    命令随着时间的推移会保持更*稳定*（使用模式和选项随着时间的推移会更谨慎，延迟出现），因为它们是直接使用的，但也被许多图形工具、编辑器等所实现，而 plumbing
+    命令则一般以较少的限制进行演变。
+- en: There is no precise subdivision between these two categories of commands, as
+    the border is often quite lively; we will still use them, in order to better understand
+    the internal functioning of Git.
+  id: totrans-67
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这两类命令之间没有明确的划分，因为它们的边界通常非常活跃；我们仍然会使用它们，以更好地理解 Git 的内部运作。
+- en: Let's go back to the topic now; we were talking about Git objects.
+  id: totrans-68
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在回到主题；我们之前在讲 Git 对象。
+- en: Git uses four different types of **objects**, and *commit* is one of these.
+    Then there are *tree*, *blob*, and *annotated tag*. Let's leave the annotated
+    tags aside for a moment (whoever already uses a versioning system knows what tags
+    are) and focus on blobs and trees.
+  id: totrans-69
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git 使用四种不同类型的**对象**，其中 *commit* 就是其中之一。然后还有 *tree*、*blob* 和 *annotated tag*。暂时不讨论
+    annotated tags（任何已经使用版本控制系统的人都知道标签是什么），我们专注于 blobs 和 trees。
+- en: 'Here, for convenience, there is the output of the `git cat-file -p` command
+    typed before:'
+  id: totrans-70
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了方便起见，这里是之前输入的 `git cat-file -p` 命令的输出：
+- en: '[PRE12]'
+  id: totrans-71
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE12]'
+- en: As we can understand now, this plumbing command lets you peek into the Git objects;
+    with the `-p` option (which means *pretty-print* here), we ask Git to show an
+    easier way to read what the contents of the object are.
+  id: totrans-72
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如今我们可以理解，这个 plumbing 命令让你查看 Git 对象；使用 `-p` 选项（在这里意味着*漂亮打印*），我们让 Git 以更易读的方式显示对象的内容。
+- en: 'At this point, it''s time to learn what a tree is in Git; in fact, in the command
+    output, we can see this line: `tree a31c31cb8d7cc16eeae1d2c15e61ed7382cebf40`.'
+  id: totrans-73
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在是时候了解在 Git 中树（tree）是什么了；事实上，在命令输出中，我们可以看到这一行：`tree a31c31cb8d7cc16eeae1d2c15e61ed7382cebf40`。
+- en: What does it mean? Let's see it together.
+  id: totrans-74
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这是什么意思？让我们一起来看看。
+- en: Trees
+  id: totrans-75
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Trees
+- en: The **tree** is a **container** for blobs and other trees. The easiest way to
+    understand how it works is to think about folders in your operating system, which
+    also collect files and other subfolders inside them.
+  id: totrans-76
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**树（tree）**是用来容纳 blobs 和其他树的**容器**。理解它如何工作最简单的方法是把它想象成操作系统中的文件夹，文件夹内也可以包含文件和其他子文件夹。'
+- en: 'Let''s try to see what this additional Git object holds, using again the `git
+    cat-file -p` command:'
+  id: totrans-77
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们再次使用 `git cat-file -p` 命令，看看这个额外的 Git 对象包含了什么：
+- en: '[PRE13]'
+  id: totrans-78
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE13]'
+- en: This tree, which we said is something that Git uses to identify a folder, also
+    contains some additional objects, called **blobs.**
+  id: totrans-79
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个树，我们之前说过它是 Git 用来标识文件夹的东西，它还包含一些额外的对象，称为**blobs**。
+- en: Blobs
+  id: totrans-80
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Blobs
+- en: 'As you can see, at the right of the previous command output, we have `README.md` and
+    `shoppinglist.txt`, which makes us guess that Git blobs represent the **files**.
+    As before, we can verify its contents; let''s see what''s inside `637a0`:'
+  id: totrans-81
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，在前一个命令输出的右侧，我们有 `README.md` 和 `shoppinglist.txt`，这让我们猜测 Git 的 blobs 代表了**文件**。和之前一样，我们可以验证它的内容；让我们看看
+    `637a0` 里面是什么：
+- en: '[PRE14]'
+  id: totrans-82
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE14]'
+- en: Wow! Its content is exactly the content of our `shoppingFile.txt` file.
+  id: totrans-83
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 哇！它的内容正是我们 `shoppingFile.txt` 文件的内容。
+- en: 'To confirm, we can use the `cat` command, which on `*nix` systems allows you
+    to see the contents of a file:'
+  id: totrans-84
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了确认，我们可以使用 `cat` 命令，这个命令在 `*nix` 系统中允许你查看文件内容：
+- en: '[PRE15]'
+  id: totrans-85
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE15]'
+- en: As you can see, the result is the same.
+  id: totrans-86
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，结果是一样的。
+- en: Blobs are binary files, nothing more and nothing less. These byte sequences,
+    which cannot be interpreted with the naked eye, retain inside information belonging
+    to any file, whether binary or textual, images, source code, archives, and so
+    on. Everything is compressed and transformed into a blob before archiving it into
+    a Git repository.
+  id: totrans-87
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Blobs 是二进制文件，没什么特别的。这些无法用肉眼解释的字节序列，内部包含了任何文件的信息，无论是二进制文件还是文本文件，图像、源代码、档案等等。所有内容在归档到
+    Git 仓库之前都被压缩并转化为一个 blob。
+- en: As already mentioned previously, each file is marked with a *hash*; this hash
+    uniquely identifies the file within our repository, and it is thanks to this ID
+    that Git can then retrieve it when needed, and detect any changes when the same
+    file is altered (files with different content will have different hashes).
+  id: totrans-88
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如前所述，每个文件都有一个*哈希值*；这个哈希值在我们的仓库中唯一标识该文件，正是通过这个ID，Git可以在需要时检索文件，并在文件被更改时检测到任何变化（内容不同的文件将具有不同的哈希值）。
+- en: We said SHA-1 hashes are unique; but what does it mean?
+  id: totrans-89
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们说SHA-1哈希值是唯一的；但这意味着什么呢？
+- en: Let's try to understand it better with an example.
+  id: totrans-90
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们通过一个例子来更好地理解它。
+- en: 'Open a shell and try to play a bit with another plumbing command, `git hash-object`:'
+  id: totrans-91
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 打开一个shell，试着玩一下另一个低级命令`git hash-object`：
+- en: '[PRE16]'
+  id: totrans-92
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE16]'
+- en: The `git hash-object` command is the plumbing command to calculate the hash
+    of any object; in this example, we used the `--stdin` option to pass as a command
+    argument the result of the preceding command, `echo "banana";` in a few words,
+    we calculated the hash of the string `"banana"`, and it came out `637a09b86af61897fb72f26bfb874f2ae726db82`.
+  id: totrans-93
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`git hash-object`命令是用来计算任何对象哈希值的低级命令；在这个例子中，我们使用了`--stdin`选项，将前面的命令`echo "banana";`的结果作为命令参数，简而言之，我们计算了字符串`"banana"`的哈希值，结果是`637a09b86af61897fb72f26bfb874f2ae726db82`。'
+- en: And on your computer, did you try it? What is the result?
+  id: totrans-94
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 那你在你的计算机上试过了吗？结果是什么？
+- en: A bit of suspense... That's incredible, it's the same!
+  id: totrans-95
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一点悬念... 太不可思议了，竟然是一样的！
+- en: You can try to rerun the command as many times as you want, the resulting hash
+    will always be the same (if not, it can be due to different line endings in your
+    operating system or shell).
+  id: totrans-96
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以尽情地重新运行这个命令，结果的哈希值总是相同的（如果不相同，可能是因为操作系统或shell中不同的换行符导致的）。
+- en: 'This makes us understand something very important: **an object**, whatever
+    it is, **will always have the same hash in any repository**, in any computer,
+    on the face of the Earth.'
+  id: totrans-97
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这让我们明白了一件非常重要的事情：**一个对象**，无论它是什么，**在任何仓库中，任何计算机上，地球上的任何地方，都会始终有相同的哈希值**。
+- en: The experienced and the smart ones probably had "*smelt a rat*" for some time
+    now, but I hope that in the rest of the readers I have pulled up the same amazement
+    that caught me when I did this for the first time. This behavior has some interesting
+    implications, as we will see soon.
+  id: totrans-98
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有经验的人和聪明的人可能早就*嗅到了一丝不对劲*，但我希望在剩下的读者中，我能引起和我第一次做这件事时一样的惊讶。这种行为有一些有趣的影响，我们很快就会看到。
+- en: 'Last, but not least, I want to highlight how **Git calculates the hash on the
+    content of the file, not in the file itself**; in fact, the `637a09b86af61897fb72f26bfb874f2ae726db82`
+    hash calculated using `git hash-object` is the same as the blob we inspect previously
+    using `git cat-file -p`. This teaches us an important lesson: if you have two
+    different files with the same content, even if they have different names and paths,
+    in Git you will end up having only one blob.'
+  id: totrans-99
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后但同样重要的是，我想强调**Git计算的是文件内容的哈希值，而不是文件本身的哈希值**；事实上，使用`git hash-object`计算的`637a09b86af61897fb72f26bfb874f2ae726db82`哈希值与我们之前使用`git
+    cat-file -p`检查的blob是相同的。这教会我们一个重要的经验：如果你有两个内容相同的不同文件，即使它们的名称和路径不同，在Git中最终只有一个blob。
+- en: Even deeper - the Git storage object model
+  id: totrans-100
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 更深入地 - Git存储对象模型
+- en: Okay, now we know there are different Git objects, and we can inspect inside
+    them using some plumbing commands. But how and where does Git store them?
+  id: totrans-101
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 好的，现在我们知道Git中有不同的对象，我们可以使用一些低级命令来检查它们。但Git是如何存储这些对象的呢？
+- en: 'Do you remember the `.git` folder? Let''s put our nose inside it:'
+  id: totrans-102
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你记得`.git`文件夹吗？让我们把鼻子伸进去看看：
+- en: '[PRE17]'
+  id: totrans-103
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE17]'
+- en: 'Within it, there is an `objects` subfolder; let''s take a look:'
+  id: totrans-104
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在其中，有一个`objects`子文件夹；让我们看一下：
+- en: '[PRE18]'
+  id: totrans-105
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE18]'
+- en: 'Other than `info` and `pack` folders, which are not interesting for us right
+    now, as you can see there are some other folders with a strange two-character
+    name; let''s go inside the `63` folder:'
+  id: totrans-106
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 除了`info`和`pack`文件夹（它们现在对我们来说并不重要），如你所见，还有一些其他文件夹，其名称是两个字符的奇怪组合；我们进入`63`文件夹看看：
+- en: '[PRE19]'
+  id: totrans-107
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE19]'
+- en: Hmmm...
+  id: totrans-108
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 嗯...
+- en: 'Look at the file within it, and think: `63` + `7a09b86af61897fb72f26bfb874f2ae726db82`
+    is actually the hash of our `shoppingList.txt` blob!'
+  id: totrans-109
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 看看其中的文件，并思考：`63` + `7a09b86af61897fb72f26bfb874f2ae726db82`实际上是我们`shoppingList.txt`
+    blob的哈希值！
+- en: 'Git is amazingly smart and simple: to be quicker while searching through the
+    filesystem, Git creates a set of folders where the name is two characters long,
+    and those two characters represent the first two characters of a hash code; inside
+    those folders, Git writes all the objects using as a name the other 38 characters
+    of the hash, regardless of the kind of Git object.'
+  id: totrans-110
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git 非常智能且简单：为了在文件系统中更快地搜索，Git 创建了一组文件夹，其中文件夹名由两个字符组成，这两个字符代表哈希码的前两个字符；在这些文件夹中，Git
+    使用哈希的其他 38 个字符作为文件名，存储所有的对象，不论是何种类型的 Git 对象。
+- en: So, the `a31c31cb8d7cc16eeae1d2c15e61ed7382cebf40` tree is stored in the `a3`
+    folder, and the `a57d783905e6a35032d9b0583f052fb42d5a1308` commit in the `a5`
+    one.
+  id: totrans-111
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 所以，`a31c31cb8d7cc16eeae1d2c15e61ed7382cebf40` 树保存在 `a3` 文件夹中，而 `a57d783905e6a35032d9b0583f052fb42d5a1308`
+    提交保存在 `a5` 文件夹中。
+- en: Isn't that the most clever and simple thing you have ever seen?
+  id: totrans-112
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这是不是你见过的最聪明、最简单的事情？
+- en: 'Now, if you try to inspect those files with a common `cat` command, you will
+    be deluded: those files are plain text files, but Git compresses them using the
+    `zlib` library to reserve space on your disk. This is why we use the `git cat-file
+    -p` command, which decompresses them on the fly for us.'
+  id: totrans-113
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，如果你尝试使用普通的 `cat` 命令查看这些文件，你会被骗：这些文件是纯文本文件，但 Git 使用 `zlib` 库对它们进行压缩，以节省磁盘空间。这就是为什么我们使用
+    `git cat-file -p` 命令，它可以即时解压缩这些文件。
+- en: 'This highlights once again the simplicity of Git: no metadata, no internal
+    databases, or useless complexity, but simple files and folders are enough to make
+    it possible to manage any repository.'
+  id: totrans-114
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这再次突显了 Git 的简单性：没有元数据，没有内部数据库或无用的复杂性，简单的文件和文件夹足以管理任何仓库。
+- en: At this point, we know how Git stores objects, and where they are archived;
+    we also know that there is no database, no central repository or stuff like that,
+    so how is Git able to reconstruct the history of our repository? How can it define
+    which commit precedes or follows another one?
+  id: totrans-115
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 到目前为止，我们知道 Git 是如何存储对象的，以及它们存储的位置；我们还知道没有数据库、没有中央仓库或类似的东西。那么，Git 是如何重建我们仓库的历史的呢？它是如何定义哪个提交先于或跟随另一个提交的呢？
+- en: 'To become aware of this, we need a new commit. So, let''s now proceed modifying
+    the `shoppingList.txt` file:'
+  id: totrans-116
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要了解这一点，我们需要一个新的提交。所以，现在让我们开始修改 `shoppingList.txt` 文件：
+- en: '[PRE20]'
+  id: totrans-117
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE20]'
+- en: 'Use the `git log` command to check the new commit; the `--oneline` option allows
+    us to see the log in a more compact way:'
+  id: totrans-118
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用 `git log` 命令查看新的提交；`--oneline` 选项让我们以更简洁的方式查看日志：
+- en: '[PRE21]'
+  id: totrans-119
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE21]'
+- en: 'Okay, we have a new commit, with its hash. Time to see what''s inside it:'
+  id: totrans-120
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 好的，我们有了一个新的提交和它的哈希。是时候查看它里面的内容了：
+- en: '[PRE22]'
+  id: totrans-121
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE22]'
+- en: There's something new!
+  id: totrans-122
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有一些新东西！
+- en: I'm talking about the `parent a57d783905e6a35032d9b0583f052fb42d5a1308` row;
+    did you see? A **parent** of a commit is simply the commit that precedes it. In
+    fact, the `a57d783` hash is actually the hash of the first commit we made. So,
+    every commit has a parent, and following these relations between commits, we can
+    always navigate from a random one down to the first one, the already mentioned
+    **root commit**.
+  id: totrans-123
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我在谈论的是 `parent a57d783905e6a35032d9b0583f052fb42d5a1308` 这一行；你看到了吗？一个提交的**父提交**就是它之前的那个提交。事实上，`a57d783`
+    哈希实际上是我们第一次提交的哈希。所以，每个提交都有一个父提交，通过跟踪这些提交之间的关系，我们可以从任意一个提交一直导航到第一个提交，之前提到的**根提交**。
+- en: If you remember, the first commit did not have a parent, and this is the main
+    (and only) difference between all commits and the first one. Git, while navigating
+    and reconstructing our repository, simply knows it is done when it finds a commit
+    without a parent.
+  id: totrans-124
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你还记得，第一次提交没有父提交，这也是所有提交与第一次提交之间的主要（也是唯一）区别。Git 在浏览和重建我们的仓库时，当它发现一个没有父提交的提交时，简单地知道任务完成了。
+- en: Git doesn't use deltas
+  id: totrans-125
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Git 不使用增量
+- en: 'Now it''s time to investigate another well-known difference between Git and
+    other versioning systems. Take Subversion as an example: when you do a new commit,
+    Subversion creates a new numbered revision that only contains deltas between the
+    previous one; this is a smart way to archive changes to files, especially among
+    big text files, because if only a line of text changes, the size of the new commit
+    will be much smaller.'
+  id: totrans-126
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在是时候研究 Git 与其他版本控制系统之间的另一个著名差异了。以 Subversion 为例：当你进行新提交时，Subversion 会创建一个新的编号修订，只包含与前一个修订之间的增量；这种方法非常适合归档文件的更改，特别是对于大文本文件来说，因为如果只有一行文本发生变化，新提交的大小将大大减少。
+- en: 'Instead, in Git even if you change only a char in a big text file, it always
+    stores a new version of the file: **Git doesn''t do deltas** (at least not in
+    this case), and **every commit is actually a snapshot of the entire repository**.'
+  id: totrans-127
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 相反，在Git中，即使你只修改了一个大文本文件中的一个字符，它总是会存储文件的新版本：**Git不做增量更新**（至少在这个案例中是如此），**每次提交实际上都是整个仓库的快照**。
+- en: 'At this point, people usually exclaim: <q>"Gosh, Git waste a large amount of
+    disk space in vain!"</q>. Well, this is simply untrue.'
+  id: totrans-128
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 到这个时候，人们通常会惊呼：“天哪，Git浪费了大量的磁盘空间！”嗯，这完全不是真的。
+- en: 'In a common source code repository, with a certain amount of commit, Git usually
+    won''t need more space than other versioning systems. As an example, when Mozilla
+    went from Subversion to Git, the exact same repository went from 12GB to 420MB
+    disk space required; look at this comparison page to learn more: [https://git.wiki.kernel.org/index.php/GitSvnComparsion](https://git.wiki.kernel.org/index.php/GitSvnComparsion)'
+  id: totrans-129
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在一个常见的源代码仓库中，经过一定数量的提交后，Git通常不会占用比其他版本控制系统更多的空间。举个例子，当Mozilla从Subversion迁移到Git时，原本需要12GB的仓库在Git中只需要420MB的磁盘空间；请查看这个对比页面了解更多：[https://git.wiki.kernel.org/index.php/GitSvnComparsion](https://git.wiki.kernel.org/index.php/GitSvnComparsion)
+- en: 'Furthermore, Git has a clever way to deal with files; let''s take a look again
+    at the last commit:'
+  id: totrans-130
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 此外，Git有一个巧妙的方法来处理文件；让我们再次查看最后一个提交：
+- en: '[PRE23]'
+  id: totrans-131
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE23]'
+- en: 'Okay, now to the tree:'
+  id: totrans-132
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 好的，现在来看树结构：
+- en: '[PRE24]'
+  id: totrans-133
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE24]'
+- en: 'Annotate the two hashes on a notepad; now we have to look at the tree of the
+    first commit; cat-file the commit:'
+  id: totrans-134
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在记事本上标注两个哈希值；现在我们需要查看第一个提交的树结构；查看提交的内容：
+- en: '[PRE25]'
+  id: totrans-135
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE25]'
+- en: 'Then cat-file the tree:'
+  id: totrans-136
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后查看树的内容：
+- en: '[PRE26]'
+  id: totrans-137
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE26]'
+- en: Guess what! The hash of the `README.md` file is the same in the two trees of
+    the first and second commit; this allows us to understand another simple but clever
+    strategy that Git adopts to manage files; when a file is untouched, while committing
+    Git creates a tree where the blob for the file points to the already existing
+    one, *recycling* it and avoiding waste of disk space.
+  id: totrans-138
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 猜猜看！`README.md`文件的哈希值在第一次和第二次提交的两棵树中是相同的；这使我们能够理解Git采用的另一个简单但巧妙的策略来管理文件；当文件没有被修改时，Git在提交时创建一个树结构，其中该文件的对象指向已存在的对象，*重复利用*它并避免浪费磁盘空间。
+- en: 'The same applies to the trees: if my working directory has some folders and
+    files within them that will remain untouched, when we do a new commit Git recycles
+    the same trees.'
+  id: totrans-139
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 同样的情况也适用于树结构：如果我的工作目录中有一些文件夹和文件，它们将保持不变，当我们进行新的提交时，Git会循环利用相同的树结构。
+- en: Wrapping up
+  id: totrans-140
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 总结
+- en: It's time to summarize all the concepts illustrated since now.
+  id: totrans-141
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在是时候总结一下到目前为止说明的所有概念了。
+- en: 'An image, as they say, is worth a thousand words, so here you can find a picture
+    representing the actual state of our repository, thanks to the **git-draw** tool
+    ([https://github.com/sensorflo/git-draw](https://github.com/sensorflo/git-draw)):'
+  id: totrans-142
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如人们所说，一张图片胜过千言万语，所以在这里你可以找到一张通过**git-draw**工具（[https://github.com/sensorflo/git-draw](https://github.com/sensorflo/git-draw)）展示我们仓库当前状态的图像：
+- en: '![](img/2108beaa-0538-4922-b88f-f3efa0370e76.png)'
+  id: totrans-143
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/2108beaa-0538-4922-b88f-f3efa0370e76.png)'
+- en: In this graphic representation, you will find a detailed diagram that represents
+    the current structure of the newly created repository; you can see trees (yellow),
+    blobs (white), commits (green), and all relationships between them, represented
+    by oriented arrows.
+  id: totrans-144
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这个图形表示中，你将看到一个详细的图示，展示新创建仓库的当前结构；你可以看到树（黄色）、对象（白色）、提交（绿色），以及它们之间的所有关系，通过有向箭头表示。
+- en: Note how the direction of the arrow joining the commit comes from the second
+    commit and goes to the first, or from descendant to its ancestor; it may seem
+    a detail, but it is important that graphic representations such as these are properly
+    indicated in order to correctly highlight the relationship that binds the commits
+    between them (it is always the child who depends on the parent).
+  id: totrans-145
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 注意箭头的方向，连接提交的箭头从第二个提交指向第一个提交，或者从后代指向其祖先；这看似是一个细节，但在图形表示中正确定义这些关系非常重要，以便正确突出提交之间的依赖关系（总是子级依赖于父级）。
+- en: 'I just want to highlight some other things; such as:'
+  id: totrans-146
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我只是想强调一些其他的东西；例如：
+- en: The two different trees refer to the same `README.md` blob
+  id: totrans-147
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 这两个不同的树结构指向同一个`README.md`对象。
+- en: There are two different blobs for the `shoppingList.txt` files, one containing
+    only the `banana` text line and one containing `banana` and `apple`
+  id: totrans-148
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 对于`shoppingList.txt`文件，有两个不同的对象，一个只包含`banana`的文本行，另一个包含`banana`和`apple`。
+- en: The second commit refers to the first
+  id: totrans-149
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 第二个提交引用了第一个提交。
+- en: The first commit has no parent
+  id: totrans-150
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 第一个提交没有父提交。
+- en: There are three commits!
+  id: totrans-151
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 有三个提交！
+- en: What the heck?!
+  id: totrans-152
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这是什么情况？！
+- en: 'Okay, don''t panic. Look at the commit at the right of the picture, and read
+    author and email: that was the first commit we did using the *wrong* user and
+    email; after that, we amended the commit, changing the author, remember?'
+  id: totrans-153
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 好的，别慌张。看看图片右侧的提交，并阅读作者和邮箱：那是我们第一次使用*错误*的用户和邮箱所做的提交；之后我们修改了该提交，改变了作者，记得吗？
+- en: Well, but why is it already there? And why do we see it in this picture, but
+    we don't see it in `git log`?
+  id: totrans-154
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 好吧，但它为什么已经在那里？为什么我们在这张图片中能看到它，却在`git log`中看不到它？
+- en: It's about **reachability** of the commit, a topic that we will talk about in
+    the following sections.
+  id: totrans-155
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这是关于**提交可达性**的话题，我们将在接下来的章节中讨论它。
+- en: Git references
+  id: totrans-156
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Git引用
+- en: In the previous section, we have seen that a Git repository can be imagined
+    as a tree that, starting from a root (the root-commit), grows upward through one
+    or more branches.
+  id: totrans-157
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在上一节中，我们看到一个Git仓库可以被想象成一棵树，从根节点（根提交）开始，向上生长，通过一个或多个分支。
+- en: These branches are generally distinguished by a name. In this Git is no exception;
+    if you remember, the experiments conducted so far led us to commit to the `master`
+    branch of our test repository. *Master* is precisely the name of the *default
+    branch* of a Git repository, somewhat like `trunk` is for Subversion.
+  id: totrans-158
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这些分支通常由一个名称区分。在这方面Git也不例外；如果你还记得，到目前为止的实验都导致我们提交到了我们测试仓库的`master`分支。*Master*恰好是Git仓库的*默认分支*的名称，就像Subversion中的`trunk`一样。
+- en: 'But Subversion analogies end here: we will now see how Git handles branches,
+    and for Subversion users it will be a little surprising.'
+  id: totrans-159
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 但Subversion的类比到此为止：我们现在将看到Git如何处理分支，对于Subversion用户来说，这可能会有些惊讶。
+- en: It's all about labels
+  id: totrans-160
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 一切都与标签有关。
+- en: In Git, **a branch is nothing more than a label**, a *mobile label* placed on
+    a commit.
+  id: totrans-161
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在Git中，**分支不过是一个标签**，是一个*可移动的标签*，指向一个提交。
+- en: In fact, every leaf on a Git branch has to be labeled with a meaningful name
+    to allow us to reach it and then move around, go back, merge, rebase, or discard
+    some commits when needed.
+  id: totrans-162
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 事实上，每个Git分支上的叶子都必须用一个有意义的名称标记，以便我们能够到达它，然后在其上进行移动、回退、合并、变基或在需要时丢弃某些提交。
+- en: 'Let''s start exploring this topic by checking the current status of our `grocery`
+    repository; we do it using the well-known `git log` command, this time adding
+    some new options:'
+  id: totrans-163
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们通过检查当前`grocery`仓库的状态来开始探索这个话题；我们使用著名的`git log`命令，这次添加了一些新的选项：
+- en: '[PRE27]'
+  id: totrans-164
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE27]'
+- en: 'Let''s look at those options in detail:'
+  id: totrans-165
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们详细查看这些选项：
+- en: '`--graph`: In this case it just adds an asterisk to the left, before the commit
+    hash, but when you have more branches, this option will draw them for us giving
+    a simple but effective graphical representation of the repository'
+  id: totrans-166
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`--graph`：在这种情况下，它只是在左侧的提交哈希前加上一个星号，但当你有更多分支时，这个选项将为我们绘制分支，提供一个简单但有效的仓库图形表示。'
+- en: '`--decorate`: This option prints out the labels attached to any commits that
+    are shown; in this case, it prints `(HEAD ->``master)` on the `e4a5e7b` commit'
+  id: totrans-167
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`--decorate`：此选项会显示与任何提交关联的标签；在此例中，它会在`e4a5e7b`提交上显示`(HEAD -> master)`标签。'
+- en: '`--oneline`: This is easy to understand: it reports every commit using one
+    line, shortening things when necessary'
+  id: totrans-168
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`--oneline`：这个选项很容易理解：它用一行展示每个提交，必要时简化内容。'
+- en: 'We''ll now do a new commit and see what happens:'
+  id: totrans-169
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们来做一个新的提交，看看会发生什么：
+- en: '[PRE28]'
+  id: totrans-170
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE28]'
+- en: Have you noticed? After adding an orange to the `shopingList.txt`, I made a
+    commit without first making `git add`; the *trick* is in the `-a` (`--add`) option
+    added to the `git commit` command, which means *add to this commit all the modified
+    files that I have already committed at least one time before*. In our case, this
+    option allowed us to go faster and skip the `git add` command.
+  id: totrans-171
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你注意到了吗？在向`shopingList.txt`添加了一个橙子后，我没有先执行`git add`就做了提交；*窍门*在于`git commit`命令中添加了`-a`（`--add`）选项，这意味着*将所有我之前至少提交过一次的修改文件添加到这个提交中*。在我们的例子中，这个选项让我们能更快地跳过`git
+    add`命令。
+- en: 'Anyway, use it carefully, especially while learning and using Git at the beginning:
+    you easily end up doing commit with more files than you want.'
+  id: totrans-172
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 无论如何，在学习和使用Git的初期，特别要小心：你很容易提交更多文件，而不是你想要的。
+- en: 'Okay, go on now and take a look at the current repository situation:'
+  id: totrans-173
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 好的，继续看一下当前仓库的情况：
+- en: '[PRE29]'
+  id: totrans-174
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE29]'
+- en: Interesting! Both `HEAD` and `master` have now moved on the last commit, the
+    third one; what does it mean?
+  id: totrans-175
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有趣！现在`HEAD`和`master`都指向了最后一个提交，即第三个提交；这意味着什么？
+- en: Branches are movable labels
+  id: totrans-176
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 分支是可移动的标签。
+- en: 'We have seen in the previous sections how the commits are linked to each other
+    by a parent-and-son relationship: each commit contains a reference to the previous
+    commit.'
+  id: totrans-177
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们在之前的章节中已经看到了，提交是通过父子关系彼此连接的：每个提交都包含对前一个提交的引用。
+- en: This means that, for example, to *navigate* within a repository I cannot start
+    from the first commit and try to go to the next, because a commit has no reference
+    to who comes next, but to who comes first. By staying in our *arboreal* metaphor,
+    this means that our tree is only navigable from *leaves*, from the extreme *top* of
+    a branch, and then down to root-commit.
+  id: totrans-178
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这意味着，例如，要在一个仓库内*导航*，我不能从第一个提交开始并尝试跳到下一个提交，因为一个提交并没有指向下一个提交的引用，而是指向前一个提交的引用。继续使用我们*树木*的比喻，这意味着我们的树只能从*叶子*开始导航，从分支的最*顶端*开始，然后一直向下到根提交。
+- en: So, branches are nothing but labels that are on the tip commit, the last one.
+    This commit, our leaf, must always be identified by a label so that its ancestors
+    commits can be reached while browsing within a repository. Otherwise, we should
+    remember for every branch of our repository the hash code of the tip commit, and
+    you can imagine how easy it would be for humans.
+  id: totrans-179
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 所以，分支不过是标签，标注在顶端提交上，也就是最后一个提交。这个提交，我们的叶子，必须总是由一个标签来标识，以便在浏览仓库时能够访问它的祖先提交。否则，我们每次切换分支时，都需要记住该分支的顶端提交的哈希码，想象一下人类要如何做到这一点。
+- en: How references work
+  id: totrans-180
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 引用如何工作
+- en: So, every time we make a commit to a branch, the **reference** that identifies
+    that branch will move accordingly to always stay associated with the tip commit.
+  id: totrans-181
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 所以，每当我们向一个分支提交时，标识该分支的**引用**会相应地移动，以始终与顶端提交保持关联。
+- en: 'But how will Git handle this feature? Let''s go back to putting the nose again
+    in the `.git` folder:'
+  id: totrans-182
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 但是Git是如何处理这个功能的呢？我们回到`.git`文件夹中，继续探究：
+- en: '[PRE30]'
+  id: totrans-183
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE30]'
+- en: 'There''s a `refs` folder: let''s take a look inside:'
+  id: totrans-184
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这里有一个`refs`文件夹：让我们看一下里面的内容：
+- en: '[PRE31]'
+  id: totrans-185
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE31]'
+- en: 'Now go to `heads`:'
+  id: totrans-186
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，进入`heads`：
+- en: '[PRE32]'
+  id: totrans-187
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE32]'
+- en: 'There''s a `master` file inside! Let''s see what''s the content:'
+  id: totrans-188
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 里面有一个`master`文件！让我们看看它的内容：
+- en: '[PRE33]'
+  id: totrans-189
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE33]'
+- en: As you could imagine, Git manages all this articulated reference system... with
+    a trivial text file! It contains the hash of the last commit made on the branch;
+    in fact, if you look at the previous `git log` output, you can see the hash of
+    the last commit is `0e8b5cf`.
+  id: totrans-190
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如你可以想象的那样，Git通过一个简单的文本文件来管理所有这个复杂的引用系统！它包含了该分支上最后一次提交的哈希值；实际上，如果你查看之前的`git
+    log`输出，你可以看到最后一个提交的哈希值是`0e8b5cf`。
+- en: Nowadays it has been time since the first time, but I continue to be amazed
+    by how essential and effective the internal structure of Git is.
+  id: totrans-191
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如今，自从第一次接触以来已经过去了很长时间，但我仍然对Git的内部结构感到惊叹，它既简洁又高效。
+- en: Creating a new branch
+  id: totrans-192
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 创建一个新分支
+- en: 'Now that we have warmed up, the fun begins. Let''s see what happens when you
+    ask Git to create a new branch. Since we are going to serve a delicious fruit
+    salad, it''s time to set a branch apart for a *berries-flavored* variant recipe:'
+  id: totrans-193
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经热身好了，真正有趣的部分开始了。让我们看看当你请求Git创建一个新分支时会发生什么。既然我们准备做一份美味的水果沙拉，是时候为*浆果口味*的变种食谱设立一个分支了：
+- en: '[PRE34]'
+  id: totrans-194
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE34]'
+- en: That's all! To create a new branch, all you need to do is call the `git branch`
+    followed by the name of the branch you'd like to use. And this is super-fast;
+    always working locally, Git does this kind of work in a blink of an eye.
+  id: totrans-195
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 就这样！要创建一个新分支，只需要使用`git branch`命令，后面跟上你想要使用的分支名称。这是非常快速的；由于Git总是本地操作，它在眨眼之间就完成了这样的工作。
+- en: 'To be true, there are some (complicated) rules to be respected and things to
+    know about the possible name of a branch (all you need to know is here: [https://git-scm.com/docs/git-check-ref-format](https://git-scm.com/docs/git-check-ref-format)),
+    but for now it is not relevant.'
+  id: totrans-196
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 事实上，有一些（复杂的）规则需要遵守，关于分支名称的一些知识（你所需要了解的都在这里：[https://git-scm.com/docs/git-check-ref-format](https://git-scm.com/docs/git-check-ref-format)），但目前这些不太相关。
+- en: 'So, `git log` again:'
+  id: totrans-197
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 所以，再次执行`git log`：
+- en: '[PRE35]'
+  id: totrans-198
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE35]'
+- en: Wonderful! Now Git tells us there's a new branch, `berries`, and it refers to
+    the same commit as a `master` branch.
+  id: totrans-199
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 太棒了！现在Git告诉我们有一个新的分支`berries`，并且它指向与`master`分支相同的提交。
+- en: 'Anyway, at the moment we continue to be located in the `master` branch; in
+    fact, as you can see in the shell output prompt, it continues to appear `(master)`
+    between the round parenthesis:'
+  id: totrans-200
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 无论如何，目前我们仍然位于`master`分支；事实上，正如你在终端输出提示中看到的，它依然显示`(master)`，括号中的内容：
+- en: '[PRE36]'
+  id: totrans-201
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE36]'
+- en: 'How can I switch branch? By using the `git checkout` command:'
+  id: totrans-202
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如何切换分支？可以使用`git checkout`命令：
+- en: '[PRE37]'
+  id: totrans-203
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE37]'
+- en: 'Do a `git log` to see:'
+  id: totrans-204
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 执行`git log`查看：
+- en: '[PRE38]'
+  id: totrans-205
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE38]'
+- en: 'Mmm, interesting! Now there''s a `(berries)` sign into the shell prompt, and
+    more, something happened to that `HEAD` thing: now the arrows points to `berries`,
+    not more to `master`. What does it mean?'
+  id: totrans-206
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Mmm, interesting! 现在在shell提示符中有一个`(berries)`标志，并且更重要的是，`HEAD`指向的东西发生了变化：箭头现在指向`berries`，而不是`master`。这是什么意思？
+- en: HEAD, or you are here
+  id: totrans-207
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: HEAD，或者你在这里
+- en: During previous exercises we continued to see that `HEAD` thing while using
+    `git log`, and now it's time to investigate a little bit.
+  id: totrans-208
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在之前的练习中，我们在使用`git log`时一直看到`HEAD`，现在是时候稍微调查一下了。
+- en: 'First of all, what is `HEAD`? As branches are, `HEAD` is a **reference**. It
+    represents a pointer to the place on where we are right now, nothing more, nothing
+    less. In practice instead, it is just another plain text file:'
+  id: totrans-209
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 首先，`HEAD`是什么？和分支一样，`HEAD`是一个**引用**。它代表着我们当前所处位置的指针，没有多余的，也没有少的。实际上，它只是另一个普通的文本文件：
+- en: '[PRE39]'
+  id: totrans-210
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE39]'
+- en: The difference between the `HEAD` file and branches text file is that the `HEAD`
+    file usually refers to a branch, and not directly to a commit as branches do.
+    The `ref:` part is the convention Git uses internally to declare a pointer to
+    another branch, while `refs/heads/berries` is of course the relative path to the
+    `berries` branch text file.
+  id: totrans-211
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`HEAD`文件和分支文本文件之间的区别在于，`HEAD`文件通常指的是一个分支，而不像分支一样直接指向一个提交。`ref:`部分是Git内部使用的声明指向另一个分支的指针的约定，而`refs/heads/berries`当然是指向`berries`分支文本文件的相对路径。'
+- en: So, having checked out the `berries` branch, in fact we moved that pointer from
+    the `master` branch to the `berries` one; from now on, every commit we do will
+    be part of the `berries` branch. Let's give it a try.
+  id: totrans-212
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 因此，当我们检出`berries`分支时，实际上我们将指针从`master`分支移动到`berries`分支；从现在开始，我们每做一次提交都将是`berries`分支的一部分。让我们试试看。
+- en: 'Add a blackberry to the shopping list:'
+  id: totrans-213
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在购物清单中添加一个黑莓：
+- en: '[PRE40]'
+  id: totrans-214
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE40]'
+- en: 'Then perform a commit:'
+  id: totrans-215
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后执行一个提交：
+- en: '[PRE41]'
+  id: totrans-216
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE41]'
+- en: 'Take a look on what happened with the usual `git log` command:'
+  id: totrans-217
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 看一下使用常规`git log`命令发生了什么：
+- en: '[PRE42]'
+  id: totrans-218
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE42]'
+- en: 'Nice! Something happened here:'
+  id: totrans-219
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 很好！这里发生了一些变化：
+- en: 'The `berries` branch moved to the last commit we performed, confirming what
+    we said before: a branch is just a label that follows you while doing new commits,
+    getting stuck to the last one'
+  id: totrans-220
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`berries`分支移动到我们执行的最后一个提交，确认了我们之前说的：一个分支只是一个标签，在做新的提交时会跟随你，粘在最后一个提交上'
+- en: The `HEAD` pointer moved too, following the branch it is actually pointing to,
+    the `berries` one
+  id: totrans-221
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`HEAD`指针也移动了，现在跟随它实际指向的分支，即`berries`分支'
+- en: The `master` branch remains where it was, stuck to the penultimate commit, the
+    last one we did before switching to the `berries` branch
+  id: totrans-222
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`master`分支仍然停留在原地，粘在倒数第二个提交上，也就是我们切换到`berries`分支之前做的最后一个提交'
+- en: 'Okay, so now our `shoppingList.txt` file appears to contain these text lines:'
+  id: totrans-223
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 好的，现在我们的`shoppingList.txt`文件似乎包含了这些文本行：
+- en: '[PRE43]'
+  id: totrans-224
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE43]'
+- en: What happens if we move back to the `master` branch? Let's see.
+  id: totrans-225
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果我们回到`master`分支会发生什么？让我们看看。
+- en: 'Check out the master branch:'
+  id: totrans-226
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 检查一下master分支：
+- en: '[PRE44]'
+  id: totrans-227
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE44]'
+- en: 'Look at the `shoppingFile.txt` content:'
+  id: totrans-228
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 查看`shoppingFile.txt`的内容：
+- en: '[PRE45]'
+  id: totrans-229
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE45]'
+- en: 'We actually moved back to where we were before adding the blackberry; as it
+    is being added in the `berries` branch, here in the `master` branch it does not
+    exist: sounds good, doesn''t it?'
+  id: totrans-230
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 实际上我们回到了添加黑莓之前的地方；由于它在`berries`分支中被添加了，在`master`分支中它并不存在：听起来不错，是吧？
+- en: 'Even the `HEAD` file has been updated accordingly:'
+  id: totrans-231
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 甚至`HEAD`文件也相应更新了：
+- en: '[PRE46]'
+  id: totrans-232
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE46]'
+- en: 'But at this point someone could raise their hand and say: <q>"That''s weird!
+    In Subversion, we usually have different folders for each different branch; here
+    Git seems to always overwrite the content of the same folder, isn''t it?"</q>.'
+  id: totrans-233
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 但是此时，有人可能会举手说：<q>"这很奇怪！在Subversion中，我们通常为每个不同的分支有不同的文件夹；而在这里Git似乎总是覆盖同一个文件夹的内容，对吗？"</q>。
+- en: Of course, it is. This is how Git works. When you switch a branch, Git goes
+    to the commit the branch is pointing to, and following the parent relationship
+    and analyzing trees and blobs, rebuilds the content on the **working directory**
+    accordingly, getting hold of that files and folders (that is the same Subversion
+    can do with the *switch branch* feature, actually).
+  id: totrans-234
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当然了。这就是Git的工作原理。当你切换一个分支时，Git会到分支指向的提交去，根据父子关系和分析树和对象，相应地重新构建**工作目录**的内容，抓住那些文件和文件夹（实际上这就是Subversion实际上可以通过*切换分支*功能来做的）。
+- en: This is a big difference between Git and Subversion (and other similar versioning
+    systems); people used to Subversion often argue that in this manner you cannot
+    easily compare branches file by file, or open in your favorite IDE two different
+    *versions* of your in-development software. Yes, this is true, in Git you cannot
+    do the same, but there are some tricks to work around this issue (if it is an
+    issue for you).
+  id: totrans-235
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这是 Git 和 Subversion（以及其他类似版本控制系统）之间的一个重要区别；习惯使用 Subversion 的人常常争论，在这种方式下，你无法像在
+    Subversion 中那样轻松地按文件逐一比较分支，或者在你喜欢的 IDE 中同时打开你正在开发软件的两个不同 *版本*。是的，这是真的，在 Git 中你不能做到这一点，但有一些技巧可以绕过这个问题（如果这个问题对你来说是个问题的话）。
+- en: Another important thing to say is that in Git you cannot check out only a folder
+    of the repository, as you can do in Subversion; when you check out a branch, you
+    get all its content.
+  id: totrans-236
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 另一个需要说明的重要事项是，在 Git 中，你不能像在 Subversion 中那样仅检出某个仓库的文件夹；当你检出一个分支时，你将获得该分支的所有内容。
+- en: 'Go back to the repository now; let''s do the usual `git log`:'
+  id: totrans-237
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在回到仓库；让我们执行常见的 `git log`：
+- en: '[PRE47]'
+  id: totrans-238
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE47]'
+- en: 'Uh-oh: where is the `berries` branch? Don''t worry: `git log` usually displays
+    only the branch you are on, and the commit that belongs to it. To see all branches,
+    you only need to add the `--all` option:'
+  id: totrans-239
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 哎呀：`berries` 分支去哪儿了？别担心：`git log` 通常只显示你所在的分支和属于它的提交。要查看所有分支，你只需要添加 `--all`
+    选项：
+- en: '[PRE48]'
+  id: totrans-240
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE48]'
+- en: 'Okay, let''s see: we are on the `master` branch, as the shell prompts and as
+    `HEAD` remembers us, with that arrow that points to `master`; then there is a
+    `berries` branch, with a commit more than `master`.'
+  id: totrans-241
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 好的，让我们看一下：我们现在在 `master` 分支上，正如 shell 提示和 `HEAD` 提示我们所看到的，那个箭头指向 `master`；然后有一个
+    `berries` 分支，它比 `master` 多一个提交。
+- en: Reachability and undoing commits
+  id: totrans-242
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 可达性和撤销提交
+- en: 'Now let''s imagine this scenario: we have a new commit on the `berries` branch,
+    but we realized it is a wrong one, so we want the `berries` branch to go back
+    where `master` is. We actually want to discard the last commit on the `berries`
+    branch.'
+  id: totrans-243
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在让我们设想这样一个场景：我们在 `berries` 分支上有一个新的提交，但我们意识到这是一个错误的提交，因此我们希望将 `berries` 分支回退到
+    `master` 分支的位置。实际上，我们想要丢弃 `berries` 分支上的最后一次提交。
+- en: 'First, check out the `berries` branch:'
+  id: totrans-244
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 首先，检出 `berries` 分支：
+- en: '[PRE49]'
+  id: totrans-245
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE49]'
+- en: 'New trick: using the dash (`-`), you actually are saying to Git: "*Move me
+    to the branch I was before switching*"; and Git obeys, moving us to the `berries`
+    branch.'
+  id: totrans-246
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 新技巧：使用破折号（`-`），实际上是在告诉 Git：“*把我移回到我切换之前所在的分支*”；Git 会遵从，将我们移回 `berries` 分支。
+- en: 'Now a new command, `git reset` (please don''t care about the `--hard` option
+    for now):'
+  id: totrans-247
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在执行一个新命令，`git reset`（暂时不需要关心 `--hard` 选项）：
+- en: '[PRE50]'
+  id: totrans-248
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE50]'
+- en: 'In Git, this is simple as this. The `git reset` actually **moves a branch from
+    the current position to a new one**; here we said Git to move the current `berries`
+    branch to where `master` is, and the result is that now we have all the two branches
+    pointing to the same commit:'
+  id: totrans-249
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 Git 中，这就是这么简单。`git reset` 实际上是**将一个分支从当前位置移动到一个新的位置**；在这里，我们让 Git 将当前的 `berries`
+    分支移动到 `master` 分支所在的位置，结果是现在我们有两个分支都指向相同的提交：
+- en: '[PRE51]'
+  id: totrans-250
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE51]'
+- en: 'You can double-check this looking at `refs` files; this is the `berries` one:'
+  id: totrans-251
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以通过查看 `refs` 文件来再次确认这一点；这是 `berries` 分支的文件：
+- en: '[PRE52]'
+  id: totrans-252
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE52]'
+- en: 'And this is the `master` one:'
+  id: totrans-253
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这是 `master` 分支的内容：
+- en: '[PRE53]'
+  id: totrans-254
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE53]'
+- en: Same hash, same commit.
+  id: totrans-255
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 相同的哈希值，相同的提交。
+- en: 'A *side effect* of this operation is losing the last commit we did in `berries`,
+    as we already said: but why? And how?'
+  id: totrans-256
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这次操作的一个 *副作用* 是丢失了我们在 `berries` 分支上做的最后一次提交，正如我们之前所说：但是为什么呢？又是如何发生的？
+- en: This is due to the **reachability** of commits. A commit is not more reachable
+    when no branches points to it directly, nor it figures as a parent of another
+    commit in a branch. Our *blackberry commit* was the last commit on the `berries`
+    branch, so moving the `berries` branch away from it, made it unreachable, and
+    it *disappears* from our repository.
+  id: totrans-257
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这是因为**可达性**的原因。一个提交在没有任何分支直接指向它，或者它不再作为其他提交的父提交时，就不再是可达的。我们的 *黑莓提交* 是 `berries`
+    分支上的最后一个提交，因此将 `berries` 分支移开它，使得该提交变得不可达，并且它从我们的仓库中 *消失* 了。
+- en: But are you sure it is gone? Want to make a bet?
+  id: totrans-258
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 但是你确定它已经消失了吗？想打个赌吗？
+- en: 'Let''s try another trick: we can use `git reset` to move the actual branch
+    directly to a commit. And to make things more interesting, let''s try to point
+    the *blackberry commit* (if you scroll your shell window backwards, you can see
+    its hash, which for me is `ef6c382`) so, `git reset` to the `ef6c382` commit:'
+  id: totrans-259
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们再试一个技巧：我们可以使用 `git reset` 将当前分支直接移动到某个提交。为了让事情更有趣，我们来试试将 *黑莓提交* （如果你向上滚动终端窗口，你可以看到它的哈希值，对我来说是
+    `ef6c382`）指向该提交，所以我们使用 `git reset` 将 `berries` 分支移到 `ef6c382` 提交：
+- en: '[PRE54]'
+  id: totrans-260
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE54]'
+- en: 'And then do the usual `git log`:'
+  id: totrans-261
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接着执行常见的 `git log`：
+- en: '[PRE55]'
+  id: totrans-262
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE55]'
+- en: That's magic! We actually recovered the lost commit!
+  id: totrans-263
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 真神奇！我们实际上恢复了丢失的提交！
+- en: Okay, jokes aside, there's no magic in Git; it simply won't delete unreachable
+    commits, at least not immediately. It makes some housekeeping automatically at
+    a given time, as it has some powerful **garbage collection** features (look at
+    the `git gc` command help page if you are curious; I want you to remember that
+    any Git command, followed by the `--help` option, will open for you the internal
+    man page for it).
+  id: totrans-264
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 好的，开个玩笑，Git里没有什么魔法；它只是不删除无法访问的提交，至少不会立刻删除。它会在某个时刻自动进行一些清理，因为它具有强大的**垃圾回收**功能（如果你感兴趣，可以查看`git
+    gc`命令的帮助页面；我希望你记住，任何Git命令后跟`--help`选项，都将打开它的内部手册页）。
+- en: So, we have seen what reachability of commits means, and then learnt how to
+    undo a commit using the `git reset` command, that is a thing to know to take advantage
+    of Git features while working on a repository.
+  id: totrans-265
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 所以，我们已经了解了提交的可达性是什么意思，然后学会了如何使用`git reset`命令撤销一个提交，这是在处理Git仓库时非常有用的功能。
+- en: But let's continue experimenting with branches.
+  id: totrans-266
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 但是让我们继续尝试不同的分支操作。
+- en: 'Assume you want to add a watermelon to the shopping list, but later you realize
+    you added it to the wrong `berries` branch; so, add `"watermelon"` to the `shoppingList.txt`
+    file:'
+  id: totrans-267
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 假设你想把一个西瓜添加到购物清单中，但后来你意识到你把它添加到了错误的`berries`分支；于是，向`shoppingList.txt`文件中添加`"watermelon"`：
+- en: '[PRE56]'
+  id: totrans-268
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE56]'
+- en: 'Then do the commit:'
+  id: totrans-269
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后执行提交：
+- en: '[PRE57]'
+  id: totrans-270
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE57]'
+- en: 'And do a `git log` to check the result:'
+  id: totrans-271
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 执行`git log`查看结果：
+- en: '[PRE58]'
+  id: totrans-272
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE58]'
+- en: 'Now our aim here is: have a new `melons` branch, which the *watermelon commit* have
+    to belong to, then set the house in order and move the `berries` branch back to
+    the *blackberry commit*. To keep the *watermelon commit*, first create a `melon`
+    branch that points to it with the well-known `git branch` command:'
+  id: totrans-273
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们的目标是：创建一个新的`melons`分支，它必须包含*西瓜提交*，然后整理一下，将`berries`分支回退到*黑莓提交*。为了保留*西瓜提交*，首先用著名的`git
+    branch`命令创建一个指向它的`melon`分支：
+- en: '[PRE59]'
+  id: totrans-274
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE59]'
+- en: 'Let''s check:'
+  id: totrans-275
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们检查一下：
+- en: '[PRE60]'
+  id: totrans-276
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE60]'
+- en: Okay, so now we have both `berries` and `melons` branches pointing to the watermelon
+    commit.
+  id: totrans-277
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 好的，现在我们有了`berries`和`melons`两个分支都指向了西瓜提交。
+- en: Now we can move the `berries` branch back to the previous commit; let's get
+    advantage of the opportunity to learn something new.
+  id: totrans-278
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们可以将`berries`分支回退到之前的提交；让我们利用这个机会来学习一些新东西。
+- en: 'In Git, you often have the need to point to a preceding commit, like in this
+    case, the one before; for this scope, we can use `HEAD` reference, followed by
+    one of two different special characters, the *tilde*`~` and the *caret*`^`. A
+    **caret** basically means *a back step*, while two carets means two steps back,
+    and so on. As you probably don''t want to type dozens of carets, when you need
+    to step back a lot, you can use **tilde**: similarly, `~1` means *a back step*,
+    while `~25` means 25 steps back, and so on.'
+  id: totrans-279
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在Git中，你经常需要指向一个之前的提交，就像在这个例子中，指向那个前一个提交；为了实现这个目的，我们可以使用`HEAD`引用，并跟随两个特殊字符中的一个，*波浪线*`~`和*插入符号*`^`。**插入符号**基本上意味着*回退一步*，而两个插入符号意味着回退两步，依此类推。由于你可能不想打出一堆插入符号，当你需要回退很多步时，可以使用**波浪线**：同样，`~1`表示*回退一步*，而`~25`表示回退25步，依此类推。
+- en: There's more to know about this mechanism, but it is enough for now; for all
+    the details check [http://www.paulboxley.com/blog/2011/06/git-caret-and-tilde](http://www.paulboxley.com/blog/2011/06/git-caret-and-tilde).
+  id: totrans-280
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个机制还有更多内容需要了解，但现在就足够了；要查看所有的细节，请访问[http://www.paulboxley.com/blog/2011/06/git-caret-and-tilde](http://www.paulboxley.com/blog/2011/06/git-caret-and-tilde)。
+- en: 'So, let''s step back our `berries` branch using caret; do a `git reset --hard
+    HEAD^`:'
+  id: totrans-281
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 那么，使用插入符号（caret）将我们的`berries`分支回退；执行`git reset --hard HEAD^`：
+- en: '[PRE61]'
+  id: totrans-282
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE61]'
+- en: 'Let''s see the result:'
+  id: totrans-283
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们来看一下结果：
+- en: '[PRE62]'
+  id: totrans-284
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE62]'
+- en: Well done! We successfully recovered the mistake, and learnt how to use the
+    `HEAD` reference and `git reset` command to move branches from here to there.
+  id: totrans-285
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 做得好！我们成功地恢复了错误，并学会了如何使用`HEAD`引用和`git reset`命令来在分支间进行切换。
+- en: 'Just to remark concepts, let''s take a look at the `shoppingList.txt` file
+    here in the `berries` branch:'
+  id: totrans-286
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 仅仅为了说明概念，我们来看看`berries`分支中的`shoppingList.txt`文件：
+- en: '[PRE63]'
+  id: totrans-287
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE63]'
+- en: Okay, here we have blackberry, other than the other previously added fruits.
+  id: totrans-288
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 好的，这里我们看到了黑莓，除了之前添加的其他水果。
+- en: 'Switch to `master` and check again; check out the `master` branch:'
+  id: totrans-289
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 切换到`master`分支，再次查看；检查一下`master`分支：
+- en: '[PRE64]'
+  id: totrans-290
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE64]'
+- en: 'Then `cat` the file:'
+  id: totrans-291
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后`cat`文件：
+- en: '[PRE65]'
+  id: totrans-292
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE65]'
+- en: Okay, no blackberry here, but only fruits added before the `berries` branch
+    creation.
+  id: totrans-293
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 好的，这里没有黑莓，只有`berries`分支创建之前添加的水果。
+- en: 'And now a last check on the `melons` branch; check out the branch:'
+  id: totrans-294
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后最后检查一下`melons`分支；查看该分支：
+- en: '[PRE66]'
+  id: totrans-295
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE66]'
+- en: 'And `cat` the `shoppingList.txt` file:'
+  id: totrans-296
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后使用`cat`查看`shoppingList.txt`文件：
+- en: '[PRE67]'
+  id: totrans-297
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE67]'
+- en: Fantastic! Here there is the watermelon, other than fruits previously added
+    while in the `berries` and `master` branches.
+  id: totrans-298
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 太棒了！这里有西瓜，除了之前在`berries`和`master`分支中添加的水果。
+- en: 'Quick tip: while writing the branch name, use *Tab* to autocomplete: Git will
+    write the complete branch name for you.'
+  id: totrans-299
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 小提示：写分支名称时，使用*Tab*键进行自动补全：Git会为你写出完整的分支名称。
+- en: Detached HEAD
+  id: totrans-300
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Detached HEAD
+- en: Now it's time to explore another important concept about Git and its references,
+    the `detached HEAD` state.
+  id: totrans-301
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在是时候探索Git及其引用的另一个重要概念——`detached HEAD`状态了。
+- en: 'For the sake of the explanation, go back to the `master` branch and see what
+    happens when we check out the previous commit, moving `HEAD` backward; perform
+    a `git checkout HEAD^`:'
+  id: totrans-302
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了说明，返回到`master`分支，看看当我们检出上一个提交时会发生什么，将`HEAD`向后移动；执行`git checkout HEAD^`：
+- en: '[PRE68]'
+  id: totrans-303
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE68]'
+- en: 'Wow, a lot of new things to see here. But don''t be scared, it''s not that
+    complicated: let''s take some baby steps into the long message Git showed us.'
+  id: totrans-304
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 哇，这里有很多新东西可以看。但不要害怕，其实并没有那么复杂：让我们一步步了解Git给我们展示的长消息。
+- en: 'First, think about it: Git is very kind and often tells us loads of useful
+    information in its output messages. Don''t under evaluate this behavior: especially
+    at the beginning, reading Git messages allows you to learn a lot, so read them
+    carefully.'
+  id: totrans-305
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 首先，思考一下：Git非常友好，经常在其输出信息中告诉我们很多有用的信息。不要低估这种行为：尤其是在刚开始时，阅读Git的信息可以让你学到很多，所以要仔细阅读。
+- en: 'Here, Git says we are in a `detached HEAD` state. Being in this state basically
+    means that `HEAD` does not reference a branch, but directly a commit, the `e4a5e7b`
+    one in this case; do a `git log` and see:'
+  id: totrans-306
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这里，Git告诉我们我们处于`detached HEAD`状态。处于这个状态基本上意味着`HEAD`不再引用一个分支，而是直接指向一个提交，在这个例子中是`e4a5e7b`那个提交；执行`git
+    log`并查看：
+- en: '[PRE69]'
+  id: totrans-307
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE69]'
+- en: First of all, in the shell prompt you can see that between rounds, that now
+    are doubled, there is not a branch name, but the first seven characters of the
+    commit, `((e4a5e7b...))`.
+  id: totrans-308
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 首先，在Shell提示符中，你会看到，在现在加倍的回合之间，并没有分支名称，而是提交的前七个字符，`((e4a5e7b...))`。
+- en: 'Then, `HEAD` is now stuck to that commit, while branches, especially the `master`
+    one, remains at their own place. As a result, the `HEAD` file now contains the
+    hash of that commit, not a ref to a branch as before:'
+  id: totrans-309
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后，`HEAD`现在被固定在那个提交上，而分支，特别是`master`分支，仍然在它们自己的位置。因此，`HEAD`文件现在包含该提交的哈希值，而不是像以前那样引用一个分支：
+- en: '[PRE70]'
+  id: totrans-310
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE70]'
+- en: Going on, Git says that in this state we can look around, make experiments,
+    doing new commits if we like, and then discard them simply by checking out an
+    existing branch, or save them if you like creating a new branch. Can you say why
+    this is true?
+  id: totrans-311
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来，Git表示在这个状态下，我们可以四处查看，做实验，如果喜欢，还可以进行新的提交，然后通过检出一个已有分支来简单丢弃它们，或者如果你愿意，可以创建一个新分支来保存它们。你能说出为什么这样做是对的吗？
+- en: Due to reachability of commits, of course. If we do some commits, then move
+    `HEAD` to an existing branch, those commits become unreachable. They stay in a
+    reachable state until `HEAD` is on top of the last of them, but when you move
+    `HEAD` with a `git checkout`, they are gone. At the same time, if you create a
+    new branch before moving `HEAD`, there will be a label, a pointer Git can use
+    to reach those commits, so they are safe.
+  id: totrans-312
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当然是由于提交的可达性。如果我们做了一些提交，然后将`HEAD`移动到一个已有的分支上，这些提交就变得不可达了。它们会保持在一个可达状态，直到`HEAD`位于它们的最后一个提交之上，但当你使用`git
+    checkout`移动`HEAD`时，它们就会消失。与此同时，如果你在移动`HEAD`之前创建一个新分支，会有一个标签，Git可以用来指向这些提交，因此它们是安全的。
+- en: Want to try?
+  id: totrans-313
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 想试试吗？
+- en: 'Okay, let''s have some fun; modify the `shoppingList.txt` file, adding a `bug`:'
+  id: totrans-314
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 好的，来点乐趣；修改`shoppingList.txt`文件，添加一个`bug`：
+- en: '[PRE71]'
+  id: totrans-315
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE71]'
+- en: 'Then `commit` this voluntary mistake:'
+  id: totrans-316
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后`commit`这个自愿的错误：
+- en: '[PRE72]'
+  id: totrans-317
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE72]'
+- en: 'Let''s `cat` the file:'
+  id: totrans-318
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们`cat`这个文件：
+- en: '[PRE73]'
+  id: totrans-319
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE73]'
+- en: Ouch, we actually erased all your shopping list files!
+  id: totrans-320
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 哎呀，实际上我们删除了你所有的购物清单文件！
+- en: What happened in the repository then?
+  id: totrans-321
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 那么，仓库中发生了什么呢？
+- en: '[PRE74]'
+  id: totrans-322
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE74]'
+- en: 'Nice! We have a new commit, the bug one, and we can see as `HEAD` followed
+    us, so now it points to it. Then, the console drew two different `paths`, because
+    starting from `apple commit`, we traced two routes: one that goes to the `master`
+    branch (then to `berries` and `melons`), and one that goes to the `bug commit`
+    we just made.'
+  id: totrans-323
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 很棒！我们有了一个新的提交，就是那个错误提交，我们可以看到`HEAD`跟随了我们，所以现在它指向了它。然后，控制台绘制了两条不同的`路径`，因为从`apple
+    commit`开始，我们追踪了两条路线：一条指向`master`分支（然后是`berries`和`melons`），另一条指向我们刚刚做的`bug commit`。
+- en: 'Okay, so if we now check out `master` again, what happens? Give it a try:'
+  id: totrans-324
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 好的，如果我们现在再次检出`master`，会发生什么？试试看吧：
+- en: '[PRE75]'
+  id: totrans-325
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE75]'
+- en: 'Okay, we have already seen this message: Git is aware that we are leaving a
+    commit behind; but in this case, it''s not a problem for us, indeed it''s actually
+    what we really want.'
+  id: totrans-326
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 好的，我们已经看到过这条信息：Git知道我们正在丢弃一个提交；但在这种情况下，这对我们来说不是问题，事实上，这正是我们真正想要的。
+- en: 'Let''s check the situation:'
+  id: totrans-327
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们检查一下情况：
+- en: '[PRE76]'
+  id: totrans-328
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE76]'
+- en: 'Yay! The bug commit is gone, so nothing is compromised. In the previous message,
+    Git was kind enough to remind us how to recover that commit, just in case; the
+    trick is to directly create a branch that points to that commit, and Git pinned
+    us even the complete command. Let''s try it, creating a `bug` branch:'
+  id: totrans-329
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 耶！`bug`提交已经消失了，所以没有什么被破坏。在之前的消息中，Git很友好地提醒我们如何恢复那个提交，以防万一；诀窍是直接创建一个指向该提交的分支，Git甚至给我们提供了完整的命令。让我们试试看，创建一个`bug`分支：
+- en: '[PRE77]'
+  id: totrans-330
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE77]'
+- en: 'Let''s see what happened:'
+  id: totrans-331
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们看看发生了什么：
+- en: '[PRE78]'
+  id: totrans-332
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE78]'
+- en: Wow, that's amazingly simple! The commit is here again, and now we have even
+    a branch to check out if we like.
+  id: totrans-333
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 哇，真是太简单了！提交又回来了，现在我们甚至有了一个分支可以切换了，如果我们愿意的话。
+- en: The reflogs
+  id: totrans-334
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '**引用日志**'
+- en: Okay, but what if we ignore the Git message the first time, then time goes and
+    at the end, we can't remember the hash of the commit we want to retrieve?
+  id: totrans-335
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 好的，但是如果我们第一次忽略了Git的消息，然后时间过去，最终我们记不起我们想要恢复的提交的哈希值怎么办？
+- en: Git never forgets you. It has another powerful tool in its wrench box, and that
+    is called the **reference log**, or reflog for short. Basically, the reflog (or
+    better the reflogs, as there is one for every reference) records what happens
+    in the repository while you commit, reset, check out, and so on. To be more precise,
+    every reflog records all the times that tips of the branches and other references
+    (such as `HEAD`) where updated.
+  id: totrans-336
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git从不忘记你。它有另一个强大的工具在其工具箱里，叫做**引用日志**，简称reflog。基本上，reflog（或者更准确地说是reflogs，因为每个引用都有一个）记录了在你提交、重置、检出等操作时发生的所有事情。更具体地说，每个reflog记录了分支和其他引用（如`HEAD`）的指针更新的所有时间。
+- en: 'We can take a look at it with a convenient Git command, `git reflog show`:'
+  id: totrans-337
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以通过一个方便的Git命令`git reflog show`来看一下它：
+- en: '[PRE79]'
+  id: totrans-338
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE79]'
+- en: Actually, here there are all the movements the `HEAD` reference made in my repository
+    since the beginning, in reverse order, as you may have already noticed.
+  id: totrans-339
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 实际上，这里记录了自从一开始以来，`HEAD`引用在我的仓库中所做的所有变动，按倒序排列，正如你可能已经注意到的那样。
+- en: 'In fact, the last one (`HEAD@{0}`) says:'
+  id: totrans-340
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 事实上，最后一条（`HEAD@{0}`）显示的是：
+- en: '[PRE80]'
+  id: totrans-341
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE80]'
+- en: Actually, this is the very last thing we did, apart from the creation on the
+    `bug` branch. As we never moved into it, the `HEAD` reflog doesn't log anything
+    about `bug` branch creation.
+  id: totrans-342
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 实际上，这是我们做的最后一件事，除了在`bug`分支上的创建。由于我们从未切换到该分支，`HEAD`引用日志并没有记录任何关于`bug`分支创建的信息。
+- en: The reflog is a quite complex topic to be discussed in depth, so here we only
+    learn how to open and read it, and how to interpret information from it.
+  id: totrans-343
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 引用日志是一个相当复杂的主题，深入讨论它超出了这个范围，因此我们这里只学习如何打开和读取它，并如何解读其中的信息。
+- en: 'The only things I want you to know are that this log will be cleared at some
+    point; the default retention is 90 days. Then, there is a reflog for every reference;
+    what we are seeing now is the `HEAD` reflog (`HEAD@` is a hint about this), but
+    if you type `git reflog show berries` you will see the movements `berries` branch
+    did in the past:'
+  id: totrans-344
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我只想让你知道的事情是，这个日志会在某个时刻被清除；默认的保留期限是90天。然后，每个引用都有一个reflog；我们现在看到的是`HEAD`的reflog（`HEAD@`是一个提示），但是如果你输入`git
+    reflog show berries`，你会看到`berries`分支过去的变动：
+- en: '[PRE81]'
+  id: totrans-345
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE81]'
+- en: To go back to our problem, if we want to check out a currently unreachable commit,
+    we can go to the `HEAD` reflog and look for a line where we did the commit (in
+    this example, I would look for a `commit:` logline, searching the one where the
+    commit message says something that helps me to remind, something like `bug` in
+    this case).
+  id: totrans-346
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 回到我们的问题，如果我们想检出一个当前无法访问的提交，我们可以进入`HEAD`的reflog，寻找我们做提交的那一行（在这个例子中，我会寻找一个`commit:`的日志行，查找提交信息中提到的、帮助我记起的内容，比如这次是`bug`）。
+- en: Well done, that's enough for now; later we will use reflog again.
+  id: totrans-347
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 做得好，暂时就到这里；稍后我们会再次使用reflog。
+- en: Tags are fixed labels
+  id: totrans-348
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 标签是固定的标签
+- en: '**Tags** are labels you can pin to a commit, but unlike branches, they will
+    stay there.'
+  id: totrans-349
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**标签**是你可以附加到提交上的标签，但与分支不同的是，它们会一直存在。'
+- en: 'Creating a tag is simple: you only need the `git tag` command, followed by
+    a tag name; we can create one in the tip commit of `bug` branch to give it a try;
+    check out the `bug` branch:'
+  id: totrans-350
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 创建标签很简单：你只需要`git tag`命令，后面跟上标签名；我们可以在`bug`分支的最新提交上创建一个标签来试试看；切换到`bug`分支：
+- en: '[PRE82]'
+  id: totrans-351
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE82]'
+- en: 'Then use the `git tag` command followed by the funny `bugTag` name:'
+  id: totrans-352
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后使用`git tag`命令，后面跟上有趣的`bugTag`名称：
+- en: '[PRE83]'
+  id: totrans-353
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE83]'
+- en: 'Let''s see what `git log` says:'
+  id: totrans-354
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们看看`git log`怎么说：
+- en: '[PRE84]'
+  id: totrans-355
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE84]'
+- en: As you can see in the log, now on the tip of the `bug` branch there is even
+    a tag named `bugTag`.
+  id: totrans-356
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如您在日志中所看到的，现在在`bug`分支的末端甚至有一个名为`bugTag`的标签。
+- en: 'If you do a commit in this branch, you will see the `bugTag` will remain at
+    its place; add a new line to the same old shopping list file:'
+  id: totrans-357
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果您在此分支进行提交，您将看到`bugTag`将保持其位置不变；向同一个旧购物清单文件添加一行：
+- en: '[PRE85]'
+  id: totrans-358
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE85]'
+- en: 'Perform a `commit`:'
+  id: totrans-359
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 执行一个`commit`：
+- en: '[PRE86]'
+  id: totrans-360
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE86]'
+- en: 'Then look at the current situation:'
+  id: totrans-361
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后查看当前情况：
+- en: '[PRE87]'
+  id: totrans-362
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE87]'
+- en: That's exactly what we predict.
+  id: totrans-363
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这正是我们预测的。
+- en: 'Tags are useful to give a particular meaning to some particular commits; for
+    instance, as a developer, you maybe want to tag every release of your software:
+    in that case, this is all you need to know to do that job.'
+  id: totrans-364
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 标签对于赋予某些特定提交特定意义非常有用；例如，作为开发者，您可能希望为您的软件的每个发布打上标签：在这种情况下，这就是您需要知道的所有内容来完成这项工作。
+- en: 'Even tags are references, and they are stored, as branches, as simple text
+    files in the tags subfolder within the `.git` folder; take a look under the `.git/refs/tags`
+    folder, you will see a `bugTag` file; look at the content:'
+  id: totrans-365
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 即使标签也是引用，并且像分支一样，它们作为简单的文本文件存储在`.git`文件夹中的tags子文件夹中；在`.git/refs/tags`文件夹下看一下，您会看到一个`bugTag`文件；查看其内容：
+- en: '[PRE88]'
+  id: totrans-366
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE88]'
+- en: As you maybe have already predicted, it contains the hash of the commit it refers
+    to.
+  id: totrans-367
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如您可能已经预测的那样，它包含了它所指向的提交的哈希值。
+- en: 'To delete a tag, you have to simply append the `-d` option: `git tag -d <tag
+    name>`.'
+  id: totrans-368
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要删除一个标签，只需添加 `-d` 选项：`git tag -d <标签名>`。
+- en: As you can't move a tag, if you need to move it you have to delete the previous
+    tag and then create a new one with the same name that points to the commit you
+    want; you can create a tag that points a commit wherever you want, appending the
+    hash of the commit as an argument, for example, `git tag myTag 07b1858`.
+  id: totrans-369
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于您不能移动标签，如果需要移动它，则必须删除先前的标签，然后创建一个新的同名标签，指向您希望的提交；您可以创建一个标签，指向任何您想要的提交，例如，`git
+    tag myTag 07b1858`。
+- en: Annotated tags
+  id: totrans-370
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 注释标签
+- en: Git has two kinds of tags; this is because in some situations you may want to
+    add a message to the tag, or because you like to have the author stick to it.
+  id: totrans-371
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git 有两种类型的标签；这是因为在某些情况下，您可能希望向标签添加消息，或者因为您喜欢作者坚持不变。
+- en: We already have seen the first type, the simpler one; tags containing this extra
+    information load belong to the second type, the **annotated tag**.
+  id: totrans-372
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们已经看到了第一种类型，更简单的那种；包含这些额外信息的标签属于第二种类型，**注释标签**。
+- en: An annotated tag is both a *reference* and a *git object* such as commits, trees,
+    and blobs.
+  id: totrans-373
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 注释标签既是一个*引用*，也是*git对象*，如提交、树和blob。
+- en: 'To create one, simply append `-a` to the command; let''s create another one
+    to give this a try:'
+  id: totrans-374
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要创建一个注释标签，只需将`-a`追加到命令中；让我们再创建一个来试试看：
+- en: '[PRE89]'
+  id: totrans-375
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE89]'
+- en: 'At this point Git opens the default editor, to allow you to write the tag message,
+    as in the following screenshot:'
+  id: totrans-376
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 此时，Git 打开默认编辑器，允许您编写标签消息，就像下面的截图中所示：
+- en: '![](img/efb244ea-c2fa-48f6-acda-7d0dd2fba54f.png)'
+  id: totrans-377
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/efb244ea-c2fa-48f6-acda-7d0dd2fba54f.png)'
+- en: 'Save and exit, and then see the log:'
+  id: totrans-378
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 保存并退出，然后查看日志：
+- en: '[PRE90]'
+  id: totrans-379
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE90]'
+- en: Okay, there are two tags now on the same commit.
+  id: totrans-380
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 好的，现在同一个提交上有两个标签了。
+- en: 'A new ref has been created:'
+  id: totrans-381
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 已创建一个新引用：
+- en: '[PRE91]'
+  id: totrans-382
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE91]'
+- en: 'But even a new object: try to `cat-file` the hash you see in the reference:'
+  id: totrans-383
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 但是即使是一个新对象：试着 `cat-file` 这个引用中看到的哈希值：
+- en: '[PRE92]'
+  id: totrans-384
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE92]'
+- en: This is how an annotated tag looks like.
+  id: totrans-385
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这就是注释标签的样子。
+- en: Obviously, the `git tag` command has many other options, but I only highlighted
+    the ones I think are worth knowing at the moment.
+  id: totrans-386
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 显然，`git tag`命令还有许多其他选项，但我只强调了我认为目前值得知道的那些选项。
+- en: If you want to look at all the options of a command, remember you can always
+    do a `git <command> --help` to see the complete guide.
+  id: totrans-387
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果您想查看命令的所有选项，请记住您始终可以使用 `git <命令> --help` 查看完整指南。
+- en: Time to spend some words on the staging area, as we have only scratched the
+    surface.
+  id: totrans-388
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 是时候多说几句关于缓存区了，因为我们只是刚刚触及了表面。
+- en: Staging area, working tree, and HEAD commit
+  id: totrans-389
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 缓存区、工作树和 HEAD 提交
+- en: Until now, we have barely named the **staging area** (also known as an **index**),
+    while preparing files to make a new commit with the `git add` command.
+  id: totrans-390
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 到目前为止，我们几乎只提到了**缓存区**（也称为**索引**），用 `git add` 命令准备文件以进行新的提交。
+- en: 'Well, the staging area purpose is actually this. When you change the content
+    of a file, when you add a new one or delete an existing one, you have to tell
+    Git what of these modifications will be part of the next commit: the staging area
+    is the container for this kind of data.'
+  id: totrans-391
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 缓存区的目的实际上就是这样。当您更改文件的内容、添加新文件或删除现有文件时，您必须告诉 Git 这些修改中哪些将成为下一个提交的一部分：缓存区就是存储这类数据的容器。
+- en: 'Let''s focus on this right now; move to the `master` branch, if not already
+    there, then type the `git status` command; it allows us to see the actual status
+    of the staging area:'
+  id: totrans-392
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们专注于这个；如果尚未处于 `master` 分支，请切换到该分支，然后输入 `git status` 命令；它让我们可以查看暂存区的实际状态：
+- en: '[PRE93]'
+  id: totrans-393
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE93]'
+- en: Git says there's nothing to commit, our working tree is clean. But what's a
+    **working tree**? Is it the same as the working directory we talked about? Well,
+    yes and no, and it's confusing, I know.
+  id: totrans-394
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git 显示没有内容需要提交，我们的工作树是干净的。但什么是**工作树**呢？它和我们之前讨论过的工作目录是一样的吗？嗯，既是也不是，这点确实令人困惑，我知道。
+- en: Git had (and still have) some troubles with names; in fact, as we said a couple
+    of lines before, even for the staging area we have two names (the other one is
+    index). Git uses both in its messages and commands output, and the same often
+    does people, blogs, and books like this one while talking about Git. Having two
+    names for the same thing is not always a good idea, especially when they represent
+    exactly the same thing, but being aware of this is enough (time will give us a
+    less confusing Git, I'm sure).
+  id: totrans-395
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git 曾经（并且现在仍然有）一些命名上的问题；事实上，正如我们之前提到的，甚至对于暂存区，我们有两个名字（另一个是 index）。Git 在其消息和命令输出中都使用这两个名字，人们、博客以及像这本书一样的书籍在谈论
+    Git 时也经常这样做。为同一件事使用两个名字并不总是个好主意，尤其是当它们确切地表示相同的东西时，但意识到这一点就足够了（时间会带给我们一个不那么混乱的
+    Git，我相信）。
+- en: 'For the working tree and working directory, the story is this. At some point,
+    someone argued: *If I''m in the root of the repository I''m in a working directory,
+    but if I walk through a subfolder, I''m in another working directory*. This is
+    technically true by a filesystem perspective, but while in Git, doing some operations
+    such as checkout or reset does not affect the current working directory, but the
+    entire... working tree. So, to avoid confusion, Git stopped talking about working
+    directory in its messages and "renamed" it as working tree. This is the commit
+    on Git repository that made this change: [https://github.com/git/git/commit/2a0e6cdedab306eccbd297c051035c13d0266343](https://github.com/git/git/commit/2a0e6cdedab306eccbd297c051035c13d0266343),
+    if you want to go in deep. Hope I''ve clarified a little bit.'
+  id: totrans-396
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 关于工作树和工作目录，情况是这样的。曾有人争论过：*如果我在仓库的根目录下，我就处于一个工作目录，但如果我走进一个子文件夹，我就处于另一个工作目录*。从文件系统的角度来看，这种说法是对的，但在
+    Git 中，进行一些操作，如 checkout 或 reset，并不会影响当前工作目录，而是影响整个……工作树。因此，为了避免混淆，Git 停止在其消息中使用工作目录这个术语，而是将其“重命名”为工作树。如果你想深入了解，可以查看这个提交记录：[https://github.com/git/git/commit/2a0e6cdedab306eccbd297c051035c13d0266343](https://github.com/git/git/commit/2a0e6cdedab306eccbd297c051035c13d0266343)。希望我已经稍微澄清了一些。
+- en: Back on topic now.
+  id: totrans-397
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在回到正题。
+- en: 'Add a `peach` to the `shoppingList.txt` file:'
+  id: totrans-398
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 向 `shoppingList.txt` 文件添加一个 `peach`：
+- en: '[PRE94]'
+  id: totrans-399
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE94]'
+- en: 'Then make use of this new learnt command again, `git status`:'
+  id: totrans-400
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后再次使用这个新学到的命令 `git status`：
+- en: '[PRE95]'
+  id: totrans-401
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE95]'
+- en: Okay, now it's time to learn about **staged** changes; with the word `staged`,
+    Git means modifications we already added to the staging area, so they will be
+    part of the next commit. In the current situation, we modified the `shoppingList.txt`
+    file, but we have not added it yet to the staging area (using the good old `git
+    add` command).
+  id: totrans-402
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 好的，现在是时候学习**已暂存**的更改了；当 Git 提到 `staged` 时，它指的是我们已经添加到暂存区的修改，这些修改将成为下一个提交的一部分。在当前情况下，我们修改了
+    `shoppingList.txt` 文件，但尚未将其添加到暂存区（使用经典的 `git add` 命令）。
+- en: 'So, Git informs us: it tells that there is a modified file (in red color),
+    and then offers two possibilities: *stage* it (add it to the staging area), or
+    *discard* the modification, using the `git checkout -- <file> command`.'
+  id: totrans-403
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 所以，Git 会告诉我们：它显示有一个修改过的文件（以红色显示），然后提供两个选择：*暂存*它（将其添加到暂存区），或*放弃*该修改，使用 `git checkout
+    -- <file>` 命令。
+- en: Let's try to add it; we will see the second option later.
+  id: totrans-404
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们尝试添加它；第二个选项稍后会讲到。
+- en: 'So, try a `git add` command, with nothing more:'
+  id: totrans-405
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 所以，尝试一个`git add`命令，不加其他内容：
+- en: '[PRE96]'
+  id: totrans-406
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE96]'
+- en: 'Okay, new thing learnt: `git add` wants you to specify something to add. A
+    common thing is to use the dot `.` as a wildcard, and this by default means, *add
+    all the files in this folder and subfolders to the staging area*. This is the
+    same as `git add -A` (or `--all`), and by "all" I mean:'
+  id: totrans-407
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 好的，学到新东西了：`git add` 需要你指定要添加的内容。常见的做法是使用点 `.` 作为通配符，默认情况下，这意味着*将此文件夹及子文件夹中的所有文件添加到暂存区*。这与
+    `git add -A`（或 `--all`）相同，所谓的“所有”是指：
+- en: '**Files in this folder and sub-folders I added in the past at least one time**:
+    This set of files is also known as the **tracked files**'
+  id: totrans-408
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**我之前至少添加过一次的此文件夹及子文件夹中的文件**：这组文件也被称为**已追踪文件**。'
+- en: '**New files**: These are called **untracked files**'
+  id: totrans-409
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**新文件**：这些称为**未追踪文件**。'
+- en: Files marked for deletion
+  id: totrans-410
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 标记为删除的文件
+- en: 'Be aware that this behavior changed over time: before Git 2.x, `git add .`
+    and `git add -A` had different effects. Here is a table for quickly understanding
+    the differences.'
+  id: totrans-411
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请注意，这种行为随时间发生了变化：在 Git 2.x 之前，`git add .` 和 `git add -A` 的效果不同。这里有一个表格，帮助快速理解它们之间的差异。
+- en: 'Git version 1.x:'
+  id: totrans-412
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git 版本 1.x：
+- en: '|  | **New files** | **Modified files** | **Deleted files** |  |'
+  id: totrans-413
+  prefs: []
+  type: TYPE_TB
+  zh: '|  | **新文件** | **修改过的文件** | **已删除的文件** |  |'
+- en: '| `git add -A` | yes | yes | yes | Stage all (new, modified, deleted) files
+    |'
+  id: totrans-414
+  prefs: []
+  type: TYPE_TB
+  zh: '| `git add -A` | 是 | 是 | 是 | 暂存所有（新建、修改、删除）文件 |'
+- en: '| `git add .` | yes | yes | no | Stage new and modified files only |'
+  id: totrans-415
+  prefs: []
+  type: TYPE_TB
+  zh: '| `git add .` | 是 | 是 | 否 | 仅暂存新建和修改的文件 |'
+- en: '| `git add -u` | no | yes | yes | Stage modified and deleted files only |'
+  id: totrans-416
+  prefs: []
+  type: TYPE_TB
+  zh: '| `git add -u` | 否 | 是 | 是 | 仅暂存已修改和已删除的文件 |'
+- en: 'Git version 2.x:'
+  id: totrans-417
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git 版本 2.x：
+- en: '|  | **New files** | **Modified files** | **Deleted files** |  |'
+  id: totrans-418
+  prefs: []
+  type: TYPE_TB
+  zh: '|  | **新文件** | **修改过的文件** | **已删除的文件** |  |'
+- en: '| `git add -A` | yes | yes | yes | Stage all (new, modified, deleted) files
+    |'
+  id: totrans-419
+  prefs: []
+  type: TYPE_TB
+  zh: '| `git add -A` | 是 | 是 | 是 | 暂存所有（新建、修改、删除）文件 |'
+- en: '| `git add .` | yes | yes | **yes** | Stage all (new, modified, deleted) files
+    |'
+  id: totrans-420
+  prefs: []
+  type: TYPE_TB
+  zh: '| `git add .` | 是 | 是 | **是** | 暂存所有（新建、修改、删除）文件 |'
+- en: '| `git add --ignore-removal .` | **yes** | **yes** | **no** | Stage new and
+    modified files only |'
+  id: totrans-421
+  prefs: []
+  type: TYPE_TB
+  zh: '| `git add --ignore-removal .` | **是** | **是** | **否** | 仅暂存新建和修改的文件 |'
+- en: '| `git add -u` | no | yes | yes | Stage modified and deleted files only |'
+  id: totrans-422
+  prefs: []
+  type: TYPE_TB
+  zh: '| `git add -u` | 否 | 是 | 是 | 仅暂存已修改和已删除的文件 |'
+- en: As you can see, in Git 2.x there's a new way to stage new and modified files
+    only, the `git add --ignore-removal .` way, and then `git add .` became the same
+    as `git add -A`. If you are wondering, the `-u` option is the equivalent of `--update`.
+  id: totrans-423
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如你所看到的，在 Git 2.x 中，有了一种新的方法来仅暂存新文件和修改过的文件，即 `git add --ignore-removal .`，然后
+    `git add .` 就变成了与 `git add -A` 相同。如果你在想，`-u` 选项相当于 `--update`。
+- en: 'Another basic usage is to specify the file we want to add; let''s give it a
+    try:'
+  id: totrans-424
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 另一个基本用法是指定我们想要添加的文件；让我们试试：
+- en: '[PRE97]'
+  id: totrans-425
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE97]'
+- en: 'As you can see, when `git add` goes right, Git says nothing, no messages: let''s
+    consider it a tacit approval.'
+  id: totrans-426
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如你所看到的，当 `git add` 执行成功时，Git 什么也不说，没有消息：我们可以认为这是一个默许的批准。
+- en: Other ways to add files is specifying a directory to add all the changed files
+    within it, using wildcards such as the star `*` with or without something else
+    (for example, `*.txt` for adding all `txt` files, `foo*` for adding all files
+    starting with `foo` and so on).
+  id: totrans-427
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 另一种添加文件的方式是指定一个目录，将其中所有更改过的文件添加进来，使用通配符（如星号 `*`），可以有或没有其他内容（例如，`*.txt` 用于添加所有
+    `txt` 文件，`foo*` 用于添加所有以 `foo` 开头的文件，依此类推）。
+- en: Please refer to [https://git-scm.com/docs/git-add#git-add-ltpathspecgt82308203](https://git-scm.com/docs/git-add#git-add-ltpathspecgt82308203)
+    for all the information.
+  id: totrans-428
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请参阅 [https://git-scm.com/docs/git-add#git-add-ltpathspecgt82308203](https://git-scm.com/docs/git-add#git-add-ltpathspecgt82308203)
+    以获取所有相关信息。
+- en: 'Okay, time to look back at our repository; go with a `git status` now:'
+  id: totrans-429
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 好的，现在是时候回顾我们的仓库了；现在用 `git status` 看看：
+- en: '[PRE98]'
+  id: totrans-430
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE98]'
+- en: Nice! Our file has been added to the staging area, and now it is one of the
+    changes that will be part of the next commit, the only one actually.
+  id: totrans-431
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 很好！我们的文件已经被添加到暂存区，现在它是下次提交的一部分，实际上是唯一的一部分。
+- en: 'Now take a look at what Git says then: if you want to `unstage` the change,
+    you can use the `git reset HEAD` command: what does it mean? **Unstage** is a
+    word to say *remove a change from the staging area*, for example, because we realized
+    we want to add that change not in the next commit, but later.'
+  id: totrans-432
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在看看 Git 后来的输出：如果你想要 `unstage` 这个更改，可以使用 `git reset HEAD` 命令：这是什么意思呢？**Unstage**
+    是一个表示 *从暂存区移除更改* 的词，例如，因为我们意识到我们不想在下次提交中添加这个更改，而是想在以后添加。
+- en: 'For now, leave things how they are, and do a `commit`:'
+  id: totrans-433
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 目前，保持现状，然后进行一次 `commit`：
+- en: '[PRE99]'
+  id: totrans-434
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE99]'
+- en: 'Check the status:'
+  id: totrans-435
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 检查状态：
+- en: '[PRE100]'
+  id: totrans-436
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE100]'
+- en: Okay, now we have a new `commit` and our working tree is clean again; yes, because
+    the effect of `git commit` is to create a new commit with the content of the staging
+    area, and then empty it.
+  id: totrans-437
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 好的，现在我们有了一个新的 `commit`，并且我们的工作区再次干净了；是的，因为 `git commit` 的效果是创建一个包含暂存区内容的新提交，然后清空暂存区。
+- en: Now we can make some experiments and see how to deal with the staging area and
+    working tree, undoing changes when in need.
+  id: totrans-438
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们可以进行一些实验，看看如何处理暂存区和工作区，并在需要时撤销更改。
+- en: 'So, follow me and make things more interesting; add an onion to the shopping
+    list and then add it to the staging area, and then add a garlic and see what happens:'
+  id: totrans-439
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 所以，跟我来，让我们让事情变得更有趣；往购物清单上加个洋葱，然后将它添加到暂存区，再加个大蒜，看看会发生什么：
+- en: '[PRE101]'
+  id: totrans-440
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE101]'
+- en: Okay, good! We are in a very interesting state now. Our `shoppingList.txt` file
+    has been modified two times, and only the first modification has been added to
+    the staging area. This means that at this point if we would commit the file, only
+    the `onion` modification would be part of the commit, but not the `garlic` one.
+    This is a thing to underline, as in other versioning systems it is not so simple
+    to do this kind of work.
+  id: totrans-441
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 好的，很好！我们现在处于一个非常有趣的状态。我们的`shoppingList.txt`文件已经修改了两次，但只有第一次修改被添加到暂存区。这意味着，如果我们现在提交文件，只有`onion`的修改会被包含在提交中，而`garlic`的修改不会。这一点很值得注意，因为在其他版本控制系统中，做这种操作并没有这么简单。
+- en: 'To highlight the modification we did, and take a brief look, we can use the
+    `git diff` command; for example, if you want to see the difference between the
+    working tree version and the staging area one, try to input only the `git diff`
+    command without any option or argument:'
+  id: totrans-442
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了突出显示我们所做的修改，并简单查看，我们可以使用`git diff`命令；例如，如果你想查看工作树版本和暂存区版本之间的差异，只需输入`git diff`命令，不加任何选项或参数：
+- en: '[PRE102]'
+  id: totrans-443
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE102]'
+- en: As you can see, Git highlights the fact that in the working tree we have a `garlic`
+    more than the staging area version.
+  id: totrans-444
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，Git突出了工作树中比暂存区版本多出的`garlic`。
+- en: 'The last part of the output of the `git diff` command is not difficult to understand:
+    green lines starting with a plus `+` symbol are new lines added (there would be
+    red lines starting with a minus `-` for deleted lines). A modified line will be
+    usually highlighted by Git with a minus red deleted line and a plus green added
+    line; to be `true`, Git can be instructed to use different `diff` algorithms,
+    but this is out of the scope of this book.'
+  id: totrans-445
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`git diff`命令输出的最后部分并不难理解：以加号`+`开头的绿色行是新增的行（被删除的行会有以减号`-`开头的红色行）。修改的行通常会通过红色的减号删除行和绿色的加号新增行来突出显示；要做到`准确`，Git可以被指示使用不同的`diff`算法，但这超出了本书的范围。'
+- en: Other than this, the first part of the `git diff` output is a little bit too
+    difficult to explain in a few words; please refer to [https://git-scm.com/docs/git-diff](https://git-scm.com/docs/git-diff)
+    for all the details.
+  id: totrans-446
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 除此之外，`git diff`输出的第一部分有点难以用几句话解释；请参考[https://git-scm.com/docs/git-diff](https://git-scm.com/docs/git-diff)了解所有细节。
+- en: But what if you want to see the differences between the last committed version
+    of the `shoppingList.txt` file and the one added into the staging area?
+  id: totrans-447
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 但是如果你想查看最后提交的`shoppingList.txt`文件与已经添加到暂存区的文件之间的差异呢？
+- en: 'We have to use the `git diff --cached HEAD` command:'
+  id: totrans-448
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们需要使用`git diff --cached HEAD`命令：
+- en: '[PRE103]'
+  id: totrans-449
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE103]'
+- en: 'We have to dissect this command to better understand what''s the purpose; appending
+    the `HEAD` argument, we are asking to use the last commit we did as a subject
+    of the compare. To be `true`, in this case, the `HEAD` reference is optional,
+    as it is the default: `git diff --cached` would return the same result.'
+  id: totrans-450
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们需要拆解这个命令，更好地理解它的目的；通过添加`HEAD`参数，我们要求使用我们最后一次提交的版本作为比较对象。要做到`准确`，在这种情况下，`HEAD`引用是可选的，因为它是默认的：`git
+    diff --cached`会返回相同的结果。
+- en: Instead, the `--cached` option says, *compare the argument (HEAD in this case)
+    with the version in the staging area*.
+  id: totrans-451
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 另一方面，`--cached`选项表示，*将参数（在本例中是HEAD）与暂存区中的版本进行比较*。
+- en: 'Yes, dear friends: the staging area, also known as an `index`, sometimes is
+    called `cache`, hence the `--cached` option.'
+  id: totrans-452
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 是的，亲爱的朋友们：暂存区，也被称为`索引`，有时也叫做`缓存`，因此有了`--cached`选项。
+- en: 'The last experiment that we can do is compare the `HEAD` version with the working
+    tree one; let''s do it with a `git diff HEAD`:'
+  id: totrans-453
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以做的最后一个实验是将`HEAD`版本与工作树版本进行比较；我们来用`git diff HEAD`来试试：
+- en: '[PRE104]'
+  id: totrans-454
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE104]'
+- en: Okay, it works as expected.
+  id: totrans-455
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 好的，效果如预期。
+- en: Now it's time to take a break from the console and spend a couple of words to
+    talk about these three `locations` we compared.
+  id: totrans-456
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在是从控制台休息一下，花点时间聊聊我们比较过的这三个`位置`。
+- en: The three areas of Git
+  id: totrans-457
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Git的三个区域
+- en: 'In Git, we work at three different levels:'
+  id: totrans-458
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在Git中，我们在三个不同的层级进行工作：
+- en: The **working tree** (or working directory)
+  id: totrans-459
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**工作树**（或工作目录）'
+- en: The **staging area** (or index, or cache)
+  id: totrans-460
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**暂存区**（或索引，或缓存）'
+- en: The **HEAD ****commit** (or the last commit or tip commit on the current branch)
+  id: totrans-461
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**HEAD提交**（或当前分支上的最后提交或头部提交）'
+- en: 'When we modify a file, we are doing it at working tree level; when we do a
+    `git add`, we are actually copying the changes from the working tree to the staging
+    area. At the end, when we do a `git commit`, we finally move the changes from
+    the staging area to a brand new commit, referenced by `HEAD`, which will become
+    part of our repository history: this is what I mean with the HEAD commit.'
+  id: totrans-462
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当我们修改文件时，我们是在工作区层面进行的；当我们执行 `git add` 时，实际上是在将更改从工作区复制到暂存区。最终，当我们执行 `git commit`
+    时，我们将更改从暂存区移到一个全新的提交中，该提交由 `HEAD` 引用，最终成为我们仓库历史的一部分：这就是我所说的 HEAD 提交。
+- en: 'The following figure draws those three areas:'
+  id: totrans-463
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 下图展示了这三个区域：
+- en: '![](img/41b68d6e-bdb8-4894-9a6f-81baafcd030e.png)'
+  id: totrans-464
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/41b68d6e-bdb8-4894-9a6f-81baafcd030e.png)'
+- en: We can move changes between these areas forward, from the working tree to the
+    `HEAD` commit, but we can even go backward, undoing changes if we like.
+  id: totrans-465
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以将更改从这些区域向前移动，从工作区到 `HEAD` 提交，但我们甚至可以向后移动，撤销更改。
+- en: We already know how to go forward using `git add` then `git commit`; let's take
+    a look at the commands to go backward.
+  id: totrans-466
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们已经知道如何通过使用 `git add` 然后 `git commit` 向前推进；让我们来看看撤销的命令。
+- en: Removing changes from the staging area
+  id: totrans-467
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 从暂存区移除更改
+- en: It happens that you add changes to the staging area, then you realize they fit
+    better in a future commit, not in the commit you are composing right now.
+  id: totrans-468
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 假设你已经将更改添加到暂存区，然后你意识到这些更改更适合放到未来的提交中，而不是当前正在编写的提交中。
+- en: To remove those changes to one or more files from the staging area, you can
+    use the `git reset HEAD <file>` command; get back the shell and follow me.
+  id: totrans-469
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要从暂存区中移除一个或多个文件的更改，可以使用 `git reset HEAD <file>` 命令；回到命令行，跟着我来。
+- en: 'Check the repository current status:'
+  id: totrans-470
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 查看仓库的当前状态：
+- en: '[PRE105]'
+  id: totrans-471
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE105]'
+- en: This is the actual situation, remember? We have an `onion` in the staging area
+    and a `garlic` more in the working tree.
+  id: totrans-472
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这就是实际情况，记得吗？我们在暂存区有一个 `onion`，在工作区有一个 `garlic`。
+- en: 'Now go with a `git reset HEAD`:'
+  id: totrans-473
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在使用 `git reset HEAD`：
+- en: '[PRE106]'
+  id: totrans-474
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE106]'
+- en: 'Okay, Git confirms we unstaged changes. The `M` on the left side means `Modified`;
+    here Git is telling us we have unstaged a modification to a file. If you create
+    a new file and you add it to the staging area, Git knows this is a new file; if
+    you try to unstage it, Git would put an `A` for `Added` in the left, to remember
+    that you just unstaged the addition of a new file. Same if you unstage the deletion
+    of an existing file: on the left would appear a `D` for `Deleted`.'
+  id: totrans-475
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 好的，Git 确认我们已取消暂存更改。左侧的 `M` 表示 `Modified`；这里 Git 告诉我们已经取消暂存了一个文件的修改。如果你创建了一个新文件并将其添加到暂存区，Git
+    会知道这是一个新文件；如果你尝试取消暂存它，Git 会在左侧显示 `A` 代表 `Added`，以便记住你刚刚取消暂存了对新文件的添加。同样，如果你取消暂存了删除一个已存在的文件，左侧会显示
+    `D` 代表 `Deleted`。
+- en: 'Well, time to verify what happened:'
+  id: totrans-476
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 好吧，检查一下发生了什么：
+- en: '[PRE107]'
+  id: totrans-477
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE107]'
+- en: Okay, by using `git status` we see that now the staging area is empty, there's
+    nothing staged. We only have some unstaged modification, but what modification?
+    Did the `git reset HEAD` actually delete the onion?
+  id: totrans-478
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 好的，通过使用 `git status`，我们看到现在暂存区是空的，没有任何暂存的文件。我们只有一些未暂存的修改，但是什么修改呢？`git reset
+    HEAD` 是否真的删除了洋葱？
+- en: 'Let''s verify this using the `git diff` command:'
+  id: totrans-479
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们通过 `git diff` 命令来验证这一点：
+- en: '[PRE108]'
+  id: totrans-480
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE108]'
+- en: No, fortunately! The `git reset HEAD` command won't destroy your modification;
+    it only moves away them from the staging area, so they will not be part of the
+    next commit.
+  id: totrans-481
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 不，幸运的是！`git reset HEAD` 命令不会销毁你的修改；它只是将它们从暂存区移开，这样它们就不会成为下一次提交的一部分。
+- en: 'The following figure shows a quick summary of `git diff` different behaviors:'
+  id: totrans-482
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 下图展示了 `git diff` 不同行为的简要总结：
+- en: '![](img/0e8a66c7-9317-47fb-8777-0206751c5d8c.png)'
+  id: totrans-483
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/0e8a66c7-9317-47fb-8777-0206751c5d8c.png)'
+- en: 'Now imagine that we completely messed up: the modification we did to the `shoppingList.txt`
+    file is wrong (in fact they are, no tasty fruit salad with onion and garlic),
+    so we need to undo them.'
+  id: totrans-484
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在假设我们完全搞砸了：我们对 `shoppingList.txt` 文件所做的修改是错误的（事实上是错误的，没有洋葱和大蒜的美味水果沙拉），所以我们需要撤销它们。
+- en: 'The command for that is `git checkout -- <file>`, as Git gently reminds in
+    `the git status` output message. Give it a try:'
+  id: totrans-485
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 该命令是 `git checkout -- <file>`，正如 Git 在 `git status` 输出信息中温柔地提醒我们。试试这个：
+- en: '[PRE109]'
+  id: totrans-486
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE109]'
+- en: 'Check the status:'
+  id: totrans-487
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 查看状态：
+- en: '[PRE110]'
+  id: totrans-488
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE110]'
+- en: 'Check the content of the file:'
+  id: totrans-489
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 查看文件内容：
+- en: '[PRE111]'
+  id: totrans-490
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE111]'
+- en: 'That''s it! We actually removed onion and garlic from the shopping list file.
+    But be aware: we lost them! As those modifications were only in the working tree,
+    there''s no way to reclaim them, so be careful: `git checkout --` is a `destructive`
+    command, use it carefully.'
+  id: totrans-491
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 就这样！我们实际上已经从购物清单文件中删除了洋葱和大蒜。但请注意：我们丢失了它们！由于这些修改仅存在于工作区中，无法恢复它们，因此要小心：`git checkout
+    --` 是一个`破坏性`命令，使用时要小心。
+- en: 'Other than this, we need to remember that `git checkout` overwrites even the
+    staging area; as per the preceding figure, working tree and `HEAD` commit are
+    in direct relationship: changes always go through the staging area. Later we will
+    grasp this concept better while delving into `git reset` options.'
+  id: totrans-492
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 除此之外，我们还需要记住，`git checkout` 会覆盖暂存区；如前图所示，工作区和 `HEAD` 提交是直接相关的：更改总是经过暂存区。稍后我们在深入研究
+    `git reset` 选项时，会更好地理解这个概念。
+- en: At this point you maybe have noticed here we used `git reset` and `git checkout`
+    commands in a different way than we did in the preceding sections, and this is
+    true.
+  id: totrans-493
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 到此，你可能已经注意到这里我们使用 `git reset` 和 `git checkout` 命令的方式与之前章节中的不同，确实是这样。
+- en: At the beginning, this can be a little confusing for the newcomers, because
+    mentally you cannot associate a single command to a single operation as it can
+    be used to do more than one. For example, you cannot say, *git checkout is for
+    branch switching* (or for commit inspection, going to a detaching `HEAD` state),
+    as it can be used even to discard changes in a working tree, as we just did.
+  id: totrans-494
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一开始，对于新手来说，这可能有点混乱，因为你无法将一个单独的命令与一个操作关联，因为它可以用来执行多个操作。例如，你不能说，*git checkout
+    只是用于切换分支*（或者用于提交检查，进入 `HEAD` 分离状态），因为它甚至可以用于丢弃工作区的更改，就像我们刚刚做的那样。
+- en: The trick you can use to differentiate the two variations for these commands
+    is to take into account that double-dash `--` notation. So, you can remember *git
+    checkout is for switching branches* and *git checkout -- is for discarding local
+    changes*.
+  id: totrans-495
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以通过考虑双破折号 `--` 符号来区分这两个命令的不同变体。所以，你可以记住 *git checkout 用于切换分支* 和 *git checkout
+    -- 用于丢弃本地更改*。
+- en: This is `true` even for the `git reset` command; in fact, do a `git reset --
+    <file>` is actually the same as doing a `git reset HEAD <file>`.
+  id: totrans-496
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这对于 `git reset` 命令也是真的；实际上，执行 `git reset -- <file>` 与执行 `git reset HEAD <file>`
+    是一样的。
+- en: 'To be true, the double-dash `--` notation is not mandatory; if you do a `git
+    checkout <file>` or `git reset <file>` without `--`, in 99% of cases Git does
+    what you expect. The double-dash is needed when, due to a coincidence, there is
+    a file and a branch with the same name: in that case, Git has to know if you want
+    to deal with branches, for example switching to another one with `git checkout`,
+    or if you want to manage files. In this situation, the double-dash is the way
+    to tell Git *I want to handle files, not branches*.'
+  id: totrans-497
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 说实话，双破折号 `--` 符号并不是强制性的；如果你在没有 `--` 的情况下执行 `git checkout <file>` 或 `git reset
+    <file>`，在 99% 的情况下 Git 会做你期望的操作。双破折号是在出现文件和分支同名的情况下需要的：在这种情况下，Git 需要知道你是想处理分支，例如通过
+    `git checkout` 切换到另一个分支，还是想处理文件。在这种情况下，双破折号是告诉 Git *我想处理文件，而不是分支* 的方式。
+- en: 'The following figure summarizes the commands to move changes between those
+    three areas:'
+  id: totrans-498
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下图表总结了在这三个区域之间移动更改的命令：
+- en: '![](img/7aa9ce86-1772-40a9-97c2-f5ea48dd5f4e.png)'
+  id: totrans-499
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/7aa9ce86-1772-40a9-97c2-f5ea48dd5f4e.png)'
+- en: Now it's time to complete our cultural baggage about file status lifecycle within
+    a repository.
+  id: totrans-500
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在是时候完成我们关于文件状态生命周期的文化知识了，深入了解一下 Git 仓库中的文件状态。
+- en: File status lifecycle
+  id: totrans-501
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 文件状态生命周期
+- en: 'In a Git repository, files pass through some different states. When you first
+    create a file in the working tree, Git notices it and tells you there''s a new
+    untracked file; let''s try to create a new `file.txt` in our `grocery` repository
+    and see the output of `git status`:'
+  id: totrans-502
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 Git 仓库中，文件会经历一些不同的状态。当你第一次在工作区创建一个文件时，Git 会注意到它，并告诉你有一个新的未跟踪文件；我们来尝试在 `grocery`
+    仓库中创建一个新的 `file.txt` 文件，看看 `git status` 的输出：
+- en: '[PRE112]'
+  id: totrans-503
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE112]'
+- en: As you can see, Git explicitly says that there's an **untracked** file; an untracked
+    file is basically a new file Git has never seen before.
+  id: totrans-504
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，Git 明确表示存在一个 **未跟踪** 文件；未跟踪的文件基本上是一个 Git 从未见过的新文件。
+- en: When you add it, it becomes a **tracked** file.
+  id: totrans-505
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当你添加它时，它变成了一个 **已跟踪** 文件。
+- en: If you commit the file, then it goes in an **unmodified** state; this means
+    Git knows it, and the current version of the file in the working tree is the same
+    as the one in the `HEAD` commit.
+  id: totrans-506
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你提交了文件，它将进入 **未修改** 状态；这意味着 Git 知道它，并且工作区中文件的当前版本与 `HEAD` 提交中的版本相同。
+- en: If you make some changes, the file goes to a **modified** state.
+  id: totrans-507
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你做了一些更改，文件会进入 **已修改** 状态。
+- en: Adding a modified file to the staging area makes it a **staged** file.
+  id: totrans-508
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 将已修改的文件添加到暂存区，使其成为一个 **已暂存** 文件。
+- en: 'The following figure summarizes these states:'
+  id: totrans-509
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下图表总结了这些状态：
+- en: '![](img/765544f9-0219-4db1-ad35-15a0ffdcc754.png)'
+  id: totrans-510
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/765544f9-0219-4db1-ad35-15a0ffdcc754.png)'
+- en: Knowing this terminology is important to better understand Git messages, and
+    it helps me and you to go smoothly while talking about files in a Git repository.
+  id: totrans-511
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 了解这些术语对于更好地理解 Git 消息很重要，它有助于我和你在讨论 Git 仓库中的文件时更加顺利。
+- en: Now it's time to go a little bit deep with `git reset` and `git checkout` commands.
+  id: totrans-512
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在是时候更深入地了解 `git reset` 和 `git checkout` 命令了。
+- en: All you need to know about checkout and reset
+  id: totrans-513
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 你需要了解的关于 checkout 和 reset 的所有内容
+- en: 'First of all, we need to do some housekeeping. Go back to the `grocery` repository
+    and clean up the working tree; double-check that you are in the `master` branch,
+    and then do a `git reset --hard master`:'
+  id: totrans-514
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 首先，我们需要做一些清理工作。返回到 `grocery` 仓库并清理工作树；再次确认你处于 `master` 分支，然后执行 `git reset --hard
+    master`：
+- en: '[PRE113]'
+  id: totrans-515
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE113]'
+- en: This allows us to discard all the latest changes and go back to the latest commit
+    on `master`, cleaning up even the staging area.
+  id: totrans-516
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这让我们可以丢弃所有最新的更改，回到 `master` 上的最新提交，甚至清理暂存区。
+- en: 'Then, delete the `bug` branch we created some time ago; the command to delete
+    a branch is again the `git branch` command, this time followed by a `-d` option
+    and then the branch name:'
+  id: totrans-517
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后，删除我们之前创建的 `bug` 分支；删除分支的命令依然是 `git branch` 命令，这次后面跟一个 `-d` 选项，然后是分支名称：
+- en: '[PRE114]'
+  id: totrans-518
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE114]'
+- en: 'Okay, Git has an objection. It says the branch is not fully merged, in other
+    words, *if you delete it, the commit within it will be lost*. No problem, we don''t
+    need that commit; so, use the capital `-D` option to force the deletion:'
+  id: totrans-519
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 好的，Git 提出了异议。它说该分支没有完全合并，换句话说，*如果你删除它，里面的提交将丢失*。没问题，我们不需要那个提交；因此，使用大写的 `-D`
+    选项强制删除：
+- en: '[PRE115]'
+  id: totrans-520
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE115]'
+- en: 'Okay, now we are done, and the repository is in good shape, as the `git log`
+    command shows:'
+  id: totrans-521
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 好的，现在完成了，仓库状态良好，正如 `git log` 命令所显示的那样：
+- en: '[PRE116]'
+  id: totrans-522
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE116]'
+- en: Git checkout overwrites all the tree areas
+  id: totrans-523
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Git checkout 会覆盖所有的树区
+- en: 'Now switch to the `melons` branch using the `git checkout` command:'
+  id: totrans-524
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在使用 `git checkout` 命令切换到 `melons` 分支：
+- en: '[PRE117]'
+  id: totrans-525
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE117]'
+- en: 'Check the log:'
+  id: totrans-526
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 查看日志：
+- en: '[PRE118]'
+  id: totrans-527
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE118]'
+- en: Okay, what happened?
+  id: totrans-528
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 好的，发生了什么？
+- en: Git took the tip commit in the `melons` branch, analyzed it, and then rebuilt
+    the snapshot the commit represents into our working tree. It basically copied
+    all those files and folders into the staging area and then into the working tree.
+  id: totrans-529
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git 从 `melons` 分支获取了提示提交，分析了它，然后将该提交所代表的快照重新构建到我们的工作树中。它基本上将所有这些文件和文件夹复制到暂存区，然后再复制到工作树中。
+- en: Remember that `git checkout` can destroy changes in your working tree; in fact,
+    if you have some local modification Git will block you.
+  id: totrans-530
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 记住，`git checkout` 可能会覆盖你在工作树中的更改；实际上，如果你有一些本地修改，Git 会阻止你。
+- en: 'We can try it; add a `potato` to the shopping list file:'
+  id: totrans-531
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以试试；在购物清单文件中添加一个 `potato`：
+- en: '[PRE119]'
+  id: totrans-532
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE119]'
+- en: 'Then checkout `master`:'
+  id: totrans-533
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后检出 `master`：
+- en: '[PRE120]'
+  id: totrans-534
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE120]'
+- en: As you can see, you cannot switch branch if you are not in a clean state.
+  id: totrans-535
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，如果你不处于干净的状态下，不能切换分支。
+- en: Now please remove the potato from the shopping list file, by an editor or by
+    Git (I leave this to you as an exercise).
+  id: totrans-536
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在请通过编辑器或 Git 删除购物清单文件中的土豆（我将这部分留给你作为练习）。
+- en: Git reset can be hard, soft, or mixed
+  id: totrans-537
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Git reset 可以是硬重置、软重置或混合重置
+- en: Finally, you will see what `git reset --hard` means, and what are the other
+    reset options that we have.
+  id: totrans-538
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后，你将看到 `git reset --hard` 的含义，以及我们所拥有的其他重置选项。
+- en: 'To avoid messing up our repo again, go into a detached `HEAD` state, so at
+    the end it will be easier to throw all the things away. To do this, checkout directly
+    the penultimate commit on the `master` branch:'
+  id: totrans-539
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了避免再次弄乱我们的仓库，进入一个脱离的 `HEAD` 状态，这样最终就更容易丢弃所有内容。要做到这一点，直接检出 `master` 分支上的倒数第二个提交：
+- en: '[PRE121]'
+  id: totrans-540
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE121]'
+- en: 'Okay, this is the content of the `shoppingList.txt` file in this commit:'
+  id: totrans-541
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 好的，这是这个提交中 `shoppingList.txt` 文件的内容：
+- en: '[PRE122]'
+  id: totrans-542
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE122]'
+- en: 'Now just replicate the `onion` and `garlic` situation we used before: append
+    an `onion` to the file and add it to the staging area, and then add a `garlic`:'
+  id: totrans-543
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在就复制我们之前使用过的 `onion` 和 `garlic` 情况：在文件中追加一个 `onion` 并将其添加到暂存区，然后再添加一个 `garlic`：
+- en: '[PRE123]'
+  id: totrans-544
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE123]'
+- en: 'Now use the `git diff` command to be sure we are in the situation we desire;
+    check the differences with the staging area:'
+  id: totrans-545
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在使用 `git diff` 命令确认我们处于所期望的状态；检查与暂存区的差异：
+- en: '[PRE124]'
+  id: totrans-546
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE124]'
+- en: 'Check the differences between the working tree and `HEAD` commit:'
+  id: totrans-547
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 检查工作树和 `HEAD` 提交之间的差异：
+- en: '[PRE125]'
+  id: totrans-548
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE125]'
+- en: Okay, we have a `HEAD` commit with only fruits, and then a staging area with
+    an onion more and working tree with a garlic more.
+  id: totrans-549
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 好的，我们有一个只有水果的 `HEAD` 提交，然后暂存区有一个洋葱，并且工作树中还有一个大蒜。
+- en: 'Now try to do a **soft reset** to the `master` branch, with the `git reset
+    --soft master` command:'
+  id: totrans-550
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在尝试使用 `git reset --soft master` 命令做一个 **软重置** 到 `master` 分支：
+- en: '[PRE126]'
+  id: totrans-551
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE126]'
+- en: 'Diff to the staging area:'
+  id: totrans-552
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 和暂存区的差异：
+- en: '[PRE127]'
+  id: totrans-553
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE127]'
+- en: 'What did Git do? It basically moved the `HEAD` reference to the last commit
+    in the `master` branch, the `603b9d1`. Small break: note as when in detached `HEAD`
+    state, even if you reset to a commit with a branch label, Git continues to reference
+    directly the commit, not the branch.'
+  id: totrans-554
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git 做了什么？它基本上将 `HEAD` 引用移到了 `master` 分支上的最后一个提交 `603b9d1`。稍作休息：注意，当处于分离的 `HEAD`
+    状态时，即使你重置到带有分支标签的提交，Git 仍然会直接引用该提交，而不是分支。
+- en: 'Okay, having done this, now the differences between the `HEAD` commit and staging
+    area are those we see in the output: the peach that was part of the `shoppingList.txt`
+    file in the `HEAD` commit is not part of the currently staged `shoppingList.txt`
+    file, so Git marks a `peach` text line in red with a preceding minus, to tell
+    you *actually this line has been deleted*, while the `onion` one has been added.'
+  id: totrans-555
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 好吧，完成这个操作后，现在 `HEAD` 提交和暂存区之间的差异是我们在输出中看到的内容：`shoppingList.txt` 文件中的桃子内容在 `HEAD`
+    提交中有，但当前暂存的 `shoppingList.txt` 文件中没有，因此 Git 用红色标记一个带有前导减号的 `peach` 行，表示*该行实际上已经被删除*，而
+    `onion` 行则被添加了。
+- en: 'The same is if you compare the `HEAD` commit with a working tree:'
+  id: totrans-556
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 同样，如果你将 `HEAD` 提交与工作区进行比较：
+- en: '[PRE128]'
+  id: totrans-557
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE128]'
+- en: In this case, Git even notes that two new lines have been added, `onion` and
+    `garlic`.
+  id: totrans-558
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这种情况下，Git 甚至指出添加了两行新内容，分别是 `onion` 和 `garlic`。
+- en: This soft-reset technique can help you quickly compare changes between two commits,
+    as it only overwrites the `HEAD` commit area.
+  id: totrans-559
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这种软重置技巧可以帮助你快速比较两个提交之间的差异，因为它只会覆盖 `HEAD` 提交区域。
+- en: 'Another option is the **mixed reset**; you can do it using the `--mixed` option
+    (or simply using no options, as this is the default):'
+  id: totrans-560
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 另一种选项是 **混合重置**；你可以使用 `--mixed` 选项（或者直接不加选项，因为这是默认选项）来实现：
+- en: '[PRE129]'
+  id: totrans-561
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE129]'
+- en: 'Okay, there''s something different here: Git tells us about unstaged changes.
+    In fact, the `--mixed` option makes Git overwrite even the staging area, not only
+    the `HEAD` commit. If you check differences between the `HEAD` commit and staging
+    area with `git diff`, you will see that there are no differences:'
+  id: totrans-562
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 好吧，这里有一些不同：Git 告诉我们有未暂存的变化。事实上，`--mixed` 选项让 Git 覆盖了暂存区，而不仅仅是 `HEAD` 提交。如果你使用
+    `git diff` 检查 `HEAD` 提交和暂存区之间的差异，你会发现没有任何差异：
+- en: '[PRE130]'
+  id: totrans-563
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE130]'
+- en: 'Instead, differences arise between the `HEAD` commit and working tree:'
+  id: totrans-564
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 相反，`HEAD` 提交和工作区之间会产生差异：
+- en: '[PRE131]'
+  id: totrans-565
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE131]'
+- en: This mixed-reset technique can be useful, for example, to clean up all the staged
+    changes in one shot, with a simple `git reset HEAD`.
+  id: totrans-566
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这种混合重置技巧可以很有用，例如，用一个简单的 `git reset HEAD` 清理所有暂存的更改。
+- en: 'At this point, you can presume what is the purpose of the `--hard` option:
+    it overwrites all the three areas:'
+  id: totrans-567
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这一点上，你可以推测 `--hard` 选项的作用：它会覆盖三个区域：
+- en: '[PRE132]'
+  id: totrans-568
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE132]'
+- en: In fact, now there are no differences at any level.
+  id: totrans-569
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 事实上，现在在任何级别上都没有差异。
+- en: This hard-reset technique is used to completely discard all the changes we did,
+    with a `git reset --hard HEAD` command, as we did in our previous experiments.
+  id: totrans-570
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这种硬重置技巧用于完全丢弃我们所做的所有更改，使用 `git reset --hard HEAD` 命令，就像我们之前的实验一样。
+- en: 'We are done. Now we know a little more about both the `git checkout` and `git
+    reset` command; but before leaving, go back in a non-detached `HEAD` state, checking
+    out the `master` branch:'
+  id: totrans-571
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们完成了。现在我们对 `git checkout` 和 `git reset` 命令有了更多了解；但在离开之前，回到非分离的 `HEAD` 状态，切换到
+    `master` 分支：
+- en: '[PRE133]'
+  id: totrans-572
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE133]'
+- en: Rebasing
+  id: totrans-573
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 变基
+- en: Now I want to tell you something about the `git rebase` command; a **rebase**
+    is a common term while using a versioning system, and even in Git this is a hot
+    topic.
+  id: totrans-574
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我想告诉你一些关于 `git rebase` 命令的内容；**rebase** 是使用版本控制系统时常见的术语，即便在 Git 中，这也是一个热门话题。
+- en: 'Basically, with `git rebase` you **rewrite history**; with this statement,
+    I mean you can use rebase command to achieve the following:'
+  id: totrans-575
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 基本上，使用 `git rebase` 你可以**重写历史**；通过这句话，我的意思是你可以使用 rebase 命令来实现以下操作：
+- en: Combine two or more commits into a new one
+  id: totrans-576
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 将两个或更多提交合并成一个新的提交
+- en: Discard a previous commit you did
+  id: totrans-577
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 丢弃你之前做的提交
+- en: Change the starting point of a branch, split it, and much more
+  id: totrans-578
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 更改分支的起点，拆分分支，以及更多操作
+- en: Reassembling commits
+  id: totrans-579
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 重新整理提交
+- en: One of the widest uses of the `git rebase` command is for reordering or combining
+    commits. For this first approach, imagine you have to combine two different commits.
+  id: totrans-580
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`git rebase` 命令最广泛的用途之一是重新排序或合并提交。对于这种方法，假设你需要合并两个不同的提交。'
+- en: Suppose we erroneously added half a grape in the `shoppingList.txt` file, then
+    the other half, but at the end we want to have only one commit for the entire
+    grape; follow me with these steps.
+  id: totrans-581
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 假设我们错误地在 `shoppingList.txt` 文件中添加了一半的葡萄，然后又添加了另一半，但最终我们希望只有一个提交记录整个葡萄；跟着我做这些步骤。
+- en: 'Add a `gr` to the shopping list file:'
+  id: totrans-582
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在购物清单文件中添加一个 `gr`：
+- en: '[PRE134]'
+  id: totrans-583
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE134]'
+- en: The `-n` option is for not adding a new line.
+  id: totrans-584
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`-n` 选项用于不添加新行。'
+- en: 'Cat the file to be sure:'
+  id: totrans-585
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用 `cat` 命令查看文件以确认：
+- en: '[PRE135]'
+  id: totrans-586
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE135]'
+- en: 'Now perform the first commit:'
+  id: totrans-587
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在执行第一个提交：
+- en: '[PRE136]'
+  id: totrans-588
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE136]'
+- en: 'Okay, we have a commit with half a grape. Go on and add the other half, `ape`:'
+  id: totrans-589
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 好的，我们有一个提交，里面只有半个葡萄。接着加上另一半，`ape`：
+- en: '[PRE137]'
+  id: totrans-590
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE137]'
+- en: 'Check the file:'
+  id: totrans-591
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 查看文件：
+- en: '[PRE138]'
+  id: totrans-592
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE138]'
+- en: 'Perform the second commit:'
+  id: totrans-593
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 执行第二个提交：
+- en: '[PRE139]'
+  id: totrans-594
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE139]'
+- en: 'Check the log:'
+  id: totrans-595
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 查看日志：
+- en: '[PRE140]'
+  id: totrans-596
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE140]'
+- en: 'Well, this is inconvenient: I''d like to have only a commit with the entire
+    `grape`.'
+  id: totrans-597
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 好吧，这有点不方便：我想只保留一个包含整个`grape`的提交。
+- en: We can repair the mistake with an **interactive rebase**. To do this, we have
+    to rebase the last two commits, creating a new one that is, in fact, the sum of
+    the two.
+  id: totrans-598
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以通过**交互式变基（interactive rebase）**来修复这个错误。为此，我们需要变基最后两个提交，创建一个新的提交，实际上它是这两个提交的总和。
+- en: So, type `git rebase -i HEAD~2` and see what happen; `-i` means *interactive*,
+    while the `HEAD~2` argument means *I want to rebase the last two commits*.
+  id: totrans-599
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 所以，输入 `git rebase -i HEAD~2` 看看会发生什么；`-i` 表示*交互式*，而 `HEAD~2` 参数表示*我想要变基最后两个提交*。
+- en: 'This is a screenshot of the console:'
+  id: totrans-600
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这是控制台的截图：
+- en: '![](img/6c3b58b3-d761-44d9-a2c6-06def3d85f88.png)'
+  id: totrans-601
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/6c3b58b3-d761-44d9-a2c6-06def3d85f88.png)'
+- en: As you can see in the preceding screenshot, Git opens the default editor, Vim.
+    Then it tells us how to edit this temporary file (you can see the location at
+    the bottom of the screenshot) using some commented lines (those starting with
+    `#`).
+  id: totrans-602
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如你在前面的截图中看到的，Git 会打开默认的编辑器 Vim。然后它会告诉我们如何编辑这个临时文件（你可以看到截图底部的位置），并给出一些注释行（以
+    `#` 开头）。
+- en: Let's read this message carefully.
+  id: totrans-603
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们仔细阅读这个信息。
+- en: Here we can reorder the commit lines; doing only this, we basically change the
+    order of commits in our repository. Maybe this can seem a not-so-useful feature,
+    but it can be so if you plan to create new branches after this rebase and you
+    want to clear the ground before.
+  id: totrans-604
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这里我们可以重新排序提交行；仅仅这样做，我们实际上是改变了仓库中提交的顺序。这看起来可能是一个不太有用的功能，但如果你计划在这个变基之后创建新分支，并且希望在此之前清理一下环境，它还是有用的。
+- en: 'Then you can delete lines: if you delete a line, basically you drop the corresponding
+    commit.'
+  id: totrans-605
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后你可以删除行：如果删除一行，基本上就是丢弃对应的提交。
+- en: 'Finally, for every line (every commit), you can use one of the following commands,
+    as per the comments showed in the Vi editor:'
+  id: totrans-606
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后，对于每一行（每个提交），你可以使用 Vi 编辑器中注释所示的以下命令之一：
+- en: '**# p, pick = use commit**: If you pick a commit, the commit will continue
+    to be part of your repo. Think at it as, *Okay, I want to preserve this commit
+    as is*.'
+  id: totrans-607
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**# p, pick = 使用提交**：如果你选择一个提交，该提交将继续成为你仓库的一部分。可以理解为，*好吧，我想保留这个提交不变*。'
+- en: '**# r, reword = use commit, but edit the commit message**: Reword allows you
+    to change the commit message, useful if you realized you wrote something wrong
+    in it. It''s kind of, *Okay, I want to preserve this commit, but I want to change
+    the message*.'
+  id: totrans-608
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**# r, reword = 使用提交，但编辑提交信息**：Reword 允许你更改提交信息，如果你发现自己写错了某些内容，它会很有用。可以理解为，*好吧，我想保留这个提交，但我要修改提交信息*。'
+- en: '**# e, edit = use commit, but stop for amending**: When you amend a commit
+    you basically want to reassemble it. For example, you forgot to include a file
+    in it, or you added one too many. If you mark a commit to be edited, Git will
+    stop the subsequent rebase operations to let you do what you need. So, the commit
+    will be preserved, but it will be altered.'
+  id: totrans-609
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**# e, edit = 使用提交，但停下来进行修改**：当你修改一个提交时，你基本上是想重新组合它。例如，你忘记将一个文件包含在其中，或者你多添加了一个。如果你标记一个提交为编辑，Git
+    会停止后续的变基操作，让你做需要的修改。所以，提交将会被保留，但它会被修改。'
+- en: '**# s, squash = use commit, but meld into previous commit**: Squash is a term
+    we will see again; it basically means put together two commits or more. In this
+    case, if you squash a commit, it will be removed, but the changes within it will
+    be part of the preceding commit. This is maybe the command we need?'
+  id: totrans-610
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**# s, squash = 使用提交，但合并到前一个提交**：Squash 是我们会再次看到的一个术语，它基本上意味着将两个或更多提交合并。在这种情况下，如果你
+    squash 一个提交，它会被删除，但其中的更改会成为前一个提交的一部分。这可能是我们需要的命令？'
+- en: '**# f, fixup = like "squash", but discard this commit''s log message**: Fixup
+    is like squash, but let''s provide you with a new commit message. This is definitely
+    what I need; as I want the new `grape` commit to have a new message.'
+  id: totrans-611
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**# f, fixup = 类似于“squash”，但丢弃此提交的日志信息**：Fixup 类似于 squash，但它会为你提供一个新的提交信息。这肯定是我需要的，因为我希望新的
+    `grape` 提交有一个新的信息。'
+- en: '**# x, exec = run command (the rest of the line) using shell**: Exec is, well,
+    advanced stuff. You basically tell Git to run a particular command when it will
+    manipulate this commit during the following rebase actions. This can be useful
+    to do something you forgot between two commits, rerun some tests, or whatever.'
+  id: totrans-612
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**# x, exec = 使用shell运行命令（该行的其余部分）**：Exec是高级内容。你基本上是在告诉Git，在接下来的变基操作中，它将操作该提交时运行一个特定的命令。这可以用来做一些你在两次提交之间忘记做的事情，重新运行一些测试，或者其他什么操作。'
+- en: '**# d, drop = remove commit**: Drop simply removes the commit, the same as
+    deleting the entire line.'
+  id: totrans-613
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**# d, drop = 删除提交**：Drop简单地删除提交，就像删除整行一样。'
+- en: 'Okay, now we can proceed. We have to modify this file using those commands,
+    and then save it and exit: Git will then continue the rebase process executing
+    every command in order, from top to bottom.'
+  id: totrans-614
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 好的，现在我们可以继续了。我们必须使用这些命令修改这个文件，然后保存并退出：Git接着会继续变基过程，按顺序执行每一个命令，从上到下。
+- en: 'To resolve our issue, I will *reword* the first commit and then *fixup* the
+    second; the following is a screenshot of my console:'
+  id: totrans-615
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了解决我们的这个问题，我将*重新编写*第一个提交，然后*修正*第二个提交；以下是我的控制台截图：
+- en: '![](img/17444bdb-82fd-422e-b472-548ee5187224.png)'
+  id: totrans-616
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/17444bdb-82fd-422e-b472-548ee5187224.png)'
+- en: Note that you can use the long format of the command or the short one (for example,
+    `f ->` short, fixup `->` long).
+  id: totrans-617
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请注意，你可以使用命令的长格式或短格式（例如，`f ->`为短格式，fixup `->`为长格式）。
+- en: 'Okay, now Git does the work and then opens a new temporary file to allow us
+    to write the new message for the commit we decided to reword, that is, the first
+    one. The following is the screenshot:'
+  id: totrans-618
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 好的，现在Git开始工作，并打开一个新的临时文件，允许我们为我们决定要重新编写的提交（也就是第一个提交）写入新的信息。以下是截图：
+- en: '![](img/a0dd0337-87a3-4c40-a7dd-7186152eead4.png)'
+  id: totrans-619
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/a0dd0337-87a3-4c40-a7dd-7186152eead4.png)'
+- en: Note as Git tell us word for word what it is going to do.
+  id: totrans-620
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 注意，Git会逐字告诉我们它将要做什么。
+- en: 'Now edit the message, and then save and exit, like in the following screenshot:'
+  id: totrans-621
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在编辑消息，然后保存并退出，像下面的截图那样：
+- en: '![](img/aabe28e4-58ff-4834-b2c7-9aef6c1ae508.png)'
+  id: totrans-622
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/aabe28e4-58ff-4834-b2c7-9aef6c1ae508.png)'
+- en: Press `ENTER` and we're done.
+  id: totrans-623
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 按`ENTER`键，我们完成了。
+- en: 'This is the final message from Git:'
+  id: totrans-624
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这是Git的最终消息：
+- en: '[PRE141]'
+  id: totrans-625
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE141]'
+- en: 'Take a look at the log:'
+  id: totrans-626
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 看一下日志：
+- en: '[PRE142]'
+  id: totrans-627
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE142]'
+- en: Wonderful! We just accomplished our mission.
+  id: totrans-628
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 太棒了！我们刚刚完成了任务。
+- en: Now let's make a little experiment on rebasing branches.
+  id: totrans-629
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，让我们做一个关于变基（rebasing）分支的小实验。
+- en: Rebasing branches
+  id: totrans-630
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 变基分支
+- en: With the `git rebase` command you can also modify the story of branches; one
+    of the things you do more often inside a repository is to change - or better to
+    say - move the point where a branch started, bringing it to another point of the
+    tree. This operation makes it possible to keep low the level of ramifications
+    that would instead be generated using the command `git merge`, which we will see
+    later.
+  id: totrans-631
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用`git rebase`命令，你还可以修改分支的历史；在仓库中，你经常做的一件事就是改变——或者更确切地说——移动一个分支的起点，把它带到树的另一个点上。这项操作使得可以保持较低的分支层级，否则使用`git
+    merge`命令时，分支层级会较高，稍后我们会看到这个命令。
+- en: In order to better understand this, let me give you an example.
+  id: totrans-632
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了更好地理解这一点，让我给你举个例子。
+- en: Let's imagine that to the commit where the orange was added, a branch `nuts`
+    was created in the past, to which a walnut was added.
+  id: totrans-633
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 假设在添加橙色的提交时，过去已经创建了一个`nuts`分支，向其中添加了一个核桃。
+- en: At this point, let's imagine that we want to move this branch above, to the
+    point where it is now `master` as if this branch had been created starting from
+    there and not from the orange commit.
+  id: totrans-634
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 此时，让我们假设我们想将这个分支向上移动到现在`master`所在的位置，就像这个分支本应从那里而不是从橙色提交开始一样。
+- en: Let's see how this can be achieved using the `git rebase` command.
+  id: totrans-635
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们看看如何使用`git rebase`命令来实现这一点。
+- en: 'Let''s start by creating a new branch that points to commit `0e8b5cf`, the
+    orange one:'
+  id: totrans-636
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们从创建一个指向提交`0e8b5cf`的新分支开始，这个提交是橙色的：
+- en: '[PRE143]'
+  id: totrans-637
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE143]'
+- en: 'This time I used the `git branch` command followed by two arguments, the name
+    of the branch and the commit where to stick the label. As a result, a new `nuts`
+    branch has been created:'
+  id: totrans-638
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这次我使用了`git branch`命令，后面跟着两个参数：分支的名称和要贴上标签的提交。结果，一个新的`nuts`分支已经创建：
+- en: '[PRE144]'
+  id: totrans-639
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE144]'
+- en: 'Move `HEAD` to the new branch with the `git checkout` command:'
+  id: totrans-640
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用`git checkout`命令将`HEAD`移动到新分支：
+- en: '[PRE145]'
+  id: totrans-641
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE145]'
+- en: 'Okay, now it''s time to add a `walnut`; add it to the `shoppingList.txt` file:'
+  id: totrans-642
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 好的，现在是时候添加一个`walnut`了；把它添加到`shoppingList.txt`文件中：
+- en: '[PRE146]'
+  id: totrans-643
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE146]'
+- en: 'Then do the commit:'
+  id: totrans-644
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后进行提交：
+- en: '[PRE147]'
+  id: totrans-645
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE147]'
+- en: 'Check the log:'
+  id: totrans-646
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 查看日志：
+- en: '[PRE148]'
+  id: totrans-647
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE148]'
+- en: 'As you can see, the graph is now a little bit more complicated; starting from
+    the `orange` commit, there are three branches: the `berries`, the `master`, and
+    the `nuts` ones.'
+  id: totrans-648
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，图形现在稍微复杂了一些；从`orange`提交开始，有三条分支：`berries`、`master`和`nuts`。
+- en: Now we want to move the `nuts` branch starting point, form an orange commit
+    to a `grape` commit, as if the `nuts` branch is just one commit next to the `master`.
+  id: totrans-649
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们想要移动`nuts`分支的起始点，将其从`orange`提交移到`grape`提交，就好像`nuts`分支只有一个提交，紧接在`master`之后。
+- en: 'Let''s do it, rebasing the `nuts` branch on top of `master`; double-check that
+    you actually are in the `nuts` branch, as a rebase command basically rebases the
+    current branch (`nuts`) to the target one, `master`; so:'
+  id: totrans-650
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们继续，进行将`nuts`分支变基到`master`分支上；请再次确认你确实在`nuts`分支上，因为变基命令基本上是将当前分支（`nuts`）变基到目标分支`master`上；所以：
+- en: '[PRE149]'
+  id: totrans-651
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE149]'
+- en: 'Okay, don''t be scared: the rebase failed, but that''s not a problem. In fact,
+    it failed because Git cannot merge differences between `shoppingList.txt` file
+    versions automatically.'
+  id: totrans-652
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 好吧，别担心：变基失败了，但这不是问题。实际上，它失败了是因为Git无法自动合并`shoppingList.txt`文件版本之间的差异。
+- en: 'Read the message: Now you have three choices:'
+  id: totrans-653
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 阅读提示信息：现在你有三种选择：
+- en: Fix the merge conflicts and then continue, with `git rebase -continue.`
+  id: totrans-654
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 修复合并冲突后，继续执行`git rebase --continue`命令。
+- en: Skip this step, and discard the modification using `git rebase -skip.`
+  id: totrans-655
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 跳过此步骤，并使用`git rebase --skip`丢弃修改。
+- en: Abort the rebase, using `git rebase -abort.`
+  id: totrans-656
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用`git rebase --abort`终止变基操作。
+- en: We will choose the first option, but I want to tell you something about the
+    second and third ones.
+  id: totrans-657
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将选择第一个选项，但我想先告诉你关于第二个和第三个选项的一些信息。
+- en: While rebasing, Git internally creates patches and applies them to the commits
+    we are moving; in fact, while rebasing a branch you actually move all its commits
+    on top of another commit of choice, in this case the last commit on the `master`
+    branch.
+  id: totrans-658
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在进行变基时，Git 会在内部创建补丁并将其应用到我们正在移动的提交上；实际上，在变基分支时，你实际上是将所有的提交移到另一个你选择的提交上，在这个例子中是`master`分支上的最后一个提交。
+- en: 'In this case, the `nuts` branch has only one commit, so Git compared the destination
+    commit (the grape commit on `master`) with a walnut commit on the `nuts` branch.
+    At the end, only one comparing and patching step will be necessary (this is the
+    meaning of the `REBASE 1/1` message on the console: you are rebasing commit 1
+    of 1 total commits to rebase).'
+  id: totrans-659
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这种情况下，`nuts`分支只有一个提交，因此Git将目标提交（`master`上的grape提交）与`nuts`分支上的walnut提交进行比较。最终，只需要一个比较和补丁步骤（这就是控制台中`REBASE
+    1/1`消息的含义：你正在变基第1个提交，总共需要变基1个提交）。
+- en: 'That being said, you can now understand what `git rebase --skip` means: if
+    you find the current patching step not useful nor necessary, you can skip it and
+    move on to the next one.'
+  id: totrans-660
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 话虽如此，你现在可以理解`git rebase --skip`的含义了：如果你发现当前的补丁步骤既不有用也不必要，你可以跳过它，继续进行下一个步骤。
+- en: Finally, with `git rebase --abort` you simply stop the current rebase operation,
+    backing to the previous pre-rebase situation.
+  id: totrans-661
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后，使用`git rebase --abort`你只是简单地停止当前的变基操作，回到变基前的状态。
+- en: 'Now, back to our repository; if you open the file with Vim, you can see the
+    generated conflict:'
+  id: totrans-662
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，回到我们的仓库；如果你用Vim打开文件，你会看到生成的冲突：
+- en: '[PRE150]'
+  id: totrans-663
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE150]'
+- en: '![](img/cf8277b3-82eb-4c16-9171-ad489b64c34a.png)'
+  id: totrans-664
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/cf8277b3-82eb-4c16-9171-ad489b64c34a.png)'
+- en: Walnut has been added at line 4, but in the `master` branch, that line is occupied
+    by the peach, and then there's a `grape`.
+  id: totrans-665
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`walnut`已添加到第4行，但在`master`分支中，这一行被`peach`占据，然后是`grape`。'
+- en: 'I will fix it adding the `walnut` at the end of the file:'
+  id: totrans-666
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我将通过在文件末尾添加`walnut`来解决这个问题：
+- en: '![](img/95de9c5a-c0be-45a1-8320-365519b5ac09.png)'
+  id: totrans-667
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/95de9c5a-c0be-45a1-8320-365519b5ac09.png)'
+- en: 'Now, the next step is to `git add` the `shoppingList.txt` file to the staging
+    area, and then go on with the `git rebase --continue` command, as the previous
+    message suggested:'
+  id: totrans-668
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，下一步是使用`git add`将`shoppingList.txt`文件添加到暂存区，然后按照之前的提示继续执行`git rebase --continue`命令：
+- en: '[PRE151]'
+  id: totrans-669
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE151]'
+- en: As you can see, after the `git rebase --continue` command, the rebase ends successfully
+    (no errors and no more `REBASE` message in shell prompt at step `[11]`).
+  id: totrans-670
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，执行`git rebase --continue`命令后，变基成功完成（没有错误，且在步骤`[11]`的命令行提示符中不再出现`REBASE`信息）。
+- en: 'Now take a look at the repo using `git log` as usual:'
+  id: totrans-671
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在像往常一样使用`git log`查看仓库：
+- en: '[PRE152]'
+  id: totrans-672
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE152]'
+- en: Well done! The `nuts` branch is now just a commit beyond the `master` one.
+  id: totrans-673
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 做得好！`nuts`分支现在只比`master`分支多了一个提交。
+- en: 'Okay, now to keep the simplest and most compact repository, we cancel the `walnut`
+    commit and put everything back in place as it was before this little experiment,
+    even removing the `nuts` branch:'
+  id: totrans-674
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 好的，现在为了保持最简洁、最紧凑的仓库，我们取消`walnut`提交，并将一切恢复到这个小实验之前的状态，甚至删除`nuts`分支：
+- en: '[PRE153]'
+  id: totrans-675
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE153]'
+- en: Well done.
+  id: totrans-676
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 干得好。
+- en: Rebasing is a wide and fairly complex topic; we would need another entire chapter
+    (or book) to tell everything about it, but this is basically what we need to know
+    about rewriting history.
+  id: totrans-677
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 变基（Rebasing）是一个广泛而相当复杂的话题；我们需要另一个章节（甚至一本书）来讲述它的全部内容，但这基本上是我们需要了解的关于重写历史的内容。
+- en: Merging branches
+  id: totrans-678
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 合并分支
+- en: 'Yes, I know, probably there''s a thought on your mind since we start playing
+    with branches: *why he doesn''t talk about merging?*.'
+  id: totrans-679
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 是的，我知道，你可能会想：“从我们开始操作分支时，为什么他不讲讲合并？”
+- en: Now the moment has arrived.
+  id: totrans-680
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在时刻到了。
+- en: 'In Git, merging two (or more!) branches is the act of making their personal
+    history meet each other. When they meet, two things can happen:'
+  id: totrans-681
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在Git中，合并两个（或多个！）分支是让它们的历史合并在一起。当它们合并时，可能会发生两件事：
+- en: Files in their tip commit are different, so some conflict will rise
+  id: totrans-682
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 文件在它们的最新提交中不同，因此会出现一些冲突。
+- en: Files do not conflict
+  id: totrans-683
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 文件没有冲突
+- en: Commits of the target branch are directly behind commits of the branch we are
+    merging, so a fast-forward will happen
+  id: totrans-684
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 目标分支的提交直接位于我们要合并的分支提交之后，所以会发生快进合并。
+- en: 'In the first two cases, Git will guide us assembling a new commit, a so-called
+    **merge commit**; in the fast-forward case instead, no new commit is needed: Git
+    will simply move the target branch label to the tip commit of the branch we are
+    merging.'
+  id: totrans-685
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在前两种情况下，Git将指导我们组装一个新的提交，这就是所谓的**合并提交**；而在快进的情况下，则不需要新的提交：Git只会将目标分支标签移动到我们要合并的分支的最新提交。
+- en: Let's give it a try.
+  id: totrans-686
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们试试吧。
+- en: 'We can try to merge the `melons` branch into the `master` one; to do so, you
+    have to check out the target branch, `master` in this case, and then fire a `git
+    merge <branch name>` command; as I''m already on the `master` branch, I go straight
+    with the `merge` command:'
+  id: totrans-687
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以尝试将`melons`分支合并到`master`分支；为此，你需要先检出目标分支，这里是`master`，然后执行`git merge <branch
+    name>`命令；由于我已经在`master`分支上，所以直接执行`merge`命令：
+- en: '[PRE154]'
+  id: totrans-688
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE154]'
+- en: Uh-oh, conflicts here. Git always tries to auto-merge a file (it uses complex
+    algorithms to reduce your manual work on files), but if you're in doubt, pretend
+    you fix the issues by hand.
+  id: totrans-689
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 哎呀，这里有冲突。Git总是尝试自动合并文件（它使用复杂的算法来减少你对文件的手动处理），但如果你有疑问，可以假装自己手动修复这些问题。
+- en: 'See the conflict with `git diff`:'
+  id: totrans-690
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 查看`git diff`中的冲突：
+- en: '[PRE155]'
+  id: totrans-691
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE155]'
+- en: 'Okay, it''s clear that the fourth and fifth line of our `shoppingList.txt`
+    diverged in the two branches: in `master`, they are occupied respectively by `peach`
+    and `grape`, in the `melons` branch the place is taken by `blackberry` and `watermelon`.'
+  id: totrans-692
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 好的，很明显我们`shoppingList.txt`的第四和第五行在两个分支中发生了分歧：在`master`中，它们分别是`peach`和`grape`，而在`melons`分支中，这两行被`blackberry`和`watermelon`占据。
+- en: 'Note the shell prompt: it has that `MERGING` word after the branch name to
+    remind us that we are in the middle of a merge. Instead, don''t mind the `- grape
+    ++grape` part: it is a due line ending mismatch between my Windows computer and
+    the GNU/Linux Git subsystem.'
+  id: totrans-693
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 注意Shell提示符：它在分支名称后面有`MERGING`字样，提醒我们正在进行合并。而`- grape ++grape`部分不用理会：那是我的Windows电脑与GNU/Linux
+    Git子系统之间的行尾符号不匹配。
+- en: To resolve the merge, you have to edit the file accordingly, and then add and
+    commit it; let's go.
+  id: totrans-694
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要解决合并，你需要相应地编辑文件，然后添加并提交它；我们开始吧。
+- en: 'I will edit the file enqueuing `blackberry` and `watermelon` after `peach`
+    and `grape`, as per the following screenshot:'
+  id: totrans-695
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我将在文件中按以下截图的顺序，排队`blackberry`和`watermelon`，将它们放在`peach`和`grape`之后：
+- en: '![](img/86e857bb-9653-4a83-a1a2-cd60e09c73f1.png)'
+  id: totrans-696
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/86e857bb-9653-4a83-a1a2-cd60e09c73f1.png)'
+- en: 'After saving the file, add it to the staging area and then commit:'
+  id: totrans-697
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 保存文件后，将它添加到暂存区，然后提交：
+- en: '[PRE156]'
+  id: totrans-698
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE156]'
+- en: The commit is done, and the merge is finished. Perfect!
+  id: totrans-699
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 提交完成，合并也结束了。完美！
+- en: 'Now take a look at the log:'
+  id: totrans-700
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在看一下日志：
+- en: '[PRE157]'
+  id: totrans-701
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE157]'
+- en: Wow, that's cool!
+  id: totrans-702
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 哇，这真酷！
+- en: 'Look at the green path, the one on the right: this is now the new history of
+    the `master` branch. It starts from the beginning, the banana commit, goes to
+    `apple`, `orange`, and then to `peach`, `grape`, `blackberry`, and the `watermelon`
+    commit.'
+  id: totrans-703
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 看看绿色路径，右侧的那条：这就是现在`master`分支的新历史。从最开始的香蕉提交开始，然后是`apple`、`orange`，接着是`peach`、`grape`、`blackberry`和`watermelon`提交。
+- en: The tip commit on the `master` branch is the merge commit, the result of the
+    merge. Can you tell how Git is able to draw this graph?
+  id: totrans-704
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`master`分支上的尖端提交是合并提交，合并的结果。你能看出来Git是如何绘制这个图表的吗？'
+- en: 'Suggestion: look at the merge commit with `git cat-file -p`:'
+  id: totrans-705
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 建议：使用`git cat-file -p`查看合并提交：
+- en: '[PRE158]'
+  id: totrans-706
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE158]'
+- en: A-ha! This commit has **two parents**! In fact, this is the result of the merge
+    of two previous commits, and this is how Git handles merges. Storing the two parents
+    inside the commit, Git can keep track of the merge, and use the information to
+    draw the graph and let you remember, even after years, when and how you merged
+    two branches.
+  id: totrans-707
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 啊哈！这个提交有**两个父提交**！实际上，这是两个先前提交合并的结果，这也是Git处理合并的方式。通过将两个父提交存储在提交中，Git可以跟踪合并，并利用这些信息绘制图表，帮助你记住，哪怕过了几年，什么时候、如何合并了两个分支。
+- en: Fast forwarding
+  id: totrans-708
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 快速前进
+- en: 'A merge not always generates a new commit; to test this case, try to merge
+    the `melons` branch into a `berries` one:'
+  id: totrans-709
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 合并并不总是会生成新的提交；为了测试这种情况，尝试将`melons`分支合并到`berries`分支：
+- en: '[PRE159]'
+  id: totrans-710
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE159]'
+- en: 'As `melons` contained only a commit more than the `berries` branch, and as
+    it changes between the two are not in conflict, doing a merge here is just a matter
+    of a second: Git only needs to move the `berries` label to the same tip commit
+    of the `melons` branch.'
+  id: totrans-711
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于`melons`分支只比`berries`分支多了一个提交，并且它们之间的变化没有冲突，因此在这里进行合并仅仅是一瞬间的事：Git只需要将`berries`标签移到`melons`分支的相同提交位置。
+- en: This is called **fast-forwarding**.
+  id: totrans-712
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这就是所谓的**快速前进**。
+- en: This time there's no merge commit, as it is not necessary; someone will argue
+    that in this manner you lose the information that tells you when two branches
+    have been merged. If you want to force Git always create a new merge commit, you
+    can use the `--no-ff` (no fast-forward) option.
+  id: totrans-713
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这次没有合并提交，因为这不是必须的；有人会争辩说，这样做你会丢失合并了两个分支的时间信息。如果你希望Git总是创建一个新的合并提交，可以使用`--no-ff`（无快速前进）选项。
+- en: Wanna try? Okay, good chance to make another exercise.
+  id: totrans-714
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 想试试吗？好的，这是进行另一个练习的好机会。
+- en: 'Move back the `berries` branch where it was using `git reset`:'
+  id: totrans-715
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用`git reset`将`berries`分支移回原位：
+- en: '[PRE160]'
+  id: totrans-716
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE160]'
+- en: We have just undone a merge, did you realize it?
+  id: totrans-717
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们刚刚撤销了一个合并，你意识到了吗？
+- en: 'Okay, now do the merge again with the `--no-ff` option:'
+  id: totrans-718
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 好的，现在使用`--no-ff`选项再次进行合并：
+- en: '[PRE161]'
+  id: totrans-719
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE161]'
+- en: 'Git will now open your default editor to allow you to specify a commit message,
+    as shown in the following screenshot:'
+  id: totrans-720
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git现在会打开你的默认编辑器，允许你指定一个提交信息，正如下面的截图所示：
+- en: '![](img/dc6314d3-748b-4263-a060-aeae22a7dfb4.png)'
+  id: totrans-721
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/dc6314d3-748b-4263-a060-aeae22a7dfb4.png)'
+- en: As you can see, when Git can automatically merge the changes, it does; it then
+    asks you for a commit message, suggesting a default one.
+  id: totrans-722
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，当Git能够自动合并更改时，它会自动进行；然后它会要求你输入一个提交信息，建议一个默认的消息。
+- en: 'Accept the default message, save and exit:'
+  id: totrans-723
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接受默认信息，保存并退出：
+- en: '[PRE162]'
+  id: totrans-724
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE162]'
+- en: Merge done.
+  id: totrans-725
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 合并完成。
+- en: Git tells us what merging strategy is adopted for the automatic merge, and then
+    what changed in terms of files and changes to them (insertions or deletions).
+  id: totrans-726
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git告诉我们自动合并时采用了什么合并策略，然后告诉我们在文件和文件更改（插入或删除）方面发生了哪些变化。
+- en: 'Now a `git log`:'
+  id: totrans-727
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在执行`git log`：
+- en: '[PRE163]'
+  id: totrans-728
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE163]'
+- en: 'Okay, now the graph highlights the merge between the two branches. As you can
+    see, the graph is a little bit more complicated now, and this is why doing a fast-forward
+    merge is normally preferable: it ends with a more compact and simple repository
+    structure.'
+  id: totrans-729
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 好的，现在图表突出显示了两个分支之间的合并。正如你所看到的，图表现在变得稍微复杂了一些，这也是为什么通常更倾向于做快速前进合并：它会以一个更紧凑且简单的仓库结构结束。
+- en: 'We are done with these experiments; anyway, I want to undo this merge, because
+    I want to keep the repository as simple as possible to allow you to better understand
+    the exercise we do together; go with a `git reset --hard HEAD^`:'
+  id: totrans-730
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们已经完成了这些实验；无论如何，我想撤销这个合并，因为我想保持仓库尽可能简单，以便你能更好地理解我们一起做的练习；执行`git reset --hard
+    HEAD^`：
+- en: '[PRE164]'
+  id: totrans-731
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE164]'
+- en: 'Okay, now undo even the past merge we did on the `master` branch:'
+  id: totrans-732
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 好的，现在撤销我们在`master`分支上做的那个合并：
+- en: '[PRE165]'
+  id: totrans-733
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE165]'
+- en: 'I''m sure you get the point now: undoing a merge in Git is easy. I wanted to
+    show you this more and more because sometimes merging branches is scaring; after
+    doing it, sometimes you realize you messed up your project, and you go out of
+    mind. Instead, don''t worry about it: recovering from this situation is simple.'
+  id: totrans-734
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我相信你现在明白了：在Git中撤销合并是很简单的。我想向你展示这一点，因为有时候合并分支会让人感到害怕；做完之后，有时你会意识到自己搞砸了项目，感觉崩溃。其实不用担心：从这种情况恢复是很简单的。
+- en: Cherry picking
+  id: totrans-735
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 樱桃挑选（Cherry picking）
+- en: 'Sometimes you don''t want to merge two branches, but simply your desire is
+    to apply the same changes in a commit on top to another branch. This situation
+    is very common when working on bugs: you fix a bug in a branch, and then you want
+    to apply the same fix on top of another branch.'
+  id: totrans-736
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有时候你不想合并两个分支，而只是想将一个提交中的更改应用到另一个分支的顶部。这种情况在处理 bug 时非常常见：你在一个分支中修复了一个 bug，然后你想将相同的修复应用到另一个分支的顶部。
+- en: Git has a convenient way to do it; this is the `git cherry-pick` command.
+  id: totrans-737
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git 提供了一种方便的方式来处理这个问题；这就是 `git cherry-pick` 命令。
+- en: Let's play with it a little bit.
+  id: totrans-738
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们稍微玩一下这个。
+- en: 'Assume you want to pick the `blackberry` from the `berries` branch, and then
+    apply it into the `master` branch; this is the way:'
+  id: totrans-739
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 假设你想从 `berries` 分支中挑选出 `blackberry`，然后将其应用到 `master` 分支；方法如下：
+- en: '[PRE166]'
+  id: totrans-740
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE166]'
+- en: For the argument, you usually specify the hash of the commit you want to pick;
+    in this case, as that commit is referenced even by the `berries` branch label,
+    doing a `git cherry-pick berries` would have been the same.
+  id: totrans-741
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于参数，你通常需要指定你想挑选的提交的哈希值；在这种情况下，由于该提交甚至被 `berries` 分支标签引用，执行 `git cherry-pick
+    berries` 将是相同的。
+- en: 'Okay, the cherry pick raised a conflict, of course:'
+  id: totrans-742
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 好的，cherry-pick 引发了一个冲突，当然：
+- en: '[PRE167]'
+  id: totrans-743
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE167]'
+- en: 'The fourth line of both the `shoppingList.txt` file versions has been modified
+    with different fruits. Resolve the conflict and then add a commit:'
+  id: totrans-744
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`shoppingList.txt` 文件版本的第四行已被不同的水果修改。解决冲突后再添加提交：'
+- en: '[PRE168]'
+  id: totrans-745
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE168]'
+- en: 'The following is a screenshot of my Vim console, and the files are arranged
+    as I like:'
+  id: totrans-746
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是我 Vim 控制台的截图，文件按照我喜欢的方式排列：
+- en: '![](img/47c3e1ba-8bf7-48b9-a0f3-fa5842f76cc3.png)'
+  id: totrans-747
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/47c3e1ba-8bf7-48b9-a0f3-fa5842f76cc3.png)'
+- en: '[PRE169]'
+  id: totrans-748
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE169]'
+- en: 'Note the `git status` output: you always have some suggestions; in this case,
+    to abort a `cherry-pick` and undo all you did, you can do a `git cherry-pick --abort`
+    (you can do the same even while rebasing or merging).'
+  id: totrans-749
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 注意 `git status` 输出：你总会看到一些建议；在这种情况下，如果你想中止一个 `cherry-pick` 并撤销你所做的所有操作，你可以执行
+    `git cherry-pick --abort`（即使在变基或合并时，你也可以执行相同的操作）。
+- en: 'Now go on and commit:'
+  id: totrans-750
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在继续提交吧：
+- en: '[PRE170]'
+  id: totrans-751
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE170]'
+- en: Okay, as you can see a new commit appeared, but there are no new paths in the
+    graph. Unlike the merging feature, with cherry-picking you only pick changes made
+    inside the specified commit, and no relationship will be stored between the cherry-picked
+    commit and the new one created.
+  id: totrans-752
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 好的，如你所见，出现了一个新的提交，但图表中没有新的路径。与合并功能不同，使用 cherry-picking，你只选择指定提交中所做的更改，并且不会在被选择的提交和新创建的提交之间存储任何关系。
+- en: 'If you want to track what was the commit you cherry-picked, you can append
+    the `-x` option to the `git cherry-pick` command; then, while committing, don''t
+    append the message in the `git commit` command using the `-m` option, but type
+    `git commit` and then press `ENTER` to allow Git to open the editor: it will suggest
+    you a message that contains the hash of the cherry-picked commit, as you can see
+    in the following screenshot:'
+  id: totrans-753
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你想追踪你挑选的提交是什么，你可以在 `git cherry-pick` 命令中加上 `-x` 选项；然后，在提交时，不要使用 `-m` 选项附加消息，而是输入
+    `git commit` 然后按 `ENTER`，让 Git 打开编辑器：它会建议一个包含 cherry-pick 提交哈希值的消息，如下图所示：
+- en: '![](img/ebae889b-b086-45c0-9a24-bd918685c9bd.png)'
+  id: totrans-754
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/ebae889b-b086-45c0-9a24-bd918685c9bd.png)'
+- en: This is the only way to track a cherry pick, if you want.
+  id: totrans-755
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这是追踪 cherry-pick 的唯一方法，如果你想的话。
+- en: Summary
+  id: totrans-756
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 总结
+- en: This has been a very long chapter, I know.
+  id: totrans-757
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我知道这一章非常长。
+- en: But now I think you know all you need to work proficiently with Git, at least
+    in your own local repository. You know about working tree, staging area, and `HEAD`
+    commit; you know about references as branches and `HEAD`; you know how to merge
+    rebase, and cherry pick; and finally, you know how Git works under the hood, and
+    this will help you from here on out.
+  id: totrans-758
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 但现在我想你已经知道了所有在本地仓库中熟练使用 Git 所需的知识。你了解工作树、暂存区和 `HEAD` 提交；你知道如何使用分支和 `HEAD` 引用；你知道如何合并、变基和进行
+    cherry-pick；最后，你知道 Git 是如何在后台工作的，这将帮助你从这里开始。
+- en: In the next chapter, we will learn how to deal with **remotes**, and pushing
+    and pulling changes from a server such as GitHub.
+  id: totrans-759
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一章，我们将学习如何处理**远程**仓库，以及如何从像 GitHub 这样的服务器推送和拉取更改。

@@ -1,0 +1,1540 @@
+- en: '*Chapter 6*: Automating Jira Service Management'
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '*第六章*：自动化 Jira Service Management'
+- en: Today, Jira Service Management is used by many organizations to provide customer
+    support portals, **human resources** (**HR**) services, and **information technology**
+    (**IT**) service desks, among others.
+  id: totrans-1
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 今天，许多组织使用 Jira Service Management 提供客户支持门户、**人力资源**（**HR**）服务以及**信息技术**（**IT**）服务台等。
+- en: The most common use case for Jira Service Management, however, is as an **IT
+    Service Management** (**ITSM**) solution to enable the efficient provision of
+    IT services within an organization.
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，Jira Service Management 最常见的使用案例是作为**IT 服务管理**（**ITSM**）解决方案，帮助高效提供组织内的 IT
+    服务。
+- en: One of the best ways to improve efficiency and drive down the cost per ticket
+    in an IT service desk request is to automate mundane tasks and processes wherever
+    possible.
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 提高效率、降低 IT 服务台请求每票成本的最佳方法之一是尽可能自动化琐碎的任务和流程。
+- en: Some of the most common tasks wherein automation provides immediate benefits
+    are the categorization and routing of tickets, keeping customers updated as to
+    the status of their requests, maintaining **service-level agreement** (**SLA**)
+    compliance, freeing up support staff from repetitive tasks, and closing out older
+    requests to ensure they are not clogging up your request queues.
+  id: totrans-4
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一些最常见的任务，自动化能够提供即时的好处，包括票据分类与路由、实时更新客户请求状态、维护**服务水平协议**（**SLA**）的合规性、解放支持人员从重复性任务中脱身，并关闭过时的请求，确保它们不会堵塞请求队列。
+- en: 'In this chapter, we will cover the following topics:'
+  id: totrans-5
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们将涵盖以下主题：
+- en: Processing incoming requests
+  id: totrans-6
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 处理来往请求
+- en: Monitoring SLA compliance
+  id: totrans-7
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 监控 SLA 合规性
+- en: Automating common and repetitive tasks
+  id: totrans-8
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 自动化常见的重复任务
+- en: By the end of this chapter, you will have a better understanding of how you
+    can use automation rules in Jira Service Management to improve the efficiency
+    of your service desks. In addition, reducing the amount of human intervention
+    necessary to complete common tasks will also reduce the cost per ticket of service
+    desk requests.
+  id: totrans-9
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章结束时，你将更好地理解如何在 Jira Service Management 中使用自动化规则来提高服务台的效率。此外，减少完成常见任务所需的人为干预，也将降低每个服务台请求的成本。
+- en: Technical requirements
+  id: totrans-10
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 技术要求
+- en: 'The requirements for this chapter are as follows:'
+  id: totrans-11
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章的要求如下：
+- en: '**Jira Cloud environment**: If you don''t already have access to Jira, you
+    can create a free Jira Cloud account at [https://www.atlassian.com/software/jira/free](https://www.atlassian.com/software/jira/free)
+    and ensure that you have both **Jira Software** and **Jira Service Management**
+    selected.'
+  id: totrans-12
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**Jira Cloud 环境**：如果你尚未访问 Jira，你可以在[https://www.atlassian.com/software/jira/free](https://www.atlassian.com/software/jira/free)创建一个免费的
+    Jira Cloud 账户，并确保你选择了**Jira Software**和**Jira Service Management**。'
+- en: '**Jira Server environment**: If you are using Jira Server (available from [https://www.atlassian.com/software/jira/download](https://www.atlassian.com/software/jira/download)),
+    ensure you have licenses for both Jira Software and Jira Service Management. In
+    addition, you will also need to ensure that you install the *Automation for Jira*
+    app available from the Atlassian Marketplace.'
+  id: totrans-13
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**Jira Server 环境**：如果你使用的是 Jira Server（可从[https://www.atlassian.com/software/jira/download](https://www.atlassian.com/software/jira/download)下载），请确保你拥有
+    Jira Software 和 Jira Service Management 的许可证。此外，你还需要确保安装来自 Atlassian 市场的*Automation
+    for Jira*应用。'
+- en: '**Microsoft Azure Active Directory (Azure AD)**: Azure AD is Microsoft''s cloud-based
+    identity service. You can sign up for a free Azure account at [https://azure.microsoft.com/free](https://azure.microsoft.com/free).'
+  id: totrans-14
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**Microsoft Azure Active Directory（Azure AD）**：Azure AD 是微软的基于云的身份服务。你可以在[https://azure.microsoft.com/free](https://azure.microsoft.com/free)注册一个免费的
+    Azure 账户。'
+- en: In both instances, you will need to have at least **Project Administrator**
+    access to a Service Management project and a Scrum Software project to be able
+    to follow the examples in this chapter. For the examples in this chapter, we have
+    used the *IT Service project template* to create the Service Management project
+    and the *Scrum Software project template* to create the software project.
+  id: totrans-15
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这两种情况下，你需要至少具有**项目管理员**权限，才能在服务管理项目和 Scrum 软件项目中执行本章中的示例。对于本章中的示例，我们使用了*IT
+    服务项目模板*来创建服务管理项目，并使用*Scrum 软件项目模板*来创建软件项目。
+- en: 'You can download the latest code samples for this chapter from this book''s
+    official GitHub repository at [https://github.com/PacktPublishing/Automate-Everyday-Tasks-in-Jira](https://github.com/PacktPublishing/Automate-Everyday-Tasks-in-Jira).
+    Please visit the following link to check the CiA videos: [https://bit.ly/2NhMFp9](https://bit.ly/2NhMFp9)'
+  id: totrans-16
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以从本书的官方 GitHub 仓库下载本章的最新代码示例，链接为[https://github.com/PacktPublishing/Automate-Everyday-Tasks-in-Jira](https://github.com/PacktPublishing/Automate-Everyday-Tasks-in-Jira)。请访问以下链接查看CiA视频：[https://bit.ly/2NhMFp9](https://bit.ly/2NhMFp9)
+- en: Processing incoming requests
+  id: totrans-17
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 处理传入请求
+- en: One of the more time-consuming tasks in a service desk is the categorization
+    and routing of incoming requests to the correct teams.
+  id: totrans-18
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 服务台中较为耗时的任务之一是将收到的请求分类并将其分发到正确的团队。
+- en: Having a mature service request catalog and using this as a basis to create
+    relevant request types in the Jira Service Management portal solves the initial
+    categorization issue when customers create requests; however, in many organizations
+    requests are still received via email, and these generally require human intervention
+    to categorize and route to the relevant team.
+  id: totrans-19
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 拥有一个成熟的服务请求目录，并将其作为基础在 Jira 服务管理门户中创建相关的请求类型，可以解决客户创建请求时的初步分类问题；然而，在许多组织中，仍然通过电子邮件接收请求，这些请求通常需要人工干预来分类并将其路由到相关团队。
+- en: In this section, we will look at automation rules to automatically triage incoming
+    requests and then route them to the correct teams for processing.
+  id: totrans-20
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本节中，我们将探讨自动化规则，自动处理传入的请求，并将其路由到正确的团队进行处理。
+- en: In our first example, we will look at how we can use automation rules to triage
+    requests originating from incoming emails.
+  id: totrans-21
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在第一个示例中，我们将查看如何使用自动化规则来处理来自电子邮件的请求。
+- en: Creating a rule to triage email requests
+  id: totrans-22
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 创建一个规则来处理电子邮件请求
+- en: One of the benefits of having a well-structured customer portal is that you
+    can make use of your organization's service request catalog to drive the correct
+    selection of service requests using request types, and at the same time using
+    pre-selected components in each service request to narrow down the categorization
+    of the request.
+  id: totrans-23
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 拥有一个结构良好的客户门户的好处之一是，你可以利用组织的服务请求目录，通过请求类型推动正确的服务请求选择，同时使用每个服务请求中的预选组件来缩小请求的分类范围。
+- en: Tip
+  id: totrans-24
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 提示
+- en: To pre-define a value for any field in a request type, add that field to the
+    request form as a hidden field. Doing this will force you to supply the field
+    with a default value that you can then rely on in later automations.
+  id: totrans-25
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要为请求类型中的任何字段预定义一个值，可以将该字段添加为请求表单中的隐藏字段。这样做会强制你为该字段提供一个默认值，之后可以在自动化中使用这个默认值。
+- en: This approach ensures that tickets reaching your service desk queues have already
+    been categorized with the correct components, which we can use to drive the automations.
+  id: totrans-26
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这种方法确保了到达服务台队列的票据已经按正确的组件进行了分类，我们可以利用这些组件来推动自动化流程。
+- en: However, email requests are still widely used to create service desk requests,
+    and these typically end up in a service queue that requires human intervention
+    to triage and correctly categorize.
+  id: totrans-27
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，电子邮件请求仍然被广泛用于创建服务台请求，这些请求通常会进入一个服务队列，需要人工干预以进行初步分类和正确归类。
+- en: In this example, we'll use an automation rule to triage and categorize incoming
+    emails with the correct components based on the presence of specific keywords
+    in the email. To keep things simple, we'll only examine the issue summary, which
+    is set from the email subject.
+  id: totrans-28
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这个例子中，我们将使用一个自动化规则来处理并根据电子邮件中某些特定关键词的出现对传入的电子邮件进行分类。为了简化起见，我们只检查问题摘要，这个摘要是从电子邮件主题设置的。
+- en: 'Let''s take a look at the rule, as follows:'
+  id: totrans-29
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们来看看这个规则，如下所示：
+- en: In your Jira Service Management project, navigate to **Project settings**, click
+    on the **Automation** link in the **Project Settings** menu, and then click **Create
+    rule**.
+  id: totrans-30
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在你的 Jira 服务管理项目中，导航到**项目设置**，点击**项目设置**菜单中的**自动化**链接，然后点击**创建规则**。
+- en: Select the **Issue created** trigger and click **Save**.
+  id: totrans-31
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 选择**问题已创建**触发器并点击**保存**。
+- en: Then, select `Request Type`
+  id: totrans-32
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 然后，选择`请求类型`
+- en: '`equals`'
+  id: totrans-33
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`equals`'
+- en: '`Emailed request`'
+  id: totrans-34
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`电子邮件请求`'
+- en: Next, select `Summary`
+  id: totrans-35
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 接下来，选择`摘要`
+- en: '`contains`'
+  id: totrans-36
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`contains`'
+- en: '`vpn`'
+  id: totrans-37
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`vpn`'
+- en: Select `Components` field from the `VPN Server` component and click **Save**.
+  id: totrans-38
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 从`VPN 服务器`组件中选择`组件`字段并点击**保存**。
+- en: Click on `Summary`
+  id: totrans-39
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击`摘要`
+- en: '`contains`'
+  id: totrans-40
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`contains`'
+- en: '`password`'
+  id: totrans-41
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`password`'
+- en: Now, select `Components` field from the `Active Directory` component and click
+    **Save**.
+  id: totrans-42
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在，从`Active Directory`组件中选择`组件`字段并点击**保存**。
+- en: The rule should now look similar to the one shown in the following screenshot:![Figure
+    6.1 – Triaging incoming email requests
+  id: totrans-43
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 规则现在应该与以下截图中的规则类似：![Figure 6.1 – Triaging incoming email requests
+- en: '](img/B16551_Figure_6.1.jpg)'
+  id: totrans-44
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '](img/B16551_Figure_6.1.jpg)'
+- en: Figure 6.1 – Triaging incoming email requests
+  id: totrans-45
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 图6.1 – 处理来邮件请求
+- en: You could continue to add else-if blocks for as many components as you need;
+    however, for this example, we'll stop here and name the rule `Triage email requests`,
+    and then click **Turn it on** to save and enable the rule.
+  id: totrans-46
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 你可以继续为需要的每个组件添加else-if块；不过，在这个例子中，我们就此停止，命名规则为`Triage email requests`，然后点击**启用**来保存并启用该规则。
+- en: Now that we've learned how to categorize incoming requests that we've received
+    via email, let's see how we can extend this to route and assign requests to the
+    correct teams.
+  id: totrans-47
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经学会了如何分类通过电子邮件接收到的来请求，让我们看看如何将这一过程扩展到路由和分配请求给正确的团队。
+- en: Creating a rule to automatically route requests
+  id: totrans-48
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 创建自动路由请求的规则
+- en: Using automation rules to automatically categorize incoming requests will help
+    shorten the response time for ticket handling. However, we can take this one step
+    further and automatically route and assign the request to the correct team, further
+    shortening the response and resolution times.
+  id: totrans-49
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用自动化规则自动分类来请求将有助于缩短工单处理的响应时间。然而，我们可以更进一步，自动将请求路由并分配给正确的团队，进一步缩短响应和解决时间。
+- en: In this example, we are going to make use of the ability to pre-define components
+    for each request type and use these to assign incoming requests to the correct
+    team. In addition, we will ensure that the automatic categorization rule we created
+    previously can feed into this rule.
+  id: totrans-50
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这个例子中，我们将利用为每种请求类型预定义组件的功能，并使用这些组件将来请求分配给正确的团队。此外，我们将确保我们之前创建的自动分类规则能够输入到此规则中。
+- en: We will be referring to the *Network Team* and *System Administrator Team* user
+    groups, so you will need to create these user groups in your instance for this
+    rule to work correctly.
+  id: totrans-51
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将提到*网络团队*和*系统管理员团队*用户组，因此你需要在你的实例中创建这些用户组，以确保规则能够正常工作。
+- en: 'Let''s get started with the rule, as follows:'
+  id: totrans-52
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们开始创建规则，如下所示：
+- en: In your Jira Service Management project, navigate to **Project settings**, click
+    on the **Automation** link in the **Project Settings** menu, and then click **Create
+    rule**.
+  id: totrans-53
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在你的Jira Service Management项目中，导航至**项目设置**，点击**项目设置**菜单中的**自动化**链接，然后点击**创建规则**。
+- en: Select the `Issue Created` and `Issue Updated`, then click **Save**.
+  id: totrans-54
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 选择`问题已创建`和`问题已更新`，然后点击**保存**。
+- en: Next, select `Components`
+  id: totrans-55
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 接下来，选择`组件`
+- en: '`contains any of`'
+  id: totrans-56
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`包含任何`'
+- en: '`VPN Server`'
+  id: totrans-57
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`VPN 服务器`'
+- en: Then, select `User in a group`
+  id: totrans-58
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 然后，选择`用户在组中`
+- en: '`Balanced workload`'
+  id: totrans-59
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`平衡工作负载`'
+- en: '`Network Team`'
+  id: totrans-60
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`网络团队`'
+- en: Click on `Components`
+  id: totrans-61
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击`组件`
+- en: '`contains any of`'
+  id: totrans-62
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`包含任何`'
+- en: '`Active Directory`'
+  id: totrans-63
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`Active Directory`'
+- en: Click on `Summary`
+  id: totrans-64
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击`Summary`
+- en: '`does not contain`'
+  id: totrans-65
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`不包含`'
+- en: '`password`'
+  id: totrans-66
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`密码`'
+- en: Now, select `User in a group`
+  id: totrans-67
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在，选择`用户在组中`
+- en: '`Balanced workload`'
+  id: totrans-68
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`平衡工作负载`'
+- en: '`System Administrator Team`'
+  id: totrans-69
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`系统管理员团队`'
+- en: You can continue to add further Else-If blocks to route more requests; however,
+    for this example, we'll only create these two conditions.
+  id: totrans-70
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 你可以继续添加更多的Else-If块来路由更多的请求；不过，在这个例子中，我们只会创建这两个条件。
+- en: Before we save this rule, we need to ensure that it can be triggered by the
+    rule that categorizes incoming emails.
+  id: totrans-71
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在我们保存此规则之前，我们需要确保它能够通过分类来邮件的规则触发。
+- en: Click on `Route incoming requests`
+  id: totrans-72
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击`Route incoming requests`
+- en: '**Allow rule trigger**: Ensure the checkbox is selected'
+  id: totrans-73
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '**允许规则触发**：确保勾选此框'
+- en: 'Your rule should now look similar to the one shown in the following screenshot:'
+  id: totrans-74
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 你的规则现在应该与以下截图中的规则类似：
+- en: '![Figure 6.2 – Routing incoming requests'
+  id: totrans-75
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '![Figure 6.2 – Routing incoming requests'
+- en: '](img/B16551_Figure_6.2.jpg)'
+  id: totrans-76
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '](img/B16551_Figure_6.2.jpg)'
+- en: Figure 6.2 – Routing incoming requests
+  id: totrans-77
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 图6.2 – 路由来请求
+- en: Finally, click **Save** and then click **Turn it on** to save and enable the
+    rule.
+  id: totrans-78
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 最后，点击**保存**，然后点击**启用**来保存并启用规则。
+- en: In this section, we have learned how to use automation rules to process incoming
+    requests to Jira Service Management by firstly categorizing them where appropriate,
+    and then routing them to the correct teams for resolution.
+  id: totrans-79
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这一部分，我们学会了如何使用自动化规则来处理Jira Service Management中的来请求，首先在适当的情况下对它们进行分类，然后将它们路由到正确的团队进行解决。
+- en: In the next section, we will look at how to use automation rules to monitor
+    SLA compliance.
+  id: totrans-80
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在接下来的部分，我们将了解如何使用自动化规则来监控SLA合规性。
+- en: Monitoring SLA compliance
+  id: totrans-81
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 监控SLA合规性
+- en: SLAs are important metrics that are set to ensure that IT services are delivered
+    within an agreed time period with respect to their priority and nature.
+  id: totrans-82
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 服务水平协议（SLA）是重要的衡量指标，旨在确保IT服务在约定的时间内，根据其优先级和性质进行交付。
+- en: To maintain the agreed SLA compliance ratio of requests, we need to ensure that
+    where possible, their priority is automatically increased when they are about
+    to breach their SLA so that they gain a higher chance of their SLAs being met.
+  id: totrans-83
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了维持约定的SLA合规率，我们需要确保在可能的情况下，当请求即将违反其SLA时，会自动提升其优先级，从而增加其SLA得到满足的可能性。
+- en: Additionally, this should be accompanied by appropriate notifications to the
+    assigned agent, the service desk team, and the service desk manager, allowing
+    for the appropriate response should the agent not be able to deliver a resolution
+    with the SLA.
+  id: totrans-84
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 此外，这应伴随适当的通知，通知给受托代理、服务台团队和服务台经理，以便在代理未能在SLA内提供解决方案时，做出适当反应。
+- en: In this section, we will look at how to use automation rules to keep abreast
+    of SLAs and how to manage requests when these are breached.
+  id: totrans-85
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本节中，我们将学习如何使用自动化规则来跟踪SLA，并在SLA违约时管理请求。
+- en: Let's look at an example by creating a rule to monitor the *Time to first response*
+    SLA and notify the appropriate persons as applicable.
+  id: totrans-86
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通过创建一个规则来监控*首次响应时间*SLA，并根据适用情况通知相关人员，来看一个示例。
+- en: Creating a rule to monitor SLA breaches
+  id: totrans-87
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 创建规则来监控SLA违约
+- en: To maintain the SLA success rate, we want to avoid requests breaching their
+    SLAs in the first instance.
+  id: totrans-88
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了保持SLA的成功率，我们希望尽量避免请求在首次时违反其SLA。
+- en: In this example, we are going to monitor the *Time to first response* SLA for
+    high-priority requests and either notify a Slack channel if the request is unassigned
+    or send a message to the assigned agent if the request has been automatically
+    assigned. In addition, we will also send a notification to the service desk manager
+    to alert them of the fact that the SLA is about to be breached so that they can
+    take the appropriate action.
+  id: totrans-89
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在此示例中，我们将监控高优先级请求的*首次响应时间*SLA，并在请求未分配时通知Slack频道，或者如果请求已被自动分配，则向受托代理发送消息。此外，我们还将向服务台经理发送通知，提醒他们SLA即将违反，以便他们采取适当的措施。
+- en: 'Let''s get started with the rule, as follows:'
+  id: totrans-90
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们开始创建规则，具体步骤如下：
+- en: In your Jira Service Management project, navigate to **Project settings**, click
+    on the **Automation** link in the **Project Settings** menu, and then click **Create
+    rule**.
+  id: totrans-91
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在你的Jira服务管理项目中，导航到**项目设置**，点击**项目设置**菜单中的**自动化**链接，然后点击**创建规则**。
+- en: Select the `Time to first response`
+  id: totrans-92
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 选择`首次响应时间`
+- en: '`will breach in the next 30 minutes`'
+  id: totrans-93
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`将在接下来的30分钟内违反`'
+- en: Next, select `Priority`
+  id: totrans-94
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 接下来，选择`优先级`
+- en: '`is one of`'
+  id: totrans-95
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`是其中之一`'
+- en: '`Highest`, `High`'
+  id: totrans-96
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`最高`、`高`'
+- en: The service desk manager needs to be notified irrespective of whether we send
+    a general Slack notification or notify the request's assignee, so we'll send this
+    notification first.
+  id: totrans-97
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 无论我们是发送常规的Slack通知，还是通知请求的受托人，服务台经理都需要被通知，因此我们将首先发送此通知。
+- en: Select `Manager`
+  id: totrans-98
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 选择`经理`
+- en: '`{{issue.key}} is about to breach its SLA`'
+  id: totrans-99
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`{{issue.key}} 即将违反其SLA`'
+- en: '`An unassigned high-priority issue, {{issue.key}} - {{issue.summary}} is about
+    to breach its "Time to first response" SLA in 30 minutes.`'
+  id: totrans-100
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`一个未分配的高优先级问题，{{issue.key}} - {{issue.summary}} 即将在30分钟内违反其“首次响应时间”SLA。`'
+- en: '`A notification has also been sent to the #service-desk Slack channel.`'
+  id: totrans-101
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`通知已发送到#service-desk Slack频道。`'
+- en: '`Regards,`'
+  id: totrans-102
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`此致，`'
+- en: '`Your friendly SLA bot.`'
+  id: totrans-103
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`你的友好的SLA机器人。`'
+- en: Then, select `Assignee`
+  id: totrans-104
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 然后，选择`受托人`
+- en: '`is empty`'
+  id: totrans-105
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`为空`'
+- en: 'Now, select `:fire: <{{issue.toUrl}}|{{issue.key}} - {{issue.summary}}> is
+    currently unassigned and will breach its ''Time to first response'' SLA in 30
+    minutes.`'
+  id: totrans-106
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: '现在，选择 `:fire: <{{issue.toUrl}}|{{issue.key}} - {{issue.summary}}> 当前未分配，并将在30分钟内违反其“首次响应时间”SLA。`'
+- en: '`#service-desk`'
+  id: totrans-107
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`#service-desk`'
+- en: Then, click **Add else** in the rule-chain view on the left, and then click
+    **Save**.
+  id: totrans-108
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 然后，在左侧规则链视图中点击**添加其他条件**，接着点击**保存**。
+- en: Select `Assignee`
+  id: totrans-109
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 选择`受托人`
+- en: '`{{issue.key}} is about to breach its Time to first response SLA`'
+  id: totrans-110
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`{{issue.key}} 即将违反其首次响应时间SLA`'
+- en: '`Hi {{issue.assignee.displayName.split(" ").first}},` `You have been assigned
+    {{issue.key}} - {{issue.summary}} which is about to breach its Time to first response
+    SLA in 30 minutes.` `Please take appropriate action to ensure we meet our SLA
+    targets.` `Thanks,` `Your friendly SLA bot.`'
+  id: totrans-111
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`嗨，{{issue.assignee.displayName.split(" ").first}}，` `你已被分配 {{issue.key}} -
+    {{issue.summary}}，该问题将在30分钟内违反其首次响应时间SLA。` `请采取适当的措施，确保我们达到SLA目标。` `谢谢，` `你的友好的SLA机器人。`'
+- en: 'Now that you have configured the **Send email** action, your rule should look
+    similar to the one shown in the following screenshot:'
+  id: totrans-112
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 现在你已经配置了**发送电子邮件**动作，你的规则应该与下面截图中的样式相似：
+- en: '![Figure 6.3 – Monitoring SLA breaches'
+  id: totrans-113
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '![图6.3 – 监控SLA违约情况'
+- en: '](img/B16551_Figure_6.3.jpg)'
+  id: totrans-114
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '](img/B16551_Figure_6.3.jpg)'
+- en: Figure 6.3 – Monitoring SLA breaches
+  id: totrans-115
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 图6.3 – 监控SLA违约情况
+- en: Finally, name your rule `Time to first response monitor` and click **Turn it
+    on** to save and enable the rule.
+  id: totrans-116
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 最后，将你的规则命名为`Time to first response monitor`，然后点击**启用**来保存并启用规则。
+- en: In this section, we learned how to monitor requests whose SLAs are about breach
+    or that have already breached, and how to automatically prioritize and escalate
+    these requests.
+  id: totrans-117
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这一部分中，我们学习了如何监控那些SLA即将违约或已经违约的请求，以及如何自动优先处理和升级这些请求。
+- en: Next, we will look at how to improve service desk efficiency by automating common
+    and repetitive tasks using automation rules.
+  id: totrans-118
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来，我们将探讨如何通过自动化规则来提升服务台效率，自动化常见且重复的任务。
+- en: Automating common and repetitive tasks
+  id: totrans-119
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 自动化常见的重复性任务
+- en: There are a number of requests received daily by IT service desks that are repetitive
+    and mundane, and that are prime candidates for automation.
+  id: totrans-120
+  prefs: []
+  type: TYPE_NORMAL
+  zh: IT服务台每天收到许多重复且琐碎的请求，这些请求是自动化的理想候选。
+- en: By automating tasks, not only are you reducing the need for human intervention
+    and potential errors during the completion of these tasks, but you are also enabling
+    increased productivity for the end user by reducing the time taken to fulfill
+    their request.
+  id: totrans-121
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通过自动化任务，你不仅减少了人工干预和完成这些任务时可能出现的错误，还通过减少完成请求的时间，提高了最终用户的生产力。
+- en: In this section, we will take a look at using automation to handle password
+    resets, which is quite possibly one of the most common requests handled by service
+    desks.
+  id: totrans-122
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这一部分中，我们将了解如何通过自动化来处理密码重置请求，这很可能是服务台处理的最常见请求之一。
+- en: Let's look at an automation rule that will automatically reset a user password
+    when the user raises a password reset request in the service desk.
+  id: totrans-123
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们来看一个自动化规则，当用户在服务台提交密码重置请求时，自动重置用户密码。
+- en: Creating a rule to automatically reset passwords
+  id: totrans-124
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 创建一个规则来自动重置密码
+- en: Probably one of the more frequent and time-consuming tasks faced by IT service
+    desks is the request to reset a user's password, making it a prime candidate for
+    automation.
+  id: totrans-125
+  prefs: []
+  type: TYPE_NORMAL
+  zh: IT服务台面临的一个常见且耗时的任务是重置用户密码的请求，这使得它成为自动化的理想候选任务。
+- en: To demonstrate how we could achieve this with automation rules in Jira Service
+    Management, we are going to make use of **Microsoft's Azure AD** service, which
+    has a well-defined **REpresentational State Transfer** **application programming
+    interface** (**REST API**).
+  id: totrans-126
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了展示我们如何通过Jira Service Management中的自动化规则实现这一目标，我们将利用**微软的Azure AD**服务，该服务拥有定义良好的**表现性状态转移**
+    **应用程序编程接口**（**REST API**）。
+- en: Important note
+  id: totrans-127
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 重要提示
+- en: We are going to assume that the only common information between users in Jira
+    Cloud (or Jira Server) and Azure AD are the users' email addresses, as Jira Cloud
+    does not allow access to user account names.
+  id: totrans-128
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们假设Jira Cloud（或Jira Server）和Azure AD之间唯一的公共信息是用户的电子邮件地址，因为Jira Cloud不允许访问用户账户名。
+- en: To begin, we first need to ensure that Jira is registered as an app with Azure
+    AD and has the appropriate permissions assigned.
+  id: totrans-129
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 首先，我们需要确保Jira已经作为应用注册到Azure AD，并且拥有适当的权限。
+- en: 'Let''s start by completing the configuration we require in Azure AD, as follows:'
+  id: totrans-130
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 首先，我们需要完成在Azure AD中所需的配置，如下所示：
+- en: Navigate to the **Azure Active Directory** component in your Azure portal and
+    select **App registrations**, and then click on **New registration**.
+  id: totrans-131
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在你的Azure门户中导航到**Azure Active Directory**组件，选择**应用注册**，然后点击**新建注册**。
+- en: Name your new app `Service Desk Autobot` and click **Register**.
+  id: totrans-132
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 将你的新应用命名为`Service Desk Autobot`，然后点击**注册**。
+- en: 'You should now be presented with a screen similar to the one shown in the following
+    screenshot. You will need to copy the **Application (client) ID (1)** and **Directory
+    (tenant) ID (2)** IDs to use later in our rule:'
+  id: totrans-133
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 你现在应该会看到一个类似于下面截图的界面。你需要复制**应用程序（客户端）ID（1）**和**目录（租户）ID（2）**，以便稍后在我们的规则中使用：
+- en: '![Figure 6.4 – Registering Jira as an app with Azure AD'
+  id: totrans-134
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '![图6.4 – 在Azure AD中将Jira注册为应用'
+- en: '](img/B16551_Figure_6.4.jpg)'
+  id: totrans-135
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '](img/B16551_Figure_6.4.jpg)'
+- en: Figure 6.4 – Registering Jira as an app with Azure AD
+  id: totrans-136
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 图6.4 – 在Azure AD中将Jira注册为应用
+- en: The next step is to create a client secret that we can use to authenticate with
+    from our automation rule. To do this, navigate to **Certificates & secrets** in
+    the menu and click on **New client secret** in the **Client secrets** section.
+  id: totrans-137
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 下一步是创建一个客户端密钥，用于通过自动化规则进行身份验证。为此，请在菜单中导航到**证书与秘密**，并在**客户端密钥**部分点击**新建客户端密钥**。
+- en: Add an optional description and select the length of time you want this secret
+    to be valid for, and click **Add**.
+  id: totrans-138
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 添加可选描述并选择你希望该密钥有效的时间长度，然后点击**添加**。
+- en: 'Your screen should now look similar to the one shown in the following screenshot.
+    Copy the newly added **client secret (1)** ID to a safe place for use later in
+    our automation rule:'
+  id: totrans-139
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 你的屏幕现在应该看起来类似于以下屏幕截图。将新添加的**客户端密钥 (1)** ID 复制到安全位置，以便稍后在自动化规则中使用：
+- en: '![Figure 6.5 – Creating a client secret in Azure AD for Jira'
+  id: totrans-140
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '![图 6.5 – 在 Azure AD 中为 Jira 创建客户端密钥'
+- en: '](img/B16551_Figure_6.5.jpg)'
+  id: totrans-141
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '](img/B16551_Figure_6.5.jpg)'
+- en: Figure 6.5 – Creating a client secret in Azure AD for Jira
+  id: totrans-142
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 图 6.5 – 在 Azure AD 中为 Jira 创建客户端密钥
+- en: We now need to give our new app the correct permissions in order to be able
+    to reset passwords in Azure AD.
+  id: totrans-143
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在我们需要为我们的新应用授予正确的权限，以便能够在 Azure AD 中重置密码。
+- en: Navigate to the **API permissions** menu item and then click **Add a permission**.
+    Then, select **Microsoft Graph**.
+  id: totrans-144
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 导航到**API 权限**菜单项，然后点击**添加权限**。接着，选择**Microsoft Graph**。
+- en: Next, select `Directory`, and check the **Directory.ReadWrite.All** permission.
+    Finally, click **Add permissions**, as shown in the following screenshot:![Figure
+    6.6 – Adding the correct Azure AD permissions for Jira
+  id: totrans-145
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 接下来，选择`Directory`，并勾选**Directory.ReadWrite.All**权限。最后，点击**添加权限**，如以下屏幕截图所示：![图
+    6.6 – 为 Jira 添加正确的 Azure AD 权限
+- en: '](img/B16551_Figure_6.6.jpg)'
+  id: totrans-146
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '](img/B16551_Figure_6.6.jpg)'
+- en: Figure 6.6 – Adding the correct Azure AD permissions for Jira
+  id: totrans-147
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 图 6.6 – 为 Jira 添加正确的 Azure AD 权限
+- en: To simplify the interaction with our automation rule, we want to pre-authorize
+    the permissions we just granted, so click on `<tenant>`.
+  id: totrans-148
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 为了简化与自动化规则的交互，我们希望预先授权我们刚刚授予的权限，所以点击`<tenant>`。
+- en: 'The status for both **Microsoft Graph** API permissions should now have a green
+    check next to them indicating they have been granted **Admin** consent, as can
+    be seen in the following screenshot:'
+  id: totrans-149
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 现在，两个**Microsoft Graph** API 权限的状态应该都有一个绿色勾选，表示它们已获得**管理员**同意，正如以下屏幕截图所示：
+- en: '![Figure 6.7 – Granting Admin consent to the API permissions'
+  id: totrans-150
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '![图 6.7 – 授予 API 权限的管理员同意'
+- en: '](img/B16551_Figure_6.7.jpg)'
+  id: totrans-151
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '](img/B16551_Figure_6.7.jpg)'
+- en: Figure 6.7 – Granting Admin consent to the API permissions
+  id: totrans-152
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 图 6.7 – 授予 API 权限的管理员同意
+- en: 'The final step in the Azure portal is to grant the **Company Administrator**
+    role to your app. To do this, click on the Cloud Shell icon immediately to the
+    right of the search bar and copy the following commands to the PowerShell terminal:'
+  id: totrans-153
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在 Azure 门户中的最后一步是授予你的应用**公司管理员**角色。为此，请点击搜索栏右侧的 Cloud Shell 图标，并将以下命令复制到 PowerShell
+    终端中：
+- en: '[PRE0]'
+  id: totrans-154
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: 'Your screen should now look similar to the one shown in the following screenshot:'
+  id: totrans-155
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 你的屏幕现在应该看起来类似于以下屏幕截图：
+- en: '![Figure 6.8 – Granting the Company Administrator role to Jira'
+  id: totrans-156
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '![图 6.8 – 将公司管理员角色授予 Jira'
+- en: '](img/B16551_Figure_6.8.jpg)'
+  id: totrans-157
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '](img/B16551_Figure_6.8.jpg)'
+- en: Figure 6.8 – Granting the Company Administrator role to Jira
+  id: totrans-158
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 6.8 – 将公司管理员角色授予 Jira
+- en: 'Now that we have configured our app in Azure AD and you have a couple of users
+    configured with email addresses that match their Jira email addresses, we can
+    create our automation rule to automatically reset user passwords when a request
+    is received in Jira Service Management. To do this, follow these steps:'
+  id: totrans-159
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经在 Azure AD 中配置了应用，并且你已经配置了一些与 Jira 邮件地址匹配的用户邮箱地址，我们可以创建自动化规则，当 Jira Service
+    Management 接收到请求时，自动重置用户密码。为此，请按照以下步骤操作：
+- en: In your Jira Service Management project, navigate to **Project settings**, click
+    on the **Automation** link in the **Project Settings** menu, and then click **Create
+    rule**.
+  id: totrans-160
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在你的 Jira Service Management 项目中，导航到**项目设置**，点击**项目设置**菜单中的**自动化**链接，然后点击**创建规则**。
+- en: Select the `Issue Created` and `Issue Updated`, then click **Save**.
+  id: totrans-161
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 选择`Issue Created`和`Issue Updated`，然后点击**保存**。
+- en: Then, select `Components`
+  id: totrans-162
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 然后，选择`Components`
+- en: '`contains any of`'
+  id: totrans-163
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`contains any of`'
+- en: '`Active Directory`'
+  id: totrans-164
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`Active Directory`'
+- en: Select `Summary`
+  id: totrans-165
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 选择`Summary`
+- en: '`contains`'
+  id: totrans-166
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`contains`'
+- en: '`password`'
+  id: totrans-167
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`password`'
+- en: Next, we'll use the [https://www.passwordrandom.com](https://www.passwordrandom.com)
+    external web service to generate a random, temporary password for the user, so
+    we'll select `GET`
+  id: totrans-168
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 接下来，我们将使用[https://www.passwordrandom.com](https://www.passwordrandom.com)外部网页服务为用户生成一个随机的临时密码，因此我们将选择`GET`
+- en: '`Empty`'
+  id: totrans-169
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`Empty`'
+- en: '**Wait for response**: Ensure this is selected'
+  id: totrans-170
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '**等待响应**：确保选择了此项'
+- en: 'If you validate your webhook configuration, you should receive a response,
+    similar to the following:'
+  id: totrans-171
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如果您验证了webhook配置，应该会收到一个类似以下内容的响应：
+- en: '[PRE1]'
+  id: totrans-172
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: Click **Save** to move on.
+  id: totrans-173
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 点击**保存**继续。
+- en: In the next step, we need to log in to Microsoft Azure and retrieve an authentication
+    token. To complete this step, we will need the `resource`, `client_id`, `client_secret`,
+    and `grant_type`.
+  id: totrans-174
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在下一步中，我们需要登录到Microsoft Azure并获取身份验证令牌。为了完成此步骤，我们需要`resource`、`client_id`、`client_secret`和`grant_type`。
+- en: To URL-encode the data, the field and the value are separated by `=` and each
+    field-value pair is then separated using `&`; and finally, the entire text string
+    needs to be URL-encoded, which you can do by pasting the complete string into
+    a service such as [https://www.urlencoder.org](https://www.urlencoder.org).
+  id: totrans-175
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 为了对数据进行URL编码，字段和值通过`=`分隔，每个字段值对再使用`&`分隔；最后，需要对整个文本字符串进行URL编码，您可以通过将完整字符串粘贴到像[https://www.urlencoder.org](https://www.urlencoder.org)这样的服务中来完成此操作。
+- en: Select `https://login.windows.net/<Directory (tenant) ID>/oauth2/token`
+  id: totrans-176
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 选择 `https://login.windows.net/<目录 (租户) ID>/oauth2/token`
+- en: '`Content-Type`'
+  id: totrans-177
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`Content-Type`'
+- en: '`application/x-www-form-urlencoded`'
+  id: totrans-178
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`application/x-www-form-urlencoded`'
+- en: '`POST`'
+  id: totrans-179
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`POST`'
+- en: '`Custom data`'
+  id: totrans-180
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`自定义数据`'
+- en: '`<Application (client) ID>`'
+  id: totrans-181
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`<应用程序 (客户端) ID>`'
+- en: '`<Client secret>`'
+  id: totrans-182
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`<客户端密钥>`'
+- en: '`client_credentials`'
+  id: totrans-183
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`client_credentials`'
+- en: 'At this point, your rule should look similar to the one shown in the following
+    screenshot:'
+  id: totrans-184
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 到此为止，您的规则应该类似于以下截图所示：
+- en: '![Figure 6.9 – Configuring the login web request to Azure AD'
+  id: totrans-185
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '![图 6.9 – 配置登录到Azure AD的网页请求'
+- en: '](img/B16551_Figure_6.9.jpg)'
+  id: totrans-186
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '](img/B16551_Figure_6.9.jpg)'
+- en: Figure 6.9 – Configuring the login web request to Azure AD
+  id: totrans-187
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 图 6.9 – 配置登录到Azure AD的网页请求
+- en: 'A successful login request to Microsoft Azure will return the `token_type`
+    and `access_token` you will need to complete the password reset request in the
+    following `{{webhookResponse.body.token_type}}` and `{{webhookResponse.body.access_token}}`
+    smart values respectively, as follows:'
+  id: totrans-188
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 成功的Microsoft Azure登录请求将返回`token_type`和`access_token`，您将分别使用以下的`{{webhookResponse.body.token_type}}`和`{{webhookResponse.body.access_token}}`智能值，来完成密码重置请求：
+- en: '[PRE2]'
+  id: totrans-189
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: Now that we have successfully logged in to Microsoft Azure, we can use the authentication
+    response and the reporter's email address to look up the ID of the user in the
+    Azure AD. To do this, we need to select `https://graph.microsoft.com/v1.0/users?$filter=startsWith(mail,'{{reporter.emailAddress.urlEncode}}')`
+  id: totrans-190
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在我们已成功登录到Microsoft Azure，我们可以使用身份验证响应和报告者的电子邮件地址，查找Azure AD中用户的ID。为此，我们需要选择
+    `https://graph.microsoft.com/v1.0/users?$filter=startsWith(mail,'{{reporter.emailAddress.urlEncode}}')`
+- en: '`Authorization`'
+  id: totrans-191
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`Authorization`'
+- en: '`{{webhookResponses.get(1).body.token_type}} {{webhookResponses.get(1).body.access_token}}`'
+  id: totrans-192
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`{{webhookResponses.get(1).body.token_type}} {{webhookResponses.get(1).body.access_token}}`'
+- en: '`GET`'
+  id: totrans-193
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`GET`'
+- en: '`Empty`'
+  id: totrans-194
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`Empty`'
+- en: '`{{webhookResponse.body.value.id}}` smart value, as follows:'
+  id: totrans-195
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`{{webhookResponse.body.value.id}}`智能值，如下所示：'
+- en: '[PRE3]'
+  id: totrans-196
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: Tip
+  id: totrans-197
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 提示
+- en: When receiving responses multiple web requests in an automation rule, each response
+    is added to the `{{webhookResponses}}` smart value list in the order it was called
+    in the rule, starting at position zero (`0`). We can therefore use the smart value
+    list functions to retrieve the individual webhook responses when we need to reference
+    them later in the rule. For example, `{{webhookResponses.get(1).body}}` will retrieve
+    the JSON response from the *second* web request, while `{{webhookResponses.first.body}}`
+    will retrieve the response from the first request.
+  id: totrans-198
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 当自动化规则接收到多个网页请求的响应时，每个响应会按照在规则中调用的顺序，添加到`{{webhookResponses}}`智能值列表中，从位置零（`0`）开始。因此，我们可以使用智能值列表函数，在后续需要引用时获取单个的webhook响应。例如，`{{webhookResponses.get(1).body}}`将获取来自*第二个*网页请求的JSON响应，而`{{webhookResponses.first.body}}`将获取第一个请求的响应。
+- en: Now that we have our authentication data, the ID of the user in Azure AD, and
+    a temporary password from our first web request, we can combine these to actually
+    perform the password reset.
+  id: totrans-199
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在我们拥有了身份验证数据、Azure AD中用户的ID和我们从第一个网页请求中获取的临时密码，我们可以将这些信息结合起来，实际执行密码重置。
+- en: Select `https://graph.microsoft.com/v1.0/users/{{webhookResponse.body.value.id}}`
+  id: totrans-200
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 选择 `https://graph.microsoft.com/v1.0/users/{{webhookResponse.body.value.id}}`
+- en: First `Authorization`
+  id: totrans-201
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 首先 `Authorization`
+- en: '`{{webhookResponses.get(1).body.token_type}} {{webhookResponses.get(1).body.access_token}}`'
+  id: totrans-202
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`{{webhookResponses.get(1).body.token_type}} {{webhookResponses.get(1).body.access_token}}`'
+- en: Second `Content-Type`
+  id: totrans-203
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 第二个 `Content-Type`
+- en: '`application/json`'
+  id: totrans-204
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`application/json`'
+- en: '`POST`'
+  id: totrans-205
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`POST`'
+- en: '`Custom data`'
+  id: totrans-206
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`自定义数据`'
+- en: '**Custom data**:'
+  id: totrans-207
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '**自定义数据**：'
+- en: '[PRE4]'
+  id: totrans-208
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: '**Wait for response**: Ensure this option is selected so that we only continue
+    with the rule if the response is successful.'
+  id: totrans-209
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '**等待响应**：确保选中此选项，以便只有在响应成功时，我们才会继续执行该规则。'
+- en: The custom data in this example makes use of the Azure AD password profile structure
+    of the user REST API defined in Microsoft's Graph API, available at [https://docs.microsoft.com/en-us/graph/api/resources/passwordprofile?view=graph-rest-1.0](https://docs.microsoft.com/en-us/graph/api/resources/passwordprofile?view=graph-rest-1.0).
+  id: totrans-210
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 本示例中的自定义数据使用了微软Graph API中定义的用户REST API的Azure AD密码配置结构，详细信息请参见[https://docs.microsoft.com/en-us/graph/api/resources/passwordprofile?view=graph-rest-1.0](https://docs.microsoft.com/en-us/graph/api/resources/passwordprofile?view=graph-rest-1.0)。
+- en: 'Your rule should look similar to the one shown in the following screenshot:'
+  id: totrans-211
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 您的规则应类似于以下截图所示：
+- en: '![Figure 6.10 – Configuring the reset password request'
+  id: totrans-212
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '![图 6.10 – 配置密码重置请求'
+- en: '](img/B16551_Figure_6.10.jpg)'
+  id: totrans-213
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '](img/B16551_Figure_6.10.jpg)'
+- en: Figure 6.10 – Configuring the reset password request
+  id: totrans-214
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 图 6.10 – 配置密码重置请求
+- en: To complete the rule, we need to inform the user that their password has been
+    reset, as well as what the new temporary password is for them to be able sign
+    in again and change the password to one of their choice.
+  id: totrans-215
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 要完成该规则，我们需要通知用户他们的密码已被重置，并告知他们新的临时密码，以便他们重新登录并将密码更改为他们选择的密码。
+- en: Select `Reporter`
+  id: totrans-216
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 选择 `报告人`
+- en: '`Your request to reset your password has been completed.`'
+  id: totrans-217
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`您的密码重置请求已完成。`'
+- en: '`Dear {{issue.reporter.displayName.split(" ").first}},`'
+  id: totrans-218
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`亲爱的 {{issue.reporter.displayName.split(" ").first}}，`'
+- en: '`Your request to reset your password has been completed.`'
+  id: totrans-219
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`您的密码重置请求已完成。`'
+- en: '`The new temporary password which has been generated for you is:`'
+  id: totrans-220
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`为您生成的新临时密码是：`'
+- en: '`{{webhookResponses.first.body.char}}`'
+  id: totrans-221
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`{{webhookResponses.first.body.char}}`'
+- en: '`You will be prompted to change this when you next log in.`'
+  id: totrans-222
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`下次登录时，系统将提示您更改密码。`'
+- en: '`Thank you,`'
+  id: totrans-223
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`谢谢，`'
+- en: '`The Service Desk Team.`'
+  id: totrans-224
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`服务台团队。`'
+- en: Finally, select `Password reset bot`, and ensure the **Allow rule trigger**
+    checkbox is selected. Click **Save** and then click **Turn it on** to enable the
+    rule.
+  id: totrans-225
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 最后，选择 `密码重置机器人`，并确保选中**允许规则触发**复选框。点击**保存**，然后点击**开启**以启用该规则。
+- en: In this section, we have learned how we can use automation rules to automate
+    common and repetitive tasks faced by service desk teams by looking at one of the
+    most common repetitive tasks—namely, resetting passwords.
+  id: totrans-226
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本节中，我们学习了如何使用自动化规则来自动化服务台团队面临的常见和重复性任务，通过查看最常见的重复性任务之一——重置密码。
+- en: As we have seen, using automation rules to automate these types of repetitive
+    and time-consuming tasks will lead to improved overall efficiency of your service
+    desk, reducing the cost per ticket and also improving end-user satisfaction.
+  id: totrans-227
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如我们所见，使用自动化规则来自动化这些重复且耗时的任务将提高您的服务台的整体效率，减少每个工单的成本，并提高最终用户的满意度。
+- en: Summary
+  id: totrans-228
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 总结
+- en: In this chapter, you learned how adding automations to Jira Service Management
+    can improve the efficiency of your IT service desks, reducing the cost per ticket
+    and improving overall user satisfaction.
+  id: totrans-229
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，您学习了如何通过将自动化添加到Jira服务管理中，提升IT服务台的效率，降低每个工单的成本，并提高整体用户满意度。
+- en: We learned how categorizing and processing incoming requests early in the request
+    life cycle can increase the response and resolution times of requests as human
+    intervention is no longer required for triage, and we now understand how monitoring
+    SLA compliance with appropriate escalations can help to stay on top of important
+    issues.
+  id: totrans-230
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们学到了如何在请求生命周期的早期对传入的请求进行分类和处理，这可以提高请求的响应和解决时间，因为不再需要人工干预进行初步筛选，并且我们现在了解了如何通过适当的升级监控SLA合规性，以帮助我们保持对重要问题的掌控。
+- en: Finally, we learned how using automation bots to perform common and repetitive
+    tasks such as resetting a user's password can drastically improve both the time
+    to resolve a request and the end user's productivity, as they no longer have to
+    wait for a service agent to manually perform the tasks.
+  id: totrans-231
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后，我们了解到，使用自动化机器人执行常见且重复的任务（如重置用户密码）可以显著提高请求解决的时间和最终用户的生产力，因为他们不再需要等待服务代理手动执行这些任务。
+- en: By using the skills learned in this chapter and applying them to more processes
+    within your service desk, you will not only enable your service agents to focus
+    on more meaningful and urgent tasks but will also improve overall user satisfaction
+    with IT services throughout the organization.
+  id: totrans-232
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通过运用本章所学的技能，并将其应用于服务台中的更多流程，你不仅能够让服务代理集中精力处理更有意义和紧急的任务，还将提升整个组织对IT服务的整体用户满意度。
+- en: In the next chapter, we will explore how we can use automations to effectively
+    manage Jira Software projects.
+  id: totrans-233
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一章，我们将探讨如何使用自动化有效管理Jira软件项目。

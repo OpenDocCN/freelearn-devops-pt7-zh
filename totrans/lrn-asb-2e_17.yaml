@@ -1,0 +1,1459 @@
+- en: '17'
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '17'
+- en: Next Steps with Ansible
+  id: totrans-1
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Ansible的后续步骤
+- en: In this, our final chapter, we will discuss how you can integrate Ansible into
+    your day-to-day workflows. We will cover continuous integration tools, monitoring
+    tools, and troubleshooting.
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章的最后一部分，我们将讨论如何将Ansible集成到你的日常工作流程中。我们将讨论持续集成工具、监控工具和故障排除。
+- en: 'We will discuss the following topics:'
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将讨论以下主题：
+- en: Integrating with third-party services
+  id: totrans-4
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 集成第三方服务
+- en: How you can use Ansible to troubleshoot problems when they occur
+  id: totrans-5
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 如何使用Ansible在问题发生时进行故障排除
+- en: Some real-world examples
+  id: totrans-6
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 一些实际案例
+- en: Let’s dive straight in and look at how we can hook our playbooks into third-party
+    services.
+  id: totrans-7
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们直接进入主题，看看如何将我们的剧本与第三方服务进行集成。
+- en: Technical requirements
+  id: totrans-8
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 技术要求
+- en: This chapter will differ from previous ones. While code examples are given in
+    the chapter and the GitHub repository, they will not be complete working examples.
+    Instead, we will discuss integrating them into your projects so they are more
+    of the art of the possible rather than fully formed examples.
+  id: totrans-9
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章与之前的章节有所不同。虽然本章和GitHub库中给出了代码示例，但它们并不是完整的可运行示例。相反，我们将讨论如何将它们集成到你的项目中，使它们更像是可能的艺术，而不是完全形成的示例。
+- en: Integrating with third-party services
+  id: totrans-10
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 集成第三方服务
+- en: Although you may be running the playbooks yourself, it’s a good idea to keep
+    a log of your playbook run or update other team members or departments with the
+    results. Ansible has several modules that allow you to work with third-party services
+    to provide real-time notifications.
+  id: totrans-11
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 虽然你可能自己运行剧本，但保持剧本运行日志或更新其他团队成员或部门的结果是个好主意。Ansible有多个模块可以帮助你与第三方服务合作，提供实时通知。
+- en: Let’s start by looking at Slack.
+  id: totrans-12
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们从Slack开始。
+- en: Slack
+  id: totrans-13
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: Slack
+- en: Slack has rapidly become the preferred option for team-based collaboration services
+    across different IT departments. One key benefit of Slack is its support for third-party
+    applications via its App Directory; Ansible supports Slack Incoming Webhooks via
+    the `community.general.slack` module.
+  id: totrans-14
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Slack迅速成为不同IT部门团队协作服务的首选。Slack的一个主要优势是通过其应用目录支持第三方应用；Ansible通过`community.general.slack`模块支持Slack的传入Webhooks。
+- en: 'Remember, you can install the `community.general` collection if you don’t have
+    it installed by running the following command:'
+  id: totrans-15
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 记住，如果你还没有安装`community.general`集合，你可以运行以下命令来安装它：
+- en: '[PRE0]'
+  id: totrans-16
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: Before we look at the Ansible code, we should quickly discuss how you create
+    a Slack App and enable webhooks.
+  id: totrans-17
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在我们查看Ansible代码之前，先快速讨论一下如何创建一个Slack应用并启用webhooks。
+- en: 'First, you must make your own Slack app; you can do this by visiting [https://api.slack.com/apps/new](https://api.slack.com/apps/new).
+    Once there, click the **Create an App** button and select the **From Scratch**
+    option. From here, you need to fill in the **App Name** and **Pick a workspace
+    to develop your app in**, which for the majority of us will be your primary workspace,
+    as you can see from the following screenshot:'
+  id: totrans-18
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 首先，你需要创建自己的Slack应用；你可以访问[https://api.slack.com/apps/new](https://api.slack.com/apps/new)来完成这一步。进入后，点击**创建应用**按钮，并选择**从零开始**选项。接下来，你需要填写**应用名称**和**选择一个工作区来开发你的应用**，对于我们大多数人来说，这将是你的主工作区，正如以下截图所示：
+- en: '![Figure 17.1 – Creating the Slack app](img/B21620_11_011.jpg)'
+  id: totrans-19
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图17.1 – 创建Slack应用](img/B21620_11_011.jpg)'
+- en: Figure 17.1 – Creating the Slack app
+  id: totrans-20
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图17.1 – 创建Slack应用
+- en: Once the Slack App has been created, you will be taken to your new application
+    settings page. In the left-hand menu, you should see an option for **Incoming
+    Webhooks**. Go to this page and toggle the **Activate Incoming Webhooks** switch
+    to **On**. This will extend the options and give you the option to **Add New Webhook**
+    **to Workspace**.
+  id: totrans-21
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦Slack应用创建完成，你将进入新的应用设置页面。在左侧菜单中，你应该看到**传入Webhooks**的选项。进入该页面并将**启用传入Webhooks**开关切换为**开启**。这将扩展选项，并允许你**添加新的Webhook**到**工作区**。
+- en: 'From here, you will need to select where you would like your Slack App to post;
+    as you can see from the following screenshot, I selected the **#****general**
+    channel:'
+  id: totrans-22
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这里，你需要选择你希望你的Slack应用发布到哪里；如以下截图所示，我选择了**#general**频道：
+- en: '![Figure 17.2 – Choosing where to post](img/B21620_11_02.jpg)'
+  id: totrans-23
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图17.2 – 选择发布位置](img/B21620_11_02.jpg)'
+- en: Figure 17.2 – Choosing where to post
+  id: totrans-24
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图17.2 – 选择发布位置
+- en: 'Once selected, you will be taken back to the **Incoming Webhooks** page for
+    your application; here, you will be given a Webhook URL, which should look something
+    like the following, and you will need to make a note of this and keep it safe
+    (the following one has been revoked):'
+  id: totrans-25
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦选择了，你将被带回到你的应用的**Incoming Webhooks**页面；在这里，你将获得一个Webhook URL，它应该看起来像以下内容，你需要记录并妥善保管（以下的链接已被撤销）：
+- en: '[PRE1]'
+  id: totrans-26
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: Now that we have everything we need to interact with Slack, we can examine the
+    code. As mentioned at the start of the chapter, I will only go into some of the
+    code, as much of it will already be familiar.
+  id: totrans-27
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经准备好与Slack交互，我们可以查看代码。正如本章开始时提到的，我只会深入讲解其中的一些代码，因为很多内容你可能已经很熟悉了。
+- en: 'There is just a single variable we need to add, and it is the token used to
+    identify and authenticate against the webhook we created: the token is everything
+    after `https://hooks.slack.com/services/` in the webhook URL from Slack, so in
+    my case, the variable, which I put in `group_vars/common.yml`, looks like this:'
+  id: totrans-28
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们只需要添加一个变量，它是用于识别和验证我们创建的Webhook的token：token是Webhook URL中`https://hooks.slack.com/services/`后面的所有内容，因此在我的例子中，我将该变量放在`group_vars/common.yml`中，如下所示：
+- en: '[PRE2]'
+  id: totrans-29
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: 'As this token should be treated as a secret, I recommend also using Ansible
+    Vault to encrypt the value, so to do this, you can run the following:'
+  id: totrans-30
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于这个token应该被视为机密，我建议也使用Ansible Vault来加密其值，因此你可以运行以下命令来实现这一点：
+- en: '[PRE3]'
+  id: totrans-31
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: The token in the repo is encrypted using Ansible Vault, and as it has been revoked,
+    you will need to update it with your own.
+  id: totrans-32
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 仓库中的token使用Ansible Vault进行了加密，且它已经被撤销，因此你需要用你自己的token来更新它。
+- en: By jumping straight into `roles/slack/tasks/main.yml`, you can see that the
+    playbook launches a resource group, virtual network, and subnet in Azure.
+  id: totrans-33
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通过直接跳到`roles/slack/tasks/main.yml`，你可以看到剧本启动了Azure中的资源组、虚拟网络和子网。
+- en: 'There are no changes to the first tasks that launch the Azure resources:'
+  id: totrans-34
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 启动Azure资源的第一个任务没有变化：
+- en: '[PRE4]'
+  id: totrans-35
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: 'Additionally, the debug task we used in previous chapters is still there; immediately
+    after the debug task, we have the task (well, sort of) which sends the notification
+    to Slack:'
+  id: totrans-36
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 此外，我们在前几章中使用的调试任务仍然存在；在调试任务后面，我们有一个任务（嗯，有点像）会将通知发送到Slack：
+- en: '[PRE5]'
+  id: totrans-37
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: 'As you can see, it triggers another task in the `slack_notify_generic.yml`
+    file, and we pass the registered output’s content as a set of variables, most
+    of the them are self-explanatory:'
+  id: totrans-38
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，它触发了`slack_notify_generic.yml`文件中的另一个任务，我们将注册输出的内容传递为一组变量，其中大部分变量是显而易见的：
+- en: '[PRE6]'
+  id: totrans-39
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: 'The last two are a little different; this one takes the full resource ID and
+    prefixes it with `https://portal.azure.com/#resource`, as the resource ID is the
+    URL for the resource in Azure; this, together with the URL prefix, will give us
+    a clickable link that will take the user directly to the resource when they follow
+    it:'
+  id: totrans-40
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后两个有点不同；这个需要完整的资源ID，并将其前缀加上`https://portal.azure.com/#resource`，因为资源ID是Azure中资源的URL；这个和URL前缀一起，会生成一个可点击的链接，当用户点击时，直接带领他们到资源页面：
+- en: '[PRE7]'
+  id: totrans-41
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE7]'
+- en: 'The final variable generates a comma-separated list of tags and values using
+    a Jinja2 template function:'
+  id: totrans-42
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最终变量使用Jinja2模板函数生成一个以逗号分隔的标签和值的列表：
+- en: '[PRE8]'
+  id: totrans-43
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE8]'
+- en: You might also have noticed that the `{{ key }}` variable has a `*` on either
+    side; this is not part of the template function; this is the markdown syntax for
+    **bold**, and it will style the contents as such.
+  id: totrans-44
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可能也注意到，`{{ key }}`变量两侧有一个`*`；这不是模板函数的一部分，而是Markdown语法中的**粗体**，它会将内容样式化为粗体。
+- en: Before we look at what is in `roles/slack/tasks/` `slack_notify_generic.yml`,
+    let’s quickly discuss why we are taking this approach.
+  id: totrans-45
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在查看`roles/slack/tasks/`中的`slack_notify_generic.yml`之前，让我们快速讨论一下为什么我们选择了这种方法。
+- en: As we mentioned several times in the title, one of the main goals of automating
+    our deployments is to streamline everything as much as possible. In this case,
+    the task we are calling will be the standard throughout the playbook, and the
+    only changes we need to make are the content.
+  id: totrans-46
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如我们在标题中多次提到的，自动化部署的主要目标之一是尽可能地简化一切。在这种情况下，我们调用的任务将在整个剧本中作为标准，唯一需要改变的是内容。
+- en: So rather than repeating the `community.general.slack` task several times in
+    our playbook, we can define it once and then call it multiple times. This means
+    if we need to change something in the `community.general.slack` task, we only
+    have to update it in one place.
+  id: totrans-47
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 所以我们并不需要在剧本中多次重复`community.general.slack`任务，我们可以只定义一次，然后多次调用。这意味着如果我们需要更改`community.general.slack`任务中的内容，我们只需要在一个地方更新它。
+- en: 'The task itself has a little bit of logic added, so let’s review that now:'
+  id: totrans-48
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 任务本身有一点逻辑附加在其中，现在我们来回顾一下：
+- en: '[PRE9]'
+  id: totrans-49
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE9]'
+- en: As you can see from the preceding code, we are passing our webhook `token` and
+    setting the `parse` option to `none`. This means that `community.general.slack`
+    will not touch any content we post to the webhook to strip out formatting, etc.
+  id: totrans-50
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如前面的代码所示，我们传递了 webhook 的 `token`，并将 `parse` 选项设置为 `none`。这意味着 `community.general.slack`
+    不会处理我们发布到 webhook 的任何内容，不会去除格式等。
+- en: 'Rather than sending a simple message, we use the `attachments` type. This will
+    nicely format our message into blocks, and we can also set a status color based
+    on whether there has been a change to the content or not:'
+  id: totrans-51
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们不是发送一个简单的消息，而是使用 `attachments` 类型。这将把我们的消息格式化为块状，并且我们可以根据内容是否发生变化来设置状态颜色：
+- en: '[PRE10]'
+  id: totrans-52
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE10]'
+- en: 'The logic for setting the color is as follows: here, we use the Boolean value
+    of `true` or `false` that is passed by the `resource_changed` variable. If the
+    variable equals `true`, it means that the resource has been changed, so we set
+    the color to the pre-defined `warning` color, which is orange; otherwise, the
+    color is set to `good`, which is green:'
+  id: totrans-53
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 设置颜色的逻辑如下：在这里，我们使用 `resource_changed` 变量传递的布尔值 `true` 或 `false`。如果变量等于 `true`，意味着资源发生了变化，因此我们将颜色设置为预定义的
+    `warning` 颜色，即橙色；否则，颜色设置为 `good`，即绿色：
+- en: '[PRE11]'
+  id: totrans-54
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE11]'
+- en: 'Next, we have the message content: here, we are using a similar logic as we
+    did for setting the color based on whether there has been a change to the resource
+    or not:'
+  id: totrans-55
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来，我们有消息内容：在这里，我们使用与设置颜色类似的逻辑，根据资源是否发生变化来决定颜色：
+- en: '[PRE12]'
+  id: totrans-56
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE12]'
+- en: 'Finally, we have the fields; each of these displays the information we are
+    passing to the task in a block, apart from one:'
+  id: totrans-57
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后，我们有字段；每个字段都以块的形式显示我们传递给任务的信息，除了一个：
+- en: '[PRE13]'
+  id: totrans-58
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE13]'
+- en: 'The value of the Azure portal link is a little different; Slack uses **mrkdwn**,
+    a markup language similar to Markdown but with some differences, especially regarding
+    formatting links. As you can see, we are setting this to the following:'
+  id: totrans-59
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Azure 门户链接的值稍有不同；Slack 使用 **mrkdwn**，一种类似于 Markdown 的标记语言，但在某些方面有所不同，特别是在格式化链接时。正如你所看到的，我们将其设置为以下内容：
+- en: '[PRE14]'
+  id: totrans-60
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE14]'
+- en: This is the mrkdwn syntax for creating a clickable link. It will link to the
+    URL being passed in the `{{ azure_portal_link }}` variable. The text after the
+    pipe `|` is the visible text that will appear in the Slack message and act as
+    the clickable link.
+  id: totrans-61
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这是创建可点击链接的 mrkdwn 语法。它将链接到 `{{ azure_portal_link }}` 变量中传递的 URL。管道符号 `|` 后的文本是会出现在
+    Slack 消息中的可见文本，并充当可点击链接。
+- en: When Slack renders this message, it will display `{{ azure_portal_link }}` variable,
+    directing the user to the Azure Portal.
+  id: totrans-62
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当 Slack 渲染此消息时，它会显示 `{{ azure_portal_link }}` 变量，指向 Azure 门户。
+- en: 'Now that we know what the playbook looks like, let’s run it:'
+  id: totrans-63
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经了解了 playbook 的样子，让我们运行它：
+- en: '[PRE15]'
+  id: totrans-64
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE15]'
+- en: 'This will prompt you to provide a valuable password and then deploy the resources;
+    in this case, we don’t need to know the output of running the playbook and should,
+    instead, turn our attention to Slack itself:'
+  id: totrans-65
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这将提示你提供一个有效的密码，然后部署资源；在这种情况下，我们不需要了解运行 playbook 的输出，应该将注意力转向 Slack 本身：
+- en: '![Figure 17.3 – First run of the playbook](img/B21620_11_03.jpg)'
+  id: totrans-66
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 17.3 – Playbook 的第一次运行](img/B21620_11_03.jpg)'
+- en: Figure 17.3 – First run of the playbook
+  id: totrans-67
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 17.3 – Playbook 的第一次运行
+- en: As you can see from the preceding output, three resources have been added, so
+    they are referred to as created/updated. The orange bar is on the left-hand side
+    of the message.
+  id: totrans-68
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 从前面的输出中可以看出，已经添加了三个资源，因此它们被称为已创建/更新。橙色条形图显示在消息的左侧。
+- en: 'Let’s now rerun the playbook using the following:'
+  id: totrans-69
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，让我们使用以下命令重新运行 playbook：
+- en: '[PRE16]'
+  id: totrans-70
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE16]'
+- en: 'You will see that the message now looks like this:'
+  id: totrans-71
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你将看到消息现在是这样的：
+- en: '![Figure 17.4 – Running the playbook a second time](img/B21620_11_04.jpg)'
+  id: totrans-72
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 17.4 – 第二次运行 playbook](img/B21620_11_04.jpg)'
+- en: Figure 17.4 – Running the playbook a second time
+  id: totrans-73
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 17.4 – 第二次运行 playbook
+- en: This time, there have been no changes, which the message reflects. The status
+    is also showing green, so we can quickly see that there have been no changes.
+  id: totrans-74
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这次没有发生任何变化，消息也反映了这一点。状态显示为绿色，因此我们可以快速看到没有变化。
+- en: 'The only thing I would add is that if you look at the code in the repo, you
+    will notice that for the subnet, we are having to make some allowances:'
+  id: totrans-75
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我唯一想补充的是，如果你查看仓库中的代码，你会注意到对于子网，我们需要做一些适配：
+- en: '`resource_location`: subnets don’t have a location, so we are using the one
+    from the virtual network the subnet is being created in'
+  id: totrans-76
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`resource_location`：子网没有位置，因此我们使用其所在虚拟网络的位置。'
+- en: '`azure_portal_link`: while an ID for the subnet is being returned, it doesn’t
+    precisely match the logic we use to open the resource directly in the Azure portal,
+    so we link to the virtual network where the subnet is configured'
+  id: totrans-77
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`azure_portal_link`：虽然返回的是子网的 ID，但它并没有完全匹配我们用来直接在 Azure 门户中打开资源的逻辑，因此我们链接到配置了子网的虚拟网络。'
+- en: '`resource_tags`: you can’t add tags to a subnet, so we set the value to `N/A`'
+  id: totrans-78
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`resource_tags`：你不能为子网添加标签，因此我们将值设置为`N/A`。'
+- en: As you can see from the screens, this is useful for notifying others that your
+    playbook is being run. It also gives you quick access to the resources being created/updated
+    or checked and an audit trail of changes being made to your resources.
+  id: totrans-79
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如你从屏幕上看到的，这对于通知他人你的剧本正在运行非常有用。它还可以让你快速访问正在创建/更新或检查的资源，并提供资源变更的审计记录。
+- en: While the code we discussed only applies to Slack and the resources deployed
+    in Microsoft Azure, the concept should apply to any integration supported by Ansible.
+  id: totrans-80
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 虽然我们讨论的代码仅适用于 Slack 和在 Microsoft Azure 中部署的资源，但这个概念应该适用于 Ansible 支持的任何集成。
+- en: Other integrations
+  id: totrans-81
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 其他集成
+- en: Dozens of other integrations, both community- and vendor-supported, are available
+    on Ansible Galaxy. If you can’t find one for your use case and your target service
+    has an API, you could quite quickly build an integration using the `ansible.builtin.uri`
+    module, which is designed to interact with web APIs and services.
+  id: totrans-82
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible Galaxy 上有数十种其他集成，既有社区支持的，也有供应商支持的。如果你找不到适合你用例的集成，而且你的目标服务有 API，你可以非常快速地使用
+    `ansible.builtin.uri` 模块构建集成，该模块旨在与 Web API 和服务进行交互。
+- en: What follows are some example use cases for other integration modules.
+  id: totrans-83
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是其他集成模块的一些示例用例。
+- en: Say
+  id: totrans-84
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 说
+- en: 'Most modern computers come with some level of voice synthesis built in; by
+    using this module, you can have Ansible verbally inform you of the status of your
+    playbook run:'
+  id: totrans-85
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 大多数现代计算机都内置了一定程度的语音合成功能；通过使用此模块，你可以让 Ansible 通过语音告知你剧本运行的状态：
+- en: '[PRE17]'
+  id: totrans-86
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE17]'
+- en: While this is fun, it isn’t very useful and could quickly become annoying, so
+    let’s move on.
+  id: totrans-87
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 虽然这很有趣，但并不太实用，可能很快就会变得烦人，所以让我们继续。
+- en: Syslog
+  id: totrans-88
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: Syslog
+- en: 'Suppose you ship the log files from your target hosts. In that case, you may
+    want to send the results of the playbook run to your target host machine syslog
+    so that it is shipped to your central logging service for use in external services
+    such as an **SIEM**, which stands for **security information and event** **management**,
+    product:'
+  id: totrans-89
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 假设你从目标主机发送日志文件。在这种情况下，你可能希望将剧本运行的结果发送到目标主机的 syslog 中，这样它就会被传送到你的中央日志服务中，用于像**SIEM**（即**安全信息和事件管理**）这样的外部服务：
+- en: '[PRE18]'
+  id: totrans-90
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE18]'
+- en: This is a great way to register that something has happened on the target host
+    in a way that logs it along with everything else that is happening on the target
+    operating system.
+  id: totrans-91
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这是一种很好的方式，用来记录目标主机上发生的事件，并将其与目标操作系统上发生的其他所有事件一起记录。
+- en: ServiceNow
+  id: totrans-92
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: ServiceNow
+- en: ServiceNow is enterprise-grade IT service management software from ServiceNow,
+    Inc.
+  id: totrans-93
+  prefs: []
+  type: TYPE_NORMAL
+  zh: ServiceNow 是 ServiceNow 公司提供的企业级 IT 服务管理软件。
+- en: 'By using the `servicenow.servicenow.snow_record` module, your playbook can
+    open incidents within your ServiceNow installation:'
+  id: totrans-94
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通过使用`servicenow.servicenow.snow_record`模块，你的剧本可以在 ServiceNow 安装中打开事件：
+- en: '[PRE19]'
+  id: totrans-95
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE19]'
+- en: 'Once open, you can then add notes to them using something like the following:'
+  id: totrans-96
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 打开后，你可以像下面这样为它们添加注释：
+- en: '[PRE20]'
+  id: totrans-97
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE20]'
+- en: At the end of the playbook run, you can close the incident, which will permanently
+    record whatever information you ship from your playbook in your ITSM tool.
+  id: totrans-98
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在剧本运行结束时，你可以关闭事件，这将永久记录你从剧本中传输到 ITSM 工具的所有信息。
+- en: Microsoft Teams
+  id: totrans-99
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: Microsoft Teams
+- en: 'While we covered Slack as the primary example in this chapter, Ansible also
+    supports several Microsoft 365 products, including Microsoft Teams, via the `community.general.office_365_connector_card`
+    module. Microsoft 365 Connector cards are very powerful, and their configuration
+    and, by extension, the Ansible module can get quite complicated; so rather than
+    cover them here, I would recommend the following links as a starting point:'
+  id: totrans-100
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 尽管我们在本章中以 Slack 为主要示例，Ansible 还支持多个 Microsoft 365 产品，包括通过`community.general.office_365_connector_card`模块的
+    Microsoft Teams。Microsoft 365 Connector 卡片非常强大，它们的配置，以及因此而来的 Ansible 模块，可能会变得相当复杂；因此，建议你从以下链接开始了解：
+- en: '[https://docs.ansible.com/ansible/latest/collections/community/general/office_365_connector_card_module.html](https://docs.ansible.com/ansible/latest/collections/community/general/office_365_connector_card_module.html)'
+  id: totrans-101
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '[https://docs.ansible.com/ansible/latest/collections/community/general/office_365_connector_card_module.html](https://docs.ansible.com/ansible/latest/collections/community/general/office_365_connector_card_module.html)'
+- en: '[https://learn.microsoft.com/en-us/microsoftteams/platform/task-modules-and-cards/what-are-cards](https://learn.microsoft.com/en-us/microsoftteams/platform/task-modules-and-cards/what-are-cards)'
+  id: totrans-102
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '[https://learn.microsoft.com/en-us/microsoftteams/platform/task-modules-and-cards/what-are-cards](https://learn.microsoft.com/en-us/microsoftteams/platform/task-modules-and-cards/what-are-cards)'
+- en: '[https://adaptivecards.io/](https://adaptivecards.io/)'
+  id: totrans-103
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '[https://adaptivecards.io/](https://adaptivecards.io/)'
+- en: As you can see from the preceding links, connector cards can be as simple or
+    complicated as you want. However, configuring them is probably worth a chapter
+    all by itself, so let’s move on.
+  id: totrans-104
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 从前面的链接中可以看出，连接器卡片可以根据需要简单或复杂。然而，配置它们可能值得专门成章，所以我们继续往下看。
+- en: Summary of third-party services
+  id: totrans-105
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 第三方服务总结
+- en: One of the key takeaways I hope you get from this book is that automation is
+    great; it is not only a real time saver, but using tools such as the ones we covered
+    in the previous chapter, [*Chapter 16*](B21620_16.xhtml#_idTextAnchor716), *Introducing
+    Ansible AWX and Red Hat Ansible Automation Platform*, can enable people who are
+    not sys-admins or developers to execute their playbooks from a friendly web interface.
+    We will look at this further in the final section of the chapter, where I will
+    cover some real-world examples of how Ansible has been implemented in organizations
+    I have worked with.
+  id: totrans-106
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我希望你从本书中得到的一个重要收获是，自动化非常棒；它不仅节省了大量时间，而且使用我们在上一章中介绍的工具，[*第 16 章*](B21620_16.xhtml#_idTextAnchor716)，*引入
+    Ansible AWX 和 Red Hat Ansible 自动化平台*，使得那些不是系统管理员或开发人员的人也可以通过友好的 web 界面执行他们的 playbook。在本章的最后部分，我们将进一步探讨这一点，我会介绍一些
+    Ansible 在我曾合作的组织中实施的实际案例。
+- en: The modules we have covered in this section allow you to take your automation
+    to the next level by not only allowing you to record the results but also automatically
+    doing some housekeeping during your playbook run and having it notify your users.
+  id: totrans-107
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本节中我们介绍的模块不仅可以让你记录结果，还能在执行 playbook 时自动进行一些清理工作，并通知你的用户，从而将自动化提升到一个新的水平。
+- en: For example, you need to deploy a new configuration to your server. Your service
+    desk has made a change request for you to take action on the work within your
+    ServiceNow installation.
+  id: totrans-108
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 例如，你需要向服务器部署一个新配置。你的服务台已为你发出了一个更改请求，要求你在 ServiceNow 安装中处理这项工作。
+- en: Your playbook could be written so that before the change is actioned, it uses
+    the fetch module to copy the configuration file to your Ansible Controller. The
+    playbook could then use the `servicenow.servicenow.snow_record` module to attach
+    a copy of the existing configuration file to the change request, proceed to make
+    the changes, and then automatically update the change request with the results.
+  id: totrans-109
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你的 playbook 可以在执行更改之前，使用 fetch 模块将配置文件复制到你的 Ansible Controller。然后，playbook 可以使用
+    `servicenow.servicenow.snow_record` 模块，将现有配置文件的副本附加到更改请求中，进行更改操作，最后自动更新更改请求的结果。
+- en: Before we look at some real-world examples, let’s take a look at how you can
+    debug your playbooks as they are running.
+  id: totrans-110
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在我们看一些实际案例之前，让我们来看看你如何在 playbook 执行过程中进行调试。
+- en: The Ansible playbook debugger
+  id: totrans-111
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Ansible playbook 调试器
+- en: 'Ansible has a debugger built in. Let’s look at how you can build this into
+    your playbook by creating a simple playbook with an error. As we have just mentioned,
+    we are going to write a playbook that uses the `community.general.say` module.
+    The playbook itself looks like this:'
+  id: totrans-112
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 内置了调试器。让我们通过创建一个带有错误的简单 playbook，来看看如何将其集成到你的 playbook 中。正如我们刚才提到的，我们将编写一个使用
+    `community.general.say` 模块的 playbook。该 playbook 本身如下所示：
+- en: '[PRE21]'
+  id: totrans-113
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE21]'
+- en: 'There are two things to point out: the first is the mistake. As you can see,
+    we are defining a variable named `message`, but when I came to use it in the task,
+    I made a typo and entered `massage` instead. Luckily, as I developed the playbook,
+    I instructed Ansible to use the interactive debugger whenever a task fails by
+    setting the `debugger` option to `on_failed`.'
+  id: totrans-114
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有两件事需要指出：第一是错误。正如你所看到的，我们定义了一个名为 `message` 的变量，但当我在任务中使用它时，我打错了一个字，输入了 `massage`。幸运的是，在开发这个
+    playbook 时，我指示 Ansible 在任务失败时使用交互式调试器，通过将 `debugger` 选项设置为 `on_failed`。
+- en: Debugging the task
+  id: totrans-115
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 调试任务
+- en: 'Let’s run the playbook and see what happens:'
+  id: totrans-116
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们运行该 playbook，看看会发生什么：
+- en: '[PRE22]'
+  id: totrans-117
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE22]'
+- en: 'The first problem is that we are not passing a host inventory file, so there
+    will be warnings that only the localhost is available; this is fine, as we want
+    to run the `Say` module only on our Ansible Controller anyway:'
+  id: totrans-118
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 第一个问题是我们没有传递主机清单文件，因此会有警告，显示只有 localhost 可用；这没问题，因为我们只希望在我们的 Ansible 控制器上运行
+    `Say` 模块：
+- en: '[PRE23]'
+  id: totrans-119
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE23]'
+- en: 'Next, Ansible runs the play itself; this should result in a fatal error:'
+  id: totrans-120
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来，Ansible 执行 playbook 本身；这应该会导致一个致命错误：
+- en: '[PRE24]'
+  id: totrans-121
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE24]'
+- en: 'Typically, the playbook run will stop, and you will be returned to your shell;
+    however, because we have instructed Ansible to drop into the interactive debugger,
+    we now see the following prompt:'
+  id: totrans-122
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通常，playbook 执行会停止，你将返回到你的 shell；然而，因为我们指示 Ansible 进入交互式调试器，所以现在我们看到以下提示：
+- en: '[PRE25]'
+  id: totrans-123
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE25]'
+- en: 'From here, we can start to investigate the problem a little more; for example,
+    we can review the error by typing the following command:'
+  id: totrans-124
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 从这里，我们可以开始进一步调查问题；例如，我们可以通过输入以下命令来查看错误：
+- en: '[PRE26]'
+  id: totrans-125
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE26]'
+- en: In Ansible, when using the debug module, the `p` command is used to prettify
+    the output of a variable or expression. It stands for `p result._result` in an
+    Ansible debug task, it will display the value of `result._result` in a more readable
+    and formatted way. The `p` command uses the `pprint` (**pretty-print**) function
+    from the Python standard library to format the output.
+  id: totrans-126
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 Ansible 中，使用 debug 模块时，`p` 命令用于美化变量或表达式的输出。它代表 `p result._result`，在 Ansible
+    调试任务中，它将以更易读和格式化的方式显示 `result._result` 的值。`p` 命令使用 Python 标准库中的 `pprint`（**漂亮打印**）函数来格式化输出。
+- en: 'Once you hit the *Enter* key, the results of the failed task will be returned:'
+  id: totrans-127
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦你按下 *Enter* 键，失败任务的结果将被返回：
+- en: '[PRE27]'
+  id: totrans-128
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE27]'
+- en: 'Let’s take a closer look at the variables used in the task by typing the following:'
+  id: totrans-129
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们通过输入以下命令来更仔细地查看任务中使用的变量：
+- en: '[PRE28]'
+  id: totrans-130
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE28]'
+- en: 'This will return the two arguments we are using in the task:'
+  id: totrans-131
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这将返回我们在任务中使用的两个参数：
+- en: '[PRE29]'
+  id: totrans-132
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE29]'
+- en: 'Now, let’s look at the variables that are available to the task using the following:'
+  id: totrans-133
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，让我们通过以下命令查看任务可用的变量：
+- en: '[PRE30]'
+  id: totrans-134
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE30]'
+- en: 'You may have noted that we instructed Ansible to execute the setup module as
+    part of the playbook run, so the list of variables available to the task is very
+    long:'
+  id: totrans-135
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可能已经注意到，我们指示 Ansible 在执行 playbook 时执行 setup 模块，因此任务可用的变量列表非常长：
+- en: '[PRE31]'
+  id: totrans-136
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE31]'
+- en: As you can see, there is much information about the environment in which our
+    playbook is being executed. In the list of variables, you will notice that all
+    the information gathered by the setup modules starts with `ansible_`, and our
+    two variables are listed at the bottom.
+  id: totrans-137
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，关于我们的 playbook 执行环境有很多信息。在变量列表中，你会注意到所有由 setup 模块收集的信息都以 `ansible_` 开头，我们的两个变量被列在底部。
+- en: 'We can find out more about these two variables by running the following commands:'
+  id: totrans-138
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以通过运行以下命令来进一步了解这两个变量：
+- en: '[PRE32]'
+  id: totrans-139
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE32]'
+- en: 'This will display the contents of the variable:'
+  id: totrans-140
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这将显示变量的内容：
+- en: '[PRE33]'
+  id: totrans-141
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE33]'
+- en: 'We know we are passing a misspelled variable to the `msg` argument, so we will
+    make some changes on the fly and continue the playbook run. To do this, we are
+    going to run the following command:'
+  id: totrans-142
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们知道我们将一个拼写错误的变量传递给了 `msg` 参数，因此我们将进行一些修改并继续执行 playbook。为此，我们将运行以下命令：
+- en: '[PRE34]'
+  id: totrans-143
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE34]'
+- en: 'This will update the argument to use the correct variable; we can now rerun
+    the task by issuing the following command:'
+  id: totrans-144
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这将更新参数，使用正确的变量；我们现在可以通过发出以下命令重新运行任务：
+- en: '[PRE35]'
+  id: totrans-145
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE35]'
+- en: This will immediately rerun the task with the correct argument and, with any
+    luck, you should hear, “*The task has completed, and all* *is well*:”
+  id: totrans-146
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这将立即使用正确的参数重新运行任务，如果一切顺利，你应该听到：“*任务已完成，一切* *顺利*：”
+- en: '[PRE36]'
+  id: totrans-147
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE36]'
+- en: As you can see from the preceding output, because we only have a single task,
+    the playbook is completed. If we had more, it would carry on from where it left
+    off. You can now update your playbook with the correct spelling and proceed with
+    the rest of your day. Additionally, if we wanted to, we could have typed either
+    `continue` or `quit` to proceed or stop, respectively.
+  id: totrans-148
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如前面的输出所示，因为我们只有一个任务，所以 playbook 执行完毕。如果有更多任务，它会从上次中断的地方继续。现在你可以更新你的 playbook，修正拼写错误，并继续你接下来的工作。此外，如果我们愿意，也可以输入
+    `continue` 或 `quit` 来分别继续或停止。
+- en: Summary of the Ansible debugger
+  id: totrans-149
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: Ansible 调试器摘要
+- en: The Ansible debugger is a handy option to enable when you are working on creating
+    complex playbooks; for example, imagine that you have a playbook that takes about
+    20 minutes to run, but it throws an error somewhere toward the end, say, 18 minutes
+    after you first run the playbook.
+  id: totrans-150
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当你在编写复杂的 playbook 时，Ansible 调试器是一个非常有用的选项；例如，假设你有一个需要大约 20 分钟运行的 playbook，但它在接近结束时抛出错误，比如在运行
+    playbook 18 分钟后出现问题。
+- en: Having Ansible drop into the interactive debugger shell not only means you can
+    see precisely what is and isn’t defined, but it also means you don’t have to blindly
+    make changes to your playbook and then wait another 18 minutes to see whether
+    those changes resolved the fatal error.
+  id: totrans-151
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让 Ansible 进入交互式调试器 shell 不仅意味着你可以精确查看已定义和未定义的内容，而且也意味着你不需要盲目地修改 playbook 然后再等
+    18 分钟来查看这些修改是否解决了致命错误。
+- en: Some real-world examples
+  id: totrans-152
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 一些现实世界的例子
+- en: Before we finish the chapter and the book, I will give a few examples of how
+    I have used and interacted with Ansible over the last few years.
+  id: totrans-153
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在我们结束本章和本书之前，我将举几个例子，说明过去几年我如何使用和与 Ansible 互动。
+- en: Automating a complex deployment
+  id: totrans-154
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 自动化一个复杂的部署
+- en: In this example, an application was distributed across several dozen servers
+    in a public cloud. Each application component was installed on at least three
+    different hosts and required updates in a specific order.
+  id: totrans-155
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这个例子中，一个应用程序被分布在数十台公共云服务器上。每个应用程序组件都至少安装在三台不同的主机上，并且需要按特定顺序进行更新。
+- en: 'The application developers collaborated with the operations team to streamline
+    the deployment process to create an Ansible Playbook. The playbook automated the
+    following steps for each component of the application:'
+  id: totrans-156
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 应用程序开发人员与运维团队合作，优化部署流程并创建了一个 Ansible Playbook。这个 playbook 自动化了应用程序每个组件的以下步骤：
+- en: Put the application into maintenance mode by connecting to the targeted hosts
+    and executing a specific command.
+  id: totrans-157
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 通过连接到目标主机并执行特定命令，将应用程序置于维护模式。
+- en: Create snapshots of all the costs involved in the deployment, ensuring a rollback
+    point if needed.
+  id: totrans-158
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建涉及所有部署成本的快照，以确保在需要时可以进行回滚。
+- en: Initiate the deployment process by pulling the latest code from the designated
+    GitHub repository and executing a series of commands to update the application.
+  id: totrans-159
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 通过从指定的 GitHub 仓库拉取最新代码并执行一系列命令来更新应用程序，从而启动部署过程。
+- en: Verify the deployment’s success by connecting to the application’s API and running
+    a set of health checks on each targeted host.
+  id: totrans-160
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 通过连接到应用程序的 API 并在每个目标主机上运行一组健康检查来验证部署是否成功。
+- en: If the deployment and health checks pass successfully, take the application
+    out of maintenance mode and proceed to the next component. However, if any tests
+    fail, halt the deployment immediately and execute commands to revert the hosts
+    to the previously taken snapshots, ensuring a safe rollback.
+  id: totrans-161
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如果部署和健康检查成功通过，将应用程序从维护模式中取出并继续进行下一个组件的部署。然而，如果任何测试失败，立即停止部署并执行命令将主机恢复到之前的快照，确保安全回滚。
+- en: Prior to implementing Ansible automation, the manual execution of these deployment
+    steps took several hours, as the application and operations teams had to co-ordinate
+    and follow the process meticulously. This manual approach made deployments challenging
+    and prone to human errors.
+  id: totrans-162
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在实施 Ansible 自动化之前，手动执行这些部署步骤需要几个小时，因为应用程序和运维团队必须协调并仔细遵循流程。这个手动方法使得部署充满挑战，且容易出现人为错误。
+- en: By automating the deployment tasks using Ansible, the teams could focus on handling
+    the exceptions that arose due to genuine issues rather than mistakes caused by
+    manual execution. Before the automation was put in place, errors were common during
+    almost every release, with many hosts and complex manual steps involved.
+  id: totrans-163
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通过使用 Ansible 自动化部署任务，团队可以专注于处理由于真正的问题而产生的异常，而不是手动执行过程中导致的错误。在自动化投入使用之前，几乎每次发布过程中都会出现错误，涉及许多主机和复杂的手动步骤。
+- en: The introduction of Ansible automation significantly improved the deployment
+    process, reducing the time required and minimizing the risk of human errors. The
+    playbook ensured consistency, reliability, and repeatability across multiple deployments,
+    enabling the teams to deploy the application components more frequently and with
+    greater confidence.
+  id: totrans-164
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 自动化的引入显著改善了部署过程，减少了所需时间并最小化了人为错误的风险。该 playbook 确保了多个部署过程中的一致性、可靠性和可重复性，使得团队能够更频繁且更有信心地部署应用程序组件。
+- en: This example demonstrates how Ansible can tackle complex deployment scenarios,
+    streamline processes, and enhance collaboration between development and operations
+    teams in a public cloud environment.
+  id: totrans-165
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个例子展示了 Ansible 如何处理复杂的部署场景，简化流程，并增强开发和运维团队之间在公共云环境中的协作。
+- en: Combining Ansible and other tools
+  id: totrans-166
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 结合 Ansible 和其他工具
+- en: In this real-world scenario, we collaborated with a team that had invested significant
+    effort in developing their infrastructure automation using Terraform. Their Terraform
+    code successfully deployed the infrastructure and performed basic host bootstrapping
+    using a simple `cloud-init` script.
+  id: totrans-167
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这个实际场景中，我们与一个团队合作，该团队在使用 Terraform 开发其基础设施自动化方面投入了大量精力。他们的 Terraform 代码成功地部署了基础设施，并使用简单的`cloud-init`脚本执行了基本的主机引导。
+- en: However, as the application requirements grew more complex, it became evident
+    that additional automation was needed to effectively manage the application on
+    the provisioned hosts. Instead of replacing the existing Terraform code, we introduced
+    Ansible to complement the infrastructure automation.
+  id: totrans-168
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，随着应用程序需求的日益复杂，显然需要额外的自动化来有效地管理已配置的主机上的应用程序。我们并没有替换现有的 Terraform 代码，而是引入了
+    Ansible 来补充基础设施自动化。
+- en: To integrate Ansible with the existing Terraform workflow, we utilized the `community.general.terraform`
+    module. This module allowed us to execute the Terraform deployment directly from
+    within an Ansible playbook.
+  id: totrans-169
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了将 Ansible 与现有的 Terraform 工作流集成，我们使用了`community.general.terraform`模块。该模块使我们能够直接在
+    Ansible 剧本中执行 Terraform 部署。
+- en: By leveraging this integration, we took the output generated by the Terraform
+    deployment and passed the relevant information back to Ansible. This enabled Ansible
+    to gather detailed information about the provisioned hosts and perform the necessary
+    application bootstrapping tasks.
+  id: totrans-170
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通过利用这种集成，我们将 Terraform 部署生成的输出传递给 Ansible。这使得 Ansible 能够收集已配置主机的详细信息，并执行必要的应用程序引导任务。
+- en: 'The combination of Terraform and Ansible proved to be a powerful solution:'
+  id: totrans-171
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Terraform 和 Ansible 的结合证明了这是一个强大的解决方案：
+- en: Terraform handled the infrastructure provisioning, ensuring the required resources
+    were created and configured correctly in the target environment.
+  id: totrans-172
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Terraform 处理了基础设施的配置，确保所需资源在目标环境中正确创建和配置。
+- en: Ansible took over the application management, utilizing the host information
+    provided by Terraform to configure and deploy the application components seamlessly.
+  id: totrans-173
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Ansible 接管了应用程序管理，利用 Terraform 提供的主机信息无缝配置和部署应用程序组件。
+- en: This approach allowed the team to maintain their existing Terraform codebase
+    while extending the automation capabilities with Ansible. The integration between
+    the two tools provided a seamless workflow, enabling the team to manage both the
+    infrastructure and the application more effectively without having to throw away
+    the code that they already had.
+  id: totrans-174
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这种方法使团队能够在保持现有 Terraform 代码库的基础上，利用 Ansible 扩展自动化功能。两种工具之间的集成提供了无缝的工作流，使团队能够更有效地管理基础设施和应用程序，而无需舍弃已有的代码。
+- en: The team achieved a more comprehensive and efficient automation solution by
+    choosing the right tools for specific tasks and leveraging their strengths. Terraforms
+    infrastructure-as-code capabilities, combined with Ansible’s application management
+    and orchestration features, resulted in a robust and flexible automation pipeline.
+  id: totrans-175
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通过为特定任务选择合适的工具并发挥它们的优势，团队实现了一个更全面、高效的自动化解决方案。Terraform 的基础设施即代码能力与 Ansible 的应用程序管理和编排功能相结合，最终形成了一个强大且灵活的自动化流水线。
+- en: Deploying Ansible AWX
+  id: totrans-176
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 部署 Ansible AWX
+- en: As discussed in [*Chapter 16*](B21620_16.xhtml#_idTextAnchor716), *Introducing
+    Ansible AWX and Red Hat Ansible Automation Platform*, Ansible AWX is a powerful
+    tool that offers a wide range of features beyond the basics. In addition to the
+    core functionalities, Ansible AWX provides capabilities such as surveys, integration
+    with identity services such as Microsoft Entra, and **role-based access controls**
+    (**RBACs**) that enable granular access management for projects and templates.
+  id: totrans-177
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如在[*第16章*](B21620_16.xhtml#_idTextAnchor716)中讨论的那样，*介绍 Ansible AWX 和 Red Hat
+    Ansible 自动化平台*，Ansible AWX 是一个强大的工具，提供了超越基础功能的广泛特性。除了核心功能外，Ansible AWX 还提供了调查、与身份服务（如
+    Microsoft Entra）的集成以及 **基于角色的访问控制**（**RBACs**）等功能，这些功能能够为项目和模板提供细粒度的访问管理。
+- en: Surveys in Ansible AWX allow you to create interactive forms that gather input
+    from users before running a playbook. This feature is particularly useful when
+    you need to collect specific information or parameters from end-users without
+    exposing them to the underlying playbook complexities.
+  id: totrans-178
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible AWX 中的调查问卷允许你创建交互式表单，在运行 playbook 之前收集用户的输入。当你需要从最终用户那里收集特定信息或参数，而又不暴露底层
+    playbook 复杂性时，这一功能尤其有用。
+- en: Integration with identity services, such as Microsoft Entra, enables seamless
+    authentication and authorization for Ansible AWX users. This integration allows
+    you to leverage existing user accounts and access controls, simplifying user management
+    and ensuring secure access to Ansible AWX resources.
+  id: totrans-179
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 与身份服务（如 Microsoft Entra）的集成，使 Ansible AWX 用户能够实现无缝的身份验证和授权。此集成让你可以利用现有的用户账户和访问控制，简化用户管理并确保对
+    Ansible AWX 资源的安全访问。
+- en: RBAC in Ansible AWX provides a flexible and granular way to manage user permissions.
+    With RBAC, you can define roles and associate them with specific projects, templates,
+    and other resources. This allows you to control who can access and execute specific
+    playbooks, ensuring that users have the appropriate level of access based on their
+    responsibilities and expertise.
+  id: totrans-180
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible AWX 中的 RBAC 提供了一种灵活且细粒度的方式来管理用户权限。通过 RBAC，你可以定义角色并将其与特定的项目、模板和其他资源关联。这样，你可以控制谁可以访问和执行特定的
+    playbook，确保用户根据其职责和专业知识具有适当的访问权限。
+- en: In the following examples, we’ll explore how Ansible AWX has been utilized in
+    various organizations that I have worked with to streamline processes, automate
+    tasks, and empower teams to perform their duties effectively while maintaining
+    security and governance.
+  id: totrans-181
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在以下示例中，我们将探讨 Ansible AWX 如何在我曾合作过的各个组织中应用，以简化流程、自动化任务并帮助团队高效地履行职责，同时保持安全和治理。
+- en: Provisioning virtual machines
+  id: totrans-182
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 配置虚拟机
+- en: In this scenario, the IT team needed to provide a self-service portal for developers
+    to provision **virtual machines** (**VMs**) across different environments, such
+    as development, staging, and production. Each environment had specific requirements
+    and configurations.
+  id: totrans-183
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这种场景下，IT 团队需要为开发人员提供一个自助服务门户，便于他们在不同环境（如开发、暂存和生产环境）中配置**虚拟机**（**VMs**）。每个环境有不同的要求和配置。
+- en: To streamline the process, Ansible AWX was deployed, and a survey was created
+    to capture the necessary information from the developers. The survey included
+    fields for specifying the desired operating system, VM size, environment, and
+    other relevant parameters.
+  id: totrans-184
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为简化流程，部署了 Ansible AWX，并创建了一个调查问卷来捕获开发人员的必要信息。问卷包括用于指定操作系统、虚拟机大小、环境及其他相关参数的字段。
+- en: Upon submitting the survey, Ansible AWX triggered a playbook that automated
+    the provisioning process. Based on the survey responses, the playbook dynamically
+    generated the appropriate VM configurations and provisioned the VMs in the specified
+    environment.
+  id: totrans-185
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 提交调查问卷后，Ansible AWX 触发了一个 playbook，自动化了资源配置过程。根据调查问卷的回答，playbook 动态生成了适当的虚拟机配置并在指定的环境中配置了虚拟机。
+- en: Additionally, the playbook integrated with the organization’s ticketing system,
+    automatically creating a ticket with the VM details and linking it to the change
+    management process for tracking and auditing purposes.
+  id: totrans-186
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 此外，playbook 与组织的工单系统进行了集成，自动创建了一个包含虚拟机详情的工单，并将其与变更管理流程相关联，用于追踪和审计目的。
+- en: By leveraging Ansible AWX and surveys, the IT team empowered developers to provision
+    VMs on-demand while maintaining control and governance over the process.
+  id: totrans-187
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通过利用 Ansible AWX 和调查问卷，IT 团队赋能开发人员按需配置虚拟机，同时保持对整个过程的控制和治理。
+- en: Managing application deployments
+  id: totrans-188
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 管理应用部署
+- en: In another use case, a software development team needed to deploy their application
+    across multiple environments, including development, QA, and production. Each
+    environment had its own set of configurations and dependencies.
+  id: totrans-189
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在另一个用例中，一个软件开发团队需要将其应用程序部署到多个环境，包括开发、QA 和生产环境。每个环境都有自己的配置和依赖关系。
+- en: To simplify the deployment process, Ansible AWX was utilized. A survey was created
+    to capture the necessary deployment parameters, such as the application version,
+    target environment, and any specific configuration options.
+  id: totrans-190
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为简化部署过程，使用了 Ansible AWX。创建了一个调查问卷来捕获必要的部署参数，例如应用版本、目标环境和任何特定的配置选项。
+- en: 'The survey responses were then passed as variables to an Ansible playbook that
+    was responsible for executing the deployment. The playbook handled the entire
+    deployment process, including the following:'
+  id: totrans-191
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 随后，调查问卷的响应被作为变量传递给负责执行部署的 Ansible playbook。该 playbook 处理整个部署过程，包括以下内容：
+- en: Retrieving the specified application version from the artifact repository
+  id: totrans-192
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 从工件库中检索指定的应用程序版本
+- en: Configuring the target environment based on the provided parameters
+  id: totrans-193
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 根据提供的参数配置目标环境
+- en: Deploying the application components and dependencies
+  id: totrans-194
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 部署应用程序组件及其依赖项
+- en: Running post-deployment tests and health checks
+  id: totrans-195
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 运行部署后的测试和健康检查
+- en: Updating the deployment status in the organization’s project management tool
+  id: totrans-196
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 更新组织项目管理工具中的部署状态
+- en: By using Ansible AWX and surveys, the development team could initiate deployments
+    through a user-friendly interface, ensuring consistency and reducing the risk
+    of manual errors. The playbook automated the complex deployment steps, saving
+    time and effort for the team who needed the deployment while freeing up the time
+    of the team who would have done the deployment.
+  id: totrans-197
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通过使用 Ansible AWX 和调查问卷，开发团队可以通过一个用户友好的界面发起部署，确保一致性并减少手动错误的风险。Playbook 自动化了复杂的部署步骤，为需要部署的团队节省了时间和精力，同时释放了本应执行部署的团队的时间。
+- en: Updating DNS records
+  id: totrans-198
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 更新 DNS 记录
+- en: In this example, the organization managed multiple **DNS** (or, to give it its
+    full name, **domain name system**) zones across different providers, and they
+    needed to allow front-line support teams to update DNS records without granting
+    them direct access to the providers’ management consoles.
+  id: totrans-199
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这个例子中，组织管理着多个 **DNS**（或其全称，**域名系统**）区域，跨多个提供商，他们需要允许前线支持团队更新 DNS 记录，而无需直接授予他们访问提供商管理控制台的权限。
+- en: To achieve this, Ansible AWX was used. A survey was created to capture the necessary
+    information for updating DNS records. The survey included fields specifying the
+    domain name, record type (e.g., A, CNAME, MX), record value, and **time to** **live**
+    (**TTL**).
+  id: totrans-200
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了实现这一目标，使用了 Ansible AWX。创建了一个调查问卷，用于捕获更新 DNS 记录所需的信息。调查问卷包括指定域名、记录类型（如 A、CNAME、MX）、记录值和**生存时间**（**TTL**）的字段。
+- en: 'Upon submitting the survey, Ansible AWX triggered a playbook that automated
+    the DNS record update process. The playbook performed the following steps:'
+  id: totrans-201
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 提交调查问卷后，Ansible AWX 会触发一个 playbook 来自动化 DNS 记录更新过程。该 playbook 执行以下步骤：
+- en: Validated the provided survey inputs to ensure data integrity and prevent invalid
+    entries
+  id: totrans-202
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 验证提供的调查输入，确保数据完整性并防止无效条目的输入
+- en: Determined the appropriate DNS provider based on the domain name specified in
+    the survey
+  id: totrans-203
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 根据调查问卷中指定的域名确定了适当的 DNS 提供商
+- en: Connected to the DNS provider’s API using the necessary credentials securely
+    stored in Ansible Vault
+  id: totrans-204
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用 Ansible Vault 安全存储的必要凭证连接到 DNS 提供商的 API
+- en: Retrieved the existing DNS records for the specified domain and record type
+  id: totrans-205
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 检索指定域名和记录类型的现有 DNS 记录
+- en: Updated the DNS record with the new value and TTL provided in the survey
+  id: totrans-206
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用调查问卷中提供的新值和 TTL 更新 DNS 记录
+- en: Saved the updated DNS record using the provider’s API
+  id: totrans-207
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用提供商的 API 保存更新后的 DNS 记录
+- en: Logged the change in the organization’s change management system, such as ServiceNow,
+    for tracking and auditing purposes
+  id: totrans-208
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在组织的变更管理系统中记录该变更，如 ServiceNow，供跟踪和审计使用
+- en: By using Ansible AWX, the front-line support teams could easily update DNS records
+    without requiring direct access to the DNS providers’ management consoles. The
+    playbook automated the complex steps involved in updating DNS records across multiple
+    providers, ensuring consistency and reducing the risk of errors.
+  id: totrans-209
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通过使用 Ansible AWX，前线支持团队可以轻松更新 DNS 记录，无需直接访问 DNS 提供商的管理控制台。Playbook 自动化了更新多个提供商的
+    DNS 记录过程中复杂的步骤，确保了一致性并减少了错误的风险。
+- en: Additionally, the integration with the change management system provided a centralized
+    record of all DNS changes, enabling easy tracking, auditing, and compliance with
+    the organization’s change control processes.
+  id: totrans-210
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 此外，与变更管理系统的集成提供了所有 DNS 变更的集中记录，便于跟踪、审计，并符合组织的变更控制流程。
+- en: These examples demonstrate how Ansible AWX can be leveraged to run tasks and
+    simplify processes for end-users across different domains, such as infrastructure
+    provisioning and application deployment. By combining Ansible AWX with surveys
+    and integrating with existing tools and processes, organizations can enable self-service
+    capabilities while maintaining control and governance over critical operations.
+  id: totrans-211
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这些示例展示了如何利用 Ansible AWX 来运行任务，并简化不同领域（如基础设施配置和应用部署）中最终用户的流程。通过将 Ansible AWX
+    与调查结合，并与现有工具和流程集成，组织可以启用自助服务功能，同时保持对关键操作的控制和治理。
+- en: Summary
+  id: totrans-212
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 总结
+- en: We have reached the end of the chapter and our book. I have been trying to think
+    of a way to summarize Ansible; I believe the summary from the first edition of
+    *Learn Ansible* still stands.
+  id: totrans-213
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们已经到达了本章的结尾，也是我们书本的结尾。我一直在思考如何总结 Ansible；我认为《学习 Ansible》第一版的总结依然适用。
+- en: 'In response to a technical recruiter who reached out to him with a job role
+    that required at least three years of Ansible experience when the tool had only
+    been available for a short time, Ansible creator Michael DeHaan said the following
+    in a now-deleted Tweet:'
+  id: totrans-214
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在回应一位技术招聘人员时，该招聘人员联系了他并要求至少三年的 Ansible 使用经验，而 Ansible 这款工具实际上只发布了短短一段时间，Ansible
+    的创始人 Michael DeHaan 在一条现在已经删除的推文中说了以下话：
+- en: '*“Anyone using Ansible for a few months is as good as anyone using Ansible
+    for three years. It’s a simple tool* *on purpose.”*'
+  id: totrans-215
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '*“使用 Ansible 几个月的人和使用 Ansible 三年的人一样好。它是故意设计成一个简单的工具。”*'
+- en: That perfectly sums up my experience of Ansible and hopefully yours.
+  id: totrans-216
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这完美地总结了我对 Ansible 的经验，希望也能总结出你的经验。
+- en: Once you know the basics, it is straightforward to move on and start building
+    more complex playbooks quickly. These playbooks can assist with deploying basic
+    code and applications as well as complex cloud and even physical architectures.
+  id: totrans-217
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦掌握了基础知识，继续学习并快速构建更复杂的 playbook 是非常简单的。这些 playbook 可以帮助部署基础代码和应用程序，也可以帮助构建复杂的云架构甚至物理架构。
+- en: Reusing your roles and accessing an extensive collection of community-contributed
+    roles and modules via Ansible Galaxy means you have many examples or quick starting
+    points for your next project. So, you can roll your sleeves up and get stuck in
+    a lot sooner than you would with other tools. Additionally, if Ansible cannot
+    do something, the odds are that there is a tool it can integrate with to provide
+    the missing functionality.
+  id: totrans-218
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通过重用你的角色并通过 Ansible Galaxy 访问大量社区贡献的角色和模块，你将拥有许多示例或快速启动点来进行下一个项目。因此，你可以比使用其他工具时更早地卷起袖子开始动手。此外，如果
+    Ansible 无法完成某项任务，通常可以找到一个可以与其集成的工具来提供缺失的功能。
+- en: Going back to what we discussed back in [*Chapter 1*](B21620_01.xhtml#_idTextAnchor017),
+    *Installing and Running Ansible*, being able to define your infrastructure and
+    deployment in code in a repeatable and shareable way that encourages others to
+    contribute to your playbooks should be the aim of starting to introduce Ansible
+    into your day-to-day workflows.
+  id: totrans-219
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 回到我们在[*第 1 章*](B21620_01.xhtml#_idTextAnchor017)中讨论的内容，*安装和运行 Ansible*，能够以可重复和可共享的方式定义你的基础设施和部署，并鼓励他人参与贡献你的
+    playbook，应当是将 Ansible 引入日常工作流的目标。
+- en: Through this book, I hope you have begun to think of day-to-day tasks where
+    Ansible could help you and save you time, and I wish you luck with developing
+    your own playbooks.
+  id: totrans-220
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通过本书，我希望你已经开始思考日常任务中 Ansible 能帮助你节省时间的地方，并祝你在开发自己的 playbook 时好运。

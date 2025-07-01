@@ -1,0 +1,2423 @@
+- en: '11'
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '11'
+- en: Managing Subprojects
+  id: totrans-1
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 管理子项目
+- en: In [*Chapter 6*](B21194_06.xhtml#_idTextAnchor140), *Collaborative Development
+    with Git*, we learned how to manage multiple repositories, while [*Chapter 8*](B21194_08_split_000.xhtml#_idTextAnchor196),
+    *Advanced Branching Techniques*, taught us various development techniques utilizing
+    multiple branches, and multiple lines of development in these repositories. Up
+    until now, these multiple repositories were all being developed independently
+    of each other. Repositories of the different projects were autonomous.
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在[*第6章*](B21194_06.xhtml#_idTextAnchor140)，*与Git进行协作开发*中，我们学习了如何管理多个仓库，而[*第8章*](B21194_08_split_000.xhtml#_idTextAnchor196)，*高级分支技术*则教会了我们利用多个分支进行各种开发技术，以及在这些仓库中进行多线开发。直到现在，这些多个仓库都是独立开发的。不同项目的仓库是自治的。
+- en: This chapter will explain and show different ways to connect different subprojects
+    in one single repository of the framework project, from the strong inclusion by
+    embedding the code of one project in the other (subtrees) to the light connection
+    between projects by nesting repositories (submodules). You will learn how to add
+    a subproject to a master project, how to update the superproject state, and how
+    to update a subproject. We will find out how to send our changes upstream, backport
+    them to the appropriate project, and push them to the appropriate repository.
+    Different techniques of managing subprojects have different advantages and drawbacks
+    here.
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章将解释并展示不同的方法，将不同的子项目连接到框架项目的单个仓库中，从通过嵌入一个项目的代码来进行强连接（子树）到通过嵌套仓库（子模块）来进行轻连接的方式。您将学习如何将子项目添加到主项目中，如何更新超级项目状态，以及如何更新子项目。我们将了解如何将我们的更改发送到上游，将它们回溯到适当的项目，并将它们推送到适当的仓库。管理子项目的不同技术在这里有不同的优缺点。
+- en: 'In this chapter, we will cover the following topics:'
+  id: totrans-4
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章中，我们将涵盖以下主题：
+- en: Managing library and framework dependencies
+  id: totrans-5
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 管理库和框架依赖项
+- en: 'Dependency management tools: managing dependencies outside of Git'
+  id: totrans-6
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 依赖管理工具：管理Git之外的依赖项
+- en: Importing code into a superproject as a subtree
+  id: totrans-7
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 将代码作为子树导入超级项目
+- en: Using subtree merges; the **git-subtree** and **git-stree** tools
+  id: totrans-8
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用子树合并；**git-subtree** 和 **git-stree** 工具
+- en: 'Nested repositories (submodules): a subproject inside a superproject'
+  id: totrans-9
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 嵌套仓库（子模块）：超级项目中的子项目
+- en: 'Internals of submodules: gitlinks, **.gitmodules**, and the **.****git** file'
+  id: totrans-10
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 子模块的内部工作原理：gitlinks，**.gitmodules** 和 **.git** 文件
+- en: Use cases for subtrees and submodules; comparison of approaches
+  id: totrans-11
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 子树和子模块的使用案例；不同方法的比较
+- en: Alternative third-party solutions and tools/helpers
+  id: totrans-12
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 替代的第三方解决方案和工具/助手
+- en: Building a living framework
+  id: totrans-13
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 构建一个活跃的框架
+- en: There are various reasons to join an external project to your own project. As
+    there are different reasons to include a project (let’s call it a **subproject**,
+    or a **module**) inside another project (let’s call it a **superproject**, or
+    a **master project**), there are different types of inclusions geared toward different
+    circumstances. They all have their advantages and disadvantages, and it is important
+    to understand these to be able to choose the correct solution for your problem.
+  id: totrans-14
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 加入外部项目到你自己的项目有多种原因。就像将一个项目（我们称之为**子项目**或**模块**）包含在另一个项目（我们称之为**超级项目**或**主项目**）中有不同的原因一样，有不同类型的包含适应不同情况。它们都有各自的优缺点，了解这些对于选择解决方案至关重要。
+- en: Let’s assume that you work on a web application and that your web app uses JavaScript
+    (perhaps working as a single-page app). To make it easier to develop, you probably
+    use some JavaScript library or a web framework, such as React.
+  id: totrans-15
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 假设您正在开发一个Web应用程序，并且您的Web应用程序使用JavaScript（可能作为单页应用程序）。为了更容易开发，您可能会使用一些JavaScript库或Web框架，如React。
+- en: Such a library is a separate project. You would want to be able to pin it to
+    a known working version (to avoid problems where future changes to the library
+    would make it stop working for your project), while also being able to review
+    changes and automatically update it to the new version. Perhaps you would want
+    to make your own changes to the library and send the proposed changes to the upstream.
+    Of course, you would want users of your project to be able to use the library
+    with your out-of-tree fixes, even if they are not yet accepted by original developers.
+    Conceivably, you might have customizations and changes that you don’t want to
+    publish (send to the upstream), but you might still make them available.
+  id: totrans-16
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这样的库是一个独立的项目。你会希望能够将其固定在已知的工作版本上（以避免未来对库的更改导致其在你的项目中停止工作），同时也能够审查更改并自动将其更新到新版本。也许你还希望对库进行自己的更改，并将这些提议的更改发送到上游。当然，你希望你的项目用户能够使用带有你树外修复的库，即使这些修复尚未被原开发者接受。可以想象，你可能会有一些定制和更改，不希望公开（发送到上游），但你仍然可能会使它们可用。
+- en: 'This is all possible in Git. There are two main solutions for including subprojects:
+    importing code into your project with the **subtree** merge strategy and linking
+    subprojects with **submodules**.'
+  id: totrans-17
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这一切在 Git 中都是可能的。包括子项目的主要解决方案有两个：使用**子树**合并策略将代码导入到项目中，以及使用**子模块**链接子项目。
+- en: Both submodules and subtrees aim to reuse the code from another project, which
+    usually has its own repository, putting it somewhere inside your own repository’s
+    working directory tree. The goal is usually to benefit from the central maintenance
+    of the reused code across a number of container repositories, without having to
+    resort to clumsy, unreliable manual maintenance (usually by copy-pasting).
+  id: totrans-18
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 子模块和子树的目标都是重用来自另一个项目的代码，该项目通常有自己的代码库，并将其放置在自己代码库的工作目录树的某个位置。其目标通常是从多个容器仓库的集中维护中受益，而无需依赖笨拙、不可靠的手动维护（通常是复制粘贴）。
+- en: Sometimes, it is more complicated. The typical situation in many companies is
+    that they use many in-house produced applications, which depend on the common
+    utility library, or a set of libraries. You would often want to develop each of
+    such applications separately, use it together with others, branch and merge, and
+    apply your own changes and customizations, all in their own separate Git repositories.
+    But there are also advantages to having a single **monolithic repository** (**monorepo**),
+    such as simplified organizations, dependencies, cross-project changes, and tooling
+    if you can get away with it.
+  id: totrans-19
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有时，这种情况更为复杂。许多公司中的典型情况是，他们使用许多内部生产的应用程序，这些应用程序依赖于公共工具库或一组库。你通常会希望单独开发每个这样的应用程序，与其他应用程序一起使用，进行分支和合并，并在它们自己的
+    Git 仓库中应用你自己的更改和定制。然而，如果能做到的话，使用单一的**单体仓库**（**monorepo**）也有其优点，比如简化的组织结构、依赖关系、跨项目的变更和工具支持。
+- en: The mechanism used by submodules and subtrees solutions (of having separate
+    Git repositories for each application, framework, or library) is not without problems.
+    The development gets more complex because you now have multiple repositories to
+    interact with. If the library gets improved, you would want to update your subproject
+    and need to test whether this new version correctly works with your code, then
+    decide whether to use it in your superproject. On the other hand, at some point
+    in time, you would want to send your changes to the library itself to share their
+    changes with other developers, if only to share the burden of maintaining these
+    features (the out-of-tree patches bring maintenance costs to keep them current).
+  id: totrans-20
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 子模块和子树方案所使用的机制（为每个应用程序、框架或库拥有独立的 Git 仓库）并非没有问题。开发变得更加复杂，因为现在需要与多个仓库交互。如果库得到改进，你会希望更新你的子项目，并且需要测试这个新版本是否与代码正确配合，然后决定是否在超级项目中使用它。另一方面，在某个时间点，你会希望将更改提交到库本身，以便与其他开发者共享他们的更改，哪怕只是为了分担维护这些功能的负担（树外补丁会带来维护成本，需要保持其更新）。
+- en: What to do in those cases? This chapter describes a few strategies used to manage
+    subprojects. For each technique, we will detail how to add such subprojects to
+    superprojects, how to keep them up to date, how to create your own changes, and
+    how to publish selected changes upstream.
+  id: totrans-21
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这些情况下该怎么办？本章描述了几种管理子项目的策略。对于每种技术，我们将详细说明如何将子项目添加到超级项目中，如何保持它们的最新状态，如何创建自己的更改，以及如何将选定的更改发布到上游。
+- en: Subdirectory requirement
+  id: totrans-22
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 子目录需求
+- en: Note that all the solutions require that all the files of a subproject be contained
+    in a single subdirectory of a superproject. No currently available solution allows
+    you to mix the subproject files with other files, or have them occupy more than
+    one directory.
+  id: totrans-23
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请注意，所有解决方案都要求子项目的所有文件都包含在超级项目的单个子目录中。当前没有任何可用的解决方案允许将子项目文件与其他文件混合，或让它们占用多个目录。
+- en: However you manage subprojects, be it subtrees, submodules, third-party tools,
+    or dependency management outside Git, you should strive for the module code to
+    remain independent of the particularities of the superproject (or at least, handle
+    such particularities using an external, possibly non-versioned configuration).
+    Using superproject-specific modifications goes against modularization and encapsulation
+    principles, unnecessarily coupling the two projects.
+  id: totrans-24
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 无论你如何管理子项目，不论是子树、子模块、第三方工具，还是 Git 之外的依赖管理，你应该努力让模块代码保持独立于超级项目的特殊性（或者至少通过外部配置来处理这些特殊性，可能是非版本化的配置）。使用针对超级项目的特定修改违背了模块化和封装的原则，导致两个项目之间不必要的耦合。
+- en: On the other hand, sharing common components, libraries, and tooling, and keeping
+    them the same for all the distinct but related projects might be more important
+    than the autonomy of those projects (for example, if they are all developed by
+    the same company). It might be the case with the polyrepo setup that introducing
+    a new feature always makes it necessary to create multiple commits in multiple
+    repositories, instead of requiring only a single commit. In those cases, monorepo
+    might be a better solution.
+  id: totrans-25
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 另一方面，共享通用组件、库和工具，并确保所有不同但相关的项目使用相同的组件，可能比这些项目的自主性更为重要（例如，当这些项目由同一公司开发时）。在多仓库的设置中，可能每次引入新功能时都需要在多个仓库中创建多个提交，而不仅仅是一个提交。在这种情况下，单一仓库（monorepo）可能是更好的解决方案。
+- en: Managing dependencies outside of Git
+  id: totrans-26
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 管理 Git 之外的依赖关系
+- en: In many cases, the development stack used allows you to simply use **packaging**
+    and **formal dependency management**. If it is possible, it is usually preferable
+    to go this route. Using dependency management solutions lets you split your code
+    base better and avoid a number of side effects, complications, and pitfalls that
+    litter the submodule and subtree solution space (with different complications
+    for different techniques). It removes the version control systems from the managing
+    modules. It also lets you benefit from versioning schemes, such as **semantic
+    versioning**, for your dependencies.
+  id: totrans-27
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在很多情况下，所使用的开发栈允许你简单地使用**打包**和**正式的依赖管理**。如果可能，通常推荐走这条路。使用依赖管理解决方案能更好地拆分代码库，避免许多副作用、复杂性和陷阱，这些问题会出现在子模块和子树解决方案中（不同的技术会带来不同的复杂性）。它使得版本控制系统与管理模块脱离关系，也让你能够从版本控制方案中受益，例如**语义化版本控制**，用于管理依赖项。
+- en: 'As a reminder, here’s a partial list (in alphabetical order) of the main languages
+    and development stacks, and their dependency management/packaging systems and
+    registries (see the full comparison at [www.modulecounts.com](http://www.modulecounts.com)):'
+  id: totrans-28
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 提醒一下，这里是主要编程语言和开发栈的部分列表（按字母顺序排列），以及它们的依赖管理/打包系统和注册中心（查看完整比较请访问 [www.modulecounts.com](http://www.modulecounts.com)）：
+- en: Go has GoDoc
+  id: totrans-29
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Go 使用 GoDoc
+- en: Java has Maven Central (Maven and Gradle)
+  id: totrans-30
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Java 使用 Maven Central（Maven 和 Gradle）
+- en: JavaScript has npm (for Node.js) and Bower
+  id: totrans-31
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: JavaScript 使用 npm（用于 Node.js）和 Bower
+- en: .NET has NuGet
+  id: totrans-32
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: .NET 使用 NuGet
+- en: Objective-C has CocoaPods
+  id: totrans-33
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Objective-C 使用 CocoaPods
+- en: Perl has **Comprehensive Perl Archive Network** (**CPAN**) and carton
+  id: totrans-34
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Perl 使用**全面的 Perl 存档网络**（**CPAN**）和 carton
+- en: PHP has Composer, Packagist, and good old PEAR and PECL
+  id: totrans-35
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: PHP 使用 Composer、Packagist，以及经典的 PEAR 和 PECL
+- en: Python has **Python Package Index** (**PyPI**) and pip
+  id: totrans-36
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Python 使用**Python 包索引**（**PyPI**）和 pip
+- en: Ruby has Bundler and RubyGems
+  id: totrans-37
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Ruby 使用 Bundler 和 RubyGems
+- en: Rust has Crates
+  id: totrans-38
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Rust 使用 Crates
+- en: Sometimes, just using the official package registry is not enough. You might
+    need to apply some out-of-tree patches (changes) to customize the module (subproject)
+    for your needs. Sometimes, however, for many reasons, you might be unable to publish
+    these changes upstream to have them accepted. Perhaps the changes are relevant
+    only to your specific project, or the upstream is slow to respond to the proposed
+    changes, or perhaps there are license considerations. Maybe the subproject in
+    question is an in-house module that cannot be made public, but which you are required
+    to use for your company projects.
+  id: totrans-39
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有时，仅仅使用官方的软件包注册表是不够的。您可能需要应用一些树外补丁（更改）来定制模块（子项目）以满足您的需求。然而，由于种种原因，您可能无法将这些更改上推并被接受。可能这些更改只与您的特定项目相关，或者上游响应提议更改的速度很慢，或者可能涉及许可方面的考虑。也许该子项目是一个不能公开的内部模块，但您被要求在公司项目中使用它。
+- en: In all these cases, you need the **custom package registry** (the package repository)
+    to be used in addition to the default one, or you need to let subprojects be managed
+    as private packages, which these systems often allow. If there is no support for
+    private packages, a tool to manage the private registry, such as Pinto or CPAN::Mini
+    for Perl, would be also needed.
+  id: totrans-40
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在所有这些情况下，您需要使用**自定义软件包注册表**（软件包仓库），并且需要在默认注册表之外使用，或者需要将子项目管理为私有软件包，许多这类系统通常是支持的。如果没有对私有软件包的支持，还需要一个工具来管理私有注册表，例如Perl的Pinto或CPAN::Mini。
+- en: Manually importing the code into your project
+  id: totrans-41
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 手动将代码导入到您的项目中
+- en: Sometimes, the library or a tool that you want to include in your project is
+    not available in the package registry (perhaps because of the software stack;
+    for example, package registries for C++ such as Conan or vcpkg are quite a new
+    thing).
+  id: totrans-42
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有时候，您想要在项目中包含的库或工具在软件包注册表中不可用（可能是因为软件堆栈的原因；例如，C++的软件包注册表如Conan或vcpkg是比较新的东西）。
+- en: 'Therefore, let’s take a look at one of the other possibilities: why don’t we
+    simply import the library into some subdirectory in our project? If you need to
+    bring it up to date, you can just copy the new version as a new set of files.
+    In this approach, the subproject code is embedded inside the code of the superproject.'
+  id: totrans-43
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 因此，让我们看一下另一种可能性：为什么我们不直接将库导入到项目中的某个子目录中呢？如果您需要更新它，只需将新版本作为一组新文件复制进来。在这种方法中，子项目代码被嵌入到超级项目的代码中。
+- en: The simplest solution would be to just overwrite the contents of the subproject’s
+    directory each time we want to update the superproject to use the new version.
+    If the project you want to import doesn’t use Git, or if it doesn’t use a **version
+    control system** (**VCS**) at all, or if the repository it uses is not public,
+    this will indeed be the only possible solution.
+  id: totrans-44
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最简单的解决方案是每次想要更新超级项目以使用新版本时，就覆盖子项目目录的内容。如果您想导入的项目没有使用Git，或者根本没有使用**版本控制系统**（**VCS**），或者它使用的仓库不是公开的，那么这确实是唯一可能的解决方案。
+- en: Using repositories from a foreign VCS as a remote
+  id: totrans-45
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用外部VCS的仓库作为远程仓库
+- en: If the project you want to import (to embed) uses a VCS other than Git but there
+    is a good conversion mechanism (for example, with a fast import stream), you can
+    use **remote helpers** to set up a foreign VCS repository as a remote repository
+    (via automatic conversion). You can check [*Chapter 6*](B21194_06.xhtml#_idTextAnchor140),
+    *Collaborative Development with Git*, and [*Chapter 13*](B21194_13_split_000.xhtml#_idTextAnchor320),
+    *Customizing and Extending Git*, for more information.
+  id: totrans-46
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果您想导入（嵌入）的项目使用的是Git以外的版本控制系统（VCS），但存在良好的转换机制（例如，快速导入流），您可以使用**远程帮助程序**来将外部VCS仓库设置为远程仓库（通过自动转换）。您可以查看[*第6章*](B21194_06.xhtml#_idTextAnchor140)，*与Git的协同开发*，以及[*第13章*](B21194_13_split_000.xhtml#_idTextAnchor320)，*定制和扩展Git*，以获取更多信息。
+- en: This can be done, for example, with the Mercurial and Bazaar repositories, thanks
+    to the **git-remote-hg** and **git-remote-bzr** helpers.
+  id: totrans-47
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 例如，可以使用Mercurial和Bazaar仓库，感谢**git-remote-hg**和**git-remote-bzr**帮助程序。
+- en: 'Moving to the new version of the imported library is quite simple (and the
+    mechanism is easy to understand). Remove all the files from the directory, add
+    files from the new version of the library (for example, by extracting them from
+    the archive), then use the `git add` command to the directory:'
+  id: totrans-48
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 移动到导入库的新版本非常简单（而且机制容易理解）。删除目录中的所有文件，添加新版本库中的文件（例如，通过从归档中提取它们），然后使用`git add`命令将其添加到目录中：
+- en: '[PRE0]'
+  id: totrans-49
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: 'This method works quite well in simple cases with the following caveats:'
+  id: totrans-50
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这种方法在简单的情况下效果非常好，但有以下几点注意事项：
+- en: In the Git history of your project, you have only the versions of the library
+    at the time of import. On the one hand, this makes your project history clean
+    and easy to understand; on the other hand, you don’t have access to the fine-grained
+    history of a subproject. For example, when using **git bisect**, you would only
+    be able to find that it was introduced by upgrading the library, but not the exact
+    commit in the history of the library that introduced the bug in question.
+  id: totrans-51
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在你的项目的 Git 历史记录中，只有在导入时的库版本。一方面，这使得你的项目历史清晰易懂；另一方面，你无法访问子项目的详细历史记录。例如，在使用**git
+    bisect**时，你只能知道是通过升级库引入的问题，而无法知道导致此问题的具体提交。
+- en: If you want to customize the code of the library, fitting it to your project
+    by adding the changes dependent on your application, you would need to reapply
+    that customization in some way after you import a new version. You could extract
+    your changes with **git diff** (comparing it to the unchanged version at the time
+    of import) and then use **git apply** after upgrading the library. Or, you could
+    use a rebase, an interactive rebase, or some patch management interface; see [*Chapter
+    10*](B21194_10_split_000.xhtml#_idTextAnchor247), *Keeping History Clean*. Git
+    won’t do this automatically.
+  id: totrans-52
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 如果你想通过添加与应用程序相关的更改来自定义库的代码，并将其适配到你的项目中，那么在导入新版本后，你需要以某种方式重新应用这些自定义更改。你可以使用**git
+    diff**提取更改（将其与导入时的未更改版本进行比较），然后在升级库后使用**git apply**。或者，你可以使用 rebase、交互式 rebase
+    或某些补丁管理接口；详见[*第 10 章*](B21194_10_split_000.xhtml#_idTextAnchor247)，*保持历史清晰*。Git
+    不会自动执行此操作。
+- en: 'Each importing of the new version of the library requires running a specific
+    sequence of commands to update the superproject: removing the old version of files,
+    adding new ones, and committing the change. It is not as easy as running **git
+    pull**, though you can use scripts or aliases to help.'
+  id: totrans-53
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 每次导入新版本的库都需要运行一系列特定的命令来更新超项目：删除旧版本的文件，添加新文件，并提交更改。它不像运行**git pull**那么简单，尽管你可以使用脚本或别名来帮助完成。
+- en: A Git subtree solution for embedding the subproject code
+  id: totrans-54
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 一种用于嵌入子项目代码的 Git 子树解决方案
+- en: In a slightly more advanced solution, you can use the **subtree merge** to join
+    the history of a subproject to the history of a superproject. This is only somewhat
+    more complicated than an ordinary pull (at least, after the subproject is imported),
+    but provides a way to automatically merge changes together.
+  id: totrans-55
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在稍微高级一些的解决方案中，你可以使用**子树合并**将子项目的历史记录合并到超项目的历史记录中。这仅比普通的 pull 操作稍微复杂一些（至少在子项目导入之后），但提供了一种自动合并更改的方法。
+- en: 'Depending on your requirements, this method might fit well with your needs.
+    It has the following advantages:'
+  id: totrans-56
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 根据你的需求，这种方法可能非常适合你。它有以下优点：
+- en: You would always have the correct version of the library, never using the wrong
+    library version by accident.
+  id: totrans-57
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 你将始终拥有正确版本的库，避免错误使用库版本。
+- en: The method is simple to explain and understand, using only the standard (and
+    well-known) Git features. As you will see, the most important and most commonly
+    used operations are easy to do and easy to understand, and it is hard to go wrong.
+  id: totrans-58
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 这种方法简单易懂，仅使用标准的（且广为人知的）Git 功能。正如你所看到的，最重要且最常用的操作都很容易完成且易于理解，而且很难出错。
+- en: The repository of your application is always self-contained; therefore, cloning
+    it (with plain old **git clone**) will always include everything that’s needed.
+    This means that this method is a good fit for the *required dependencies*.
+  id: totrans-59
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 你的应用程序仓库始终是自包含的；因此，克隆它（使用普通的**git clone**）将始终包含所有需要的内容。这意味着这种方法非常适合*所需的依赖项*。
+- en: It is easy to apply patches (for example, customizations) to the library inside
+    your repository, even if you don’t have the commit rights to the upstream repository.
+  id: totrans-60
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 即使你没有上游仓库的提交权限，也可以轻松地将补丁（例如，自定义修改）应用到库内。
+- en: Creating a new branch in your application also creates a new branch for the
+    library; it is the same for switching branches. That’s the behavior you expect.
+    This is contrasted with the submodule’s behavior (the other technique for managing
+    subprojects).
+  id: totrans-61
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在你的应用程序中创建一个新分支也会为库创建一个新分支；切换分支时也会如此。这是你期望的行为。与子模块的行为（管理子项目的另一种技术）形成对比。
+- en: If you are using the **subtree** merge strategy (described shortly in [*Chapter
+    9*](B21194_09.xhtml#_idTextAnchor229), *Merging Changes Together*), for example,
+    with **git pull -s subtree**, then getting a new library version will be as easy
+    as updating all the other parts of your project.
+  id: totrans-62
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 如果你使用的是**子树**合并策略（在[*第9章*](B21194_09.xhtml#_idTextAnchor229)中有描述，*合并变更*），例如使用**git
+    pull -s subtree**，那么获取新的库版本将像更新项目中的其他部分一样简单。
+- en: Unfortunately, however, this technique is not without its disadvantages. For
+    many people and for many projects, these disadvantages do not matter. The simplicity
+    of the subtree-based method usually prevails over its faults.
+  id: totrans-63
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，不幸的是，这种技术并非没有缺点。对于许多人和许多项目来说，这些缺点并不重要。基于子树的方法通常因其简便性而克服了其缺陷。
+- en: 'Here are the problems with the subtree approach:'
+  id: totrans-64
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是子树方法的几个问题：
+- en: Each application using the library doubles its files. There is no easy and safe
+    way to share its objects among different projects and different repositories.
+    (See the following callout about the possibility of sharing the Git object database.)
+  id: totrans-65
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 每个使用该库的应用程序都会增加其文件的副本。没有简单且安全的方式在不同的项目和不同的仓库之间共享其对象。（请参阅以下有关共享 Git 对象数据库的说明。）
+- en: 'Each application using the library has its files checked out in the working
+    area, though you can change it with the help of the **sparse checkout** (which
+    will be described in the next chapter: [*Chapter 12*](B21194_12.xhtml#_idTextAnchor302),
+    *Handling* *Large Repositories*).'
+  id: totrans-66
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 每个使用该库的应用程序都有它自己的文件检出到工作区，尽管你可以借助**稀疏检出**来更改这一点（将在下一章[*第12章*](B21194_12.xhtml#_idTextAnchor302)中描述，*处理*
+    *大型仓库*）。
+- en: If your application introduces changes to its copy of the library, it is not
+    that easy to publish these changes and send them upstream. Third-party tools such
+    as **git subtree** or **git stree** can help here. They have specialized subcommands
+    to extract the subproject’s changes.
+  id: totrans-67
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 如果你的应用程序对其库的副本进行了更改，那么将这些更改发布并推送到上游并不那么简单。像**git subtree**或**git stree**这样的第三方工具可以提供帮助。它们有专门的子命令来提取子项目的更改。
+- en: Because of the lack of separation between the subproject files and the superproject
+    files, it is quite easy to mix the changes to the library and the changes to the
+    application in one commit. In such cases, you might need to rewrite the history
+    (or the copy of a history), as described in [*Chapter 10*](B21194_10_split_000.xhtml#_idTextAnchor247),
+    *Keeping* *History Clean*.
+  id: totrans-68
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 由于子项目文件与超级项目文件之间缺乏分离，因此很容易在一次提交中混合库的更改和应用程序的更改。在这种情况下，你可能需要重写历史（或历史的副本），如[*第10章*](B21194_10_split_000.xhtml#_idTextAnchor247)中所述，*保持*
+    *历史清晰*。
+- en: The first two issues mean that subtrees are not a good fit to manage the subprojects
+    that are *optional dependencies* (needed only for some extra features) or *optional
+    components* (such as themes, extensions, or plugins), especially those that are
+    installed by a mere presence in the appropriate place in the filesystem hierarchy.
+  id: totrans-69
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 前两个问题意味着子树并不适合管理*可选依赖*（仅用于某些额外功能）或*可选组件*（如主题、扩展或插件）等子项目，特别是那些只需在文件系统层次结构中的适当位置存在就能安装的子项目。
+- en: Sharing objects between forks (copies) with alternates
+  id: totrans-70
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在分支（副本）之间通过替代对象共享
+- en: You can mitigate the duplication of objects in the repository with **alternates**
+    or, in other words, with **git clone --reference**. However, then you would need
+    to take greater care about garbage collection. The problematic parts are those
+    parts of the history that are referenced in the borrower repository (that is,
+    one with alternates set up), but are not referenced in the lender reference’s
+    repository. The description and explanation of the alternate mechanisms will be
+    presented in [*Chapter 14*](B21194_14.xhtml#_idTextAnchor349), *Git Administration*.
+  id: totrans-71
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以通过**替代**（换句话说，使用**git clone --reference**）来减少仓库中对象的重复。然而，这样做时你需要更加小心垃圾回收。问题的关键部分是那些在借用者仓库中被引用，但在借出者仓库的引用中没有被引用的历史部分。替代机制的描述和解释将在[*第14章*](B21194_14.xhtml#_idTextAnchor349)中介绍，*Git
+    管理*。
+- en: There are different technical ways to handle and manage the subtree-imported
+    subprojects. You can use classic Git commands, just using the appropriate options
+    while affecting the subproject, such as `--strategy=subtree` (or the `subtree`
+    option to the default `recursive` merge strategy, `--strategy-option=subtree=<path>`)
+    for `merge`, `cherry-pick`, and related operations. This manual approach works
+    everywhere, is actually quite simple in most cases, and offers the best degree
+    of control over operations. However, it requires a good understanding of the underlying
+    concepts.
+  id: totrans-72
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 处理和管理子树导入的子项目有多种技术方法。你可以使用经典的 Git 命令，只需在操作子项目时使用适当的选项，例如 `--strategy=subtree`（或将
+    `subtree` 选项添加到默认的 `recursive` 合并策略中，`--strategy-option=subtree=<path>`）用于 `merge`、`cherry-pick`
+    和相关操作。这种手动方法在大多数情况下非常简单，并且提供了最佳的操作控制度。然而，它需要对底层概念有充分的理解。
+- en: In modern Git (since version 1.7.11), there is the `git subtree` command available
+    among installed binaries. It comes from the `contrib/` area and is not fully integrated
+    (for example, with respect to its documentation). This script is well tested and
+    robust, but some of its notions are rather peculiar or confusing, and this command
+    does not support the whole range of possible subtree operations. Additionally,
+    this tool supports only the *import with history* workflow (which will be defined
+    later), which some say clutters the history graph.
+  id: totrans-73
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在现代 Git（自 1.7.11 版本起），`git subtree` 命令作为已安装的二进制文件之一可用。它来自 `contrib/` 区域，并未完全集成（例如，在文档方面）。这个脚本经过充分测试且稳健，但它的一些概念比较特殊或令人困惑，而且这个命令并不支持所有可能的子树操作。此外，这个工具仅支持
+    *带历史的导入* 工作流（稍后会定义），有些人认为这会使历史图表变得混乱。
+- en: There are also other third-party scripts that help with subtrees; among them
+    is `git-subrepo`.
+  id: totrans-74
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 还有一些第三方脚本可以帮助处理子树，其中之一是 `git-subrepo`。
+- en: Creating a remote for a subproject
+  id: totrans-75
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 为子项目创建远程
+- en: 'Usually, while importing a subproject, you would want to be able to update
+    the embedded files easily. You would want to continue interacting with the subproject.
+    For this, you would add that subproject (for example, the common library) as a
+    **remote reference** in your own (super)project and fetch it:'
+  id: totrans-76
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通常，在导入子项目时，你会希望能够轻松地更新嵌入的文件。你希望继续与子项目互动。为此，你可以将该子项目（例如，公共库）作为 **远程引用** 添加到你的（超级）项目中，并进行拉取：
+- en: '[PRE1]'
+  id: totrans-77
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: Note that, in this example, progress messages were removed for simplicity.
+  id: totrans-78
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请注意，在这个示例中，进度信息被删除以简化展示。
+- en: 'You can then examine the `mylib_repo/master` remote-tracking branch, which
+    can be done either by checking it out into the detached `HEAD` with `git checkout
+    mylib_repo/master`, or by creating a local branch out of it and checking this
+    local branch out with `git checkout -b mylib_branch mylib_repo/master`. Alternatively,
+    you can just list its files with `git ls-tree -r --abbrev mylib repo/master`.
+    You will see then that the subproject has a different project root from your superproject.
+    Additionally, as can be seen from the **warning: no common commits** message,
+    this remote-tracking branch contains a completely different history coming from
+    a separate project.'
+  id: totrans-79
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '然后你可以检查 `mylib_repo/master` 远程跟踪分支，可以通过 `git checkout mylib_repo/master` 将其签出到脱离的
+    `HEAD`，或者通过创建一个本地分支并使用 `git checkout -b mylib_branch mylib_repo/master` 签出这个本地分支。另外，你也可以通过
+    `git ls-tree -r --abbrev mylib_repo/master` 列出它的文件。你会看到，子项目的根目录与超项目不同。此外，从 **warning:
+    no common commits** 的信息可以看出，这个远程跟踪分支包含了来自独立项目的完全不同的历史。'
+- en: Adding a subproject as a subtree
+  id: totrans-80
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 将子项目作为子树添加
+- en: If you are not using specialized tools such as `git subtree` but a manual approach,
+    the next step will be a bit complicated and will require you to use some advanced
+    Git concepts and techniques. Fortunately, it needs to be done only once.
+  id: totrans-81
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你没有使用像 `git subtree` 这样的专用工具，而是采用手动方法，下一步将会有些复杂，并且需要你使用一些高级 Git 概念和技巧。幸运的是，这个过程只需要做一次。
+- en: 'First, if you want to import the *subproject history*, you would need to create
+    a merge commit that will import the subproject in question. You need to have the
+    files of the subproject in the given directory in a superproject. Unfortunately
+    (at least, with the current version of Git as of writing this chapter), using
+    the `-Xsubtree=mylib/` merge strategy option would not work as expected. We would
+    have to do it in two steps: prepare the parents and then prepare the contents.'
+  id: totrans-82
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 首先，如果你想导入*子项目历史*，你需要创建一个合并提交，导入相关的子项目。你需要在超级项目中的给定目录下拥有子项目的文件。不幸的是（至少在写这篇章时的当前Git版本中），使用`-Xsubtree=mylib/`合并策略选项并不能按预期工作。我们必须分两步来做：先准备父项，然后准备内容。
+- en: 'The first step would then be to prepare a merge commit using the `ours` merge
+    strategy, but without creating it (writing it to the repository). This strategy
+    joins histories, but takes the current version of the files from the current branch:'
+  id: totrans-83
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 第一步是准备一个合并提交，使用`ours`合并策略，但不立即创建它（不写入到仓库中）。该策略会合并历史记录，但会从当前分支取当前版本的文件：
+- en: '[PRE2]'
+  id: totrans-84
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: If you want to have *simple history*, similar to the one we get from just copying
+    files, you can skip this step.
+  id: totrans-85
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你想要一个*简单的历史*，类似于我们仅仅复制文件时得到的历史，你可以跳过这一步。
+- en: 'We now need to update our index (the staging area for the commits) with the
+    contents of the `master` branch from the library repository and update our working
+    directory with it. All this needs to happen in the proper subfolder too. This
+    can be done with the low-level (plumbing) `git` `read-tree` command:'
+  id: totrans-86
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们需要更新我们的索引（即提交的暂存区），将库仓库中`master`分支的内容更新到我们的工作目录。所有这些也需要在适当的子文件夹中完成。这可以通过低级（plumbing）`git`
+    `read-tree`命令来完成：
+- en: '[PRE3]'
+  id: totrans-87
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: We have used the `-u` option, so the working directory is updated along with
+    the index. We then need simply to finalize the merge with `git commit`, as Git
+    tells us.
+  id: totrans-88
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们使用了`-u`选项，因此工作目录会随着索引一起更新。然后，我们只需按照Git的提示用`git commit`来完成合并。
+- en: Important note!
+  id: totrans-89
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 重要提示！
+- en: It is important to not forget the trailing slash in the argument of the **--prefix**
+    option. Checked-out files are literally prefixed with it.
+  id: totrans-90
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 重要的是不要忘记**--prefix**选项参数中的尾部斜杠。检出的文件会以此为前缀。
+- en: This set of steps is described in the HOWTO section of the Git documentation,
+    namely, in **How to use the subtree merge strategy**. This HOWTO is available
+    at [https://kernel.org/pub/software/scm/git/docs/howto/using-merge-subtree.html](https://kernel.org/pub/software/scm/git/docs/howto/using-merge-subtree.html).
+  id: totrans-91
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这一系列步骤在Git文档的HOWTO部分中有描述，具体来说是在**如何使用子树合并策略**中。此HOWTO可以在[https://kernel.org/pub/software/scm/git/docs/howto/using-merge-subtree.html](https://kernel.org/pub/software/scm/git/docs/howto/using-merge-subtree.html)找到。
+- en: 'It is much easier to use tools such as `git subtree`:'
+  id: totrans-92
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用`git subtree`这类工具要简单得多：
+- en: '[PRE4]'
+  id: totrans-93
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: The `git subtree` command would fetch the subtree’s remote when necessary; there’s
+    no need for the manual fetch that you had to perform in the manual solution.
+  id: totrans-94
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`git subtree`命令在必要时会拉取子树的远程版本；无需像手动方案那样执行手动拉取。'
+- en: 'If you examine the history, for example, with `git log --oneline --graph --decorate`,
+    you will see that this command merged the library’s history with the history of
+    the application (of the superproject). If you don’t want this, tough luck. The
+    `--squash` option that `git subtree` offers on its `add`, `pull`, and `merge`
+    subcommands won’t help here. One of the peculiarities of this tool is that this
+    option doesn’t create a **squash merge**, but simply merges the squashed subproject’s
+    history (as if it were squashed with an interactive rebase). The commit message
+    would look like this: **Squashed ‘mylib/’ content from commit 5e28a71**. See *Figure
+    11**.2(b)* later in this chapter.'
+  id: totrans-95
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你检查历史记录，例如使用`git log --oneline --graph --decorate`，你会看到这个命令将库的历史记录与应用程序（超级项目）的历史记录合并。如果你不希望这样，那就没办法了。`git
+    subtree`在其`add`、`pull`和`merge`子命令中提供的`--squash`选项在这里并不会帮上忙。这个工具的一个特殊之处在于，这个选项不会创建**压缩合并**，而是简单地合并压缩后的子项目历史（就像是经过交互式变基后的合并）。提交消息会像这样：**Squashed
+    ‘mylib/’ content from commit 5e28a71**。请参见本章稍后的*图11.2(b)*。
+- en: 'If you want a subtree without its history attached to the superproject history,
+    as in *Figure 11**.2(c)*, consider using the external tool, `git-subrepo`. It
+    has the additional advantage that it remembers the subtree settings:'
+  id: totrans-96
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你想要一个没有历史记录与超级项目历史关联的子树，如*图11.2(c)*所示，可以考虑使用外部工具`git-subrepo`。它的额外优点是它能记住子树设置：
+- en: '[PRE5]'
+  id: totrans-97
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: The information about the subproject repository URL, the main branch, the original
+    commit, and so on, is stored in the `.gitrepo` file in the directory with the
+    subproject. All subsequent `git subrepo` commands refer to the embedded subproject
+    by the name of the directory it is in (which is `mylib/` in the preceding example).
+  id: totrans-98
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有关子项目仓库 URL、主分支、原始提交等信息存储在包含子项目的目录中的 `.gitrepo` 文件里。所有后续的 `git subrepo` 命令都会通过子项目所在目录的名称来引用该嵌入的子项目（在前面的示例中是
+    `mylib/`）。
+- en: You can achieve similar results with the external `git-stree` tool, which was
+    deprecated in favor of `git-subrepo`.
+  id: totrans-99
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你也可以使用外部的 `git-stree` 工具来实现类似的效果，但该工具已被弃用，取而代之的是 `git-subrepo`。
+- en: Cloning and updating superprojects with subtrees
+  id: totrans-100
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 克隆和更新包含子树的超级项目
+- en: All right! Now that we have our project with a library embedded as a subtree,
+    what do we need to do to get it? Because the concept behind subtrees is to have
+    just one repository (the container), you can simply clone this repository.
+  id: totrans-101
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 好的！现在我们已经将库作为子树嵌入到项目中了，那我们需要做什么才能获取它呢？由于子树的概念是只有一个仓库（容器），你只需克隆这个仓库即可。
+- en: To get an up-to-date repository, you just need a regular pull; this would bring
+    both the superproject (the container) and subproject (the library) up to date.
+    This works regardless of the approach taken, the tool used, and the manner in
+    which the subtree was added. It is a great advantage of the subtrees approach.
+  id: totrans-102
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了获取最新的仓库，你只需要进行常规的拉取；这将同时更新超级项目（容器）和子项目（库）。无论采用何种方法、使用何种工具，或者子树是如何添加的，这种方法都能正常工作。这是子树方法的一个巨大优势。
+- en: Getting updates from subprojects with a subtree merge
+  id: totrans-103
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 从子项目获取更新，通过子树合并
+- en: 'Let’s see what happens if there are some new changes in the subproject since
+    we imported it. It is easy to bring the version embedded in the superproject up
+    to date:'
+  id: totrans-104
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们看看自从导入子项目后，子项目是否有一些新变化。如果需要更新超级项目中嵌入的版本，这是很容易做到的：
+- en: '[PRE6]'
+  id: totrans-105
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: You could have fetched and then merged instead, which allows for greater control.
+    Or, you could have rebased instead of merging, if you prefer; that works too.
+  id: totrans-106
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你本来可以选择先拉取然后再合并，这样能更好地控制。或者，如果你喜欢，也可以选择变基而不是合并，这也可以。
+- en: Importance of selecting subtree merge strategy
+  id: totrans-107
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 选择子树合并策略的重要性
+- en: Don’t forget to select the merge strategy with **-s subtree** while pulling
+    a subproject. Merging could work even without it because Git does rename detection
+    and would usually be able to discover that the files were moved from the root
+    directory (in the subproject) to a subdirectory (in the superproject we are merging
+    into). The problematic case is when there are conflicting files inside and outside
+    of the subproject. Potential candidates are Makefiles and other standard filenames.
+  id: totrans-108
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在拉取子项目时，别忘了选择合并策略 **-s subtree**。即使没有该选项，合并也能正常工作，因为 Git 会进行重命名检测，并通常能发现文件是从根目录（子项目中的）移动到子目录（我们正在合并到的超级项目中的）
+    的。问题出现在子项目内外存在冲突文件的情况下。潜在的候选文件包括 Makefile 和其他标准文件名。
+- en: If there are some problems with Git detecting the correct directory to merge
+    into, or if you need advanced features of an ordinary **ort** merge strategy (which
+    is the default), you can instead use **-Xsubtree=<path/to/subproject>**, the **subtree**
+    option of the **ort** merge strategy.
+  id: totrans-109
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果 Git 无法正确检测到需要合并的目录，或者如果你需要使用普通 **ort** 合并策略的高级功能（这是默认策略），你可以改用 **-Xsubtree=<path/to/subproject>**，即
+    **ort** 合并策略的 **subtree** 选项。
+- en: You may need to adjust other parts of the application code to work properly
+    with the updated code of the library.
+  id: totrans-110
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可能需要调整应用程序代码的其他部分，以便与更新后的库代码正常配合工作。
+- en: 'Note that, with this solution, you have a subproject history attached to your
+    application history, as you can see in *Figure 11**.1*:'
+  id: totrans-111
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请注意，通过这种解决方案，你的子项目历史会与应用程序历史相关联，就像你在 *图 11.1* 中看到的那样：
+- en: "![Figure 11.1 – History of a superproject with a subtree-merged subproject\
+    \ inside the ‘maps/’ directory. Subproject history is available \uFEFFin the superproject\
+    \ via relevant remote-tracking branch](img/B21194_11_01.jpg)"
+  id: totrans-112
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 11.1 – 超级项目的历史，子项目已合并到 ''maps/'' 目录中。子项目历史可以通过相关的远程跟踪分支在超级项目中查看](img/B21194_11_01.jpg)'
+- en: Figure 11.1 – History of a superproject with a subtree-merged subproject inside
+    the ‘maps/’ directory. Subproject history is available in the superproject via
+    relevant remote-tracking branch
+  id: totrans-113
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 11.1 – 超级项目的历史，子项目已合并到 'maps/' 目录中。子项目历史可以通过相关的远程跟踪分支在超级项目中查看
+- en: 'If you don’t want to have the history of a subproject entangled in the history
+    of a master project and prefer a simpler-looking history (as shown in *Figure
+    11**.1*), you can use the `--squash` option of the `git merge` (or `git pull`)
+    command to squash it:'
+  id: totrans-114
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你不希望子项目的历史记录与主项目的历史记录混杂在一起，并且更喜欢更简洁的历史记录（如*图11.1*所示），你可以使用`git merge`（或`git
+    pull`）命令的`--squash`选项来合并：
+- en: '[PRE7]'
+  id: totrans-115
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE7]'
+- en: Squash merge is described in [*Chapter 9*](B21194_09.xhtml#_idTextAnchor229),
+    *Merging* *Changes Together*.
+  id: totrans-116
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 压缩合并在[*第9章*](B21194_09.xhtml#_idTextAnchor229)中描述，*合并* *更改一起*。
+- en: In this case, in the history, you would have only the fact that the version
+    of the subproject had changed, which has its advantages and disadvantages. You
+    get *simpler* history but also *simplified* history.
+  id: totrans-117
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这种情况下，在历史记录中，你将只看到子项目版本已更改这一事实，这既有优点也有缺点。你得到的是*更简洁*的历史，但也失去了*详细*的历史。
+- en: With the `git subtree` or `git subrepo` tools, it is enough to use their `pull`
+    subcommand; they supply the `subtree` merge strategy themselves. However, currently,
+    `git subtree pull` requires you to respecify `--prefix` and the entire subtree
+    settings.
+  id: totrans-118
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用`git subtree`或`git subrepo`工具时，只需使用它们的`pull`子命令；它们自己提供了`subtree`合并策略。然而，目前`git
+    subtree pull`需要你重新指定`--prefix`和整个子树设置。
+- en: '![Figure 11.2 – Different types of subtree merges: (a) subtree merge, (b) subtree
+    merge of squashed commits, (c) squashed subtree merge](img/B21194_11_02.jpg)'
+  id: totrans-119
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图11.2 – 不同类型的子树合并：（a）子树合并，（b）压缩提交的子树合并，（c）压缩子树合并](img/B21194_11_02.jpg)'
+- en: 'Figure 11.2 – Different types of subtree merges: (a) subtree merge, (b) subtree
+    merge of squashed commits, (c) squashed subtree merge'
+  id: totrans-120
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图11.2 – 不同类型的子树合并：（a）子树合并，（b）压缩提交的子树合并，（c）压缩子树合并
+- en: Note that the `git subtree` command always merges, even with the `--squash`
+    option; it simply squashes the subproject commits before merging (such as the
+    `squash` instruction in the interactive rebase). In turn, `git subrepo pull` always
+    squashes the merge (such as `git merge --squash`), which keeps the superproject
+    history and subproject history separated without polluting the graph of the history.
+    All this can be seen in *Figure 11**.2*. Note that the dotted line in *(c)* denotes
+    how commits **C2** and **C4** were made, and not that it is the parent commit.
+  id: totrans-121
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 注意，`git subtree`命令总是会进行合并，即使使用了`--squash`选项；它只是会在合并之前将子项目的提交压缩（就像交互式变基中的`squash`指令一样）。反过来，`git
+    subrepo pull`总是会将合并压缩（如`git merge --squash`），这保持了超项目历史和子项目历史的分离，不会污染历史的图谱。所有这些可以在*图11.2*中看到。注意，图中*(c)*中的虚线表示的是**C2**和**C4**提交的生成方式，而不是父提交。
+- en: Showing changes between a subtree and its upstream
+  id: totrans-122
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 显示子树与其上游之间的差异
+- en: To find out the differences between the subproject and the current version in
+    the working directory, you need nontypical selector syntax for `git diff`. This
+    is because all the files in the subproject (for example, in the `mylib_repo/master`
+    remote-tracking branch) are in the root directory, while they are in the `mylib/`
+    directory in the superproject (for example, in `master`). We need to select the
+    subdirectory to be compared with `master`, putting it after the revision identifier
+    and the colon (skipping it would mean that it would be compared with the root
+    directory of the superproject).
+  id: totrans-123
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要查找子项目与工作目录中当前版本之间的差异，你需要使用非常规选择器语法来执行`git diff`。这是因为子项目中的所有文件（例如，在`mylib_repo/master`远程跟踪分支中）都位于根目录下，而在超项目中（例如，在`master`中）则位于`mylib/`目录下。我们需要选择要与`master`进行比较的子目录，将其放在修订标识符和冒号之后（跳过它意味着将与超项目的根目录进行比较）。
+- en: 'The command looks as follows:'
+  id: totrans-124
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 命令如下所示：
+- en: '[PRE8]'
+  id: totrans-125
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE8]'
+- en: 'Similarly, to check after the subtree merge whether the commit we just created
+    (`HEAD`) has the same contents in the `mylib/` directory as the merged in the
+    commit, that is, `HEAD^2`, we can use the following:'
+  id: totrans-126
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 类似地，要检查在子树合并之后，我们刚刚创建的提交（`HEAD`）是否与合并后的提交中的`mylib/`目录中的内容相同，即`HEAD^2`，我们可以使用以下命令：
+- en: '[PRE9]'
+  id: totrans-127
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE9]'
+- en: Sending changes to the upstream of a subtree
+  id: totrans-128
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 将更改发送到子树的上游
+- en: In some cases, the subtree code of a subproject can only be used or tested inside
+    the container code; most themes and plugins have such constraints. In this situation,
+    you’ll be forced to evolve your subtree code straight inside the master project
+    code base, before you finally backport it to the subproject upstream.
+  id: totrans-129
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在某些情况下，子项目的子树代码只能在容器代码中使用或测试；大多数主题和插件都有这样的限制。在这种情况下，你将被迫直接在主项目代码库中发展你的子树代码，然后最终将其回传到子项目的上游。
+- en: These changes often require adjustments in the rest of the superproject code;
+    though it is recommended to make two separate commits (one for the subtree code
+    change and one for the rest), it is not strictly necessary. You can tell Git to
+    extract only the subproject changes. The problem is with the commit messages of
+    the split changes, as Git is not able to automatically extract relevant parts
+    of the changeset description.
+  id: totrans-130
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这些变更通常需要对超级项目代码做出调整；尽管建议将子树代码变更和其他部分的变更分别提交（一个用于子树代码变更，另一个用于其他部分），但这并非严格必要。你可以告诉Git只提取子项目的变更。问题在于拆分的变更提交信息，因为Git无法自动提取变更集描述的相关部分。
+- en: Another common occurrence, which is best avoided but is sometimes necessary,
+    is the need to customize the subproject’s code in a container-specific way (configure
+    it specifically for a master project), usually without pushing these changes back
+    upstream. You should carefully distinguish between both situations, keeping each
+    use case’s changes (backportable and non-backportable) in their own commits.
+  id: totrans-131
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 另一个常见的情况是，虽然最好避免，但有时需要根据容器特定的方式自定义子项目代码（特别为主项目进行配置），通常不将这些变更推送回上游。你应该小心区分这两种情况，并将每个用例的变更（可回溯和不可回溯）保存在它们各自的提交中。
+- en: There are different ways to deal with this issue. You can avoid the problem
+    of extracting changes to be sent upstream by requiring that all the subtree changes
+    have to be done in a separate module-only repository. If it is possible, we can
+    even require that all the subproject changes have to be sent upstream first, and
+    we can get the changes into the container only through upstream acceptance.
+  id: totrans-132
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 处理这个问题有不同的方式。你可以通过要求所有子树的变更必须在单独的模块仓库中进行，从而避免提取变更并将其提交到上游的问题。如果可能，我们甚至可以要求所有子项目的变更必须先提交到上游，然后只有通过上游接受，我们才能将这些变更合并到容器中。
+- en: If you need to be able to extract the subtree changes, then one possible solution
+    is to utilize `git filter-branch --directory-filter` (or `--index-filter` with
+    the appropriate script). Another simple solution is to just use `git subtree push`.
+    Both of the methods, however, backport *every* commit that touches the subtree
+    in question.
+  id: totrans-133
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你需要能够提取子树的变更，那么一种可能的解决方案是使用`git filter-branch --directory-filter`（或使用带有适当脚本的`--index-filter`）。另一种简单的解决方案是直接使用`git
+    subtree push`。然而，这两种方法都会回溯*每一个*触及相关子树的提交。
+- en: If you want to send upstream only a selection of the changes to the subproject
+    of those that made it into the master project repository, then the solution is
+    a bit more complicated. One possibility is to create a local branch meant specifically
+    for backporting out of the subproject remote-tracking branch. Forking it from
+    said subtree-tracking branch means that it has the subtree as the root and it
+    would include only the submodule files.
+  id: totrans-134
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你只想将那些已经进入主项目仓库的子项目变更中的一部分发送到上游，那么解决方案就稍微复杂一些。一个可能的方法是创建一个本地分支，专门用于从子项目远程跟踪分支回溯。将其从该子树跟踪分支中分叉意味着它将以子树为根，并且只会包含子模块文件。
+- en: This branch, intended for backporting changes to the subproject, would need
+    to have the appropriate branch in the remote of the subproject upstream repository
+    as its upstream branch. With such a setup, we would then be able to use `git cherry-pick
+    --strategy=subtree` the commits we’re interested in sending to the subproject’s
+    upstream onto it. Then, we can simply `git push` this branch into the subproject’s
+    repository.
+  id: totrans-135
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个用于回溯子项目变更的分支需要在子项目上游仓库的远程中具有适当的分支作为上游分支。通过这种设置，我们就能够使用`git cherry-pick --strategy=subtree`将我们希望发送到子项目上游的提交应用到这个分支上。然后，我们可以简单地使用`git
+    push`将这个分支推送到子项目的仓库中。
+- en: Cherry picking and submodules
+  id: totrans-136
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 樱桃挑选和子模块
+- en: It is prudent to specify **--strategy=subtree** even if **cherry-pick** would
+    work without it, to make sure that the files outside the subproject’s directory
+    (outside **subtree**) will get quietly ignored. This can be used to extract the
+    subtree changes from the mixed commit; without this option, Git will refuse to
+    complete the cherry-pick.
+  id: totrans-137
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 即使**cherry-pick**在没有它的情况下也能正常工作，最好还是指定**--strategy=subtree**，以确保子项目目录外的文件（即**子树外**的文件）会被安静地忽略。这可以用来从混合提交中提取子树的变更；如果没有这个选项，Git将拒绝完成樱桃挑选。
+- en: This requires much more steps than ordinary `git push`. Fortunately, you need
+    to face this problem only while sending the changes made in the superproject repository
+    back to the subproject. As you have seen, fetching changes from the subproject
+    into the superproject is much, much simpler.
+  id: totrans-138
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这比普通的`git push`需要更多的步骤。幸运的是，你只需要在将超级项目仓库中的更改推送回子项目时面对这个问题。正如你所见，将子项目的更改获取到超级项目中要简单得多。
+- en: 'Well, using `git-stree` would make this trivial; you just need to list the
+    commits to be pushed to backport:'
+  id: totrans-139
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 好吧，使用`git-stree`会让这变得微不足道；你只需要列出要推送到回退的提交即可：
+- en: '[PRE10]'
+  id: totrans-140
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE10]'
+- en: In fact, this tool internally uses the same technique, creating and using a
+    backport-specific local branch for the subproject.
+  id: totrans-141
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 事实上，这个工具在内部使用相同的技术，为子项目创建并使用一个专门的回退本地分支。
+- en: The Git submodules solution – a repository inside a repository
+  id: totrans-142
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Git子模块解决方案——仓库中的仓库
+- en: 'The subtrees method of importing the code (and possibly also the history) of
+    a subproject into the superproject has its disadvantages. In many cases, the subproject
+    and the container are two different projects: your application depends on the
+    library, but it is obvious that they are separate entities. Joining the histories
+    of the two doesn’t look like the best solution.'
+  id: totrans-143
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 将子项目的代码（以及可能的历史）导入到超级项目中的子树方法有其缺点。在许多情况下，子项目和容器是两个不同的项目：你的应用程序依赖于该库，但显然它们是独立的实体。将两者的历史合并并不是最好的解决方案。
+- en: Additionally, the embedded code and imported history of a subproject are always
+    here. Therefore, the subtrees technique is not a good fit for optional dependencies
+    and components (such as plugins or themes). It also doesn’t allow you to have
+    different access controls for the subproject’s history, with the possible exception
+    of restricting write access to the subproject (actually to the subdirectory of
+    a subproject), by using Git repository management solutions such as `gitolite`
+    (you can find more in [*Chapter 14*](B21194_14.xhtml#_idTextAnchor349), *Git Administration*).
+  id: totrans-144
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 此外，子项目的嵌入代码和导入历史始终存在。因此，子树技术不适用于可选依赖项和组件（如插件或主题）。它也不允许你对子项目的历史设置不同的访问控制，可能唯一的例外是通过使用Git仓库管理解决方案，如`gitolite`（你可以在[*第14章*](B21194_14.xhtml#_idTextAnchor349)，*Git管理*中找到更多内容），来限制对子项目（实际上是子项目子目录）的写访问权限。
+- en: The submodule solution is to keep the subproject code and history in its own
+    repository and to embed this repository inside the working area of a superproject,
+    but not to add its files as superproject files.
+  id: totrans-145
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 子模块解决方案是将子项目的代码和历史保存在其自己的仓库中，并将该仓库嵌入到超级项目的工作区中，但不会将其文件作为超级项目的文件添加。
+- en: Gitlinks, .git files, and the git submodule command
+  id: totrans-146
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: Git链接、.git文件和git子模块命令
+- en: 'Git includes the command named `git submodule`, which is intended to work with
+    submodules. However, to utilize it correctly, you need to understand at least
+    some of the details of its operation. It is a combination of two distinct features:
+    the so-called `git submodule` tool itself.'
+  id: totrans-147
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git包括一个名为`git submodule`的命令，旨在与子模块一起使用。然而，要正确使用它，你需要理解至少一些它的操作细节。它是两种不同功能的结合：所谓的`git
+    submodule`工具本身。
+- en: Both in the subtree solution and the submodule solution, subprojects need to
+    be contained in their own folder inside the working directory of the superproject.
+    But while, with subtrees, the code of the subproject belongs to the superproject
+    repository, this is not the case for submodules. With submodules, each subproject
+    has instead its own repository somewhere inside its container repository. The
+    code of the submodule belongs to its repository, and the superproject itself simply
+    stores the meta-information required to get appropriate revisions of the subproject
+    files.
+  id: totrans-148
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 无论是子树解决方案还是子模块解决方案，子项目都需要包含在超级项目工作目录中的一个单独文件夹中。但是，在使用子树时，子项目的代码属于超级项目仓库，而在子模块中则不是这种情况。使用子模块时，每个子项目有自己在容器仓库中的某个地方的仓库。子模块的代码属于其自己的仓库，超级项目本身仅存储获取子项目文件相应修订版所需的元信息。
+- en: In practice, in modern Git, submodules use a simple `.git` file with a single
+    `gitdir:` line containing a relative path to the actual repository folder. The
+    submodule repository is actually located inside the superproject’s `.git/modules`
+    folder (and has `core.worktree` set up appropriately). This is done mostly to
+    handle the case when the superproject has branches that don’t have a submodule
+    at all. It allows us to avoid having to scrap the submodule’s repository while
+    switching to the superproject revision without it.
+  id: totrans-149
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 实际上，在现代 Git 中，子模块使用一个简单的 `.git` 文件，其中包含一个包含实际仓库文件夹相对路径的 `gitdir:` 行。子模块仓库实际上位于超级工程的
+    `.git/modules` 文件夹内（并且 `core.worktree` 已适当设置）。这样做主要是为了处理当超级工程有些分支根本没有子模块的情况。它允许我们在切换到没有子模块的超级工程版本时，避免必须丢弃子模块的仓库。
+- en: Tip
+  id: totrans-150
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 提示
+- en: 'You can think of the **.git** file with the **gitdir:** line as a symbolic
+    reference equivalent for the **.git** directories, an OS-independent symbolic
+    link replacement. The path to the repository doesn’t need to be a relative path:'
+  id: totrans-151
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以将包含 `gitdir:` 行的 **.git** 文件视为等效的符号引用，作为 **.git** 目录的操作系统独立符号链接替代品。仓库的路径不一定需要是相对路径：
+- en: '[PRE11]'
+  id: totrans-152
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE11]'
+- en: 'Be that as it may, the contained superproject and the subproject module truly
+    act as (and, in fact, are) independent repositories: they have their own history,
+    their own staging area, and their own current branch. Therefore, you should take
+    care while typing commands, minding whether you’re inside the submodule or outside
+    it, as the context and impact of your commands differ drastically!'
+  id: totrans-153
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 尽管如此，包含的超级工程和子工程模块实际上充当（并且实际上是）独立的仓库：它们有自己的历史记录、自己的暂存区和自己的当前分支。因此，在输入命令时，你应该小心，注意自己是在子模块内部还是外部，因为命令的上下文和影响差异很大！
+- en: The main idea behind the typical use of submodules is that the superproject
+    commit remembers the *exact* revision of the subproject; this reference uses the
+    SHA1 identifier of the subproject commit. Instead of using a manifest-like file
+    as in some dependency management tools, the submodules solution stores this information
+    in a tree object using so-called gitlinks. **Gitlink** is a reference from a **tree
+    object** (in the superproject repository) to a **commit object** (usually, in
+    the submodule repository); see *Figure 11**.3*. The faint shade of submodule files
+    on the left-hand side denotes that they are present as files in the working directory
+    of the superproject, but are not in the superproject repository themselves.
+  id: totrans-154
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用子模块的主要思想是超级工程的提交记住子工程的 *确切* 修订版；此引用使用子工程提交的 SHA1 标识符。与某些依赖管理工具中使用清单文件的方式不同，子模块解决方案将此信息存储在一个树对象中，使用所谓的
+    gitlinks。**Gitlink** 是从超级工程仓库中的 **树对象** 到子模块仓库中的 **提交对象** 的引用；见 *图11.3*。左侧子模块文件的淡色阴影表示它们作为文件存在于超级工程的工作目录中，但并不在超级工程仓库中。
+- en: '![Figure 11.3 – The history of a superproject with a subproject linked as a
+    submodule inside the ‘maps/’ subdirectory. Subproject history is separate](img/B21194_11_03.jpg)'
+  id: totrans-155
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图11.3 – 一个超级工程的历史，子工程作为子模块链接在‘maps/’子目录中。子工程历史是独立的](img/B21194_11_03.jpg)'
+- en: Figure 11.3 – The history of a superproject with a subproject linked as a submodule
+    inside the ‘maps/’ subdirectory. Subproject history is separate
+  id: totrans-156
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图11.3 – 一个超级工程的历史，子工程作为子模块链接在‘maps/’子目录中。子工程历史是独立的
+- en: Recall that, following the description of the types of objects in the repository
+    database from [*Chapter 10*](B21194_10_split_000.xhtml#_idTextAnchor247), *Keeping
+    History Clean*, each commit object (representing a revision of a project) points
+    exactly to one tree object with the snapshot of the repository contents. Each
+    tree object references blobs and trees, representing file contents and directory
+    contents, respectively. The tree object referenced by the commit object uniquely
+    identifies the set of file contents, filenames, and file permissions contained
+    in a revision associated with the commit object.
+  id: totrans-157
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 回想一下，在[*第10章*](B21194_10_split_000.xhtml#_idTextAnchor247)《保持历史干净》一节中描述的仓库数据库中对象的类型，每个提交对象（表示项目的一个修订版）准确地指向一个树对象，该树对象包含仓库内容的快照。每个树对象引用
+    blobs 和 trees，分别表示文件内容和目录内容。提交对象引用的树对象唯一标识与该提交对象相关联的修订版中包含的文件内容、文件名和文件权限集。
+- en: Let’s remember that the commit objects themselves are connected with each other,
+    creating the **Directed Acyclic Graph** (**DAG**) of revisions. Each commit object
+    references zero or more parent commits, which together describe the history of
+    a project.
+  id: totrans-158
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们记住，提交对象本身是彼此连接的，形成了**有向无环图**（**DAG**）的修订历史。每个提交对象都引用零个或多个父提交，它们共同描述了一个项目的历史。
+- en: Each type of reference mentioned earlier took part in the reachability check.
+    If the object pointed to was missing, it means that the repository is corrupt.
+  id: totrans-159
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 前面提到的每种引用类型都参与了可达性检查。如果指向的对象缺失，则意味着仓库已损坏。
+- en: 'It is not so for gitlinks. Entries in the tree object pointing to the commits
+    refer to the objects in the other separate repository, namely, in the subproject
+    (submodule) repository. The fact that the submodule commit being unreachable is
+    not an error is what allows us to optionally include submodules: no submodule
+    repository, no commit referenced in gitlink.'
+  id: totrans-160
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于 gitlink 来说情况并非如此。指向提交的树对象条目指向的是另一个独立仓库中的对象，即子项目（子模块）仓库中的对象。子模块提交无法访问并不是错误，这一点使我们可以选择性地包含子模块：没有子模块仓库，也就没有在
+    gitlink 中引用的提交。
+- en: 'The results of running `git ls-tree --abbrev HEAD` on a project with all the
+    types of objects is as follows:'
+  id: totrans-161
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在一个包含所有类型对象的项目上运行 `git ls-tree --abbrev HEAD` 的结果如下：
+- en: '[PRE12]'
+  id: totrans-162
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE12]'
+- en: 'Compare it with the contents of the working area (with `ls -l -``o -F`):'
+  id: totrans-163
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 将其与工作区的内容进行比较（使用 `ls -l -o -F`）：
+- en: '[PRE13]'
+  id: totrans-164
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE13]'
+- en: Adding a subproject as a submodule
+  id: totrans-165
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 将子项目作为子模块添加
+- en: To manage submodules there is the `git submodule` command. It was created to
+    help manage the filesystem contents, the metadata, and the configuration of your
+    submodules, as well as inspect their status and update them.
+  id: totrans-166
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要管理子模块，可以使用 `git submodule` 命令。它的创建是为了帮助管理子模块的文件系统内容、元数据和配置，并检查其状态以及进行更新。
+- en: With subtrees, the first step was usually to add a subproject repository as
+    a remote, which meant that objects from the subproject repository were fetched
+    into the *superproject* object database.
+  id: totrans-167
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于子树来说，第一步通常是将子项目仓库添加为远程，这意味着从子项目仓库中获取对象到*超项目*的对象数据库中。
+- en: 'To add the given repository as a submodule at a specific directory in the superproject,
+    use the `add` subcommand of the `git submodule`:'
+  id: totrans-168
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要将给定的仓库作为子模块添加到超项目的特定目录中，请使用 `git submodule` 的 `add` 子命令：
+- en: '[PRE14]'
+  id: totrans-169
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE14]'
+- en: Note about adding subprojects via a path to their repository
+  id: totrans-170
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 关于通过路径添加子项目到其仓库的说明
+- en: While using paths instead of URLs for remotes, you need to remember that the
+    relative paths for remotes are interpreted relative to our main remote, not to
+    the root directory of our repository.
+  id: totrans-171
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当使用路径而非 URL 作为远程地址时，需记住远程的相对路径是相对于我们的主远程地址解释的，而不是相对于我们仓库的根目录。
+- en: 'This command stores the information about the submodule, for example, the URL
+    of the repository, in the `.gitmodules` file. It creates a `.gitmodules` file
+    if it does not exist:'
+  id: totrans-172
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 此命令将子模块的信息（例如仓库的 URL）存储在 `.gitmodules` 文件中。如果 `.gitmodules` 文件不存在，它会创建一个新的文件：
+- en: '[PRE15]'
+  id: totrans-173
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE15]'
+- en: Note that a submodule gets a name equal to its path. You can set the name explicitly
+    with the `--name` option (or by editing the configuration); `git mv` on a submodule
+    directory will change the submodule path but keep the same name.
+  id: totrans-174
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请注意，子模块的名称等于其路径。你可以通过 `--name` 选项显式设置名称（或通过编辑配置）；在子模块目录上执行 `git mv` 会改变子模块路径，但保持相同的名称。
+- en: Reuse of authentication while fetching submodules
+  id: totrans-175
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 获取子模块时的身份验证重用
+- en: While storing the URL of a remote repository, it is often acceptable and useful
+    to store the username with the subproject information (for example, storing the
+    username in a URL, such as **user@git.company.com:mylib.git**).
+  id: totrans-176
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在存储远程仓库的 URL 时，通常可以接受并且有用的是将用户名与子项目信息一起存储（例如，将用户名存储在 URL 中，如 **user@git.company.com:mylib.git**）。
+- en: However, remembering the username as a part of the URL is undesirable in **.gitmodules**,
+    as this file must be visible to other developers (which often use different usernames
+    for authentication). Fortunately, the commands that descend into submodules can
+    reuse the authentication from cloning (or fetching) a superproject.
+  id: totrans-177
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，将用户名作为 URL 一部分来存储在 **.gitmodules** 中是不推荐的，因为该文件必须对其他开发人员可见（他们通常会使用不同的用户名进行身份验证）。幸运的是，深入子模块的命令可以重用克隆（或获取）超项目时的身份验证。
+- en: 'The `add` subcommand also runs an equivalent of `git submodule init` for you,
+    assuming that if you have added a submodule, you are interested in it. This adds
+    some submodule-specific settings to the local configuration of the master project:'
+  id: totrans-178
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`add` 子命令还会为你执行等效的 `git submodule init`，假设你添加了一个子模块，那么你肯定对它感兴趣。这个操作会将一些子模块特定的设置添加到主项目的本地配置中：'
+- en: '[PRE16]'
+  id: totrans-179
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE16]'
+- en: Why the duplication? Why store the same information in `.gitmodules` and in
+    `.git/ config`? Well, because while the `.gitmodules` file is meant for all developers,
+    we can fit our local configuration to specific local circumstances. The other
+    reason for using two different files is that while the presence of the submodule
+    information in `.gitmodules` means only that the subproject is available, having
+    it also in `.git/ config` implies that we are interested in a given submodule
+    (and that we want it to be present).
+  id: totrans-180
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为什么会有重复？为什么要将相同的信息存储在 `.gitmodules` 和 `.git/config` 中？原因是，虽然 `.gitmodules` 文件是为所有开发者设计的，但我们可以根据具体的本地情况调整本地配置。使用两个不同文件的另一个原因是，`.gitmodules`
+    文件中包含的子模块信息仅表示子项目可用，而 `.git/config` 中的子模块信息则意味着我们对某个特定的子模块感兴趣（并且希望它存在）。
+- en: You can create and edit the `.gitmodules` file by hand or with `git config -``f
+    .gitmodules`.
+  id: totrans-181
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以手动创建并编辑 `.gitmodules` 文件，或者使用 `git config -f .gitmodules` 来进行编辑。
+- en: This file is usually committed to the superproject repository (similar to `.gitignore`
+    and `.gitattributes` files), where it serves as the list of possible subprojects.
+  id: totrans-182
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个文件通常会被提交到超级项目仓库（类似于 `.gitignore` 和 `.gitattributes` 文件），它的作用是列出所有可能的子项目。
+- en: 'All the other subcommands require the `.gitmodules` file to be present; for
+    example, if we would run `git submodule update` before adding it, we would get
+    the following:'
+  id: totrans-183
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 所有其他子命令都要求 `.gitmodules` 文件必须存在；例如，如果在添加子模块之前运行 `git submodule update`，你将得到以下结果：
+- en: '[PRE17]'
+  id: totrans-184
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE17]'
+- en: 'That’s why `git submodule add` stages both the `.gitmodules` file and the submodule
+    itself:'
+  id: totrans-185
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这就是为什么 `git submodule add` 命令会同时暂存 `.gitmodules` 文件和子模块本身：
+- en: '[PRE18]'
+  id: totrans-186
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE18]'
+- en: Note that the whole submodule, which is a directory, looks to `git status` like
+    the new file. By default, most Git commands are limited to the active container
+    repository only and do not descend to the nested repositories of the submodules.
+    As we will see, this is configurable.
+  id: totrans-187
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请注意，整个子模块（它是一个目录）在 `git status` 中看起来就像是一个新文件。默认情况下，大多数 Git 命令仅限于操作活动容器仓库，并不会递归进入子模块的嵌套仓库。正如我们将看到的，这一行为是可以配置的。
+- en: Cloning superprojects with submodules
+  id: totrans-188
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 克隆带有子模块的超级项目
+- en: One important issue is that, by default, if you clone the superproject repository,
+    you will not get any submodules. All the submodules will be missing from the working
+    duplicated directory; only their base directories are here. This behavior is the
+    basis of the optionality of submodules.
+  id: totrans-189
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一个重要的问题是，默认情况下，如果你克隆超级项目仓库，你将无法获取任何子模块。所有的子模块都不会出现在工作复制目录中；这里只有它们的基础目录。这种行为正是子模块可选性的基础。
+- en: 'We need then to tell Git that we are interested in a given submodule. This
+    is done by calling the `git submodule init` command. What this command does is
+    copy the submodule settings from the `.gitmodules` file into the superproject’s
+    repository configuration, namely, `.git/config`, registering the submodule:'
+  id: totrans-190
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后我们需要告诉 Git 我们对某个特定的子模块感兴趣。我们通过调用 `git submodule init` 命令来实现这一点。这个命令的作用是将子模块的设置从
+    `.gitmodules` 文件复制到超级项目的仓库配置中，即 `.git/config`，并注册该子模块：
+- en: '[PRE19]'
+  id: totrans-191
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE19]'
+- en: 'The `init` subcommand adds the following two lines to the `.``git/config` file:'
+  id: totrans-192
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`init` 子命令会将以下两行添加到 `.git/config` 文件中：'
+- en: '[PRE20]'
+  id: totrans-193
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE20]'
+- en: This separate local configuration for the submodules you are interested in allows
+    you also to configure your local submodules to point to a different location URL
+    (perhaps, a per-company reference clone of a subproject’s repository) from the
+    one that is present in the `.``gitmodules` file.
+  id: totrans-194
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个单独的本地配置允许你为你感兴趣的子模块配置不同的 URL 地址（可能是某个子项目仓库的公司专用克隆地址），与 `.gitmodules` 文件中指定的
+    URL 地址不同。
+- en: This mechanism also makes it possible to provide a new URL if the repository
+    of a subproject has moved. That’s why the local configuration overrides the one
+    that is recorded in `.gitmodules`; otherwise, you would not be able to fetch from
+    the current URL when switched to the version before the URL change. On the other
+    hand, if the repository moved and the `.gitmodules` file was updated accordingly,
+    we can re-extract the new URL from `.gitmodules` into local configuration with
+    `git` `submodule sync`.
+  id: totrans-195
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个机制还使得在子项目的仓库发生移动时，能够提供一个新的 URL。这就是为什么本地配置会覆盖 `.gitmodules` 中记录的配置；否则，当切换到
+    URL 变更之前的版本时，你将无法从当前 URL 获取内容。另一方面，如果仓库发生了移动，并且 `.gitmodules` 文件已相应更新，我们可以通过 `git
+    submodule sync` 将新的 URL 从 `.gitmodules` 提取到本地配置中。
+- en: We have told Git that we are interested in the given submodule. However, we
+    have still not fetched the submodule commits from its remote and neither have
+    we checked it out and have its files present in the working directory of the superproject.
+    We can do this with `git` `submodule update`.
+  id: totrans-196
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们已经告诉 Git 我们关注的是给定的子模块。但是，我们仍然没有从其远程仓库获取子模块提交，也没有将其检出并让其文件出现在超级项目的工作目录中。我们可以通过
+    `git submodule update` 来实现这一点。
+- en: Shortcut command
+  id: totrans-197
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 快捷命令
+- en: In practice, while dealing with submodules using repositories, we usually group
+    the two commands (**init** and **update**) into one with **git submodule update
+    --init**; unless we need to customize the URL.
+  id: totrans-198
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 实际上，在使用仓库处理子模块时，我们通常将这两个命令（**init** 和 **update**）合并为一个命令 **git submodule update
+    --init**；除非我们需要自定义 URL。
+- en: If you are interested in all the submodules, you can use `git clone --recursive`
+    (or `git clone --recurse-submodules`) to automatically initialize and update each
+    submodule right after cloning.
+  id: totrans-199
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你对所有子模块感兴趣，可以使用 `git clone --recursive`（或 `git clone --recurse-submodules`）在克隆后自动初始化并更新每个子模块。
+- en: To temporarily remove a submodule, retaining the possibility of restoring it
+    later, you can mark it as not interesting with `git remote deinit`. This just
+    affects `.git/config`. To permanently remove a submodule, you need to first deinitialize
+    it, and then remove it from `.gitmodules` and from the working area (with `git
+    rm`).
+  id: totrans-200
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要临时移除一个子模块，并保留稍后恢复它的可能性，你可以通过 `git remote deinit` 将其标记为不感兴趣。这只会影响 `.git/config`。要永久移除一个子模块，你需要先取消初始化它，然后从
+    `.gitmodules` 和工作区中移除它（使用 `git rm`）。
+- en: Updating submodules after superproject changes
+  id: totrans-201
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 更新超级项目更改后的子模块
+- en: 'To update the submodule so that the working directory contents reflect the
+    state of a submodule in the current version of the superproject, you need to perform
+    `git submodule update`. This command updates the files of the subproject or, if
+    necessary, clones the initial submodule repository:'
+  id: totrans-202
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要更新子模块，使工作目录中的内容反映当前超级项目版本中子模块的状态，你需要执行 `git submodule update`。这个命令会更新子项目的文件，或者如果需要的话，克隆初始的子模块仓库：
+- en: '[PRE21]'
+  id: totrans-203
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE21]'
+- en: The `git submodule update` command goes to the repository referenced by `.git/config`,
+    fetches the ID of the commit found in the index (`git ls-tree HEAD -- plugins/demo`),
+    and checks out this version into the directory given by `.git/config`. You can,
+    of course, specify the submodule you want to update, giving the path to the submodule
+    as a parameter.
+  id: totrans-204
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`git submodule update` 命令会进入 `.git/config` 中引用的仓库，获取索引中找到的提交 ID（`git ls-tree
+    HEAD -- plugins/demo`），并将此版本检出到 `.git/config` 中指定的目录。当然，你可以指定要更新的子模块，作为参数提供子模块的路径。'
+- en: Because we are here checking out the revision given by gitlink, and not by a
+    branch, `git submodule update` detaches the subproject’s `HEAD` (see *Figure 11**.3*).
+    This command rewinds the subproject straight to the version recorded in the supermodule.
+  id: totrans-205
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 因为我们在这里检查的是由 `gitlink` 提供的修订版本，而不是一个分支，`git submodule update` 会使子项目的 `HEAD`
+    脱离（参见 *图 11.3*）。这个命令会将子项目直接回滚到超级项目中记录的版本。
+- en: 'There are a few more things that you need to know:'
+  id: totrans-206
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 还有一些你需要了解的其他事项：
+- en: If you are changing the current revision of a superproject in any way, either
+    by changing a branch, importing a branch with **git pull**, or rewinding the history
+    with **git reset**, you need to run **git submodule update** to get the matching
+    content to submodules. This is not done automatically by default, because it could
+    lead to potentially losing your work in a submodule.
+  id: totrans-207
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 如果你以任何方式更改了超级项目的当前修订版本，无论是通过更改分支、使用 **git pull** 导入分支，还是通过 **git reset** 回滚历史记录，你都需要运行
+    **git submodule update** 来获取与子模块匹配的内容。默认情况下不会自动执行此操作，因为这可能导致子模块中的工作丢失。
+- en: Conversely, if you switch to another branch, or otherwise change the current
+    revision in a superproject, and do not run **git submodule update**, Git would
+    consider that you changed your submodule directory deliberately to point to a
+    new commit (while it is really an old commit that you used before but forgot to
+    update). If, in this situation, you would run **git commit -a**, then by accident,
+    you will change the gitlink, leading to having an incorrect version of a submodule
+    stored in the superproject history.
+  id: totrans-208
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 相反，如果你切换到另一个分支，或者以其他方式更改了超项目中的当前修订版，并且没有运行**git submodule update**，Git 会认为你故意更改了子模块目录，以指向一个新的提交（尽管它实际上是你之前使用过的旧提交，但你忘记更新了）。如果在这种情况下你运行了**git
+    commit -a**，那么你可能会意外更改 gitlink，从而导致超项目历史中存储了错误版本的子模块。
+- en: You can upgrade the gitlink reference simply by fetching (or switching to) the
+    version of a submodule you want to have by using ordinary Git commands inside
+    the subproject and then committing this version in the supermodule. You don’t
+    need to use the **git submodule** command here.
+  id: totrans-209
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 你可以通过在子项目中使用普通的 Git 命令来获取（或切换到）你想要的子模块版本，然后在超项目中提交这个版本，从而轻松升级 gitlink 引用。在这里不需要使用**git
+    submodule**命令。
+- en: You can have Git automatically fetch the initialized submodules while pulling
+    the updates from the master project’s remote repository. This behavior can be
+    configured using `fetch.recurseSubmodules` (or `submodule.<name>.fetchRecurseSubmodules`).
+    The default value for this configuration is `on-demand` (to fetch if gitlink changes
+    and the submodule commit that it points to is missing). You can set it to `yes`
+    or `no` to turn recursively fetching submodules on or off unconditionally. The
+    corresponding command-line option is `--recurse-submodules`.
+  id: totrans-210
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以在从主项目的远程仓库拉取更新时，让 Git 自动获取初始化的子模块。这一行为可以通过`fetch.recurseSubmodules`（或`submodule.<name>.fetchRecurseSubmodules`）进行配置。该配置的默认值是`on-demand`（当
+    gitlink 更改且其指向的子模块提交丢失时进行获取）。你可以将其设置为`yes`或`no`，以无条件开启或关闭递归获取子模块。对应的命令行选项是`--recurse-submodules`。
+- en: You can pass the `--recurse-submodules` command-line option to many Git commands,
+    including the `git pull` command, which would then fetch initialized modules and
+    update working trees of active submodules.
+  id: totrans-211
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以将`--recurse-submodules`命令行选项传递给许多 Git 命令，包括`git pull`命令，这样它就会获取已初始化的模块并更新活动子模块的工作树。
+- en: Always recursing into active submodules
+  id: totrans-212
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 始终递归进入活动子模块
+- en: To make those Git commands that support it use the **--recurse-submodules**
+    option by default, you can set the **submodule.recurse** configuration option
+    to **true**. The **checkout**, **fetch**, **grep**, **pull**, **push**, **read-tree**,
+    **reset**, **restore**, and **switch** commands are supported.
+  id: totrans-213
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要使支持该功能的 Git 命令默认使用**--recurse-submodules**选项，可以将**submodule.recurse**配置选项设置为**true**。**checkout**、**fetch**、**grep**、**pull**、**push**、**read-tree**、**reset**、**restore**和**switch**命令都支持此选项。
+- en: Note that instead of checking out the gitlinked revision on the detached `HEAD`,
+    we can merge the commit recorded in the superproject into the current branch in
+    the submodule with `--merge`, or rebase the current branch on top of the gitlink
+    with `--rebase`, just like with `git pull`. The submodule repository branch used
+    defaults to `master`, but the branch name may be overridden by setting the `submodule.<name>.branch`
+    option in either `.gitmodules` or `.git/config`, with the latter taking precedence.
+  id: totrans-214
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请注意，我们可以使用`--merge`将超项目中记录的提交合并到子模块的当前分支，或者使用`--rebase`将当前分支重基于 gitlink 上，就像使用`git
+    pull`一样，而不是在分离的`HEAD`上检出 gitlinked 修订版。默认使用的子模块仓库分支是`master`，但可以通过在`.gitmodules`或`.git/config`中设置`submodule.<name>.branch`选项来覆盖分支名称，以后者为优先。
+- en: As you can see, using gitlinks and the `git submodule` command is quite complicated.
+    Fundamentally, the concept of gitlink might fit well with the relationship between
+    subprojects and your superproject, but using this information correctly is harder
+    than you think. On the other hand, it gives great flexibility and power.
+  id: totrans-215
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，使用 gitlink 和**git submodule**命令相当复杂。从根本上讲，gitlink 的概念可能很适合子项目和超项目之间的关系，但正确使用这些信息比你想象的要困难。另一方面，它提供了巨大的灵活性和强大功能。
+- en: Examining changes in a submodule
+  id: totrans-216
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 检查子模块中的更改
+- en: 'By default, the status, logs, and `diff` output are based solely on the state
+    of the active repository and do not descend into submodules. This is often problematic;
+    you would need to remember to run `git submodule summary`. It is easy to miss
+    a regression if you are limited to this view: you can see that the submodule has
+    changed but you can’t see how.'
+  id: totrans-217
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 默认情况下，状态、日志和`diff`输出仅基于活动仓库的状态，并不深入子模块。这通常是个问题；你需要记住运行`git submodule summary`。如果你仅限于这种视图，很容易错过回归：你可以看到子模块已经发生变化，但却看不到具体如何变化。
+- en: You can, however, set up Git to make it use a `status.submoduleSummary` configuration
+    variable. If it is set to a nonzero number, this number will provide the `--summary-limit`
+    restriction; a value of `true` or `-1` will mean an unlimited number.
+  id: totrans-218
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，你可以设置 Git，使其使用`status.submoduleSummary`配置变量。如果设置为非零数字，则该数字将提供`--summary-limit`限制；值为`true`或`-1`表示无限制。
+- en: 'After setting this configuration, you would get something like the following:'
+  id: totrans-219
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 设置此配置后，你会得到如下内容：
+- en: '[PRE22]'
+  id: totrans-220
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE22]'
+- en: The status extends the always present information that the submodule changed
+    (`plugins/demo` got three new commits, and showing the summary for the last one
+    (`>`) preceding the summary line means that the commit was added, that is, present
+    in the working area but not (yet) in the superproject commit.
+  id: totrans-221
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 状态扩展了始终存在的信息，表明子模块发生了变化（`plugins/demo`有三个新的提交，并显示最后一个提交的摘要（`>`）标记在摘要行之前，意味着该提交已被添加，即存在于工作区中，但还未在超级项目的提交中）。
+- en: Trivia
+  id: totrans-222
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 小知识
+- en: Actually, this added part is just the **git submodule** **summary** output.
+  id: totrans-223
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 实际上，这部分添加的内容就是**git submodule** **summary**输出。
+- en: For the submodule in question, a series of commits in the submodule between
+    the submodule version in the given superproject’s commit and the submodule version
+    in the index or the working tree (the former shown by using `--cached`) are listed.
+    There is also `git submodule status` for short information about each module.
+  id: totrans-224
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于相关的子模块，将列出给定超级项目的提交中子模块版本与索引或工作树中的子模块版本之间的一系列提交（前者通过使用`--cached`显示）。此外，还有`git
+    submodule status`命令，提供每个模块的简短信息。
+- en: 'The `git diff` command’s default output also doesn’t tell much about the change
+    in the submodule, just that it is different:'
+  id: totrans-225
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`git diff`命令的默认输出也不会提供关于子模块更改的详细信息，只是告诉你它有所不同：'
+- en: '[PRE23]'
+  id: totrans-226
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE23]'
+- en: 'Fortunately, there is the `--submodule=log` command-line option (which you
+    can enable by default with the `diff.submodule` configuration setting) that lets
+    us see something more useful:'
+  id: totrans-227
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 幸运的是，有一个`--submodule=log`命令行选项（你可以通过`diff.submodule`配置设置默认启用）可以让我们看到一些更有用的信息：
+- en: '[PRE24]'
+  id: totrans-228
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE24]'
+- en: Instead of using `log`, we can use the `short` format that shows just the names
+    of the commits, which is the default if the format is not given (that is, with
+    just `git diff --submodule`). Alternatively, we can use the `diff` format to show
+    an inline `diff` of the changed contents of the submodule.
+  id: totrans-229
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以不使用`log`，而使用`short`格式，仅显示提交的名称，这也是默认格式（即使用`git diff --submodule`时）。或者，我们可以使用`diff`格式，显示子模块更改内容的内联`diff`。
+- en: Getting updates from the upstream of the submodule
+  id: totrans-230
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 从子模块的上游获取更新
+- en: To remind you, the submodule commits are referenced in gitlinks using the SHA1
+    identifier, which always resolves to the same revision; it is not a volatile (inconstant)
+    reference such as a branch name. Because of this, a submodule in a superproject
+    does not automatically upgrade (which could possibly be breaking the application).
+    However, sometimes, you may want to update the subproject to its upstream.
+  id: totrans-231
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 提醒一下，子模块的提交通过 gitlinks 使用 SHA1 标识符进行引用，该标识符始终指向相同的修订版本；它不是一个易变（不稳定）的引用，比如分支名称。因此，超级项目中的子模块不会自动升级（这可能会破坏应用程序）。然而，有时你可能想要将子项目更新到它的上游版本。
+- en: Let’s assume that the subproject repository got new revisions published and,
+    for our superproject, we want to update to the new version of a submodule.
+  id: totrans-232
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 假设子项目仓库发布了新的修订版本，并且对于我们的超级项目，我们想要更新到子模块的新版本。
+- en: To achieve this, we need to update the local repository of a submodule, move
+    the version we want to the working directory of the superproject, and, finally,
+    commit the submodule change in the superproject.
+  id: totrans-233
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了实现这一点，我们需要更新子模块的本地仓库，将我们想要的版本移到超级项目的工作目录中，最后在超级项目中提交子模块的更改。
+- en: We can do this manually, starting by first changing the current directory to
+    be inside the working directory of the submodule. Then, inside the submodule,
+    we perform `git fetch` to get the data to the local clone of the repository (in
+    `.git/modules/` in the superproject). After verifying what we have with `git log`,
+    we can then update the working directory. If there are no local changes, you can
+    simply check out the desired revision. Finally, you need to create a commit in
+    a superproject.
+  id: totrans-234
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以手动完成这个过程，首先将当前目录更改为子模块工作目录。然后，在子模块中，执行 `git fetch` 以获取到本地克隆库中的数据（在超级项目的
+    `.git/modules/` 中）。在通过 `git log` 验证我们所拥有的内容后，我们可以更新工作目录。如果没有本地更改，你可以简单地检出所需的修订版本。最后，需要在超级项目中创建一个提交。
+- en: In addition to the finer-grained control, this approach has the added benefit
+    of working regardless of your current state (whether you are on an active branch
+    or on a detached `HEAD`).
+  id: totrans-235
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 除了更精细的控制，这种方法还有额外的好处，即使在当前状态下也可以工作（无论你是在活动分支上还是在分离的`HEAD`上）。
+- en: Another way to go about this would be, working from the container repository,
+    to explicitly upgrade the submodule to its tracked remote branch with `git submodule
+    update --remote`. Similarly to the ordinary update command, you can choose to
+    merge or rebase instead of checking out a branch; you can configure the default
+    way of updating with the `submodule.<name>.update` configuration variable, and
+    the default upstream branch with `submodule.<name>.branch`.
+  id: totrans-236
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 另一种方法是，从容器存储库开始，使用 `git submodule update --remote` 显式将子模块升级到其跟踪的远程分支。与普通的更新命令类似，你可以选择合并或变基而不是检出分支；你可以使用
+    `submodule.<name>.update` 配置变量配置更新的默认方式，并使用 `submodule.<name>.branch` 配置默认上游分支。
+- en: Variants of git submodule update
+  id: totrans-237
+  prefs: []
+  type: TYPE_NORMAL
+  zh: git submodule update 的变种
+- en: In short, **submodule update --remote --merge** will merge the upstream’s subproject
+    changes into the submodule, while **submodule update --merge** will merge the
+    superproject gitlink changes into the submodule.
+  id: totrans-238
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 简而言之，**submodule update --remote --merge** 将上游的子项目更改合并到子模块中，而 **submodule update
+    --merge** 将超级项目的 gitlink 更改合并到子模块中。
+- en: The `git submodule update --remote` command would fetch new changes from the
+    submodule remote site automatically unless told not to with `--no-fetch`.
+  id: totrans-239
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`git submodule update --remote` 命令会自动从子模块远程站点获取新的更改，除非使用 `--no-fetch` 明确告知不要这样做。'
+- en: Sending submodule changes upstream
+  id: totrans-240
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 将子模块更改发送到上游
+- en: One of the major dangers in making changes live directly in a submodule (and
+    not via its standalone repository) is forgetting to push the submodule. A good
+    practice for submodules is to commit changes to the submodule first, push the
+    module changes, and only then get back to the container project, commit it, and
+    push the container changes.
+  id: totrans-241
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 直接在子模块中进行更改（而不是通过其独立的存储库）的主要危险之一是忘记推送子模块。对于子模块的一个良好实践是首先提交子模块的更改，推送模块更改，然后再回到容器项目，提交并推送容器更改。
+- en: 'If you only push to the supermodule repository, forgetting about the submodule
+    push, then other developers will get an error while trying to get the updates.
+    Though Git does not complain while fetching the superproject, you would see the
+    problem in the `git submodule summary` output (and in the `git status` output,
+    if properly configured) and while trying to update the working area:'
+  id: totrans-242
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你只推送到超级模块存储库，忘记了子模块的推送，那么其他开发者在尝试获取更新时会遇到错误。虽然 Git 在获取超级项目时不会抱怨，但你会在 `git
+    submodule summary` 输出（如果正确配置的话还有 `git status` 输出）以及尝试更新工作区时看到问题：
+- en: '[PRE25]'
+  id: totrans-243
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE25]'
+- en: You can plainly see how important it is to remember to push the submodule. You
+    can ask Git to automatically push the submodules while pushing the superproject,
+    if it is necessary, with `git push --recurse-submodules=on-demand` (the other
+    option is just to check). You can also use the `push.` `recurseSubmodules` configuration
+    option.
+  id: totrans-244
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 显然你可以看出记得推送子模块是多么重要。如果需要，你可以请求 Git 在推送超级项目时自动推送子模块，使用命令 `git push --recurse-submodules=on-demand`（另一个选项是仅检查）。你还可以使用
+    `push.` `recurseSubmodules` 配置选项。
+- en: Transforming a subfolder into a subtree or submodule
+  id: totrans-245
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 将子文件夹转换为子树或子模块
+- en: The first issue that comes to mind while thinking of the use cases of subprojects
+    in Git is about having the source code of the base project ready for such division.
+  id: totrans-246
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在思考 Git 中子项目的用例时，首先考虑的问题之一是准备好基本项目的源代码以进行这种分割。
+- en: Submodules and subtrees are always expressed as subdirectories of the superproject
+    (the master project). You can’t mix files from different subsystems in one directory.
+  id: totrans-247
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 子模块和子树始终表示为超级项目（主项目）的子目录。您不能在一个目录中混合来自不同子系统的文件。
+- en: 'Experience shows that most systems use such a directory hierarchy, even in
+    monolithic repositories, which is a good beginning for modularization efforts.
+    Therefore, transforming a subfolder into a real submodule/subtree is fairly easy
+    and can be done in the following sequence of steps:'
+  id: totrans-248
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 经验表明，大多数系统即使在单体存储库中也使用这样的目录层次结构，这对模块化工作是一个很好的开端。因此，将子文件夹转换为真正的子模块/子树相当容易，并可以通过以下步骤序列完成：
+- en: Move the subdirectory in question outside the working area of a superproject
+    to have it beside the top directory of the superproject. If it is important to
+    keep the history of a subproject, consider using **git subtree split**, or **git
+    filter-branch --subdirectory-filter** or its equivalent, perhaps together with
+    tools such as **reposurgeon** to clean up the history. See [*Chapter 10*](B21194_10_split_000.xhtml#_idTextAnchor247),
+    *Keeping History Clean*, for more details.
+  id: totrans-249
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 将问题子目录移出超级项目的工作区以将其放置在超级项目顶级目录旁边。如果保留子项目的历史记录很重要，请考虑使用 **git subtree split**，或者
+    **git filter-branch --subdirectory-filter** 或其等效方法，也许还可以结合 **reposurgeon** 等工具清理历史记录。有关更多详细信息，请参阅
+    [*第 10 章*](B21194_10_split_000.xhtml#_idTextAnchor247)，*保持历史干净*。
+- en: Rename the directory with the subproject repository to better express the essence
+    of the extracted component. For example, a subdirectory originally named **refresh**
+    could be renamed **refresh-client-app-plugin**.
+  id: totrans-250
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 将包含子项目存储库的目录重命名，以更好地表达提取组件的本质。例如，原始命名为 **refresh** 的子目录可以重命名为 **refresh-client-app-plugin**。
+- en: Create the public repository (upstream) for the subproject as a first-class
+    project (for example, create a new project on GitHub to keep extracted code, either
+    under the same organization as a superproject, or under a specialized organization
+    for application plugins).
+  id: totrans-251
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建子项目的公共存储库（上游）作为一流项目（例如，在 GitHub 上创建一个新项目以保存提取的代码，可以在与超级项目相同的组织下，也可以在专门的应用程序插件组织下）。
+- en: Initialize a self-sufficient and standalone plugin as a Git repository with
+    **git init**. If, in *step 1*, you have extracted the history of the subdirectory
+    into some branch, then push this branch into the just-created repository. Set
+    up the public repository created in *step 3* as a default remote repository and
+    push the initial commit (or the whole history) to the just-created URL to store
+    the subproject code.
+  id: totrans-252
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用 **git init** 将自包含的独立插件初始化为 Git 存储库。如果在 *第 1 步* 中将子目录的历史记录提取到某个分支中，则将此分支推送到刚创建的存储库。设置在
+    *第 3 步* 中创建的公共存储库作为默认远程存储库，并将初始提交（或整个历史记录）推送到刚创建的 URL 以存储子项目代码。
+- en: In the superproject, read the subproject you have just extracted but, this time,
+    as a proper submodule or subtree, whichever solution is a better fit and whichever
+    method you prefer to use. Use the URL of the just-created public repository for
+    the subproject.
+  id: totrans-253
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在超级项目中，阅读您刚刚提取的子项目，但这次，作为一个合适的子模块或子树，无论哪种解决方案更合适，也无论您更喜欢使用哪种方法。使用刚创建的子项目的公共存储库的网址。
+- en: Commit the changes in the superproject and push them to its public repository,
+    in the case of submodules, including the newly created (or the just modified)
+    **.****gitmodules** file.
+  id: totrans-254
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 将超级项目中的更改提交并推送到其公共存储库，在子模块的情况下，包括新创建（或刚修改的）**.****gitmodules** 文件。
+- en: 'The recommended practice for the transformation of a subdirectory into a standalone
+    submodule is to use a read-only URL for cloning (adding back) a submodule. This
+    means that you can use either the `git://` protocol (warning: in this case, the
+    server is unauthenticated) or `https://` without a username. The goal of this
+    recommendation is to enforce separation by moving the work on a submodule code
+    to a standalone separate subproject repository. In order to ensure that the submodule
+    commits are available to all other developers, every change should go through
+    the public repository for a subproject.'
+  id: totrans-255
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 将子目录转换为独立子模块的推荐实践是使用只读 URL 进行克隆（添加回）子模块。这意味着您可以使用 `git://` 协议（警告：在这种情况下，服务器未经身份验证）或者没有用户名的
+    `https://`。此建议的目标是通过将子模块代码移动到独立的子项目存储库来强制实现分离。为确保所有其他开发者都能访问子模块提交，每个更改都应通过子项目的公共存储库进行。
+- en: If this recommendation (best practice) is met with a categorical refusal, in
+    practice, you could work on the subproject source code directly inside the superproject,
+    though it is more error-prone. You would need to remember to commit and push in
+    the submodule first, doing it from inside of the nested submodule subdirectory;
+    otherwise, other developers would be not able to get the changes. This combined
+    approach might be simpler to use, but it loses the true separation between implementing
+    and consuming changes, which should be better assumed while using submodules.
+  id: totrans-256
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果这个建议（最佳实践）被明确拒绝，实际上，你可以直接在超级项目内处理子项目的源代码，尽管这更容易出错。你需要记得首先在子模块内提交和推送，在嵌套子模块子目录内执行；否则，其他开发者将无法获取更改。这种结合的方法可能更简单，但它失去了在使用子模块时应当更好地假设的实现和消费更改之间的真正分离。
+- en: Subtrees versus submodules
+  id: totrans-257
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 子树与子模块的对比
+- en: In general, subtrees are easier to use and less tricky. Many people go with
+    submodules, because of the better built-in tooling (they have their own Git command,
+    namely, `git submodule`), detailed documentation, and similarity to the Subversion
+    externals, making them feel falsely familiar. Adding a submodule is very simple
+    (just run `git submodule add`), especially compared to adding a subtree without
+    the help of third-party tools such as `git subtree` or `git subrepo`.
+  id: totrans-258
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一般来说，子树比子模块更容易使用，且不容易出错。很多人选择使用子模块，因为它们有更好的内建工具（拥有自己的 Git 命令，即`git submodule`）、详细的文档，并且与
+    Subversion 外部引用类似，给人一种虚假的熟悉感。添加子模块非常简单（只需运行`git submodule add`），尤其是相比于在没有第三方工具（如`git
+    subtree`或`git subrepo`）帮助的情况下添加子树。
+- en: The major difference between subtrees and submodules is that, with subtrees,
+    there’s only one repository, which means just one life cycle. Submodules and similar
+    solutions use nested repositories, each with its own lifeline.
+  id: totrans-259
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 子树和子模块的主要区别在于，子树只有一个仓库，这意味着只有一个生命周期。而子模块和类似的解决方案使用嵌套仓库，每个仓库都有自己的生命周期。
+- en: Though submodules are easy to set up and fairly flexible, they are also fraught
+    with peril, and you need to practice vigilance while working with them. The fact
+    that the submodules are opt-in also means that the changes touching the submodules
+    demand a manual update by every collaborator. Subtrees are always there, so getting
+    the superproject’s changes means getting the subproject’s too.
+  id: totrans-260
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 虽然子模块设置简单且灵活性较强，但它们也充满了风险，在使用时需要保持警惕。子模块是可选的，这意味着涉及子模块的更改需要每个协作者手动更新。子树始终存在，因此获取超级项目的更改也意味着获取子项目的更改。
+- en: Commands such as `status`, `diff`, and `log` display precious little information
+    about submodules, unless properly configured to cross the repository boundary;
+    it is easy to miss a change. With subtrees, `status` works normally, while `diff`
+    and `log` need some care because the subproject commits have a different root
+    directory. The latter assumes that you did not decide to not include the subproject
+    history (by squashing subtree merges). Then, the problem is only with the remote-tracking
+    branches in the subproject’s repository, if any.
+  id: totrans-261
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 命令如`status`、`diff`和`log`关于子模块的信息显示非常有限，除非正确配置以跨越仓库边界；否则很容易错过更改。使用子树时，`status`正常工作，而`diff`和`log`需要一些小心，因为子项目的提交有不同的根目录。后者假设你没有决定不包含子项目历史（通过压缩子树合并）。如果有远程跟踪分支存在于子项目的仓库中，那么问题只会出现在远程跟踪分支上。
+- en: 'Because the life cycles of different repositories are separate, updating a
+    submodule inside its containing project requires two commits and two pushes. Updating
+    a subtree-merged subproject is very simple: only one commit and one push. On the
+    other hand, publishing the subproject changes upstream is much easier with submodules,
+    while it requires changeset extraction with subtrees (here, tools such as `git
+    subtree` help a lot).'
+  id: totrans-262
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于不同仓库的生命周期是独立的，在包含项目内更新子模块需要两个提交和两个推送。而更新一个子树合并的子项目非常简单：只需要一个提交和一个推送。另一方面，通过子模块发布子项目的更改更容易，而使用子树时则需要提取更改集（此时，`git
+    subtree`等工具非常有帮助）。
+- en: 'The next major issue, and a source of problems, is that the submodule has two
+    sources of the current revision: the gitlink in the superproject and the branches
+    in the submodule’s clone of the repository. This means that `git remote update`
+    works a bit like a sideways push into a non-bare repository (see [*Chapter 8*](B21194_08_split_000.xhtml#_idTextAnchor196),
+    *Advanced Branching Techniques*). Submodule heads are, therefore, generally detached,
+    so any local update requires various preparatory actions to avoid creating a lost
+    commit. There is no such issue with subtrees. All the revision changing commands
+    work as usual with subtrees, bringing the subproject directory to the correct
+    version without the requirement of any additional action. Getting changes from
+    the subproject repository is just a subtree merge away. The only difference between
+    ordinary pull is the `-s` `subtree` option.'
+  id: totrans-263
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 下一个主要问题，也是问题的根源，是子模块有两个当前版本来源：超项目中的 gitlink 和子模块克隆仓库中的分支。这意味着 `git remote update`
+    有点像将更改推送到非裸仓库（见 [*第8章*](B21194_08_split_000.xhtml#_idTextAnchor196)，*高级分支技术*）。因此，子模块的头指针通常是分离的，所以任何本地更新都需要进行各种预处理操作，以避免创建丢失的提交。子树没有这种问题。所有修订更改命令在子树中照常工作，将子项目目录更新到正确版本，而无需任何额外操作。从子项目仓库获取更改只需要一次子树合并。唯一与普通拉取的不同之处是
+    `-s` `subtree` 选项。
+- en: Still, sometimes, submodules are the right choice. Compared to subtrees, they
+    allow for a subproject (a module) to be not fetched, which is helpful when your
+    code base is massive. Submodules are also useful when the heavy modularization
+    is not natively handled, or not well natively handled, by the development stack’s
+    ecosystem.
+  id: totrans-264
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，有时子模块（submodules）是正确的选择。与子树相比，子模块允许不获取子项目（模块），这在你的代码库庞大时非常有用。当开发栈的生态系统没有原生处理或没有良好原生处理重度模块化时，子模块也很有用。
+- en: Submodules might also themselves be superprojects for other submodules, creating
+    a hierarchy of subprojects. Using nested submodules is made easier thanks to the
+    `git submodule status`, `update`, `foreach`, and `sync` subcommands all supporting
+    the `--``recursive` switch.
+  id: totrans-265
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 子模块本身也可能是其他子模块的超项目，创建一个子项目层级结构。使用嵌套子模块变得更容易，因为 `git submodule status`、`update`、`foreach`
+    和 `sync` 等子命令都支持 `--recursive` 开关。
+- en: Use cases for subtrees
+  id: totrans-266
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 子树的使用场景
+- en: With subtrees, there is only one repository (no nested repositories), just like
+    a regular code base. This means that there is just one life cycle. One of the
+    key benefits of subtrees is being able to mix container-specific customizations
+    with general-purpose fixes and enhancements.
+  id: totrans-267
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于子树（subtrees），只有一个代码库（没有嵌套的代码库），就像一个普通的代码库。这意味着只有一个生命周期。子树的一个关键好处是能够将特定容器的自定义与通用的修复和增强功能结合起来。
+- en: Projects can be organized and grouped together in whatever way you find to be
+    most logically consistent. Using a single repository also reduces the overhead
+    of managing dependencies.
+  id: totrans-268
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 项目可以以任何你认为最符合逻辑的一种方式进行组织和分组。使用单一仓库还可以减少管理依赖关系的开销。
+- en: The basic example of using subtrees is managing the customized version of a
+    library, a *required dependency*. It is easy to get a development environment
+    set up to run builds and tests. Monorepo makes it also viable to have one universal
+    version number for all the projects. Atomic cross-submodule commits are possible;
+    therefore, a repository can always be in a consistent state.
+  id: totrans-269
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用子树的基本示例是管理库的定制版本，一个*必需的依赖项*。设置开发环境以运行构建和测试非常简单。Monorepo 还使得为所有项目设定一个通用版本号成为可能。原子跨子模块提交是可行的，因此仓库始终可以保持一致的状态。
+- en: You can also use subtrees for *embedding related projects*, such as a GUI or
+    a web interface, inside a superproject. In fact, many use cases for submodules
+    can also apply to the subtrees solution, with the exception of the cases where
+    there is a need for a subproject to be optional, or to have different access permissions
+    than a master project. In those cases, you need to use submodules.
+  id: totrans-270
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你还可以使用子树来*嵌入相关项目*，例如 GUI 或 Web 界面，进而嵌入到超项目中。实际上，子模块的许多用例也适用于子树解决方案，除了那些需要子项目可选，或者需要与主项目不同访问权限的情况。在这些情况下，你需要使用子模块。
+- en: Use cases for monorepo
+  id: totrans-271
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: Monorepo 的使用场景
+- en: If all subprojects are managed by a single organization or a company, then it
+    might be advantageous to have all those inter-related projects in a single repository,
+    which we call monorepo.
+  id: totrans-272
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果所有子项目都由单一组织或公司管理，那么将所有这些相互关联的项目放入一个仓库中可能是有利的，这就是我们所说的 monorepo。
+- en: One of the advantages is simplified organization. You can group and organize
+    projects in whatever way you find to be most logically consistent. You don’t need
+    to consider how to split them into separate repositories, and how to join them
+    into a superproject. It is also easier to navigate and search the history and
+    the contents if all is in the single repository.
+  id: totrans-273
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 其中一个优势是简化的组织结构。你可以以任何你认为最具逻辑一致性的方式组织和分组项目。你不需要考虑如何将它们拆分为独立的代码库，也不需要考虑如何将它们合并成一个超级项目。如果所有内容都在单一代码库中，那么浏览历史记录和搜索内容也会更容易。
+- en: Because atomic cross-project commits are possible with monorepo, the repository
+    can be always in a consistent state. It is easier to ensure that everything uses
+    the same version of a specific component. Making cross-repository/cross-project
+    changes in a polyrepo setting (multiple repositories, one per project, managed
+    with a subtree or submodule strategy) is much more difficult than in a monorepo.
+  id: totrans-274
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于在单一代码库（monorepo）中可以进行跨项目的原子级提交，因此代码库始终保持一致状态。确保所有项目使用相同版本的特定组件变得更加容易。在多代码库设置（多个代码库，每个项目一个，使用子树或子模块策略管理）中进行跨代码库/跨项目的更改，要比在单一代码库中困难得多。
+- en: It is also easier to keep consistent tooling and a common **continuous integration**
+    (**CI**) infrastructure.
+  id: totrans-275
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 也更容易保持一致的工具链和共同的**持续集成**（**CI**）基础设施。
+- en: Use cases for submodules
+  id: totrans-276
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 子模块的使用场景
+- en: The strongest argument for the use of submodules is the issue of modularization.
+    Here, the main area of use for submodules is handling plugins and extensions.
+    Some programming ecosystems, such as ANSI C and C++ and also Objectve-C, lack
+    good and standard support for managing version-locked multimodule projects. In
+    this case, a plugin-like code can be included in the application (superproject)
+    using submodules, without sacrificing the ability to easily update to the latest
+    version of a plugin from its repository. The traditional solution of putting instructions
+    about how to copy plugins in the README disconnects it from the historical metadata.
+  id: totrans-277
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用子模块的最有力论据之一是模块化问题。在这里，子模块的主要使用领域是处理插件和扩展。一些编程生态系统，如ANSI C、C++以及Objective-C，缺乏对管理版本锁定的多模块项目的良好和标准化支持。在这种情况下，类似插件的代码可以通过子模块包含到应用程序（超级项目）中，而不会牺牲从其代码库轻松更新插件到最新版本的能力。传统的解决方案是将有关如何复制插件的说明放在README中，这样就会与历史元数据脱节。
+- en: This schema can be extended also to the non-compiled code, such as the Emacs
+    Lisp settings, configuration in dotfiles, (including frameworks such as `oh-my-zsh`),
+    and themes (also for web applications). In these situations, what is usually needed
+    to use a component is the physical presence of a module code at conventional locations
+    inside the master project tree, which is mandated by the technology or framework
+    being used. For instance, themes and plugins for WordPress, Magento, and so on
+    are often de facto installed this way. In many cases, you need to be in a superproject
+    to test these optional components.
+  id: totrans-278
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个方案也可以扩展到非编译代码，比如Emacs Lisp设置、dotfiles中的配置（包括`oh-my-zsh`等框架）和主题（也适用于Web应用程序）。在这些情况下，通常需要使用组件的是模块代码在主项目树中的常规位置，这一要求是由所使用的技术或框架规定的。例如，WordPress、Magento等的主题和插件通常就是以这种方式安装的。在许多情况下，你需要处于超级项目中才能测试这些可选组件。
+- en: Yet another particular use case for submodules is the division based on *access
+    control and visibility restriction* of a complex application. For example, the
+    project might use a cryptographic code with license restrictions, limiting access
+    to it to a small subset of developers. With this code in a submodule with restricted
+    access to its repository, other developers would simply be unable to clone this
+    submodule. In this solution, the common build system needs to be able to skip
+    cryptographic components if it is not available. On the other hand, the dedicated
+    build server can be configured in such a way that the client gets the application
+    built with crypto enabled.
+  id: totrans-279
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 另一个子模块的特殊用例是基于*访问控制和可见性限制*来划分复杂应用程序。例如，项目可能使用具有许可证限制的加密代码，只允许少数开发者访问。通过将此代码放入一个访问受限的子模块中，其他开发者将无法克隆该子模块。在这种解决方案中，公共构建系统需要能够跳过加密组件，如果它不可用的话。另一方面，专用的构建服务器可以配置为使得客户端获取到已启用加密功能的应用程序。
+- en: A similar visibility restriction purpose, but in reverse, is making the source
+    code of examples available long before it was to be published. This allows for
+    better code thanks to the social input. The main repository for a book itself
+    can be closed (private), but having an `examples/` directory contain a submodule
+    intended for a sample source code allows you to make this subrepository public.
+    While generating the book in the PDF and EPUB (and perhaps also MOBI) formats,
+    the build process can then embed these examples (or fragments of them), as if
+    they were ordinary subdirectories.
+  id: totrans-280
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一个类似的可见性限制目的，但反过来，是在计划发布之前很早就使示例的源代码可用。这可以通过社会反馈使代码变得更好。书籍的主仓库本身可以是私有的，但如果`examples/`目录包含一个用作示例源代码的子模块，你可以使这个子仓库公开。在生成PDF、EPUB（以及可能还有MOBI）格式的书籍时，构建过程可以将这些示例（或其中的一部分）嵌入到书籍中，就像普通的子目录一样。
+- en: Third-party subproject management solutions
+  id: totrans-281
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 第三方子项目管理解决方案
+- en: If you don’t find a good fit in either `git subtree` or `git submodule`, you
+    can try to use one of the many third-party projects to manage dependencies, subprojects,
+    or collections of repositories.
+  id: totrans-282
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你在`git subtree`或`git submodule`中找不到合适的工具，可以尝试使用许多第三方项目来管理依赖项、子项目或仓库集合。
+- en: One such tool is `repo` ([https://android.googlesource.com/tools/repo/](https://android.googlesource.com/tools/repo/))
+    used by the Android open source project to unify the many Git repositories for
+    cross-network operations.
+  id: totrans-283
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 其中一个工具是`repo`（[https://android.googlesource.com/tools/repo/](https://android.googlesource.com/tools/repo/)），它是安卓开源项目用来统一多个Git仓库以进行跨网络操作的工具。
+- en: Another tool is `gil` (gitlinks) ([https://github.com/chronoxor/gil](https://github.com/chronoxor/gil))
+    to manage complex recursive repositories dependencies, with cross references and
+    cycles. Compared to submodules, `gil` avoids including the same dependency multiple
+    times if the superproject and its subproject use the same library as a dependency.
+    This tool also makes it easier to contribute changes upstream than with `git subtree`.
+  id: totrans-284
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 另一个工具是`gil`（gitlinks）（[https://github.com/chronoxor/gil](https://github.com/chronoxor/gil)），它用于管理复杂的递归仓库依赖关系，包括交叉引用和循环。与子模块相比，`gil`避免了当主项目及其子项目使用相同的库作为依赖项时，重复包含相同的依赖项。这个工具还使得向上游贡献更改比使用`git
+    subtree`更加简便。
+- en: If you need to split a single monolithic repository into many standalone repositories,
+    besides `git subtree split`, you can use a third-party `splitsh-lite` tool. If,
+    on the other hand, you have multiple separate repositories that you want to merge
+    into a single monorepo, you can use the `tomono` tool.
+  id: totrans-285
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你需要将一个单一的单体仓库拆分成多个独立的仓库，除了`git subtree split`，你还可以使用第三方工具`splitsh-lite`。另一方面，如果你有多个独立的仓库，想要合并成一个单一的单体仓库（monorepo），你可以使用`tomono`工具。
+- en: You can find many other such tools.
+  id: totrans-286
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以找到许多其他类似的工具。
+- en: Important consideration
+  id: totrans-287
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 重要的考虑事项
+- en: When choosing between native support and one of the many tools to manage many
+    repositories together, you should check whether the tool in question uses a subtree-like
+    or submodule-like approach to find whether it would be a good fit for your project.
+  id: totrans-288
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在选择本地支持和众多工具之间管理多个仓库时，你应该检查相关工具是否使用类似子树或子模块的方法，以判断它是否适合你的项目。
+- en: Summary
+  id: totrans-289
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 总结
+- en: This chapter provided all the tools you need to manage multicomponent projects
+    with Git, from libraries and graphical interfaces, through plugins and themes,
+    to frameworks.
+  id: totrans-290
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章提供了你管理多组件项目所需的所有工具，涵盖了从库和图形界面，到插件和主题，再到框架的各个方面。
+- en: You learned about the concept behind the subtrees technique and how to use it
+    to manage subprojects. You know how to create, update, examine, and manage subprojects
+    using subtrees.
+  id: totrans-291
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你了解了子树技术背后的概念，以及如何使用它来管理子项目。你知道如何创建、更新、检查和管理使用子树的子项目。
+- en: You got to know the submodule approach of nested repositories for optional dependencies.
+    You learned the ideas behind gitlinks, `.gitmodules`, and `.git` files. You encountered
+    the pitfalls and traps for the unwary that you need to be vigilant about while
+    using submodules. You know the reason for these problems and understand the notions
+    behind them. You know how to create, update, examine, and manage subprojects using
+    submodules.
+  id: totrans-292
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你已经了解了用于可选依赖项的嵌套仓库的子模块方法。你了解了gitlinks、`.gitmodules`和`.git`文件背后的思想。你也遇到了使用子模块时需要保持警惕的陷阱和问题。你知道这些问题的原因，并理解其背后的概念。你知道如何创建、更新、检查和管理使用子模块的子项目。
+- en: You learned when to use subtrees and submodules, and their advantages and disadvantages.
+    You know a few use cases for each technique.
+  id: totrans-293
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你学会了何时使用子树和子模块，以及它们的优缺点。你了解了每种技术的一些用例。
+- en: Now that you know how to use Git effectively in a variety of circumstances and
+    have learned the high-level ideas behind Git behavior that help you understand
+    it, it’s time to tackle how to make Git easier to use in [*Chapter 13*](B21194_13_split_000.xhtml#_idTextAnchor320),
+    *Customizing and* *Extending Git*.
+  id: totrans-294
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在你已经知道如何在各种情况下有效使用 Git，并了解了帮助你理解它的 Git 行为的高级思想，现在是时候解决如何在 [*第十三章*](B21194_13_split_000.xhtml#_idTextAnchor320)，*定制和扩展
+    Git*。
+- en: Questions
+  id: totrans-295
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 问题
+- en: 'Answer the following questions to test your knowledge of this chapter:'
+  id: totrans-296
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 回答以下问题以测试您对本章内容的了解：
+- en: What are subtrees, and what are their advantages and disadvantages?
+  id: totrans-297
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 什么是子树，它们的优缺点是什么？
+- en: What are submodules, and what are their advantages and disadvantages?
+  id: totrans-298
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 什么是子模块，它们的优缺点是什么？
+- en: Why is the information about submodules duplicated between **.gitmodules** and
+    project configuration?
+  id: totrans-299
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 为什么关于子模块的信息在 **.gitmodules** 和项目配置中重复？
+- en: Answers
+  id: totrans-300
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 答案
+- en: 'Here are the answers to the questions given above:'
+  id: totrans-301
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是上述问题的答案：
+- en: With subtree merging, the history of the subproject (or its summary) is included
+    in the superproject repository, and subproject files are put directly in a subirectory
+    of the superproject and are superproject files. Subtrees can be used only for
+    required dependencies, as they are embedded in a superproject. They are simpler
+    to understand and use.
+  id: totrans-302
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 通过子树合并，子项目的历史记录（或其摘要）包含在超级项目存储库中，并且子项目文件直接放在超级项目的子目录中，并且是超级项目文件。子树只能用于必需的依赖关系，因为它们嵌入在超级项目中。它们更简单易懂且易于使用。
+- en: With submodules, repositories and the histories of superproject and subproject
+    are kept separate. A superproject includes a link to the commit in a subproject.
+    Submodules can be initialized and active, but can also be kept inactive, thus
+    they can be used for optional dependencies. To include a change, you need to make
+    a change in a subproject and to include it in a commit in a superproject.
+  id: totrans-303
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 通过子模块，超级项目和子项目的存储库和历史记录是分开的。超级项目包含指向子项目提交的链接。子模块可以初始化并激活，但也可以保持非活动状态，因此它们可以用于可选依赖关系。要包含变更，您需要在子项目中进行更改，并将其包含在超级项目的提交中。
+- en: The information in the project configuration file about submodules is local
+    to the repository and, among others, defines which submodules are active and which
+    are not.
+  id: totrans-304
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 有关子模块的项目配置文件中的信息仅限于存储库，并在其他内容中定义哪些子模块处于活动状态以及哪些未处于活动状态。
+- en: Further reading
+  id: totrans-305
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 进一步阅读
+- en: 'To learn more about the topics that were covered in this chapter, take a look
+    at the following resources:'
+  id: totrans-306
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要了解本章涵盖的主题，请参阅以下资源：
+- en: '*git-submodule* – Initialize, update, or inspect submodules: [https://git-scm.com/docs/git-submodule](https://git-scm.com/docs/git-submodule)'
+  id: totrans-307
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*git-submodule* – 初始化、更新或检查子模块：[https://git-scm.com/docs/git-submodule](https://git-scm.com/docs/git-submodule)'
+- en: '*git-subtree* – Merge subtrees together and split the repository into subtrees:
+    [https://github.com/git/git/blob/master/contrib/subtree/git-subtree.txt](https://github.com/git/git/blob/master/contrib/subtree/git-subtree.txt)'
+  id: totrans-308
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*git-subtree* – 将子树合并在一起并将仓库分割为子树：[https://github.com/git/git/blob/master/contrib/subtree/git-subtree.txt](https://github.com/git/git/blob/master/contrib/subtree/git-subtree.txt)'
+- en: 'Git documentation HOWTO – *How to use the subtree merge* *strategy*: [https://github.com/git/git/blob/master/Documentation/howto/using-merge-subtree.txt](https://github.com/git/git/blob/master/Documentation/howto/using-merge-subtree.txt)'
+  id: totrans-309
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Git 文档 HOWTO – *如何使用子树合并* *策略*：[https://github.com/git/git/blob/master/Documentation/howto/using-merge-subtree.txt](https://github.com/git/git/blob/master/Documentation/howto/using-merge-subtree.txt)
+- en: 'Scott Chacon, Ben Straub: *Pro Git*, 2nd Edition (2014) [https://git-scm.com/book/en/v2](https://git-scm.com/book/en/v2)'
+  id: totrans-310
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Scott Chacon，Ben Straub，《Pro Git》，第二版（2014）[https://git-scm.com/book/en/v2](https://git-scm.com/book/en/v2)
+- en: Chapter *7.11 Git Tools -* *Submodules*
+  id: totrans-311
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 第 *7.11 章 Git 工具 -* *子模块*
+- en: Eric Pidoux, *Git Best Practices Guide* (2014), Packt Publishing Ltd
+  id: totrans-312
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Eric Pidoux，《Git 最佳实践指南》（2014），Packt Publishing Ltd
+- en: '*Chapter 4*, *Going Deeper into Git, Managing* *Git Submodules*'
+  id: totrans-313
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*第四章*，*深入学习 Git，管理* *Git 子模块*'
+- en: 'Johan Abildskov, *Practical Git: Confident Git Through Practice* (2020), Apress'
+  id: totrans-314
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Johan Abildskov，《实用 Git：通过实践掌握自信的 Git》（2020），Apress
+- en: '*Chapter 8*, *Additional Git Features –* *Git Submodules*'
+  id: totrans-315
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*第八章*，*额外的 Git 特性 –* *Git 子模块*'
+- en: 'Everything you need to know about monorepos and the tools to build them: [https://monorepo.tools/](https://monorepo.tools/)'
+  id: totrans-316
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 关于单仓库及其构建工具的一切：[https://monorepo.tools/](https://monorepo.tools/)

@@ -1,0 +1,1883 @@
+- en: Chapter 9. Complex Environments
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 第9章. 复杂环境
+- en: 'So far, we''ve seen how you can develop playbooks and test them. The final
+    aspect is how to release playbooks into production. In most cases, you will have
+    multiple environments to deal with before the playbook is released into production.
+    This is similar to software that your developers have written. Many companies
+    have multiple environments and usually your playbook will follow these steps:'
+  id: totrans-1
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 到目前为止，我们已经看到如何开发剧本并进行测试。最后一个方面是如何将剧本发布到生产环境。在大多数情况下，在剧本发布到生产环境之前，你将需要处理多个环境。这类似于你开发人员编写的软件。许多公司有多个环境，通常你的剧本将遵循以下步骤：
+- en: Development environment
+  id: totrans-2
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 开发环境
+- en: Testing environment
+  id: totrans-3
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 测试环境
+- en: Staging environment
+  id: totrans-4
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 阶段环境
+- en: Production
+  id: totrans-5
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 生产环境
+- en: Some companies name these environments in different ways, and some companies
+    have additional environments such as certification where all software has to be
+    certified before it can go to production.
+  id: totrans-6
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一些公司以不同的方式命名这些环境，还有一些公司有额外的环境，如认证环境，在生产环境之前，所有软件必须先通过认证。
+- en: When you write your playbooks and set up roles, we strongly recommend that you
+    keep in mind the notion of the environments right from the start. It might be
+    worthwhile to talk to your software and operations teams to figure out exactly
+    how many environments your setup has to cater to.
+  id: totrans-7
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当你编写剧本并设置角色时，我们强烈建议从一开始就考虑到环境的概念。与软件和运维团队沟通，搞清楚你的系统需要支持多少个环境可能是值得的。
+- en: 'We''ll list down a couple of approaches with examples that you can follow in
+    your environment:'
+  id: totrans-8
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将列出几种方法和示例，你可以在你的环境中使用：
+- en: Code based on the Git branch
+  id: totrans-9
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 基于Git分支的代码
+- en: 'Let''s assume you have four environments to take care of, which are as follows:'
+  id: totrans-10
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 假设你需要处理四个环境，如下所示：
+- en: Development
+  id: totrans-11
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 开发环境
+- en: Testing
+  id: totrans-12
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 测试环境
+- en: Stage
+  id: totrans-13
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 阶段
+- en: Production
+  id: totrans-14
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 生产环境
+- en: In the Git branch-based method, you will have one environment per branch. You
+    will always make changes to **Development** first, and then promote those changes
+    to **Testing** (merge or cherry-pick, and tag commits in Git), **Stage**, and
+    **Production**. In this approach, you will hold one single inventory file, one
+    set of variable files, and finally, a bunch of folders dedicated to roles and
+    playbooks per branch.
+  id: totrans-15
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在基于Git分支的方法中，你将为每个分支拥有一个环境。你将始终首先在**开发环境**中进行更改，然后将这些更改推广到**测试环境**（合并或挑选提交并在Git中标记），**阶段环境**和**生产环境**。在这种方法中，你将拥有一个单一的清单文件、一组变量文件，以及每个分支专用的角色和剧本文件夹。
+- en: A single stable branch with multiple folders
+  id: totrans-16
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 一个稳定的主分支，配有多个文件夹
+- en: 'In this approach, you will always maintain the dev and master branches. The
+    initial code is committed to the dev branch, and once stable, you will promote
+    it to the master branch. The same roles and playbooks that exist in the master
+    branch will run across all environments. On the other hand, you will have separate
+    folders for each of your environments. Let''s look at an example. We''ll show
+    how you can have a separate configuration and an inventory for two environments:
+    stage and production. You can extend it for your scenario to fit all the environments
+    you use. Let''s first look at the playbook in `playbooks/variables.yaml` that
+    will run across these multiple environments and has the following content:'
+  id: totrans-17
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这种方法中，你将始终保持dev和master分支。初始代码提交到dev分支，一旦稳定，你会将其推送到master分支。master分支中存在的相同角色和剧本将在所有环境中运行。另一方面，你将为每个环境保持独立的文件夹。我们来看一个例子。我们将展示如何为两个环境——阶段和生产——设置单独的配置和清单。你可以根据你的场景扩展，适应所有使用的环境。首先，我们来看一下`playbooks/variables.yaml`中的剧本，它将在这些多个环境中运行，内容如下：
+- en: '[PRE0]'
+  id: totrans-18
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: 'As you can see, there are two sets of tasks in this plays:'
+  id: totrans-19
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，剧本中有两组任务：
+- en: Tasks that run against DB servers
+  id: totrans-20
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 运行于数据库服务器的任务
+- en: Tasks that run against web servers
+  id: totrans-21
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 运行于Web服务器的任务
+- en: There is also an extra task to print the environment name that is common to
+    all servers in a particular environment. We will also have two different inventory
+    files.
+  id: totrans-22
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 还有一个额外的任务，用于打印特定环境中所有服务器的环境名称。我们还会有两个不同的清单文件。
+- en: 'The first one will be called `inventory/production` with the following content:'
+  id: totrans-23
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 第一个将被称为`inventory/production`，其内容如下：
+- en: '[PRE1]'
+  id: totrans-24
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: 'The second one will be called `inventory/staging` with the following content:'
+  id: totrans-25
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 第二个将被称为`inventory/staging`，其内容如下：
+- en: '[PRE2]'
+  id: totrans-26
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: As you can see, we have two machines for the `web` section and one for the `db`
+    in each environment. Further, we have a different set of machines for stage and
+    production environments. The additional section, `[ENVIRONMENT:children]`, allows
+    you to create a group of groups. This would mean that any variables that are defined
+    in the `ENVIRONMENT` section will apply to both the `db` and `web` groups, unless
+    they're overridden in the individual sections, respectively. The next interesting
+    part would be to look at variable values for each of the environments and see
+    how they are separated out in each environment.
+  id: totrans-27
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，在每个环境中，我们为`web`部分配有两台机器，为`db`部分配有一台机器。此外，我们为阶段和生产环境配置了不同的机器。额外的部分`[ENVIRONMENT:children]`允许你创建一个组的组。这意味着在`ENVIRONMENT`部分中定义的任何变量将应用于`db`和`web`组，除非它们在各自的独立部分中被覆盖。下一个有趣的部分是查看每个环境中变量的值，并查看它们在每个环境中的分离方式。
+- en: 'Let''s start with the variables that will be the same for all our environments,
+    located in `inventory/group_vars/all`:'
+  id: totrans-28
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们从所有环境通用的变量开始，它们位于`inventory/group_vars/all`中：
+- en: '[PRE3]'
+  id: totrans-29
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: The only variable that is the same for both our environments is the `db_user`.
+  id: totrans-30
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 唯一在两个环境中相同的变量是`db_user`。
+- en: 'We can now look at the production-specific variables, located in `inventory/group_vars/production`:'
+  id: totrans-31
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们可以查看生产环境特定的变量，它们位于`inventory/group_vars/production`中：
+- en: '[PRE4]'
+  id: totrans-32
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: 'If we now look at the stage-specific variables located in `inventory/group_vars/staging`,
+    we will find the same variables we had in the production one, but with different
+    values:'
+  id: totrans-33
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果我们现在查看位于`inventory/group_vars/staging`中的阶段特定变量，我们会发现它们与生产环境中的变量相同，但值不同：
+- en: '[PRE5]'
+  id: totrans-34
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: 'We can now validate that we receive the expected results. First we are going
+    to run against the staging environment:'
+  id: totrans-35
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们可以验证是否收到了预期的结果。首先，我们将在暂存环境中运行：
+- en: '[PRE6]'
+  id: totrans-36
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: 'And we should receive an output similar to the following:'
+  id: totrans-37
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们应该收到类似于以下内容的输出：
+- en: '[PRE7]'
+  id: totrans-38
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE7]'
+- en: 'We can now run against the production environment:'
+  id: totrans-39
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们可以在生产环境中运行：
+- en: '[PRE8]'
+  id: totrans-40
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE8]'
+- en: 'We will receive the following result:'
+  id: totrans-41
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将收到以下结果：
+- en: '[PRE9]'
+  id: totrans-42
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE9]'
+- en: You can see that the Ansible run picked up all the relevant variables defined
+    for the staging environment.
+  id: totrans-43
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以看到，Ansible 运行已经获取了为暂存环境定义的所有相关变量。
+- en: If you're using this approach to gain a stable master branch for multiple environments,
+    it's best to use an amalgamation of environment-specific directories, `group_vars`,
+    and inventory groups to tackle the scenario.
+  id: totrans-44
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你正在使用这种方法来为多个环境获取稳定的主分支，最好结合使用特定于环境的目录、`group_vars`和清单组来解决这个问题。
+- en: Software distribution strategy
+  id: totrans-45
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 软件分发策略
+- en: Deploying applications is probably one of the most complex tasks in the **Information
+    and Communication Technology** (**ICT**) field. This is mainly caused by the fact
+    that it often requires changing the state of the majority of machines that are
+    somehow part of that application. In fact, often you find yourself having to change
+    the state of load balancers, distribution servers, application servers, and database
+    servers all at the same time during a deployment. New technologies, like containers,
+    are trying to make those operations simpler, but often is not easy or possible
+    to just move a legacy application to a container.
+  id: totrans-46
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 部署应用程序可能是**信息与通信技术**（**ICT**）领域最复杂的任务之一。其主要原因是它通常需要更改大多数在某种程度上参与该应用程序的机器的状态。事实上，通常你会发现自己不得不在部署过程中同时更改负载均衡器、分发服务器、应用服务器和数据库服务器的状态。像容器这样的新技术正在努力简化这些操作，但将传统应用程序迁移到容器中往往并不容易或可行。
+- en: What we are now going to see are the various software distribution strategies
+    and how Ansible can help with each one.
+  id: totrans-47
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来我们将看到各种软件分发策略，以及 Ansible 如何帮助实现每一种策略。
+- en: Copying files from the local machine
+  id: totrans-48
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 从本地机器复制文件
+- en: This is probably the oldest strategy to distribute software. The idea is to
+    have the files on the local machine (often used to develop the code) and as soon
+    as the change is made, a copy of the file is put on the server (usually via FTP).
+    This way of deploying code was often used for web development, where the code
+    (usually in PHP) does not need any compilation.
+  id: totrans-49
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这可能是分发软件的最古老策略。其思想是将文件放在本地机器上（通常用于开发代码），一旦做出更改，就将文件复制到服务器上（通常通过 FTP）。这种部署代码的方式通常用于
+    Web 开发，其中代码（通常是 PHP）不需要任何编译。
+- en: 'This distribution strategy should be avoided due to its multiple problems:'
+  id: totrans-50
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于其多种问题，这种分发策略应该避免使用。
+- en: Very hard to rollback
+  id: totrans-51
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 很难回滚
+- en: Impossible to track changes to the various deployments
+  id: totrans-52
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 无法跟踪不同部署的变化
+- en: No deployment history
+  id: totrans-53
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 没有部署历史
+- en: Easy to make errors during the deployment
+  id: totrans-54
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在部署过程中容易出错
+- en: Although this distribution strategy can be very easily automated with Ansible,
+    I strongly suggest you move immediately to a different strategy that allows you
+    to have a safer distribution strategy.
+  id: totrans-55
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 尽管这种分发策略可以通过Ansible轻松自动化，但我强烈建议你立即转向一种允许你有更安全分发策略的其他方法。
+- en: Revision control system with branches
+  id: totrans-56
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 带分支的版本控制系统
+- en: Many companies are using this technique to distribute their software, mainly
+    for uncompiled software. The idea behind this technique is to set up your server
+    to use a local copy of your code repository. With SVN this was possible but not
+    very easy to manage properly, while Git allowed a simplification of this technique,
+    making it very popular.
+  id: totrans-57
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 许多公司正在使用这种技术来分发他们的软件，主要是针对未编译的软件。这种技术的核心思想是将服务器设置为使用本地代码仓库副本。使用SVN时，这种方法是可行的，但管理起来不太容易，而Git则使这一技术得到了简化，因而变得非常流行。
+- en: 'This technique has many advantages over the one we have just seen, the main
+    ones are:'
+  id: totrans-58
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这种技术相较于我们刚才看到的方法有许多优势，主要有：
+- en: Easy rollbacks
+  id: totrans-59
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 简单的回滚
+- en: Very easy to obtain the history of changes
+  id: totrans-60
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 非常容易获取变更历史
+- en: Very easy deployments (mainly if Git is used)
+  id: totrans-61
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 非常简便的部署（主要是使用Git时）
+- en: 'On the other hand, this technique, still has multiple disadvantages:'
+  id: totrans-62
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 另一方面，这种技术仍然有多个缺点：
+- en: No deployment history
+  id: totrans-63
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 没有部署历史
+- en: Hard for compiled software
+  id: totrans-64
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 对于编译软件来说比较困难
+- en: Possible security problems
+  id: totrans-65
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 可能的安全问题
+- en: I'd like to discuss the possible security problems you can encounter with this
+    technique a little bit more. What can be very tempting, is to download your Git
+    repository directly in the folder that you use to distribute the content, so if
+    it's a web server, the `/var/www/` folder. This has obvious advantages since to
+    deploy you'll only need to perform a `git pull`. The disadvantage is that Git
+    will create the `/var/www/.git` folder which will contain your entire Git repository
+    (history included) and, if not properly protected, will be freely downloadable
+    by anyone.
+  id: totrans-66
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我想再谈谈你可能会遇到的安全问题。非常诱人的一种做法是将Git仓库直接下载到你用来分发内容的文件夹中，比如如果是一个Web服务器，那就是`/var/www/`文件夹。这有显而易见的优势，因为部署时你只需要执行`git
+    pull`命令。缺点是Git会创建`/var/www/.git`文件夹，其中包含整个Git仓库（包括历史记录），如果没有适当保护，它将会被任何人自由下载。
+- en: Note
+  id: totrans-67
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: About 1% of Alexa's top 1 million websites have the Git folder publicly accessible,
+    so be very careful if you want to use this distribution strategy.
+  id: totrans-68
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 大约1%的Alexa前百万网站将Git文件夹公开访问，因此如果你打算使用这种分发策略，请非常小心。
+- en: Revision control system with tags
+  id: totrans-69
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 带标签的版本控制系统
+- en: Another way of using revision control systems that is a little bit more complex
+    but have some advantages, is leveraging the tagging system. This method requires
+    to tag every time a new deployment has to be done and then checkout the specific
+    tag on the server.
+  id: totrans-70
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 另一种使用版本控制系统的方式稍微复杂一些，但有一些优势，那就是利用标签系统。此方法要求每次部署时都要打标签，然后在服务器上检出特定的标签。
+- en: This has all the advantages of the previous method, with the addition of the
+    deployment history. The compiled software problem and possible security problems
+    are the same as in the previous method.
+  id: totrans-71
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这种方法具备之前方法的所有优势，并且增加了部署历史记录。编译软件问题和可能的安全问题与前述方法相同。
+- en: RPM packages
+  id: totrans-72
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: RPM包
+- en: A very common way to deploy software (mainly for compiled applications, but
+    also advantageous for non-compiled applications) is using some kind of packaging
+    system. Some languages, like Java, have an included system (the WAR, in Java case),
+    but there are also packaging systems that can be used for any kind of applications,
+    such as RPM. The disadvantage of these systems is that they are a little bit more
+    complex than the previous methods, but those systems can grant a higher level
+    of security as well as versioning. Also, these systems are easily injectable in
+    a CI/CD pipeline, so the real complexity is much lower than what it could seem
+    at first sight, since the CI/CD pipeline will take care of the building itself.
+  id: totrans-73
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一种非常常见的软件部署方式（主要适用于编译过的应用程序，但对未编译的应用程序也有优势）是使用某种打包系统。一些语言，如Java，已经包含了一个系统（在Java中是WAR），但也有一些可以用于任何类型应用程序的打包系统，例如RPM。这些系统的缺点是，它们比之前的方法稍微复杂一些，但它们可以提供更高的安全性和版本控制。此外，这些系统很容易在CI/CD流水线中注入，因此实际的复杂性比初看起来要低，因为CI/CD流水线会自动处理构建过程。
+- en: Preparing the environment
+  id: totrans-74
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 准备环境
+- en: 'To see how we can deploy the code in the various ways we talked about in the
+    previous pages, we will need an environment, and obviously we are going to create
+    it using Ansible. First of all, to ensure that our roles are properly loaded,
+    we need the `ansible.cfg` file with the following content:'
+  id: totrans-75
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要查看我们如何以我们在前几页中讨论的不同方式部署代码，我们需要一个环境，显然我们将使用Ansible来创建它。首先，为了确保我们的角色被正确加载，我们需要`ansible.cfg`文件，内容如下：
+- en: '[PRE10]'
+  id: totrans-76
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE10]'
+- en: 'Then we need the `playbooks/firstrun.yaml` to ensure that we can configure
+    our machines with a basic configuration, with the following content:'
+  id: totrans-77
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后我们需要`playbooks/firstrun.yaml`来确保我们可以使用基本配置来配置我们的机器，内容如下：
+- en: '[PRE11]'
+  id: totrans-78
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE11]'
+- en: 'The `playbooks/groups/web.yaml` will also need to be created to allow us to
+    properly bootstrap our web servers:'
+  id: totrans-79
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`playbooks/groups/web.yaml`也需要创建，以便我们能够正确引导我们的Web服务器：'
+- en: '[PRE12]'
+  id: totrans-80
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE12]'
+- en: 'As you can imagine from the previous file content, we will need to create the
+    roles: `common` and `webserver` which are very similar to the ones we created
+    in [Chapter 4](ch04.html "Chapter 4.  Handling Complex Deployment"), *Handling
+    Complex Deployment*. We start with the `roles/common/tasks/main.yaml` file with
+    the following content:'
+  id: totrans-81
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如你从前面的文件内容中可以想象的那样，我们需要创建角色：`common`和`webserver`，它们与我们在[第4章](ch04.html "第4章：处理复杂的部署")中创建的非常相似，*处理复杂的部署*。我们从`roles/common/tasks/main.yaml`文件开始，文件内容如下：
+- en: '[PRE13]'
+  id: totrans-82
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE13]'
+- en: 'It''s `motd` template is in `roles/common/templates/motd`:'
+  id: totrans-83
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 它的`motd`模板位于`roles/common/templates/motd`：
+- en: '[PRE14]'
+  id: totrans-84
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE14]'
+- en: 'We can now move to the `webserver` role, more specifically to the `roles/webserver/tasks/main.yaml`
+    file:'
+  id: totrans-85
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们可以继续到`webserver`角色，更具体地说是到`roles/webserver/tasks/main.yaml`文件：
+- en: '[PRE15]'
+  id: totrans-86
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE15]'
+- en: 'We also need to create the handler in `roles/webserver/handlers/main.yaml`
+    with the content:'
+  id: totrans-87
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们还需要在`roles/webserver/handlers/main.yaml`中创建处理程序，内容如下：
+- en: '[PRE16]'
+  id: totrans-88
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE16]'
+- en: Lastly, we need to touch the `roles/webserver/files/website.conf` file, leaving
+    it empty for now, but it needs to exist.
+  id: totrans-89
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后，我们需要修改`roles/webserver/files/website.conf`文件，暂时保持为空，但该文件必须存在。
+- en: 'We can now provision a couple of CentOS machines (I provisioned `ws01.fale.io`
+    and `ws02.fale.io`) and ensure that the inventory is right. We can also run the
+    `firstrun.yaml` playbook to ensure that the Ansible user is present and properly
+    configured:'
+  id: totrans-90
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们可以配置几台CentOS机器（我配置了`ws01.fale.io`和`ws02.fale.io`）并确保库存是正确的。我们还可以运行`firstrun.yaml`剧本，以确保Ansible用户已经存在并且配置正确：
+- en: '[PRE17]'
+  id: totrans-91
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE17]'
+- en: 'The output you should receive is the following:'
+  id: totrans-92
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你应该收到的输出如下：
+- en: '[PRE18]'
+  id: totrans-93
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE18]'
+- en: 'We can now configure those machines running their group playbook:'
+  id: totrans-94
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们可以通过运行它们的组剧本来配置这些机器：
+- en: '[PRE19]'
+  id: totrans-95
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE19]'
+- en: 'We will receive the following output:'
+  id: totrans-96
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将收到以下输出：
+- en: '[PRE20]'
+  id: totrans-97
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE20]'
+- en: We can now point our browser to our nodes on port `80` to check that the HTTPd
+    page is displayed as expected.
+  id: totrans-98
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们可以将浏览器指向我们的节点端口`80`，检查HTTPd页面是否按预期显示。
+- en: Deploying a web app with revision control systems
+  id: totrans-99
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用修订控制系统部署Web应用程序
+- en: 'For this example, we are going to deploy a simple PHP application that will
+    be composed of only a single PHP page. The source is available on the following
+    repository: https://github.com/Fale/demo-php-app.'
+  id: totrans-100
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于这个示例，我们将部署一个简单的PHP应用程序，它只由一个PHP页面组成。源代码可以在以下仓库中找到：https://github.com/Fale/demo-php-app。
+- en: 'To deploy it, we will need the following code placed in `playbooks/manual/rcs_deploy.yaml`:'
+  id: totrans-101
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了部署它，我们需要将以下代码放入`playbooks/manual/rcs_deploy.yaml`中：
+- en: '[PRE21]'
+  id: totrans-102
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE21]'
+- en: 'We can now run the **deployer** with the following command:'
+  id: totrans-103
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们可以使用以下命令运行**deployer**：
+- en: '[PRE22]'
+  id: totrans-104
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE22]'
+- en: 'This is the expected result:'
+  id: totrans-105
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这是预期的结果：
+- en: '[PRE23]'
+  id: totrans-106
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE23]'
+- en: 'At the moment, our application is not yet reachable since we have no HTTPd
+    rule for that folder. To achieve this, we will need to change the `roles/webserver/files/website.conf`
+    file with the following content:'
+  id: totrans-107
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 目前，由于我们没有为该文件夹设置HTTPd规则，我们的应用程序尚不可访问。为此，我们需要更改`roles/webserver/files/website.conf`文件，内容如下：
+- en: '[PRE24]'
+  id: totrans-108
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE24]'
+- en: As you can see, we are just displaying this application to the users reaching
+    our server with the `app.fale.io` URL and not to everyone. This will ensure that
+    all your users will have a consistent experience. Also, you can see that we are
+    blocking all access to the `.git` folder (and all its content). This is needed
+    for security reasons we mentioned earlier in the chapter.
+  id: totrans-109
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，我们只是将这个应用程序展示给通过`app.fale.io` URL访问我们服务器的用户，而不是所有人。这将确保所有用户获得一致的体验。此外，你可以看到我们正在阻止所有访问`.git`文件夹（以及其中的所有内容）。这对于之前提到的安全原因是必要的。
+- en: 'We can now re-run the web playbook to ensure that our HTTPd configuration gets
+    propagated with:'
+  id: totrans-110
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们可以重新运行web剧本，以确保我们的HTTPd配置得到了传播，命令如下：
+- en: '[PRE25]'
+  id: totrans-111
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE25]'
+- en: 'This is the result we are going to receive:'
+  id: totrans-112
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这是我们将收到的结果：
+- en: '[PRE26]'
+  id: totrans-113
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE26]'
+- en: You can now check and see that everything works properly.
+  id: totrans-114
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 您现在可以检查并确保一切正常运行。
+- en: Deploying a web app with RPM packages
+  id: totrans-115
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用 RPM 包部署 Web 应用
+- en: In order to deploy an RPM package, we will need to create it in the first place.
+    To do so, the first thing we need is a Spec file.
+  id: totrans-116
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了部署一个 RPM 包，我们首先需要创建它。为此，我们需要一个 Spec 文件。
+- en: Creating a Spec file
+  id: totrans-117
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 创建一个 Spec 文件
+- en: 'The first thing to do is to create a **Specifics** (**Spec**) file, which is
+    a recipe for instructing `rpmbuild` on how to actually create the RPM package.
+    We are going to locate the Spec file in `spec/demo-php-app.spec` and put the following
+    content into it:'
+  id: totrans-118
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 首先要做的是创建一个 **Specifics**（**Spec**）文件，这是一个指导 `rpmbuild` 如何实际创建 RPM 包的配方。我们将把
+    Spec 文件放在 `spec/demo-php-app.spec` 中，并将以下内容放入其中：
+- en: '[PRE27]'
+  id: totrans-119
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE27]'
+- en: 'Let''s see what the various parts do and mean before moving forward:'
+  id: totrans-120
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在继续之前，让我们先了解各部分的作用和含义：
+- en: '[PRE28]'
+  id: totrans-121
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE28]'
+- en: These first three lines are variables declarations.
+  id: totrans-122
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这前三行是变量声明。
+- en: The first one will disable the generation of a debug package. By default, `rpmbuild`
+    will create a debug package every time and include all debugging symbols, but
+    in this case, we don't have any debugging symbols since we are not making any
+    compilation.
+  id: totrans-123
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 第一个将禁用调试包的生成。默认情况下，`rpmbuild` 每次都会创建调试包并包含所有调试符号，但在这种情况下，我们没有任何调试符号，因为我们没有进行任何编译。
+- en: 'The second puts the **hash** of the commit in the variable `commit0`. The third
+    one calculates the value of `shortcommit0`, that is calculated as the first eight
+    characters of the `commit0` string:'
+  id: totrans-124
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 第二个将提交的 **hash** 放入变量 `commit0` 中。第三个计算 `shortcommit0` 的值，这是 `commit0` 字符串的前八个字符：
+- en: '[PRE29]'
+  id: totrans-125
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE29]'
+- en: In the first line, we declare the name, version, release number, and summary.
+    The difference between version and release, is that the version is the upstream
+    version, while the release is the Spec version for that upstream release.
+  id: totrans-126
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在第一行，我们声明名称、版本、发布号和摘要。版本和发布号之间的区别在于，版本是上游版本，而发布号是该上游版本的 Spec 版本。
+- en: The license is the source license, not the Spec license. The URL is used to
+    track the upstream website. The `source0` field is used by `rpmbuild` to know
+    how the source file is called (in case more than one file is present, we can user
+    `source1`, `source2`, and so on). Also, if the source fields are valid URI, we
+    can use `spectool` to download them automatically.
+  id: totrans-127
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 许可证是源码许可证，而不是 Spec 文件的许可证。URL 用于跟踪上游网站。`source0` 字段用于 `rpmbuild` 知道源文件的名称（如果有多个文件，我们可以使用
+    `source1`、`source2` 等）。此外，如果源字段是有效的 URI，我们可以使用 `spectool` 自动下载它们。
+- en: '[PRE30]'
+  id: totrans-128
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE30]'
+- en: This is the `description` of the software packaged in RPM package.
+  id: totrans-129
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这是打包在 RPM 包中的软件的 `description`。
+- en: '[PRE31]'
+  id: totrans-130
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE31]'
+- en: 'The `prep` phase is the one where the source(s) get uncompressed and eventual
+    patch(es) and applied. The `%autosetup` will `uncompress` the first source, as
+    well as apply all patches. In this part, you can also perform other operations
+    that need to be executed before the building phase and have the goal to prepare
+    the environment for the build phase:'
+  id: totrans-131
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`prep` 阶段是源码解压缩和可能的补丁应用的阶段。`%autosetup` 将会解压缩第一个源码，并应用所有补丁。在此部分，您还可以执行其他需要在构建阶段之前执行的操作，目的是为构建阶段准备环境：'
+- en: '[PRE32]'
+  id: totrans-132
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE32]'
+- en: 'Here we would put all actions of the `build` phase. In our case, our sources
+    do not need to be compiled and therefore it is empty:'
+  id: totrans-133
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这里，我们将放置所有 `build` 阶段的操作。在我们的情况下，我们的源代码不需要编译，因此为空：
+- en: '[PRE33]'
+  id: totrans-134
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE33]'
+- en: In the `install` phase, we put the files in the folder `%{buildroot}` that will
+    mimic the target filesystem.
+  id: totrans-135
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 `install` 阶段，我们将文件放置在 `%{buildroot}` 文件夹中，该文件夹将模拟目标文件系统。
+- en: '[PRE34]'
+  id: totrans-136
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE34]'
+- en: The `files` section is needed to declare which files are to be put in the package.
+  id: totrans-137
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`files` 部分用于声明要放入包中的文件。'
+- en: '[PRE35]'
+  id: totrans-138
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE35]'
+- en: The `changelog` is needed to track who released a new version when and with
+    which changes.
+  id: totrans-139
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`changelog` 是用来追踪谁在什么时候发布了新版本以及有哪些变更的。'
+- en: 'Now that we have the Spec file, we need to build it. To do so, we could use
+    a production machine, but this would increase the attack surface to that machine,
+    so it''s better to avoid one. There are multiple ways to build your RPM software.
+    The four main ways are:'
+  id: totrans-140
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们有了 Spec 文件，需要构建它。为此，我们可以使用生产机器，但这会增加该机器的攻击面，所以最好避免这种情况。有多种方式可以构建您的 RPM 软件。主要有四种方式：
+- en: Manually
+  id: totrans-141
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 手动地
+- en: Automate the manual way with Ansible
+  id: totrans-142
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用 Ansible 自动化手动方式
+- en: Jenkins
+  id: totrans-143
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Jenkins
+- en: Koji
+  id: totrans-144
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Koji
+- en: Let's look at the differences very briefly.
+  id: totrans-145
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们简要看一下它们的不同之处。
+- en: Building RPMs manually
+  id: totrans-146
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 手动构建 RPM
+- en: The simplest way to build an RPM package is doing so in a manual way.
+  id: totrans-147
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 构建 RPM 包的最简单方法是手动进行。
+- en: The big advantage is that you need very few and easy to install packages and
+    for this reason many people that are starting with RPM, start from here. The disadvantage
+    is that the process will be manual, and therefore human errors can spoil the result
+    and the procedure is not easy to audit.
+  id: totrans-148
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 大的优势是你只需要非常少且易于安装的软件包，正因为如此，许多刚接触 RPM 的人都从这里开始。缺点是过程是手动的，因此人为错误可能会破坏结果，且该过程不容易审计。
+- en: 'To build RPM packages, you will need a Fedora or an EL (Red Hat Enterprise
+    Linux, CentOS, Scientific Linux, Oracle Enterprise Linux) system. If you are using
+    Fedora, you will need to execute the following command to install all needed software:'
+  id: totrans-149
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要构建 RPM 包，你需要使用 Fedora 或 EL（Red Hat Enterprise Linux，CentOS，Scientific Linux，Oracle
+    Enterprise Linux）系统。如果你使用的是 Fedora，你需要执行以下命令来安装所有必需的软件：
+- en: '[PRE36]'
+  id: totrans-150
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE36]'
+- en: 'If you are running an EL system, the command you''ll need to execute is:'
+  id: totrans-151
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你正在运行 EL 系统，你需要执行的命令是：
+- en: '[PRE37]'
+  id: totrans-152
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE37]'
+- en: 'In either case, you''ll need to add the user you''ll use to the `mock` group,
+    to do so, you need to execute:'
+  id: totrans-153
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 无论哪种情况，你都需要将你将使用的用户添加到 `mock` 组中，为此你需要执行：
+- en: '[PRE38]'
+  id: totrans-154
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE38]'
+- en: Note
+  id: totrans-155
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: Linux loads the users at login, so to apply a group change, you need to restart
+    your session.
+  id: totrans-156
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Linux 在登录时加载用户，因此要应用组的更改，你需要重新启动会话。
+- en: 'At this point, we can copy the Spec file in folder (usually `$HOME` is a good
+    one) and perform the following actions:'
+  id: totrans-157
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 此时，我们可以将 Spec 文件复制到文件夹中（通常 `$HOME` 是一个不错的选择），并执行以下操作：
+- en: '[PRE39]'
+  id: totrans-158
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE39]'
+- en: This will create the `$HOME/rpmbuild/SOURCES` folder that is needed in the process.
+    The `-p` option will automatically create all folders in the path that are eventually
+    missing.
+  id: totrans-159
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这将创建过程所需的 `$HOME/rpmbuild/SOURCES` 文件夹。`-p` 选项会自动创建路径中缺失的所有文件夹。
+- en: '[PRE40]'
+  id: totrans-160
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE40]'
+- en: We used `spectool` to download the source file and place it in the appropriate
+    directory. The `spectool` will automatically get the URL from the Spec file so
+    that we don't have to remember it.
+  id: totrans-161
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们使用 `spectool` 下载源文件并将其放置在适当的目录中。`spectool` 会自动从 Spec 文件获取 URL，这样我们就不必记住它了。
+- en: 'We now need to create an `src.rpm` file, to do so we can use `rpmbuild`:'
+  id: totrans-162
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们现在需要创建一个 `src.rpm` 文件，为此我们可以使用 `rpmbuild`：
+- en: '[PRE41]'
+  id: totrans-163
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE41]'
+- en: 'This command will output something like:'
+  id: totrans-164
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个命令将输出类似以下内容：
+- en: '[PRE42]'
+  id: totrans-165
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE42]'
+- en: 'Some small differences in the name could be present, for instance you will
+    probably have a different `$HOME` folder and you could have something other than
+    `fc24`, if you are using something different than Fedora 24 to build the package.
+    At this point, we can create the binary file with:'
+  id: totrans-166
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 可能存在一些小的差异，例如你可能会有不同的 `$HOME` 文件夹，并且如果你使用的不是 Fedora 24 来构建包，可能会有不同的 `fc24`。此时，我们可以使用以下命令创建二进制文件：
+- en: '[PRE43]'
+  id: totrans-167
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE43]'
+- en: 'Mock allows us to build RPM packages in a clean environment and also, thanks
+    to the `-r` option, it allows us to build for different versions of Fedora, EL,
+    and Mageia. This command will give you a very long output, that I''ll not report
+    here, but in the last few lines there is useful information. If everything built
+    properly, this is the last few lines you should see:'
+  id: totrans-168
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Mock 允许我们在一个干净的环境中构建 RPM 包，而且 thanks to `-r` 选项，它还允许我们为不同版本的 Fedora、EL 和 Mageia
+    构建。这个命令将给出非常长的输出，我这里不会列出所有内容，但在最后几行有有用的信息。如果一切构建成功，以下几行应该是你看到的最后内容：
+- en: '[PRE44]'
+  id: totrans-169
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE44]'
+- en: 'The second to last line contains the path where you can find the results. If
+    you look in that folder, you should find the following files:'
+  id: totrans-170
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 倒数第二行包含了你可以找到结果的路径。如果你查看该文件夹，你应该能找到以下文件：
+- en: '[PRE45]'
+  id: totrans-171
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE45]'
+- en: The three log files are very useful in case of problems during the compilation.
+    The `src.rpm` file will be a copy of the `src.rpm` file we created with the first
+    command, while the `x86_64.rpm` file is the one mock created and the one we will
+    need to install on our machines.
+  id: totrans-172
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这三个日志文件在编译过程中出现问题时非常有用。`src.rpm` 文件将是我们用第一个命令创建的 `src.rpm` 文件的副本，而 `x86_64.rpm`
+    文件是 mock 创建的文件，也是我们需要安装到机器上的文件。
+- en: Building RPMs with Ansible
+  id: totrans-173
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 使用 Ansible 构建 RPM 包
+- en: Since doing all those steps manually can be long, boring, and error prone, we
+    can automatize them with Ansible. The resulting playbook will probably not be
+    the cleanest one, but will be able to execute all operations in a repeatable way.
+  id: totrans-174
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于手动执行所有这些步骤可能很繁琐、无聊且容易出错，我们可以使用 Ansible 自动化这些步骤。生成的 playbook 可能不是最干净的，但它能以可重复的方式执行所有操作。
+- en: 'For this reason, we are going to build a new machine from scratch. I''ll call
+    this machine `builder01.fale.io` and we are also going to change the inventory/production
+    file to match this change:'
+  id: totrans-175
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 因此，我们将从头开始构建一台新机器。我将这台机器命名为`builder01.fale.io`，我们还将更改库存/生产文件以匹配此更改：
+- en: '[PRE46]'
+  id: totrans-176
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE46]'
+- en: 'Before diving in the `builders` role, we will need to do a couple of changes
+    to the `webserver` roles to enable a new repository. The first is adding a task
+    in `roles/webserver/tasks/main.yaml` at the end of the file with the following
+    code:'
+  id: totrans-177
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在深入了解 `builders` 角色之前，我们需要对 `webserver` 角色做一些更改，以启用新的仓库。第一个更改是在文件末尾的 `roles/webserver/tasks/main.yaml`
+    中添加一个任务，代码如下：
+- en: '[PRE47]'
+  id: totrans-178
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE47]'
+- en: 'And the second change is actually creating the `roles/webserver/files/privaterepo.repo`
+    file with the following content:'
+  id: totrans-179
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 第二个更改是实际创建 `roles/webserver/files/privaterepo.repo` 文件，内容如下：
+- en: '[PRE48]'
+  id: totrans-180
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE48]'
+- en: 'We can now execute the `webserver` group playbook to make the changes effective
+    with:'
+  id: totrans-181
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们现在可以执行 `webserver` 组的 playbook 以使更改生效，命令如下：
+- en: '[PRE49]'
+  id: totrans-182
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE49]'
+- en: 'And the following output should appear:'
+  id: totrans-183
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下输出应该会出现：
+- en: '[PRE50]'
+  id: totrans-184
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE50]'
+- en: As expected, the only change has been the deployment of our newly generated
+    repository file.
+  id: totrans-185
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如预期的那样，唯一的变化是我们新生成的仓库文件的部署。
+- en: 'We also need to create a role for `builders` with a `tasks` file located in
+    `roles/builder/tasks/main.yaml` with the following content:'
+  id: totrans-186
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们还需要为 `builders` 创建一个角色，并在 `roles/builder/tasks/main.yaml` 中创建一个 `tasks` 文件，内容如下：
+- en: '[PRE51]'
+  id: totrans-187
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE51]'
+- en: 'Also, as part of the `builders` role, we need the `roles/builder/handlers/main.yaml`
+    handler file with the following content:'
+  id: totrans-188
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 另外，作为 `builders` 角色的一部分，我们需要 `roles/builder/handlers/main.yaml` 处理器文件，内容如下：
+- en: '[PRE52]'
+  id: totrans-189
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE52]'
+- en: 'As you can guess from the tasks file, we will also need the `roles/builder/files/repo.conf`
+    file with the following content:'
+  id: totrans-190
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如你从任务文件中可以猜到的那样，我们还需要 `roles/builder/files/repo.conf` 文件，内容如下：
+- en: '[PRE53]'
+  id: totrans-191
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE53]'
+- en: 'We also need a new `group` playbook in `playbooks/groups/builders.yaml` with
+    the following content:'
+  id: totrans-192
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们还需要在 `playbooks/groups/builders.yaml` 中创建一个新的 `group` playbook，内容如下：
+- en: '[PRE54]'
+  id: totrans-193
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE54]'
+- en: 'We can now execute the `firstrun` playbook against it with:'
+  id: totrans-194
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们现在可以执行 `firstrun` playbook，命令如下：
+- en: '[PRE55]'
+  id: totrans-195
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE55]'
+- en: 'And we will receive the following output:'
+  id: totrans-196
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将收到如下输出：
+- en: '[PRE56]'
+  id: totrans-197
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE56]'
+- en: 'We can now move to create the host itself with:'
+  id: totrans-198
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们现在可以继续创建主机，命令如下：
+- en: '[PRE57]'
+  id: totrans-199
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE57]'
+- en: 'And we are expecting a result similar to:'
+  id: totrans-200
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们预期的结果类似于：
+- en: '[PRE58]'
+  id: totrans-201
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE58]'
+- en: 'Now that we have all the parts of the infrastructure ready, we can create the
+    `playbooks/manual/rpm_deploy.yaml` with the following content:'
+  id: totrans-202
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在所有基础设施部分都已准备好，我们可以创建 `playbooks/manual/rpm_deploy.yaml`，内容如下：
+- en: '[PRE59]'
+  id: totrans-203
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE59]'
+- en: As discussed, this playbook has a lot of commands and shells which are not very
+    clean. Probably, in the future it will be possible to write a playbook with the
+    same features but with modules. Most actions are the same as we discussed in the
+    previous section. The new actions are toward the end, in fact in this case we
+    copy the generated RPM file to a specific folder, we invoke `createrepo` to generate
+    a repository in that folder, and then we force all web servers to update the generated
+    package to the last version.
+  id: totrans-204
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如前所述，这个 playbook 包含了很多命令和 shell，可能会显得不太整洁。未来可能会有机会写出一个功能相同但使用模块的 playbook。大部分操作和我们在前一节中讨论的相同。新的操作是在后面，实际上，在这个案例中，我们将生成的
+    RPM 文件复制到一个特定文件夹中，使用 `createrepo` 在该文件夹中生成一个仓库，然后强制所有 Web 服务器更新到最新版本的生成包。
+- en: Note
+  id: totrans-205
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: To grant the security of your application, is important that the repository
+    is only accessible internally and not publicly.
+  id: totrans-206
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了确保应用程序的安全，重要的是仓库只能在内部访问，而不能公开访问。
+- en: 'We can now run the playbook with:'
+  id: totrans-207
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们现在可以使用以下命令运行 playbook：
+- en: '[PRE60]'
+  id: totrans-208
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE60]'
+- en: 'And we expect a result like the following:'
+  id: totrans-209
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们预期的结果如下所示：
+- en: '[PRE61]'
+  id: totrans-210
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE61]'
+- en: Building RPMs with CI/CD pipelines
+  id: totrans-211
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 使用 CI/CD 管道构建 RPM 包
+- en: 'Although this is not covered by this book, in more complex cases you may want
+    to use a CI/CD pipeline to create and manage RPM packages. The two main pipelines
+    are based on two different software: Jenkins and Koji.'
+  id: totrans-212
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 尽管本书未涉及这一部分，但在更复杂的情况下，你可能希望使用 CI/CD 管道来创建和管理 RPM 包。主要的两种管道基于两个不同的软件：Jenkins
+    和 Koji。
+- en: The Koji software has been developed by the Fedora community and Red Hat. It
+    is released under the terms of the LGPL 2.1 license. This is the pipeline that
+    currently gets used by Fedora, CentOS, as well as many other companies and communities
+    to create all their RPMs (both for official and testing-aka **scratch builds**-builds).
+    Koji - by default is not triggered by commit, but needs to be called "manually"
+    from a user (through web interface or CLI). Koji will automatically download the
+    last version of the Spec Git, download the source from a side-cache (this is optional,
+    but suggested) or from the original location, and trigger the mock build. Koji
+    does support only mock due to the fact that is the only system that allows consistent
+    and repeatable builds. Koji can store all output artifacts forever or for a limited
+    amount of time, based on the configuration. This is to ensure a very high level
+    of auditability.
+  id: totrans-213
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Koji 软件由 Fedora 社区和 Red Hat 开发。它根据 LGPL 2.1 许可协议发布。这是目前 Fedora、CentOS 以及许多其他公司和社区用来创建所有
+    RPM 包的管道（无论是官方版本还是测试版——即**临时构建**）。Koji 默认不会通过提交触发，而是需要用户通过 web 界面或命令行界面“手动”调用。Koji
+    将自动下载最新版本的 Spec Git，从侧缓存中下载源代码（这一步是可选的，但推荐）或从原始位置下载，并触发 mock 构建。由于 mock 是唯一允许一致和可重复构建的系统，Koji
+    仅支持 mock。Koji 可以根据配置永久或在有限时间内存储所有输出工件。这是为了确保很高的审计能力。
+- en: Jenkins is one of the most used CI/CD managers and can also be used for RPM
+    pipelines. The big disadvantage is that it needs to be configured from scratch
+    with the consequence that more time is required, but this means it has more flexibility.
+    Also, a big advantage of Jenkins is that many companies already have an instance
+    of Jenkins, and this makes it easier to set up and maintain the infrastructure,
+    since you can reuse an installation you already have, having to manage less systems
+    overall.
+  id: totrans-214
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Jenkins 是最常用的 CI/CD 管理工具之一，也可以用于 RPM 管道。它的一个大缺点是需要从头开始配置，这意味着需要更多时间，但也因此具有更多的灵活性。Jenkins
+    的另一个大优势是许多公司已经有了 Jenkins 实例，这使得搭建和维护基础设施变得更加容易，因为您可以重用已有的安装，整体上减少了系统管理的工作。
+- en: Building compiled software with RPM packaging
+  id: totrans-215
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用 RPM 打包构建已编译的软件
+- en: RPM packaging is very useful for non-binary applications and close to a necessity
+    for binary applications. This is also true because the difference in complexity
+    is pretty low between a non-binary and a binary case. In fact, the build and the
+    installation will work in exactly the same way. The only thing that will change
+    is the Spec file.
+  id: totrans-216
+  prefs: []
+  type: TYPE_NORMAL
+  zh: RPM 打包对于非二进制应用程序非常有用，对于二进制应用程序几乎是必需的。这也是因为非二进制和二进制的复杂性差异非常小。事实上，构建和安装的方式完全相同。唯一的区别是
+    Spec 文件。
+- en: 'Let''s see for example the Spec file needed to compile and package a simple
+    Hello World! application written in C:'
+  id: totrans-217
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们来看一个例子，查看需要编译和打包一个简单的用 C 编写的 Hello World! 应用程序所需的 Spec 文件：
+- en: '[PRE62]'
+  id: totrans-218
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE62]'
+- en: As you can see, it's very similar to the one we saw for the PHP demo application.
+    Let's see the differences.
+  id: totrans-219
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如您所见，它与我们为 PHP 演示应用程序看到的非常相似。让我们看看其中的区别。
+- en: '[PRE63]'
+  id: totrans-220
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE63]'
+- en: As you can see, we don't have the line to disable the debug package. Every time
+    you package a compiled application, you should let `rpm` create the debug symbols
+    package so that in case of crashes, it will be easier to debug and understand
+    the problem.
+  id: totrans-221
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如您所见，我们没有禁用调试包的行。每次打包一个已编译的应用程序时，您应该让 `rpm` 创建调试符号包，这样在发生崩溃时，调试和理解问题会更容易。
+- en: '[PRE64]'
+  id: totrans-222
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE64]'
+- en: As you can see, the changes in this section are only due to the fact that the
+    new package has a different name and `URL`, but are not linked to the fact that
+    is a compliable application.
+  id: totrans-223
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如您所见，本节的变化仅仅是由于新包的名称和 `URL` 不同，但与是否是可编译的应用程序无关。
+- en: '[PRE65]'
+  id: totrans-224
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE65]'
+- en: In the non-compiled application we did not need any packages present at build
+    time, while in this case we will need the make and the `gcc` (compiler) applications.
+    Different applications could require different tools and or libraries to be present
+    on the system at build time.
+  id: totrans-225
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在非编译应用程序中，我们在构建时不需要任何包，而在这种情况下，我们将需要 make 和 `gcc`（编译器）等应用程序。不同的应用程序可能需要不同的工具和/或库在构建时存在于系统中。
+- en: '[PRE66]'
+  id: totrans-226
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE66]'
+- en: The `description` is package-specific and is not influenced by the compilation
+    of the package. In the same way, the `%prep` phase works.
+  id: totrans-227
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`description` 是特定于包的，并不受包编译的影响。类似地，`%prep` 阶段也是如此。'
+- en: In the `%build` phase we now have make `%{?_smp_mflags}`. This is needed to
+    tell `rpmbuild` to actually run make to build our application. The `_smp_mflags`
+    variable will include a set of parameters to optimize the compilation to be multi-thread.
+  id: totrans-228
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在`%build`阶段，我们现在有了`make %{?_smp_mflags}`。这是为了告诉`rpmbuild`实际运行make来构建我们的应用程序。`_smp_mflags`变量将包含一组参数，用于优化编译以支持多线程。
+- en: '[PRE67]'
+  id: totrans-229
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE67]'
+- en: During the `%install` phase, we will issue the `%make_install` command. This
+    macro will call `%make_install` with a set of additional parameters to ensure
+    that the **libraries** are located in the right folder, as well as the binaries
+    and so forth.
+  id: totrans-230
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在`%install`阶段，我们将执行`%make_install`命令。这个宏将使用一组附加参数调用`%make_install`，以确保**库文件**位于正确的文件夹中，二进制文件等也会被正确处理。
+- en: '[PRE68]'
+  id: totrans-231
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE68]'
+- en: In this case, we only need to place the `hello` binary that was located in the
+    right folder of the `buildroot` during the `%install` phase as well as add the
+    `LICENSE` file containing the license.
+  id: totrans-232
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这种情况下，我们只需要将`hello`二进制文件放在`%install`阶段位于`buildroot`的正确文件夹中，并添加包含许可证的`LICENSE`文件。
+- en: '[PRE69]'
+  id: totrans-233
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE69]'
+- en: The `%changelog` is very similar to the other Spec file we saw, since it is
+    not influenced by the involvement of a compilation.
+  id: totrans-234
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`%changelog`与我们之前看到的其他Spec文件非常相似，因为它不受编译过程的影响。'
+- en: 'After you completed this, you can place it in `spec/hello-world.spec` and tweak
+    `playbooks/manual/rpm_deploy.yaml` saving it into `playbooks/manual/hello_deploy.yaml`
+    with the following content:'
+  id: totrans-235
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 完成后，你可以将其放入`spec/hello-world.spec`中，并调整`playbooks/manual/rpm_deploy.yaml`，将其保存为`playbooks/manual/hello_deploy.yaml`，内容如下：
+- en: '[PRE70]'
+  id: totrans-236
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE70]'
+- en: 'As you can see, the only thing that we changes is that all references to `demo-php-app`
+    got replaced with `hello-world`. Running it with:'
+  id: totrans-237
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，我们唯一改变的就是所有对`demo-php-app`的引用都被替换为`hello-world`。运行它时：
+- en: '[PRE71]'
+  id: totrans-238
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE71]'
+- en: Note
+  id: totrans-239
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: You could eventually create a playbook that accepts the name of the package
+    to build as a parameter, so that you don't need a different playbook for every
+    package.
+  id: totrans-240
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你最终可以创建一个接受要构建的包名称作为参数的剧本，这样你就不需要为每个包创建不同的剧本了。
+- en: Deployment strategies
+  id: totrans-241
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 部署策略
+- en: We have seen how to distribute software in your environment, let's now speak
+    about deployment strategies; that is how to upgrade your application without your
+    service suffering from it.
+  id: totrans-242
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们已经看到如何在你的环境中分发软件，现在让我们谈谈部署策略；也就是说，如何在不影响服务的情况下升级你的应用程序。
+- en: 'There are three different problems you might incur during an update:'
+  id: totrans-243
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在更新过程中，你可能会遇到三种不同的问题：
+- en: Downtime during the update rollout
+  id: totrans-244
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 更新发布期间的停机时间
+- en: The new version has problems
+  id: totrans-245
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 新版本存在问题
+- en: The new version seems to work, until it fails
+  id: totrans-246
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 新版本似乎能正常工作，直到它失败。
+- en: The first problem is known to every system administrator. During the update,
+    you are probably going to restart some services, and for the time between the
+    stop and the start of the service, your application will not be available on that
+    machine. To avoid this also means that your application is not available at all;
+    you will need to have at least some machines with the application available and
+    a smart load balancer in front that will remove (and add them back when is the
+    case) all nonfunctioning nodes.
+  id: totrans-247
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 第一个问题是每个系统管理员都知道的。在更新过程中，你可能会重启一些服务，在服务停止和启动的这段时间内，你的应用程序将无法在该机器上使用。避免这种情况意味着你的应用程序根本无法使用；你需要至少有一些机器上能使用应用程序，并在前面放置一个智能负载均衡器，负责移除（并在合适时重新添加）所有无法正常工作的节点。
+- en: The second problem can be prevented in multiple ways. The cleanest one would
+    be testing in the CI/CD pipeline. In fact, those kinds of problems are pretty
+    easy to find with simple tests. This can also be prevented with the methods we
+    are going to see soon.
+  id: totrans-248
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 第二个问题可以通过多种方式来防止。最干净的方法是通过CI/CD管道进行测试。事实上，这类问题通过简单的测试就很容易发现。接下来我们将看到的方法也能防止这种情况发生。
+- en: The third problem is by far the most complex. Many big down have been generated
+    by these kinds of problems. Usually the problem is that the new version has some
+    performance problems or memory leaks. Since the majority of deployments are done
+    in the period of least load of the servers, as soon as the load increases, a performance
+    problem or memory leak could kill your servers.
+  id: totrans-249
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 第三个问题是迄今为止最复杂的。很多大的故障都由这种问题引起。通常，问题是新版本有一些性能问题或内存泄漏。由于大多数部署是在服务器负载最轻的时段进行的，一旦负载增加，性能问题或内存泄漏可能会导致服务器崩溃。
+- en: Note
+  id: totrans-250
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: To be able to use those methods in a proper way, you have to be able to ensure
+    that your software can accept rollbacks. There are cases where this is not possible
+    (that is, a database table gets removed in an update) but should be avoided. We
+    will not speak how to avoid it since is part of the development strategy, and
+    is not related to Ansible.
+  id: totrans-251
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了能够正确使用这些方法，你必须确保软件能够接受回滚。有些情况可能无法做到（例如，更新中删除了数据库表），但应尽量避免。我们不会讨论如何避免这些问题，因为它是开发策略的一部分，与
+    Ansible 无关。
+- en: Canary deployment
+  id: totrans-252
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 金丝雀发布
+- en: 'The canary deployment is a technique that involves updating a small percentage
+    of your machines (often 5%) to the new version and instruct the load balancers
+    to send only an equivalent amount of traffic to it. This has several advantages:'
+  id: totrans-253
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 金丝雀发布是一种技术，涉及将少量机器（通常是 5%）更新到新版本，并指示负载均衡器只将相应数量的流量发送给它。这有几个优点：
+- en: During the update, you never have less than 95% of the capacity
+  id: totrans-254
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在更新期间，你的容量永远不会低于 95%。
+- en: If the new version completely fails, you lose the 5% of capacity
+  id: totrans-255
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 如果新版本完全失败，你将失去 5% 的容量
+- en: Since the load-balancer divides the traffic between your new and old version,
+    if the new version has problems, only 5% of your users will see the problem
+  id: totrans-256
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 由于负载均衡器将流量分配到新旧版本之间，如果新版本出现问题，只有 5% 的用户会遇到问题。
+- en: You only need to have 5% capacity more than your expected load
+  id: totrans-257
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 你只需要比预期负载多 5% 的容量。
+- en: Canary deployment is able to prevent all three problems we mentioned with a
+    very small overhead (5%) and with a low cost in case of rollback (5%). For those
+    reasons, this technique is used a lot by huge companies; progressive rollout.
+    Often to ensure a similar user experience to users that live close to each other,
+    geography is used to choose if the user is going to hit the old or the new version.
+  id: totrans-258
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 金丝雀发布能够以非常小的开销（5%）和低成本（5%）防止我们提到的三种问题。如果回滚发生时，这一成本也是很低的。正因如此，大公司常常采用这种技术；逐步发布。为了确保地理上靠近的用户有类似的用户体验，通常会使用地理位置来决定用户是访问旧版本还是新版本。
+- en: When the test seems to be a success, the percentage can be increased progressively
+    until 100% is reached.
+  id: totrans-259
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当测试显示成功时，可以逐步增加百分比，直到达到 100%。
+- en: 'It''s possible to implement a canary deployment in multiple ways in Ansible.
+    The way I suggest is the cleanest one; using the inventory files, more specifically,
+    to have something like the following:'
+  id: totrans-260
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 Ansible 中，可以通过多种方式实现金丝雀发布。我建议的方式是最简洁的；使用清单文件，更具体地说，像下面这样：
+- en: '[PRE72]'
+  id: totrans-261
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE72]'
+- en: In this way, you can set all variables on the web group (the variables are going
+    to be the same no matter the version, or at least they should be) but you can
+    run a playbook easily against the canary group, the main group, or both groups
+    at the same time. Another option would be to create two different inventory files,
+    one for the canary group and the other for the main group with the groups having
+    the same name so that variables are shared.
+  id: totrans-262
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通过这种方式，你可以在 Web 组上设置所有变量（这些变量在版本间应该是相同的，或者至少应该是），但是你可以轻松地对金丝雀组、主组或两个组同时运行 playbook。另一个选择是创建两个不同的清单文件，一个用于金丝雀组，另一个用于主组，这样两个组的名字相同，以便共享变量。
+- en: Blue/Green deployment
+  id: totrans-263
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 蓝绿发布
+- en: '**Blue/Green** deployment is very different from canary deployment and has
+    some advantages and some disadvantages. The main advantages are:'
+  id: totrans-264
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**蓝绿**发布与金丝雀发布有很大的不同，且各自有优缺点。主要的优点包括：'
+- en: Easier to implement
+  id: totrans-265
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 更容易实现
+- en: Allows quicker iterations
+  id: totrans-266
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 允许更快速的迭代
+- en: All users get moved at the same time
+  id: totrans-267
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 所有用户同时迁移
+- en: Rollbacks have no performance degradation
+  id: totrans-268
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 回滚不会导致性能下降。
+- en: Among the disadvantages, the main ones are the fact that you need to have double
+    the machines available than what your application requires. This disadvantage
+    can be easily mitigated if the application is running on a cloud (either private,
+    public, or hybrid) scaling up the application resources for the deployment and
+    then scale them back down.
+  id: totrans-269
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 缺点中，主要的问题是你需要比应用程序要求的机器数多出一倍。这一缺点如果应用程序运行在云环境（无论是私有云、公共云还是混合云）上，通过扩展应用资源以进行部署，然后再缩减，就可以轻松缓解。
+- en: Implementing Blue/Green deployment in Ansible is very easy. The simplest way
+    is to create two different inventories (one for blue and one for green) and then
+    simply manage your infrastructure as if they are different environments such as
+    production, staging, dev, and so on.
+  id: totrans-270
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 Ansible 中实现蓝绿部署非常简单。最简单的方法是创建两个不同的清单（一个用于蓝色环境，一个用于绿色环境），然后像管理不同的环境（如生产环境、预生产环境、开发环境等）一样简单地管理你的基础设施。
+- en: Optimizations
+  id: totrans-271
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 优化
+- en: Sometimes, Ansible feels slow, mainly if you have a very long list of tasks
+    to execute and/or if you have huge amount of machines. This feeling is actually
+    more than just a feeling. There are multiple reasons for this, and ways to avoid
+    it, we are going to look at three of those.
+  id: totrans-272
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有时，Ansible 可能感觉很慢，尤其是当你有一个非常长的任务列表需要执行，和/或有大量的机器时。其实这种感觉不仅仅是一种感觉，背后有多种原因，我们将探讨其中的三种以及如何避免它们。
+- en: Pipelining
+  id: totrans-273
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 管道化
+- en: 'One of the reason why Ansible is slow by default is that for every module execution
+    and for every host, Ansible will perform the following actions:'
+  id: totrans-274
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 默认较慢的原因之一是，对于每个模块执行和每个主机，Ansible 会执行以下操作：
+- en: SSH handshake
+  id: totrans-275
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: SSH 握手
+- en: Execute the task
+  id: totrans-276
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 执行任务
+- en: Close the SSH connection
+  id: totrans-277
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 关闭 SSH 连接
+- en: As you can see, this means that if you have 10 tasks to be executed on a single
+    remote server, Ansible will open (and close) the connection 10 times. Since the
+    SSH protocol is an encrypted protocol, this makes the SSH handshake an even longer
+    process, since the two parts have to negotiate the ciphers every single time.
+  id: totrans-278
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如你所看到的，这意味着如果你有 10 个任务需要在单个远程服务器上执行，Ansible 会打开（并关闭）连接 10 次。由于 SSH 协议是加密协议，这使得
+    SSH 握手过程变得更加漫长，因为每次都需要重新协商加密算法。
+- en: 'Ansible allows us to reduce the execution time drastically by initiating the
+    connections at the beginning of the playbook and keeping them alive for the whole
+    execution so that it does not need to reopen the connection at every task. Over
+    the course of Ansible life, this feature has changed name multiple times, as well
+    as the way it''s enabled. From version 1.5, it''s been called **pipelining** and
+    the way to enable it is by adding the following line to your `ansible.cfg` file:'
+  id: totrans-279
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 通过在 playbook 开始时初始化连接并保持连接在整个执行过程中的活跃，从而大幅度减少了执行时间，这样就不需要在每个任务时重新打开连接。在
+    Ansible 的发展过程中，这个功能的名称已经多次更改，以及启用它的方式也发生了变化。从 1.5 版本开始，它被称为 **管道化（pipelining）**，启用它的方法是向
+    `ansible.cfg` 文件中添加以下行：
+- en: '[PRE73]'
+  id: totrans-280
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE73]'
+- en: The reason why this feature is not enabled by default, is that many distributions
+    ship with the `requiretty` option in `sudo`. The pipelining mode in Ansible and
+    the `requiretty` option in `sudo` conflict and will make your playbooks fail.
+  id: totrans-281
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个功能默认未启用的原因是，许多发行版在 `sudo` 中启用了 `requiretty` 选项。Ansible 中的管道化模式和 `sudo` 中的
+    `requiretty` 选项存在冲突，会导致 playbook 执行失败。
+- en: Tip
+  id: totrans-282
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 提示
+- en: If you want to enable the pipelining mode, ensure that the `sudo requiretty`
+    mode is disabled on your target machines.
+  id: totrans-283
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你想启用管道模式，请确保目标机器上禁用了 `sudo requiretty` 模式。
+- en: Optimizing with_items
+  id: totrans-284
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 使用 `with_items` 进行优化
+- en: 'If you want to execute similar operations multiple times, it''s possible to
+    repeat the same task multiple times with different parameters or use the `with_items`
+    option. Aside from the fact that `with_items` makes your code easier to read and
+    to follow, it could also improve your performance. An example is with the installation
+    of packages (that is: `apt`, `dnf`, `yum`, `package` modules) where Ansible will
+    perform a single command if you use `with_items` against a single command for
+    each package if you don''t. As you can imagine, this can help boosting your performance.'
+  id: totrans-285
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你想执行相似的操作多次，可以使用不同的参数重复相同的任务，或者使用 `with_items` 选项。除了 `with_items` 让你的代码更易读、更易理解之外，它还可能提升你的性能。例如，在安装软件包时（即：`apt`、`dnf`、`yum`、`package`
+    模块），如果你使用 `with_items`，Ansible 会执行一个命令，而如果不使用，它会为每个包执行一个命令。正如你所想象的那样，这可以帮助提升性能。
+- en: Understanding what happens when your tasks are executed
+  id: totrans-286
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 理解任务执行时发生的事情
+- en: 'Even after you implement the methods we just talked about to speed up the playbook
+    execution, you may still find some tasks take a very long time. This is very common
+    with some tasks, even if it''s possible with many other modules. The modules that
+    usually give you this problem are the following:'
+  id: totrans-287
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 即使你已经实现了我们刚才讨论的加速 playbook 执行的方法，你仍然可能发现某些任务需要非常长的时间。这对于某些任务来说是很常见的，即使许多其他模块是可能加速的。通常会出现这个问题的模块有以下几种：
+- en: 'Packaging management (that is: `apt`, `dnf`, `yum`, `package`)'
+  id: totrans-288
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 包管理（即：`apt`、`dnf`、`yum`、`package`）
+- en: 'Cloud machine creation (that is: DigitalOcean, EC2)'
+  id: totrans-289
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 云机器创建（例如：DigitalOcean，EC2）
+- en: The reason for this slowness is often non-Ansible specific. An example case
+    could be if you used a packaging management module to update your machines. This
+    requires downloading tens or hundreds of megabytes on every machine and installing
+    a high quantity of software. A way to speed up this kind of operation is to have
+    a local repository in your datacenter and have all your machines pointing to it
+    instead of your distribution repositories. This will allow your machines to download
+    at higher speed and without using the public connection that is often limited
+    in bandwidth or metered.
+  id: totrans-290
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这种慢速的原因通常不是 Ansible 特有的。一个例子是，如果你使用包管理模块来更新机器。这需要在每台机器上下载数十或数百兆字节的数据，并安装大量的软件。加速这种操作的方法是，在数据中心建立一个本地仓库，并让所有机器指向它，而不是指向分发仓库。这样可以让你的机器以更快的速度下载，而且不会使用常常带宽受限或按流量计费的公共连接。
+- en: Note
+  id: totrans-291
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: It's often important to understand what the modules do in the background to
+    optimize the playbook execution.
+  id: totrans-292
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 理解模块在后台执行的操作通常很重要，这有助于优化 playbook 的执行。
+- en: In the cloud machine creation case, Ansible just performs an API call to the
+    chosen cloud provider and waits for the machine to be ready. DigitalOcean machines
+    can take up to one minute to be created (and other clouds much longer) so Ansible
+    will wait for that amount of time. Some modules have an asynchronous mode to avoid
+    this wait period, but you'll have to ensure that the machine is ready before using
+    it otherwise the modules that use the created machine will fail.
+  id: totrans-293
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在云机器创建的案例中，Ansible 仅执行一次 API 调用到选择的云服务提供商，并等待机器准备好。DigitalOcean 的机器创建可能需要最长一分钟（其他云平台可能更长），因此
+    Ansible 会等待这一时间。一些模块具有异步模式以避免等待时间，但你必须确保机器准备好才能使用它，否则使用该机器的模块将会失败。
+- en: Summary
+  id: totrans-294
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 总结
+- en: In this chapter, we have seen how you can deploy an application with Ansible,
+    as well as the various distribution and deployment strategies you can use. We
+    also saw how to create RPM packages with Ansible and how to optimize the performance
+    of Ansible using different methods.
+  id: totrans-295
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们已经看到如何使用 Ansible 部署应用程序，以及可以使用的各种分发和部署策略。我们还了解了如何通过 Ansible 创建 RPM 包，并通过不同的方法优化
+    Ansible 的性能。
+- en: In the last and final chapter, we will discuss Ansible on Windows, networking
+    devices. Additionally, some Ansible Tower concepts will be discussed.
+  id: totrans-296
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在最后一章，我们将讨论 Ansible 在 Windows 上的使用以及网络设备的管理。此外，还会讨论一些 Ansible Tower 的概念。

@@ -1,0 +1,1268 @@
+- en: Chapter 5.  Going Cloud
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 第五章：进入云端
+- en: In this chapter, we will see how to use Ansible for provisioning infrastructures
+    in a matter of minutes. In my opinion, this is one of the most interesting and
+    powerful capabilities of Ansible, since it allows you to (re-)create environments
+    in a quick and consistent way. This is very important when you have multiple environments
+    for the various stages of your deployment pipeline. In fact, it allows you to
+    create equal environments and to keep them aligned when you need to make changes
+    without any pain.
+  id: totrans-1
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们将学习如何使用 Ansible 在几分钟内完成基础设施的配置。在我看来，这是 Ansible 最有趣和最强大的功能之一，因为它使你能够以快速且一致的方式（重新）创建环境。当你有多个环境用于部署管道的各个阶段时，这一点尤其重要。实际上，它使你能够创建相同的环境，并在需要进行更改时保持一致，且不会带来任何痛苦。
+- en: 'Letting Ansible provision your machines also has other advantages, and for
+    those reasons I always suggest to do:'
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让 Ansible 配置你的机器还有其他优点，因此我总是建议做以下事情：
+- en: '**Audit trail**: In the last few years, the IT sector swallowed a huge number
+    of other sectors and as a consequence of this, the auditing processes are now
+    looking at IT as a critical part of the process. When an auditor comes to the
+    IT department asking for the history of a server, from its creation to the present
+    moment, having Ansible playbooks for the whole process helps a lot.'
+  id: totrans-3
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**审计日志**：近年来，IT 行业吞并了大量其他行业，因此审计过程现在将 IT 视为一个关键部分。当审计员来 IT 部门要求获取一台服务器的历史记录时，从其创建到现在，拥有完整过程的
+    Ansible playbook 将非常有帮助。'
+- en: '**Multiple staging environments**: As we mentioned before, if you have multiple
+    environments, provisioning servers with Ansible will help you a lot'
+  id: totrans-4
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**多个预备环境**：正如我们之前提到的，如果你有多个环境，使用 Ansible 配置服务器将对你大有帮助。'
+- en: '**Moving servers**: When a company uses a global cloud provider (like AWS or
+    DigitalOcean) they often choose the region closest to their offices or customers
+    at the moment they create the first servers. Those providers often open new regions
+    and if their new region is close to you; you may want to move or extend your infrastructure
+    to the new region. This would be a nightmare if you had provisioned every resource
+    manually.'
+  id: totrans-5
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**迁移服务器**：当一家公司使用全球云服务提供商（如 AWS 或 DigitalOcean）时，他们通常会选择离他们的办公室或客户最近的区域来创建第一台服务器。这些提供商经常开设新的区域，如果他们的新区域靠近你，你可能会想将你的基础设施迁移或扩展到新区域。如果你手动配置了每个资源，这将是一个噩梦。'
+- en: 'In this chapter, at a broad level, we''ll cover the following topics:'
+  id: totrans-6
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章中，我们将大致涵盖以下主题：
+- en: Provisioning of machines in **Amazon Web Services** (**AWS**)
+  id: totrans-7
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在 **Amazon Web Services**（**AWS**）中配置机器。
+- en: Provisioning of machines in DigitalOcean
+  id: totrans-8
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在 DigitalOcean 中配置机器。
+- en: Provisioning Docker containers
+  id: totrans-9
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 配置 Docker 容器。
+- en: 'Most of the new machine creations have two phases:'
+  id: totrans-10
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 大多数新机器的创建有两个阶段：
+- en: Provisioning a new machine or a new set of machines
+  id: totrans-11
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 配置一台新机器或一组新机器。
+- en: Running playbooks to ensure the new machines are configured properly to play
+    their role in your infrastructure
+  id: totrans-12
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 运行 playbook，确保新机器正确配置，以在你的基础设施中发挥作用。
+- en: We've looked at the configuration management aspect in the initial chapters.
+    We'll focus a lot more on provisioning new machines in this chapter with a lesser
+    focus on configuration management.
+  id: totrans-13
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们在前几章中已经了解了配置管理的相关内容。本章将更侧重于新机器的配置，而在配置管理方面的讨论将相对较少。
+- en: Provisioning resources in the cloud
+  id: totrans-14
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 在云中配置资源。
+- en: 'With that, let''s jump to the first topic. Teams managing infrastructures have
+    a lot of choices today for running their builds, tests, and deployments. Providers
+    such as Amazon, Rackspace, and DigitalOcean primarily provide **Infrastructure
+    as a Service** (**IaaS**). When we speak about IaaS, it''s better to speak about
+    resources not virtual machines for different reasons:'
+  id: totrans-15
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有了这些，让我们进入第一个话题。今天，管理基础设施的团队有很多选择来运行他们的构建、测试和部署。像 Amazon、Rackspace 和 DigitalOcean
+    这样的提供商主要提供 **基础设施即服务**（**IaaS**）。当我们谈到 IaaS 时，最好谈论资源，而不是虚拟机，原因有很多：
+- en: The majority of the products that those companies allow you to provision are
+    not machines but other critical resources such as networking and storage
+  id: totrans-16
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 那些公司允许你配置的大多数产品并不是机器，而是其他关键资源，如网络和存储。
+- en: Lately, many of those companies have started to provide many different kind
+    of compute instances ranging from bare-metal machines to containers
+  id: totrans-17
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 最近，许多公司已经开始提供各种不同类型的计算实例，从裸金属机器到容器。
+- en: Setting up machines with no networking (or storage) could be all you need for
+    some very simple environments, but might not be enough in production environments
+  id: totrans-18
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在一些非常简单的环境中，设置没有网络（或存储）的机器可能就足够了，但在生产环境中可能不够用。
+- en: Those companies usually provide API, CLI, GUI, and SDK utilities to create and
+    manage cloud resources throughout their whole lifecycle. We're more interested
+    in using their SDK as it will play an important part in our automation effort.
+    Setting up new servers and provisioning them is interesting at first but at some
+    stage it can become boring as it's quite repetitive in nature. Each provisioning
+    step will involve several similar steps to get them up-and-running.
+  id: totrans-19
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这些公司通常提供 API、CLI、GUI 和 SDK 工具，用于创建和管理云资源的整个生命周期。我们更感兴趣的是使用他们的 SDK，因为它将在我们的自动化工作中发挥重要作用。最初，设置新服务器和配置它们可能很有趣，但在某个阶段，它可能会变得乏味，因为这类操作非常重复。每个配置步骤都将涉及多个类似的步骤，以使服务器能够启动并运行。
+- en: Imagine one fine morning you receive an e-mail asking for three new customer
+    setups, where each customer setup has three to four instances and a bunch of services
+    and dependencies. This might be an easy task for you, but would require running
+    the same set of repetitive commands multiple times, followed by monitoring the
+    servers once they come up to confirm that everything went well. In addition, anything
+    you do manually has a chance of introducing problems. What if two of the customer
+    setups come up correctly but, due to fatigue, you miss out a step for the third
+    customer and hence introduce a problem? To deal with such situations, there exists
+    automation.
+  id: totrans-20
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 想象一下，有一天早晨，你收到一封电子邮件，要求为三个新客户进行设置，其中每个客户的设置有三到四个实例，以及一堆服务和依赖项。这对你来说可能是一个简单的任务，但需要多次运行相同的重复命令，随后还要监控服务器启动，确保一切顺利。此外，任何手动操作都有可能引入问题。如果两个客户的设置顺利完成，但由于疲劳，你遗漏了第三个客户的某个步骤，从而引入了问题怎么办？为了解决这种情况，自动化就派上了用场。
+- en: Cloud provisioning automation makes it easy for an engineer to build up a new
+    server as quickly as possible, allowing her to concentrate on other priorities.
+    Using Ansible, you can easily perform these actions and automate cloud provisioning
+    with minimal effort. Ansible provides you with the power to automate various different
+    cloud platforms, such as Amazon, Azure, DigitalOcean, Google Cloud, Rackspace,
+    and many more, with modules for different services available in the Ansible core
+    or extended module packages.
+  id: totrans-21
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 云资源自动化配置使得工程师可以尽快地建立一台新服务器，让她能够集中精力处理其他优先事项。通过使用 Ansible，你可以轻松地执行这些操作，并以最小的努力自动化云资源配置。Ansible
+    为你提供了自动化多种不同云平台的能力，例如亚马逊、Azure、DigitalOcean、谷歌云、Rackspace 等，且在 Ansible 核心或扩展模块包中提供了不同服务的模块。
+- en: Note
+  id: totrans-22
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: As mentioned earlier, bringing up new machines is not the end of the game. We
+    also need to make sure we configure them to play the required role.
+  id: totrans-23
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如前所述，启动新机器并不是最终目的。我们还需要确保我们配置它们以执行所需的角色。
+- en: 'In the next sections we will provision the environment that we have used in
+    the previous chapters (two web servers and one database server) in the following
+    environments:'
+  id: totrans-24
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在接下来的章节中，我们将配置我们在前几章中使用的环境（两个 Web 服务器和一个数据库服务器），并在以下环境中进行配置：
+- en: '**Simple Amazon Web Service deployment**: Where all machines will be placed
+    in the same Availability Zone and same network'
+  id: totrans-25
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**简单的亚马逊 Web 服务部署**：所有机器将被放置在同一可用区和同一网络中。'
+- en: '**Complex Amazon Web Service deployment**: Where the machines will be split
+    in multiple Availability Zones as well as networks'
+  id: totrans-26
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**复杂的亚马逊 Web 服务部署**：机器将分布在多个可用区和网络中。'
+- en: '**DigitalOcean**: DigitalOcean does not allow us to do many networking tweaks
+    so it will be similar to the first one'
+  id: totrans-27
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**DigitalOcean**：DigitalOcean 不允许我们进行很多网络调整，因此它将与第一个类似。'
+- en: '**Docker**: We will create a simple deployment in this case'
+  id: totrans-28
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**Docker**：在这种情况下，我们将创建一个简单的部署。'
+- en: Amazon Web Service
+  id: totrans-29
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 亚马逊 Web 服务
+- en: Amazon Web Service is the most used public cloud by a fair amount and it's often
+    chosen due to their huge amount of available services as well as the huge amount
+    of documentation, answered questions, and articles that can be expected from such
+    a popular product.
+  id: totrans-30
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 亚马逊 Web 服务是使用最广泛的公共云之一，通常因为其提供的大量服务以及丰富的文档、解答问题和相关文章而被选择，这些都是如此受欢迎的产品所能期待的。
+- en: Since AWS' goal is to be a complete virtual data center provider (and much more)
+    we will need to create and manage our network as we would do if we had to set
+    up a real data center. Obviously, we will not need to cable stuff since it's a
+    virtual data center. Due to this, a few lines of an Ansible playbook will be enough.
+  id: totrans-31
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于 AWS 的目标是成为一个完整的虚拟数据中心提供商（以及更多），我们需要像搭建真实数据中心一样创建和管理我们的网络。显然，由于这是一个虚拟数据中心，我们不需要布线。因此，几行
+    Ansible 剧本就足够了。
+- en: AWS global infrastructure
+  id: totrans-32
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: AWS 全球基础设施
+- en: Amazon has always been pretty discrete about sharing the location or the exact
+    number of data centers that their cloud is actually composed of. While I'm writing
+    this, AWS counts 13 regions (with 4 more regions already planned) with a total
+    of 35 **Availability Zones** (**AZ**) and more than 50 edge locations. Amazon
+    defines a region as a physical location in the world where we (Amazon) have multiple
+    Availability Zones. Looking at Amazon's definition of Availability Zones, it says
+    that an AZ consists of one or more discrete data centers, each with redundant
+    power, networking, and connectivity, housed in separate facilities. For edge location,
+    there is no official definition.
+  id: totrans-33
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 亚马逊一直对其云服务由多少数据中心组成、具体位置等信息保持较为低调。截至我写这篇文章时，AWS 拥有 13 个区域（还有 4 个区域已经规划中），共计
+    35 个 **可用区**（**AZ**）和超过 50 个边缘位置。亚马逊将一个区域定义为一个物理位置，亚马逊在该位置有多个可用区。根据亚马逊对可用区的定义，一个
+    AZ 由一个或多个独立的数据中心组成，每个数据中心都有冗余的电力、网络和连接，并位于不同的设施中。至于边缘位置，目前没有官方定义。
+- en: 'As you can see, from a real life point of view, those definitions do not help
+    you much. When I try to explain those concepts I usually use different definitions,
+    created by myself:'
+  id: totrans-34
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，从现实生活的角度来看，这些定义并不能提供太多帮助。当我尝试解释这些概念时，我通常会使用我自己创建的不同定义：
+- en: '**Region**: Group of AZs that are physically close'
+  id: totrans-35
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**区域**：由物理上相邻的多个可用区组成的群体'
+- en: '**Availability Zone**: A data center in a region (Amazon says that it could
+    be more than one data center, but since there is no document listing the specific
+    layout of every AZ, I assume the worst-case scenario)'
+  id: totrans-36
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**可用区**：一个区域中的数据中心（亚马逊表示这可能不止一个数据中心，但由于没有文档列出每个 AZ 的具体布局，我假设最坏的情况）'
+- en: '**Edge location**: Internet exchanges or 3rd party data centers where Amazon
+    has S3 and Route 53 endpoints'
+  id: totrans-37
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**边缘位置**：互联网交换点或第三方数据中心，亚马逊在这些地方拥有 S3 和 Route 53 的端点'
+- en: Even though I tried to make those definitions as easy and as useful as possible,
+    some of them are very cloudy. When we start to speak about real world differences,
+    the definitions will become immediately clear. For instance, from a network speed
+    perspective, when you move content within the same AZ, the bandwidth is very high.
+    When you do the same operation with two AZs in the same region you get high bandwidth,
+    while if you use two AZs from two different regions, the bandwidth will be much
+    lower. Also, there is a price difference, since all traffic within the same region
+    is free, while traffic between different regions is not free of charge.
+  id: totrans-38
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 尽管我尽力让这些定义尽可能简单和有用，但其中一些仍然比较模糊。当我们开始讨论实际的世界差异时，这些定义会立刻变得清晰。例如，从网络速度的角度来看，当你在同一个
+    AZ 内移动内容时，带宽非常高。当你在同一地区的两个 AZ 之间进行相同的操作时，带宽仍然很高；然而，如果你使用两个来自不同区域的 AZ，带宽将大大降低。此外，价格也有所不同，因为同一地区内的所有流量都是免费的，而不同地区之间的流量则不免费。
+- en: AWS Simple Storage Service
+  id: totrans-39
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: AWS 简单存储服务
+- en: Amazon S3 is the first AWS service to be launched and it's also one of the most
+    well-known AWS services. Amazon S3 is an object storage service with public endpoints
+    as well as private endpoints. It uses the concept of a bucket to allow you different
+    kinds of files and to manage them in a simple way. Amazon S3 also gives the user
+    more advanced features such as the capability of serving a bucket's contents using
+    a built-in web server. This is one of the reasons why many people decide to host
+    their website, or the pictures on their websites, on Amazon S3.
+  id: totrans-40
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Amazon S3 是第一个 AWS 服务，也是最著名的 AWS 服务之一。Amazon S3 是一个对象存储服务，具有公共端点和私人端点。它使用桶（bucket）这一概念，允许你存储不同类型的文件，并以简单的方式管理它们。Amazon
+    S3 还提供了更多高级功能，例如使用内置的 Web 服务器来提供桶中的内容。这也是许多人决定将自己网站的内容或图片托管在 Amazon S3 上的原因之一。
+- en: 'The advantages of S3 are mainly:'
+  id: totrans-41
+  prefs: []
+  type: TYPE_NORMAL
+  zh: S3 的主要优势有：
+- en: '**Price schema**: You are billed by used gigabyte/month and by gigabyte transferred.'
+  id: totrans-42
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**定价模式**：按使用的千兆字节/月和传输的千兆字节计费。'
+- en: '**Reliability**: Amazon affirms that the objects on AWS S3 have a 99.999999999%
+    probability to survive any given year. This is orders of magnitude higher than
+    any hard disk.'
+  id: totrans-43
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**可靠性**：亚马逊确认 AWS S3 上的对象在任何一年内生存的概率为 99.999999999%。这个概率比任何硬盘都要高出几个数量级。'
+- en: '**Tooling**: Since S3 is a service that has been out there for many years now,
+    a lot of tools have been implemented to leverage this service.'
+  id: totrans-44
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**工具**：由于 S3 已经推出多年，因此有许多工具已经实现以便利用该服务。'
+- en: AWS Elastic Compute Cloud (EC2)
+  id: totrans-45
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: AWS 弹性计算云（EC2）
+- en: The second service launched by AWS is the EC2 service. This service allows you
+    to spin up virtual machines on AWS infrastructure. You can think of those EC2
+    instances as OpenStack compute instances or VMware virtual machines. Initially,
+    those machines were very similar to VPS, but after a while, Amazon decided to
+    give much more flexibility on those machines introducing a very advanced networking
+    option. The old kind of machines are still available in the oldest data centers
+    with the name **EC2 Classic**, while the new kind is the current default and is
+    just called **EC2**.
+  id: totrans-46
+  prefs: []
+  type: TYPE_NORMAL
+  zh: AWS 推出的第二个服务是 EC2 服务。此服务允许您在 AWS 基础设施上启动虚拟机。可以将这些 EC2 实例视为 OpenStack 计算实例或 VMware
+    虚拟机。最初，这些机器与 VPS 非常相似，但过了一段时间，亚马逊决定对这些机器提供更大的灵活性，推出了非常先进的网络选项。旧款机器仍然可以在最老的数据中心找到，名为
+    **EC2 Classic**，而新款机器则是当前的默认版本，简称 **EC2**。
+- en: AWS Virtual Private Cloud (VPC)
+  id: totrans-47
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: AWS 虚拟专用云（VPC）
+- en: 'The VPC is Amazon''s networking implementation which we mentioned in the previous
+    paragraph. The VPC is more a set of tools than a single tool, in fact, the capabilities
+    it offers were offered by multiple metal boxes in the classic data center. The
+    main things you can create with VPC are:'
+  id: totrans-48
+  prefs: []
+  type: TYPE_NORMAL
+  zh: VPC 是我们在前文提到的亚马逊的网络实现。VPC 更像是一组工具，而不是单一工具。实际上，它提供的功能曾由经典数据中心中的多个硬件设备提供。通过 VPC，您可以创建的主要内容有：
+- en: Switches
+  id: totrans-49
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 交换机
+- en: Routers
+  id: totrans-50
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 路由器
+- en: DHCP
+  id: totrans-51
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: DHCP
+- en: Gateways
+  id: totrans-52
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 网关
+- en: Firewalls
+  id: totrans-53
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 防火墙
+- en: Virtual Private Networks
+  id: totrans-54
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 虚拟私人网络
+- en: 'An important thing to understand when you use VPC is that the layout of your
+    network is not completely arbitrary, since Amazon has created a few limitations
+    to simplify their networking. The basic limitations are:'
+  id: totrans-55
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在使用 VPC 时需要理解的一件重要事情是，网络的布局并非完全随意的，因为亚马逊为了简化网络设计，设置了一些限制。基本的限制有：
+- en: You cannot spawn a subnetwork between AZ
+  id: totrans-56
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 不能在可用区（AZ）之间创建子网络
+- en: You cannot spawn a network between regions
+  id: totrans-57
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 不能在不同区域之间创建网络
+- en: You cannot route networks in different regions directly
+  id: totrans-58
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 不能直接在不同区域之间路由网络
+- en: While, for the first two, the only solution is creating multiple networks and
+    subnetworks, for the third, you can actually implement a workaround using a VPN
+    service which could be self-provisioned or be provisioned using the official AWS
+    VPN service.
+  id: totrans-59
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于前两种情况，唯一的解决方案是创建多个网络和子网络；而对于第三种情况，您实际上可以通过 VPN 服务实现一个变通方案，可以是自行提供的，也可以使用官方的
+    AWS VPN 服务来提供。
+- en: We will be mainly using the switching and routing capabilities of VPC.
+  id: totrans-60
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将主要使用 VPC 的交换和路由功能。
+- en: AWS Route 53
+  id: totrans-61
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: AWS Route 53
+- en: Like many other cloud services, Amazon offers a **DNS as a Service** (**DNSaaS**)
+    feature and in Amazon case, it's called **Route 53**. Route 53 is a distributed
+    DNS service with more than 50 endpoints worldwide (Route 53 is present in all
+    AWS edge locations).
+  id: totrans-62
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 和许多其他云服务一样，亚马逊提供了 **DNS即服务**（**DNSaaS**）功能，在亚马逊的情况下，它叫做 **Route 53**。Route 53
+    是一个分布式的 DNS 服务，全球有超过 50 个端点（Route 53 存在于所有 AWS 边缘位置）。
+- en: Route 53 allows you to create different zones for a domain allowing split-horizon
+    situations in which, based on the fact that the client asking for a DNS resolution
+    is inside or outside your VPC, will receive different responses. This is very
+    useful when you want your applications to be easily moved in and out of your VPC
+    without changes but at the same time, you want your traffic to stay on a private
+    (virtual) network whenever possible.
+  id: totrans-63
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Route 53 允许您为一个域创建不同的区域，支持分割视图（split-horizon）情况。根据客户端请求 DNS 解析时是否位于 VPC 内部或外部，会返回不同的响应。这在你希望将应用程序轻松地进出
+    VPC 时非常有用，而不需要更改，同时又希望尽可能让流量保持在私有（虚拟）网络中。
+- en: AWS Elastic Block Storage (EBS)
+  id: totrans-64
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: AWS 弹性块存储（EBS）
+- en: AWS **EBS** is a block storage provider for allowing your EC2 instances to keep
+    data that will survive reboots and is very flexible. From a user perspective,
+    EBS seems a lot like any other SAN product with a simpler interface, since you
+    only need to create the volume and tell EBS to which machine it needs to be attached,
+    and EBS does the rest. You can attach multiple volumes to a single server, but
+    every volume can be connected to only one server at any given time.
+  id: totrans-65
+  prefs: []
+  type: TYPE_NORMAL
+  zh: AWS **EBS** 是一种块存储服务，允许您的 EC2 实例保存数据，这些数据即使重启也能得以保留，并且非常灵活。从用户角度看，EBS 很像任何其他
+    SAN 产品，但界面更简洁，因为您只需创建卷并告诉 EBS 需要将其附加到哪个机器，EBS 会自动完成其余操作。您可以将多个卷附加到同一台服务器，但每个卷在任何时刻只能连接到一台服务器。
+- en: AWS Identity and Access Management
+  id: totrans-66
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: AWS 身份与访问管理
+- en: 'To allow you to manage users and access methods, Amazon provides the **IAM**
+    service. The main features of the IAM service are:'
+  id: totrans-67
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了让您管理用户和访问方式，Amazon 提供了 **IAM** 服务。IAM 服务的主要功能包括：
+- en: Create, edit, and delete users
+  id: totrans-68
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 创建、编辑和删除用户
+- en: Change user password
+  id: totrans-69
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 更改用户密码
+- en: Create, edit, and delete groups
+  id: totrans-70
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 创建、编辑和删除组
+- en: Manage users and group association
+  id: totrans-71
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 管理用户和组关联
+- en: Manage tokens
+  id: totrans-72
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 管理令牌
+- en: Manage two-factor authentication
+  id: totrans-73
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 管理双重身份验证
+- en: Manage SSH keys
+  id: totrans-74
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 管理 SSH 密钥
+- en: We will be using this service to set up our users and their permissions.
+  id: totrans-75
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将使用此服务来设置用户及其权限。
+- en: Amazon relational database service
+  id: totrans-76
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 亚马逊关系型数据库服务
+- en: 'Setting up and maintaining relational databases is complex and very time-consuming.
+    To simplify this, Amazon provides some widely used DBaaS, more specifically:'
+  id: totrans-77
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 设置和维护关系型数据库是复杂且耗时的。为简化此过程，Amazon 提供了一些广泛使用的数据库即服务（DBaaS），具体包括：
+- en: Aurora
+  id: totrans-78
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Aurora
+- en: MariaDB
+  id: totrans-79
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: MariaDB
+- en: MySQL
+  id: totrans-80
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: MySQL
+- en: Oracle
+  id: totrans-81
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Oracle
+- en: PostgreSQL
+  id: totrans-82
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: PostgreSQL
+- en: SQL Server
+  id: totrans-83
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: SQL Server
+- en: For each one of those engines, Amazon offers different features and price models
+    but the specifics of each is beyond the goal of this book.
+  id: totrans-84
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于每种数据库引擎，Amazon 提供不同的功能和定价模型，但每种的具体内容超出了本书的范围。
+- en: Setting up an account with AWS
+  id: totrans-85
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 设置 AWS 账户
+- en: The first thing we will need before starting to work on our Amazon Web Service
+    is an account. Creating an account on Amazon Web Services is pretty straightforward
+    and very well-documented by Amazon official documentation as well as by multiple
+    independent sites and therefore it will not be covered in these pages.
+  id: totrans-86
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在开始使用 Amazon Web Services 之前，首先需要一个账户。创建 Amazon Web Services 账户相当简单，并且有详细的官方文档和多个独立网站的支持，因此本书不会涉及这部分内容。
+- en: 'After you have created your AWS account, you need to go into the AWS and do
+    the following:'
+  id: totrans-87
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在创建了 AWS 账户后，您需要进入 AWS 并执行以下操作：
+- en: Upload your SSH key in **EC2** | **Keypairs**
+  id: totrans-88
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 上传您的 SSH 密钥至 **EC2** | **密钥对**
+- en: 'Create a new user in **Identity & Access Management** | **Users** | **Create
+    new user** and create a file in `~/.aws/credentials` with the following lines:'
+  id: totrans-89
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在 **身份与访问管理** | **用户** | **创建新用户** 中创建一个新用户，并在 `~/.aws/credentials` 文件中加入以下内容：
+- en: '[PRE0]'
+  id: totrans-90
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: 'After you have created your AWS Keys and uploaded your SSH key, you need to
+    set up Route53\. In Route53 you need to create two zones for your domain (you
+    can also use a subdomain if you don''t have an unused domain): one **public**
+    and one **private**.'
+  id: totrans-91
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在您创建了 AWS 密钥并上传了 SSH 密钥后，您需要设置 Route53。在 Route53 中，您需要为您的域创建两个区域（如果没有未使用的域名，也可以使用子域）：一个
+    **公共** 区域和一个 **私有** 区域。
+- en: 'If you create only the public zone, Route53 will propagate this zone everywhere,
+    but if you create a public and a private zone, Route53 will serve your public
+    zone everywhere but in the VPC you specified when creating the private zone. If
+    you query those DNS entries from within that VPC, the private zone will be used.
+    This approach has multiple advantages:'
+  id: totrans-92
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果您仅创建公共区域，Route53 会在所有地方传播此区域；但如果创建了公共和私有区域，Route53 会在所有地方提供公共区域，但在创建私有区域时指定的
+    VPC 中，私有区域将被使用。如果您从该 VPC 内查询这些 DNS 记录，私有区域将被使用。这种方式有多个优点：
+- en: Only publicize the IP addresses of public machines
+  id: totrans-93
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 仅公开公共机器的 IP 地址
+- en: Always use DNS names instead of IP addresses, even for internal traffic
+  id: totrans-94
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 始终使用 DNS 名称而非 IP 地址，即使是内部流量
+- en: Ensure that your internal machines communicate directly without your traffic
+    ever passing through the public web
+  id: totrans-95
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 确保您的内部机器直接通信，避免流量通过公共网络
+- en: Since the external IPs in Amazon Web Services are virtual IPs managed by Amazon
+    and associated to your instances using NATs, this approach grants the least amount
+    of hops and therefore latency
+  id: totrans-96
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 由于 Amazon Web Services 中的外部 IP 是由 Amazon 管理的虚拟 IP，并通过 NAT 与您的实例关联，这种方式提供了最少的跳数，因此具有较低的延迟。
+- en: Note
+  id: totrans-97
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: If you declared an entry for your public zone but not in the private one, the
+    machines in the VPC will not be able to resolve that entry.
+  id: totrans-98
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你为公共区域声明了一个条目，但没有在私有区域中声明，VPC 中的机器将无法解析该条目。
+- en: After you have created the public zone, Amazon Web Services will give you a
+    few name server IP addresses and you need to put those in your register/root zone
+    DNS so that you can actually resolve those DNS.
+  id: totrans-99
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在你创建了公共区域之后，Amazon Web Services 会提供几个名称服务器 IP 地址，你需要将这些地址放入你的注册/根区域 DNS 中，以便你可以实际解析这些
+    DNS。
+- en: Simple AWS deployment
+  id: totrans-100
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 简单的 AWS 部署
+- en: As we said previously, the first thing that we will need is the networking up.
+    For this example, we will need just one single network in one AZ and all our machines
+    will stay there.
+  id: totrans-101
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如我们之前所说的，首先我们需要将网络搭建好。对于这个例子，我们只需要在一个可用区内配置一个网络，所有的机器将都留在这个网络中。
+- en: In this section, we will be working in the `playbooks/aws_simple_provision.yaml`
+    file.
+  id: totrans-102
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这一部分，我们将会在 `playbooks/aws_simple_provision.yaml` 文件中进行操作。
+- en: 'The first two lines are just used to declare the host that will perform the
+    commands (`localhost`) and the beginning of the `tasks` section:'
+  id: totrans-103
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 前两行只是用于声明将执行命令的主机（`localhost`）以及 `tasks` 部分的开始：
+- en: '[PRE1]'
+  id: totrans-104
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: 'In AWS, we need to have a VPC network and subnetwork, but in case you need
+    it, you can do the following to create the VPC network:'
+  id: totrans-105
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 AWS 中，我们需要有一个 VPC 网络和子网络，但如果你需要的话，你可以按如下方式创建 VPC 网络：
+- en: '[PRE2]'
+  id: totrans-106
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: 'Now we have all the information we need on the network and subnetwork, we can
+    move to **security groups**. We can do this with the `ec2_group` module. In the
+    Amazon Web Service world, security groups are used for firewalling. Security groups
+    are very similar to groups of firewall rules that share the same destination (for
+    ingress rules) or same destination (for egress rules). Three differences with
+    standard firewalls rules are actually worth mentioning:'
+  id: totrans-107
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经有了网络和子网的所有信息，我们可以继续处理**安全组**了。我们可以通过 `ec2_group` 模块来实现这一点。在亚马逊 Web 服务中，安全组用于防火墙。安全组类似于具有相同目标（对于入口规则）或相同目标（对于出口规则）的防火墙规则组。值得一提的是，标准防火墙规则与安全组有三个区别：
+- en: Multiple security groups can be applied to the same EC2 instance
+  id: totrans-108
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 可以将多个安全组应用到同一个 EC2 实例。
+- en: 'As source (for ingress rules) or destination (for egress rules), you can specify
+    one of the following:'
+  id: totrans-109
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 作为源（对于入口规则）或目的地（对于出口规则），你可以指定以下其中之一：
+- en: An instance ID
+  id: totrans-110
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 一个实例 ID
+- en: Another security group
+  id: totrans-111
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 另一个安全组
+- en: An IP range
+  id: totrans-112
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 一个 IP 范围
+- en: You don't have to specify a default deny rule at the end of the chain because
+    AWS will add it by default
+  id: totrans-113
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 你不需要在链的末尾指定默认的拒绝规则，因为 AWS 默认会添加它。
+- en: '[PRE3]'
+  id: totrans-114
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: 'So, in my case, the following code will be added to `playbooks/aws_simple_provision.yaml`:'
+  id: totrans-115
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 所以，在我的情况下，以下代码将会被添加到 `playbooks/aws_simple_provision.yaml`：
+- en: '[PRE4]'
+  id: totrans-116
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: 'We are now going to create another security group for our database. In this
+    case, we only need to open port `3036` to the servers in the web security group:'
+  id: totrans-117
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们现在将为我们的数据库创建另一个安全组。在这种情况下，我们只需要将端口 `3036` 开放给 Web 安全组中的服务器：
+- en: '[PRE5]'
+  id: totrans-118
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: Note
+  id: totrans-119
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: As you can see, we allow all egress traffic to flow. This is not what security
+    best practices suggest, and therefore you may need to regulate egress traffic
+    as well. A case that frequently forces you to regulate egress traffic is if you
+    want your target machine to be PCI-DSS compliant.
+  id: totrans-120
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，我们允许所有出口流量通过。这并不是安全最佳实践所建议的，因此你可能需要对出口流量进行调控。一个常常迫使你调控出口流量的情况是，当你希望目标机器符合
+    PCI-DSS 标准时。
+- en: 'Now that we have the VPC, the subnet into the VPC, and the needed security
+    groups, we can now move on to actually creating the EC2 instances:'
+  id: totrans-121
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经有了 VPC、子网和所需的安全组，接下来我们可以开始实际创建 EC2 实例了：
+- en: '[PRE6]'
+  id: totrans-122
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: Note
+  id: totrans-123
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: 'When we created the `db` machine we did not specify the `assign_public_ip`:
+    `True` line. In this case, the machine will not receive a public IP and therefore
+    it will not be reachable from outside our VPC. Since we used a very strict security
+    group for this server, it would not be reachable from any machine outside the
+    `wssg` anyway.'
+  id: totrans-124
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '当我们创建 `db` 机器时并未指定 `assign_public_ip`: `True` 这一行。在这种情况下，机器将不会获得公共 IP，因此它将无法从我们
+    VPC 外部访问。由于我们为这台服务器使用了非常严格的安全组，它无论如何都无法从 `wssg` 外的任何机器访问。'
+- en: As you can guess, the piece of code we have just seen will create our three
+    instances (two web servers and one database server).
+  id: totrans-125
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如你猜测的那样，我们刚刚看到的这段代码将会创建我们的三个实例（两个 Web 服务器和一个数据库服务器）。
+- en: 'We can now proceed to add those newly created instances to our Route 53 account
+    so that we can resolve those machines'' FQDN. To interact with AWS Route 53, we
+    will be using the `route53` module, which allows us to create entries, query entries,
+    and delete entries. To create a new entry, we will be using the following code:'
+  id: totrans-126
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们现在可以将这些新创建的实例添加到我们的 Route 53 账户中，以便解析这些机器的 FQDN。为了与 AWS Route 53 交互，我们将使用
+    `route53` 模块，该模块允许我们创建条目、查询条目和删除条目。要创建新的条目，我们将使用以下代码：
+- en: '[PRE7]'
+  id: totrans-127
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE7]'
+- en: 'So to create the entries for our servers, we will add the following code:'
+  id: totrans-128
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 因此，要为我们的服务器创建条目，我们将添加以下代码：
+- en: '[PRE8]'
+  id: totrans-129
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE8]'
+- en: Note
+  id: totrans-130
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: Since the database server does not have a public address, it makes no sense
+    to publish this machine in the public zone, so we have created this machine entry
+    only in the internal zone.
+  id: totrans-131
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于数据库服务器没有公共地址，将这台机器发布到公共区域没有意义，因此我们只在内部区域创建了这台机器的条目。
+- en: 'Putting it all together, the `playbooks/aws_simple_provision.yaml` will be
+    the following:'
+  id: totrans-132
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 综合起来，`playbooks/aws_simple_provision.yaml` 的内容将如下：
+- en: '[PRE9]'
+  id: totrans-133
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE9]'
+- en: 'Running it with `ansible-playbook playbooks/aws_simple_provision.yaml`, we
+    will have an output similar to:'
+  id: totrans-134
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 运行 `ansible-playbook playbooks/aws_simple_provision.yaml` 后，我们将得到类似于以下的输出：
+- en: '[PRE10]'
+  id: totrans-135
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE10]'
+- en: Complex AWS deployment
+  id: totrans-136
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 复杂的 AWS 部署
+- en: 'In this paragraph, we will slightly change the previous example to move one
+    of the web servers to another AZ within the same region. To do so, we are going
+    to make a new file in `playbooks/aws_complex_provision.yaml` which will be very
+    similar to the previous one, with one difference located in the part that helps
+    us provision the machines. In fact, we will use the following code instead of
+    the one we used on the previous run:'
+  id: totrans-137
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这一段中，我们将略微修改前面的示例，将其中一台 Web 服务器移动到同一区域的另一个 AZ（可用区）。为此，我们将在 `playbooks/aws_complex_provision.yaml`
+    中创建一个新文件，该文件与之前的文件非常相似，唯一的区别是在帮助我们配置机器的部分。实际上，我们将使用以下代码，而不是上次运行时使用的代码：
+- en: '[PRE11]'
+  id: totrans-138
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE11]'
+- en: As you can see, we have put the `vpc_subnet_id` in a variable, so that we can
+    use a different one for the `ws02` machine. Due to the fact that AWS already provides
+    two subnets by default (and every subnet is tied to a different AZ), it's enough
+    to use the following AZ. Security groups and Route 53 code does not need to be
+    changed since it does not work at a subnet/AZ level, but at a VPC level (for security
+    groups and internal Route 53 zone) or global level (for public Route 53).
+  id: totrans-139
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如您所见，我们已将 `vpc_subnet_id` 放入变量中，以便可以为 `ws02` 机器使用不同的子网。由于 AWS 默认提供两个子网（且每个子网绑定到不同的
+    AZ），因此使用以下 AZ 就足够了。安全组和 Route 53 代码无需更改，因为它们并不是在子网/AZ 层级上工作，而是在 VPC 层级（对于安全组和内部
+    Route 53 区域）或全局层级（对于公共 Route 53）上工作。
+- en: DigitalOcean
+  id: totrans-140
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: DigitalOcean
+- en: 'Compared to Amazon Web Services, DigitalOcean seems to be very incomplete.
+    DigitalOcean, until a few months ago only provided droplets, SSH key management,
+    and DNS management. At the time of writing this, DigitalOcean has very recently
+    launched an additional block storage service. The advantages of DigitalOcean compared
+    to many competitors are:'
+  id: totrans-141
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 与 Amazon Web Services 相比，DigitalOcean 看起来非常不完整。直到几个月前，DigitalOcean 只提供了 droplets、SSH
+    密钥管理和 DNS 管理。撰写本文时，DigitalOcean 最近刚刚推出了一个额外的块存储服务。与许多竞争对手相比，DigitalOcean 的优势包括：
+- en: Lower prices than AWS
+  id: totrans-142
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 价格低于 AWS
+- en: Very easy APIs
+  id: totrans-143
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 非常简便的 API
+- en: Very well documented APIs
+  id: totrans-144
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 有非常完善的 API 文档
+- en: The droplets are very similar to standard virtual machines (they don't do weird
+    customization)
+  id: totrans-145
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Droplets 非常类似于标准虚拟机（它们没有做奇怪的定制化）
+- en: The droplets are very quick to go up and down
+  id: totrans-146
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Droplets 启动和停止的速度非常快
+- en: Since DigitalOcean has a very simple networking stack, it's way more efficient
+    than the AWS one
+  id: totrans-147
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 由于 DigitalOcean 的网络架构非常简单，它比 AWS 更加高效
+- en: Droplets
+  id: totrans-148
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: Droplets（云主机）
+- en: Droplets are the main service offered by DigitalOcean and are compute instances
+    which are very similar to Amazon EC2 classic. DigitalOcean relies on the **Kernel
+    Virtual Machine** (**KVM**) to virtualize the machines, assuring very high performance
+    and security. Since they do not change KVM in any sensible way, and since KVM
+    is open source and available on any Linux machine, this allows system administrators
+    to create identical environments on private and public clouds. DigitalOcean droplets
+    will have one external IP and they can be eventually added to a virtual network
+    that will allow your machines to use internal IPs.
+  id: totrans-149
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 滴水（droplets）是DigitalOcean提供的主要服务，它们是计算实例，类似于Amazon EC2经典实例。DigitalOcean依赖**内核虚拟机**（**KVM**）来虚拟化机器，确保非常高的性能和安全性。由于它们不会以任何重要方式改变KVM，且KVM是开源的，且可以在任何Linux机器上使用，这使得系统管理员能够在私有和公共云中创建相同的环境。DigitalOcean的滴水（droplets）将拥有一个外部IP，并且可以最终被添加到一个虚拟网络中，从而允许您的机器使用内部IP。
+- en: Different from many other comparable services, DigitalOcean allows your droplets
+    to have IPv6 IPs in addition to the IPv4 ones. This service is free of charge.
+  id: totrans-150
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 与许多其他类似服务不同，DigitalOcean允许您的滴水（droplets）除了IPv4地址外，还可以拥有IPv6地址。此服务是免费的。
+- en: SSH key management
+  id: totrans-151
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: SSH密钥管理
+- en: Every time you want to create a droplet, you have to specify if you want a specific
+    SSH key assigned to the `root` user or if you want a password (which will have
+    to be changed at the first login). To be able to choose an SSH key, you need an
+    interface to upload it. DigitalOcean allows you to do this using a very simple
+    interface which allows you to list the current keys, as well as create and delete
+    keys.
+  id: totrans-152
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 每次创建滴水（droplet）时，您必须指定是否希望为`root`用户分配特定的SSH密钥，或者是否希望使用密码（在首次登录时需要更改）。为了能够选择SSH密钥，您需要一个界面来上传它。DigitalOcean允许您通过一个非常简单的界面来执行此操作，该界面可以列出当前的密钥，并且可以创建和删除密钥。
+- en: Private networking
+  id: totrans-153
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 私有网络
+- en: As mentioned in the droplet paragraph, DigitalOcean allows us to have a private
+    network where our machine can communicate with another. This allows segregation
+    of services (like a database service) only on the internal network to allow a
+    higher level of security. Since by default, MySQL binds on all available interfaces,
+    we will need to tweak the database role a little bit to only bind on the internal
+    network.
+  id: totrans-154
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如在滴水（droplet）段落中提到的，DigitalOcean允许我们拥有一个私有网络，在该网络中，我们的机器可以与另一台机器通信。这使得服务（如数据库服务）仅在内部网络上进行隔离，从而提高安全性。由于MySQL默认绑定在所有可用接口上，我们需要稍微调整数据库角色，以便只在内部网络上进行绑定。
+- en: 'To recognize the internal network from the external one there are many ways,
+    due to some DigitalOcean peculiarities:'
+  id: totrans-155
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要区分内部网络与外部网络，可以采用多种方式，这与DigitalOcean的一些特性有关：
+- en: Private networks are always in the `10.0.0.0/8` network, while public IPs are
+    never in that network
+  id: totrans-156
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 私有网络始终位于`10.0.0.0/8`网络中，而公共IP则从不位于该网络中。
+- en: The public network is always `eth0` while the private network is always `eth1`
+  id: totrans-157
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 公共网络始终是`eth0`，而私有网络始终是`eth1`。
+- en: Based on your portability needs, you can use either one of those strategies
+    to understand where to bind your services.
+  id: totrans-158
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 根据您的可移植性需求，您可以使用其中一种策略来理解应该将您的服务绑定到哪里。
+- en: Adding an SSH key in DigitalOcean
+  id: totrans-159
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 在DigitalOcean中添加SSH密钥
+- en: 'You need to have a DigitalOcean user with the credit card set up, and have
+    obtained API key. To perform those operations, you can use DigitalOcean web interface.
+    We can now start to use Ansible to add our SSH key to our DigitalOcean cloud.
+    To do so, we need to create a file called `playbooks/do_provision.yaml` with the
+    following structure:'
+  id: totrans-160
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 您需要拥有一个设置了信用卡的DigitalOcean用户，并获取API密钥。要执行这些操作，您可以使用DigitalOcean的Web界面。我们现在可以开始使用Ansible将我们的SSH密钥添加到DigitalOcean云中。为此，我们需要创建一个名为`playbooks/do_provision.yaml`的文件，结构如下：
+- en: '[PRE12]'
+  id: totrans-161
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE12]'
+- en: 'In my case, this is my file content:'
+  id: totrans-162
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在我的例子中，这是我的文件内容：
+- en: '[PRE13]'
+  id: totrans-163
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE13]'
+- en: 'Then we can execute it with:'
+  id: totrans-164
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后我们可以通过以下命令执行它：
+- en: '[PRE14]'
+  id: totrans-165
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE14]'
+- en: 'and you will have a result similar to the following:'
+  id: totrans-166
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 您将得到类似以下的结果：
+- en: '[PRE15]'
+  id: totrans-167
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE15]'
+- en: This task is idempotent so we can execute it multiple times. In case the key
+    has already been uploaded, the SSH key ID will be returned at every run.
+  id: totrans-168
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个任务是幂等的，因此我们可以多次执行它。如果密钥已经上传，SSH密钥ID将在每次运行时返回。
+- en: Deployment in DigitalOcean
+  id: totrans-169
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 在DigitalOcean中的部署
+- en: At the time of writing, the only way to create a droplet in Ansible is by using
+    the `digital_ocean` module which could be soon deprecated since many of its features
+    are now done in a better, cleaner way by other modules and there is already a
+    bug on Ansible bug tracker to track its complete rewrite and possible deprecation.
+    My guess is that the new module will be called `digital_ocean_droplet` and will
+    have a similar syntax, but at the moment there is no code so it's just my guess.
+  id: totrans-170
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在写作时，创建一个 droplet 的唯一方法是使用 `digital_ocean` 模块，但该模块很快可能会被弃用，因为许多功能现在已通过其他模块以更好的、更清晰的方式完成，并且在
+    Ansible 的 bug 跟踪系统中已经有一个 bug，用于跟踪其完整重写和可能的弃用。我猜测新模块可能会叫做 `digital_ocean_droplet`，并且会有类似的语法，但目前没有相关代码，所以这只是我的猜测。
+- en: 'To create the droplets, we will have to use the `digital_ocean` module with
+    a syntax similar to the following:'
+  id: totrans-171
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了创建 droplet，我们将必须使用 `digital_ocean` 模块，语法类似于以下内容：
+- en: '[PRE16]'
+  id: totrans-172
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE16]'
+- en: 'To make sure that all our provisioning is done completely and in a sane way,
+    I always suggest creating one single provision file for the whole infrastructure.
+    So, in my case, I''ll add the following task to the `playbooks/do_provision.yaml`
+    file:'
+  id: totrans-173
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了确保我们的配置完全且以合理的方式完成，我总是建议为整个基础设施创建一个单一的配置文件。所以，在我的案例中，我将以下任务添加到 `playbooks/do_provision.yaml`
+    文件中：
+- en: '[PRE17]'
+  id: totrans-174
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE17]'
+- en: 'After this, we can add the domain with the `digital_ocean_domain` module:'
+  id: totrans-175
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 之后，我们可以使用 `digital_ocean_domain` 模块添加域名：
+- en: '[PRE18]'
+  id: totrans-176
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE18]'
+- en: 'So, putting all this together, our `playbooks/do_provision.yaml` will look
+    like this:'
+  id: totrans-177
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 所以，将所有内容整合起来，我们的 `playbooks/do_provision.yaml` 文件将如下所示：
+- en: '[PRE19]'
+  id: totrans-178
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE19]'
+- en: 'So we can now run it with the following command:'
+  id: totrans-179
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们可以通过以下命令运行它：
+- en: '[PRE20]'
+  id: totrans-180
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE20]'
+- en: 'We will see a result similar to the following:'
+  id: totrans-181
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将看到类似于以下的结果：
+- en: '[PRE21]'
+  id: totrans-182
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE21]'
+- en: Summary
+  id: totrans-183
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 总结
+- en: In this chapter, we have seen how we can provision our machines in both the
+    AWS cloud and the DigitalOcean one. In the case of the AWS cloud, we have seen
+    two different examples, one very simple and one slightly more complex.
+  id: totrans-184
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这一章中，我们已经看到如何在 AWS 云和 DigitalOcean 云中配置我们的机器。在 AWS 云的案例中，我们看到了两个不同的例子，一个非常简单，另一个稍微复杂一些。
+- en: In the next chapter, we will talk about getting notified by Ansible if something
+    went wrong.
+  id: totrans-185
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一章中，我们将讨论如何在 Ansible 运行出错时收到通知。

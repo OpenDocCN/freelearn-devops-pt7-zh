@@ -1,0 +1,881 @@
+- en: Chapter 6. Unleash the Beast – Git on Text-based Files
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 第六章：释放野兽 - Git与基于文本的文件
+- en: '*We have seen two different modes of working with our content managed by Git
+    in earlier chapters, with a gaming analogy calling it the single/solo player mode
+    and multiplayer mode.*'
+  id: totrans-1
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '*我们在之前的章节中看到了两种不同的与Git管理内容的工作模式，用游戏类比分别称为单人模式和多人模式。*'
+- en: '*Hold on to your seats. This chapter is an answer to your long awaited question:
+    What about the real multiplayer mode with several people playing in parallel?
+    In other words, having multiple people work on the same stuff at the same time.*'
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '*请系好安全带。本章将解答你长久以来的疑问：多人模式是如何工作的，几个人可以并行玩耍？换句话说，就是让多人同时在同一内容上工作。*'
+- en: 'The concepts that we are going to learn about in this chapter are as follows:'
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章将学习的概念如下：
+- en: Merging and
+  id: totrans-4
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 合并与
+- en: Resolving conflicts, making your way through the content in the way you or your
+    team want to
+  id: totrans-5
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 解决冲突，按你或团队的方式处理内容
+- en: Git for text-based files – an introduction
+  id: totrans-6
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Git用于基于文本的文件 - 介绍
+- en: 'Git arms itself with several functionalities when it comes to handling text
+    files. On a higher level let''s understand the different file types and what they
+    really mean using the following stack:'
+  id: totrans-7
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Git在处理文本文件时配备了多种功能。从更高层次理解，我们可以通过以下栈来了解不同的文件类型及其含义：
+- en: '![Git for text-based files – an introduction](img/7522_06_01.jpg)'
+  id: totrans-8
+  prefs: []
+  type: TYPE_IMG
+  zh: '![Git用于基于文本的文件 - 介绍](img/7522_06_01.jpg)'
+- en: Going from the top to the bottom, it is a layered approach starting with how
+    a user sees a file, how a computer sees it, until its storage at the bottommost
+    layer.
+  id: totrans-9
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 从上到下，它是一种分层的方法，从用户看到文件的方式，到计算机如何看到文件，直到文件在最底层的存储。
+- en: Note
+  id: totrans-10
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: '**Binary data**: Any file whose contents can be read only through specific
+    programs, such as Microsoft Word for documents and picture viewer for images,
+    is called binary data/values.'
+  id: totrans-11
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**二进制数据**：任何只能通过特定程序（如Microsoft Word用于文档、图片查看器用于图片）读取内容的文件，称为二进制数据/值。'
+- en: '**Text data**: Any file, irrespective of its extension or nature, whose content
+    is pure text and can be opened with a normal text editor like notepad or WordPad
+    is considered to contain text data.'
+  id: totrans-12
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**文本数据**：任何文件，不论其扩展名或性质如何，只要内容是纯文本，可以用普通文本编辑器如记事本或WordPad打开的文件，都被认为是包含文本数据的文件。'
+- en: 'To quote an example for giving more clarity, open up your `.git` directory
+    inside your project, and you will see a file structure as shown in the following
+    screenshot:'
+  id: totrans-13
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了更清楚地说明问题，打开项目中的`.git`目录，你将看到如下面截图所示的文件结构：
+- en: '![Git for text-based files – an introduction](img/7522_06_02.jpg)'
+  id: totrans-14
+  prefs: []
+  type: TYPE_IMG
+  zh: '![Git用于基于文本的文件 - 介绍](img/7522_06_02.jpg)'
+- en: Here the file called **index** is considered to contain binary data whereas
+    the files **COMMIT_EDITMSG**, **config**, **description**, and **HEAD** are considered
+    to have textual data. Open them with your text editor and you'll understand why.
+  id: totrans-15
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这里名为**index**的文件被认为包含二进制数据，而**COMMIT_EDITMSG**、**config**、**description**和**HEAD**这些文件被认为包含文本数据。用文本编辑器打开它们，你就会明白为什么。
+- en: Note
+  id: totrans-16
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: Make sure you don't alter anything in those files or else you might end up with
+    a screwed up version of your repository, which might need a few maneuvers to fix,
+    which we are not interested in at the moment.
+  id: totrans-17
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 确保你不要更改这些文件的任何内容，否则你可能会弄乱仓库的版本，修复这些问题可能需要一些操作，但目前我们不感兴趣。
+- en: As another example, you can also try opening an image file with a text editor
+    to view its raw content.
+  id: totrans-18
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 另一个例子是，你可以尝试用文本编辑器打开一个图像文件，以查看它的原始内容。
+- en: This is the basic difference that we were talking about. Let's talk more about
+    it once we have understood the concept of **branching** and **merging**.
+  id: totrans-19
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这就是我们之前提到的基本区别。在我们理解了**分支**和**合并**的概念后，接下来我们可以进一步讨论这个问题。
+- en: Multiplayer mode – multiple players at a time
+  id: totrans-20
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 多人模式 – 多个玩家同时在线
+- en: Let's continue our gaming analogy from earlier chapters to relate to the multiplayer
+    mode concept we have learned so far.
+  id: totrans-21
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们继续延续之前章节中的游戏类比，以便更好地理解目前所学到的多人模式概念。
+- en: Multiple players – one at a time
+  id: totrans-22
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 多个玩家 – 一次一个
+- en: Think of your favorite adventure game that has multiple levels. Consider a scenario
+    where you are stuck in a level without knowing how to proceed forward. After desperate
+    attempts, which ended in vain, you suddenly realize that your friend is an expert
+    on that level, and you want to use your friend's help. So you quickly share the
+    last saved state of the game file with him with which he can finish that level
+    for you, save the state, and push the file back to you, which will enable you
+    to continue the game.
+  id: totrans-23
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 想象一下你最喜欢的冒险游戏，它有多个关卡。设想一个情景，你在某一关卡卡住了，不知道如何继续。经过一番徒劳的尝试后，你突然意识到你的朋友是这个关卡的专家，你想寻求朋友的帮助。于是你迅速将最后保存的游戏文件状态分享给他，让他帮你完成这一关，保存状态后再把文件推送回给你，这样你就能继续进行游戏。
+- en: The same situation can apply to you when you are working with data files, especially
+    when you are working as a team where different people take care of different parts
+    of a bigger task to produce a single result. Another possibility might be that
+    you want the domain experts to handle specific portions of the work, and so on.
+  id: totrans-24
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 同样的情况也适用于你处理数据文件时，特别是在团队协作中，大家分工不同，共同完成更大任务以得出最终结果。另一种可能性是你希望领域专家处理特定的工作部分，等等。
+- en: This also means that having multiple people working on the same document one
+    topic at a time, where one passes the file to another to get the work done in
+    a sequence, might go smoothly, but having multiple people working on the same
+    file on the same topic might end up in chaos when it comes to files containing
+    binary data.
+  id: totrans-25
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这也意味着，当多人在同一文件上处理同一话题时，文件按照顺序传递给其他人逐一完成工作，可能会顺利进行，但当多个不同的人在同一个文件上处理同一话题时，尤其是对于包含二进制数据的文件，可能会变得混乱。
+- en: Multiple players – all hands on deck (many at a time)
+  id: totrans-26
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 多个玩家 – 众志成城（同时多人）
+- en: I'm a big fan of **first person shooter** (**FPS**) games. *Counter-Strike*
+    stays at the top of my list even today. Let's take *Counter-Strike* or any other
+    team game for comparison here. Each team member will be a specialist in not only
+    one but two or three weapons to adapt to situations. And when required, they pitch
+    in to take out the opponent together and complete the objective.
+  id: totrans-27
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我是**第一人称射击**（**FPS**）游戏的忠实粉丝。即便今天，*反恐精英*仍然排在我的游戏榜单的顶端。我们在这里以*反恐精英*或其他任何团队游戏为例。每个队员不仅精通一种武器，还会精通两三种武器，以适应不同的情况。当需要时，他们会协同作战，共同击败对手并完成目标。
+- en: Similarly, when you deal with textual data in files, you can have multiple people
+    collaboratively working on the same file, topic, and line, and manage to produce
+    a unified output with Git. Let's learn how to put this feature to better use.
+  id: totrans-28
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 同样，当你处理文件中的文本数据时，多个不同的人可以协作编辑同一个文件、同一个话题、同一行内容，并利用 Git 管理最终产出。让我们学习如何更好地利用这一特性。
+- en: Sharing your repository
+  id: totrans-29
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 分享你的仓库
+- en: There are two commonly used modes to share your repository with others.
+  id: totrans-30
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有两种常用的方式可以与他人分享你的仓库。
+- en: Intranet
+  id: totrans-31
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 内联网
+- en: Internet
+  id: totrans-32
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 互联网
+- en: Having got used to the way of sharing over the Internet using Bitbucket, this
+    time let's emulate sharing over the intranet using the bare repository concepts
+    we learned in [Chapter 4](ch04.html "Chapter 4. Split the Load – Distributed Working
+    with Git"), *Split the Load – Distributed Working with Git*.
+  id: totrans-33
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 已经习惯通过 Bitbucket 在互联网上进行分享的你，这次让我们模仿使用我们在[第4章](ch04.html "第4章. 分担负载 – 使用 Git
+    进行分布式协作")中学到的裸仓库概念，通过内联网进行分享，*分担负载 – 使用 Git 进行分布式协作*。
+- en: Note
+  id: totrans-34
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: If you are not able to recall, I suggest you go through the *Staying local –
+    share over intranet* topic in [Chapter 4](ch04.html "Chapter 4. Split the Load
+    – Distributed Working with Git"), *Split the Load – Distributed Working with Git*
+    to understand what the bare repository is, why we need one, and how it operates.
+  id: totrans-35
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你无法回忆起相关内容，我建议你阅读[第4章](ch04.html "第4章. 分担负载 – 使用 Git 进行分布式协作")中的*保持本地 – 通过内联网分享*部分，以了解什么是裸仓库，我们为什么需要它，以及它是如何操作的。
+- en: Time for action – getting ready to share
+  id: totrans-36
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 行动时间 – 准备分享
+- en: To keep things clear and simple we shall start with a fresh instance with minimal
+    data, so that the changes are evident.
+  id: totrans-37
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了保持清晰和简洁，我们将从一个最小数据的新实例开始，这样变化会更加显著。
+- en: Let's create a new directory and call it `collab_source`.
+  id: totrans-38
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 让我们创建一个新的目录并命名为`collab_source`。
+- en: Within the directory create a new text file called `mycontent.txt`.
+  id: totrans-39
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在目录中创建一个新的文本文件，命名为`mycontent.txt`。
+- en: 'Open up the text file that you just created, and enter the following:'
+  id: totrans-40
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 打开你刚创建的文本文件，并输入以下内容：
+- en: '[PRE0]'
+  id: totrans-41
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: Save and close the file.
+  id: totrans-42
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 保存并关闭文件。
+- en: Now make the `collab_source` directory a Git repository; then add the file `mycontent.txt`
+    and make a commit with a commit message saying "Base commit from source".
+  id: totrans-43
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在，将 `collab_source` 目录变成 Git 仓库；然后添加文件 `mycontent.txt` 并提交，提交信息为 "从源仓库的基础提交"。
+- en: Now this copy will reside in your machine for your own manipulation. Let's create
+    a bare repository from your copy to put it in a common place from where your team
+    members can clone it to have their own copy of the files.
+  id: totrans-44
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在，这个副本将存放在您的机器上，以便您进行操作。让我们从您的副本中创建一个裸仓库，并将其放置在一个公共位置，您的团队成员可以从这个位置克隆，以获取他们自己的文件副本。
+- en: 'For creating a bare clone of your existing repository, use the following command:'
+  id: totrans-45
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 若要创建现有仓库的裸克隆，请使用以下命令：
+- en: '[PRE1]'
+  id: totrans-46
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: Note
+  id: totrans-47
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: For this example, to convey the concept I have cloned the `bare_collab` repository
+    in my local system itself instead of a common network share directory. But the
+    procedures are one and the same.
+  id: totrans-48
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这个例子中，为了传达概念，我已经将 `bare_collab` 仓库克隆到我本地系统，而不是公共网络共享目录。但操作流程是一样的。
+- en: The main aim of this topic is to convey the multiuser concept so I have chosen
+    only one mode (CLI) of execution. Mostly the GUI equivalent of these commands
+    is already known to you. In case of an exception a quick note on the GUI options
+    is provided.
+  id: totrans-49
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本主题的主要目的是传达多用户概念，因此我只选择了执行模式（CLI）。通常情况下，您应该已经知道这些命令的图形界面（GUI）对应操作。如果有例外情况，我会提供一个简要说明。
+- en: '*What just happened?*'
+  id: totrans-50
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: '*刚刚发生了什么？*'
+- en: 'We have created a source repository with our content and then cloned a bare
+    repository out of our source repository, which in turn has opened up the clone
+    option for our team members. If you have followed the preceding steps, you should
+    see a structure like the one shown in the following figure:'
+  id: totrans-51
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们创建了一个源仓库并添加了内容，然后从源仓库克隆了一个裸仓库，这样就为我们的团队成员提供了克隆选项。如果您按照前面的步骤操作，您应该会看到如下图所示的结构：
+- en: '![What just happened?](img/7522_06_03.jpg)'
+  id: totrans-52
+  prefs: []
+  type: TYPE_IMG
+  zh: '![刚刚发生了什么？](img/7522_06_03.jpg)'
+- en: Time for action – distributed work force
+  id: totrans-53
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 行动时间 - 分布式工作团队
+- en: Now to get their own copy of the files, Bob and Lisa, our fictitious team members,
+    can execute the usual `git clone` command with the source as the `bare_collab`
+    repository and the destination as their preferred location.
+  id: totrans-54
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，Bob 和 Lisa（我们的虚拟团队成员）可以执行常规的 `git clone` 命令，其中源是 `bare_collab` 仓库，目标是他们选择的本地位置，以获取文件的副本。
+- en: '[PRE2]'
+  id: totrans-55
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: '*What just happened?*'
+  id: totrans-56
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: '*刚刚发生了什么？*'
+- en: 'Unless Git reported an error, Bob and Lisa have cloned the files from our bare
+    repository named `bare_collab`. Now, the structure of how these repositories evolved
+    is shown in the following figure:'
+  id: totrans-57
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 除非 Git 报告了错误，否则 Bob 和 Lisa 已经从我们名为 `bare_collab` 的裸仓库克隆了文件。现在，这些仓库的演变结构如下图所示：
+- en: '![What just happened?](img/7522OS_06_04.jpg)'
+  id: totrans-58
+  prefs: []
+  type: TYPE_IMG
+  zh: '![刚刚发生了什么？](img/7522OS_06_04.jpg)'
+- en: 'And how the commit tree looks like is shown in the following figure:'
+  id: totrans-59
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如下图所示，提交树的结构是这样的：
+- en: '![What just happened?](img/7522OS_06_05.jpg)'
+  id: totrans-60
+  prefs: []
+  type: TYPE_IMG
+  zh: '![刚刚发生了什么？](img/7522OS_06_05.jpg)'
+- en: Time for action – Bob's changes
+  id: totrans-61
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 行动时间 - Bob 的更改
+- en: 'Now Bob feels that he needs to change the content of the file. So he opens
+    and changes the first line''s text to "First line from source - Changed by Bob"
+    so that the content of the file looks like the following lines:'
+  id: totrans-62
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在，Bob 觉得需要修改文件内容。因此，他打开文件并将第一行的文本更改为 "源文件的第一行 - Bob 更改"，这样文件内容如下所示：
+- en: '[PRE3]'
+  id: totrans-63
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: Then he adds the change and commits the same as shown in the following screenshot:![Time
+    for action – Bob's changes](img/7522_06_06.jpg)
+  id: totrans-64
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 然后他添加了更改并提交，如下图所示：![行动时间 - Bob 的更改](img/7522_06_06.jpg)
+- en: In the interest of sharing the change with team members, he wants to push his
+    changes to the common bare repository but as a rule of thumb, when working with
+    multiple people on Git, pull before pushing so as to incorporate the changes first
+    in case somebody has already pushed before you. Bob does a `git pull` *first*
+    and *then* a `git push` as shown in the following screenshot:![Time for action
+    – Bob's changes](img/7522_06_07.jpg)
+  id: totrans-65
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 为了与团队成员共享更改，他希望将自己的更改推送到公共的裸仓库，但根据经验法则，在与多人合作时，使用 Git 时，推送前先拉取，以便将他人的更改合并进来，防止别人先于你推送更改。Bob
+    先执行了 `git pull`，然后再执行了 `git push`，如下图所示：![行动时间 - Bob 的更改](img/7522_06_07.jpg)
+- en: '*What just happened?*'
+  id: totrans-66
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: '*刚刚发生了什么？*'
+- en: 'Because of this push operation, the bare repository has progressed its level
+    along with Bob''s changes whereas the repository at our machine (`collab_source`)
+    and Lisa''s are still behind. Now the commit tree looks like the following:'
+  id: totrans-67
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于这次推送操作，裸仓库已更新，并包含了 Bob 的更改，而我们机器上的仓库（`collab_source`）以及 Lisa 的仓库仍然落后。现在，提交树的结构如下：
+- en: '![What just happened?](img/7522OS_06_08.jpg)'
+  id: totrans-68
+  prefs: []
+  type: TYPE_IMG
+  zh: '![刚刚发生了什么？](img/7522OS_06_08.jpg)'
+- en: Time for action – Lisa's changes
+  id: totrans-69
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 行动时刻 – 莉莎的更改
+- en: 'While Bob was doing all these operations, Lisa made her own changes. She also
+    happened to change the first line of the file and appended one more line to it,
+    which made the content of the file look like the following:'
+  id: totrans-70
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在鲍勃进行所有这些操作时，莉莎也做了自己的更改。恰巧她修改了文件的第一行，并在其后追加了一行，这使得文件内容变成了如下所示：
+- en: '[PRE4]'
+  id: totrans-71
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: Then she adds the change and commits the same as shown in the following screenshot:![Time
+    for action – Lisa's changes](img/7522_06_09.jpg)
+  id: totrans-72
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 然后她添加更改并提交，正如以下截图所示：![行动时刻 – 莉莎的更改](img/7522_06_09.jpg)
+- en: In the interest of sharing the change with team members, Lisa wants to push
+    her changes to the common bare repository, but as the rule of the thumb, when
+    working with multiple people, do a pull before pushing so as to incorporate the
+    changes first in case somebody has already pushed before you. She does a `git
+    pull` *first*, which gives her the following error message:![Time for action –
+    Lisa's changes](img/7522_06_10.jpg)
+  id: totrans-73
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 为了与团队成员共享更改，莉莎想将她的更改推送到公共裸仓库，但根据经验法则，在多人合作时，推送之前需要先拉取，以便在别人已经推送之前先整合对方的更改。她首先执行了`git
+    pull`，然后收到了以下错误信息：![行动时刻 – 莉莎的更改](img/7522_06_10.jpg)
+- en: '*What just happened?*'
+  id: totrans-74
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: '*刚刚发生了什么？*'
+- en: Lisa made changes, added, committed, and when she tried to pull from the central
+    `bare_collab` repository, got bumped into a merge conflict.
+  id: totrans-75
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 莉莎进行了更改、添加并提交，当她尝试从中央`bare_collab`仓库拉取时，遇到了合并冲突。
+- en: If you focus on the last three lines, it would be evident why the pull got stopped.
+    Git automatically tried to merge the changes Lisa made with the changes already
+    pushed by Bob in the file `mycontent.txt`. Because both have changed the first
+    line, Git smartly stops the merging and asks us to fix the conflicts.
+  id: totrans-76
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你专注于最后三行，就能清楚地看出为什么拉取操作被阻止。Git自动尝试将莉莎所做的更改与鲍勃已经推送的更改合并，因为两人都修改了第一行，Git巧妙地停止了合并，并要求我们解决冲突。
+- en: Time for action – Lisa examines the merge conflict
+  id: totrans-77
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 行动时刻 – 莉莎检查合并冲突
+- en: 'Lisa opens up the file to see the conflict that is stopping her and finds a
+    pattern as follows:'
+  id: totrans-78
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 莉莎打开文件查看导致她无法继续的冲突，并发现了如下的模式：
+- en: '[PRE5]'
+  id: totrans-79
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: '*What just happened?*'
+  id: totrans-80
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: '*刚刚发生了什么？*'
+- en: The first line, which has continuous left arrows with the word `HEAD` is nothing
+    but Lisa's current position in the repository. The next line shows the changes
+    made by her to the file.
+  id: totrans-81
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 第一行上显示的连续左箭头和`HEAD`字样只是莉莎当前在仓库中的位置。下一行显示了她对文件所做的更改。
+- en: This is followed by continuous `=` signs, which marks the end of Lisa's content
+    and beginning of Bob's content. It's a separator, which is immediately followed
+    by Bob's content in the next line, which is then followed by the commit ID generated
+    when Bob made that change.
+  id: totrans-82
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 之后是连续的`=`符号，标志着莉莎内容的结束和鲍勃内容的开始。它是一个分隔符，紧接着下一行显示的是鲍勃的内容，然后是鲍勃进行该更改时生成的提交ID。
+- en: Time for action – Lisa resolves the merge conflict
+  id: totrans-83
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 行动时刻 – 莉莎解决合并冲突
+- en: 'Perform the following steps:'
+  id: totrans-84
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 执行以下步骤：
+- en: Resolving the conflict is a very simple procedure. You are given four choices.
+  id: totrans-85
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 解决冲突是一个非常简单的过程。你有四个选择。
+- en: Specify an order and have both the changes (which in our case are Lisa's and
+    Bob's changes)
+  id: totrans-86
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 指定顺序并合并两者的更改（在我们这个例子中是莉莎和鲍勃的更改）
+- en: Delete the existing change and impose yours
+  id: totrans-87
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 删除现有更改并应用你的更改
+- en: Delete your change and apply the change fetched
+  id: totrans-88
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 删除你的更改并应用拉取的更改
+- en: Delete both
+  id: totrans-89
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 删除两者
+- en: However, the fourth option is very unlikely to happen.
+  id: totrans-90
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 然而，第四个选项不太可能发生。
+- en: Note
+  id: totrans-91
+  prefs:
+  - PREF_IND
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: To perform any of these operations on the content, one can use a common text
+    editor or an interactive merge tool, which will give you three views (local, base,
+    and remote) using which you need to solve your commits.
+  id: totrans-92
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 要执行这些操作，可以使用常见的文本编辑器或交互式合并工具，它会为你提供三种视图（本地、基础和远程），你需要利用这些视图来解决提交的冲突。
+- en: '**Local view** is the current modified version, **base** is our earlier version
+    before modification, which gets decided by Git automatically, and **remote** is
+    the modified remote version, which we are trying to fetch and merge. You need
+    to move and order your changes along with the remote version using the arrows
+    and indicators available. A screenshot of how an interactive merge tool (I have
+    showcased **meld**, which is a python based utility) looks as follows:'
+  id: totrans-93
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '**本地视图** 是当前修改版本，**基础** 是我们在修改之前的早期版本，由 Git 自动决定，并且**远程** 是修改的远程版本，我们正在尝试获取和合并。您需要使用可用的箭头和指示器移动和排序您的更改以及远程版本。互动合并工具的屏幕截图（我展示了基于
+    Python 的**meld**实用工具）如下所示：'
+- en: '![Time for action – Lisa resolves the merge conflict](img/7522_06_11.jpg)'
+  id: totrans-94
+  prefs:
+  - PREF_IND
+  type: TYPE_IMG
+  zh: '![行动时间 - Lisa 解决合并冲突](img/7522_06_11.jpg)'
+- en: Note
+  id: totrans-95
+  prefs:
+  - PREF_IND
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: We will use a normal text editor to solve this situation now, so as to understand
+    the underlying concept.
+  id: totrans-96
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 现在，我们将使用普通文本编辑器来解决这种情况，以便理解其中的概念。
+- en: Lisa is going to go with the first option of ordering and incorporating both
+    the changes; let's see how she does it.
+  id: totrans-97
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: Lisa 将选择第一种选项来排序和整合这两种更改；让我们看看她是如何做到的。
+- en: 'Lisa feels that having Bob''s changes up the order is better followed by hers.
+    After deciding the order, she opens the file using an ordinary text editor and
+    changes the content as follows:'
+  id: totrans-98
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: Lisa 觉得将 Bob 的更改放在前面更好。在决定顺序之后，她使用普通文本编辑器打开文件，并按以下方式更改内容：
+- en: '[PRE6]'
+  id: totrans-99
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: 'After making the previously mentioned changes, she *adds* the change and *commits*
+    it with the message "Merge - Posted Bob''s change to the top followed by mine"
+    as shown in the following screenshot:'
+  id: totrans-100
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在进行了上述更改之后，她*添加*了更改，并将其提交，并附带消息“合并 - 先放置 Bob 的更改，然后是我的”，如下截图所示：
+- en: '![Time for action – Lisa resolves the merge conflict](img/7522_06_12.jpg)'
+  id: totrans-101
+  prefs:
+  - PREF_IND
+  type: TYPE_IMG
+  zh: '![行动时间 - Lisa 解决合并冲突](img/7522_06_12.jpg)'
+- en: Following this, Lisa pushes her commits to our central bare repository (`bare_collab`)
+    with the usual `push` command, as shown in the following screenshot:![Time for
+    action – Lisa resolves the merge conflict](img/7522_06_13.jpg)
+  id: totrans-102
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在此之后，Lisa 使用常规的`push`命令将她的提交推送到我们的中央裸仓库（`bare_collab`），如下截图所示：![行动时间 - Lisa
+    解决合并冲突](img/7522_06_13.jpg)
+- en: '*What just happened?*'
+  id: totrans-103
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: '*刚才发生了什么？*'
+- en: Lisa has successfully resolved the conflicts and made her changes available
+    to other members of the team by pushing the changes to the central bare repository.
+  id: totrans-104
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Lisa 已成功解决冲突，并通过将更改推送到中央裸仓库使其可用于团队的其他成员。
+- en: 'This should give a commit tree structure as shown in the following flow diagram:'
+  id: totrans-105
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这应该给出一个如下流程图所示的提交树结构：
+- en: '![What just happened?](img/7522OS_06_14.jpg)'
+  id: totrans-106
+  prefs: []
+  type: TYPE_IMG
+  zh: '![刚才发生了什么？](img/7522OS_06_14.jpg)'
+- en: As you can see from the diagram, C3 (the local commit made by Lisa) and C2 (the
+    commit made and shared by Bob) are being merged to form a new commit called merge
+    commit C4.
+  id: totrans-107
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如图中所示，C3（由 Lisa 提交的本地提交）和 C2（由 Bob 提交并共享的提交）正在合并以形成一个称为合并提交 C4 的新提交。
+- en: At any given point of time you can get such graphical representations both from
+    the GUI as well as CLI mode.
+  id: totrans-108
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在任何给定时间点，您都可以从 GUI 模式和 CLI 模式获取这些图形表示。
+- en: GUI mode – get the repository's history graph
+  id: totrans-109
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: GUI 模式 - 获取仓库的历史图表
+- en: 'Select **Visualize all branch history** form the **Repository** menu of Git
+    Gui. Once Gitk opens, at the top left you have your repository''s history visualization.
+    Lisa''s visualization is as shown in the following screenshot:'
+  id: totrans-110
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 从 Git Gui 的 **Repository** 菜单中选择**Visualize all branch history**。一旦 Gitk 打开，左上角即可看到您的仓库历史可视化。Lisa
+    的可视化如下截图所示：
+- en: '![GUI mode – get the repository''s history graph](img/7522_06_15.jpg)'
+  id: totrans-111
+  prefs: []
+  type: TYPE_IMG
+  zh: '![GUI 模式 - 获取仓库的历史图表](img/7522_06_15.jpg)'
+- en: CLI mode – get the repository's history graph
+  id: totrans-112
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: CLI 模式 - 获取仓库的历史图表
+- en: 'In your terminal/console, switch to the Git repository''s location and then
+    use the following command to get a tree representation of its history:'
+  id: totrans-113
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在您的终端/控制台中，切换到 Git 仓库的位置，然后使用以下命令获取其历史的树形表示：
+- en: '[PRE7]'
+  id: totrans-114
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE7]'
+- en: 'You will see a representation as shown in the following screenshot:'
+  id: totrans-115
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 您将看到如下截图所示的表示：
+- en: '![CLI mode – get the repository''s history graph](img/7522_06_16.jpg)'
+  id: totrans-116
+  prefs: []
+  type: TYPE_IMG
+  zh: '![CLI 模式 - 获取仓库的历史图表](img/7522_06_16.jpg)'
+- en: Time for action – team members get sync with the central bare repo
+  id: totrans-117
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 行动时间 - 团队成员与中央裸仓库同步
+- en: Bob feels it's been a while since he received updates from the bare repos so
+    he pulls to get the latest changes, with the results being as follows:![Time for
+    action – team members get sync with the central bare repo](img/7522_06_17.jpg)
+  id: totrans-118
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: Bob 觉得已经有一段时间没有从裸仓库接收到更新了，于是他执行 pull 操作来获取最新的更改，结果如下所示：![行动时间 - 团队成员与中央裸仓库同步](img/7522_06_17.jpg)
+- en: 'Well, finally let''s not forget the source repository, mother of all these
+    repositories, for the update. Before doing a `git pull` from there we should point
+    to the origin as the bare repository, and then perform a pull operation. The commands
+    are as follows:'
+  id: totrans-119
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 好的，最后别忘了源仓库，所有这些仓库的母仓库，用于更新。在从那里执行 `git pull` 之前，我们应当将 origin 指向裸仓库，然后执行 pull
+    操作。命令如下：
+- en: '[PRE8]'
+  id: totrans-120
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE8]'
+- en: 'This gives us an output as shown in the following screenshot:'
+  id: totrans-121
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 这给我们提供了如下所示的输出：
+- en: '![Time for action – team members get sync with the central bare repo](img/7522_06_18.jpg)'
+  id: totrans-122
+  prefs:
+  - PREF_IND
+  type: TYPE_IMG
+  zh: '![行动时间 - 团队成员与中央裸仓库同步](img/7522_06_18.jpg)'
+- en: As we have learned in *Time for action – adding a remote origin* in [Chapter
+    4](ch04.html "Chapter 4. Split the Load – Distributed Working with Git"), *Split
+    the Load – Distributed Working with GIT*, adding a remote would be a one time
+    operation.
+  id: totrans-123
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如我们在 [第4章](ch04.html "第4章. 分担负载 – 使用 Git 的分布式工作")的 *行动时间 – 添加远程源* 中学到的，*分担负载
+    – 使用 Git 的分布式工作*，添加远程仓库是一次性的操作。
+- en: We can manually open the file or do a `git log` to see the changes taking effect
+    across repositories.
+  id: totrans-124
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以手动打开文件或执行 `git log` 来查看更改在不同仓库中的生效情况。
+- en: '*What just happened?*'
+  id: totrans-125
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: '*刚刚发生了什么？*'
+- en: We have successfully synced the changes across different repositories made by
+    different people on the same file, and the same line at the same time thereby
+    achieving the promised collaborative work environment.
+  id: totrans-126
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们成功地将不同人员在同一个文件、同一行上同时所做的更改同步到了不同的仓库，从而实现了预期的协作工作环境。
+- en: Summary
+  id: totrans-127
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 总结
+- en: 'We have learned:'
+  id: totrans-128
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们已经学到了：
+- en: The difference between files' content
+  id: totrans-129
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 文件内容的差异
+- en: How powerful Git can be on textual files
+  id: totrans-130
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Git 在文本文件上的强大功能
+- en: Additionally, we have also learned how to merge and manage conflicts occurring
+    while merging.
+  id: totrans-131
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 此外，我们还学会了如何在合并时处理和管理冲突。
+- en: Not only that, we did a role play and practically learned how to set up a collaborative
+    work environment with multiple people working on the same file, topic, and even
+    the same line. We also learned how to integrate work from different people together
+    to form one output.
+  id: totrans-132
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 不仅如此，我们还进行了一次角色扮演，实践学习了如何建立一个协作工作环境，多个成员可以在同一个文件、同一个主题，甚至同一行上进行工作。我们还学会了如何将不同人员的工作整合在一起，形成一个最终的输出。

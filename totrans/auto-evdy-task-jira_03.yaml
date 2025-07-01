@@ -1,0 +1,2610 @@
+- en: '*Chapter 2*: Automating Jira Issues'
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '*第二章*：自动化Jira问题'
+- en: In the previous chapter, we introduced you to some of the key concepts of automation
+    rules in Jira and looked at the basic building blocks of rules. To really get
+    to grips with automation rules, we need to understand how we can use those building
+    blocks to automate issues within Jira, and this is what this chapter is all about.
+  id: totrans-1
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在上一章中，我们介绍了Jira自动化规则的一些关键概念，并探讨了规则的基本构建块。要真正掌握自动化规则，我们需要理解如何使用这些构建块在Jira中自动化处理问题，本章正是讲解这一内容的。
+- en: Here, we will learn how the various conditions work and when to use each of
+    them. We will also cover how we can work with related issues, such as sub-tasks,
+    linked issues, and stories within Epics. Importantly, you will learn how to use
+    issue actions to make changes to your issue fields.
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这里，我们将学习各种条件的工作原理以及何时使用每种条件。我们还将讨论如何处理相关问题，例如子任务、关联问题和史诗中的故事。最重要的是，你将学会如何使用问题动作对问题字段进行更改。
+- en: We will also cover how to use the advanced field editing function for those
+    rare occasions when the standard field editors are not sufficient and finally,
+    we will look at how to transition issues through their workflows and how to create
+    scheduled rules.
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们还将讨论如何使用高级字段编辑功能，处理那些标准字段编辑器无法满足的特殊情况，最后，我们将探讨如何在工作流中转换问题，以及如何创建计划规则。
+- en: 'We are going to cover the following main topics:'
+  id: totrans-4
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将覆盖以下主要内容：
+- en: Understanding conditions
+  id: totrans-5
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 理解条件
+- en: Working with branch rules and related issues
+  id: totrans-6
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用分支规则和相关问题
+- en: Editing issue fields
+  id: totrans-7
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 编辑问题字段
+- en: Advanced field editing
+  id: totrans-8
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 高级字段编辑
+- en: Transitioning issues
+  id: totrans-9
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 转换问题
+- en: Scheduling tasks
+  id: totrans-10
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 安排任务
+- en: By the end of this chapter you should have a solid understanding of how you
+    can use automation conditions and actions within your rules to effectively work
+    with issues in Jira.
+  id: totrans-11
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 到本章结束时，你应该能够清楚地理解如何在规则中使用自动化条件和动作，从而有效地处理Jira中的问题。
+- en: Technical requirements
+  id: totrans-12
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 技术要求
+- en: 'The requirements for this chapter are as follows:'
+  id: totrans-13
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章的要求如下：
+- en: '**Jira Cloud environment**: If you don''t already have access to Jira, you
+    can create a free Jira Cloud account at [https://www.atlassian.com/software/jira/free](https://www.atlassian.com/software/jira/free)
+    and ensure that you have both Jira Software and Jira Service Management selected;
+    or'
+  id: totrans-14
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**Jira Cloud环境**：如果你还没有访问Jira的权限，可以在 [https://www.atlassian.com/software/jira/free](https://www.atlassian.com/software/jira/free)
+    创建一个免费的Jira Cloud账户，并确保你选择了Jira软件和Jira服务管理；或者'
+- en: '**Jira Server environment**: If you are using Jira Server (available from [https://www.atlassian.com/software/jira/download](https://www.atlassian.com/software/jira/download)),
+    ensure that you have licenses for both Jira Software and Jira Service Management.
+    In addition, you will also need to ensure that you install the *Automation for
+    Jira* app, available from the Atlassian Marketplace.'
+  id: totrans-15
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**Jira Server环境**：如果你使用的是Jira Server（可以从 [https://www.atlassian.com/software/jira/download](https://www.atlassian.com/software/jira/download)
+    获取），请确保你拥有Jira软件和Jira服务管理的许可。此外，你还需要确保安装了 *Automation for Jira* 应用，这可以在Atlassian
+    Marketplace找到。'
+- en: In both instances, you will need to have at least project administrator access
+    to a Service Management project and a Scrum Software project in order to be able
+    to follow the examples in this chapter. For the examples in this chapter, we have
+    used the IT Service Management project template to create the Service Management
+    project, and the Scrum Software project template to create the Software project.
+  id: totrans-16
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这两个实例中，你需要至少拥有服务管理项目和Scrum软件项目的项目管理员访问权限，才能跟随本章的示例进行操作。对于本章的示例，我们使用IT服务管理项目模板创建了服务管理项目，使用Scrum软件项目模板创建了软件项目。
+- en: You can download the latest code samples for this chapter from this book's official
+    GitHub repository at [https://github.com/PacktPublishing/Automate-Everyday-Tasks-in-Jira](https://github.com/PacktPublishing/Automate-Everyday-Tasks-in-Jira).
+    The Code in Action videos for this chapter are available at [https://bit.ly/2XPMdR7](https://bit.ly/2XPMdR7).
+  id: totrans-17
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以从本书的官方GitHub仓库下载本章的最新代码示例，地址为 [https://github.com/PacktPublishing/Automate-Everyday-Tasks-in-Jira](https://github.com/PacktPublishing/Automate-Everyday-Tasks-in-Jira)。本章的《实践中的代码》视频可以在
+    [https://bit.ly/2XPMdR7](https://bit.ly/2XPMdR7) 查看。
+- en: Understanding conditions
+  id: totrans-18
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 理解条件
+- en: Conditions give us the ability to make our rules much more powerful and flexible
+    as they enable us to both narrow the scope of our rules and, in the case of **if/else**
+    blocks, alter the control flow of the rule.
+  id: totrans-19
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 条件使我们能够使规则更强大和灵活，因为它们使我们能够缩小规则的范围，并且在 **if/else** 块的情况下，改变规则的控制流。
+- en: In this section, we will look at each of the conditions that we introduced in
+    [*Chapter 1*](B16551_01_Final_ASB_ePub.xhtml#_idTextAnchor017), *Key Concepts
+    of Automation*, in more detail, exploring what each of them can do and how we
+    can make use of them in automation rules.
+  id: totrans-20
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本节中，我们将更详细地研究在 [*第一章*](B16551_01_Final_ASB_ePub.xhtml#_idTextAnchor017) 中介绍的每个条件，*自动化的关键概念*，探索它们各自的功能，以及如何在自动化规则中使用它们。
+- en: Let's start by taking a look at the **Issue fields condition**.
+  id: totrans-21
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们先来看看 **问题字段条件**。
+- en: The Issue fields condition
+  id: totrans-22
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 问题字段条件
+- en: The Issue fields condition is the simplest of the conditions. It allows you
+    to test most Jira fields against certain criteria without requiring the use of
+    smart values or **JQL** (short for **Jira Query Language**).
+  id: totrans-23
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 问题字段条件是所有条件中最简单的。它允许你将大多数 Jira 字段与某些标准进行比较，而无需使用智能值或 **JQL**（即 **Jira 查询语言**）。
+- en: You can use it to compare a field against a value or set of values, and it can
+    also be used to test the field against another field in either the same issue
+    or certain related issues, such as a parent issue, an epic issue, a destination
+    issue, or the issue that triggered the rule.
+  id: totrans-24
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以用它来将字段与一个值或一组值进行比较，也可以用它来测试字段与另一个字段的关系，不论是在同一问题中，还是在某些相关问题中，如父问题、史诗问题、目标问题或触发规则的问题。
+- en: In addition, these conditions can be chained together to form more complex conditions
+    by using an additive operation.
+  id: totrans-25
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 此外，您可以通过使用加法操作将这些条件链在一起，形成更复杂的条件。
+- en: Tip
+  id: totrans-26
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 提示
+- en: The Issue fields condition should be used ahead of any of the other conditions
+    wherever possible, as it is not only simpler to configure, but it also has performance
+    benefits over conditions such as the JQL and Advanced compare conditions.
+  id: totrans-27
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 问题字段条件应尽可能在任何其他条件之前使用，因为它不仅更易于配置，而且相较于 JQL 和高级比较条件等条件，它还具有性能优势。
+- en: Let's now take a look at how we can use this condition in a rule.
+  id: totrans-28
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，让我们来看看如何在规则中使用这个条件。
+- en: Creating a rule to generate sub-tasks for a story task
+  id: totrans-29
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 创建规则以为故事任务生成子任务
+- en: 'In this example, we''ll assume a development team has a requirement that every
+    user story requires the following three sub-tasks to be created at the same time
+    that the user story is created:'
+  id: totrans-30
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这个例子中，我们假设开发团队有一个需求，即每个用户故事在创建时都需要同时创建以下三个子任务：
+- en: Develop the feature
+  id: totrans-31
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 开发功能
+- en: Perform QA tasks
+  id: totrans-32
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 执行 QA 任务
+- en: Document the feature
+  id: totrans-33
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 记录功能
+- en: 'We''ll create a rule that adds these sub-tasks when a user story is created
+    to demonstrate the Issue fields condition:'
+  id: totrans-34
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将创建一个规则，在用户故事创建时添加这些子任务，以演示问题字段条件：
+- en: If you're using Jira Cloud, navigate to **Project settings** and click on the
+    **Automation** tab of your Software project, or, for Jira Server, navigate to
+    **Project settings**, click on the **Project automation** tab, and then click
+    on **Create rule**.
+  id: totrans-35
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如果你使用的是 Jira Cloud，请导航到 **项目设置**，然后点击软件项目的 **自动化** 标签，或者对于 Jira Server，请导航到
+    **项目设置**，点击 **项目自动化** 标签，然后点击 **创建规则**。
+- en: Select **Issue created** as the trigger and then click **Save**.
+  id: totrans-36
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 选择 **问题创建** 作为触发器，然后点击 **保存**。
+- en: Next, select **New condition** and then select **Issue fields condition**.
+  id: totrans-37
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 接下来，选择 **新条件**，然后选择 **问题字段条件**。
+- en: Set **Field** to **Issue Type**, **Condition** to **equals**, and finally, set
+    **Value** to **Story**, and then click **Save**.
+  id: totrans-38
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 将 **字段** 设置为 **问题类型**，**条件** 设置为 **等于**，最后，将 **值** 设置为 **Story**，然后点击 **保存**。
+- en: Finally, select `Develop feature`
+  id: totrans-39
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 最后，选择 `Develop feature`
+- en: '`Perform QA tasks`'
+  id: totrans-40
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`执行 QA 任务`'
+- en: '`Document feature`'
+  id: totrans-41
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`记录功能`'
+- en: 'Your rule should appear as follows:'
+  id: totrans-42
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 你的规则应该如下所示：
+- en: '![Figure 2.1 – Completed Create sub-tasks rule'
+  id: totrans-43
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '![图 2.1 – 完成的创建子任务规则'
+- en: '](img/Figure_2.1_B16551.jpg)'
+  id: totrans-44
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '](img/Figure_2.1_B16551.jpg)'
+- en: Figure 2.1 – Completed Create sub-tasks rule
+  id: totrans-45
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 图 2.1 – 完成的创建子任务规则
+- en: 'Finally, name the rule `Create story sub-tasks` and click **Turn it on** to
+    save and enable the rule as seen in the following screenshot:'
+  id: totrans-46
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 最后，命名规则为 `Create story sub-tasks`，然后点击 **启用**，如以下截图所示，以保存并启用该规则：
+- en: '![Figure 2.2 – Naming and enabling the automation rule'
+  id: totrans-47
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '![图 2.2 – 命名并启用自动化规则'
+- en: '](img/Figure_2.2_B16551_a.jpg)'
+  id: totrans-48
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '](img/Figure_2.2_B16551_a.jpg)'
+- en: Figure 2.2 – Naming and enabling the automation rule
+  id: totrans-49
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 2.2 – 命名并启用自动化规则
+- en: In this section, we have seen how we can use the Issue fields condition to create
+    a decision point in a rule by simply selecting what we would like to evaluate
+    from the available list of fields, conditions, and values.
+  id: totrans-50
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本节中，我们已经看到如何使用问题字段条件，通过简单地从可用字段、条件和值列表中选择我们希望评估的内容，从而在规则中创建决策点。
+- en: In the next section, we'll look at the JQL condition and how we can use this
+    in our automation rules.
+  id: totrans-51
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一节中，我们将介绍JQL条件，以及如何在自动化规则中使用它。
+- en: JQL condition
+  id: totrans-52
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: JQL条件
+- en: The **JQL condition** allows you to test an issue against any valid JQL query.
+    In addition to standard JQL, smart values can also be used in the query. We will
+    cover smart values in more detail in [*Chapter 3*](B16551_03_Final_ASB_ePub.xhtml#_idTextAnchor065),
+    *Enhancing Rules with Smart Values*.
+  id: totrans-53
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**JQL条件**允许你测试问题是否符合任何有效的JQL查询。除了标准JQL外，还可以在查询中使用智能值。我们将在[*第3章*](B16551_03_Final_ASB_ePub.xhtml#_idTextAnchor065)中更详细地介绍智能值，*使用智能值增强规则*。'
+- en: Let's see how we can make use of the JQL condition in an example rule.
+  id: totrans-54
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们看看如何在一个示例规则中利用JQL条件。
+- en: Creating a rule to create a high-priority incident reminder
+  id: totrans-55
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 创建一个规则来创建高优先级事件提醒
+- en: 'In this example, we want to ensure that the assigned team member updates a
+    high-priority incident if it is about to breach and the reporter has not been
+    informed of the progress of the incident within the last 15 minutes:'
+  id: totrans-56
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这个例子中，我们希望确保分配的团队成员更新一个高优先级事件，如果它即将突破且报告者在过去15分钟内没有被告知事件进展：
+- en: In your Service Management project, navigate to **Project settings**, click
+    on the **Automation** tab, and then click the **Create rule** button.
+  id: totrans-57
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在你的服务管理项目中，导航到**项目设置**，点击**自动化**标签，然后点击**创建规则**按钮。
+- en: We want to check when the Time to resolution SLA is about to breach within the
+    next 30 minutes, so we select the **SLA threshold breached** trigger. Select **Time
+    to resolution SLA** and then select the **will breach in the next** option, ensuring
+    30 minutes is selected, and then click **Save**.
+  id: totrans-58
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 我们希望检查在接下来的30分钟内，**解决时间SLA**是否即将违反，因此选择**SLA阈值已突破**触发器。选择**解决时间SLA**，然后选择**将在接下来的**选项，确保选择了30分钟，然后点击**保存**。
+- en: Next, select `type = Incident AND priority in (Highest, High) AND updated >=
+    "-15m"`
+  id: totrans-59
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 接下来，选择`type = Incident AND priority in (Highest, High) AND updated >= "-15m"`
+- en: 'The following screenshot demonstrates how your rule should look at this point:'
+  id: totrans-60
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 以下截图展示了此时你的规则应该是什么样子的：
+- en: '![Figure 2.3 – Adding a JQL condition'
+  id: totrans-61
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '![图 2.3 – 添加JQL条件]'
+- en: '](img/Figure_2.2_B16551.jpg)'
+  id: totrans-62
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '](img/Figure_2.2_B16551.jpg)'
+- en: Figure 2.3 – Adding a JQL condition
+  id: totrans-63
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 图 2.3 – 添加JQL条件
+- en: We want the rule to notify the assignee by email, so select `Issue {{issue.key}}
+    is about to breach without update`
+  id: totrans-64
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 我们希望规则通过电子邮件通知被分配人，因此选择`Issue {{issue.key}} is about to breach without update`
+- en: Now, set the `The issue {{issue.key}} - {{issue.summary}} is about to breach
+    in 30 minutes and requires an update.`
+  id: totrans-65
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 现在，设置`The issue {{issue.key}} - {{issue.summary}} is about to breach in 30 minutes
+    and requires an update.`
+- en: '`Please add a comment to the above issue or update it as required.`'
+  id: totrans-66
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`请向上述问题添加评论或根据需要更新。`'
+- en: '`Many thanks,`'
+  id: totrans-67
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`非常感谢，`'
+- en: '`Jira Automation`'
+  id: totrans-68
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`Jira自动化`'
+- en: 'Your rule should now look similar to the following screenshot:'
+  id: totrans-69
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 你的规则现在应该类似于以下截图：
+- en: '![Figure 2.4 – The High priority incident reminder rule'
+  id: totrans-70
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '![图 2.4 – 高优先级事件提醒规则]'
+- en: '](img/Figure_2.3_B16551.jpg)'
+  id: totrans-71
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '](img/Figure_2.3_B16551.jpg)'
+- en: Figure 2.4 – The High priority incident reminder rule
+  id: totrans-72
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 图 2.4 – 高优先级事件提醒规则
+- en: Finally, click `High priority incident reminder`, and then click **Turn it on**
+    to save and enable the rule.
+  id: totrans-73
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 最后，点击`高优先级事件提醒`，然后点击**开启**以保存并启用规则。
+- en: In this section, we have seen how we can use any valid JQL query as a condition
+    in our rules.
+  id: totrans-74
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本节中，我们已经看到如何将任何有效的JQL查询作为条件用于我们的规则。
+- en: In the next section, we'll look at how we can use the `User` condition in automation
+    rules.
+  id: totrans-75
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一节中，我们将讨论如何在自动化规则中使用`用户`条件。
+- en: User condition
+  id: totrans-76
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 用户条件
+- en: The **User condition** allows you to check whether a particular type of user
+    exists, and whether they are in a particular role or group or are a certain type
+    of user. This condition also allows you to add multiple criteria in a single condition
+    and you can specify whether *all* criteria should match or only *one* of the criteria
+    specified is sufficient.
+  id: totrans-77
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**用户条件**允许你检查是否存在某一类型的用户，并且他们是否处于特定的角色或组中，或者是否是某种类型的用户。此条件还允许你在单个条件中添加多个标准，你可以指定是否需要*所有*标准都匹配，或仅*一个*标准匹配即可。'
+- en: Where this condition really shines though is in a Service Management project,
+    where a customer can be a reporter, a request participant, or a member of a customer
+    organization, and the User condition provides us with a criterion, *User is a
+    customer*, to check a user against all of these conditions in a single operation.
+    In addition, we can also check whether a user belongs to a particular organization
+    and apply specific actions accordingly.
+  id: totrans-78
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，这个条件真正亮眼的地方在于服务管理项目中，在该项目中，客户可以是报告人、请求参与者或客户组织的成员，而用户条件为我们提供了一个标准，*用户是客户*，以便在单次操作中检查用户是否符合这些条件。此外，我们还可以检查用户是否属于特定组织，并根据需要应用特定操作。
+- en: Let's now look at how we can use this condition in a rule.
+  id: totrans-79
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，让我们来看看如何在规则中使用这个条件。
+- en: Creating a rule to add a relationship manager to customer requests
+  id: totrans-80
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 创建规则以将关系经理添加到客户请求
+- en: 'In this rule, we want to add the customer relationship manager as a watcher
+    to any issues raised by users in our Service Management project from our more
+    important customers. You will need to create the following organizations in your
+    Service Management project and also create a few customers in each:'
+  id: totrans-81
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在此规则中，我们希望将客户关系经理作为观察者添加到我们服务管理项目中由重要客户的用户提出的任何问题。您需要在服务管理项目中创建以下组织，并在每个组织中创建一些客户：
+- en: Kate Price looks after *ACME* and *The Widget Co*
+  id: totrans-82
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Kate Price 负责*ACME* 和 *The Widget Co*
+- en: Pete Kramer looks after *Rain Forest Books*
+  id: totrans-83
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Pete Kramer 负责*Rain Forest Books*
+- en: Tip
+  id: totrans-84
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 提示
+- en: To add users to Jira so as to follow this example, you will need to supply each
+    user with a unique email address. If your mail server supports email sub-addressing
+    or tags, such as Gmail or Outlook 365, you can use this feature to create unique
+    email addresses that get delivered to your own email. For example, if your email
+    address is *your.name@yourcompany.com*, using the email address *your.name+kateprice@yourcompany.com*
+    will be both unique and deliver emails to your inbox with the email tag *kateprice*.
+  id: totrans-85
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 要将用户添加到 Jira 以便按照此示例操作，您需要为每个用户提供唯一的电子邮件地址。如果您的邮件服务器支持电子邮件子地址或标签功能，如 Gmail 或
+    Outlook 365，您可以利用此功能创建唯一的电子邮件地址，并将邮件发送到您的邮箱。例如，如果您的电子邮件地址是*your.name@yourcompany.com*，使用电子邮件地址*your.name+kateprice@yourcompany.com*将是唯一的，并且邮件会发送到您的收件箱，同时邮件标签为*kateprice*。
+- en: 'Let''s create our rule:'
+  id: totrans-86
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们来创建我们的规则：
+- en: In your Service Management project, navigate to **Project settings**, click
+    the **Automation** tab, and then click on **Create rule**.
+  id: totrans-87
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在您的服务管理项目中，导航到**项目设置**，点击**自动化**标签，然后点击**创建规则**。
+- en: Select **Issue created** as the trigger and then click **Save**.
+  id: totrans-88
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 选择**问题创建**作为触发条件，然后点击**保存**。
+- en: Now, select `Reporter`
+  id: totrans-89
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在，选择`报告人`
+- en: '`is in organization`'
+  id: totrans-90
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`位于组织中`'
+- en: '`ACME, The Widget Co`'
+  id: totrans-91
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`ACME, The Widget Co`'
+- en: 'Your condition should look as per the following screenshot:'
+  id: totrans-92
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 您的条件应如下图所示：
+- en: '![Figure 2.5 – User condition for a reporter in an organization'
+  id: totrans-93
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '![图 2.5 – 组织中的报告人用户条件'
+- en: '](img/Figure_2.4_B16551.jpg)'
+  id: totrans-94
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '](img/Figure_2.4_B16551.jpg)'
+- en: Figure 2.5 – User condition for a reporter in an organization
+  id: totrans-95
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 图 2.5 – 组织中的报告人用户条件
+- en: Select **New Action**, followed by **Manage watchers**, select **Kate Price**
+    in the **Add these watchers** field, and then click **Save**.
+  id: totrans-96
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 选择**新操作**，然后选择**管理观察者**，在**添加这些观察者**字段中选择**Kate Price**，然后点击**保存**。
+- en: Add `Reporter`
+  id: totrans-97
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 添加`报告人`
+- en: '`is in organization`'
+  id: totrans-98
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`位于组织中`'
+- en: '`Rain Forest Books`'
+  id: totrans-99
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`Rain Forest Books`'
+- en: Select **New Action**, followed by **Manage watchers**, select **Pete Kramer**
+    in the **Add these watchers** field, and then click **Save**. Your rule should
+    look like the following screenshot:![Figure 2.6 – Adding relationship managers
+    as watchers
+  id: totrans-100
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 选择**新操作**，然后选择**管理观察者**，在**添加这些观察者**字段中选择**Pete Kramer**，然后点击**保存**。您的规则应如下图所示：![图
+    2.6 – 将关系经理添加为观察者
+- en: '](img/Figure_2.5_B16551.jpg)'
+  id: totrans-101
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '](img/Figure_2.5_B16551.jpg)'
+- en: Figure 2.6 – Adding relationship managers as watchers
+  id: totrans-102
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 图 2.6 – 将关系经理添加为观察者
+- en: Finally, name your rule `Add relationship manager to customer request` and then
+    click **Turn it on** to save and enable the rule.
+  id: totrans-103
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 最后，将您的规则命名为`将关系经理添加到客户请求`，然后点击**启用**以保存并启用此规则。
+- en: In this section, we looked at how the User condition allows us to validate the
+    existence of a user and whether a user belongs to a particular group, role, or
+    organization.
+  id: totrans-104
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本节中，我们讨论了如何使用用户条件来验证用户的存在以及用户是否属于特定的组、角色或组织。
+- en: Next, we'll take a look at the Related issues condition and how we can use this
+    to test for issues related to the trigger issue.
+  id: totrans-105
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来，我们将查看“相关问题条件”，以及如何使用它来检测与触发问题相关的问题。
+- en: Related issues condition
+  id: totrans-106
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 相关问题条件
+- en: The **Related issues** condition allows you to check the state of issues related
+    to the current issue in the rule context, be that the issue that triggered the
+    rule, or each issue in a branch rule.
+  id: totrans-107
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**相关问题**条件允许你检查在规则上下文中与当前问题相关的其他问题的状态，无论是触发该规则的问题，还是分支规则中的每个问题。'
+- en: With this condition, you can check whether the related issues exist, whether
+    all of them match a given JQL condition, or even whether only some of the related
+    issues match the condition.
+  id: totrans-108
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用此条件，你可以检查相关问题是否存在，是否所有相关问题都匹配给定的JQL条件，或者仅有部分相关问题匹配该条件。
+- en: Let's take a look at an example rule that uses the **Related issues** condition.
+  id: totrans-109
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们来看一个使用**相关问题**条件的示例规则。
+- en: Creating a rule to close parent bug or story tasks when all sub-tasks are complete
+  id: totrans-110
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 创建规则以便在所有子任务完成时关闭父任务或故事任务
+- en: 'When an issue has sub-tasks, we need to autoclose the main issue when all the
+    sub-tasks attain **Done** status. We''ll need to use the Related issues condition
+    to achieve this as follows:'
+  id: totrans-111
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当一个问题有子任务时，我们需要在所有子任务达到**完成**状态时自动关闭主任务。我们需要使用相关问题条件来实现这一点，如下所示：
+- en: In your Software project, navigate to **Project settings**, click on the **Automation**
+    tab (or the **Project automation** tab if you're using Jira Server), and then
+    click on **Create rule**.
+  id: totrans-112
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在你的软件项目中，进入**项目设置**，点击**自动化**标签（如果你使用的是Jira Server，则点击**项目自动化**标签），然后点击**创建规则**。
+- en: Select the **Issue transitioned** trigger and then select **Done** in the **To**
+    status field and click **Save**.
+  id: totrans-113
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 选择**问题已转换**触发器，然后在**至**状态字段中选择**完成**并点击**保存**。
+- en: Then, select `Issue Type`
+  id: totrans-114
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 然后，选择`问题类型`
+- en: '`equals`'
+  id: totrans-115
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`等于`'
+- en: '`Sub-task`'
+  id: totrans-116
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`子任务`'
+- en: Next, select **Branch rule / related issues** and then select **Parent** as
+    **Type of related issue**.
+  id: totrans-117
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 接下来，选择**分支规则/相关问题**，然后选择**父任务**作为**相关问题的类型**。
+- en: Now select `Sub-tasks`
+  id: totrans-118
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在选择`子任务`
+- en: '`All match specified JQL`'
+  id: totrans-119
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`所有匹配指定的JQL`'
+- en: '`status = Done`'
+  id: totrans-120
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`status = Done`'
+- en: 'Your rule should now look similar to the following screenshot:'
+  id: totrans-121
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 你的规则现在应该类似于以下截图：
+- en: '![Figure 2.7 – Configuring the Related issues condition'
+  id: totrans-122
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '![图 2.7 – 配置相关问题条件'
+- en: '](img/Figure_2.6_B16551.jpg)'
+  id: totrans-123
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '](img/Figure_2.6_B16551.jpg)'
+- en: Figure 2.7 – Configuring the Related issues condition
+  id: totrans-124
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 图 2.7 – 配置相关问题条件
+- en: Then, select **New action** followed by **Transition issue**. In this case,
+    the parent issue, either **Bug** or **Story**, shares the same final status as
+    the sub-tasks, so we can leave **Destination status** as **Copy from trigger issue**.
+  id: totrans-125
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 然后，选择**新建操作**，接着选择**转换问题**。在这种情况下，父任务（无论是**缺陷**还是**故事**）与子任务共享相同的最终状态，因此我们可以将**目标状态**保留为**从触发问题复制**。
+- en: Click `Close parent when sub-tasks complete`, and then click **Turn it on**
+    to save and enable the rule.
+  id: totrans-126
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 点击`子任务完成时关闭父任务`，然后点击**启用**以保存并启用该规则。
+- en: Tip
+  id: totrans-127
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 提示
+- en: When a rule needs to work with related issues in other projects, it needs to
+    be able to execute in those projects that contain the related issues and the rule
+    should therefore be either a global or multi-project rule.
+  id: totrans-128
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 当规则需要与其他项目中的相关问题一起工作时，它需要能够在包含相关问题的项目中执行，因此该规则应该是全局规则或多项目规则。
+- en: This means that only Jira global administrators will be able create and manage
+    these rules.
+  id: totrans-129
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 这意味着只有Jira全局管理员才能创建和管理这些规则。
+- en: In this section, we have seen how to use the Related issues condition to perform
+    actions against issues related to the issue that triggered the automation rule.
+  id: totrans-130
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这一节中，我们已经了解了如何使用相关问题条件对与触发自动化规则的问题相关的问题执行操作。
+- en: In the next section, we'll take a look at the Advanced compare condition.
+  id: totrans-131
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一节中，我们将详细了解高级比较条件。
+- en: Advanced compare condition
+  id: totrans-132
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 高级比较条件
+- en: For most rules, the Issue fields condition will be adequate; however, there
+    will be times when you need that extra bit of flexibility when writing rules and
+    this is where the **Advanced compare condition** comes in. This condition allows
+    you to use compare smart values, functions and regular expressions against smart
+    values or functions!
+  id: totrans-133
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于大多数规则，问题字段条件已足够；然而，有时你在编写规则时需要更多的灵活性，这时**高级比较条件**就派上用场了。此条件允许你对智能值、函数和正则表达式进行比较！
+- en: We will be looking at smart values and functions in detail in [*Chapter 3*](B16551_03_Final_ASB_ePub.xhtml#_idTextAnchor065),
+    *Enhancing Rules with Smart Values*, so for now, let's take a look at a rule that
+    uses this condition.
+  id: totrans-134
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将在[*第3章*](B16551_03_Final_ASB_ePub.xhtml#_idTextAnchor065)中详细讨论智能值和函数，*通过智能值增强规则*，所以现在让我们来看一个使用此条件的规则。
+- en: Let's take a look at how we use the Advanced compare condition in an example
+    rule.
+  id: totrans-135
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们看一下如何在一个示例规则中使用高级比较条件。
+- en: Creating a rule to reopen an issue when the reporter creates a comment
+  id: totrans-136
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 创建一个规则，当报告者创建评论时重新打开问题
+- en: In most cases, when a customer creates a request, the service desk team, or
+    indeed an automation rule, will resolve the request without further input from
+    the customer. In some cases, however, the request may not have been resolved to
+    the customer's satisfaction and instead of creating a new request, we want to
+    be able to reopen the original request when a new comment is added by the customer
+    who opened the request.
+  id: totrans-137
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在大多数情况下，当客户创建请求时，服务台团队，或者确切来说是自动化规则，会在没有客户进一步参与的情况下解决该请求。然而，在某些情况下，请求可能没有让客户满意解决，而我们希望在客户添加新评论时重新打开原始请求，而不是创建一个新的请求。
+- en: 'Let''s see how we can leverage the Advanced compare condition to achieve this:'
+  id: totrans-138
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们看看如何利用高级比较条件来实现这一点：
+- en: In your Service Management project, navigate to **Project settings**, click
+    the **Automation** tab, and then click on **Create rule**.
+  id: totrans-139
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在你的服务管理项目中，导航到**项目设置**，点击**自动化**标签，然后点击**创建规则**。
+- en: Then, select the **Issue commented** trigger and click **Save**.
+  id: totrans-140
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 然后，选择**问题评论**触发器并点击**保存**。
+- en: Next, select `{{comment.author.accountId}}`
+  id: totrans-141
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 接下来，选择`{{comment.author.accountId}}`
+- en: '`equals`'
+  id: totrans-142
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`等于`'
+- en: '`{{issue.reporter.accountId}}`'
+  id: totrans-143
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`{{issue.reporter.accountId}}`'
+- en: 'Your condition should look like the following screenshot:'
+  id: totrans-144
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 你的条件应该如下所示：
+- en: '![](img/Figure_2.7_B16551.jpg)'
+  id: totrans-145
+  prefs:
+  - PREF_IND
+  type: TYPE_IMG
+  zh: '![](img/Figure_2.7_B16551.jpg)'
+- en: Figure 2.8 – Configuring the Advanced compare condition
+  id: totrans-146
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 图 2.8 – 配置高级比较条件
+- en: Tip
+  id: totrans-147
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 提示
+- en: The **accountId** field for users is only applicable to Jira Cloud. If you are
+    using Jira Server or Jira Data Center, you will need to use *{{comment.author}}*
+    and *{{issue.reporter}}* instead.
+  id: totrans-148
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 用户的**accountId**字段仅适用于Jira Cloud。如果你使用的是Jira Server或Jira Data Center，则需要使用*{{comment.author}}*和*{{issue.reporter}}*。
+- en: Then, select `Status`
+  id: totrans-149
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 然后，选择`状态`
+- en: '`equals`'
+  id: totrans-150
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`等于`'
+- en: '`Resolved`'
+  id: totrans-151
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`已解决`'
+- en: Now select **New action**, then **Transition issue**, and then set the **Destination
+    status** field to **In Progress** and click **Save**.
+  id: totrans-152
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在选择**新建操作**，然后选择**转换问题**，接着将**目标状态**字段设置为**进行中**并点击**保存**。
+- en: Finally, name your rule `Re-open ticket on reporter comment` and click **Turn
+    it on** to save and enable the rule.
+  id: totrans-153
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 最后，命名你的规则为`在报告者评论时重新打开工单`，并点击**开启**来保存并启用规则。
+- en: In this section, we looked at when we should use the Advanced compare condition
+    and how it allows us to compare items using smart values.
+  id: totrans-154
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这一部分，我们讨论了何时使用高级比较条件以及它如何允许我们使用智能值来比较项。
+- en: In the following section, we'll explore the **if/else** block and how we can
+    use it to perform alternate actions based on different conditions.
+  id: totrans-155
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在接下来的部分，我们将探讨**如果/否则**块，并了解如何基于不同条件执行替代操作。
+- en: If/else block
+  id: totrans-156
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如果/否则块
+- en: The if/else statement is arguably the most powerful condition in the automation
+    toolbox. It allows us to perform alternate actions based on whether the specified
+    conditions match.
+  id: totrans-157
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**如果/否则**语句可以说是自动化工具箱中最强大的条件。它允许我们基于指定条件是否匹配执行替代操作。'
+- en: Let's take a look at how we can use the **if/else** block in an example rule.
+  id: totrans-158
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们看一下如何在示例规则中使用**如果/否则**块。
+- en: Creating a rule to define an incident priority matrix
+  id: totrans-159
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 创建一个规则来定义事件优先级矩阵
+- en: The correct prioritization of an incident is critical in determining the relative
+    importance of an issue. Relying on users to select the correct priority of incidents
+    results, more often than not, in a large number of incidents being incorrectly
+    prioritized.
+  id: totrans-160
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正确的事件优先级排序对于确定问题的相对重要性至关重要。依赖用户选择事件的正确优先级，往往会导致大量事件被错误排序。
+- en: It is more common practice to define the priority of incidents based on their
+    impact and urgency instead. The following table shows a typical priority matrix
+    based on the impact and urgency selected and we'll use this to help define our
+    automation rule.
+  id: totrans-161
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 更常见的做法是根据事件的影响和紧急性来定义优先级。下表展示了基于所选影响和紧急性的一般优先级矩阵，我们将使用这个矩阵来帮助定义我们的自动化规则。
+- en: '![Figure 2.9 – Incident priority matrix'
+  id: totrans-162
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '![图 2.9 – 事件优先级矩阵'
+- en: '](img/Figure_2.8_B16551.jpg)'
+  id: totrans-163
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '](img/Figure_2.8_B16551.jpg)'
+- en: Figure 2.9 – Incident priority matrix
+  id: totrans-164
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 2.9 – 事件优先级矩阵
+- en: We are going to create our rule in a Service Management project created using
+    the IT Service Management template. We have adjusted the custom fields, **Impact**
+    and **Urgency**, with the options shown in the preceding incident priority matrix.
+    You will also need to add these two fields to the **Request** form for the Incident
+    Request types in your Service Management project.
+  id: totrans-165
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将在使用 IT 服务管理模板创建的服务管理项目中创建规则。我们已经调整了自定义字段**影响**和**紧急性**，并在前面的事件优先级矩阵中显示了选项。您还需要将这两个字段添加到服务管理项目中的**请求**表单，适用于事件请求类型。
+- en: 'Using the preceding matrix as a reference, let''s create our rule:'
+  id: totrans-166
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 参考前面的矩阵，我们来创建我们的规则：
+- en: In your Service Management project, navigate to **Project settings**, click
+    on the **Automation** tab, and then click on **Create rule**.
+  id: totrans-167
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在您的服务管理项目中，导航到**项目设置**，点击**自动化**选项卡，然后点击**创建规则**。
+- en: We want this rule to trigger when the issue is created and also if any changes
+    are made to either the **Impact** or **Urgency** fields, so we'll select the **Field
+    value changed** trigger and then select the **Impact** and **Urgency** fields
+    in the **Fields to monitor for changes** dropdown. We also want to trigger this
+    rule only when an incident is created or edited, so we'll only select those two
+    operations in the **For** dropdown and save our changes, as shown in the following
+    screenshot:![Figure 2.10 – Incident priority matrix trigger
+  id: totrans-168
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 我们希望此规则在问题创建时触发，并且如果**影响**或**紧急性**字段的任何变化，也能触发该规则，因此我们将选择**字段值更改**触发器，然后在**监控更改的字段**下拉菜单中选择**影响**和**紧急性**字段。我们还希望仅在创建或编辑事件时触发此规则，因此我们仅在**操作类型**下拉菜单中选择这两种操作，并保存我们的更改，如下图所示：![图
+    2.10 – 事件优先级矩阵触发器
+- en: '](img/Figure_2.9_B16551.jpg)'
+  id: totrans-169
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '](img/Figure_2.9_B16551.jpg)'
+- en: Figure 2.10 – Incident priority matrix trigger
+  id: totrans-170
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 图 2.10 – 事件优先级矩阵触发器
+- en: Next, we'll add a **New condition** field and select **If/else** block.
+  id: totrans-171
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 接下来，我们将添加**新条件**字段，并选择**If/else**块。
+- en: In the **If** block, we are going to configure our first criterion to test for
+    the highest priority, when both **Impact** and **Urgency** are set to **High**.
+  id: totrans-172
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在**If**块中，我们将配置第一个条件，用于测试最高优先级，当**影响**和**紧急性**都设置为**高**时。
+- en: Select **Add conditions…**, then **Issue fields condition**, set **Field** to
+    **Impact**, **Condition** to **Equals**, select **High** in the **Value** field,
+    and then repeat the exact same steps for the **Urgency** field.
+  id: totrans-173
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 选择**添加条件...**，然后选择**问题字段条件**，将**字段**设置为**影响**，**条件**设置为**等于**，在**值**字段中选择**高**，然后对**紧急性**字段重复相同的步骤。
+- en: 'Your rule should now look similar to the following screenshot:'
+  id: totrans-174
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 现在您的规则应类似于以下截图：
+- en: '![Figure 2.11 – Configuring the If block'
+  id: totrans-175
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '![图 2.11 – 配置 If 块'
+- en: '](img/Figure_2.10_B16551.jpg)'
+  id: totrans-176
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '](img/Figure_2.10_B16551.jpg)'
+- en: Figure 2.11 – Configuring the If block
+  id: totrans-177
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 图 2.11 – 配置 If 块
+- en: Now, we need to add the action to perform when the preceding condition is met,
+    so select **New action**, followed by **Edit issue**, find the **Priority** field
+    in the **Choose fields to set…** dropdown, set **Value** to **Highest**, and then
+    click **Save**.![Figure 2.12 – Editing the issue priority field
+  id: totrans-178
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在，我们需要添加当前条件满足时要执行的操作，因此选择**新建操作**，然后选择**编辑问题**，在**选择要设置的字段...**下拉菜单中找到**优先级**字段，将**值**设置为**最高**，然后点击**保存**。![图
+    2.12 – 编辑问题优先级字段
+- en: '](img/Figure_2.11_B16551.jpg)'
+  id: totrans-179
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '](img/Figure_2.11_B16551.jpg)'
+- en: Figure 2.12 – Editing the issue priority field
+  id: totrans-180
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 图 2.12 – 编辑问题优先级字段
+- en: Let's build out the rest of the matrix. Click on **Add else** in the **Rule-chain**
+    view and then on **Add conditions**, followed by **Issue fields condition**. Set
+    **Field** to **Impact**, **Condition** to **Equals**, and **Value** to **High**.
+    Repeat for the **Urgency** field, setting **Value** to **Medium**, and then click
+    **Save**.
+  id: totrans-181
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 接下来，构建矩阵的其余部分。在**规则链**视图中点击**添加 else**，然后点击**添加条件**，接着选择**问题字段条件**。将**字段**设置为**影响**，**条件**设置为**等于**，**值**设置为**高**。对**紧急性**字段重复该步骤，将**值**设置为**中**，然后点击**保存**。
+- en: We need to add the action to perform when the **else** block condition is satisfied,
+    so click on **New action**, followed by **Edit issue**. Then, set the **Priority**
+    field to **High** in line with the preceding matrix:![Figure 2.13 – Adding the
+    first Else-if block
+  id: totrans-182
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 我们需要添加当**else**块条件满足时要执行的操作，因此点击**新建操作**，然后选择**编辑问题**。接着，将**优先级**字段设置为**高**，与之前的矩阵一致：![图
+    2.13 – 添加第一个 Else-if 块
+- en: '](img/Figure_2.12_B16551.jpg)'
+  id: totrans-183
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '](img/Figure_2.12_B16551.jpg)'
+- en: Figure 2.13 – Adding the first Else-if block
+  id: totrans-184
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 图 2.13 – 添加第一个 Else-if 块
+- en: Repeat *steps 6* and *7* for the remaining priorities in the incident priority
+    matrix shown previously. You should end up with one **If** block followed by eight
+    **Else-if** blocks corresponding to each intersection of **Impact** and **Urgency**
+    in the priority matrix.
+  id: totrans-185
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 重复*第6步*和*第7步*，以处理前面所示事件优先级矩阵中的其余优先级。最终，您应该得到一个**If**块，后面跟着八个**Else-if**块，分别对应优先级矩阵中**影响**和**紧急性**的每个交集。
+- en: Finally, name the rule **Incident priority matrix**, and click **Turn it on**
+    to save and enable it.
+  id: totrans-186
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 最后，为规则命名为**事件优先级矩阵**，然后点击**启用**以保存并启用该规则。
+- en: In this section, we have seen how we can use conditions to ensure we target
+    the correct issues in our rule, and we have also learned how to control the flow
+    of a rule using the powerful **If**/**else** block.
+  id: totrans-187
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这一部分中，我们已经学习了如何使用条件来确保规则针对正确的问题，并且我们还学习了如何使用强大的**If**/**else**块来控制规则的执行流。
+- en: Next, we'll take a look at branch rules and how to work with related issues.
+  id: totrans-188
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来，我们将查看分支规则以及如何处理相关问题。
+- en: Working with branch rules and related issues
+  id: totrans-189
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用分支规则和相关问题
+- en: It is not often that issues exist in isolation. In fact, in many cases, there
+    are always other issues that relate to any given issue. This could be in the form
+    of sub-tasks, stories linked to a larger epic, or issues linked to other issues
+    using relationships such as blocked, duplicated, and more.
+  id: totrans-190
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 问题很少是孤立存在的。事实上，在许多情况下，总是有其他问题与任何给定问题相关。这些可以是子任务、与更大史诗相关的故事，或是通过诸如被阻塞、重复等关系链接到其他问题。
+- en: You will therefore often come across situations when creating automation rules
+    where you need to perform actions against not only the issue that triggered the
+    rule, but also against issues related to the source issue.
+  id: totrans-191
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 因此，在创建自动化规则时，您经常会遇到不仅需要对触发规则的问题执行操作，还需要对与源问题相关的问题执行操作的情况。
+- en: This is where the **Branch** rule component and its companion condition, the
+    **Related issues** condition, prove most useful, allowing you to create rules
+    that can work across complex issue relationships.
+  id: totrans-192
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这里，**分支**规则组件及其配套条件**相关问题**条件最为有用，使您能够创建跨复杂问题关系工作的规则。
+- en: Branch rule/related issues
+  id: totrans-193
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 分支规则/相关问题
+- en: When we use the Branch rule component to perform actions against a related issue
+    or list of issues, the rule no longer executes in a linear fashion, instead expanding
+    into multiple sub-branches representing each related issue. When using smart values,
+    which we will discuss in more detail in the next chapter, the smart value *{{issue}}*
+    refers to the related issue in the current sub-branch, and not the issue that
+    triggered the rule, which can be found instead using the smart value *{{triggerIssue}}*.
+  id: totrans-194
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当我们使用分支规则组件对相关问题或问题列表执行操作时，规则不再按线性方式执行，而是扩展成多个子分支，代表每个相关问题。使用智能值时，我们将在下一章中详细讨论，智能值*{{issue}}*指的是当前子分支中的相关问题，而触发规则的问题可以通过智能值*{{triggerIssue}}*找到。
+- en: Important note
+  id: totrans-195
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 重要提示
+- en: Branches on *multiple issues* run in separate processes in parallel and there
+    is therefore no guarantee that any one branch will finish execution before the
+    next.
+  id: totrans-196
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '*多个问题*上的分支在不同的进程中并行运行，因此不能保证任何一个分支会在下一个分支之前完成执行。'
+- en: Additionally, the main branch will continue to execute before the sub-branches
+    start.
+  id: totrans-197
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 此外，主分支将在子分支开始之前继续执行。
+- en: If you have only a single related issue, the main branch will block until the
+    sub-branch has completed its execution.
+  id: totrans-198
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果只有一个相关问题，主分支将在子分支执行完成之前被阻塞。
+- en: Let's now see how we can use the Branch rule/related issues component in an
+    example rule.
+  id: totrans-199
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在让我们看看如何在示例规则中使用分支规则/相关问题组件。
+- en: Creating a rule to keep an Epic task in sync with its user story tasks
+  id: totrans-200
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 创建规则以使Epic任务与其用户故事任务保持同步
+- en: 'A common requirement in development projects is for Epic to transition to **In
+    Progress** when the first story it contains transitions to In Progress. This is
+    a perfect scenario for the Branch rules component. Let''s see how we can do this:'
+  id: totrans-201
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在开发项目中，一个常见的需求是当其包含的第一个故事转换为“进行中”时，Epic也应转换为**进行中**。这是一个非常适合使用分支规则组件的场景。让我们看看如何实现：
+- en: In your Software project, navigate to **Project settings**, click on the **Automation**
+    tab (or the **Project automation** tab if you're using Jira Server), and then
+    click on **Create rule**.
+  id: totrans-202
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在您的软件项目中，导航至**项目设置**，点击**自动化**选项卡（如果您使用的是Jira Server，则为**项目自动化**选项卡），然后点击**创建规则**。
+- en: Select the **Issue transitioned** trigger and then click **Save**.
+  id: totrans-203
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 选择**问题转换**触发器，然后点击**保存**。
+- en: Leave the **From status** field blank and select **In Progress** in the **To
+    status** field and then click **Save**.
+  id: totrans-204
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 留空**从状态**字段，选择**进行中**作为**到状态**字段，然后点击**保存**。
+- en: Next, select `Epic`
+  id: totrans-205
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 接下来，选择`Epic`
+- en: '`Matches specified JQL`'
+  id: totrans-206
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`匹配指定的 JQL`'
+- en: '`status != "In Progress"`'
+  id: totrans-207
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`status != "进行中"`'
+- en: Now select **Branch rule / related issues** and set the **Type of related issues**
+    field to **Epic (Parent)** and click **Save**.
+  id: totrans-208
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在选择**分支规则/相关问题**，并将**相关问题的类型**字段设置为**Epic（父级）**，然后点击**保存**。
+- en: Finally, select **New action**, followed by **Transition issue**, choose **In
+    Progress** as **Destination status**, and then click **Save**.
+  id: totrans-209
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 最后，选择**新操作**，然后选择**转换问题**，选择**进行中**作为**目标状态**，然后点击**保存**。
+- en: 'Your rule should now look as per the following screenshot:'
+  id: totrans-210
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 你的规则现在应该看起来如以下截图所示：
+- en: '![Figure 2.14 – Moving Epic to In Progress when the story changes'
+  id: totrans-211
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '![图 2.14 – 在故事变化时将 Epic 移动到进行中'
+- en: '](img/Figure_2.13_B16551.jpg)'
+  id: totrans-212
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '](img/Figure_2.13_B16551.jpg)'
+- en: Figure 2.14 – Moving Epic to In Progress when the story changes
+  id: totrans-213
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 图 2.14 – 在故事变化时将 Epic 移动到进行中
+- en: As always, the final step is to name your rule `Sync Epic status to stories`
+    and then click **Turn it on** to save and enable the rule.
+  id: totrans-214
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 一如既往，最后一步是给你的规则命名为`同步 Epic 状态到故事`，然后点击**开启**以保存并启用该规则。
+- en: We have learned in this section how we can make use of the Branch rules component
+    to create powerful rules enabling us to target issues related to the issue that
+    triggered the rule.
+  id: totrans-215
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本节中，我们已经学习了如何利用分支规则组件创建强大的规则，使我们能够定位与触发规则的问题相关的问题。
+- en: In the next section, we will look at editing issue fields in more detail.
+  id: totrans-216
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一部分，我们将更详细地讨论编辑问题字段。
+- en: Editing issue fields
+  id: totrans-217
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 编辑问题字段
+- en: In the majority of your automation rules, you will be editing information in
+    issues. In this section, we are going to cover some of the more common actions
+    you will need to understand when creating your rules, including assignments, commenting
+    on issues, linking issues to other issues and, of course, editing fields within
+    issues.
+  id: totrans-218
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在你大多数的自动化规则中，你将编辑问题中的信息。在本节中，我们将介绍在创建规则时需要理解的一些常见操作，包括分配、评论、将问题链接到其他问题，以及当然，编辑问题字段。
+- en: Assigning issues
+  id: totrans-219
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 分配问题
+- en: One of the more tedious tasks usually encountered in Jira is having team members
+    track a queue of unassigned issues and take ownership of these issues. The other
+    common approach is to have someone such as a team lead go through these issues
+    and apportion them off to members of the team based on certain criteria.
+  id: totrans-220
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 Jira 中常见的一项繁琐任务是让团队成员跟踪未分配的问题队列并承担这些问题的责任。另一种常见的方法是让像团队负责人这样的人查看这些问题，并根据某些标准将其分配给团队成员。
+- en: 'We can instead use automation to handle these tasks for us, and the following
+    list is a few of the capabilities we have at our disposal when it comes to assigning
+    issues:'
+  id: totrans-221
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以使用自动化来处理这些任务，以下是一些我们在分配问题时可以利用的功能：
+- en: Assigning based on current workload
+  id: totrans-222
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 基于当前工作负载进行分配
+- en: Assigning in a round-robin fashion
+  id: totrans-223
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 循环分配
+- en: Assigning to a previous assignee or commenter
+  id: totrans-224
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 分配给先前的指派人或评论者
+- en: Assigning from a related issue or JQL query
+  id: totrans-225
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 从相关问题或 JQL 查询中分配
+- en: Let's take a look at how we can use this in a rule.
+  id: totrans-226
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们看看如何在规则中使用这个功能。
+- en: Creating a rule to autoassign incoming bugs to developers
+  id: totrans-227
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 创建一个规则，将新进的 bug 自动分配给开发人员
+- en: 'In this rule, we are going to assign any incoming issue of the bug type to
+    the development team based on how much work each team member currently has, as
+    long as the issue does not already have an assigned user. The development team
+    are all members of the developer role in the project:'
+  id: totrans-228
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这个规则中，我们将根据每个团队成员当前的工作量，将所有新进的 bug 类型问题分配给开发团队，前提是问题尚未有指派用户。开发团队是项目中所有开发角色的成员：
+- en: In your Software project, navigate to **Project settings**, click on the **Automation**
+    tab (or the **Project automation** tab if you're using Jira Server), and then
+    click on **Create rule**.
+  id: totrans-229
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在你的软件项目中，导航到**项目设置**，点击**自动化**标签（如果你使用的是 Jira Server，则是**项目自动化**标签），然后点击**创建规则**。
+- en: Select the **Issue created** trigger and then click **Save**.
+  id: totrans-230
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 选择**问题创建**触发器，然后点击**保存**。
+- en: Next we need to ensure that we only assign issues of the bug type. Select **New
+    condition** and then choose **Issue fields condition**. Set the **Field** to **Issue
+    Type**, **Condition** to **Equals**, **Value** to **Bug**, and then click **Save**.
+  id: totrans-231
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 接下来，我们需要确保只分配 bug 类型的问题。选择**新条件**，然后选择**问题字段条件**。将**字段**设置为**问题类型**，**条件**设置为**等于**，**值**设置为**Bug**，然后点击**保存**。
+- en: Now we need to execute assignment of the new issue. Do this by selecting **New
+    action** and then choosing **Assign issue**.
+  id: totrans-232
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在我们需要执行新的问题分配。通过选择**新操作**，然后选择**分配问题**来实现。
+- en: In the **Assign the issue to** field, select **User** in a role. Then, select
+    **Balanced workload** in the **Method to choose assignee** field.
+  id: totrans-233
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在**分配问题给**字段中，选择**角色中的用户**。然后，在**选择负责人方法**字段中选择**平衡工作量**。
+- en: 'Because we don''t want to reassign any issues that already have an assignee
+    set, we need to add a further restriction using JQL. Type the following query
+    in the **JQL to restrict issues** field:'
+  id: totrans-234
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 由于我们不想重新分配已经设置了负责人（assignee）的任何问题，我们需要使用JQL添加进一步的限制。在**JQL限制问题**字段中输入以下查询：
+- en: '[PRE0]'
+  id: totrans-235
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: 'And finally, set **Role** to **Developers** and then click **Save**:'
+  id: totrans-236
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 最后，设置**角色**为**开发人员**，然后点击**保存**：
+- en: '![Figure 2.15 – Assigning users using Balanced workload'
+  id: totrans-237
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '![图 2.15 – 使用平衡工作量分配用户'
+- en: '](img/Figure_2.14_B16551.jpg)'
+  id: totrans-238
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '](img/Figure_2.14_B16551.jpg)'
+- en: Figure 2.15 – Assigning users using Balanced workload
+  id: totrans-239
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 图 2.15 – 使用平衡工作量分配用户
+- en: In the final screen, name the rule `Auto assign incoming bugs` and then click
+    **Turn it on** to save and enable the rule.
+  id: totrans-240
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在最终屏幕中，将规则命名为`自动分配新问题`，然后点击**开启**以保存并启用规则。
+- en: Note
+  id: totrans-241
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 注意
+- en: If you are using Jira Server, you must ensure that the rule actor has the **Assign
+    Issues** permission in order to assign issues to users. In Jira Cloud, the default
+    permissions are designed to ensure that users in the *atlassian-addons-project-access*
+    role, such as *Automation app user*, have the necessary permissions to edit and
+    assign issues and you should only need to adjust this if you have made changes
+    to the default permissions.
+  id: totrans-242
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 如果你使用的是Jira Server，必须确保规则的执行者拥有**分配问题**的权限，才能将问题分配给用户。在Jira Cloud中，默认的权限设计是确保处于*atlassian-addons-project-access*角色中的用户，如*自动化应用用户*，拥有编辑和分配问题所需的权限，除非你修改了默认权限，否则通常不需要进行调整。
+- en: In this section, we have seen how to use the **Assign issues** action to assign
+    issues to users using various scenarios, including based on individual workload,
+    round-robin, randomly, or by using input from related issues or queries.
+  id: totrans-243
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本节中，我们已经看过如何使用**分配问题**操作，根据不同场景将问题分配给用户，包括基于个人工作量、轮流分配、随机分配或使用与相关问题或查询的输入。
+- en: In the next section, we'll look at how to use the **Edit issue** fields action
+    to update issues.
+  id: totrans-244
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一节中，我们将看看如何使用**编辑问题**字段操作来更新问题。
+- en: Edit issue fields
+  id: totrans-245
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 编辑问题字段
+- en: 'The ability to edit fields within an issue is one of the main objectives of
+    automation rules and a number of rule actions provide this functionality, these
+    being the following:'
+  id: totrans-246
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在问题中编辑字段的能力是自动化规则的主要目标之一，许多规则操作都提供此功能，具体包括以下几种：
+- en: Cloning an issue
+  id: totrans-247
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 克隆问题
+- en: Editing an issue
+  id: totrans-248
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 编辑问题
+- en: Transitioning an issue
+  id: totrans-249
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 变更问题状态
+- en: The field editors are very flexible and allow you to clear values from fields,
+    set new values, and even copy values from other fields within the current issue,
+    a parent issue, trigger issue, epic issue, or destination issue.
+  id: totrans-250
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 字段编辑器非常灵活，允许你清除字段中的值、设置新值，甚至从当前问题、父问题、触发问题、史诗问题或目标问题中复制值。
+- en: In addition, you are able to edit multiple fields in a single action and most
+    fields support smart values and functions.
+  id: totrans-251
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 此外，你可以在单个操作中编辑多个字段，大多数字段支持智能值和函数。
+- en: Let's look at a rule to see how to use this action in practice.
+  id: totrans-252
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们看一个规则，看看如何在实际操作中使用这个功能。
+- en: Creating a rule to align user story due dates and fix versions
+  id: totrans-253
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 创建规则以对齐用户故事的到期日期和修复版本
+- en: 'In this example, when starting a sprint, we will update all the stories within
+    that sprint, set the due date to the end date of the sprint, and set the fix version
+    to the next unreleased version in the project:'
+  id: totrans-254
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这个示例中，当开始一个冲刺时，我们将更新该冲刺中的所有故事，将到期日期设置为冲刺的结束日期，并将修复版本设置为项目中下一个未发布的版本：
+- en: In your Scrum Software project, navigate to **Project settings**, click on the
+    **Automation** tab (or the **Project automation** tab if you're using Jira Server),
+    and then click on **Create rule**.
+  id: totrans-255
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在你的Scrum软件项目中，进入**项目设置**，点击**自动化**标签（如果你使用的是Jira Server，则点击**项目自动化**标签），然后点击**创建规则**。
+- en: Select **Sprint started**, choose your Scrum board from the **Boards** available
+    and then click **Save**.
+  id: totrans-256
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 选择**冲刺开始**，从**可用看板**中选择你的Scrum看板，然后点击**保存**。
+- en: Next, select the **Branch rules / related issues** component and, in the **Type
+    of related issues** field, select **Issues** in the sprint.
+  id: totrans-257
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 接下来，选择**分支规则/相关问题**组件，并在**相关问题类型**字段中选择**冲刺中的问题**。
+- en: Then, select `{{sprint.endDate}}`
+  id: totrans-258
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 然后，选择`{{sprint.endDate}}`
+- en: '`Next unreleased version`'
+  id: totrans-259
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`下一个未发布的版本`'
+- en: TIP
+  id: totrans-260
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 提示
+- en: We have used a smart value for the **Due date** field in this example and you
+    can find the list of smart values which can be used in a rule at [https://support.atlassian.com/jira-software-cloud/docs/smart-values-general](https://support.atlassian.com/jira-software-cloud/docs/smart-values-general).
+    We will cover smart values and smart value functions in more detail in [*Chapter
+    3*](B16551_03_Final_ASB_ePub.xhtml#_idTextAnchor065), *Enhancing Rules with Smart
+    Values*.
+  id: totrans-261
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在这个示例中，我们为**截止日期**字段使用了智能值，你可以在 [https://support.atlassian.com/jira-software-cloud/docs/smart-values-general](https://support.atlassian.com/jira-software-cloud/docs/smart-values-general)
+    查找可以在规则中使用的智能值列表。我们将在[*第 3 章*](B16551_03_Final_ASB_ePub.xhtml#_idTextAnchor065)中更详细地讨论智能值和智能值函数，*增强规则与智能值*。
+- en: 'Your rule should look like the following screenshot:'
+  id: totrans-262
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 你的规则应如下所示：
+- en: '![Figure 2.16 – Editing issue fields'
+  id: totrans-263
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '![图 2.16 – 编辑问题字段'
+- en: '](img/Figure_2.15_B16551.jpg)'
+  id: totrans-264
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '](img/Figure_2.15_B16551.jpg)'
+- en: Figure 2.16 – Editing issue fields
+  id: totrans-265
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 图 2.16 – 编辑问题字段
+- en: Finally, name your rule `Align story version and dates to sprint` and click
+    **Turn it on** to save and enable the rule.
+  id: totrans-266
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 最后，将你的规则命名为 `Align story version and dates to sprint` 并点击 **启用** 来保存并启用该规则。
+- en: In this section, we covered some of the more common actions you will be using
+    when creating automation rules. We learned how you can use the different algorithms
+    to assign issues to team members in a more intelligent fashion, and we also learned
+    how we can use actions to make modifications to issue fields.
+  id: totrans-267
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本节中，我们介绍了在创建自动化规则时你会使用的一些常见操作。我们学习了如何使用不同的算法以更智能的方式将问题分配给团队成员，同时我们还学习了如何使用操作来修改问题字段。
+- en: In certain cases, we may need more flexibility to edit issues and, in the next
+    section, we will explore how to use the available advanced field editing functionality
+    to achieve this.
+  id: totrans-268
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在某些情况下，我们可能需要更多的灵活性来编辑问题，接下来我们将探讨如何使用可用的高级字段编辑功能来实现这一目标。
+- en: Advanced field editing
+  id: totrans-269
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 高级字段编辑
+- en: Not all fields in Jira are created equal, and more especially in the case of
+    custom fields provided by third-party apps. In these cases, where it is not possible
+    to update the fields using the default functionality provided by the actions,
+    an **advanced field editor** is provided that we can utilize to apply the field
+    updates we require.
+  id: totrans-270
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 并非所有 Jira 中的字段都是相同的，尤其是在第三方应用提供的自定义字段的情况下。在这些无法使用默认功能更新字段的情况下，提供了一个**高级字段编辑器**，我们可以利用它来应用所需的字段更新。
+- en: In this section, we will take a look at the advanced field editor and how we
+    can use it to take advantage of those situations when we cannot use the standard
+    field editors.
+  id: totrans-271
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本节中，我们将介绍高级字段编辑器以及如何在无法使用标准字段编辑器的情况下利用它。
+- en: The advanced field editor
+  id: totrans-272
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 高级字段编辑器
+- en: The advanced field editor is present in a number of actions under the **More
+    options** section and allows you to specify the fields to edit using a JSON object
+    using the format specified in Jira's REST API.
+  id: totrans-273
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 高级字段编辑器存在于**更多选项**部分中的多个操作下，允许你使用 Jira 的 REST API 中指定的格式，通过 JSON 对象指定要编辑的字段。
+- en: 'The actions that allow advanced field editing are as follows:'
+  id: totrans-274
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 允许进行高级字段编辑的操作如下：
+- en: Cloning an issue
+  id: totrans-275
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 克隆问题
+- en: Creating an issue
+  id: totrans-276
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 创建问题
+- en: Creating a Service Management request
+  id: totrans-277
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 创建服务管理请求
+- en: Editing an issue
+  id: totrans-278
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 编辑问题
+- en: Transitioning an issue
+  id: totrans-279
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 转换问题
+- en: Before we look at how to use the advanced field editor, we'll first need to
+    understand how the JSON object required by the field editor is structured.
+  id: totrans-280
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在我们了解如何使用高级字段编辑器之前，我们首先需要理解字段编辑器所需的 JSON 对象是如何结构化的。
+- en: Understanding the JSON object
+  id: totrans-281
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 理解 JSON 对象
+- en: 'There are two attributes that we can use in the JSON object:'
+  id: totrans-282
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以在 JSON 对象中使用两个属性：
+- en: '**update**: You can use any of the supported field operations, such as add,
+    set or remove, in the update attribute. It is most useful for fields with multiple
+    values where you want to add values to, or remove values from, the existing set
+    of values.'
+  id: totrans-283
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**update**：你可以在更新属性中使用任何支持的字段操作，如添加、设置或删除。它最适用于具有多个值的字段，在这种情况下，你可以向现有的值集合中添加值，或从中删除值。'
+- en: '**fields**: This attribute is a shortcut for calling the update attribute with
+    the set operation.'
+  id: totrans-284
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**fields**：此属性是调用更新属性并执行设置操作的快捷方式。'
+- en: 'The fields you can use in the advanced editor within either the **update**
+    or **fields** attribute depends on whether you''re using the advanced editor when
+    creating a new issue or editing an existing one, and these fields can be found
+    by using one of the following REST API calls:'
+  id: totrans-285
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 您在**更新**或**字段**属性中使用的字段取决于您是在创建新问题时还是编辑现有问题时使用高级编辑器，这些字段可以通过以下REST API调用中的一种来找到：
+- en: '*createmeta:* `https://<yourjira.domain.com>/rest/api/latest/issue/createmeta?projectKeys={projectKey}&expand=projects.issuetypes.fields`
+    or'
+  id: totrans-286
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*createmeta:* `https://<yourjira.domain.com>/rest/api/latest/issue/createmeta?projectKeys={projectKey}&expand=projects.issuetypes.fields`
+    或'
+- en: '*editmeta*: `https://<yourjira.domain.com>/rest/api/latest/{issueKey}/editmeta`'
+  id: totrans-287
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*editmeta*: `https://<yourjira.domain.com>/rest/api/latest/{issueKey}/editmeta`'
+- en: The response from these calls will return a JSON object listing all the fields
+    available when creating or editing the issue, including the possible operations
+    and values for each. You can read more about finding fields using the REST API
+    in the official documentation available at [https://support.atlassian.com/jira-software-cloud/docs/advanced-field-editing-json/](https://support.atlassian.com/jira-software-cloud/docs/advanced-field-editing-json/).
+  id: totrans-288
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这些调用的响应将返回一个JSON对象，列出在创建或编辑问题时所有可用的字段，包括每个字段的可能操作和数值。您可以在官方文档中了解更多关于如何通过REST
+    API查找字段的信息，文档地址为[https://support.atlassian.com/jira-software-cloud/docs/advanced-field-editing-json/](https://support.atlassian.com/jira-software-cloud/docs/advanced-field-editing-json/)。
+- en: Important note
+  id: totrans-289
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 重要提示
+- en: These API calls return a list of fields on the corresponding create or edit
+    screen configured for the project and issue type. If you cannot find a field in
+    the returned JSON, you will need to add it to the corresponding screen first.
+  id: totrans-290
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这些API调用返回与项目和问题类型配置的相应创建或编辑屏幕上的字段列表。如果在返回的JSON中找不到某个字段，您需要首先将其添加到相应的屏幕中。
+- en: Let's now take a look at how we could use the advanced field editor in a rule.
+  id: totrans-291
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在让我们来看看如何在规则中使用高级字段编辑器。
+- en: Creating a rule to demonstrate the advanced field editor
+  id: totrans-292
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 创建一个规则以展示高级字段编辑器
+- en: To demonstrate how to use the advanced field editing functionality, we are going
+    to use a somewhat contrived situation.
+  id: totrans-293
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了演示如何使用高级字段编辑功能，我们将使用一个稍显牵强的情况。
+- en: 'For this rule, we''ll look for the word *printer* in the summary or description
+    field and then add the **Printers** component to the **Component** field, add
+    a new label, and update the description field. Let''s begin:'
+  id: totrans-294
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于此规则，我们将查找`summary`或`description`字段中包含的*printer*一词，然后将**打印机**组件添加到**组件**字段中，添加新的标签，并更新描述字段。让我们开始：
+- en: In your Service Management project, navigate to **Project settings**, click
+    the **Automation** tab, and then click on **Create rule**.
+  id: totrans-295
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在您的服务管理项目中，导航到**项目设置**，点击**自动化**标签，然后点击**创建规则**。
+- en: Add the **Issue created** trigger and click **Save**.
+  id: totrans-296
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 添加**问题已创建**触发器并点击**保存**。
+- en: Add a new **Issue fields condition**, set **Issue Type** equal to **Service
+    Request**, and then click **Save**.
+  id: totrans-297
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 添加一个新的**问题字段条件**，将**问题类型**设置为**服务请求**，然后点击**保存**。
+- en: Add a new `summary ~ printer OR description ~ printer`
+  id: totrans-298
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 添加一个新的`summary ~ printer OR description ~ printer`
+- en: 'Add an **Edit issue** action, expand the **More options** section, and then
+    set **Additional fields** to the following JSON:'
+  id: totrans-299
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 添加一个**编辑问题**动作，展开**更多选项**部分，然后将**附加字段**设置为以下JSON：
+- en: '[PRE1]'
+  id: totrans-300
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: TIP
+  id: totrans-301
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 提示
+- en: The JSON structure used in the advanced field editor is based on the Jira REST
+    API which you can learn more about at [https://developer.atlassian.com/cloud/jira/platform/rest](https://developer.atlassian.com/cloud/jira/platform/rest)
+    for Jira Cloud and at [https://developer.atlassian.com/server/jira/platform/rest-apis](https://developer.atlassian.com/server/jira/platform/rest-apis)
+    for Jira Server and Jira Data Center.
+  id: totrans-302
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 高级字段编辑器使用的JSON结构基于Jira REST API，您可以在[https://developer.atlassian.com/cloud/jira/platform/rest](https://developer.atlassian.com/cloud/jira/platform/rest)了解有关Jira
+    Cloud的更多信息，在[https://developer.atlassian.com/server/jira/platform/rest-apis](https://developer.atlassian.com/server/jira/platform/rest-apis)了解Jira
+    Server和Jira Data Center的相关信息。
+- en: Your rule should look similar to the following screenshot:![Figure 2.17 – Advanced
+    field editing rule
+  id: totrans-303
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 你的规则应该与以下屏幕截图类似：![图2.17 – 高级字段编辑规则
+- en: '](img/Figure_2.16_B16551.jpg)'
+  id: totrans-304
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '](img/Figure_2.16_B16551.jpg)'
+- en: Figure 2.17 – Advanced field editing rule
+  id: totrans-305
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 图2.17 – 高级字段编辑规则
+- en: Finally, click `Advanced field editing example`, and then click **Turn it on**
+    to save and enable the rule.
+  id: totrans-306
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 最后，点击`Advanced field editing example`，然后点击**开启**以保存并启用规则。
+- en: In this section, we have learned how to use the advanced field editor to update
+    issue fields when the default field editors are not sufficient. We have also learned
+    how to leverage the REST API to understand which fields are available and how
+    to correctly format the JSON data in the advanced editor.
+  id: totrans-307
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本节中，我们学习了如何使用高级字段编辑器在默认字段编辑器不够用时更新问题字段。我们还学习了如何利用REST API了解可用的字段，以及如何在高级编辑器中正确格式化JSON数据。
+- en: In the following section, we will look at how to transition an issue through
+    a workflow using automation.
+  id: totrans-308
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在接下来的部分，我们将学习如何使用自动化将问题通过工作流进行过渡。
+- en: Transitioning issues
+  id: totrans-309
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 过渡问题
+- en: Jira, whether you're working in a Software, Service Management or Business project,
+    is all about being able to track the progress of an issue through a particular
+    workflow. The ability to automate the **transitioning** of an issue through the
+    various statuses in the workflow is therefore key to completing the loop in terms
+    of working with issues.
+  id: totrans-310
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 无论你是在Jira的Software、Service Management还是Business项目中工作，Jira的核心是能够跟踪问题在特定工作流中的进展。因此，能够自动化问题在工作流中各个状态之间的**过渡**，对于完成工作流中的任务至关重要。
+- en: In this section, we are going to learn how we can use automation to react to
+    state transitions of an issue through its workflow, as well as how we can transition
+    an issue through subsequent statuses within its workflow.
+  id: totrans-311
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本节中，我们将学习如何使用自动化响应问题在工作流中的状态过渡，以及如何将问题在工作流中的后续状态之间进行过渡。
+- en: Transitions and workflows
+  id: totrans-312
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 过渡和工作流
+- en: As we have mentioned, we can use automation to transition an issue through a
+    workflow and, to be able to achieve this, your rules must be aligned to that issue
+    type's particular workflow.
+  id: totrans-313
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如我们所提到的，我们可以使用自动化将问题通过工作流进行过渡，并且为了实现这一点，你的规则必须与该问题类型的特定工作流对齐。
+- en: 'If we take a look at the following workflow, which represents a service request
+    in a Jira Service Management project, we could automate the transition from **In
+    Progress** to **Pending**; however, as there is no direct transition from **In
+    Progress** to **Closed**, any automation rule attempting to perform this transition
+    would result in the rule failing and an error being recorded in the audit log:'
+  id: totrans-314
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果我们查看以下工作流，它代表了一个Jira服务管理项目中的服务请求，我们可以自动将问题从**In Progress**过渡到**Pending**；然而，由于从**In
+    Progress**到**Closed**没有直接过渡，因此任何尝试执行此过渡的自动化规则都会导致规则失败，并在审计日志中记录错误：
+- en: '![Figure 2.18 – A service request workflow'
+  id: totrans-315
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '![Figure 2.18 – A service request workflow'
+- en: '](img/Figure_2.17_B16551.jpg)'
+  id: totrans-316
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '](img/Figure_2.17_B16551.jpg)'
+- en: Figure 2.18 – A service request workflow
+  id: totrans-317
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 2.18 – 一个服务请求工作流
+- en: As you can see from the workflow representation in the preceding diagram, automation
+    rules can only transition issues through a workflow where a transition already
+    exists between two statuses in that workflow.
+  id: totrans-318
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如你从前面的工作流示意图中看到的，自动化规则只能在工作流中已经存在两个状态之间的过渡时，将问题通过工作流进行过渡。
+- en: Important note
+  id: totrans-319
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 重要提示
+- en: Another point to consider is that the rule actor must have permission to perform
+    the particular transition. If, for example, you have a condition on the workflow
+    transition that restricts it to certain users or groups, you will need to adjust
+    the condition to allow the rule actor to also be allowed to perform the transition.
+  id: totrans-320
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 另一个需要考虑的点是，规则执行者必须有权限执行特定的过渡。例如，如果你在工作流过渡中设置了条件，限制了某些用户或组的权限，那么你需要调整该条件，以允许规则执行者也能执行过渡。
+- en: Let's look at how we can transition issues through their workflow in an automation
+    rule.
+  id: totrans-321
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们看看如何在自动化规则中将问题通过工作流进行过渡。
+- en: Creating a rule to automatically escalate requests to the correct team
+  id: totrans-322
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 创建一个规则，自动将请求升级到正确的团队
+- en: 'Let''s assume a service desk team is usually inundated with requests, so, in
+    order to free up some of their time, we want to automatically escalate any requests
+    that we know are infrastructure-related to a member of the infrastructure team.
+    We''ll use the workflow in *Figure 2.17* as a guide:'
+  id: totrans-323
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 假设一个服务台团队通常会收到大量请求，因此，为了腾出一些时间，我们希望将我们知道与基础设施相关的任何请求自动升级到基础设施团队的成员。我们将使用*图2.17*中的工作流作为指南：
+- en: In your Service Management project, navigate to **Project settings**, click
+    the **Automation** tab, and then click on **Create rule**.
+  id: totrans-324
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在你的服务管理项目中，进入**项目设置**，点击**自动化**标签页，然后点击**创建规则**。
+- en: Select the `Waiting for support` in the **To** status field, and finally click
+    **Save**.
+  id: totrans-325
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在**To**状态字段中选择`Waiting for support`，然后点击**Save**。
+- en: Next, we select `Components`
+  id: totrans-326
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 接下来，我们选择`Components`
+- en: '`contains any of`'
+  id: totrans-327
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`包含任何`'
+- en: '`Cloud Storage Services, Data Center Services, Office Network`'
+  id: totrans-328
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`云存储服务、数据中心服务、办公室网络`'
+- en: Now select **New action**, then **Transition issue**, and set **Destination
+    status** to **Escalated**.
+  id: totrans-329
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在选择**新建操作**，然后选择**转换问题**，并将**目标状态**设置为**已升级**。
+- en: At this point, we could choose to set the **Assignee** field to a particular
+    user; however, we want to distribute any tasks evenly across the infrastructure
+    team, so click **Save**.
+  id: totrans-330
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 此时，我们可以选择将**负责人**字段设置为某个特定用户；然而，我们希望将任务均匀分配给基础设施团队，因此点击**保存**。
+- en: 'Your rule should now look similar to the following screenshot:'
+  id: totrans-331
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 您的规则现在应该与以下截图类似：
+- en: '![Figure 2.19 – Transitioning an issue to ESCALATED'
+  id: totrans-332
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '![图 2.19 – 将问题转换为已升级状态'
+- en: '](img/Figure_2.18_B16551.jpg)'
+  id: totrans-333
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '](img/Figure_2.18_B16551.jpg)'
+- en: Figure 2.19 – Transitioning an issue to ESCALATED
+  id: totrans-334
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 图 2.19 – 将问题转换为已升级状态
+- en: Let's add the assignment next. Select `User in a group`
+  id: totrans-335
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 接下来，我们来添加分配。选择`用户组中的用户`
+- en: '`Round-robin`'
+  id: totrans-336
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`循环分配`'
+- en: '`Infrastructure Team`'
+  id: totrans-337
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`基础设施团队`'
+- en: Finally, name your rule `Auto-escalate requests` and click **Turn it on** to
+    save and enable the rule.
+  id: totrans-338
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 最后，为您的规则命名为 `自动升级请求`，然后点击**启用**以保存并启用规则。
+- en: In this section, you have learned how to create rules to respond to state transitions
+    of an issue, as well as how you can automatically transition an issue to the next
+    status in its workflow.
+  id: totrans-339
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本节中，您已经学习了如何创建响应问题状态转换的规则，以及如何自动将问题转换为其工作流中的下一个状态。
+- en: In the final section of this chapter, we will look at how you can use automations
+    to schedule recurring tasks.
+  id: totrans-340
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章的最后一节中，我们将探讨如何使用自动化来安排定期执行的任务。
+- en: Scheduling tasks
+  id: totrans-341
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 任务调度
+- en: One of the first things people think about when you mention automation is the
+    ability to create issues on a scheduled basis, and with automation in Jira, this
+    is a relatively straightforward task to achieve. In conjunction with the rest
+    of the components we have already discussed, this gives you great flexibility
+    in terms of what you can achieve.
+  id: totrans-342
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当提到自动化时，人们首先想到的事情之一就是按计划创建问题，在 Jira 中使用自动化实现这一点是相对简单的任务。结合我们已经讨论的其他组件，它为您提供了巨大的灵活性，能让您实现各种功能。
+- en: In this section, we will look at how you can use the **Scheduled** trigger to
+    perform a variety of tasks that need to be performed at defined intervals.
+  id: totrans-343
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本节中，我们将探讨如何使用**定时**触发器来执行需要在特定时间间隔内完成的各种任务。
+- en: Scheduled trigger
+  id: totrans-344
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 定时触发器
+- en: The **Scheduled trigger** allows us to run rules at specified intervals. We
+    can use either a fixed rate interval in our rule, or we can use a **cron** expression
+    to create a more complex schedule.
+  id: totrans-345
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**定时触发器**允许我们在指定的时间间隔内运行规则。我们可以在规则中使用固定间隔，或者使用**cron**表达式来创建更复杂的调度计划。'
+- en: Fixed rate intervals are pretty straightforward; you specify how often the rule
+    should trigger in minutes, hours, or days, and the automation engine will initiate
+    execution of the rule based on the interval.
+  id: totrans-346
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 固定速率间隔非常简单；您指定规则触发的频率（以分钟、小时或天为单位），自动化引擎会根据间隔启动规则的执行。
+- en: Important note
+  id: totrans-347
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 重要提示
+- en: When you use a fixed rate interval of hours or days, the automation engine will
+    consider the starting time of the interval to be the time you saved or updated
+    the rule. For example, if you have a schedule running daily and you save the rule
+    at 09:21, it will run at 09:21 every day until you edit and save the rule at a
+    different time.
+  id: totrans-348
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当您使用小时或天数的固定速率间隔时，自动化引擎会将间隔的起始时间视为您保存或更新规则的时间。例如，如果您设置了每天运行的计划，并且您在 09:21 保存规则，那么它将每天在
+    09:21 运行，直到您编辑并在不同时间保存规则。
+- en: Cron expressions give you greater flexibility over when your rule will trigger.
+    Using cron expressions allows you to define schedules such as kicking off the
+    rule every Monday and Friday at 8:30 a.m. You can find much more detailed information
+    on creating cron expressions in Jira at [https://support.atlassian.com/jira-software-cloud/docs/construct-cron-expressions-for-a-filter-subscription/](https://support.atlassian.com/jira-software-cloud/docs/construct-cron-expressions-for-a-filter-subscription/).
+  id: totrans-349
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Cron 表达式为您提供了更大的灵活性，可以控制规则触发的时间。使用 cron 表达式，您可以定义计划，例如每周一和周五上午 8:30 执行规则。您可以在
+    [https://support.atlassian.com/jira-software-cloud/docs/construct-cron-expressions-for-a-filter-subscription/](https://support.atlassian.com/jira-software-cloud/docs/construct-cron-expressions-for-a-filter-subscription/)
+    找到更多关于如何在 Jira 中创建 cron 表达式的详细信息。
+- en: Tip
+  id: totrans-350
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 提示
+- en: Writing cron expressions is not always intuitive or straightforward. I'd recommend
+    that you use a site such as CronMaker ([https://www.cronmaker.com](https://www.cronmaker.com))
+    to help you build cron expressions that are compatible with Jira automation. Note
+    that Jira cron expressions have a **seconds** field, whereas some cron expression
+    generators only support resolution down to minutes.
+  id: totrans-351
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 编写cron表达式并不总是直观或简单的。我建议你使用像CronMaker ([https://www.cronmaker.com](https://www.cronmaker.com))
+    这样的网站，帮助你构建与Jira自动化兼容的cron表达式。请注意，Jira的cron表达式包含**秒**字段，而某些cron表达式生成器只支持到分钟级别。
+- en: Let's first take a look at how we can use a fixed rate interval in a scheduled
+    rule.
+  id: totrans-352
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们先看看如何在调度规则中使用固定速率间隔。
+- en: Creating a rule to close out stale issues
+  id: totrans-353
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 创建一个规则来关闭过时的问题
+- en: 'In this example, we''ll look at how we can resolve any requests that have been
+    waiting for customer feedback for longer than 5 days:'
+  id: totrans-354
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这个示例中，我们将看一下如何处理那些等待客户反馈超过5天的请求：
+- en: In your Service Management project, navigate to **Project settings**, click
+    on the **Automation** tab, and then click on **Create rule**.
+  id: totrans-355
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在你的服务管理项目中，进入**项目设置**，点击**自动化**选项卡，然后点击**创建规则**。
+- en: Select the `status = "Waiting for customer" AND updated > -5d`
+  id: totrans-356
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 选择`status = "等待客户" AND updated > -5d`
+- en: 'Your rule should look like the following screenshot:'
+  id: totrans-357
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 你的规则应该如下所示：
+- en: '![Figure 2.20 – Scheduling a fixed rate rule'
+  id: totrans-358
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '![图2.20 – 调度固定速率规则'
+- en: '](img/Figure_2.19_B16551.jpg)'
+  id: totrans-359
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '](img/Figure_2.19_B16551.jpg)'
+- en: Figure 2.20 – Scheduling a fixed rate rule
+  id: totrans-360
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 图2.20 – 调度固定速率规则
+- en: Next, we'll add a comment to the issue that will fire a notification to the
+    customer that we're auto-closing their request, so we'll select `Dear {{issue.reporter.displayName}},`
+  id: totrans-361
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 接下来，我们将在问题中添加评论，通知客户我们正在自动关闭他们的请求，因此我们将选择`亲爱的 {{issue.reporter.displayName}}，`
+- en: '`We haven''t heard from you for a while, so we''re closing this issue.`'
+  id: totrans-362
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`我们已经有一段时间没有收到你的消息了，所以我们将关闭这个问题。`'
+- en: '`If you feel this is incorrect, please reply to this message and we''ll re-open
+    this request for you.`'
+  id: totrans-363
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`如果你觉得这个不正确，请回复此消息，我们将为你重新打开这个请求。`'
+- en: '`Kind regards,`'
+  id: totrans-364
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`此致，`'
+- en: '`The Service Team`'
+  id: totrans-365
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`服务团队`'
+- en: Then we'll transition the issue to **Resolved**. Select **New action**, **Transition
+    issue**, and set the **Destination status** field to **Resolved**.
+  id: totrans-366
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 然后我们将问题转移到**已解决**状态。选择**新建操作**，**转移问题**，并将**目标状态**字段设置为**已解决**。
+- en: Finally, click `Auto-resolve stale issues`, and then click **Turn it on** to
+    save and enable the rule.
+  id: totrans-367
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 最后，点击`自动解决过时问题`，然后点击**启用**以保存并启用规则。
+- en: Now that we've seen how the fixed rate interval works, let's take a look at
+    how to use a cron expression to create a more precise schedule.
+  id: totrans-368
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经看到固定间隔规则的工作方式，接下来我们来看一下如何使用cron表达式创建更精确的调度。
+- en: Creating a rule to generate recurring start-of-week tasks
+  id: totrans-369
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 创建一个规则来生成周期性的周开始任务
+- en: 'Next, let''s look at how we can use the Scheduled trigger to create weekly
+    tasks for the Service Management every Monday morning. We will create a single
+    main task to track this and add sub-tasks as required to this main task. The due
+    date for this task should be within 1 day:'
+  id: totrans-370
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来，让我们看看如何使用调度触发器每周一早上为服务管理创建任务。我们将创建一个主任务来跟踪此任务，并根据需要为主任务添加子任务。这个任务的到期日期应为1天内：
+- en: In your Service Management project, navigate to **Project settings**, click
+    the **Automation** tab, and then click on **Create rule**.
+  id: totrans-371
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在你的服务管理项目中，进入**项目设置**，点击**自动化**选项卡，然后点击**创建规则**。
+- en: Select the `0 0 9 ? * MON *`
+  id: totrans-372
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 选择`0 0 9 ? * MON *`
+- en: 'Your trigger should look like the following screenshot:'
+  id: totrans-373
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 你的触发器应该如下所示：
+- en: '![Figure 2.21 – Setting a scheduled trigger with a cron expression'
+  id: totrans-374
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '![图2.21 – 使用cron表达式设置调度触发器'
+- en: '](img/Figure_2.20_B16551.jpg)'
+  id: totrans-375
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '](img/Figure_2.20_B16551.jpg)'
+- en: Figure 2.21 – Setting a scheduled trigger with a cron expression
+  id: totrans-376
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 图2.21 – 使用cron表达式设置调度触发器
+- en: Select `Task`
+  id: totrans-377
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 选择`任务`
+- en: '`Start of week checks`'
+  id: totrans-378
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`周开始检查`'
+- en: '`{{now.plusDays(1)}}`'
+  id: totrans-379
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`{{now.plusDays(1)}}`'
+- en: Next, select **Branch rule / related issues** and **All created issues** as
+    **Type of related issue** and then click **Save**.
+  id: totrans-380
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 接下来，选择**分支规则/相关问题**，并将**相关问题类型**设置为**所有创建的问题**，然后点击**保存**。
+- en: 'Finally, click **New action**, **Create sub-tasks**, and add as many sub-tasks
+    as required for the actions you want to check. For this example, we''ll add two
+    sub-tasks: **Check weekend access logs** and **Other tasks**.'
+  id: totrans-381
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 最后，点击**新建操作**，**创建子任务**，并根据需要添加多个子任务以执行你想要检查的操作。对于这个示例，我们将添加两个子任务：**检查周末访问日志**和**其他任务**。
+- en: 'Your rule should look similar to the following:'
+  id: totrans-382
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 你的规则应该类似如下：
+- en: '![Figure 2.22 – Creating a scheduled weekly task'
+  id: totrans-383
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '![图 2.22 – 创建定期的每周任务'
+- en: '](img/Figure_2.21_B16551.jpg)'
+  id: totrans-384
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '](img/Figure_2.21_B16551.jpg)'
+- en: Figure 2.22 – Creating a scheduled weekly task
+  id: totrans-385
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 图 2.22 – 创建定期的每周任务
+- en: Finally, click `Start-of-week checks`, and click **Turn it on** to save and
+    enable the rule.
+  id: totrans-386
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 最后，点击`Start-of-week checks`，然后点击**开启**以保存并启用规则。
+- en: In this section, we have seen how to use the Scheduled trigger to automate both
+    the creation of tasks on a regular basis as well as how we can leverage scheduling
+    to perform maintenance tasks at defined intervals.
+  id: totrans-387
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本节中，我们学习了如何使用调度触发器，自动化定期创建任务，以及如何利用调度来在定义的时间间隔执行维护任务。
+- en: Summary
+  id: totrans-388
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 总结
+- en: In this chapter, you have learned how we can use automation rules to work with
+    issues in Jira. We have explored rule conditions in more detail and how you can
+    use these to accurately target issues in your rules.
+  id: totrans-389
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，你已经学习了如何使用自动化规则来处理 Jira 中的问题。我们更详细地探讨了规则条件，以及如何利用这些条件精确地定位规则中的问题。
+- en: Next, we introduced branch rules and learned how to author rules that target
+    not only the issue that triggered a rule, but also its related issues, and then
+    we introduced the most common actions involved in making changes to your issues.
+  id: totrans-390
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 接下来，我们介绍了分支规则，学习了如何编写规则，既可以针对触发规则的问题，也可以针对与之相关的问题，并介绍了处理问题时最常用的操作。
+- en: We then learned how to use the advanced field editor for those situations where
+    the standard rule actions are not sufficient and also learned how to transition
+    issues through their workflows automatically.
+  id: totrans-391
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后，我们学习了如何使用高级字段编辑器，处理标准规则动作不足以应对的情况，并且还学会了如何自动化地将问题在其工作流中转换。
+- en: Finally, we looked at how to use the scheduling capability of rules to perform
+    tasks on a regular basis using both fixed rate scheduling and cron expressions
+    for finer control over our schedules.
+  id: totrans-392
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后，我们了解了如何使用规则的调度功能，通过固定速率调度和 cron 表达式来定期执行任务，以便更精细地控制我们的日程安排。
+- en: These skills form the basis of working with issues in automation rules and we'll
+    be using all of them throughout the rest of this book.
+  id: totrans-393
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这些技能构成了在自动化规则中处理问题的基础，接下来我们将在本书的其余部分继续使用这些技能。
+- en: In the next chapter, we'll be learning about smart values and smart value functions
+    and how we can use these to take your automation rules to the next level.
+  id: totrans-394
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一章中，我们将学习智能值和智能值函数，以及如何利用这些工具将你的自动化规则提升到一个新的水平。

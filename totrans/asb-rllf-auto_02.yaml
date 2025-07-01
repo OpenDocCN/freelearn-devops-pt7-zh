@@ -1,0 +1,907 @@
+- en: '2'
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '2'
+- en: Starting with Simple Automation
+  id: totrans-1
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 从简单自动化开始
+- en: When you start your automation journey, start with simple use cases instead
+    of automating complex workflows. Find three small use cases that you can use to
+    learn automation faster and implement it in your environment. Ansible has a smooth
+    learning curve but it is also important to choose the right use cases for your
+    first automation project. Three great examples for initial use cases for automation
+    are simple tasks such as application deployment, asset information collection,
+    and simple file manipulation such as copy operations.
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当你开始自动化之旅时，首先从简单的用例入手，而不是自动化复杂的工作流。找出三个小的用例，这些用例能帮助你更快地学习自动化并在你的环境中实施。Ansible
+    有一个平滑的学习曲线，但选择合适的用例作为你的第一个自动化项目同样重要。三个很好的初始自动化用例示例包括简单的任务，如应用程序部署、资产信息收集以及简单的文件操作，如复制操作。
+- en: 'In this chapter, we are going to cover the following topics:'
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们将覆盖以下主题：
+- en: Identifying manual tasks to be automated
+  id: totrans-4
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 识别需要自动化的手动任务
+- en: Finding the Ansible modules to use
+  id: totrans-5
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 寻找要使用的 Ansible 模块
+- en: Configuring your text editor for Ansible
+  id: totrans-6
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 配置你的文本编辑器以支持 Ansible
+- en: Connecting to remote nodes
+  id: totrans-7
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 连接到远程节点
+- en: You will start by creating basic automation tasks by finding suitable modules
+    before learning how to use credentials and other parameters.
+  id: totrans-8
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你将通过在学习如何使用凭证和其他参数之前，先找到合适的模块来创建基本的自动化任务。
+- en: Technical requirements
+  id: totrans-9
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 技术要求
+- en: 'You will need the following technical requirements for this chapter:'
+  id: totrans-10
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章你将需要以下技术要求：
+- en: A Linux machine for the Ansible control node
+  id: totrans-11
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 一台用于 Ansible 控制节点的 Linux 机器
+- en: One or more Linux machines with Red Hat repositories configured (if you are
+    using other Linux operating systems instead of **Red Hat Enterprise Linux** (**RHEL**),
+    then make sure you have the appropriate repositories configured to get packages
+    and updates)
+  id: totrans-12
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 一台或多台配置了 Red Hat 仓库的 Linux 机器（如果你使用的是其他 Linux 操作系统，而不是**Red Hat Enterprise Linux**（**RHEL**），请确保已配置适当的仓库以获取软件包和更新）
+- en: All the Ansible code and the Ansible playbooks, commands, and snippets for this
+    chapter can be found in this book’s GitHub repository at [https://github.com/PacktPublishing/Ansible-for-Real-life-Automation/tree/main/Chapter-02](https://github.com/PacktPublishing/Ansible-for-Real-life-Automation/tree/main/Chapter-02).
+  id: totrans-13
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章的所有 Ansible 代码、Ansible 剧本、命令和片段都可以在本书的 GitHub 仓库中找到，链接为 [https://github.com/PacktPublishing/Ansible-for-Real-life-Automation/tree/main/Chapter-02](https://github.com/PacktPublishing/Ansible-for-Real-life-Automation/tree/main/Chapter-02)。
+- en: Identifying manual tasks to be automated
+  id: totrans-14
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 识别需要自动化的手动任务
+- en: In the previous chapter, you learned how to use Ansible ad hoc commands to manually
+    execute tasks on remotely managed nodes using Ansible modules. Now, you will learn
+    how to start with simple Ansible playbooks and tasks. Remember, you need to add
+    your managed node details to your inventory file before you can execute any Ansible
+    tasks.
+  id: totrans-15
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在上一章中，你学习了如何使用 Ansible 临时命令手动执行远程管理节点上的任务，使用的是 Ansible 模块。现在，你将学习如何从简单的 Ansible
+    剧本和任务开始。记住，在执行任何 Ansible 任务之前，你需要将管理节点的详细信息添加到你的库存文件中。
+- en: We will start with a simple automation job to understand the basics of the Ansible
+    playbook. For this example, we are assuming you have installed and configured
+    the `chronyd` application. The `chrony` application is an implementation of the
+    `chronyd` is the default NTP client and server in Red Hat Enterprise Linux 8 and
+    SUSE Linux Enterprise Server 15 and is available in many Linux distributions.
+  id: totrans-16
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们将从一个简单的自动化任务开始，以理解 Ansible 剧本的基本概念。对于这个示例，我们假设你已经安装并配置了 `chronyd` 应用程序。`chrony`
+    应用程序是 `chronyd` 的实现，是 Red Hat Enterprise Linux 8 和 SUSE Linux Enterprise Server
+    15 中默认的 NTP 客户端和服务器，并且在许多 Linux 发行版中都可以使用。
+- en: 'For our example Ansible playbook, we will do the following:'
+  id: totrans-17
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于我们的示例 Ansible 剧本，我们将执行以下操作：
+- en: Install the `chrony` package on all nodes.
+  id: totrans-18
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在所有节点上安装 `chrony` 包。
+- en: Adjust the `chrony` configurations.
+  id: totrans-19
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 调整 `chrony` 配置。
+- en: Start the `chronyd` service and enable it.
+  id: totrans-20
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 启动 `chronyd` 服务并启用它。
+- en: 'The following diagram shows the Ansible to `node1` connection for deploying
+    and configuring the `chrony` application:'
+  id: totrans-21
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 下图显示了用于部署和配置 `chrony` 应用程序的 Ansible 与 `node1` 的连接：
+- en: '![Figure 2.1 – Configurations for Ansible to automate chrony ](img/B18383_02_01.jpg)'
+  id: totrans-22
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 2.1 – 配置 Ansible 以自动化 chrony](img/B18383_02_01.jpg)'
+- en: Figure 2.1 – Configurations for Ansible to automate chrony
+  id: totrans-23
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 2.1 – 配置 Ansible 以自动化 chrony
+- en: 'Follow these steps to create Ansible artifacts for the `chronyd` installation,
+    including `ansible.cfg`, `hosts`, and the Ansible playbook:'
+  id: totrans-24
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 按照以下步骤创建 Ansible 工件以安装 `chronyd`，包括 `ansible.cfg`、`hosts` 文件和 Ansible 剧本：
+- en: 'First, create a new directory called `Chapter-02` and create the `ansible.cfg`
+    file inside the directory, as you did in the previous chapter:'
+  id: totrans-25
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 首先，创建一个名为`Chapter-02`的新目录，并像上一章那样在该目录中创建`ansible.cfg`文件：
+- en: '![Figure 2.2 – Ansible configuration file (ansible.cfg) ](img/B18383_02_02.jpg)'
+  id: totrans-26
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 2.2 – Ansible 配置文件 (ansible.cfg)](img/B18383_02_02.jpg)'
+- en: Figure 2.2 – Ansible configuration file (ansible.cfg)
+  id: totrans-27
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 2.2 – Ansible 配置文件 (ansible.cfg)
+- en: 'Next, create the `hosts` file in the same directory as the `node1` managed
+    node:'
+  id: totrans-28
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 接下来，在与 `node1` 受管节点相同的目录下创建 `hosts` 文件：
+- en: '![Figure 2.3 – Ansible inventory file with node1 ](img/B18383_02_03.jpg)'
+  id: totrans-29
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 2.3 – 带有 node1 的 Ansible 清单文件](img/B18383_02_03.jpg)'
+- en: Figure 2.3 – Ansible inventory file with node1
+  id: totrans-30
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 2.3 – 带有 node1 的 Ansible 清单文件
+- en: 'Create a playbook file called `install-package.yaml` in the same directory
+    with the following content:'
+  id: totrans-31
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在同一目录下创建一个名为`install-package.yaml`的 playbook 文件，内容如下：
+- en: '![Figure 2.4 – Ansible playbook for installing chrony ](img/B18383_02_04.jpg)'
+  id: totrans-32
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 2.4 – 安装 chrony 的 Ansible playbook](img/B18383_02_04.jpg)'
+- en: Figure 2.4 – Ansible playbook for installing chrony
+  id: totrans-33
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 2.4 – 安装 chrony 的 Ansible playbook
+- en: 'In the preceding playbook, you only have one *play* called `Install Chrony
+    Package` and only one task called `Ensure Chronry package is installed`. Also,
+    note the `hosts: node1` line as you are installing the package on your managed
+    node – that is, `node1`.'
+  id: totrans-34
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '在前面的 playbook 中，您只有一个名为 `Install Chrony Package` 的 *play*，以及一个名为 `Ensure Chrony
+    package is installed` 的任务。还要注意 `hosts: node1` 行，因为您正在安装软件包到您的受管节点——也就是 `node1`。'
+- en: Ansible Fully Qualified Collection Name (FQCN)
+  id: totrans-35
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 完全限定集合名称 (FQCN)
+- en: 'As we learned in [*Chapter 1*](B18383_01.xhtml#_idTextAnchor014), *Ansible
+    Automation – Introduction,* in the *Ansible Content Collections* *section*, many
+    plugins and modules were moved to content collections in Ansible 2.10\. The playbooks
+    will work without any issues but it is best practice to use `ansible.builtin.dnf`
+    is an FQCN in which `dnf` is the module name and part of `ansible-core`. As another
+    example, there’s `google.cloud.gcp_compute_disk`, where `google` is the author
+    of the collection, `cloud` is the collection name, and `gcp_compute_disk` is the
+    module name to create a Google Cloud disk. Read more about collections here: [https://docs.ansible.com/ansible/latest/user_guide/collections_using.xhtml](https://docs.ansible.com/ansible/latest/user_guide/collections_using.xhtml).'
+  id: totrans-36
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如我们在[*第一章*](B18383_01.xhtml#_idTextAnchor014)中学到的，*Ansible 自动化 – 介绍*，在 *Ansible
+    内容集合* *部分*，许多插件和模块已移至 Ansible 2.10 中的内容集合。playbook 可以正常工作，但最佳实践是使用 `ansible.builtin.dnf`
+    作为 FQCN，其中 `dnf` 是模块名称，且是 `ansible-core` 的一部分。另一个例子是 `google.cloud.gcp_compute_disk`，其中
+    `google` 是集合的作者，`cloud` 是集合名称，`gcp_compute_disk` 是创建 Google Cloud 磁盘的模块名称。有关集合的更多信息，请阅读：[https://docs.ansible.com/ansible/latest/user_guide/collections_using.xhtml](https://docs.ansible.com/ansible/latest/user_guide/collections_using.xhtml)。
+- en: 'Execute the playbook using the `ansible-playbook` command; you will see the
+    following output:'
+  id: totrans-37
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用 `ansible-playbook` 命令执行 playbook，您将看到以下输出：
+- en: '![Figure 2.5 – The chrony package installation playbook ](img/B18383_02_05.jpg)'
+  id: totrans-38
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 2.5 – chrony 包安装 playbook](img/B18383_02_05.jpg)'
+- en: Figure 2.5 – The chrony package installation playbook
+  id: totrans-39
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 2.5 – chrony 包安装 playbook
+- en: 'With that, the playbook has been executed successfully. The following screenshot
+    shows the success status:'
+  id: totrans-40
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这样，playbook 就已成功执行。以下截图显示了成功状态：
+- en: '![Figure 2.6 – The chrony package installation message ](img/B18383_02_06.jpg)'
+  id: totrans-41
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 2.6 – chrony 包安装消息](img/B18383_02_06.jpg)'
+- en: Figure 2.6 – The chrony package installation message
+  id: totrans-42
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 2.6 – chrony 包安装消息
+- en: 'Now, log in to the target machine, `node1`, and verify the installation:'
+  id: totrans-43
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在，登录到目标机器 `node1` 并验证安装：
+- en: '![Figure 2.7 – The chrony package installed on node1 ](img/B18383_02_07.jpg)'
+  id: totrans-44
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 2.7 – 在 node1 上安装的 chrony 包](img/B18383_02_07.jpg)'
+- en: Figure 2.7 – The chrony package installed on node1
+  id: totrans-45
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 2.7 – 在 node1 上安装的 chrony 包
+- en: Now, you need to create a `chrony` configuration that you can use for all of
+    your servers.
+  id: totrans-46
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，您需要创建一个可以在所有服务器上使用的`chrony`配置。
+- en: 'Create the `Chapter-02/chrony.conf.sample` file in the same directory (`Chapter-02`).
+    Add more details to the `chrony` configuration as per your organization’s standards:'
+  id: totrans-47
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在相同目录（`Chapter-02`）下创建 `Chapter-02/chrony.conf.sample` 文件。根据您组织的标准，为 `chrony`
+    配置添加更多详细信息：
+- en: '![Figure 2.8 – Sample chrony configuration ](img/B18383_02_08.jpg)'
+  id: totrans-48
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 2.8 – 示例 chrony 配置](img/B18383_02_08.jpg)'
+- en: Figure 2.8 – Sample chrony configuration
+  id: totrans-49
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 2.8 – 示例 chrony 配置
+- en: Add a task called `Copy chrony configuration to node` to the playbook to copy
+    the sample `chrony` configuration to the node using the `template` module. Then,
+    start the `chronyd` service using the `service` module.
+  id: totrans-50
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在剧本中添加一个名为`Copy chrony configuration to node`的任务，使用`template`模块将示例`chrony`配置复制到节点。然后，使用`service`模块启动`chronyd`服务。
+- en: 'The completed playbook will look as follows:'
+  id: totrans-51
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 完整的剧本如下所示：
+- en: '![Figure 2.9 – Playbook for installing and configuring chrony ](img/B18383_02_09.jpg)'
+  id: totrans-52
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图2.9 – 安装和配置chrony的剧本](img/B18383_02_09.jpg)'
+- en: Figure 2.9 – Playbook for installing and configuring chrony
+  id: totrans-53
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图2.9 – 安装和配置chrony的剧本
+- en: 'Execute the playbook again and verify it, as shown in the following screenshot:'
+  id: totrans-54
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 再次执行剧本并验证，如下图所示：
+- en: '![Figure 2.10 – Expanded playbook with chrony configuration ](img/B18383_02_10.jpg)'
+  id: totrans-55
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图2.10 – 展开后的剧本与chrony配置](img/B18383_02_10.jpg)'
+- en: Figure 2.10 – Expanded playbook with chrony configuration
+  id: totrans-56
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图2.10 – 展开后的剧本与chrony配置
+- en: In the preceding example, the status of the `Ensure chrony package is installed`
+    task is `ok`. This means that the desired state has already been reached and that
+    you do not need to install the `chrony` package again. Therefore, Ansible will
+    not take any action for that task.
+  id: totrans-57
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在上述示例中，`Ensure chrony package is installed`任务的状态为`ok`。这意味着所需的状态已经达到，因此无需再次安装`chrony`包。因此，Ansible不会对该任务采取任何行动。
+- en: In Ansible, this feature is called **idempotency**, which means that if the
+    result of performing an action is the same as the current state, then no further
+    action is required for that task. Most of the Ansible modules are idempotent,
+    which will help you run the same playbook multiple times on managed nodes, without
+    any impact ([https://docs.ansible.com/ansible/latest/reference_appendices/glossary.xhtml#term-Idempotency](https://docs.ansible.com/ansible/latest/reference_appendices/glossary.xhtml#term-Idempotency)).
+  id: totrans-58
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在Ansible中，这一特性称为**幂等性**，意味着如果执行一个操作的结果与当前状态相同，则该任务无需进一步操作。大多数Ansible模块是幂等的，这将帮助你在受管节点上多次运行相同的剧本而不会产生任何影响（[https://docs.ansible.com/ansible/latest/reference_appendices/glossary.xhtml#term-Idempotency](https://docs.ansible.com/ansible/latest/reference_appendices/glossary.xhtml#term-Idempotency)）。
+- en: 'Now, verify the details on the target node:'
+  id: totrans-59
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，验证目标节点上的详细信息：
+- en: '![Figure 2.11 – The chrony configuration and service status on node1 ](img/B18383_02_11.jpg)'
+  id: totrans-60
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图2.11 – node1上的chrony配置和服务状态](img/B18383_02_11.jpg)'
+- en: Figure 2.11 – The chrony configuration and service status on node1
+  id: totrans-61
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图2.11 – node1上的chrony配置和服务状态
+- en: The preceding playbook can be used to automate your `chrony` configuration for
+    thousands of servers and it will only take a few minutes to complete the tasks.
+  id: totrans-62
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 上述剧本可以用来自动化你的`chrony`配置，适用于成千上万的服务器，并且只需几分钟就能完成任务。
+- en: Ansible Module References
+  id: totrans-63
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible模块参考
+- en: 'Refer to the following documentation for the modules you have used in the playbook:'
+  id: totrans-64
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请参考以下文档，了解你在剧本中使用的模块：
+- en: '[https://docs.ansible.com/ansible/latest/collections/ansible/builtin/dnf_module.xhtml](https://docs.ansible.com/ansible/latest/collections/ansible/builtin/dnf_module.xhtml)'
+  id: totrans-65
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '[https://docs.ansible.com/ansible/latest/collections/ansible/builtin/dnf_module.xhtml](https://docs.ansible.com/ansible/latest/collections/ansible/builtin/dnf_module.xhtml)'
+- en: '[https://docs.ansible.com/ansible/latest/collections/ansible/builtin/copy_module.xhtml](https://docs.ansible.com/ansible/latest/collections/ansible/builtin/copy_module.xhtml)'
+  id: totrans-66
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '[https://docs.ansible.com/ansible/latest/collections/ansible/builtin/copy_module.xhtml](https://docs.ansible.com/ansible/latest/collections/ansible/builtin/copy_module.xhtml)'
+- en: '[https://docs.ansible.com/ansible/latest/collections/ansible/builtin/systemd_module.xhtml](https://docs.ansible.com/ansible/latest/collections/ansible/builtin/systemd_module.xhtml).'
+  id: totrans-67
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '[https://docs.ansible.com/ansible/latest/collections/ansible/builtin/systemd_module.xhtml](https://docs.ansible.com/ansible/latest/collections/ansible/builtin/systemd_module.xhtml)。'
+- en: Finding the Ansible modules to use
+  id: totrans-68
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 查找要使用的Ansible模块
+- en: In this section, you will learn how to find suitable modules and documentation
+    to use inside the Ansible playbook.
+  id: totrans-69
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本节中，你将学习如何在Ansible剧本中查找适合的模块和文档。
+- en: 'Find the available modules and details using the `ansible-doc` command:'
+  id: totrans-70
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用`ansible-doc`命令查找可用的模块和详细信息：
+- en: '![Figure 2.12 – Ansible module list ](img/B18383_02_12.jpg)'
+  id: totrans-71
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图2.12 – Ansible模块列表](img/B18383_02_12.jpg)'
+- en: Figure 2.12 – Ansible module list
+  id: totrans-72
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图2.12 – Ansible模块列表
+- en: 'It will be a long or short list, depending on your type of Ansible installation.
+    (Recall the difference between `ansible`, `ansible-base`, and `ansible-core`,
+    which was explained in the previous chapter.) You can check the total module count
+    that’s available as follows:'
+  id: totrans-73
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 它将是一个长列表或短列表，具体取决于你的Ansible安装类型。（回顾前一章中解释的`ansible`、`ansible-base`和`ansible-core`之间的区别。）你可以按照以下方式检查可用的模块总数：
+- en: '[PRE0]'
+  id: totrans-74
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: 'Check the module details by calling the module name with the `-s` (`--snippet`)
+    argument, as follows:'
+  id: totrans-75
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通过调用模块名称并使用`-s`（`--snippet`）参数检查模块详情，如下所示：
+- en: '![Figure 2.13 – Ansible module snippet for the dnf module ](img/B18383_02_13.jpg)'
+  id: totrans-76
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 2.13 – dnf模块的Ansible模块片段](img/B18383_02_13.jpg)'
+- en: Figure 2.13 – Ansible module snippet for the dnf module
+  id: totrans-77
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 2.13 – dnf模块的Ansible模块片段
+- en: 'Alternatively, Check the full details of the module as follows:'
+  id: totrans-78
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 或者，检查模块的完整详情如下：
+- en: '![Figure 2.14 – Ansible module details for the dnf module ](img/B18383_02_14.jpg)'
+  id: totrans-79
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 2.14 – dnf模块的Ansible模块详情](img/B18383_02_14.jpg)'
+- en: Figure 2.14 – Ansible module details for the dnf module
+  id: totrans-80
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 2.14 – dnf模块的Ansible模块详情
+- en: 'The preceding output shows the example usages and all the arguments for the
+    module. This is like an offline copy of the module documentation. If you want
+    to search for a specific module interactively inside the module list, execute
+    the `ansible-doc -l` command, then press the */* key and type the module’s name
+    to search, as shown in the following screenshot:'
+  id: totrans-81
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 上面的输出显示了模块的示例用法和所有参数。这就像是模块文档的离线副本。如果你想在模块列表中交互式地搜索某个特定模块，可以执行`ansible-doc -l`命令，然后按*/*键并输入模块名称进行搜索，如下截图所示：
+- en: '![Figure 2.15 – Searching for the module in ansible-doc ](img/B18383_02_15.jpg)'
+  id: totrans-82
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 2.15 – 在ansible-doc中搜索模块](img/B18383_02_15.jpg)'
+- en: Figure 2.15 – Searching for the module in ansible-doc
+  id: totrans-83
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 2.15 – 在ansible-doc中搜索模块
+- en: 'When you hit the *Enter* key, the searched item will be highlighted if available.
+    This can be seen in the following screenshot. Press the *N* key to find the next
+    item with the same text:'
+  id: totrans-84
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当你按下*Enter*键时，如果搜索项存在，它将被高亮显示。这可以通过以下截图看到。按*N*键可以查找下一个包含相同文本的项目：
+- en: '![Figure 2.16 – Finding modules in the ansible-doc list ](img/B18383_02_16.jpg)'
+  id: totrans-85
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 2.16 – 在ansible-doc列表中查找模块](img/B18383_02_16.jpg)'
+- en: Figure 2.16 – Finding modules in the ansible-doc list
+  id: totrans-86
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 2.16 – 在ansible-doc列表中查找模块
+- en: Use `ansible-doc` to list all the other plugins, including the `connection`
+    plugins, `become` plugins, `lookup`, `filters`, and so on.
+  id: totrans-87
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用`ansible-doc`列出所有其他插件，包括`connection`插件、`become`插件、`lookup`、`filters`等。
+- en: 'The following screenshot shows the available `become` plugins:'
+  id: totrans-88
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下截图显示了可用的`become`插件：
+- en: '![Figure 2.17 – Ansible become plugins ](img/B18383_02_17.jpg)'
+  id: totrans-89
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 2.17 – Ansible become插件](img/B18383_02_17.jpg)'
+- en: Figure 2.17 – Ansible become plugins
+  id: totrans-90
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 2.17 – Ansible become插件
+- en: 'The following screenshot shows the available `connection` plugins:'
+  id: totrans-91
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下截图显示了可用的`connection`插件：
+- en: '![Figure 2.18 – Ansible connection plugins ](img/B18383_02_18.jpg)'
+  id: totrans-92
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 2.18 – Ansible连接插件](img/B18383_02_18.jpg)'
+- en: Figure 2.18 – Ansible connection plugins
+  id: totrans-93
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 2.18 – Ansible连接插件
+- en: With that, you have learned how to use the `ansible-doc` command to find the
+    necessary modules and module documentation. Next, you will learn how to configure
+    your text editor for editing Ansible playbooks.
+  id: totrans-94
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 到此，你已经学会了如何使用`ansible-doc`命令查找所需的模块和模块文档。接下来，你将学习如何配置文本编辑器以编辑Ansible playbook。
+- en: Configuring your text editor for Ansible
+  id: totrans-95
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 配置你的文本编辑器以支持Ansible
+- en: Since **YAML** is highly sensitive to indentation, you need to take extra care
+    while developing and editing playbooks using your text editor. You can use any
+    text editor of your choice to edit Ansible playbooks and configure the editor
+    as needed.
+  id: totrans-96
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于**YAML**对缩进非常敏感，因此在使用文本编辑器开发和编辑playbook时，需要格外小心。你可以使用任何你喜欢的文本编辑器来编辑Ansible
+    playbook，并根据需要配置编辑器。
+- en: 'If you can use a GUI editor such as Visual Studio Code or Atom, skip this section
+    as GUI editors can easily be configured with multiple plugins to perform Ansible
+    content development more efficiently. Please refer to [https://docs.ansible.com/ansible/latest/community/other_tools_and_programs.xhtml](https://docs.ansible.com/ansible/latest/community/other_tools_and_programs.xhtml)
+    to find details about tools and programs for Ansible content development. Now,
+    let’s learn how to configure the **Vim** editor for Ansible YAML files. Use Vim
+    variables to enable or disable the features in the Vim editor:'
+  id: totrans-97
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你能够使用像 Visual Studio Code 或 Atom 这样的 GUI 编辑器，请跳过本节内容，因为 GUI 编辑器可以轻松通过多个插件配置，以更高效地进行
+    Ansible 内容开发。有关 Ansible 内容开发的工具和程序详情，请参考 [https://docs.ansible.com/ansible/latest/community/other_tools_and_programs.xhtml](https://docs.ansible.com/ansible/latest/community/other_tools_and_programs.xhtml)。现在，让我们学习如何为
+    Ansible YAML 文件配置 **Vim** 编辑器。使用 Vim 变量启用或禁用 Vim 编辑器中的功能：
+- en: '[PRE1]'
+  id: totrans-98
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: 'Now, press *Esc* followed by *:* and type `set nu` to enable line numbers,
+    as shown in the following screenshot:'
+  id: totrans-99
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，按下*Esc*，接着按 *:* 并输入 `set nu` 来启用行号，如下图所示：
+- en: '![Figure 2.19 – Configuring the Vim editor with line numbers ](img/B18383_02_19.jpg)'
+  id: totrans-100
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 2.19 – 配置 Vim 编辑器以显示行号](img/B18383_02_19.jpg)'
+- en: Figure 2.19 – Configuring the Vim editor with line numbers
+  id: totrans-101
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 2.19 – 配置 Vim 编辑器以显示行号
+- en: You will see the line numbers visible on the left-hand side of your editor.
+    But when you close the Vim editor session and reopen it, all these variables will
+    be reset. Instead of enabling the features one by one, you can configure these
+    Vim variables in a file called `.vimrc` under your home directory.
+  id: totrans-102
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你将看到行号显示在编辑器的左侧。但是当你关闭 Vim 编辑器会话并重新打开时，所有这些变量会被重置。为了避免逐一启用这些功能，你可以在主目录下的 `.vimrc`
+    文件中配置这些 Vim 变量。
+- en: 'Create a `~/.vimrc` file and add the following content to configure Vim for
+    YAML files:'
+  id: totrans-103
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 创建一个 `~/.vimrc` 文件，并添加以下内容来配置 Vim 支持 YAML 文件：
+- en: '![Figure 2.20 – Configuring the ~/.vimrc file ](img/B18383_02_20.jpg)'
+  id: totrans-104
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 2.20 – 配置 ~/.vimrc 文件](img/B18383_02_20.jpg)'
+- en: Figure 2.20 – Configuring the ~/.vimrc file
+  id: totrans-105
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 2.20 – 配置 ~/.vimrc 文件
+- en: 'The following table lists some of the available Vim variables:'
+  id: totrans-106
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下表格列出了一些可用的 Vim 变量：
+- en: '![Table 2.1 – List of Vim variables ](img/B18383_02_Table1.jpg)'
+  id: totrans-107
+  prefs: []
+  type: TYPE_IMG
+  zh: '![表 2.1 – Vim 变量列表](img/B18383_02_Table1.jpg)'
+- en: Table 2.1 – List of Vim variables
+  id: totrans-108
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 表 2.1 – Vim 变量列表
+- en: 'Once you have completed the `~/.vimrc` file, check the Vim editor by editing
+    any YAML files:'
+  id: totrans-109
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 完成 `~/.vimrc` 文件后，尝试通过编辑任何 YAML 文件来检查 Vim 编辑器：
+- en: '[PRE2]'
+  id: totrans-110
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: 'You will see line numbers and other syntax highlighted. Try to edit the file;
+    the indentation will be created automatically when you edit lines. You can still
+    use *Tab* as Vim will replace *Tab* with two spaces based on your `vimrc` configuration.
+    The following screenshot shows a sample Vim editor screen after enabling the `vimrc`
+    configuration:'
+  id: totrans-111
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你将看到行号和其他语法高亮。尝试编辑文件；当你编辑行时，缩进会自动创建。你仍然可以使用*Tab*键，因为 Vim 会根据你的 `vimrc` 配置将*Tab*替换为两个空格。以下截图展示了启用
+    `vimrc` 配置后 Vim 编辑器的示例界面：
+- en: '![Figure 2.21 – The Vim editor configured for YAML files ](img/B18383_02_21.jpg)'
+  id: totrans-112
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 2.21 – 配置为 YAML 文件的 Vim 编辑器](img/B18383_02_21.jpg)'
+- en: Figure 2.21 – The Vim editor configured for YAML files
+  id: totrans-113
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 2.21 – 配置为 YAML 文件的 Vim 编辑器
+- en: Please refer to *Setup Your Vim editor for Ansible Playbook* at [https://www.techbeatly.com/setup-your-vim-editor-for-ansible-playbook/](https://www.techbeatly.com/setup-your-vim-editor-for-ansible-playbook/)
+    to learn more about Vim editor configuration for YAML.
+  id: totrans-114
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请参阅 [https://www.techbeatly.com/setup-your-vim-editor-for-ansible-playbook/](https://www.techbeatly.com/setup-your-vim-editor-for-ansible-playbook/)
+    中的 *设置你的 Vim 编辑器以支持 Ansible Playbook*，了解更多关于 Vim 编辑器配置 YAML 的内容。
+- en: What is Vim editor?
+  id: totrans-115
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 什么是 Vim 编辑器？
+- en: Vim is a well-known text editor available for Linux platforms. The Vim editor
+    is highly configurable and useful for developing and editing any complex files
+    in Linux. Refer to [https://www.vim.org](https://www.vim.org) for more details.
+  id: totrans-116
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Vim 是一个著名的文本编辑器，适用于 Linux 平台。Vim 编辑器具有高度的可配置性，非常适合开发和编辑任何复杂的 Linux 文件。更多详情请参考
+    [https://www.vim.org](https://www.vim.org)。
+- en: Connecting to remote nodes
+  id: totrans-117
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 连接到远程节点
+- en: 'It is the best practice to use dynamic inventories to avoid frequent changes
+    in static inventory files. However, this depends on your environment. It is also
+    a best practice to separate inventory files based on environment, criticality,
+    or other parameters. The following screenshot shows sample inventory files based
+    on the workload environment. As you can see, there are different directories and
+    files for production, development, and staging devices:'
+  id: totrans-118
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最佳实践是使用动态清单，以避免频繁更改静态清单文件。然而，这取决于你的环境。另一个最佳实践是根据环境、重要性或其他参数分离清单文件。以下截图展示了基于工作负载环境的示例清单文件。如你所见，生产、开发和暂存设备分别有不同的目录和文件：
+- en: '![Figure 2.22 – Ansible inventory separation based on environment ](img/B18383_02_22.jpg)'
+  id: totrans-119
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 2.22 – 基于环境的 Ansible 清单分离](img/B18383_02_22.jpg)'
+- en: Figure 2.22 – Ansible inventory separation based on environment
+  id: totrans-120
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 2.22 – 基于环境的 Ansible 清单分离
+- en: You need to ensure that the Ansible control node to managed nodes connection
+    is safe and secure. For Linux/Unix managed nodes, use the `ssh` connection (which
+    is the default connection method) with key-based authentication, as explained
+    in [*Chapter 1*](B18383_01.xhtml#_idTextAnchor014)*'s*, *Configuring Your Managed
+    Nodes* section. There might be cases where you cannot use SSH keys. In that case,
+    you can use encrypted passwords with a username for authentication; this will
+    be explained in [*Chapter 13*](B18383_13.xhtml#_idTextAnchor241), *Using Ansible
+    for Secret Management*.
+  id: totrans-121
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你需要确保 Ansible 控制节点到受管节点的连接是安全的。对于 Linux/Unix 受管节点，使用`ssh`连接（这是默认连接方式）并使用基于密钥的身份验证，如在[*第1章*](B18383_01.xhtml#_idTextAnchor014)*“配置受管节点”*部分所解释的那样。可能会有无法使用
+    SSH 密钥的情况，在这种情况下，你可以使用用户名和加密密码进行身份验证；这将在[*第13章*](B18383_13.xhtml#_idTextAnchor241)中讲解，*使用
+    Ansible 进行密钥管理*。
+- en: For Windows machines, use the `WinRM` protocol, which Ansible can use to connect
+    to and execute tasks on Windows machines. However, you need to configure a few
+    items on the Windows machine, such as enabling a WinRM listener, opening the port
+    for WinRM, and so on.
+  id: totrans-122
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于 Windows 机器，使用`WinRM`协议，Ansible 可以用它连接并执行 Windows 机器上的任务。然而，你需要在 Windows 机器上配置一些项，如启用
+    WinRM 监听器、打开 WinRM 的端口等。
+- en: 'View the `WinRM` connection plugin using the `ansible-doc` command, as shown
+    here:'
+  id: totrans-123
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用`ansible-doc`命令查看`WinRM`连接插件，如下所示：
+- en: '![Figure 2.23 – Ansible WinRM connection plugin ](img/B18383_02_23.jpg)'
+  id: totrans-124
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 2.23 – Ansible WinRM 连接插件](img/B18383_02_23.jpg)'
+- en: Figure 2.23 – Ansible WinRM connection plugin
+  id: totrans-125
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 2.23 – Ansible WinRM 连接插件
+- en: 'It is also possible to configure the connection method for the managed host
+    in your inventory or playbook. You can also do this while executing the playbook.
+    The following screenshot shows the `ansible_connection=winrm` method for the `win2019`
+    inventory group. All the hosts under that group will use `winrm` as the connection
+    method:'
+  id: totrans-126
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你也可以在清单或 playbook 中配置受管主机的连接方式。你还可以在执行 playbook 时进行配置。以下截图展示了`ansible_connection=winrm`方法用于`win2019`清单组。该组下的所有主机将使用`winrm`作为连接方式：
+- en: '![Figure 2.24 – WinRM configured in the Ansible inventory ](img/B18383_02_24.jpg)'
+  id: totrans-127
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 2.24 – 在 Ansible 清单中配置 WinRM](img/B18383_02_24.jpg)'
+- en: Figure 2.24 – WinRM configured in the Ansible inventory
+  id: totrans-128
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 2.24 – 在 Ansible 清单中配置 WinRM
+- en: 'You can also mention the connection type in your Ansible playbook, as follows:'
+  id: totrans-129
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你也可以在 Ansible playbook 中提及连接类型，如下所示：
+- en: '![Figure 2.25 – WinRM configured in the Ansible playbook ](img/B18383_02_25.jpg)'
+  id: totrans-130
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 2.25 – 在 Ansible playbook 中配置 WinRM](img/B18383_02_25.jpg)'
+- en: Figure 2.25 – WinRM configured in the Ansible playbook
+  id: totrans-131
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 2.25 – 在 Ansible playbook 中配置 WinRM
+- en: 'If you want to dynamically provide the connection method, pass this information
+    while executing the `ansible-playbook` command:'
+  id: totrans-132
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你想动态地提供连接方式，可以在执行`ansible-playbook`命令时传递此信息：
+- en: '![Figure 2.26 – Passing the WinRM connection while executing the Ansible playbook
+    ](img/B18383_02_26.jpg)'
+  id: totrans-133
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 2.26 – 在执行 Ansible playbook 时传递 WinRM 连接](img/B18383_02_26.jpg)'
+- en: Figure 2.26 – Passing the WinRM connection while executing the Ansible playbook
+  id: totrans-134
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 2.26 – 在执行 Ansible playbook 时传递 WinRM 连接
+- en: For network and firewall devices, use the supported connection protocols based
+    on the device’s type and compatibility. You will learn more about this in [*Chapter
+    6*](B18383_06.xhtml#_idTextAnchor105), *Automating Microsoft Windows and Network
+    Devices.*
+  id: totrans-135
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于网络和防火墙设备，使用基于设备类型和兼容性的支持连接协议。你将在[*第6章*](B18383_06.xhtml#_idTextAnchor105)中了解更多内容，*自动化
+    Microsoft Windows 和网络设备*。
+- en: Please refer to the Ansible connection plugin documentation at [https://docs.ansible.com/ansible/latest/plugins/connection.xhtml](https://docs.ansible.com/ansible/latest/plugins/connection.xhtml)
+    to learn more.
+  id: totrans-136
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请参考 Ansible 连接插件文档，网址：[https://docs.ansible.com/ansible/latest/plugins/connection.xhtml](https://docs.ansible.com/ansible/latest/plugins/connection.xhtml)，以了解更多信息。
+- en: Summary
+  id: totrans-137
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 总结
+- en: In this chapter, you learned how to develop a simple playbook to automate the
+    `chrony` package’s deployment and service management. You learned how to use the
+    `ansible-doc` command to find the modules and details, including module examples
+    and arguments to use. You also explored how to use the `ansible-doc` command to
+    find the connection plugins and become plugins. After that, you learned how to
+    configure your Vim editor to edit Ansible YAML files easily. Finally, you learned
+    how to configure managed node connection methods.
+  id: totrans-138
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，你学习了如何开发一个简单的 playbook 来自动化 `chrony` 包的部署和服务管理。你学习了如何使用 `ansible-doc` 命令查找模块及其详细信息，包括模块示例和使用的参数。你还探索了如何使用
+    `ansible-doc` 命令查找连接插件和成为插件。之后，你学习了如何配置你的 Vim 编辑器，以便轻松编辑 Ansible YAML 文件。最后，你学习了如何配置被管理节点的连接方法。
+- en: In the next chapter, you will learn how to automate your daily tasks using Ansible,
+    develop real use cases, and apply them to your workplace.
+  id: totrans-139
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一章，你将学习如何使用 Ansible 自动化你的日常任务，开发实际用例，并将其应用到你的工作场所。
+- en: Further reading
+  id: totrans-140
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 进一步阅读
+- en: 'For more information on the topics covered in this chapter, please visit the
+    following links:'
+  id: totrans-141
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 若要了解本章所涉及的更多信息，请访问以下链接：
+- en: '*Tools and programs for Ansible*: [https://docs.ansible.com/ansible/latest/community/other_tools_and_programs.xhtml](https://docs.ansible.com/ansible/latest/community/other_tools_and_programs.xhtml)'
+  id: totrans-142
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*Ansible 的工具和程序*: [https://docs.ansible.com/ansible/latest/community/other_tools_and_programs.xhtml](https://docs.ansible.com/ansible/latest/community/other_tools_and_programs.xhtml)'
+- en: '*Ansible idempotency*: [https://docs.ansible.com/ansible/latest/reference_appendices/glossary.xhtml#term-Idempotency](https://docs.ansible.com/ansible/latest/reference_appendices/glossary.xhtml#term-Idempotency)'
+  id: totrans-143
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*Ansible 幂等性*: [https://docs.ansible.com/ansible/latest/reference_appendices/glossary.xhtml#term-Idempotency](https://docs.ansible.com/ansible/latest/reference_appendices/glossary.xhtml#term-Idempotency)'
+- en: '*Ansible Automation for Windows*: [https://www.techbeatly.com/ansible-windows/](https://www.techbeatly.com/ansible-windows/)'
+  id: totrans-144
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*Ansible 在 Windows 上的自动化*: [https://www.techbeatly.com/ansible-windows/](https://www.techbeatly.com/ansible-windows/)'
+- en: '*Introduction to Ansible modules*: [https://docs.ansible.com/ansible/latest/user_guide/modules_intro.xhtml](https://docs.ansible.com/ansible/latest/user_guide/modules_intro.xhtml)'
+  id: totrans-145
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*Ansible 模块介绍*: [https://docs.ansible.com/ansible/latest/user_guide/modules_intro.xhtml](https://docs.ansible.com/ansible/latest/user_guide/modules_intro.xhtml)'
+- en: '*Ansible connection plugins*: [https://docs.ansible.com/ansible/latest/plugins/connection.xhtml](https://docs.ansible.com/ansible/latest/plugins/connection.xhtml)'
+  id: totrans-146
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*Ansible 连接插件*: [https://docs.ansible.com/ansible/latest/plugins/connection.xhtml](https://docs.ansible.com/ansible/latest/plugins/connection.xhtml)'

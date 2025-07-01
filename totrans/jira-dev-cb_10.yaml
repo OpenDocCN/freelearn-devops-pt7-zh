@@ -1,0 +1,2665 @@
+- en: Chapter 10. Dealing with a Database
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 第10章：处理数据库
+- en: 'In this chapter, we will cover:'
+  id: totrans-1
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们将涵盖：
+- en: Extending JIRA DB with custom schema
+  id: totrans-2
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用自定义模式扩展JIRA数据库
+- en: Accessing DB entities from plugins
+  id: totrans-3
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 从插件访问数据库实体
+- en: Persisting plugin information in JIRA DB
+  id: totrans-4
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在JIRA数据库中持久化插件信息
+- en: Using Active Objects to store data
+  id: totrans-5
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用活动对象存储数据
+- en: Accessing JIRA configuration properties
+  id: totrans-6
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 访问JIRA配置属性
+- en: Getting database connection for JDBC calls
+  id: totrans-7
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 获取数据库连接以进行JDBC调用
+- en: Migrating a custom field from one type to another
+  id: totrans-8
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 将自定义字段从一种类型迁移到另一种类型
+- en: Retrieving issue information from a database
+  id: totrans-9
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 从数据库中检索问题信息
+- en: Retrieving custom field details from a database
+  id: totrans-10
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 从数据库中检索自定义字段详细信息
+- en: Retrieving permissions on issues from a database
+  id: totrans-11
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 从数据库中检索问题权限
+- en: Retrieving workflow details from a database
+  id: totrans-12
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 从数据库中检索工作流详细信息
+- en: Updating issue status in a database
+  id: totrans-13
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在数据库中更新问题状态
+- en: Retrieving users and groups from a database
+  id: totrans-14
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 从数据库中检索用户和组信息
+- en: Dealing with Change history in a database
+  id: totrans-15
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 在数据库中处理变更历史
+- en: Introduction
+  id: totrans-16
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 介绍
+- en: We have already seen in [Chapter 2](ch02.html "Chapter 2. Understanding Plugin
+    Framework"), *Understanding* *Plugin* *Framework*, that JIRA uses the Ofbiz suite's
+    Entity Engine module to deal with database operations.
+  id: totrans-17
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们已经在[第2章](ch02.html "第2章：理解插件框架")，*理解* *插件* *框架*中看到，JIRA使用Ofbiz套件的Entity Engine模块来处理数据库操作。
+- en: OfBiz stands for Open For Business and the OfBiz Entity Engine is a set of tools
+    and patterns used to model and manage entity-specific data.
+  id: totrans-18
+  prefs: []
+  type: TYPE_NORMAL
+  zh: OfBiz代表“Open For Business”，OfBiz Entity Engine是一套用于建模和管理特定实体数据的工具和模式。
+- en: As per the definition from the standard entity-relationship modeling concepts
+    of RDBMS, an entity is a piece of data defined by a set of fields and a set of
+    relations to other entities.
+  id: totrans-19
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 根据关系数据库管理系统（RDBMS）标准实体关系建模概念的定义，实体是由一组字段和与其他实体的关系所定义的数据单元。
+- en: In JIRA, these entities are defined in two files, `entitygroup.xml` and `entitymodel.xml`,
+    both residing in the `WEB-INF/classes/entitydefs` folder. `entitygroup.xml` stores
+    the entity names for a previously-defined group. If you look at the file, you
+    will see that, the default group in JIRA is named `default`; you will find the
+    same defined in the entity configuration file, which we will see in a moment.
+    `entitymodel.xml` holds the actual entity definitions, details of which we will
+    see in the recipes.
+  id: totrans-20
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在JIRA中，这些实体定义在两个文件中，`entitygroup.xml`和`entitymodel.xml`，它们都位于`WEB-INF/classes/entitydefs`文件夹中。`entitygroup.xml`存储先前定义的组的实体名称。如果查看该文件，您将看到JIRA中的默认组名为`default`；您将在稍后看到的实体配置文件中找到相同的定义。`entitymodel.xml`包含实际的实体定义，相关细节将在后续的配方中进行说明。
+- en: 'The entity configuration is defined in `entityengine.xml`, residing in the
+    `WEB-INF/classes` folder. It is in this file that the `datasource`, transaction
+    factory, and so on, are defined. The content of this file varies based on the
+    database that we use and the application server. For example, the `datasource`
+    definition will be as follows, when the database is MySQL and application server
+    is `tomcat`:'
+  id: totrans-21
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 实体配置定义在`entityengine.xml`文件中，该文件位于`WEB-INF/classes`文件夹中。正是在此文件中定义了`datasource`、事务工厂等。该文件的内容根据我们使用的数据库和应用服务器的不同而有所变化。例如，当数据库是MySQL且应用服务器是`tomcat`时，`datasource`的定义如下：
+- en: '[PRE0]'
+  id: totrans-22
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: More about connecting to various other databases can be read at [http://confluence.atlassian.com/display/JIRA/Connecting+JIRA+to+a+Database](http://confluence.atlassian.com/display/JIRA/Connecting+JIRA+to+a+Database).
+  id: totrans-23
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有关连接到其他各种数据库的更多信息，请参阅[http://confluence.atlassian.com/display/JIRA/Connecting+JIRA+to+a+Database](http://confluence.atlassian.com/display/JIRA/Connecting+JIRA+to+a+Database)。
+- en: 'For other application servers, the `jndi-server` attribute in the `jndi-jdbc`
+    element varies, as follows:'
+  id: totrans-24
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于其他应用服务器，`jndi-server`属性在`jndi-jdbc`元素中有所不同，如下所示：
+- en: 'Orion format: <jndi-jdbc jndi-server-name="default" jndi-name="jdbc/JiraDS"/>'
+  id: totrans-25
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Orion格式：<jndi-jdbc jndi-server-name="default" jndi-name="jdbc/JiraDS"/>
+- en: 'JBoss format: <jndi-jdbc jndi-server-name="default" jndi-name="java:/JiraDS"/>'
+  id: totrans-26
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: JBoss格式：<jndi-jdbc jndi-server-name="default" jndi-name="java:/JiraDS"/>
+- en: 'Weblogic format: <jndi-jdbc jndi-server-name="default" jndi-name="JiraDS"/>'
+  id: totrans-27
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Weblogic格式：<jndi-jdbc jndi-server-name="default" jndi-name="JiraDS"/>
+- en: 'The `transaction-factory` tag is defined as follows:'
+  id: totrans-28
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`transaction-factory`标签的定义如下：'
+- en: '[PRE1]'
+  id: totrans-29
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: The entity definition XMLs are referenced in the file using the `entity-group-reader`
+    and `entity-model-reader` attributes that point to `entitygroup.xml` and `entitymodel.xml`,
+    respectively.
+  id: totrans-30
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 实体定义的XML文件在文件中通过`entity-group-reader`和`entity-model-reader`属性进行引用，分别指向`entitygroup.xml`和`entitymodel.xml`。
+- en: '[PRE2]'
+  id: totrans-31
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: 'The delegator element is also defined in this file, as follows:'
+  id: totrans-32
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 委托器元素也在此文件中定义，如下所示：
+- en: '[PRE3]'
+  id: totrans-33
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: 'The field type mapping XMLs for different databases are also defined in this
+    file. An example of this is:'
+  id: totrans-34
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 不同数据库的字段类型映射XML也定义在此文件中。一个例子如下：
+- en: '[PRE4]'
+  id: totrans-35
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: Read more about configuring `entityengine.xml` at [http://www.atlassian.com/software/jira/docs/latest/entityengine.html](http://www.atlassian.com/software/jira/docs/latest/entityengine.html)
+    and about entity modeling concepts at [http://ofbiz.apache.org/docs/entity.html](http://ofbiz.apache.org/docs/entity.html).
+  id: totrans-36
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 阅读更多关于配置`entityengine.xml`的信息，见[http://www.atlassian.com/software/jira/docs/latest/entityengine.html](http://www.atlassian.com/software/jira/docs/latest/entityengine.html)，以及关于实体建模概念的信息，见[http://ofbiz.apache.org/docs/entity.html](http://ofbiz.apache.org/docs/entity.html)。
+- en: In the recipe, *Extending* *JIRA* *DB* *with* *custom* *schema*, we will also
+    see glimpses of the JIRA database architecture, which is also explained in detail
+    at [http://confluence.atlassian.com/display/JIRADEV/Database+Schema](http://confluence.atlassian.com/display/JIRADEV/Database+Schema).
+  id: totrans-37
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本节*扩展* *JIRA* *数据库* *的* *自定义* *架构*中，我们还将看到JIRA数据库架构的简要介绍，详细内容可以在[http://confluence.atlassian.com/display/JIRADEV/Database+Schema](http://confluence.atlassian.com/display/JIRADEV/Database+Schema)中查看。
+- en: Extending JIRA DB with custom schema
+  id: totrans-38
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 扩展JIRA数据库的自定义架构
+- en: Now that we know that JIRA scheme definitions are maintained in `WEB-INF/classes/entitydefs/entitygroup.xml`
+    and `entitymodel.xml`, let us have a look at extending the existing scheme definitions.
+    How would you extend the JIRA scheme if you want to add one or two custom tables
+    into JIRA? Is it just about creating the new tables in our database? We will see
+    that in this recipe.
+  id: totrans-39
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们知道JIRA的方案定义保存在`WEB-INF/classes/entitydefs/entitygroup.xml`和`entitymodel.xml`中，让我们来看看如何扩展现有的方案定义。如果你想将一两个自定义表格添加到JIRA中，如何扩展JIRA方案？仅仅是在数据库中创建新表格就可以了吗？我们将在本节中了解这一点。
+- en: How to do it...
+  id: totrans-40
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: JIRA uses the schema definitions entered in the `WEB-INF/classes/entitydefs/entitygroup.xml`
+    and `entitymodel.xml` files. It makes use of these files not only to validate
+    and create the schema but also during import and export of the JIRA Data backup.
+    JIRA also uses these entity definitions to read and write to a database, using
+    OfBizDelegator ([http://docs.atlassian.com/jira/latest/com/atlassian/jira/ofbiz/OfBizDelegator.html](http://docs.atlassian.com/jira/latest/com/atlassian/jira/ofbiz/OfBizDelegator.html)),
+    details of which we will see in the upcoming recipes.
+  id: totrans-41
+  prefs: []
+  type: TYPE_NORMAL
+  zh: JIRA使用在`WEB-INF/classes/entitydefs/entitygroup.xml`和`entitymodel.xml`文件中输入的方案定义。它不仅在验证和创建架构时使用这些文件，还在JIRA数据备份的导入和导出过程中使用这些文件。JIRA还使用这些实体定义通过OfBizDelegator（[http://docs.atlassian.com/jira/latest/com/atlassian/jira/ofbiz/OfBizDelegator.html](http://docs.atlassian.com/jira/latest/com/atlassian/jira/ofbiz/OfBizDelegator.html)）读写数据库，相关细节我们将在接下来的配方中看到。
+- en: The following are quick steps to add a new table into the JIRA schema. Let us
+    assume we are adding a table to hold the details of an employee.
+  id: totrans-42
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下是将新表添加到JIRA架构的快速步骤。假设我们正在添加一个表格来保存员工的详细信息。
+- en: Identify an entity name for the table. This could be the same as the table name
+    or different from it. This name will be used in the XML backups and also by the
+    OfBizDelegator to read or write data.
+  id: totrans-43
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 为表格确定一个实体名称。这可以与表格名称相同，也可以不同。这个名称将用于XML备份，并且也会被OfBizDelegator用于读取或写入数据。
+- en: In our example, let us choose `Employee` as the entity name.
+  id: totrans-44
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在我们的示例中，我们选择`Employee`作为实体名称。
+- en: 'Modify the `WEB-INF/classes/entitydefs/entitygroup.xml` file to include the
+    new entity group definition:'
+  id: totrans-45
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 修改`WEB-INF/classes/entitydefs/entitygroup.xml`文件以包含新的实体组定义：
+- en: '[PRE5]'
+  id: totrans-46
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: 'Here, the `group` attribute refers to the group name the delegator is associated
+    with. You can find it in the `WEB-INF/classes/entityengine.xml`, as shown:'
+  id: totrans-47
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 这里，`group`属性指的是委托人所关联的组名。你可以在`WEB-INF/classes/entityengine.xml`中找到它，如下所示：
+- en: '[PRE6]'
+  id: totrans-48
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: The `entity` attribute holds the name of the entity.
+  id: totrans-49
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`entity`属性保存了实体的名称。'
+- en: 'Modify the `WEB-INF/classes/entitydefs/entitymodel.xml` file to include the
+    new entity definition:'
+  id: totrans-50
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 修改`WEB-INF/classes/entitydefs/entitymodel.xml`文件以包含新的实体定义：
+- en: '[PRE7]'
+  id: totrans-51
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE7]'
+- en: Here, the `entity-name` attribute holds the name of the entity we have used
+    in *Step* *2\.* The `table-name` holds the name of the table; it is optional and
+    will be derived from `entity-name`, if not present. `package-name` can be used
+    if you want to organize and structure the entities' definitions into different
+    packages.
+  id: totrans-52
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在这里，`entity-name`属性保存了我们在*步骤* *2*中使用的实体名称。`table-name`保存了表格名称；它是可选的，如果没有提供，将从`entity-name`中派生。`package-name`可用于在你希望将实体定义组织到不同的包中时使用。
+- en: The `entity` element contains one field element for each column in the table
+    that needs to be created. The `field` element has a `name` attribute that holds
+    the name of the field. If the column name of the field is different, the `col-name`
+    attribute can be used, as in the case with employee address. If `col-name` is
+    missing, the name of the field is used. The next important attribute is `type`.
+    In our example, `id` is `numeric` whereas `name` and `address` are `long-varchar`.
+  id: totrans-53
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`entity` 元素包含每个需要创建的表的列的一个 `field` 元素。`field` 元素有一个 `name` 属性，保存字段的名称。如果字段的列名不同，可以使用
+    `col-name` 属性，例如员工地址的情况。如果缺少 `col-name`，则使用字段的名称。下一个重要的属性是 `type`。在我们的示例中，`id`
+    是 `numeric` 类型，而 `name` 和 `address` 是 `long-varchar` 类型。'
+- en: 'These type definitions of a field are mapped to the appropriate column type
+    for each database type. The `field-type` mappings are stored under `WEB-INF/classes/entitydefs/`
+    and is declared in `entityengine.xml`, as shown next:'
+  id: totrans-54
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 字段的这些类型定义映射到每种数据库类型的适当列类型。`field-type` 映射存储在 `WEB-INF/classes/entitydefs/` 下，并在
+    `entityengine.xml` 中声明，如下所示：
+- en: '[PRE8]'
+  id: totrans-55
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE8]'
+- en: If you look inside `fieldtype-oracle10g.xml`, you will notice that `numeric`
+    is mapped to `NUMBER(18,0)` and `long-varchar` is mapped to `VARCHAR2(255)`. You
+    can find out the various mappings and even the related Java data type from the
+    same file.
+  id: totrans-56
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 如果你查看 `fieldtype-oracle10g.xml` 文件，你会注意到 `numeric` 被映射到 `NUMBER(18,0)`，而 `long-varchar`
+    被映射到 `VARCHAR2(255)`。你可以从同一个文件中找到各种映射，甚至是相关的 Java 数据类型。
+- en: The `prim-key` element is used to define the primary key constraint for the
+    table, as shown previously. In our case, `id` is the primary key. It is mandatory
+    to name the primary key as `id` for all the new tables we are creating.
+  id: totrans-57
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`prim-key` 元素用于定义表的主键约束，如前所示。在我们的示例中，`id` 是主键。对于我们创建的所有新表，主键必须命名为 `id`。'
+- en: The `index` element creates a DB index for the field specified for that table.
+    We can specify the index name and the group of the fields that needs to be indexed
+    underneath it.
+  id: totrans-58
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: '`index` 元素为该表指定的字段创建数据库索引。我们可以指定索引名称和需要索引的字段组。'
+- en: 'You can also define the relationship between entities using the element `relation`
+    as shown next:'
+  id: totrans-59
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 你还可以使用 `relation` 元素来定义实体之间的关系，如下所示：
+- en: '[PRE9]'
+  id: totrans-60
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE9]'
+- en: Here, we are adding a relationship between the `Employee` entity and `Company`
+    entity by saying an employee can have only one company. In the above case, `Employee`
+    should have a field `company` that points to the `id` field of a company's record.
+    In other words, the `company` field in an employee's record will be the foreign
+    key to the company's record.
+  id: totrans-61
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在这里，我们通过声明一个员工只能有一个公司，添加了 `Employee` 实体和 `Company` 实体之间的关系。在上面的示例中，`Employee`
+    应该有一个指向公司记录 `id` 字段的 `company` 字段。换句话说，员工记录中的 `company` 字段将是公司记录的外键。
+- en: More details of entity definition can be found at [http://ofbiz.apache.org/docs/entity.html#Entity_Modeling](http://ofbiz.apache.org/docs/entity.html#Entity_Modeling).
+  id: totrans-62
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 关于实体定义的更多详细信息可以在 [http://ofbiz.apache.org/docs/entity.html#Entity_Modeling](http://ofbiz.apache.org/docs/entity.html#Entity_Modeling)
+    找到。
+- en: Restart JIRA after the changes are made.
+  id: totrans-63
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在进行更改后，重新启动 JIRA。
+- en: How it works...
+  id: totrans-64
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: How it works...
+- en: 'When JIRA is restarted with the previous changes, you will notice that a warning
+    message appear in the logs during startup, as shown next:'
+  id: totrans-65
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当 JIRA 在应用了之前的更改后重新启动时，你会注意到启动时日志中出现一个警告信息，如下所示：
+- en: '![How it works...](img/1803-10-01.jpg)'
+  id: totrans-66
+  prefs: []
+  type: TYPE_IMG
+  zh: '![How it works...](img/1803-10-01.jpg)'
+- en: 'Once JIRA recognizes that there is no table corresponding to the new entity
+    name **employee** in the database; it will create one, as shown:'
+  id: totrans-67
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦 JIRA 识别到数据库中没有与新实体名称 **employee** 对应的表，它将创建一个，如下所示：
+- en: '![How it works...](img/1803-10-02.jpg)'
+  id: totrans-68
+  prefs: []
+  type: TYPE_IMG
+  zh: '![How it works...](img/1803-10-02.jpg)'
+- en: 'Even the index information is stored, as shown:'
+  id: totrans-69
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 即使是索引信息也被存储，如下所示：
+- en: '![How it works...](img/1803-10-03.jpg)'
+  id: totrans-70
+  prefs: []
+  type: TYPE_IMG
+  zh: '![How it works...](img/1803-10-03.jpg)'
+- en: If you want to add a new column to an existing table, you can add a field definition,
+    as we saw earlier and, on restarting JIRA, the table will be updated to include
+    the column.
+  id: totrans-71
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你想向现有表中添加新列，可以像之前看到的那样添加字段定义，并且在重新启动 JIRA 时，表将更新以包含该列。
+- en: You will notice an error message in the JIRA logs if the database has a table,
+    or a column in the table, that doesn't have a valid entity or field definition
+    in the `entitymodel.xml`.
+  id: totrans-72
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果数据库中有表或表中的列没有有效的实体或字段定义在 `entitymodel.xml` 中，你将在 JIRA 日志中看到错误信息。
+- en: Care must be taken to update the `entitygroup.xml` and `entitymodel.xml` files
+    when JIRA is upgraded or else the changes will be lost.
+  id: totrans-73
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 JIRA 升级时，必须小心更新 `entitygroup.xml` 和 `entitymodel.xml` 文件，否则更改将丢失。
+- en: Accessing DB entities from plugins
+  id: totrans-74
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 从插件访问数据库实体
+- en: We have seen how the various entities in the JIRA database are defined and how
+    we can introduce new entities. In this recipe, we will see how we can read and
+    write data from the database using these entity definitions.
+  id: totrans-75
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们已经看到了JIRA数据库中各种实体是如何定义的，以及如何引入新实体。在本示例中，我们将看到如何使用这些实体定义从数据库中读取和写入数据。
+- en: How to do it...
+  id: totrans-76
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何实现...
+- en: JIRA exposes the OfBizDelegator ([http://docs.atlassian.com/jira/latest/com/atlassian/jira/ofbiz/OfBizDelegator.html](http://docs.atlassian.com/jira/latest/com/atlassian/jira/ofbiz/OfBizDelegator.html))
+    component, which is a wrapper around `org.ofbiz.core.entity.DelegatorInterface`,
+    to communicate with its database using the Ofbiz layer.
+  id: totrans-77
+  prefs: []
+  type: TYPE_NORMAL
+  zh: JIRA公开了`OfBizDelegator` ([http://docs.atlassian.com/jira/latest/com/atlassian/jira/ofbiz/OfBizDelegator.html](http://docs.atlassian.com/jira/latest/com/atlassian/jira/ofbiz/OfBizDelegator.html))
+    组件，它是`org.ofbiz.core.entity.DelegatorInterface`的封装，用于通过Ofbiz层与数据库进行通信。
+- en: 'You can get hold of an instance of `OfBizDelegator` by injecting it in the
+    constructor or from `ComponentManager`, as follows:'
+  id: totrans-78
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以通过在构造函数中注入或通过`ComponentManager`来获取`OfBizDelegator`实例，如下所示：
+- en: '[PRE10]'
+  id: totrans-79
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE10]'
+- en: Reading from a database
+  id: totrans-80
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 从数据库读取
+- en: 'We can read from the database using the various methods exposed via the above
+    delegator class. For example, all the records in the employee table we defined
+    in the previous recipe can be read as:'
+  id: totrans-81
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以通过上述委托类公开的各种方法从数据库中读取。例如，之前示例中定义的员工表的所有记录可以这样读取：
+- en: '[PRE11]'
+  id: totrans-82
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE11]'
+- en: 'Here, the `findAll` method takes the entity name (not the table name) and returns
+    a list of `GenericValue` objects, each representing a row in the table. The individual
+    fields can be read from the object using the name of the field (not `col-name`),
+    as follows:'
+  id: totrans-83
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这里，`findAll`方法接受实体名称（不是表名称），并返回一个`GenericValue`对象列表，每个对象代表表中的一行。可以通过字段名（而不是`col-name`）来读取个别字段，如下所示：
+- en: '[PRE12]'
+  id: totrans-84
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE12]'
+- en: The data type to which the field should be converted can be found from the `field-type`
+    mapping XML we saw in the previous recipe.
+  id: totrans-85
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 字段应转换为的数据类型可以从我们在上一个示例中看到的`field-type`映射XML中找到。
+- en: 'We can read data from a database, when certain conditions are satisfied, using
+    the `findByAnd` method:'
+  id: totrans-86
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以在满足特定条件时，使用`findByAnd`方法从数据库中读取数据：
+- en: '[PRE13]'
+  id: totrans-87
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE13]'
+- en: 'This will return all the records where company name is `J-Tricks`. You can
+    enforce more complex conditions using the `findByCondition` method and select
+    only the interested fields, as follows:'
+  id: totrans-88
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这将返回所有公司名称为`J-Tricks`的记录。你可以使用`findByCondition`方法强制执行更复杂的条件，并且只选择感兴趣的字段，如下所示：
+- en: '[PRE14]'
+  id: totrans-89
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE14]'
+- en: Here, we find all employee records with ID greater than `15000` and we retrieve
+    only the ID and name of the employees.
+  id: totrans-90
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这里，我们查找所有ID大于`15000`的员工记录，并且只检索员工的ID和姓名。
+- en: '`findListIteratorByCondition` ([http://docs.atlassian.com/jira/latest/com/atlassian/jira/ofbiz/OfBizDelegator.html#findListIteratorByCondition%28java.lang.String,%20org.ofbiz.core.entity.EntityCondition,%20org.ofbiz.core.entity.EntityCondition,%20java.util.Collection,%20java.util.List,%20org.ofbiz.core.entity.EntityFindOptions%29](http://docs.atlassian.com/jira/latest/com/atlassian/jira/ofbiz/OfBizDelegator.html#findListIteratorByCondition%28java.lang.String,%20org.ofbiz.core.entity.EntityCondition,%20org.ofbiz.core.entity.EntityCondition,%20java.util.Collection,%20java.util.List,%20org.ofbiz.core.entity.EntityFindOptions%29))'
+  id: totrans-91
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`findListIteratorByCondition` ([http://docs.atlassian.com/jira/latest/com/atlassian/jira/ofbiz/OfBizDelegator.html#findListIteratorByCondition%28java.lang.String,%20org.ofbiz.core.entity.EntityCondition,%20org.ofbiz.core.entity.EntityCondition,%20java.util.Collection,%20java.util.List,%20org.ofbiz.core.entity.EntityFindOptions%29](http://docs.atlassian.com/jira/latest/com/atlassian/jira/ofbiz/OfBizDelegator.html#findListIteratorByCondition%28java.lang.String,%20org.ofbiz.core.entity.EntityCondition,%20org.ofbiz.core.entity.EntityCondition,%20java.util.Collection,%20java.util.List,%20org.ofbiz.core.entity.EntityFindOptions%29))'
+- en: 'This method can be used to add more options like the `orderBy` clause, `EntityFindOptions`,
+    `where` conditions, `having` conditions, and so on, as follows:'
+  id: totrans-92
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这个方法可以用来添加更多选项，如`orderBy`子句、`EntityFindOptions`、`where`条件、`having`条件等，如下所示：
+- en: '[PRE15]'
+  id: totrans-93
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE15]'
+- en: Here, we search for all records with the ID greater than `15000`. We don't have
+    a `having` condition in this case and, so, we will leave it null. The next two
+    arguments specify that only the `name` field needs to be selected and the records
+    should be ordered by the `name` field. The last argument specifies the `EntityFindOptions`.
+    Here, we define the EntityFindOptions with four arguments including `TYPE_SCROLL_INSENSTITVE`
+    and `CONCUR_READ_ONLY`. The first true is for `specifyTypeAndConcur` and the last
+    true is for distinct select.
+  id: totrans-94
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这里，我们搜索所有ID大于`15000`的记录。此情况下没有`having`条件，因此我们将其留为空值。接下来的两个参数指定仅需要选择`name`字段，并且记录应该按`name`字段排序。最后一个参数指定了`EntityFindOptions`。在这里，我们定义了包含四个参数的EntityFindOptions，其中包括`TYPE_SCROLL_INSENSTITVE`和`CONCUR_READ_ONLY`。第一个true用于`specifyTypeAndConcur`，最后一个true用于distinct选择。
+- en: If `specifyTypeAndConcur` is true, the following two parameters will be used
+    to specify `resultSetType` and `resultSetConcurrency`. If false, the default values
+    of the JDBC driver will be used. In the above case, `specifyTypeAndConcur` is
+    true and, hence, `resultSetType` is taken as `TYPE_SCROLL_INSENSITIVE` and `resultSetConcurrency`
+    is taken as `CONCUR_READ_ONLY`. More about this and the possible values can be
+    found at [http://download.oracle.com/javase/tutorial/jdbc/basics/retrieving.html](http://download.oracle.com/javase/tutorial/jdbc/basics/retrieving.html).
+  id: totrans-95
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果`specifyTypeAndConcur`为true，接下来的两个参数将用于指定`resultSetType`和`resultSetConcurrency`。如果为false，则使用JDBC驱动程序的默认值。在上面的例子中，`specifyTypeAndConcur`为true，因此`resultSetType`被设置为`TYPE_SCROLL_INSENSITIVE`，而`resultSetConcurrency`被设置为`CONCUR_READ_ONLY`。关于此以及可能的值，可以参考[http://download.oracle.com/javase/tutorial/jdbc/basics/retrieving.html](http://download.oracle.com/javase/tutorial/jdbc/basics/retrieving.html)。
+- en: As discussed before, the last true in the `EntityFindOptions` constructor is
+    for selecting distinct values. Apparently, this is the only way to do a distinct
+    select using Entity Engine. You will find more information about this in the entity
+    engine cookbook at [http://www.opensourcestrategies.com/ofbiz/ofbiz_entity_cookbook.txt](http://www.opensourcestrategies.com/ofbiz/ofbiz_entity_cookbook.txt).
+  id: totrans-96
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如前所述，`EntityFindOptions`构造函数中的最后一个true用于选择不同的值。显然，这是使用Entity Engine进行distinct选择的唯一方法。你可以在实体引擎的食谱中找到更多信息，网址为[http://www.opensourcestrategies.com/ofbiz/ofbiz_entity_cookbook.txt](http://www.opensourcestrategies.com/ofbiz/ofbiz_entity_cookbook.txt)。
+- en: Don't forget to close the iterator, as shown in the previous code snippet.
+  id: totrans-97
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 不要忘记关闭迭代器，正如前面的代码片段所示。
+- en: Writing a new record
+  id: totrans-98
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 写入新记录
+- en: 'Creating a new record in a table using OfBizDelegator is pretty easy, as shown
+    next:'
+  id: totrans-99
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用OfBizDelegator在表中创建新记录非常简单，如下所示：
+- en: '[PRE16]'
+  id: totrans-100
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE16]'
+- en: Make sure you don't provide the ID, as it is automatically generated. Also,
+    the missing fields in the map will be set to `null`. Data for all the mandatory
+    fields should be provided so as to avoid errors.
+  id: totrans-101
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 确保不要提供ID，因为它是自动生成的。此外，映射中缺失的字段将被设置为`null`。必须提供所有必填字段的数据，以避免错误。
+- en: Updating a record
+  id: totrans-102
+  prefs:
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 更新记录
+- en: 'Writing a record is done by retrieving the record, modifying the values, and
+    using the `store()` method. For example, we can retrieve a record with ID `12000`
+    and modify it, as follows:'
+  id: totrans-103
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 写入记录是通过检索记录、修改值并使用`store()`方法来完成的。例如，我们可以检索ID为`12000`的记录并修改它，如下所示：
+- en: '[PRE17]'
+  id: totrans-104
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE17]'
+- en: More useful methods can be found in the Java docs at [http://docs.atlassian.com/jira/latest/com/atlassian/jira/ofbiz/OfBizDelegator.html](http://docs.atlassian.com/jira/latest/com/atlassian/jira/ofbiz/OfBizDelegator.html).
+  id: totrans-105
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 更多有用的方法可以在Java文档中找到，网址为[http://docs.atlassian.com/jira/latest/com/atlassian/jira/ofbiz/OfBizDelegator.html](http://docs.atlassian.com/jira/latest/com/atlassian/jira/ofbiz/OfBizDelegator.html)。
+- en: Persisting plugin information in JIRA DB
+  id: totrans-106
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 在JIRA数据库中持久化插件信息
+- en: While developing plugins, we come across many scenarios where we need to store
+    specific information about the plugins, be it configuration detail or metadata
+    for entities. How can we do this without creating a custom schema and going through
+    the pain of editing entity definitions? In this recipe, we will how we can make
+    use of JIRA's existing framework to store information specific to the plugins
+    we develop.
+  id: totrans-107
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在开发插件时，我们会遇到许多场景，需要存储有关插件的特定信息，无论是配置细节还是实体的元数据。我们如何在不创建自定义模式且不需要编辑实体定义的情况下做到这一点？在这个例子中，我们将展示如何利用JIRA现有的框架存储我们开发的插件的特定信息。
+- en: 'JIRA uses Open symphony''s `PropertySet` framework to store properties in the
+    database. These properties are a set of key/value pairs and are stored against
+    any entity that the user wants. The key of the property is always a String value;
+    the value can be: String, Long, Date, Boolean, or Double. We have already seen
+    how JIRA uses it in [Chapter 2](ch02.html "Chapter 2. Understanding Plugin Framework"),
+    *Understanding* *Plugin* *Framework*. In this recipe, we will see we can use `PropertySet`
+    to store our custom data.'
+  id: totrans-108
+  prefs: []
+  type: TYPE_NORMAL
+  zh: JIRA使用Open Symphony的`PropertySet`框架将属性存储到数据库中。这些属性是一组键/值对，存储在用户想要的任何实体中。属性的键始终是一个字符串值；值可以是：String、Long、Date、Boolean或Double。我们已经在[第2章](ch02.html
+    "第2章：理解插件框架")，*理解* *插件* *框架*中看到JIRA是如何使用它的。在本食谱中，我们将看到如何使用`PropertySet`存储我们的自定义数据。
+- en: How to do it...
+  id: totrans-109
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何做到...
+- en: 'Suppose that we need to store a Boolean value in the database as part of our
+    plugin''s configuration and read it later; here are the steps to follow to do
+    it:'
+  id: totrans-110
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 假设我们需要将一个布尔值存储到数据库中，作为插件配置的一部分，并稍后读取；以下是执行此操作的步骤：
+- en: 'Get an instance of `PropertySet`, using `PropertiesManager`:'
+  id: totrans-111
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 获取`PropertySet`的实例，使用`PropertiesManager`：
+- en: '[PRE18]'
+  id: totrans-112
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE18]'
+- en: 'From JIRA 4.3 onwards, the `PropertiesManager.getInstance()` method is deprecated.
+    Instead, you can inject the `PropertiesManager` into the constructor, using dependency
+    injection, or retrieve it from `ComponentManager`, as follows:'
+  id: totrans-113
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 从JIRA 4.3开始，`PropertiesManager.getInstance()`方法已被弃用。相反，您可以通过依赖注入将`PropertiesManager`注入构造函数，或者从`ComponentManager`中检索，如下所示：
+- en: '[PRE19]'
+  id: totrans-114
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE19]'
+- en: 'Persist the Boolean property using the `setBoolean` method:'
+  id: totrans-115
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用`setBoolean`方法持久化布尔属性：
+- en: '[PRE20]'
+  id: totrans-116
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE20]'
+- en: Similarly, String, Long, Double, and Date values can be stored using the respective
+    methods.
+  id: totrans-117
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 同样，String、Long、Double和Date类型的值可以通过相应的方法进行存储。
+- en: 'The property that is stored can be retrieved at any point, as follows:'
+  id: totrans-118
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 存储的属性可以在任何时刻检索，如下所示：
+- en: '[PRE21]'
+  id: totrans-119
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE21]'
+- en: 'However, how do we store a more complex structure, such as a property, to an
+    existing entity? Let us say we want to store the address of a user. JIRA stores
+    the user information against the entity `OSUser`, as follows:'
+  id: totrans-120
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，如何将一个更复杂的结构（如属性）存储到现有实体中呢？假设我们想要存储一个用户的地址。JIRA将用户信息存储到`OSUser`实体中，如下所示：
+- en: Retrieve the ID of the user entity we are going to store the address against.
+    For example, if there is a user `jobinkk`, we can find the ID of the user from
+    the `OSUser` entity that corresponds to the `userbase` table in JIRA. Let us assume
+    the ID is `10032`.
+  id: totrans-121
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 检索我们将存储地址的用户实体的ID。例如，如果有一个用户`jobinkk`，我们可以从`OSUser`实体中找到该用户的ID，它对应于JIRA中的`userbase`表。假设ID是`10032`。
+- en: 'Get an instance of `PropertySet`, using `PropertySetManager`, by passing the
+    details of the entity we got:'
+  id: totrans-122
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 获取`PropertySet`的实例，使用`PropertySetManager`，传递我们获得的实体的详细信息：
+- en: '[PRE22]'
+  id: totrans-123
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE22]'
+- en: Here, we create a map with the entity name, that is, `OSUser`, and the ID of
+    the user, that is, `10032`. We also pass the delegator name as defined in the
+    `entityengine.xml`, under the `WEB-INF/classes` folder, which is the default in
+    this case. We then retrieve the `PropertySet` instance from `PropertySetManager`,
+    using `ofbiz` as the key.
+  id: totrans-124
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在这里，我们创建一个包含实体名称（即`OSUser`）和用户ID（即`10032`）的映射。我们还传递了在`entityengine.xml`中定义的委托名称，该文件位于`WEB-INF/classes`文件夹下，默认情况下即为此。然后我们从`PropertySetManager`中检索`PropertySet`实例，使用`ofbiz`作为键。
+- en: 'The values can be set as before, depending on the type of the field. In this
+    case, we will have more than one key for state, country, and so on:'
+  id: totrans-125
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 这些值可以像之前一样设置，具体取决于字段的类型。在这种情况下，我们将有多个键用于州、省，国家等：
+- en: '[PRE23]'
+  id: totrans-126
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE23]'
+- en: This will then be stored in the appropriate tables.
+  id: totrans-127
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 这将被存储在相应的表中。
+- en: 'We can retrieve these values later by creating the `PropertySet` in a similar
+    manner and using the getter methods:'
+  id: totrans-128
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 我们可以通过以类似的方式创建`PropertySet`并使用getter方法，稍后检索这些值：
+- en: '[PRE24]'
+  id: totrans-129
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE24]'
+- en: How it works...
+  id: totrans-130
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 它是如何工作的...
+- en: When a property is set using `PropertySet` instantiated from `PropertiesManager`
+    as we did in the case of the Boolean values, it gets stored in the **propertyentry**
+    table with the `ENTITY_NAME` as **jira.properties** and `ENTITY_ID` as **1**.
+    It will also have a unique ID, which will then be used to store the value in the
+    **propertynumber**, **propertystring**, **propertytext**, or **propertydate**
+    tables, depending on the data type we used.
+  id: totrans-131
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当使用从`PropertiesManager`实例化的`PropertySet`设置属性时，正如我们在布尔值的案例中所做的那样，它会存储在**propertyentry**表中，`ENTITY_NAME`为**jira.properties**，`ENTITY_ID`为**1**。它还会有一个唯一的ID，之后将用来将值存储到**propertynumber**、**propertystring**、**propertytext**或**propertydate**表中，具体取决于我们使用的数据类型。
+- en: 'In our case, the **propertyentry** table is populated with values, as shown
+    next:'
+  id: totrans-132
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在我们的案例中，**propertyentry**表已经填充了值，如下所示：
+- en: '![How it works...](img/1803-10-04.jpg)'
+  id: totrans-133
+  prefs: []
+  type: TYPE_IMG
+  zh: '![工作原理...](img/1803-10-04.jpg)'
+- en: The first one is the Boolean property we added whereas the second and third
+    are the user properties.
+  id: totrans-134
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 第一个是我们添加的 Boolean 属性，而第二个和第三个是用户属性。
+- en: 'Boolean values get stored as numbers (`0` or `1`) and hence, the **propertyentry**
+    table stores the **propertytype** as **1**, which denotes a number value. There
+    is a corresponding entry in the **propertynumber** table, with ID **11303**, for
+    the Boolean property, as shown:'
+  id: totrans-135
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 布尔值会作为数字（`0` 或 `1`）存储，因此，**propertyentry** 表将 **propertytype** 存储为 **1**，表示数字值。对于布尔属性，**propertynumber**
+    表中有一个对应的条目，ID 为 **11303**，如下所示：
+- en: '![How it works...](img/1803-10-05.jpg)'
+  id: totrans-136
+  prefs: []
+  type: TYPE_IMG
+  zh: '![工作原理...](img/1803-10-05.jpg)'
+- en: In our example, the **Boolean** is set to **true** and, hence, the **propertynumber**
+    stores the value **1**. If set to `false`, it will store **0**.
+  id: totrans-137
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在我们的示例中，**Boolean** 被设置为 **true**，因此，**propertynumber** 存储值 **1**。如果设置为 `false`，则会存储
+    **0**。
+- en: 'In the case of address, the entity is **OSUser** and it has an **entityId**
+    of **10032**. We have seen two rows with IDs **11304** and **11305**, each with
+    **propertytype** as **5**, which denotes String values. Because they are String
+    values, they are stored in the **propertystring** table, as shown in the following
+    screenshot:'
+  id: totrans-138
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在地址的情况下，实体是 **OSUser**，它的 **entityId** 为 **10032**。我们看到了两行，ID 分别为 **11304**
+    和 **11305**，每行的 **propertytype** 为 **5**，表示字符串值。由于它们是字符串值，所以被存储在 **propertystring**
+    表中，如下图所示：
+- en: '![How it works...](img/1803-10-06.jpg)'
+  id: totrans-139
+  prefs: []
+  type: TYPE_IMG
+  zh: '![工作原理...](img/1803-10-06.jpg)'
+- en: Hopefully, this gives a fair idea about how we can store attributes against
+    an existing entity record.
+  id: totrans-140
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 希望这能帮助你大致了解我们如何在现有实体记录中存储属性。
+- en: The good thing about the usage of `propertySet` is that we don't need to create
+    an extra scheme or entity definition and these properties are exported in the
+    backup XML when JIRA data is exported. So, all configurations stored like this
+    will be retained when the data is imported back into another JIRA instance.
+  id: totrans-141
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用 `propertySet` 的好处是我们不需要创建额外的模式或实体定义，并且这些属性在 JIRA 数据导出时会被导出到备份 XML 中。因此，以这种方式存储的所有配置，在数据重新导入到另一个
+    JIRA 实例时会被保留。
+- en: Using active objects to store data
+  id: totrans-142
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 使用 Active Objects 存储数据
+- en: Active objects represent a technology recently used by JIRA to allow per-plugin
+    storage. This gives the plugin developers a real protected database where they
+    can store the data belonging to their plugin and which other plugins won't be
+    able to access. In this recipe, we will see how we can store an address entity
+    in the database using active objects.
+  id: totrans-143
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Active Objects 是 JIRA 最近使用的一项技术，用于允许每个插件存储数据。这为插件开发人员提供了一个真正受保护的数据库，他们可以将属于其插件的数据存储在其中，并且其他插件无法访问。在这个教程中，我们将看到如何使用
+    Active Objects 将地址实体存储到数据库中。
+- en: You can read more about active objects at [http://java.net/projects/activeobjects/pages/Home](http://java.net/projects/activeobjects/pages/Home).
+  id: totrans-144
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你可以在 [http://java.net/projects/activeobjects/pages/Home](http://java.net/projects/activeobjects/pages/Home)
+    阅读更多关于 Active Objects 的信息。
+- en: Getting ready
+  id: totrans-145
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 准备就绪
+- en: Create a skeleton plugin using Atlassian Plugin SDK.
+  id: totrans-146
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用 Atlassian Plugin SDK 创建一个骨架插件。
+- en: How to do it...
+  id: totrans-147
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: 'In order to understand it better, let us look at the simple ''address entity''
+    example that we used in the previous recipe. This will also help in an easy comparison
+    with `PropertySet`, if desired Follow the ensuing steps to use active objects
+    in the plugin:'
+  id: totrans-148
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了更好地理解，让我们看一下我们在之前的教程中使用的简单 "地址实体" 示例。这也有助于与 `PropertySet` 进行简便的比较，如果需要的话。按照以下步骤在插件中使用
+    Active Objects：
+- en: 'Include the active objects dependency in `pom.xml`. Add the appropriate `ao`
+    version:'
+  id: totrans-149
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在 `pom.xml` 中包含 Active Objects 依赖项。添加合适的 `ao` 版本：
+- en: '[PRE25]'
+  id: totrans-150
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE25]'
+- en: 'Include the active objects plugin artifacts, under the `maven-jira-plugin`
+    configuration, in the `pom.xml` file as shown:'
+  id: totrans-151
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在 `pom.xml` 文件中，按照如下方式将 Active Objects 插件工件包含在 `maven-jira-plugin` 配置下：
+- en: '[PRE26]'
+  id: totrans-152
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE26]'
+- en: 'Add the active objects plugin module to the Atlassian plugin descriptor:'
+  id: totrans-153
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 将 Active Objects 插件模块添加到 Atlassian 插件描述符中：
+- en: '[PRE27]'
+  id: totrans-154
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE27]'
+- en: As you can see, the module has a unique key and it points to an entity we are
+    going to define later, `AddressEntity` in this case.
+  id: totrans-155
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 如你所见，模块有一个唯一的键，并指向我们稍后将定义的实体，这里是 `AddressEntity`。
+- en: 'Include a component-import plugin to register `ActiveObjects` as a component
+    in the `atlassian-plugin.xml` previous with the above module:'
+  id: totrans-156
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 包含一个 component-import 插件，将 `ActiveObjects` 注册为 `atlassian-plugin.xml` 文件中的一个组件，前面已经提到的模块：
+- en: '[PRE28]'
+  id: totrans-157
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE28]'
+- en: Define the entity to be used for data storage. The entity should be an interface
+    and should extend the `net.java.ao.Entity` interface. All we need to do in this
+    entity interface is to define getter and setter methods for the data that we need
+    to store for this entity.
+  id: totrans-158
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 定义用于数据存储的实体。实体应该是一个接口，并且应继承 `net.java.ao.Entity` 接口。我们需要在这个实体接口中做的所有工作是为我们需要存储的数据定义
+    getter 和 setter 方法。
+- en: 'For example, we need to store the name, city and country as part of the address
+    entity. In this case, the `AddressEntity` interface will look like the following:'
+  id: totrans-159
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 例如，我们需要将名称、城市和国家作为地址实体的一部分进行存储。在这种情况下，`AddressEntity` 接口将如下所示：
+- en: '[PRE29]'
+  id: totrans-160
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE29]'
+- en: By doing this, we have setup the entity to facilitate the storage of all the
+    three attributes. We can now create, modify, or delete the data using the `ActiveObjects`
+    component. The component can be instantiated by injecting it into the constructor.
+  id: totrans-161
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通过这样做，我们已经设置了实体，以便存储所有三个属性。我们现在可以使用 `ActiveObjects` 组件创建、修改或删除数据。该组件可以通过注入到构造函数中进行实例化。
+- en: '[PRE30]'
+  id: totrans-162
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE30]'
+- en: 'A new row can be added to the database using the following piece of code:'
+  id: totrans-163
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 可以使用以下代码片段向数据库添加新行：
+- en: '[PRE31]'
+  id: totrans-164
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE31]'
+- en: 'Details can be read either using the `id`, which is the primary key, or by
+    querying the data using a `net.java.ao.Query` object. Using ID is as simple as
+    is shown next:'
+  id: totrans-165
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 可以通过使用 `id`（主键）或通过 `net.java.ao.Query` 对象查询数据来读取详细信息。使用 ID 就像下面这样简单：
+- en: '[PRE32]'
+  id: totrans-166
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE32]'
+- en: 'The `Query` object can be used as follows:'
+  id: totrans-167
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`Query` 对象可以按如下方式使用：'
+- en: '[PRE33]'
+  id: totrans-168
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE33]'
+- en: Here, we are querying for all records with a given name.
+  id: totrans-169
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这里，我们正在查询所有具有给定名称的记录。
+- en: 'Once you get hold of an entity by either means, we can edit the contents simply
+    by using the setter method:'
+  id: totrans-170
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦通过任何方式获取到实体，我们可以通过使用 setter 方法简单地编辑内容：
+- en: '[PRE34]'
+  id: totrans-171
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE34]'
+- en: Deleting is even simpler!
+  id: totrans-172
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 删除甚至更简单！
+- en: '[PRE35]'
+  id: totrans-173
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE35]'
+- en: Hopefully, that gives a fair introduction to active objects.
+  id: totrans-174
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 希望这能为活跃对象提供一个公平的介绍。
+- en: How it works...
+  id: totrans-175
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 它是如何工作的...
+- en: Behind the scenes, separate tables are created in the JIRA database for every
+    entity that we add. The active objects service interacts with these tables to
+    do the work.
+  id: totrans-176
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在后台，每添加一个实体，JIRA 数据库中就会为其创建一个单独的表。活跃对象服务与这些表进行交互以完成工作。
+- en: 'If you see the database, a table of the name `AO_{SOME_HEX}_MY_OBJECT` is created
+    for every entity named `MyObject` belonging to a plugin with key `com.example.ao.myplugin`,
+    where:'
+  id: totrans-177
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你查看数据库，将会看到每个名为 `MyObject` 的实体（属于插件密钥为 `com.example.ao.myplugin` 的插件）会创建一个名为
+    `AO_{SOME_HEX}_MY_OBJECT` 的表，其中：
+- en: '`AO` is a common prefix'
+  id: totrans-178
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`AO` 是一个常见的前缀'
+- en: '`SOME_HEX` is a set of the first six characters of the hexadecimal value of
+    the hash of the plugin key `com.example.ao.myplugin`'
+  id: totrans-179
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`SOME_HEX` 是插件密钥 `com.example.ao.myplugin` 的哈希值的前六个十六进制字符的集合'
+- en: '`MY_OBJECT` is the upper-case translation of the entity class name `MyObject`'
+  id: totrans-180
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`MY_OBJECT` 是实体类名 `MyObject` 的大写翻译'
+- en: For every attribute with getter method, `getSomeAttribute` defined in the entity
+    interface, a column is created in the table with the name `SOME_ATTRIBUTE` using
+    the Java Beans naming convention—separating the two words by an underscore and
+    keeping them both in upper case.
+  id: totrans-181
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于每个在实体接口中定义的具有 getter 方法的属性 `getSomeAttribute`，都会在表中创建一列，列名为 `SOME_ATTRIBUTE`，遵循
+    Java Beans 命名约定——通过下划线分隔两个单词，并将它们都保持大写。
+- en: 'In our **AddressEntity** example, we have the following table, **ao_d6b86e_address_entity**,
+    created:'
+  id: totrans-182
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在我们的 **AddressEntity** 示例中，已创建以下表：**ao_d6b86e_address_entity**：
+- en: '![How it works...](img/1803-10-07.jpg)'
+  id: totrans-183
+  prefs: []
+  type: TYPE_IMG
+  zh: '![它是如何工作的...](img/1803-10-07.jpg)'
+- en: 'And, for our example, the data is stored as shown next:'
+  id: totrans-184
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于我们的示例，数据存储方式如下所示：
+- en: '![How it works...](img/1803-10-08.jpg)'
+  id: totrans-185
+  prefs: []
+  type: TYPE_IMG
+  zh: '![它是如何工作的...](img/1803-10-08.jpg)'
+- en: Accessing JIRA configuration properties
+  id: totrans-186
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 访问 JIRA 配置属性
+- en: We have seen how to use `PropertySet` to store details of plugins in the previous
+    recipes. In this recipe, we will see how we can access the JIRA configuration
+    properties using `PropertySet`.
+  id: totrans-187
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们已经在之前的配方中看到如何使用 `PropertySet` 存储插件的详细信息。在这个配方中，我们将看到如何使用 `PropertySet` 访问
+    JIRA 配置属性。
+- en: How to do it...
+  id: totrans-188
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: There are lot of global configurations settings in JIRA which are configured
+    using Administration menus. More on the various options can be read at [http://confluence.atlassian.com/display/JIRA/Configuring+Global+Settings](http://confluence.atlassian.com/display/JIRA/Configuring+Global+Settings).
+    Where does JIRA store this information and how do we access it?
+  id: totrans-189
+  prefs: []
+  type: TYPE_NORMAL
+  zh: JIRA 中有很多全局配置设置，这些设置通过管理菜单进行配置。更多关于各种选项的信息可以在 [http://confluence.atlassian.com/display/JIRA/Configuring+Global+Settings](http://confluence.atlassian.com/display/JIRA/Configuring+Global+Settings)
+    阅读。JIRA 将这些信息存储在哪里，如何访问？
+- en: All these configuration properties, such as, settings under **General** **Configuration**,
+    **Base** **URL**, **Attachments** **path**, **license** **info**, and more, are
+    stored in the `propertyset` tables we saw earlier. They are stored against a virtual
+    entity, `jira.properties`. This is the same virtual entity that is used when the
+    `PropertySet` is retrieved using `PropertiesManager`, as we saw while persisting
+    plugin information.
+  id: totrans-190
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 所有这些配置属性，例如 **General** **Configuration**、**Base** **URL**、**Attachments** **path**、**license**
+    **info** 等，都存储在我们之前看到的 `propertyset` 表中。它们与虚拟实体 `jira.properties` 一起存储。这与使用 `PropertiesManager`
+    检索 `PropertySet` 时使用的虚拟实体相同，正如我们在持久化插件信息时所看到的那样。
+- en: Here, all the property key entries are stored in the `propertyentry` table,
+    with `jira.properties` as the entity name and `entityid` as `1`. The `propertytype`
+    for each property varies, depending on what is stored against it. For example,
+    `jira.option.allowattachments` is a flag and hence is stored in the `propertynumber`
+    table, with a value of either `0` or `1`. In this case, the `propertytype` is
+    `1`, denoting the number `value`. `jira.path.index`, on the other hand, stores
+    a String that holds the index path and will have `5` as `propertytype`. Here the
+    value is stored in `propertystring` table.
+  id: totrans-191
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这里，所有属性键条目都存储在 `propertyentry` 表中，`jira.properties` 是实体名称，`entityid` 是 `1`。每个属性的
+    `propertytype` 不同，取决于存储的内容。例如，`jira.option.allowattachments` 是一个标志，因此存储在 `propertynumber`
+    表中，其值为 `0` 或 `1`。在这种情况下，`propertytype` 为 `1`，表示数字 `value`。另一方面，`jira.path.index`
+    存储一个字符串，表示索引路径，其 `propertytype` 为 `5`，值存储在 `propertystring` 表中。
+- en: 'All the properties can be accessed using the following SQL command:'
+  id: totrans-192
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 所有属性可以通过以下 SQL 命令访问：
+- en: '[PRE36]'
+  id: totrans-193
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE36]'
+- en: 'If you want to see only String properties and their values, you can get it
+    using the command:'
+  id: totrans-194
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果您只想查看字符串类型的属性及其值，可以使用以下命令：
+- en: '[PRE37]'
+  id: totrans-195
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE37]'
+- en: 'If you want to search for a specific property, you can do that using the following
+    command:'
+  id: totrans-196
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果您想查找特定的属性，可以使用以下命令：
+- en: '[PRE38]'
+  id: totrans-197
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE38]'
+- en: Note that the appropriate property table should be used, `propertynumber` in
+    this case!
+  id: totrans-198
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 注意，应使用适当的属性表，`propertynumber` 在此情况下！
+- en: 'The same things can be achieved in a plugin, as follows:'
+  id: totrans-199
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在插件中也可以实现相同的功能，如下所示：
+- en: 'Retrieve the `PropertySet` object:'
+  id: totrans-200
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 检索 `PropertySet` 对象：
+- en: '[PRE39]'
+  id: totrans-201
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE39]'
+- en: 'As said before, from JIRA 4.3, the `PropertiesManager.getInstance()` method
+    has been deprecated. Instead, you can inject the `PropertiesManager` in the constructor
+    using dependency injection or retrieve it from `ComponentManager`, as shown:'
+  id: totrans-202
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 如前所述，从 JIRA 4.3 开始，`PropertiesManager.getInstance()` 方法已被弃用。相反，您可以通过依赖注入将 `PropertiesManager`
+    注入构造函数，或从 `ComponentManager` 中检索，示例如下：
+- en: '[PRE40]'
+  id: totrans-203
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE40]'
+- en: 'All property keys can be retrieved as follows:'
+  id: totrans-204
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 所有属性键可以通过以下方式检索：
+- en: '[PRE41]'
+  id: totrans-205
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE41]'
+- en: 'Similarly, all the properties of a specific type can be accessed as:'
+  id: totrans-206
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 同样，特定类型的所有属性可以通过以下方式访问：
+- en: '[PRE42]'
+  id: totrans-207
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE42]'
+- en: 'The value of a particular key can be accessed as follows:'
+  id: totrans-208
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 可以按如下方式访问特定键的值：
+- en: '[PRE43]'
+  id: totrans-209
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE43]'
+- en: Getting database connection for JDBC calls
+  id: totrans-210
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 获取 JDBC 调用的数据库连接
+- en: It is not always feasible to use **OfBizDelegator** to get all the details that
+    we need. What if we need to execute a complex query in the database via JDBC?
+    In this recipe, we will see how we can retrieve the database connection that is
+    defined in `entityengine.xml`.
+  id: totrans-211
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用 **OfBizDelegator** 获取我们所需的所有详细信息并不总是可行。如果我们需要通过 JDBC 执行复杂的查询怎么办？在这个示例中，我们将看到如何获取在
+    `entityengine.xml` 中定义的数据库连接。
+- en: How to do it...
+  id: totrans-212
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何做到这一点...
+- en: 'The database connection lookup is pretty simple if you are familiar with JDBC.
+    Follow these quick steps to retrieve a connection:'
+  id: totrans-213
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果您熟悉 JDBC，数据库连接查找非常简单。按照以下步骤快速获取连接：
+- en: 'Create a `javax.naming.InitialContext` object:'
+  id: totrans-214
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建 `javax.naming.InitialContext` 对象：
+- en: '[PRE44]'
+  id: totrans-215
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE44]'
+- en: 'Retrieve the database information from the entity configurations using `EntityConfigUtil`:'
+  id: totrans-216
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用 `EntityConfigUtil` 从实体配置中检索数据库信息：
+- en: '[PRE45]'
+  id: totrans-217
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE45]'
+- en: Here, `defaultDS` is the name of the data source defined in `entityengine.xml`.
+  id: totrans-218
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在这里，`defaultDS` 是 `entityengine.xml` 中定义的数据源的名称。
+- en: 'Retrieve the `jndi-name` string from the `DataSourceInfo` object:'
+  id: totrans-219
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 从 `DataSourceInfo` 对象中检索 `jndi-name` 字符串：
+- en: '[PRE46]'
+  id: totrans-220
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE46]'
+- en: 'Use `jndi-name` to look up the `javax.sql.DataSource` object:'
+  id: totrans-221
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 使用 `jndi-name` 查找 `javax.sql.DataSource` 对象：
+- en: '[PRE47]'
+  id: totrans-222
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE47]'
+- en: 'Create the `java.sql.Connection` object from the DataSource:'
+  id: totrans-223
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 从 DataSource 创建 `java.sql.Connection` 对象：
+- en: '[PRE48]'
+  id: totrans-224
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE48]'
+- en: Once you get the connection, it is similar to any other JDBC calls. Create your
+    statements or prepare statements and execute them.
+  id: totrans-225
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 一旦建立连接，它与其他任何 JDBC 调用相似。创建语句或准备语句并执行它们。
+- en: 'As I write this, JIRA 4.3 is being released, and getting a connection is going
+    to be much simpler. Just do the following:'
+  id: totrans-226
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在我写这篇文章时，JIRA 4.3 正在发布，并且连接将变得更加简单。只需执行以下操作：
+- en: '[PRE49]'
+  id: totrans-227
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE49]'
+- en: Simple, isn't it?
+  id: totrans-228
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 简单吧？
+- en: '`DataSourceInfo` can be accessed as follows:'
+  id: totrans-229
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`DataSourceInfo` 可以通过以下方式访问：'
+- en: '[PRE50]'
+  id: totrans-230
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE50]'
+- en: Over to you, to write the JDBC calls wisely!
+  id: totrans-231
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 轮到你了，明智地编写 JDBC 调用吧！
+- en: Migrating a custom field from one type to another
+  id: totrans-232
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 将自定义字段从一种类型迁移到另一种类型
+- en: Custom fields in JIRA are of different types—text fields, select lists, number
+    fields, and so on. We might come across scenarios where we need to change the
+    type of a field but without losing all the data we have entered until then! Is
+    possible to do that? It is, to a certain extent. In this recipe, we will see how
+    to do it.
+  id: totrans-233
+  prefs: []
+  type: TYPE_NORMAL
+  zh: JIRA 中的自定义字段有多种类型——文本字段、选择列表、数字字段等等。我们可能会遇到需要更改字段类型的场景，但又不想丢失已经输入的数据！这可能吗？在一定程度上是可能的。在这个教程中，我们将看到如何做到这一点。
+- en: The type of a field can only be changed via the database, as the UI doesn't
+    support that. But, it won't be possible with all the field types. For example,
+    it isn't possible to convert a text field to a number field because all the values
+    that the field already has may not be number fields. However, the reverse is possible,
+    because all number values can be treated as text values. Similarly, you can convert
+    a select field to a text field but you cannot convert a multi-select field to
+    a text field because a multi-select has multiple values, each with a separate
+    row in the `customfieldvalue` table.
+  id: totrans-234
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 字段的类型只能通过数据库更改，因为 UI 不支持此操作。但是，并不是所有字段类型都能支持转换。例如，无法将文本字段转换为数字字段，因为该字段已有的所有值可能不是数字字段。然而，反过来是可以的，因为所有数字值都可以当作文本值来处理。类似地，你可以将选择字段转换为文本字段，但不能将多选字段转换为文本字段，因为多选字段有多个值，每个值在
+    `customfieldvalue` 表中都有单独的行。
+- en: So, the first step is to identify whether the conversion is feasible, by looking
+    at the source and target types. If it is feasible, we can go on and modify the
+    type, as described in this recipe.
+  id: totrans-235
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 所以，第一步是通过查看源类型和目标类型，确定转换是否可行。如果可行，我们就可以按照这个教程的描述继续修改类型。
+- en: How to do it...
+  id: totrans-236
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: 'The following steps outline how to modify the type of custom field if the source
+    and target types satisfy the condition we discussed earlier:'
+  id: totrans-237
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下步骤概述了如何修改自定义字段的类型，前提是源类型和目标类型满足我们之前讨论的条件：
+- en: Stop the JIRA instance.
+  id: totrans-238
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 停止 JIRA 实例。
+- en: Connect to the JIRA DB as the JIRA user.
+  id: totrans-239
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 以 JIRA 用户身份连接到 JIRA 数据库。
+- en: 'Modify the custom field key in the `customfield` table by executing the SQL
+    script as shown:'
+  id: totrans-240
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 通过执行如下 SQL 脚本，修改 `customfield` 表中的自定义字段键：
+- en: '[PRE51]'
+  id: totrans-241
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE51]'
+- en: Here, the type of the custom field named **'Old** **Number** **Value'** is changed
+    to text field. Make sure that the custom field name is unique; if not, use custom
+    field ID in the `where` condition.
+  id: totrans-242
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 在这里，将名为 **'Old** **Number** **Value'** 的自定义字段类型更改为文本字段。确保自定义字段的名称唯一；如果不是，请在
+    `where` 条件中使用自定义字段 ID。
+- en: 'Modify the searcher key similarly, with an appropriate searcher. In the previous
+    case, we need to modify the searcher value to text searcher, as shown:'
+  id: totrans-243
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 类似地，修改搜索器键，并使用适当的搜索器。在前面的案例中，我们需要将搜索器值修改为文本搜索器，如下所示：
+- en: '[PRE52]'
+  id: totrans-244
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE52]'
+- en: Commit the changes and disconnect.
+  id: totrans-245
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 提交更改并断开连接。
+- en: Start JIRA.
+  id: totrans-246
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 启动 JIRA。
+- en: Do a complete reindexing of the JIRA instance by going to **Administration**
+    | **System** | **Indexing**.
+  id: totrans-247
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 通过进入 **管理** | **系统** | **索引**，对 JIRA 实例进行完全重新索引。
+- en: The custom field should now be modified to a text field from the old number
+    field. Add or update values and search them to verify the change.
+  id: totrans-248
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 自定义字段现在应从旧的数字字段修改为文本字段。添加或更新值并进行搜索以验证更改。
+- en: Retrieving issue information from a Database
+  id: totrans-249
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 从数据库中获取问题信息
+- en: Information about an issue is scattered around in multiple tables in the JIRA
+    database. However, a good starting point is the `jiraissue` table, which is where
+    the issue record is stored. It has foreign keys referencing other tables and,
+    at the same time, the issue ID is referenced in few other tables.
+  id: totrans-250
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 关于一个问题的信息分散在 JIRA 数据库的多个表中。然而，一个好的起点是 `jiraissue` 表，这里存储着问题记录。它有外键引用其他表，同时，问题
+    ID 也会在其他几个表中被引用。
+- en: 'The following diagram captures the important tables that the `jiraissue` table
+    has a parent relationship with:'
+  id: totrans-251
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下图表展示了 `jiraissue` 表与其他表之间的父子关系：
+- en: '![Retrieving issue information from a Database](img/1803-10-09.jpg)'
+  id: totrans-252
+  prefs: []
+  type: TYPE_IMG
+  zh: '![从数据库中获取问题信息](img/1803-10-09.jpg)'
+- en: As you can see, critical information about an issue, such as, the project, issue
+    type, status, priority, resolution, security level, workflow, and so on, are all
+    stored in the respective tables but are referenced from the `jiraissue` table,
+    using a foreign key. The foreign key points to the ID of the other tables in all
+    cases, but there are no foreign key constraints enforced on any of these tables.
+  id: totrans-253
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，关于问题的关键信息，如项目、问题类型、状态、优先级、解决方案、安全级别、工作流等，都存储在各自的表中，但都通过`jiraissue`表引用，使用外键。外键指向其他表的ID，但这些表上没有强制执行外键约束。
+- en: 'Similarly, the following diagram shows the tables that the `jiraissue` table
+    has a child relationship with:'
+  id: totrans-254
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 类似地，以下图表显示了`jiraissue`表与哪些表有子关系：
+- en: '![Retrieving issue information from a Database](img/1803-10-10.jpg)'
+  id: totrans-255
+  prefs: []
+  type: TYPE_IMG
+  zh: '![从数据库中检索问题信息](img/1803-10-10.jpg)'
+- en: Here, the tables `customfieldvalue`, `changegroup`, `jiraaction`, `label`, `worklog`,
+    `fileattachment`, `issuelink`, `trackback_ping`, and so on, have a foreign key
+    with the name `issueid` or `issue` (or source or destination) pointing to the
+    relevant issue's ID.
+  id: totrans-256
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这里，`customfieldvalue`、`changegroup`、`jiraaction`、`label`、`worklog`、`fileattachment`、`issuelink`、`trackback_ping`等表，都有一个名为`issueid`或`issue`（或source或destination）的外键，指向相关问题的ID。
+- en: In this recipe, we will learn how to access some of the issue's information
+    with the help of the previous diagrams.
+  id: totrans-257
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本食谱中，我们将学习如何借助前面的图表访问一些问题的信息。
+- en: How to do it...
+  id: totrans-258
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: 'When there is a parent-child relationship between tables, we can do a join
+    operation to get most of the information we are looking for. For example, all
+    the issues along with their project names can be retrieved by the following query:'
+  id: totrans-259
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当表之间存在父子关系时，我们可以进行联接操作，以获取大部分所需的信息。例如，可以通过以下查询获取所有问题及其项目名称：
+- en: '[PRE53]'
+  id: totrans-260
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE53]'
+- en: Here we do an inner join on the condition that the project's ID is the same
+    as the project column value in the `jiraissue` table.
+  id: totrans-261
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这里，我们通过条件进行内部连接，即项目的ID与`jiraissue`表中的项目列值相同。
+- en: 'Similarly, all the comments on an issue can be retrieved by the following query:'
+  id: totrans-262
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 类似地，所有关于一个问题的评论可以通过以下查询获取：
+- en: '[PRE54]'
+  id: totrans-263
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE54]'
+- en: In the example, we retrieve the comments on issues with their author and created
+    date. The same approach can be used with all tables in the previous diagrams.
+  id: totrans-264
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在此示例中，我们检索问题的评论及其作者和创建日期。相同的方法可以应用于前面图表中的所有表。
+- en: There's more...
+  id: totrans-265
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 还有更多...
+- en: Accessing version and component information on an issue is slightly different.
+    Even though you see the `fixfor` and `component` columns in the `jiraissue` table,
+    they are not used anymore!
+  id: totrans-266
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 访问问题的版本和组件信息稍有不同。尽管你会在`jiraissue`表中看到`fixfor`和`component`列，它们已经不再使用！
+- en: Each issue can have multiple versions or components and hence there is a `join`
+    table between the `jiraissue` and `version`/`component` tables, called `nodeassociation`.
+    The `source_node_entity` will be the `ISSUE` and the `source_node_id` represents
+    the issue ID. The `sink_node_entity` will be **Component** or **Version**, in
+    this case, and `sink_node_id` will hold the ID of the respective component or
+    version.
+  id: totrans-267
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 每个问题可以有多个版本或组件，因此在`jiraissue`和`version`/`component`表之间存在一个`join`表，称为`nodeassociation`。`source_node_entity`将是`ISSUE`，`source_node_id`表示问题ID。`sink_node_entity`将在此情况下为**Component**或**Version**，而`sink_node_id`将存储相应组件或版本的ID。
+- en: There is a third column, `association_type`, which will be `IssueFixVersion`,
+    `IssueVersion`, or `IssueComponent` for fixes for versions, affected versions
+    or components respectively.
+  id: totrans-268
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 还有第三列`association_type`，它的值将是`IssueFixVersion`、`IssueVersion`或`IssueComponent`，分别用于版本修复、受影响版本或组件。
+- en: 'We can access the components of an issue as follows:'
+  id: totrans-269
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们可以通过以下方式访问问题的组件：
+- en: '[PRE55]'
+  id: totrans-270
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE55]'
+- en: Here, `DEMO-123` is the issue. We can also retrieve the affected versions and
+    fix versions in a similar fashion.
+  id: totrans-271
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这里，`DEMO-123`是问题。我们还可以以类似的方式检索受影响的版本和修复版本。
+- en: Retrieving custom field details from a database
+  id: totrans-272
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 从数据库中检索自定义字段详细信息
+- en: In the previous recipe, we have seen how to retrieve the standard fields of
+    an issue from the database. In this recipe, we will see how to retrieve the custom
+    field details of an issue.
+  id: totrans-273
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在之前的食谱中，我们已经看过如何从数据库中检索问题的标准字段。在本食谱中，我们将学习如何检索问题的自定义字段详细信息。
+- en: All the custom fields in JIRA are stored in the `customfield` table, as we have
+    seen while modifying the custom field types. Some of these custom fields, such
+    as, select fields, multi-select fields, and so on, can have different options
+    configured and they can be found in the `customfieldoption` table.
+  id: totrans-274
+  prefs: []
+  type: TYPE_NORMAL
+  zh: JIRA中的所有自定义字段都存储在`customfield`表中，正如我们在修改自定义字段类型时所见。某些自定义字段，例如选择字段、多选字段等，可以配置不同的选项，并且这些选项可以在`customfieldoption`表中找到。
+- en: For each custom field, there can be a set of contexts configured. These contexts
+    specify the projects or a list of issue types the field is associated with. For
+    each such context, an entry is made in the `fieldconfigscheme` with a unique ID.
+    For each `fieldconfigscheme`, there will be entries in the `configurationcontext`
+    and `fieldconfigschemeissuetype` tables, `configurationcontext` holding the projects
+    the field is associated with in the relevant context, and `fieldconfigschemeissuetype`
+    holding the issue types the field is associated with! For fields, such as Select
+    and Multi Select, there can be different options configured for different contexts
+    and this can be found from the `customfieldoption` table, using the `customfildconfig`
+    column, which points to the respective row in the `fieldconfigscheme` table.
+  id: totrans-275
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于每个自定义字段，都可以配置一组上下文。这些上下文指定了与字段相关联的项目或问题类型列表。对于每个这样的上下文，`fieldconfigscheme`中会有一条带有唯一ID的记录。对于每个`fieldconfigscheme`，在`configurationcontext`和`fieldconfigschemeissuetype`表中都会有记录，`configurationcontext`存储字段在相关上下文中与哪些项目相关联，`fieldconfigschemeissuetype`则存储字段与哪些问题类型相关联！对于像选择字段（Select）和多选字段（Multi
+    Select）这样的字段，可以为不同的上下文配置不同的选项，这些选项可以在`customfieldoption`表中找到，通过`customfildconfig`列，它指向`fieldconfigscheme`表中的相应行。
+- en: There must always be a record in `configurationcontext` and `fieldconfigschemeissuetype`
+    for each configuration scheme. If the scheme isn't restricted to any projects
+    or issue types, the `project` and `issuetype` columns of the respective tables
+    should be `NULL`.
+  id: totrans-276
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 每个配置方案必须在`configurationcontext`和`fieldconfigschemeissuetype`中有记录。如果该方案没有限制到任何项目或问题类型，则相关表中的`project`和`issuetype`列应该为`NULL`。
+- en: For individual issues, the value(s) of the custom fields are stored in the `customfieldvalue`
+    table with a reference to the `jiraissue` and `customfield` tables. For multi-value
+    fields, such as multiple select, multiple checkboxes, and so on, there will be
+    multiple entries in the `customfieldvalue` table.
+  id: totrans-277
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于单个问题，自定义字段的值存储在`customfieldvalue`表中，并引用了`jiraissue`和`customfield`表。对于多值字段，例如多选框、多个选择项等，`customfieldvalue`表中会有多条记录。
+- en: 'We capture this information in a simple diagram like the following:'
+  id: totrans-278
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 我们通过一个简单的图表来捕捉这些信息，如下所示：
+- en: '![Retrieving custom field details from a database](img/1803-10-11.jpg)'
+  id: totrans-279
+  prefs: []
+  type: TYPE_IMG
+  zh: '![从数据库中检索自定义字段详情](img/1803-10-11.jpg)'
+- en: How to do it...
+  id: totrans-280
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: 'Once a custom field is added, the details of the field can be retrieved from
+    the `customfield` table with this simple query:'
+  id: totrans-281
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦添加了自定义字段，可以通过以下简单的查询从`customfield`表中检索该字段的详情：
+- en: '[PRE56]'
+  id: totrans-282
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE56]'
+- en: 'If it is a field with multiple options, such as the select field, the options
+    can be retrieved using a simple join, as shown next:'
+  id: totrans-283
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果是具有多个选项的字段，例如选择字段，可以使用简单的连接查询检索选项，如下所示：
+- en: '[PRE57]'
+  id: totrans-284
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE57]'
+- en: 'The various field configurations can be retrieved from the `fieldconfigscheme`
+    table, as follows:'
+  id: totrans-285
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 可以通过以下方式从`fieldconfigscheme`表中检索各种字段配置：
+- en: '[PRE58]'
+  id: totrans-286
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE58]'
+- en: Here, `12345` is the unique ID for the custom field.
+  id: totrans-287
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这里，`12345`是自定义字段的唯一ID。
+- en: 'The projects associated with a custom field can be retrieved as follows:'
+  id: totrans-288
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 与自定义字段相关联的项目可以通过以下方式检索：
+- en: '[PRE59]'
+  id: totrans-289
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE59]'
+- en: When the project is `NULL`, the field is global and hence available for all
+    projects!
+  id: totrans-290
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当项目为`NULL`时，字段是全局性的，因此对所有项目都可用！
+- en: 'Similarly, the issue types associated with the field can be retrieved as follows:'
+  id: totrans-291
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 类似地，可以通过以下方式检索与字段相关联的问题类型：
+- en: '[PRE60]'
+  id: totrans-292
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE60]'
+- en: Retrieving permissions on issues from a database
+  id: totrans-293
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 从数据库中检索问题的权限
+- en: JIRA is quite powerful in enforcing permissions on issues. There are quite a
+    lot of configuration options in controlling who can do what. All these revolve
+    around two different schemes in JIRA, **Permission** **Scheme** and **Issue**
+    **Security** **Scheme**.
+  id: totrans-294
+  prefs: []
+  type: TYPE_NORMAL
+  zh: JIRA在对问题执行权限控制方面非常强大。它提供了许多配置选项来控制谁可以做什么。所有这些配置选项都围绕着JIRA中的两种不同方案展开，**权限** **方案**
+    和 **问题** **安全** **方案**。
+- en: Permission Scheme enforces project-level security whereas Issue Security Scheme
+    enforces issue-level security. It is possible for you to grant access to view
+    issues in a project and yet hide some of those issues from the user. However,
+    the reverse is not possible, that is, one cannot grant access to certain selected
+    issues when the user originally didn't have access to view the issues in the project.
+  id: totrans-295
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 权限方案强制实施项目级安全性，而问题安全方案则强制实施问题级安全性。你可以授予查看项目中问题的访问权限，同时隐藏部分问题不让用户看到。然而，反过来就不可行，即，如果用户原本没有权限查看项目中的问题，则无法授予对某些特定问题的访问权限。
+- en: 'The various tables involved in storing permission information in the JIRA database,
+    along with the relations between them, can be depicted as follows:'
+  id: totrans-296
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 存储 JIRA 数据库中权限信息的各种表格，以及它们之间的关系，可以如下所示：
+- en: '![Retrieving permissions on issues from a database](img/1803-10-12.jpg)'
+  id: totrans-297
+  prefs: []
+  type: TYPE_IMG
+  zh: '![从数据库中检索问题权限](img/1803-10-12.jpg)'
+- en: As you can see here, both the Permission Schemes and Issue Security Schemes
+    are related to a project via the `nodeassociation` table. Here, the **SOURCE_NODE_ENTITY**
+    is **Project** and the corresponding **SOURCE_NODE_ID** holds the ID of the project.
+    The **SINK_NODE_ENTITY** is `PermissionScheme` or `IssueSecurityScheme` depending
+    on the scheme type. **SINK_NODE_ID** will point to the appropriate scheme. The
+    **ASSOCIATION_TYPE** is `ProjectSheme`, in both the cases.
+  id: totrans-298
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如你所见，权限方案和问题安全方案都通过 `nodeassociation` 表与项目相关联。在这里，**SOURCE_NODE_ENTITY** 是 **项目**，相应的
+    **SOURCE_NODE_ID** 存储项目的 ID。**SINK_NODE_ENTITY** 是 `PermissionScheme` 或 `IssueSecurityScheme`，取决于方案类型。**SINK_NODE_ID**
+    将指向适当的方案。**ASSOCIATION_TYPE** 在两种情况下都是 `ProjectSheme`。
+- en: For each of the permission schemes, there are multiple permissions predefined,
+    such as, **Administer** **Project**, **Browse** **Project**, **Create** **Issues**,
+    and so on. For each of these permissions, the `perm_type` and `perm_parameter`
+    hold the type of the entity and its value that has the relevant permission. For
+    example, the `perm_type` could be group, user, project role, and so on, and `perm_parameter`
+    will be the group name, username, or the project role , respectively. Multiple
+    permission types can be granted a single permission.
+  id: totrans-299
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于每个权限方案，都有多个预定义的权限，例如，**管理员** **项目**，**浏览** **项目**，**创建** **问题**，等等。对于每个这些权限，`perm_type`
+    和 `perm_parameter` 存储具有相关权限的实体类型及其值。例如，`perm_type` 可以是组、用户、项目角色等，而 `perm_parameter`
+    将分别是组名、用户名或项目角色。多个权限类型可以被授予单一权限。
+- en: Similarly, issue security scheme holds a number of security levels that are
+    stored in the `schemeissuesecuritylevels` table. Each of these security levels
+    can have different entities in them, which are also defined using `type` and `parameter`
+    values; in this case, the column names are `sec_type` and `sec_parameter`.
+  id: totrans-300
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 同样，问题安全方案保存了多个安全级别，这些安全级别存储在 `schemeissuesecuritylevels` 表中。每个安全级别可以包含不同的实体，它们也使用
+    `type` 和 `parameter` 值定义；在这种情况下，列名分别是 `sec_type` 和 `sec_parameter`。
+- en: The Permission Scheme is enforced on an issue based on the project it resides
+    in, whereas the security scheme is enforced by looking at the security level the
+    issue is assigned. The security column in the `jiraissue` table holds this information.
+  id: totrans-301
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 权限方案根据问题所在的项目强制实施，而安全方案则通过查看问题所分配的安全级别来强制实施。`jiraissue` 表中的安全列保存了此信息。
+- en: Let us see how we can retrieve some of this information from an issue, based
+    on the previous diagram.
+  id: totrans-302
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们看看如何根据前面的示意图从问题中检索一些信息。
+- en: How to do it...
+  id: totrans-303
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: 'It is fairly easy to find out the Permission Scheme associated with a project
+    with the help of the `nodeassociation` table, as shown next:'
+  id: totrans-304
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通过 `nodeassociation` 表，找到与项目关联的权限方案非常容易，如下所示：
+- en: '[PRE61]'
+  id: totrans-305
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE61]'
+- en: 'Similarly, Issue Security Scheme can be retrieved as follows:'
+  id: totrans-306
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 同样，问题安全方案可以按如下方式检索：
+- en: '[PRE62]'
+  id: totrans-307
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE62]'
+- en: 'The permissions parameters associated with a specific permission in a permission
+    scheme, with an `id` value 9, can be easily retrieved as follows:'
+  id: totrans-308
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 与权限方案中的特定权限相关的权限参数，`id` 值为 9，可以轻松地按如下方式检索：
+- en: '[PRE63]'
+  id: totrans-309
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE63]'
+- en: Here, `sp.permission = 23` denotes `PROJECT_ADMIN` permission. The different
+    permission types can be found in `com.atlassian.jira.security.Permissions` class.
+    Here, the `perm_type` denotes whether the permission is granted to a group, user,
+    or role; `perm_parameter` holds the name of the respective group, user, or role.
+  id: totrans-310
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在这里，`sp.permission = 23` 表示 `PROJECT_ADMIN` 权限。不同的权限类型可以在 `com.atlassian.jira.security.Permissions`
+    类中找到。这里，`perm_type` 表示权限是否授予给组、用户或角色；`perm_parameter` 存储相应的组名、用户名或角色名。
+- en: 'Similarly, queries can be written to retrieve information on the issue security
+    schemes. For example, the security levels and the security type and parameters
+    for each level in a issue security scheme can be retrieved as follows:'
+  id: totrans-311
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 同样，可以编写查询来检索问题安全方案的信息。例如，可以按如下方式检索问题安全方案中每个级别的安全级别、安全类型和参数：
+- en: '[PRE64]'
+  id: totrans-312
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE64]'
+- en: Writing more complex queries is outside the scope of the book but, hopefully,
+    the previous schema diagram and the sample SQL diagrams give enough information
+    to start with!
+  id: totrans-313
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 编写更复杂的查询超出了本书的范围，但希望前面的模式图和示例 SQL 图表提供了足够的信息来入门！
+- en: Retrieving workflow details from a database
+  id: totrans-314
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 从数据库中检索工作流详情
+- en: Other major information that people normally look for in the database is about
+    workflows. What is the current status of an issue? How does one find out which
+    workflow an issue is associated with? Where is the workflow XML stored in the
+    database? In this recipe, we will take a quick tour of the tables related to workflows.
+  id: totrans-315
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 其他人通常在数据库中查找的主要信息是关于工作流的。一个问题的当前状态是什么？如何查找一个问题所关联的工作流？工作流 XML 存储在哪里？在本节中，我们将快速浏览与工作流相关的表。
+- en: JIRA workflows, as we have seen in the previous chapters, have statuses, steps,
+    and transitions. There is always a one-to-one mapping between status and step
+    and they are always kept in sync. Then, there are transitions which will move
+    the issue from one step to another and, hence, from one status to another.
+  id: totrans-316
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如我们在前面的章节中看到的，JIRA 工作流包含状态、步骤和转换。状态和步骤之间总是存在一对一的映射，并且它们始终保持同步。然后，存在将问题从一个步骤移动到另一个步骤的转换，从而从一个状态转换到另一个状态。
+- en: The workflows themselves are stored as XML files in the `jiraworkflows` table.
+    JIRA processes these XMLs using the OSWorkflow APIs to retrieve the necessary
+    information for each transition, step, and so on. Any draft workflows are stored
+    in the `jiradraftworkflows` table.
+  id: totrans-317
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 工作流本身以 XML 文件的形式存储在 `jiraworkflows` 表中。JIRA 使用 OSWorkflow API 处理这些 XML 文件，以检索每个转换、步骤等所需的信息。任何草稿工作流都会存储在
+    `jiradraftworkflows` 表中。
+- en: The `jiraissue` table holds the ID of its current status and the status details
+    are stored in the `issuestatus` table. We can use the status ID in the `jiraissue`
+    table to retrieve the corresponding details from the `issuestatus` table.
+  id: totrans-318
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`jiraissue` 表保存其当前状态的 ID，状态的详细信息存储在 `issuestatus` 表中。我们可以使用 `jiraissue` 表中的状态
+    ID 从 `issuestatus` 表中检索对应的详细信息。'
+- en: '`jiraissue` also has another column, `workflow_id`, which points to the workflow
+    the issue is associated with and the current step in the workflow the issue is
+    in. The first bit of information, that is, the workflow an issue is associated
+    with, is stored in the `os_wfentry` table. Here, the `workflow_id` will point
+    to the ID column of the `os_wfentry` table. The second bit of information, that
+    is, the current step associated with an issue, is stored in the `os_currentstep`
+    table. Here, the `workflow_id` points to the `entry_id` column in the `os_currentstep`
+    table.'
+  id: totrans-319
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`jiraissue` 还有另一个列，`workflow_id`，它指向与该问题关联的工作流以及该问题所在的工作流的当前步骤。第一个信息，即问题所关联的工作流，存储在
+    `os_wfentry` 表中。在这里，`workflow_id` 将指向 `os_wfentry` 表的 ID 列。第二个信息，即与问题关联的当前步骤，存储在
+    `os_currentstep` 表中。在这里，`workflow_id` 指向 `os_currentstep` 表中的 `entry_id` 列。'
+- en: 'So, for every issue, there is an entry in the `os_wfentry` and `os_currentstep`
+    tables. And the relations are: `jiraissue.WORKFLOW_ID == OS_WFENTRY.ID` and `jiraissue.WORKFLOW_ID
+    == OS_CURRENTSTEP.ENTRY_ID`.'
+  id: totrans-320
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 所以，每个问题在 `os_wfentry` 和 `os_currentstep` 表中都有一个条目。它们之间的关系是：`jiraissue.WORKFLOW_ID
+    == OS_WFENTRY.ID` 和 `jiraissue.WORKFLOW_ID == OS_CURRENTSTEP.ENTRY_ID`。
+- en: There is another table `os_history` step, which holds all the history information
+    of the steps an issue has gone through. Here, again, the `workflow_id` points
+    to the `entry_id` column in the `os_historystep` table. From this table, we can
+    retrieve information on how long an issue remained in a particular step or status.
+  id: totrans-321
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 还有另一个表格 `os_history` 步骤，它保存了一个问题经过的所有步骤的历史信息。在这里，`workflow_id` 再次指向 `os_historystep`
+    表中的 `entry_id` 列。通过这个表，我们可以检索到一个问题在特定步骤或状态下停留的时间。
+- en: 'The following schema diagram captures the important relations:'
+  id: totrans-322
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下的模式图展示了重要的关系：
+- en: '![Retrieving workflow details from a database](img/1803-10-13.jpg)'
+  id: totrans-323
+  prefs: []
+  type: TYPE_IMG
+  zh: '![从数据库中检索工作流详情](img/1803-10-13.jpg)'
+- en: How to do it...
+  id: totrans-324
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何做...
+- en: 'The status of an issue, `DEMO-123`, can be retrieved by a simple query, as
+    shown next:'
+  id: totrans-325
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一个问题的状态，`DEMO-123`，可以通过一个简单的查询来获取，如下所示：
+- en: '[PRE65]'
+  id: totrans-326
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE65]'
+- en: 'The details of the workflow associated with an issue can be retrieved, as follows:'
+  id: totrans-327
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 关联到问题的工作流的详细信息可以按如下方式检索：
+- en: '[PRE66]'
+  id: totrans-328
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE66]'
+- en: 'You can retrieve the workflow XML for an issue using the following query:'
+  id: totrans-329
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 您可以使用以下查询检索问题的工作流XML：
+- en: '[PRE67]'
+  id: totrans-330
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE67]'
+- en: 'The current step associated with an issue can be retrieved as follows:'
+  id: totrans-331
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当前与问题关联的步骤可以通过以下方式检索：
+- en: '[PRE68]'
+  id: totrans-332
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE68]'
+- en: 'The history of workflow status (step) changes can be retrieved from the `os_historystep`,
+    as shown:'
+  id: totrans-333
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 工作流状态（步骤）变化的历史记录可以从`os_historystep`中检索，如下所示：
+- en: '[PRE69]'
+  id: totrans-334
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE69]'
+- en: Updating issue status in a database
+  id: totrans-335
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 在数据库中更新问题状态
+- en: In this recipe, we will quickly see how to update the status of an issue in
+    the JIRA database.
+  id: totrans-336
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本配方中，我们将简要了解如何更新JIRA数据库中问题的状态。
+- en: Getting ready
+  id: totrans-337
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 准备就绪
+- en: Go through the previous recipe to understand the workflow related tables in
+    JIRA.
+  id: totrans-338
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请参考前面的配方，了解JIRA中与工作流相关的表。
+- en: How to do it...
+  id: totrans-339
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: 'Refer to the follow steps to update the status of an issue in JIRA:'
+  id: totrans-340
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请参阅以下步骤以更新JIRA中问题的状态：
+- en: Stop the JIRA server.
+  id: totrans-341
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 停止JIRA服务器。
+- en: Connect to JIRA database.
+  id: totrans-342
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 连接到JIRA数据库。
+- en: 'Update the `issuestatus` field in `jiraissue` table with the status you need:'
+  id: totrans-343
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在`jiraissue`表中更新`issuestatus`字段，设置所需的状态：
+- en: '[PRE70]'
+  id: totrans-344
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE70]'
+- en: Modify the `step_id` in the `os_currentstep` table with the step ID linked to
+    the status you used in the previous step. The `step_id` can be found in the workflow
+    XML alongside the step name within brackets, as shown in the following screenshot:![How
+    to do it...](img/1803-10-14.jpg)
+  id: totrans-345
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在`os_currentstep`表中修改`step_id`，使其与前一步骤中使用的状态相关联的步骤ID相匹配。`step_id`可以在工作流XML中找到，步骤名称位于括号内，如下所示截图所示：![如何操作...](img/1803-10-14.jpg)
+- en: 'As you can see, the status **Closed** in the JIRA default workflow is linked
+    to the **Closed** step with an `id` value 6\. Now, the `step_id` can be updated
+    as follows:'
+  id: totrans-346
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 如您所见，JIRA默认工作流中的**Closed**状态与`id`值为6的**Closed**步骤相关联。现在，`step_id`可以按以下方式更新：
+- en: '[PRE71]'
+  id: totrans-347
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE71]'
+- en: Here, we modify the `step_id` in `os_currentstep` where the `entry_id` is the
+    same as the `workflow_id` in the `jiraissue` table.
+  id: totrans-348
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 这里，我们修改`os_currentstep`中的`step_id`，其中`entry_id`与`jiraissue`表中的`workflow_id`相同。
+- en: This is very important as the step and status should always be in sync. Updating
+    the status alone will change it on the issue but will prevent further workflow
+    actions on it.
+  id: totrans-349
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 这非常重要，因为步骤和状态应该始终保持同步。单独更新状态会改变问题的状态，但会阻止后续的工作流操作。
+- en: Add entries in the `os_historystep` field if you want to keep track of the status
+    changes. This is entirely optional. Leaving it out won't cause any issues except
+    that the records won't be available for reporting at a later stage.
+  id: totrans-350
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 如果您希望跟踪状态变化，请在`os_historystep`字段中添加条目。这是完全可选的。忽略它不会导致任何问题，只是后期无法报告这些记录。
+- en: Update the `os_currentstep_prev` and `os_historystep_prev` tables accordingly.
+    These tables hold the ID of the previous record. This is again optional.
+  id: totrans-351
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 相应地更新`os_currentstep_prev`和`os_historystep_prev`表。这些表保存前一条记录的ID。这个步骤是可选的。
+- en: Commit the changes and start JIRA.
+  id: totrans-352
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 提交更改并启动JIRA。
+- en: Do a full re-index by going to **Administration** | **System** | **Indexing**.
+  id: totrans-353
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 通过进入**管理** | **系统** | **索引**，执行完整的重新索引。
+- en: Retrieving users and groups from a database
+  id: totrans-354
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 从数据库中检索用户和组
+- en: When external user management is not turned **ON**, we can find all the information
+    about JIRA users and their groups from the database by running a few simple SQL
+    queries. In this recipe, we will see the various tables involved.
+  id: totrans-355
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当外部用户管理未开启**时**，我们可以通过运行一些简单的SQL查询，从数据库中找到所有JIRA用户及其组的信息。在本配方中，我们将查看涉及的各种表。
+- en: In versions prior to JIRA 4.3, user information is stored in the `userbase`
+    table, the group information is stored in the `groupbase` table, and the details
+    of which users belong to which groups are stored in the `membershipbase` table.
+  id: totrans-356
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在JIRA 4.3版本之前，用户信息存储在`userbase`表中，组信息存储在`groupbase`表中，关于哪些用户属于哪些组的详细信息存储在`membershipbase`表中。
+- en: In those versions, user properties are stored using `PropertySet`, as we have
+    seen earlier in one of the recipes (where we added an address against a user).
+    There will be an entry for the user in the `propertyentry` table with the `entity_name`
+    as `OSUser` and `entity_id` as the ID of the user in the `userbase` table. Examples
+    of properties stored are full name and e-mail address and they are stored as String
+    values in the `propertystring` table.
+  id: totrans-357
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在那些版本中，用户属性是使用`PropertySet`存储的，正如我们之前在某个配方中看到的（我们为用户添加了一个地址）。`propertyentry`表中会有一个用户条目，`entity_name`为`OSUser`，`entity_id`为`userbase`表中用户的ID。存储的属性示例包括全名和电子邮件地址，并且它们作为字符串值存储在`propertystring`表中。
+- en: There is another table, `userassociation`, that holds the information about
+    watching an issue and voting on an issue. In this table, the `source_name` column
+    holds the unique username and `sink_node_id` holds the ID of the issue. `sink_node_entity`
+    has the value `Issue` and `association_type` has values `WatchIssue` or `VoteIssue`,
+    depending on the operation.
+  id: totrans-358
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 还有一个表，`userassociation`，存储关于关注问题和投票问题的信息。在此表中，`source_name`列保存唯一的用户名，`sink_node_id`保存问题的ID。`sink_node_entity`的值为`Issue`，`association_type`的值为`WatchIssue`或`VoteIssue`，具体取决于操作。
+- en: From version 4.3 onwards, JIRA uses **Embedded** **Crowd** as its user management
+    framework. Here, the users are stored in the `cwd_user` table, groups in the `cwd_group`
+    table, and the membership details in the `cwd_membership` table. It is possible
+    to have group-user membership or group-group membership in versions 4.3+, and
+    this information is also stored in the `cwd_membership` table. Also, as opposed
+    to the previous versions, there are separate tables for storing attributes—`cwd_user_attributes`
+    to store user attributes and `cwd_group_attributes` to store group attributes.
+  id: totrans-359
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 从4.3版本开始，JIRA使用**嵌入式** **Crowd**作为其用户管理框架。在这里，用户存储在`cwd_user`表中，组存储在`cwd_group`表中，成员关系存储在`cwd_membership`表中。在4.3+版本中，可能会有组-用户关系或组-组关系，这些信息也存储在`cwd_membership`表中。此外，与之前的版本不同，存储属性的表是分开的——`cwd_user_attributes`用于存储用户属性，`cwd_group_attributes`用于存储组属性。
+- en: JIRA versions 4.3+ also have the concept of user directories. A JIRA instance
+    can have multiple directories and different directories can have the same name
+    in it. The directory details are stored in the `cwd_directory` table and its attributes
+    in the `cwd_directory_attribute` table. There are references in the `cwd_user`
+    table and the `cwd_group` table, both with name `directory_id`, and pointing to
+    the appropriate directory ID. The `cwd_directory_operation` table stores the available
+    operations on a directory, based on user permissions.
+  id: totrans-360
+  prefs: []
+  type: TYPE_NORMAL
+  zh: JIRA 4.3+版本还引入了用户目录的概念。一个JIRA实例可以拥有多个目录，并且不同目录中可以有相同的名称。目录的详细信息存储在`cwd_directory`表中，其属性存储在`cwd_directory_attribute`表中。`cwd_user`表和`cwd_group`表中都存在名为`directory_id`的引用字段，指向相应的目录ID。`cwd_directory_operation`表存储与目录相关的操作，基于用户权限。
+- en: When there are multiple users with the same name in different directories, JIRA
+    will only recognize the user in the highest-priority directory. The priority is
+    stored in the `directory_position` column.
+  id: totrans-361
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当不同目录中有多个用户具有相同名称时，JIRA只会识别优先级最高目录中的用户。优先级存储在`directory_position`列中。
+- en: 'The table relations prior to 4.3 are too simple to draw ER diagrams from, hence
+    we will draw one for 4.3+ versions:'
+  id: totrans-362
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在4.3之前，表关系过于简单，无法绘制ER图，因此我们将为4.3+版本绘制一张：
+- en: '![Retrieving users and groups from a database](img/1803-10-15.jpg)'
+  id: totrans-363
+  prefs: []
+  type: TYPE_IMG
+  zh: '![从数据库中检索用户和组](img/1803-10-15.jpg)'
+- en: Watches and votes in JIRA versions 4.3+ work in the same way as in the previous
+    versions.
+  id: totrans-364
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在JIRA 4.3+版本中，关注和投票的工作方式与之前的版本相同。
+- en: How to do it...
+  id: totrans-365
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: 'With the simple layout of table structure, it is quite easy to list the users,
+    groups or their relationships by directly accessing the database. For example,
+    prior to version 4.3, we can find all users in a group by simply running:'
+  id: totrans-366
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 由于表结构简单，通过直接访问数据库列出用户、组或它们的关系非常容易。例如，在4.3之前，我们只需运行以下命令，就能找出一个组中的所有用户：
+- en: '[PRE72]'
+  id: totrans-367
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE72]'
+- en: 'In versions 4.3+, we can do the same, as follows:'
+  id: totrans-368
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在4.3+版本中，我们可以执行相同的操作，如下所示：
+- en: '[PRE73]'
+  id: totrans-369
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE73]'
+- en: Here, we consider the directory as well, because we can have the same users
+    and groups in different directories.
+  id: totrans-370
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这里，我们还考虑目录的情况，因为我们可以在不同的目录中拥有相同的用户和组。
+- en: 'Prior to version 4.3, the properties like full name and e-mail are stored and
+    accessed from `propertystring` table, as follows:'
+  id: totrans-371
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在4.3之前，诸如全名和电子邮件等属性存储在并从`propertystring`表中访问，如下所示：
+- en: '[PRE74]'
+  id: totrans-372
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE74]'
+- en: 'In versions 4.3+, these attributes are part of the `cwd_user` table, but there
+    can be other attributes stored in the `cwd_user_attributes` table, such as, last
+    login time, invalid password attempts, and so on, which are accessed as shown
+    in the command:'
+  id: totrans-373
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在4.3+版本中，这些属性是`cwd_user`表的一部分，但也可能有其他属性存储在`cwd_user_attributes`表中，例如最后登录时间、无效密码尝试次数等，可以通过如下命令访问：
+- en: '[PRE75]'
+  id: totrans-374
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE75]'
+- en: 'In all the versions, users watching an issue can be retrieved as follows:'
+  id: totrans-375
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在所有版本中，关注问题的用户可以通过以下方式检索：
+- en: '[PRE76]'
+  id: totrans-376
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE76]'
+- en: 'Similarly, all the issues watched by a user can be retrieved as:'
+  id: totrans-377
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 类似地，用户关注的所有问题可以通过以下方式检索：
+- en: '[PRE77]'
+  id: totrans-378
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE77]'
+- en: It is the same for votes, except that the association type will be `VoteIssue`.
+  id: totrans-379
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 对于投票也是一样，唯一不同的是关联类型为`VoteIssue`。
+- en: Dealing with Change history in a database
+  id: totrans-380
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 在数据库中处理变更历史
+- en: Before we wind up this chapter, let us touch up on the change history tables
+    as well. Change histories on issues hold important information on what was changed
+    and when. It is sometimes very useful for reporting and, sometimes, we find ourselves
+    manually adding change histories in the database to keep record of the changes
+    we made via SQL - for example, updating the status of an issue via SQL as we saw
+    earlier in this chapter.
+  id: totrans-381
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章结束之前，我们还需要简单了解一下变更历史表。问题上的变更历史保存了关于变更的关键信息——变更了什么，何时发生。这些信息有时在报告中非常有用，有时我们也会发现自己手动在数据库中添加变更历史，以记录我们通过SQL所做的更改——例如，像本章前面提到的通过SQL更新问题状态。
+- en: A set of changes happening on an issue at a single point of time are grouped
+    together to form a change group. There is an entry for each such change group
+    in the `changegroup` table, with the information about the issue on which the
+    change is made, the user who makes the change, and the time at which the changes
+    happened.
+  id: totrans-382
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在同一时间点上发生的关于某个问题的一组变更会被聚合在一起，形成一个变更组。`changegroup`表中会有每个变更组的记录，记录了该变更发生在哪个问题、由哪个用户做出的变更，以及变更发生的时间。
+- en: Then, there is an entry for each of those individual changes in the `changeitem`
+    table, all pointing to the respective `changegroup`. The `changeitem` table holds
+    information on what was actually changed—the old value and the new value. There
+    can be both numerical and textual representation in some cases like status where
+    there is a human-readable text (`status` `name`) as well as a unique ID (`status_id`).
+    They are stored in `oldvalue` and `oldstring`, and `newvalue` and `newstring`
+    respectively.
+  id: totrans-383
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然后，`changeitem`表中会有每个单独变更的记录，所有记录都指向相应的`changegroup`。`changeitem`表保存了实际更改的信息——旧值和新值。对于某些字段（如状态），可能有数值和文本表示，文本表示包含人类可读的文本（如`status`
+    `name`），以及一个唯一的ID（如`status_id`）。它们分别存储在`oldvalue`和`oldstring`，以及`newvalue`和`newstring`字段中。
+- en: How to do it...
+  id: totrans-384
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 如何操作...
+- en: 'Let us have a look at both retrieving change histories and adding them. For
+    a given issue, we can find out the all changes that happened on it using a simple
+    join, as follows:'
+  id: totrans-385
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 让我们来看看如何获取变更历史记录和添加变更。对于给定的问题，我们可以通过一个简单的连接查询找到所有在该问题上发生的变更，如下所示：
+- en: '[PRE78]'
+  id: totrans-386
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE78]'
+- en: It is quite easy to modify this to filter out changes made by a user or during
+    a particular period.
+  id: totrans-387
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 修改此操作来筛选出由某个用户或在特定时间段内进行的更改是非常容易的。
+- en: 'Now, let us quickly have a look at adding a new change on an issue via the
+    database, as follows:'
+  id: totrans-388
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，让我们快速看一下如何通过数据库在问题上添加一个新变更，如下所示：
+- en: Stop the JIRA server.
+  id: totrans-389
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 停止JIRA服务器。
+- en: Connect to the JIRA database.
+  id: totrans-390
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 连接到JIRA数据库。
+- en: Create an entry in the `changegroup` table, with the correct ID of the issue,
+    author name, and created time.
+  id: totrans-391
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在`changegroup`表中创建一条记录，包含问题的正确ID、作者姓名和创建时间。
+- en: '[PRE79]'
+  id: totrans-392
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE79]'
+- en: Make sure the ID value (`12345)` is larger than the `max(ID)` in the table.
+  id: totrans-393
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 确保ID值（`12345`）大于表中的`max(ID)`。
+- en: 'Insert a change item for this change group. Let us consider the status change
+    we made in the earlier recipe:'
+  id: totrans-394
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 为此变更组插入一个变更项。让我们以我们之前所做的状态变更为例：
+- en: '[PRE80]'
+  id: totrans-395
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE80]'
+- en: Note that the `groupid` here is same as the ID attribute in *Step* *3*. The
+    third column holds the field type, which could be JIRA or custom. For all the
+    standard JIRA fields, such as, `summary`, `status`, and so on, the field type
+    is JIRA. For custom fields, we use the field type as `custom`.
+  id: totrans-396
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 请注意，这里的`groupid`与*第3步*中的ID属性相同。第三列保存字段类型，可以是JIRA或自定义类型。对于所有标准的JIRA字段，如`summary`、`status`等，字段类型为JIRA。对于自定义字段，字段类型为`custom`。
+- en: For fields such as `status`, there is a textual representation (the name) and
+    there is a unique ID; hence, both `oldvalue` and `oldstring` columns are populated.
+    The same is the case with the `newvalue` and `newstring` columns. For fields such
+    as `Summary`, only the `oldstring` and `newstring` columns needs to be populated.
+  id: totrans-397
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 对于像`status`这样的字段，既有文本表示（名称），也有唯一ID；因此，`oldvalue`和`oldstring`列都需要填充。同样，`newvalue`和`newstring`列也会填充。对于像`Summary`这样的字段，只需填充`oldstring`和`newstring`列。
+- en: Here, also make sure the `id(11111)` is larger than `max(id)` in the table.
+  id: totrans-398
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 此外，请确保`id(11111)`大于表中的`max(id)`。
+- en: Update the `sequence_value_item` table to hold a higher value in the `seq_id`
+    column for the `ChangeGroup` and `ChangeItem` entities. In the previous case,
+    we can give a value `12346` for `ChangeGroup` and `11112` for `ChangeItem`. Ofbiz
+    normally allocates IDs in batches of ten, so the `SEQ_ID` is the next available
+    ID, rounded up to the nearest value **10**, though adding 1 should be enough.
+  id: totrans-399
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 更新 `sequence_value_item` 表，使其在 `seq_id` 列中为 `ChangeGroup` 和 `ChangeItem` 实体存储更大的值。在之前的案例中，我们可以为
+    `ChangeGroup` 设置值 `12346`，为 `ChangeItem` 设置值 `11112`。Ofbiz 通常以每批十个的方式分配 ID，因此
+    `SEQ_ID` 是下一个可用的 ID，四舍五入到最接近的 **10**，不过加 1 应该就足够了。
+- en: '[PRE81]'
+  id: totrans-400
+  prefs:
+  - PREF_IND
+  type: TYPE_PRE
+  zh: '[PRE81]'
+- en: Note
+  id: totrans-401
+  prefs:
+  - PREF_IND
+  - PREF_H3
+  type: TYPE_NORMAL
+  zh: 注意
+- en: This step is required whenever a row is inserted into any of the JIRA tables.
+    The `seq_id` value in the `sequence_value_item` table should be updated for the
+    entity where the new row is added. The new sequence value should be atleast one
+    more than the `max(id)` of the entity.
+  id: totrans-402
+  prefs:
+  - PREF_IND
+  type: TYPE_NORMAL
+  zh: 每当向任何 JIRA 表中插入新行时，都需要执行此步骤。`sequence_value_item` 表中的 `seq_id` 值应该更新为添加新行的实体的值。新的序列值应至少比该实体的
+    `max(id)` 大 1。
+- en: Commit the changes and start JIRA.
+  id: totrans-403
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 提交更改并启动 JIRA。
+- en: Re-index the JIRA instance by going to **Administration** | **System** | **Indexing**.
+  id: totrans-404
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 通过进入 **管理** | **系统** | **索引** 来重新索引 JIRA 实例。

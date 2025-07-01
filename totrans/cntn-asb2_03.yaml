@@ -1,0 +1,914 @@
+- en: Your First Ansible Container Project
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 你的第一个 Ansible Container 项目
+- en: As we learned in [Chapter 2](089af66a-24d7-4d4d-bcfd-56bfe873ea91.xhtml), *Working
+    with Ansible Container*, Ansible Container is a powerful tool for orchestrating,
+    deploying, and managing containers in a production environment. Using a unique
+    set of versatile tools to initiate, build, run, and deploy Ansible Container enables
+    developers to build containerized applications and deploy them to local environments
+    or cloud hosting providers. Using Ansible Container, we can be sure that containers
+    can be built accurately, will run reliably, and will provide users with a consistent
+    experience, no matter which application or platform the containers are deployed
+    to.
+  id: totrans-1
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如我们在[第二章](089af66a-24d7-4d4d-bcfd-56bfe873ea91.xhtml)《与 Ansible Container 一起工作》中了解到的，*Ansible
+    Container* 是一个强大的工具，用于在生产环境中编排、部署和管理容器。通过一套独特的多功能工具，Ansible Container 可以启动、构建、运行和部署容器，使开发人员能够构建容器化应用程序，并将其部署到本地环境或云托管服务提供商。使用
+    Ansible Container，我们可以确保容器能够准确构建、可靠运行，并为用户提供一致的体验，无论容器部署到哪个应用程序或平台。
+- en: 'In this chapter, we will focus on building our first Ansible Container project
+    by building an application container, testing it in our local environment, and
+    pushing our container artifact to a container image repository. This will provide
+    the user with a real-world use case for Ansible Container and provide experience
+    with leveraging container-enabled roles. In this chapter, you will learn:'
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们将专注于构建我们的第一个 Ansible Container 项目，方法是构建一个应用程序容器，在本地环境中测试它，并将我们的容器工件推送到容器镜像仓库。这将为用户提供
+    Ansible Container 的实际使用案例，并提供利用容器启用角色的经验。在本章中，你将学到：
+- en: What are Ansible roles and container-enabled roles?
+  id: totrans-3
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 什么是 Ansible 角色和容器启用角色？
+- en: Roles in Ansible Galaxy
+  id: totrans-4
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Ansible Galaxy 中的角色
+- en: Ansible Container NGINX role
+  id: totrans-5
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Ansible Container NGINX 角色
+- en: What are Ansible roles and container-enabled roles?
+  id: totrans-6
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 什么是 Ansible 角色和容器启用角色？
+- en: Roles in Ansible are a way to organize playbooks into reusable, shareable, and
+    discrete units that are normally broken up by an application. Inside of a role
+    are typically a series of playbooks, configuration file templates, static files,
+    and other metadata that are required to bring the target host (or container) into
+    a desired state. In a typical three-tier application stack, consisting of a web
+    server, database server, and a load balancer, each of these components might be
+    contained in three separate Ansible roles. This provides the benefits of reuse
+    across your infrastructure and a simple way to share playbooks over the internet
+    or with coworkers. For example, if you wrote a load balancer role for one project,
+    and needed to provision another load balancer for an entirely different project,
+    you could simply download the role and assign it to another set of inventory hosts.
+    In Ansible Core, roles are assigned to servers or virtual machines through a parent
+    playbook that describes what the infrastructure looks like and how Ansible should
+    bring that infrastructure into the desired state. The main benefit of roles is
+    that they provide the user with a simple interface to access commonly used playbook
+    tasks and resources so that the user can be certain their infrastructure is configured
+    and running precisely as expected.
+  id: totrans-7
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 中的角色是一种将 playbook 组织成可重用、可共享且独立单元的方式，这些单元通常按应用程序进行划分。一个角色内部通常包含一系列 playbook、配置文件模板、静态文件和其他元数据，这些都是将目标主机（或容器）带入所需状态所必需的。在典型的三层应用堆栈中，包括
+    Web 服务器、数据库服务器和负载均衡器，这些组件可能被包含在三个独立的 Ansible 角色中。这提供了跨基础架构重用的好处，并且为共享 playbook
+    提供了一种简单的方式，无论是在互联网上还是与同事共享。例如，如果你为一个项目编写了负载均衡器角色，并且需要为另一个完全不同的项目配置另一个负载均衡器，你只需下载该角色并将其分配给另一个主机清单集。在
+    Ansible Core 中，角色通过父 playbook 分配给服务器或虚拟机，父 playbook 描述了基础架构的样子以及 Ansible 如何将该基础架构带入所需的状态。角色的主要好处是，它们为用户提供了一个简单的界面，用于访问常用的
+    playbook 任务和资源，从而确保用户的基础架构按预期精确配置并正常运行。
+- en: In Ansible Container, roles work in a way that is remarkably similar to Ansible
+    Core. In Ansible Container, instead of assigning roles based on infrastructure
+    components, roles are assigned to individual containers, which are then built
+    using the configurations described in Ansible playbooks by the conductor container.
+    One of the major benefits of Ansible Container is that it greatly simplifies the
+    curve to enable containerized resources in your infrastructure. Many Ansible Core
+    roles can be reused to build containers that function very similarly to how your
+    infrastructure runs if you are currently using Ansible Core for configuration
+    management. Unfortunately, since containers and full infrastructure servers are
+    fundamentally different, not all tasks can be directly ported to Ansible Container
+    roles without a little rework. For example, since containers are much more lightweight
+    than a full-blown operating system, containers usually lack tools and components
+    that come in most operating system releases, such as init systems and resource
+    managers.
+  id: totrans-8
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 Ansible Container 中，角色的工作方式与 Ansible Core 非常相似。在 Ansible Container 中，角色不是基于基础设施组件分配的，而是分配给单个容器，然后通过
+    conductor 容器使用 Ansible playbooks 中描述的配置来构建这些容器。Ansible Container 的一个主要优点是，它大大简化了在基础设施中启用容器化资源的过程。如果你当前正在使用
+    Ansible Core 进行配置管理，许多 Ansible Core 角色可以重用，以构建与基础设施运行方式非常相似的容器。不幸的是，由于容器和完整的基础设施服务器在本质上是不同的，并不是所有任务都可以直接移植到
+    Ansible Container 角色中，仍需要进行一些修改。例如，由于容器比完整的操作系统更轻量，因此容器通常缺少大多数操作系统发行版中自带的工具和组件，如初始化系统和资源管理器。
+- en: To address this disparity, the Ansible Container project has created a different
+    subset of roles, known as *container-enabled roles*. These are roles that are
+    designed with a focus on containers and are usually more minimalistic then regular
+    Ansible roles. These are leveraged to create a final container image with the
+    smallest footprint possible while maximizing functionality and flexibility. Container-enabled
+    roles consist of many of the same constructs that regular Ansible roles do, such
+    as templates, tasks, handlers, and metadata. This makes it easy to get started
+    writing roles for Ansible Container if you are familiar with Ansible syntax and
+    language constructs.
+  id: totrans-9
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了解决这种差异，Ansible Container 项目创建了一种不同子集的角色，称为 *容器启用角色*。这些角色是专门为容器设计的，通常比常规的 Ansible
+    角色更简约。这些角色用于创建具有尽可能小的占用空间，同时最大化功能和灵活性的最终容器镜像。容器启用角色包含与常规 Ansible 角色相同的许多构造，如模板、任务、处理程序和元数据。这使得如果你熟悉
+    Ansible 语法和语言构造，开始为 Ansible Container 编写角色变得非常容易。
+- en: Roles in Ansible Galaxy
+  id: totrans-10
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Ansible Galaxy 中的角色
+- en: 'Ansible Galaxy, located at [https://galaxy.ansible.com](https://galaxy.ansible.com/),
+    is a site created by the Ansible Community to share, download, and encourage the
+    reuse of Ansible roles. From Ansible Galaxy, you can search and download roles
+    for almost any application or platform you wish to automate. If you have experience
+    with Ansible Core, you have undoubtedly used Ansible Galaxy to download, share,
+    and explore roles written and maintained by other Ansible users. If you are new
+    to Ansible, Galaxy makes it easy to find and leverage new roles from your web
+    browser or the Ansible command line. With the release of Ansible Container, you
+    can browse Ansible Galaxy for core roles as well as container-enabled roles. From
+    the main website ([https://galaxy.ansible.com](https://galaxy.ansible.com/)) you can select BROWSE
+    ROLES | Role Type | Container Enabled to search for roles that fit your particular
+    requirements:'
+  id: totrans-11
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible Galaxy，位于 [https://galaxy.ansible.com](https://galaxy.ansible.com/)，是由
+    Ansible 社区创建的网站，用于共享、下载和鼓励重用 Ansible 角色。在 Ansible Galaxy 中，你可以搜索并下载几乎任何你希望自动化的应用程序或平台的角色。如果你有
+    Ansible Core 的经验，你无疑已经使用过 Ansible Galaxy 来下载、共享和探索由其他 Ansible 用户编写和维护的角色。如果你是
+    Ansible 新手，Galaxy 让你可以轻松地通过 web 浏览器或 Ansible 命令行查找并利用新的角色。随着 Ansible Container
+    的发布，你可以浏览 Ansible Galaxy 查找核心角色以及容器启用角色。从主网站 ([https://galaxy.ansible.com](https://galaxy.ansible.com/))
+    上，你可以选择 BROWSE ROLES | Role Type | Container Enabled，来搜索适合你特定需求的角色：
+- en: '**![](img/2adc2d03-4129-44bd-af89-ceefa55cb323.png)**'
+  id: totrans-12
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '**![](img/2adc2d03-4129-44bd-af89-ceefa55cb323.png)**'
+- en: 'Figure 1: Ansible Galaxy website browsing for container-enabled roles'
+  id: totrans-13
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 1：在 Ansible Galaxy 网站上浏览容器启用角色
+- en: More recently, the Ansible Container community created the concept of *container
+    apps*, which are (sometimes) used to deploy multiple containers that constitute
+    an application stack. We will look into *container apps* later in the book.
+  id: totrans-14
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最近，Ansible Container社区创建了*容器应用程序*的概念，这些应用程序（有时）用于部署构成应用堆栈的多个容器。我们将在本书后面讨论*容器应用程序*。
+- en: Ansible Container NGINX role
+  id: totrans-15
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Ansible Container NGINX角色
+- en: 'Throughout this chapter, we are going to look at how to leverage pre-written
+    Ansible Container roles featured on Ansible Galaxy to quickly get up-and-running
+    using roles to deploy container-based services. One of the major benefits of Ansible
+    Galaxy is that it gives users the ability to leverage the collective knowledge
+    pool of other users who have opted to share their projects in the form of roles.
+    Like many DevOps engineers, you are probably not familiar with how every possible
+    application, framework, or service should be configured for optimal performance.
+    Online repositories such as Ansible Galaxy help to simplify the learning curve
+    of deploying many new applications, since the applications essentially work out-of-the-box
+    with little to no input required from the user. Users who consume roles from Ansible
+    Galaxy also have the option of customizing already-written roles to suit their
+    particular requirements. Throughout this chapter, we will be using the official
+    Ansible Container NGINX role to build and deploy a functional NGINX web server
+    container. The link to the role we are using can be found here: [https://galaxy.ansible.com/ansible/nginx-container/](https://galaxy.ansible.com/ansible/nginx-container/).'
+  id: totrans-16
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，我们将学习如何利用在Ansible Galaxy上预写的Ansible Container角色，快速通过角色来部署基于容器的服务。Ansible
+    Galaxy的一个主要优点是，它使用户能够利用其他选择共享项目并将其以角色形式发布的用户的集体知识库。像许多DevOps工程师一样，你可能并不熟悉如何为每个可能的应用程序、框架或服务配置最佳的性能。像Ansible
+    Galaxy这样的在线仓库有助于简化部署许多新应用程序的学习曲线，因为这些应用程序基本上可以开箱即用，用户几乎不需要任何输入。使用Ansible Galaxy角色的用户也可以选择自定义已有的角色，以适应他们的特定需求。在本章中，我们将使用官方的Ansible
+    Container NGINX角色来构建并部署一个功能完整的NGINX web服务器容器。我们使用的角色链接如下：[https://galaxy.ansible.com/ansible/nginx-container/](https://galaxy.ansible.com/ansible/nginx-container/)。
+- en: 'Before we start installing and using the NGINX role, let''s review the Ansible
+    Container workflow and how it applies to prewritten roles:'
+  id: totrans-17
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在开始安装和使用NGINX角色之前，让我们回顾一下Ansible Container的工作流程，以及它如何应用于预写角色：
+- en: '`ansible-container init`: Used to initialize a new project to use our role
+    with.'
+  id: totrans-18
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible-container init`：用于初始化一个新项目，以便使用我们的角色。'
+- en: '`ansible-container build`: Generates the conductor container that we will use
+    to install the NGINX role. `build` is also used after installing the role to build
+    the container image.'
+  id: totrans-19
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible-container build`：生成我们将用于安装NGINX角色的指挥容器。`build`也用于在安装角色后构建容器镜像。'
+- en: '`ansible-container install`: Leverages the conductor container to download
+    and install our role within the project.'
+  id: totrans-20
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible-container install`：利用指挥容器下载并在项目中安装我们的角色。'
+- en: '`ansible-container run`: Runs the project locally to test and verify that the
+    NGINX server is running as intended.'
+  id: totrans-21
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible-container run`：在本地运行项目，以测试并验证NGINX服务器是否按预期运行。'
+- en: '`ansible-container push`: Pushes the built container image to your Docker Hub
+    repository.'
+  id: totrans-22
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`ansible-container push`：将构建的容器镜像推送到你的Docker Hub仓库。'
+- en: At any time during this chapter, you can review the completed lab exercise from
+    the GitHub repository at:  [https://github.com/aric49/ansible_container_lab/tree/master/AnsibleContainer/nginx_demo](https://github.com/aric49/ansible_container_lab/tree/master/AnsibleContainer/nginx_demo).
+  id: totrans-23
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章的任何时候，你都可以在GitHub仓库中查看完成的实验：[https://github.com/aric49/ansible_container_lab/tree/master/AnsibleContainer/nginx_demo](https://github.com/aric49/ansible_container_lab/tree/master/AnsibleContainer/nginx_demo)。
+- en: Prior to starting work on this lab exercise, it is a good idea to create a free
+    Docker Hub account, which will allow you to upload and share the container you
+    create. Go to [https://hub.docker.com](https://hub.docker.com/) to create a free
+    account.
+  id: totrans-24
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在开始进行本实验之前，最好创建一个免费的Docker Hub账户，这样你就可以上传和分享你创建的容器。前往[https://hub.docker.com](https://hub.docker.com/)创建一个免费账户。
+- en: Starting a new project
+  id: totrans-25
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 启动新项目
+- en: 'By now, you are probably quite familiar with initializing a new Ansible Container
+    project and generating the file and directory structure automatically using the
+    `ansible-container init` command. From a new directory on the Vagrant host, run
+    `ansible-container init` to begin your new project and ensure the required files
+    are automatically generated:'
+  id: totrans-26
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 到现在为止，你可能已经相当熟悉如何初始化一个新的 Ansible Container 项目，并使用 `ansible-container init` 命令自动生成文件和目录结构。从
+    Vagrant 主机上的一个新目录，运行 `ansible-container init` 来开始你的新项目，并确保所需的文件被自动生成：
+- en: '[PRE0]'
+  id: totrans-27
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: 'Once you have validated that your new project files and directory scaffolding
+    have been created, we need to run an initial, blank build of our project to create
+    a conductor container. Before Ansible Container can install roles or build more
+    complex projects, a conductor container needs to be present on your workstation
+    so that Ansible Container can modify files locally and download the required dependencies
+    that allow container roles to function properly. Now that we have initialized
+    our project, let''s do a blank build of the project in order to create a conductor
+    container:'
+  id: totrans-28
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦验证了新项目文件和目录框架已创建，我们需要运行一个初始的空构建以创建一个指挥容器。在 Ansible Container 安装角色或构建更复杂的项目之前，必须先在工作站上存在指挥容器，以便
+    Ansible Container 可以本地修改文件并下载允许容器角色正常工作的所需依赖项。现在我们已经初始化了项目，接下来让我们进行一次空构建，以便创建一个指挥容器：
+- en: '[PRE1]'
+  id: totrans-29
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: It is best practice to always use the same base image for your conductor container
+    that you are using to build your project containers with to ensure compatibility.
+    If you opt to use a different base image than the default `centos:7` you may need
+    to modify the `container.yml` file prior to building the project. More on this
+    in later chapters.
+  id: totrans-30
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最佳实践是，始终使用与你构建项目容器时相同的基础镜像来构建指挥容器，以确保兼容性。如果你选择使用与默认的`centos:7`不同的基础镜像，你可能需要在构建项目之前修改`container.yml`文件。更多内容将在后续章节中介绍。
+- en: Once the project has been built, you should see `All Images Successfully Built`
+    and `command_rc=0` returned, indicating that the Ansible Container conductor container
+    has been successfully built. You may check to ensure the conductor image has been
+    built and resides locally on your host using the `docker images` command.
+  id: totrans-31
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦项目构建完成，你应该看到`All Images Successfully Built`和`command_rc=0`的返回信息，表示 Ansible
+    Container 指挥容器已成功构建。你可以使用`docker images`命令检查以确保指挥容器镜像已经构建并且存在于本地主机上。
+- en: Newer versions of Ansible Container (1.0+) come with prebuilt conductor images
+    that do not require you to build projects prior to installing roles. However,
+    it is a good idea to build conductor images unique to your projects in order to
+    fully leverage the Ansible Container workflow more effectively.
+  id: totrans-32
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 更新版的 Ansible Container（1.0+）带有预构建的指挥容器镜像，使用这些镜像时无需在安装角色之前构建项目。然而，为了充分发挥 Ansible
+    Container 工作流的优势，最好为你的项目构建专属的指挥容器镜像。
+- en: Installing the NGINX role
+  id: totrans-33
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 安装 NGINX 角色
+- en: 'Now that we have a new project initialized and a conductor image built, we
+    can use the `ansible-container install` command to install the NGINX role from
+    Ansible Galaxy. The syntax for this command is pretty straightforward: execute `ansible-container
+    install` followed by the username of the user who owns the project, in this case,
+    `ansible`, then a period `.` and the name of the project, `nginx-container`. You
+    should see output similar to the following:'
+  id: totrans-34
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经初始化了一个新项目并构建了一个指挥容器，我们可以使用 `ansible-container install` 命令从 Ansible Galaxy
+    安装 NGINX 角色。这个命令的语法很简单：执行 `ansible-container install`，然后是项目所有者的用户名，在本例中为 `ansible`，接着是一个点号
+    `.` 和项目名称 `nginx-container`。你应该看到类似以下的输出：
+- en: '[PRE2]'
+  id: totrans-35
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: 'Upon successful completion, you should see the message:'
+  id: totrans-36
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 完成后，你应该看到以下消息：
+- en: '[PRE3]'
+  id: totrans-37
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: 'This indicates that the role has been successfully downloaded and installed
+    from Ansible Galaxy and the parent GitHub repository. The `install` command also
+    made some modifications to the `container.yml` and `requirements.yml` files that
+    already exist in your project directory. If you open these files in a text editor,
+    you will find that the role has already been added to these files:'
+  id: totrans-38
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这表示角色已经成功从 Ansible Galaxy 和父 GitHub 仓库下载并安装。`install` 命令还对你项目目录中已经存在的 `container.yml`
+    和 `requirements.yml` 文件进行了修改。如果你在文本编辑器中打开这些文件，你会发现角色已经被添加到了这些文件中：
+- en: '`requirements.yml`:'
+  id: totrans-39
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`requirements.yml`：'
+- en: '[PRE4]'
+  id: totrans-40
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE4]'
+- en: '`container.yml`:'
+  id: totrans-41
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`container.yml`：'
+- en: '[PRE5]'
+  id: totrans-42
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE5]'
+- en: It is important to note that the container role has already added itself to `container.yml`
+    with any pre-populated information the roles author wants us to use the role with.
+    By default, Ansible Container will look inside the role, use the default information
+    provided in the `meta/main.yml` and `meta/container.yml` files of the role, and
+    pass this information into the build process, if it is not overridden in the `container.yml`
+    file. Later in this chapter, we will look at how this works when we slightly customize
+    how the NGINX role works in our project.
+  id: totrans-43
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 需要注意的是，容器角色已经将其自身添加到了 `container.yml` 中，并包含了角色作者希望我们使用的任何预填充信息。默认情况下，Ansible
+    Container 会查看角色内部，使用 `meta/main.yml` 和 `meta/container.yml` 文件中提供的默认信息，并将这些信息传递到构建过程中，除非在
+    `container.yml` 文件中进行了覆盖。稍后在本章中，我们将看到当我们稍微自定义 NGINX 角色的工作方式时，这一过程是如何运作的。
+- en: The install process also added a reference to the name of the role, `ansible.nginx-container`,
+    to the `requirements.yml` file. This file is used to keep track of the Ansible
+    Galaxy roles and other dependencies that are being used in the project. If you
+    are sharing your project with another developer who wants to build the project
+    locally, the `requirements.yml` file is leveraged by Ansible Container to install
+    all of the dependency roles in one shot. This speeds up the development process
+    quite a bit if you are using multiple container-enabled roles in your project.
+  id: totrans-44
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 安装过程还将角色名 `ansible.nginx-container` 添加到了 `requirements.yml` 文件中。此文件用于跟踪项目中使用的
+    Ansible Galaxy 角色和其他依赖项。如果你将项目与其他开发者共享，而他们希望在本地构建项目，Ansible Container 会利用 `requirements.yml`
+    文件一次性安装所有依赖的角色。如果你在项目中使用了多个支持容器的角色，这将大大加速开发过程。
+- en: 'Now that we have installed the container-enabled role, let''s rerun our build
+    process and build our new container image:'
+  id: totrans-45
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在我们已经安装了支持容器的角色，让我们重新运行构建过程并构建我们的新容器镜像：
+- en: '[PRE6]'
+  id: totrans-46
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE6]'
+- en: 'It looks like, our build output is a bit more interesting than previous examples.
+    You can see that Ansible Container has recognized that our project now has a service
+    called `ansible.nginx-container` and proceeded to run the `ansible.nginx-container`
+    role associated with it in the `container.yml` file. During the build process,
+    the conductor image runs Ansible Core, passing in the playbook tasks located within
+    the role in order to bring the container image into the desired state. Each task
+    that gets executed from the role is displayed in the build output, which allows
+    the developer to see exactly what actions are being executed inside the container.
+    Here are a few key takeaways to keep in mind when examining the Ansible Container
+    build output:'
+  id: totrans-47
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 看起来，我们的构建输出比之前的示例更有趣了。你可以看到，Ansible Container 已经识别出我们的项目现在有一个名为 `ansible.nginx-container`
+    的服务，并且在 `container.yml` 文件中执行了与之关联的 `ansible.nginx-container` 角色。在构建过程中，指挥者镜像会运行
+    Ansible Core，并传入位于角色中的 playbook 任务，以便将容器镜像带入所需的状态。从角色中执行的每个任务都会显示在构建输出中，这使得开发者能够准确看到容器内正在执行哪些操作。在检查
+    Ansible Container 构建输出时，以下是一些需要记住的关键点：
+- en: '**Executed tasks**: In Ansible, each task has a unique name associated with
+    it, which helps to make the build output easy for just about anyone to read and
+    understand. Sometimes, logical conditions are not triggered correctly, which can
+    cause some tasks to be skipped. Read through the tasks to make sure those tasks
+    you are expecting to be run are actually run.'
+  id: totrans-48
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**已执行的任务**：在 Ansible 中，每个任务都有一个唯一的名称，帮助使构建输出对于几乎任何人来说都易于阅读和理解。有时，逻辑条件未能正确触发，这可能会导致某些任务被跳过。阅读任务列表，确保你期待执行的任务确实被执行。'
+- en: '**Changed tasks versus OK tasks**: Since Ansible, at its core, is a configuration
+    management tool, it closely follows the principle of idempotency. In other words,
+    if Ansible sees that a task is not required to be run since the container already
+    has the desired state, Ansible will mark that task as `OK`. When Ansible makes
+    a change, it will mark tasks as `CHANGED`, indicating that Ansible modified something
+    in the base container image. It is important to note that all tasks, regardless
+    of whether they are `SKIPPED`, `CHANGED`, or `OK`, will be counted as `OK` at
+    the end of the build process, indicating that a failure has not occurred during
+    the task execution.'
+  id: totrans-49
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**已更改的任务与OK任务**：由于Ansible本质上是一个配置管理工具，它紧密遵循幂等性原则。换句话说，如果Ansible发现某个任务不需要执行（因为容器已经处于期望的状态），它将把该任务标记为`OK`。当Ansible进行更改时，它会将任务标记为`CHANGED`，表示Ansible在基础容器镜像中修改了某些内容。需要注意的是，所有任务，无论是`SKIPPED`、`CHANGED`还是`OK`，都会在构建过程结束时被计为`OK`，表示在任务执行过程中没有发生失败。'
+- en: '**PLAY RECAP**: At the end of every Ansible Container build, you will be presented
+    with a `PLAY RECAP` section highlighting the state of the Ansible Container build.
+    This provides a handy reference to show every task that Ansible Container executed
+    at a quick glance and the status of the tasks: `OK`, `Changed`, `Unreachable`,
+    or `Failed`. Tasks that have failed will cause the build process to stop immediately
+    at the failed task unless otherwise overridden in the role.'
+  id: totrans-50
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '**PLAY RECAP**：在每次Ansible容器构建结束时，你将看到一个`PLAY RECAP`部分，突出显示Ansible容器构建的状态。这提供了一个便捷的参考，快速显示Ansible容器执行的每个任务及其状态：`OK`、`Changed`、`Unreachable`或`Failed`。失败的任务会导致构建过程在失败的任务处立即停止，除非在角色中另有覆盖。'
+- en: Once the build process has completed, Ansible Container commits the changes
+    as a single layer to the base image, creating a brand new container image for
+    your project. Remember, in [Chapter 1](61a61ca8-60d4-48a0-8987-6f719d6a2c36.xhtml),
+    *Building Containers with Docker*, when we used Dockerfiles to build container
+    images? If you remember, each line in a Dockerfile represents a layer in the container
+    image. Using Dockerfiles to build complex container images can quickly create
+    large and unruly containers that have large file sizes.
+  id: totrans-51
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦构建过程完成，Ansible容器将这些更改作为一个单独的层提交到基础镜像中，创建一个全新的容器镜像供你的项目使用。记住，在[第1章](61a61ca8-60d4-48a0-8987-6f719d6a2c36.xhtml)中，*使用Docker构建容器*时，我们是如何利用Dockerfile来构建容器镜像的？如果你还记得，Dockerfile中的每一行都代表着容器镜像中的一层。使用Dockerfile构建复杂的容器镜像会很快产生大且难以管理的容器，这些容器的文件大小也可能很大。
+- en: 'Using Ansible Container, we can make as many changes as we want by adding tasks
+    in the role and our final container image is still streamlined by only having
+    one container layer created:'
+  id: totrans-52
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用Ansible容器时，我们可以通过在角色中添加任务进行任意更改，并且我们的最终容器镜像依然保持精简，因为它只创建了一个容器层：
+- en: '![](img/68bfbb96-6ded-478c-b5a7-efa1fc47661a.png)'
+  id: totrans-53
+  prefs: []
+  type: TYPE_IMG
+  zh: '![](img/68bfbb96-6ded-478c-b5a7-efa1fc47661a.png)'
+- en: 'Figure 2: Container image layers in a container image built by Ansible Container'
+  id: totrans-54
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图2：通过Ansible容器构建的容器镜像中的层
+- en: However, do keep in mind that you should still strive to keep container images
+    built by Ansible Container as small as possible by only adding the most necessary
+    files, packages, and services. Having the benefits of Ansible Container creating
+    only one layer in the container can quickly be outweighed if having that single
+    layer is 2 GB in size!
+  id: totrans-55
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，请记住，你仍然应该尽量通过仅添加最必要的文件、包和服务，保持Ansible容器构建的容器镜像尽可能小。如果容器镜像的单一层大小达到了2GB，那么Ansible容器创建的这一层的优势很快就会被抵消！
+- en: Running the NGINX role
+  id: totrans-56
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 运行NGINX角色
+- en: 'Now that our project has been built and the role has been applied without any
+    errors, we can run our container using the `ansible-container run` command. `run`
+    will leverage the local Ansible deployment playbooks, created during the build
+    process, to bring up our container so that we can test it and ensure it is running
+    as expected:'
+  id: totrans-57
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，既然我们的项目已经构建完成且角色已成功应用，我们可以使用`ansible-container run`命令来运行我们的容器。`run`将利用在构建过程中创建的本地Ansible部署剧本来启动容器，以便我们测试它并确保它按预期运行：
+- en: '[PRE7]'
+  id: totrans-58
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE7]'
+- en: 'Based on the provided `PLAY RECAP`, we can easily identify that the task that
+    was executed on our local VM to run the container has made one change in order
+    to bring our container into a running state. The `docker ps -a` output also shows
+    that our container is running:'
+  id: totrans-59
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 根据提供的`PLAY RECAP`，我们可以轻松地识别出，在我们的本地虚拟机上执行的任务使得容器的状态发生了变化，从而使容器进入了运行状态。`docker
+    ps -a`的输出也显示我们的容器正在运行：
+- en: '[PRE8]'
+  id: totrans-60
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE8]'
+- en: 'By default, this container uses the host and container TCP port: `8000` that
+    comes out of the box with the role. Let''s use the `curl` utility to see if we
+    can access the NGINX default website on port `8000`:'
+  id: totrans-61
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 默认情况下，此容器使用角色默认配置的主机和容器 TCP 端口：`8000`。让我们使用 `curl` 工具看看是否可以在 `8000` 端口访问 NGINX
+    默认网站：
+- en: '[PRE9]'
+  id: totrans-62
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE9]'
+- en: Based on the output from `curl`, it looks like we have successfully deployed
+    the NGINX role on our workstation and have a functional NGINX server container
+    running. This is great if you want a web server to run on port `8000` and want
+    it to use only the absolute defaults. Unfortunately, this is probably not ideal
+    for anyone to use. Let's modify our role by overriding a few defaults to see if
+    we can get a container that runs a bit closer to what we might expect to see running
+    in an actual functional environment.
+  id: totrans-63
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 根据 `curl` 的输出，看来我们已经成功地在工作站上部署了 NGINX 角色，并且有一个功能正常的 NGINX 服务器容器在运行。如果你希望一个 Web
+    服务器在 `8000` 端口运行，并且只使用绝对默认配置，那么这非常棒。不幸的是，这对于任何人来说可能都不太理想。让我们通过覆盖一些默认值来修改我们的角色，看看能否获得一个运行环境中实际功能更接近的容器。
+- en: Modifying the NGINX role
+  id: totrans-64
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 修改 NGINX 角色
+- en: Ansible, functions and behaves quite differently from a lot of configuration
+    management platforms such as Chef, Puppet, or Salt. Roles are seen as service
+    abstractions that can be tweaked and modified to function in almost any way the
+    user desires. Ansible provides the concept of variables and variable precedence,
+    which can take input from a number of sources and, in order of precedence, can
+    modify the role so that it will run differently depending on how the role itself
+    is designed. It is important to note that role variable precedence is more common
+    for Ansible Core, in which a user may have playbooks that need to run in development,
+    staging, QA, and production environments, and require different configurations
+    based on the environment they are deployed to.
+  id: totrans-65
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 的功能和行为与许多配置管理平台（如 Chef、Puppet 或 Salt）有很大不同。角色被视为服务抽象，用户可以根据需要进行调整和修改，以便以几乎任何方式运行。Ansible
+    提供了变量和变量优先级的概念，这些变量可以来自多个来源，并且根据优先级的顺序，修改角色，使其根据角色本身的设计以不同方式运行。需要注意的是，角色变量优先级在
+    Ansible Core 中更为常见，用户可能会有需要在开发、预发布、QA 和生产环境中运行的 playbook，并且这些 playbook 根据部署的环境需要不同的配置。
+- en: It is still important to understand how overriding role variables and parameters
+    can be leveraged in Ansible Container in order to build resilient and customized
+    infrastructure artifacts. Ansible roles are designed in such a way that role variables
+    can be overridden without modifying the role itself. Using the concept of variable
+    precedence, Ansible Container will automatically identify role variable values
+    in the `container.yml` file and pass these values into the role, which can be
+    accessed by the playbooks. This allows the user to write code that is portable
+    and repeatable simply by downloading the correct role from Ansible Galaxy and
+    building projects using the correct `container.yml` file that contains all the
+    customizations. Of course, not every part of a role can be overridden in the `container.yml`
+    file, but we will learn in this section how we can make basic modifications and
+    push our customized container images to Docker Hub.
+  id: totrans-66
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 理解如何在 Ansible Container 中重写角色变量和参数，以构建具有韧性和定制化的基础设施组件，仍然是非常重要的。Ansible 角色的设计方式使得可以在不修改角色本身的情况下覆盖角色变量。通过变量优先级的概念，Ansible
+    Container 会自动识别 `container.yml` 文件中的角色变量值，并将这些值传递给角色，供 playbook 访问。这允许用户编写便于移植和可重复使用的代码，只需从
+    Ansible Galaxy 下载正确的角色，并使用包含所有自定义项的正确 `container.yml` 文件构建项目。当然，并非角色的每一部分都可以在
+    `container.yml` 文件中被覆盖，但我们将在本节中学习如何进行基本修改，并将我们的自定义容器镜像推送到 Docker Hub。
+- en: 'When leveraging a role written by another user on Ansible Galaxy, the first
+    thing a good Ansible Container engineer should do is read through the README file,
+    usually located in the root directory of the role. The README will usually provide
+    a guide on how to run the role in the most basic sense, as well as by providing
+    a list of common variables that can be overridden. Having a firm grasp of the
+    README is key to understanding how the role will function in the overall scheme
+    of more complex projects. You can view the README for the NGINX role here: [https://github.com/ansible/nginx-container/blob/master/README.md](https://github.com/ansible/nginx-container/blob/master/README.md).'
+  id: totrans-67
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在使用 Ansible Galaxy 上由其他用户编写的角色时，一位优秀的 Ansible Container 工程师应该首先阅读 README 文件，通常该文件位于角色的根目录中。README
+    文件通常会提供有关如何以最基本的方式运行该角色的指南，并列出可以被重写的常用变量。深入理解 README 对于了解角色在更复杂项目中的整体功能至关重要。你可以在这里查看
+    NGINX 角色的 README：[https://github.com/ansible/nginx-container/blob/master/README.md](https://github.com/ansible/nginx-container/blob/master/README.md)。
+- en: As you progress to writing your own Ansible Container roles and container-enabled
+    applications, having an updated and accurate README file will be helpful for other
+    users trying to use your project. Always update your README!
+  id: totrans-68
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 随着你编写自己的 Ansible Container 角色和容器启用应用程序，拥有一个更新且准确的 README 文件将对其他用户尝试使用你的项目非常有帮助。务必更新你的
+    README！
+- en: For this exercise, we are going to customize the `container.yml` file so that
+    it will be exposed on the host port `80` instead of the default `8000`, and also
+    pass in a new path for the document root, from which websites will be served.
+    It should also be noted that we have changed the service name from the name of
+    the role to a more commonly understood name: `webserver`. The final `container.yml`
+    file can be found in the GitHub repository for the book in the `AnsibleContainer/nginx_demo`
+    directory.
+  id: totrans-69
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本次练习中，我们将自定义 `container.yml` 文件，使其暴露在主机端口 `80` 上，而不是默认的 `8000`，并且还传递一个新的路径作为文档根目录，用于提供网站服务。还应该注意，我们将服务名称从角色的名称更改为更常见的名称：`webserver`。最终的
+    `container.yml` 文件可以在书籍的 GitHub 仓库中的 `AnsibleContainer/nginx_demo` 目录中找到。
+- en: 'First, modify the `container.yml` file so that it resembles the following,
+    keeping in mind that we are passing in the overridden variable `STATIC_ROOT` as
+    a child parameter of the role we specified for our service. We determined that
+    `STATIC_ROOT` was a valid variable that can be overridden in the role based on
+    the information the developer provided to us in the role''s README file. Essentially,
+    this is telling Ansible Container to use the value the user has provided over
+    the default value, which is hardcoded inside the role:'
+  id: totrans-70
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 首先，修改 `container.yml` 文件，使其类似于以下内容，记住，我们传递的是重写变量 `STATIC_ROOT`，并将其作为我们为服务指定的角色的子参数。我们根据开发人员提供的角色
+    README 文件中的信息，确定 `STATIC_ROOT` 是一个可以重写的有效变量。本质上，这告诉 Ansible Container 使用用户提供的值，而不是角色中硬编码的默认值：
+- en: '[PRE10]'
+  id: totrans-71
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE10]'
+- en: 'Upon rebuilding our project, Ansible Container will identify changes in the
+    `container.yml` file. This will prompt Ansible Container to rerun the role, using
+    the updated value for `STATIC_ROOT`. You will notice that, this time, the resulting
+    build process will take less time, and have fewer changed tasks from the first
+    time we executed the build. You should see an output similar to the following,
+    keeping in mind that this example is truncated:'
+  id: totrans-72
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在重新构建我们的项目后，Ansible Container 会识别 `container.yml` 文件中的变化。这将提示 Ansible Container
+    重新运行该角色，使用更新后的 `STATIC_ROOT` 值。你会注意到，这一次，构建过程所需的时间会更短，并且与第一次执行构建时相比，变更的任务也会更少。你应该看到类似以下的输出，记住这个示例是经过截断的：
+- en: '[PRE11]'
+  id: totrans-73
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE11]'
+- en: Running the modified role
+  id: totrans-74
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 运行修改后的角色
+- en: 'Once the build has completed, you can execute the `ansible-container run` command
+    to ensure that our NGINX container is still running as expected:'
+  id: totrans-75
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦构建完成，你可以执行 `ansible-container run` 命令，以确保我们的 NGINX 容器仍按预期运行：
+- en: '[PRE12]'
+  id: totrans-76
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE12]'
+- en: 'As you can see from the preceding example, the run process completed as expected,
+    displaying the message `All services running. Conductor Terminated. Cleaning Up`
+    with the relevant zero return codes. This indicates that our container is running
+    as expected. We can validate this in the local Docker environment, using the `docker
+    ps -a` command again. In this example, we can see that port `8000` on the container
+    is mapped to port `80` on the host, indicating that the changes in our `container.yml`
+    file have been accurately built into the new iteration of our project:'
+  id: totrans-77
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 从前面的示例中可以看出，运行过程如预期完成，显示消息`All services running. Conductor Terminated. Cleaning
+    Up`，并且返回的相关零值代码。这表示我们的容器正在按预期运行。我们可以在本地Docker环境中验证这一点，再次使用`docker ps -a`命令。在此示例中，我们可以看到容器的端口`8000`映射到主机的端口`80`，这表明我们在`container.yml`文件中的更改已正确构建到项目的新迭代中：
+- en: '[PRE13]'
+  id: totrans-78
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE13]'
+- en: 'To ensure our NGINX server is functioning as intended, we can use our trusty
+    `curl` command to make sure we are getting the expected response on the VM localhost
+    port `80`:'
+  id: totrans-79
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了确保我们的NGINX服务器按预期工作，我们可以使用可靠的`curl`命令，确保我们在虚拟机本地主机端口`80`上收到预期的响应：
+- en: '[PRE14]'
+  id: totrans-80
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE14]'
+- en: Congratulations! You have successfully built a functioning NGINX server container
+    by leveraging a community role from Ansible Galaxy! We have even customized the
+    role slightly by passing our own parameters into the role to slightly tweak the
+    way the role functions and the resulting container. Unfortunately, the work we
+    put into the container isn't of much use to us running on our local workstation.
+    One of the major benefits of building containers is the ability to upload containers
+    we build to image registries for other users to deploy and use. For this purpose,
+    we will learn about the `ansible-container push` command to push our NGINX image
+    to the free Docker Hub repository we created at the beginning of the chapter for
+    others to use and download.
+  id: totrans-81
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 恭喜！通过利用Ansible Galaxy中的社区角色，你已经成功构建了一个功能正常的NGINX服务器容器！我们甚至通过向角色中传递自己的参数来稍微定制了该角色，从而微调了角色的功能和生成的容器。不幸的是，我们在容器中所做的工作对在本地工作站上运行的容器没有太大帮助。构建容器的一个主要好处是，我们可以将构建的容器上传到镜像仓库，供其他用户部署和使用。为此，我们将学习使用`ansible-container
+    push`命令，将我们的NGINX镜像推送到我们在本章开头创建的免费Docker Hub仓库，以供他人使用和下载。
+- en: Pushing the project to Docker Hub
+  id: totrans-82
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 将项目推送到Docker Hub
+- en: 'To enable this functionality, we will activate the final portion of the `container.yml`
+    file by removing the curly braces after the `registries` section. Under the registries
+    section, we will create a subsection called docker, that takes two major parameters:
+    URL and namespace. For this example, since we are using the Docker Hub registry,
+    we will provide the public API URL for Docker Hub (at the time of writing) and
+    the username we created at the beginning of the chapter as the namespace parameter.
+    The registries section of your container.yml should resemble the following:'
+  id: totrans-83
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 为了启用此功能，我们将通过移除`registries`部分后的花括号来激活`container.yml`文件的最后部分。在`registries`部分下，我们将创建一个名为docker的子部分，该子部分有两个主要参数：URL和namespace。对于此示例，由于我们使用的是Docker
+    Hub注册表，我们将提供Docker Hub的公共API URL（截至写作时）和我们在本章开头创建的用户名作为namespace参数。你`container.yml`文件中的registries部分应该如下所示：
+- en: '[PRE15]'
+  id: totrans-84
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE15]'
+- en: 'It should also be noted that you can name your registry anything you want in
+    the `container.yml` file. In this example, since we are using Docker Hub, I am
+    using the name: `docker`. If you were using an internal or private registry, you
+    could provide any name that makes sense. For example, `My_Corporate_Registry`
+    might be a good name for an internal image registry hosted by your company. You
+    can even list multiple registries, provided they are each named differently.'
+  id: totrans-85
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 还需要注意的是，你可以在`container.yml`文件中为你的注册表命名任何你想要的名字。在这个示例中，由于我们使用的是Docker Hub，我使用的名字是：`docker`。如果你使用的是内部或私有注册表，你可以提供任何合适的名称。例如，`My_Corporate_Registry`可能是一个合适的名称，用于你公司托管的内部镜像注册表。你甚至可以列出多个注册表，只要它们的名字不重复即可。
+- en: It should also be noted here that the `registries` section is a completely optional
+    portion of the `container.yml` file. By default, the `ansible-container push`
+    command will push to Docker Hub if no entries are written in the `registries`
+    section of the `container.yml`. All that is required is for the user to provide
+    a `--username` flag in the `ansible-container push` command.
+  id: totrans-86
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 还需要注意的是，`registries`部分是`container.yml`文件中的完全可选部分。默认情况下，如果在`container.yml`的`registries`部分没有写入任何条目，`ansible-container
+    push`命令将推送到Docker Hub。所需的唯一操作是用户在`ansible-container push`命令中提供`--username`标志。
+- en: 'The following example demonstrates me uploading my project to my personal image
+    registry, supplying my username: `aric49`. Ansible Container will then prompt
+    for your Docker Hub password and push the container image to your free registry,
+    as shown. Ansible Container will automatically name your container based on the
+    service name in your `container.yml` file.'
+  id: totrans-87
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下示例演示了我将项目上传到个人镜像仓库，并提供了我的用户名：`aric49`。接着，Ansible Container会提示你输入Docker Hub的密码，并将容器镜像推送到你的免费仓库，如图所示。Ansible
+    Container将自动根据`container.yml`文件中的服务名称为你的容器命名。
+- en: '[PRE16]'
+  id: totrans-88
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE16]'
+- en: It is important to always provide the `--tag` flag in the `push` command. This
+    ensures that you can maintain version control over the various iterations of your
+    container images in the future. In this example, we are uploading version 1.0
+    of our container image. If you make changes to your project in the future, you
+    can upload a version 2.0 tag and the image registry will automatically maintain
+    the older version, 1.0, in case you ever need to roll back or upgrade to another
+    version of your project.
+  id: totrans-89
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在`push`命令中始终提供`--tag`标志非常重要。这可以确保你在未来对不同版本的容器镜像进行版本控制。在这个示例中，我们正在上传版本1.0的容器镜像。如果你将来对项目做出更改，可以上传版本2.0标签，镜像仓库将自动保持旧版本1.0，以防你需要回滚或升级到项目的另一个版本。
+- en: 'For the purposes of this demonstration, we are not going to use the default
+    push behavior to upload to Docker Hub, instead of uploading our container image
+    to the image registry we specified in the `container.yml` file, which just so
+    happens to also be Docker Hub. We can use the `--push-to` flag to specify the
+    name of the image registry we configured in our project, providing the username
+    and image tagging details as in the preceding example:'
+  id: totrans-90
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本次演示中，我们不会使用默认的推送行为将镜像上传到Docker Hub，而是将容器镜像上传到我们在`container.yml`文件中指定的镜像仓库，而这个镜像仓库恰好也是Docker
+    Hub。我们可以使用`--push-to`标志来指定我们在项目中配置的镜像仓库名称，提供用户名和镜像标签信息，正如之前的示例所示：
+- en: '[PRE17]'
+  id: totrans-91
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE17]'
+- en: 'Once the container has been uploaded to our image registry of choice, we can
+    execute a manual `docker pull` to download the container from our image registry.
+    By default, `docker pull` requires the user to provide the name of the container
+    image repository, the name of the image, as well as the tagged version you would
+    like to pull. When using Docker Hub, we will use your username as the image repository
+    since we are using our personal Docker Hub account. For example, you can pull
+    my NGINX web server image using the `docker pull` command:'
+  id: totrans-92
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 一旦容器上传到我们选择的镜像仓库，我们可以手动执行`docker pull`命令从镜像仓库下载容器。默认情况下，`docker pull`要求用户提供容器镜像仓库的名称、镜像的名称以及你想要拉取的标签版本。在使用Docker
+    Hub时，我们将使用你的用户名作为镜像仓库，因为我们使用的是个人的Docker Hub账户。例如，你可以使用`docker pull`命令拉取我的NGINX网页服务器镜像：
+- en: '[PRE18]'
+  id: totrans-93
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE18]'
+- en: Use the `-D` flag to enable debug mode. This allows you to see more details
+    about how the Docker image is being pulled.
+  id: totrans-94
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用`-D`标志来启用调试模式。这样可以让你看到更多关于Docker镜像拉取过程的详细信息。
+- en: You can see from the preceding output that the image we are pulling is only
+    two layers deep. This is due to the fact that Ansible Container commits all of
+    the playbook runs as a single layer in the container image. This allows the developer
+    to build a rather complex container while minimizing the size of the resulting
+    image. Just remember to keep your playbooks small and efficient, or you will start
+    to lose the benefits of containerized microservice architecture.
+  id: totrans-95
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 从前面的输出中可以看到，我们拉取的镜像只有两层。这是因为Ansible Container将所有的playbook运行作为容器镜像中的单层进行提交。这使得开发者能够构建一个相当复杂的容器，同时最大限度地减少生成镜像的大小。只要记住保持playbook小巧高效，否则你将失去容器化微服务架构的优势。
+- en: Now that our image has been cached locally, we can run the container manually
+    using Docker. Of course, we could always run our project using Ansible Container
+    directly, but the purpose of this example is to demonstrate running our container
+    directly in Docker, which may simulate environments in which you do not, or cannot,
+    install Ansible Container. The only caveat with this approach is that you have
+    to specify the port-forwarding manually since that configuration is a part of
+    our `container.yml` file and is not built intrinsically into the image itself.
+    In this example, we are going to run the container in Docker, giving it the name
+    `Ansible_Nginx` and specifying the container image in the following format: `username/containername:tag`
+  id: totrans-96
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，由于我们的镜像已被缓存到本地，我们可以使用Docker手动运行容器。当然，我们也可以直接使用Ansible Container运行项目，但本例的目的是演示如何直接在Docker中运行容器，这可能模拟一些你不能或不愿意安装Ansible
+    Container的环境。这个方法的唯一注意事项是，你需要手动指定端口转发，因为这个配置是我们`container.yml`文件的一部分，并没有内嵌到镜像本身。在本例中，我们将以`Ansible_Nginx`为容器名称，并按照以下格式指定容器镜像：`username/containername:tag`
+- en: '[PRE19]'
+  id: totrans-97
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE19]'
+- en: 'The `docker ps -a` output should show the container running and functional:'
+  id: totrans-98
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '`docker ps -a`的输出应该显示容器正在运行并且功能正常：'
+- en: '[PRE20]'
+  id: totrans-99
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE20]'
+- en: You may need to run the Ansible Container `destroy` command prior to manually
+    running the container through Docker, as port `80` may already be used by your
+    running project container.
+  id: totrans-100
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在通过Docker手动运行容器之前，你可能需要先运行Ansible Container的`destroy`命令，因为端口`80`可能已被你正在运行的项目容器占用。
+- en: Summary
+  id: totrans-101
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 总结
+- en: 'In this chapter, you have learned one of the core concepts at the heart of
+    Ansible Container: building container images using roles. By leveraging Ansible
+    roles to create container images, you can be sure the resulting container images
+    are built with the exact configurations that are required for production-grade,
+    reliable, container services. Furthermore, this also ensures that container images
+    are built using close to the exact playbook roles that your infrastructure is
+    already using, allowing container services to be built with the assurance that
+    services currently running in production can be replicated with, generally, little
+    rework effort. Ansible Container provides an excellent shim between bare metal
+    or virtualized application deployments and containerized services. Leveraging
+    Ansible Galaxy, you can even download and share custom container-enabled roles
+    built by yourself or other members of the Ansible Container Community.'
+  id: totrans-102
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章节中，你已经学习了Ansible Container核心概念之一：使用角色构建容器镜像。通过利用Ansible角色来创建容器镜像，你可以确保构建出的容器镜像具备生产级、可靠的容器服务所需的精确配置。此外，这也确保容器镜像是通过与你的基础设施已经在使用的几乎相同的playbook角色构建的，这使得容器服务的构建可以确保当前在生产环境中运行的服务能够轻松复制，并且通常几乎不需要重新工作。Ansible
+    Container为裸机或虚拟化的应用部署与容器化服务之间提供了一个出色的适配层。通过利用Ansible Galaxy，你甚至可以下载并分享你自己或其他Ansible
+    Container社区成员构建的自定义容器启用角色。
+- en: However, as already mentioned earlier in the chapter, existing Ansible roles
+    cannot be ported 1:1 directly to container-enabled roles, as containers function
+    quite differently to traditional infrastructures. In the next chapter, we will
+    learn about how to write custom Ansible container-enabled roles, as well as some
+    best practices for porting existing roles over to Ansible Container. Get your
+    text editors ready, we are about to get our hands dirty writing some code!
+  id: totrans-103
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 然而，正如本章节前面提到的那样，现有的Ansible角色不能直接1:1地移植到容器启用的角色，因为容器与传统基础设施的工作方式非常不同。在下一章中，我们将学习如何编写自定义的Ansible容器启用角色，以及将现有角色迁移到Ansible
+    Container的一些最佳实践。准备好你的文本编辑器，我们即将开始写代码！

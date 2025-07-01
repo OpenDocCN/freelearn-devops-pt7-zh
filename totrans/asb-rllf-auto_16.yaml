@@ -1,0 +1,1466 @@
+- en: '16'
+  id: totrans-0
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: '16'
+- en: Ansible Automation Best Practices for Production
+  id: totrans-1
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 适用于生产环境的 Ansible 自动化最佳实践
+- en: Ansible can be used to automate IT infrastructure and DevOps tasks. Because
+    of its flexible and modular architecture, we can implement large, complex automation
+    use cases using Ansible. But at the same time, we need to keep the simplicity
+    and reusability of the automation artifacts and methods.
+  id: totrans-2
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 可以用于自动化 IT 基础设施和 DevOps 任务。由于其灵活和模块化的架构，我们可以使用 Ansible 实现大型复杂的自动化用例。但同时，我们需要保持自动化工件和方法的简单性和可重用性。
+- en: In this chapter, you will learn about the important and well-known best practices
+    for implementing efficient automation solutions.
+  id: totrans-3
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章中，你将学习实现高效自动化解决方案的关键和知名最佳实践。
+- en: First, you will learn how to organize the playbooks, roles, collections, and
+    inventories in an Ansible project. After that, we will discuss the best practices
+    for storing managed node information in the inventory and different methods for
+    storing and maintaining multiple inventories. You can store the remote nodes separately
+    based on their function, criticality, or location; these details will be explained
+    in the upcoming sections.
+  id: totrans-4
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 首先，你将学习如何在 Ansible 项目中组织 playbooks、角色、集合和清单。之后，我们将讨论在清单中存储管理节点信息的最佳实践以及存储和维护多个清单的不同方法。你可以根据远程节点的功能、重要性或位置将其单独存储；这些细节将在接下来的章节中进行解释。
+- en: You will also learn about the most efficient ways to store the variables in
+    dynamic methods and how to store host variables and group variables to maintain
+    them appropriately.
+  id: totrans-5
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你还将学习在动态方法中存储变量的最有效方式，以及如何存储主机变量和组变量，以便适当地维护它们。
+- en: Another critical component in Ansible automation is handling credentials such
+    as usernames and passwords, API keys, and secrets. Therefore, you will explore
+    the best practices for Ansible credential management, such as how to store sensitive
+    data for an Ansible playbook.
+  id: totrans-6
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 另一个在 Ansible 自动化中至关重要的组件是处理凭据，如用户名和密码、API 密钥以及机密信息。因此，你将探索 Ansible 凭据管理的最佳实践，例如如何为
+    Ansible playbook 存储敏感数据。
+- en: Finally, you will learn about the best practices, methods, and optimization
+    techniques for developing and executing Ansible playbooks.
+  id: totrans-7
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最后，你将学习开发和执行 Ansible playbook 的最佳实践、方法和优化技巧。
+- en: 'In this chapter, we will cover the following topics:'
+  id: totrans-8
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章将覆盖以下主题：
+- en: Organizing Ansible automation content
+  id: totrans-9
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 组织 Ansible 自动化内容
+- en: Storing remote host information – inventory best practices
+  id: totrans-10
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 存储远程主机信息 – 清单最佳实践
+- en: Ansible host variables and group variables
+  id: totrans-11
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Ansible 主机变量和组变量
+- en: Ansible credentials best practices
+  id: totrans-12
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Ansible 凭据最佳实践
+- en: Ansible playbook best practices
+  id: totrans-13
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: Ansible playbook 最佳实践
+- en: This chapter will start by covering various Ansible content organization methods
+    and different inventory organization methods.
+  id: totrans-14
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章将从介绍各种 Ansible 内容组织方法和不同的清单组织方法开始。
+- en: Technical requirements
+  id: totrans-15
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 技术要求
+- en: 'You will need the following technical requirements to complete this chapter:'
+  id: totrans-16
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 完成本章内容，你需要以下技术要求：
+- en: A Linux machine for the Ansible control node.
+  id: totrans-17
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 一台用于 Ansible 控制节点的 Linux 机器。
+- en: One or more Linux machines as managed nodes with Red Hat repositories configured
+    (if you are using non-RHEL machines, then make sure you have the appropriate repositories
+    configured to get packages and updates).
+  id: totrans-18
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 一台或多台配置了 Red Hat 仓库的 Linux 机器作为管理节点（如果你使用的是非 RHEL 机器，请确保已配置适当的仓库以获取软件包和更新）。
+- en: All the Ansible artifacts, Ansible playbooks, commands, and snippets for this
+    chapter can be found in this book’s GitHub repository at [https://github.com/PacktPublishing/Ansible-for-Real-life-Automation/tree/main/Chapter-16](https://github.com/PacktPublishing/Ansible-for-Real-life-Automation/tree/main/Chapter-16).
+  id: totrans-19
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 本章所有的 Ansible 工件、Ansible playbooks、命令和片段可以在本书的 GitHub 仓库中找到，地址是 [https://github.com/PacktPublishing/Ansible-for-Real-life-Automation/tree/main/Chapter-16](https://github.com/PacktPublishing/Ansible-for-Real-life-Automation/tree/main/Chapter-16)。
+- en: Organizing Ansible automation content
+  id: totrans-20
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 组织 Ansible 自动化内容
+- en: In [*Chapter 4*](B18383_04.xhtml#_idTextAnchor067), *Exploring Collaboration
+    in Automation Development*, you learned about **version control systems** (**VCSs**)
+    and **source control management** (**SCM**) and how to use GitHub services to
+    store Ansible artifacts.
+  id: totrans-21
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 [*第 4 章*](B18383_04.xhtml#_idTextAnchor067)，*探索自动化开发中的协作*，你学习了**版本控制系统**（**VCS**）和**源代码管理**（**SCM**），以及如何使用
+    GitHub 服务存储 Ansible 工件。
+- en: It is the best practice to create project-specific directories (that is, repositories)
+    to keep all related items at a single location, such as project-specific `ansible.cfg`
+    files, playbooks, roles, collections, or libraries. If there are external roles
+    or collections dependencies, then mention the details inside the `requirements.yaml`
+    (or `requirements.yml`) file.
+  id: totrans-22
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最佳实践是创建特定于项目的目录（即存储库），将所有相关项保存在一个位置，例如特定于项目的`ansible.cfg`文件、剧本、角色、集合或库。如果有外部角色或集合依赖项，请在`requirements.yaml`（或`requirements.yml`）文件中提及详细信息。
+- en: 'Use the `tree` command in Linux to list the directories and files recursively
+    and understand the structure of the directory’s content. A sample project directory
+    can be organized like so:'
+  id: totrans-23
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用Linux中的`tree`命令递归列出目录和文件，并了解目录内容的结构。一个示例项目目录可以按如下方式组织：
+- en: '![Figure 16.1 – Typical Ansible project directory ](img/B18383_16_01.jpg)'
+  id: totrans-24
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图16.1 – 典型的Ansible项目目录](img/B18383_16_01.jpg)'
+- en: Figure 16.1 – Typical Ansible project directory
+  id: totrans-25
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图16.1 – 典型的Ansible项目目录
+- en: 'Your roles will be under the `roles` directory, as shown in the following screenshot:'
+  id: totrans-26
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 您的角色将位于`roles`目录下，如下图所示：
+- en: '![Figure 16.2 – Ansible roles directory ](img/B18383_16_02.jpg)'
+  id: totrans-27
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图16.2 – Ansible角色目录](img/B18383_16_02.jpg)'
+- en: Figure 16.2 – Ansible roles directory
+  id: totrans-28
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图16.2 – Ansible角色目录
+- en: Depending on the projects and use cases, you may have more or fewer directories
+    and files. We will explore the best practices for storing an inventory in the
+    next section.
+  id: totrans-29
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 根据项目和使用案例，您可能会有更多或更少的目录和文件。我们将在下一节中探讨存储清单的最佳实践。
+- en: Storing remote host information – inventory best practices
+  id: totrans-30
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 存储远程主机信息 – 清单最佳实践
+- en: Managed nodes or remote host information is critical data in Ansible automation
+    since, without the proper host details, Ansible will not be able to execute the
+    automation tasks. You learned about the Ansible inventory and its basic details
+    in [*Chapter 1*](B18383_01.xhtml#_idTextAnchor014), *Ansible Automation – Introduction*.
+    In *Chapter 4*, *Exploring Collaboration in Automation Development*, you learned
+    about the importance of storing an inventory in a GitHub repository for version
+    control and better management. If your managed nodes are hosted in cloud platforms,
+    then it is a best practice to use Ansible dynamic inventories, as you learned
+    in [*Chapter 5*](B18383_05.xhtml#_idTextAnchor086), *Expanding Your Automation
+    Landscape*.
+  id: totrans-31
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在Ansible自动化中，托管节点或远程主机信息是关键数据，因为没有正确的主机详细信息，Ansible将无法执行自动化任务。您在[*第一章*](B18383_01.xhtml#_idTextAnchor014)中了解了Ansible清单及其基本细节，*Ansible自动化
+    – 介绍*。在[*第四章*](B18383_04.xhtml#_idTextAnchor081)中，您了解了将清单存储在GitHub存储库中的重要性，以便进行版本控制和更好的管理。如果您的托管节点托管在云平台中，那么使用Ansible动态清单是最佳实践，正如您在[*第五章*](B18383_05.xhtml#_idTextAnchor086)中学习的那样，*扩展您的自动化视野*。
+- en: Using meaningful hostnames
+  id: totrans-32
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 使用有意义的主机名
+- en: When you create your Ansible static inventory files, use meaningful and user-friendly
+    names for your managed nodes instead of complex **Fully Qualified Domain Names**
+    (**FQDNs**) or IP addresses. It will help you while executing the Ansible playbook
+    and troubleshooting it if that’s required.
+  id: totrans-33
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在创建Ansible静态清单文件时，请使用有意义且用户友好的名称来表示托管节点，而不是复杂的**完全限定域名**（**FQDNs**）或IP地址。这将在执行Ansible剧本和故障排除时提供帮助。
+- en: 'For example, the following is a generic Ansible static inventory file:'
+  id: totrans-34
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 例如，以下是一个通用的Ansible静态清单文件：
+- en: '![Figure 16.3 – Sample static inventory file ](img/B18383_16_03.jpg)'
+  id: totrans-35
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图16.3 – 示例静态清单文件](img/B18383_16_03.jpg)'
+- en: Figure 16.3 – Sample static inventory file
+  id: totrans-36
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图16.3 – 示例静态清单文件
+- en: 'The same static inventory can be rewritten with user-friendly names and `ansible_host`
+    information, as shown in the following screenshot:'
+  id: totrans-37
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 相同的静态清单可以用用户友好的名称和`ansible_host`信息重写，如下图所示：
+- en: '![Figure 16.4 – Ansible inventory with user-friendly names ](img/B18383_16_04.jpg)'
+  id: totrans-38
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图16.4 – 带有用户友好名称的Ansible清单](img/B18383_16_04.jpg)'
+- en: Figure 16.4 – Ansible inventory with user-friendly names
+  id: totrans-39
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图16.4 – 带有用户友好名称的Ansible清单
+- en: Using `ansible_host` means you don’t have to rely on your DNS name (FQDN) by
+    using the IP address to access the managed nodes.
+  id: totrans-40
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用`ansible_host`意味着您不必依赖DNS名称（FQDN），可以通过IP地址访问托管节点。
+- en: This practice will not only help you troubleshoot output and logs but also help
+    you manage your inventory with simple and meaningful names.
+  id: totrans-41
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 这种做法不仅有助于您排除输出和日志中的故障，还能帮助您通过简单且有意义的名称管理清单。
+- en: How to Build Your Inventory
+  id: totrans-42
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如何构建您的清单
+- en: 'Refer to the official documentation for more details: [https://docs.ansible.com/ansible/latest/user_guide/intro_inventory.xhtml](https://docs.ansible.com/ansible/latest/user_guide/intro_inventory.xhtml).'
+  id: totrans-43
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有关更多详情，请参考官方文档：[https://docs.ansible.com/ansible/latest/user_guide/intro_inventory.xhtml](https://docs.ansible.com/ansible/latest/user_guide/intro_inventory.xhtml)。
+- en: In the next section, you will learn how to separate the inventory based on environments
+    such as production, staging, and development.
+  id: totrans-44
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一节中，你将学习如何根据生产、预发布和开发等环境来分离库存。
+- en: Storing production, staging, and development hosts separately
+  id: totrans-45
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 将生产、预发布和开发主机分开存储
+- en: 'You need to organize your inventory at the project level or overall inventory
+    level. If you are using the same managed nodes for multiple Ansible projects (the
+    same nodes but different automation and use cases), then keep your inventory somewhere
+    in a central GitHub repository as a single source of truth. This will help you
+    organize your managed node information in a better way so that it can be used
+    for different automation playbooks. The following diagram shows a scenario where
+    the inventory is stored in a dedicated GitHub repository:'
+  id: totrans-46
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 你需要在项目级别或整体库存级别组织你的库存。如果你在多个Ansible项目中使用相同的管理节点（相同的节点但不同的自动化和用例），那么将库存存储在一个中央的GitHub仓库中作为单一的事实来源。这将帮助你更好地组织管理节点信息，以便用于不同的自动化playbook。以下图示展示了库存存储在专用GitHub仓库中的场景：
+- en: '![Figure 16.5 – Ansible inventory in a dedicated repository ](img/B18383_16_05.jpg)'
+  id: totrans-47
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图16.5 – 存储在专用库中的Ansible库存](img/B18383_16_05.jpg)'
+- en: Figure 16.5 – Ansible inventory in a dedicated repository
+  id: totrans-48
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图16.5 – 存储在专用库中的Ansible库存
+- en: 'In the following example, we have created a separate directory for the inventories
+    and placed the production, development, and staging managed nodes in separate
+    directories (refer to the `Chapter-16` directory in this book’s GitHub repository):'
+  id: totrans-49
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在以下示例中，我们为库存创建了一个单独的目录，并将生产、开发和预发布的管理节点分别放入不同的目录（参见本书GitHub仓库中的`Chapter-16`目录）：
+- en: '![Figure 16.6 – Ansible inventory organized based on the environment ](img/B18383_16_06.jpg)'
+  id: totrans-50
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图16.6 – 基于环境组织的Ansible库存](img/B18383_16_06.jpg)'
+- en: Figure 16.6 – Ansible inventory organized based on the environment
+  id: totrans-51
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图16.6 – 基于环境组织的Ansible库存
+- en: 'When you execute the playbook, you must mention which inventory file will be
+    used, as follows:'
+  id: totrans-52
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 执行playbook时，必须指定使用的库存文件，如下所示：
+- en: '[PRE0]'
+  id: totrans-53
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE0]'
+- en: 'The inventory can also be categorized based on location, criticality, server
+    type, and more. It is possible to do the same categorization inside the inventory
+    file using host groups, as shown in the following screenshot:'
+  id: totrans-54
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 库存还可以根据位置、重要性、服务器类型等进行分类。也可以通过在库存文件中使用主机组来进行相同的分类，如下图所示：
+- en: '![Figure 16.7 – Host groups and group variables for managed nodes ](img/B18383_16_07.jpg)'
+  id: totrans-55
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图16.7 – 用于管理节点的主机组和组变量](img/B18383_16_07.jpg)'
+- en: Figure 16.7 – Host groups and group variables for managed nodes
+  id: totrans-56
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图16.7 – 用于管理节点的主机组和组变量
+- en: 'Verify the grouping of managed nodes using the `ansible-inventory` command,
+    as shown in the following screenshot:'
+  id: totrans-57
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 使用`ansible-inventory`命令验证管理节点的分组，如下图所示：
+- en: '![Figure 16.8 – Listing the hosts and host groups using the ansible-inventory
+    command ](img/B18383_16_08.jpg)'
+  id: totrans-58
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图16.8 – 使用ansible-inventory命令列出主机和主机组](img/B18383_16_08.jpg)'
+- en: Figure 16.8 – Listing the hosts and host groups using the ansible-inventory
+    command
+  id: totrans-59
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图16.8 – 使用ansible-inventory命令列出主机和主机组
+- en: In the preceding examples, we created multiple inventory files in the same or
+    different folders and grouped-managed nodes based on function or location. In
+    the next section, you will learn how to maintain host-specific and group-specific
+    variables using the `group_vars` and `host_vars` variables, respectively.
+  id: totrans-60
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在前面的示例中，我们在相同或不同的文件夹中创建了多个库存文件，并根据功能或位置对管理节点进行分组。在下一节中，你将学习如何分别使用`group_vars`和`host_vars`变量来维护主机特定和组特定的变量。
+- en: Ansible host variables and group variables
+  id: totrans-61
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Ansible主机变量和组变量
+- en: As you learned previously, like many other automation tools, Ansible allows
+    you to use variables for dynamically executing playbooks. It is possible to configure
+    the same playbook so that it can be executed for different desired states using
+    variables and values. We can keep the variables inside the playbooks, external
+    variable files, inventory files, and many other places. You learned more about
+    variables in [*Chapter 6*](B18383_06.xhtml#_idTextAnchor105), *Automating Microsoft
+    Windows and Network Devices*.
+  id: totrans-62
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 正如您之前学到的，像许多其他自动化工具一样，Ansible允许您使用变量动态执行Playbooks。可以配置相同的Playbook，使其能够根据不同的期望状态通过变量和值执行。我们可以将变量保存在Playbooks内部、外部变量文件、库存文件和许多其他地方。您在[*第6章*](B18383_06.xhtml#_idTextAnchor105)《自动化Microsoft
+    Windows和网络设备》中学习了更多关于变量的内容。
+- en: The same variable can be specified in multiple places but depending on the location
+    of your variable and variable precedence, Ansible will apply the appropriate value
+    for the variable.
+  id: totrans-63
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 相同的变量可以在多个位置指定，但根据变量的位置和变量优先级，Ansible将应用适当的变量值。
+- en: 'Ansible uses the appropriate variable values and executes the playbooks based
+    on them; the following diagram shows the typical flow where Ansible combines the
+    variable values with the playbook:'
+  id: totrans-64
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible使用适当的变量值并根据它们执行Playbooks；下图展示了Ansible如何将变量值与Playbook结合的典型流程：
+- en: '![Figure 16.9 – Ansible combines playbooks and variables for the final execution
+    ](img/B18383_16_09.jpg)'
+  id: totrans-65
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图16.9 – Ansible结合Playbooks和变量进行最终执行](img/B18383_16_09.jpg)'
+- en: Figure 16.9 – Ansible combines playbooks and variables for the final execution
+  id: totrans-66
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图16.9 – Ansible结合Playbooks和变量进行最终执行
+- en: Understanding Variable Precedence
+  id: totrans-67
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 理解变量优先级
+- en: Refer to [https://docs.ansible.com/ansible/latest/user_guide/playbooks_variables.xhtml#understanding-variable-precedence](https://docs.ansible.com/ansible/latest/user_guide/playbooks_variables.xhtml#understanding-variable-precedence)
+    to learn and understand more about variable precedence.
+  id: totrans-68
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请参考[https://docs.ansible.com/ansible/latest/user_guide/playbooks_variables.xhtml#understanding-variable-precedence](https://docs.ansible.com/ansible/latest/user_guide/playbooks_variables.xhtml#understanding-variable-precedence)以了解更多关于变量优先级的信息。
+- en: 'It is best practice to use host-specific variables and group-specific variables
+    in the `host_vars` and `group_vars` directories, respectively, as shown in the
+    following screenshot:'
+  id: totrans-69
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 最佳实践是分别在`host_vars`和`group_vars`目录中使用特定于主机和特定于组的变量，如下图所示：
+- en: '![Figure 16.10 – host_vars and group_vars for the Ansible inventory ](img/B18383_16_10.jpg)'
+  id: totrans-70
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图16.10 – Ansible库存中的host_vars和group_vars](img/B18383_16_10.jpg)'
+- en: Figure 16.10 – host_vars and group_vars for the Ansible inventory
+  id: totrans-71
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图16.10 – Ansible库存中的host_vars和group_vars
+- en: Now, let’s learn how to create `host_vars` and `group_vars`.
+  id: totrans-72
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，让我们来学习如何创建`host_vars`和`group_vars`。
+- en: Ansible group_vars
+  id: totrans-73
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: Ansible group_vars
+- en: The variables for a group should be mentioned in a file such as `group_vars/INVENTORY_GROUP_NAME.yaml`
+    or a subdirectory such as `group_vars/INVENTORY_GROUP_NAME/VAR_FILE`.
+  id: totrans-74
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 组的变量应在类似`group_vars/INVENTORY_GROUP_NAME.yaml`的文件或类似`group_vars/INVENTORY_GROUP_NAME/VAR_FILE`的子目录中提及。
+- en: 'For example:'
+  id: totrans-75
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 例如：
+- en: '`group_vars/web.yaml`'
+  id: totrans-76
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`group_vars/web.yaml`'
+- en: '`group_vars/web/vars.yaml`'
+  id: totrans-77
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`group_vars/web/vars.yaml`'
+- en: '`group_vars/web/credential.yaml`'
+  id: totrans-78
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`group_vars/web/credential.yaml`'
+- en: Ansible host_vars
+  id: totrans-79
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: Ansible host_vars
+- en: The variables for the host should be mentioned in a file such as `host_vars/INVENTORY_HOSTNAME`
+    or a subdirectory such as `host_vars/INVENTORY_HOSTNAME/VAR_FILE`.
+  id: totrans-80
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 主机的变量应在类似`host_vars/INVENTORY_HOSTNAME`的文件或类似`host_vars/INVENTORY_HOSTNAME/VAR_FILE`的子目录中提及。
+- en: 'For example:'
+  id: totrans-81
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 例如：
+- en: '`host_vars/node1.yaml`'
+  id: totrans-82
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`host_vars/node1.yaml`'
+- en: '`host_vars/node1/vars.yaml`'
+  id: totrans-83
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`host_vars/node1/vars.yaml`'
+- en: '`host_vars/node2.yaml`'
+  id: totrans-84
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`host_vars/node2.yaml`'
+- en: It is possible to create multiple variable files for the same managed node so
+    that you can manage related variables separately.
+  id: totrans-85
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 可以为同一托管节点创建多个变量文件，以便您可以分别管理相关的变量。
+- en: Keeping your secret variables in a safe location
+  id: totrans-86
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 将您的机密变量保存在安全的位置
+- en: 'If you have credentials or secrets as part of your host variables, then keep
+    such variables in a separate variable file and encrypt them using Ansible Vault.
+    The following are some examples of this:'
+  id: totrans-87
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果您的主机变量中包含凭据或机密信息，请将这些变量保存在单独的变量文件中，并使用Ansible Vault对其进行加密。以下是一些示例：
+- en: '`host_vars/node1/vars.yaml`'
+  id: totrans-88
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`host_vars/node1/vars.yaml`'
+- en: '`host_vars/node1/credentials.yaml`'
+  id: totrans-89
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`host_vars/node1/credentials.yaml`'
+- en: '`group_vars/web/vault.yaml`'
+  id: totrans-90
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`group_vars/web/vault.yaml`'
+- en: It is also possible to use other vault services such as HashiCorp Vault or CyberArk
+    instead of Ansible Vault. Refer to [*Chapter 13*](B18383_13.xhtml#_idTextAnchor241),
+    *Using Ansible for Secret Management*, to learn more about Ansible Vault.
+  id: totrans-91
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 也可以使用其他保管服务，如 HashiCorp Vault 或 CyberArk，来替代 Ansible Vault。请参考 [*第 13 章*](B18383_13.xhtml#_idTextAnchor241)，*使用
+    Ansible 进行密钥管理*，以了解有关 Ansible Vault 的更多信息。
+- en: Managing group_vars and host_vars in Ansible
+  id: totrans-92
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 管理 Ansible 中的 group_vars 和 host_vars
+- en: 'In this exercise, you will use host variables and group variables to control
+    the values of multiple web servers. Follow these steps:'
+  id: totrans-93
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在此练习中，您将使用主机变量和组变量来控制多个 Web 服务器的值。请按照以下步骤操作：
+- en: 'Create a `hosts` inventory file inside the staging inventory directory (`Chapter-16/inventories/stg`)
+    with the following content (do not worry about `node1`, `node2`, or `node3` as
+    we are not going to connect to these machines):'
+  id: totrans-94
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 在暂存清单目录（`Chapter-16/inventories/stg`）中创建一个 `hosts` 清单文件，内容如下（不用担心 `node1`、`node2`
+    或 `node3`，因为我们不会连接到这些机器）：
+- en: '![Figure 16.11 – Ansible inventory with a web group ](img/B18383_16_11.jpg)'
+  id: totrans-95
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 16.11 – 带有 web 组的 Ansible 清单](img/B18383_16_11.jpg)'
+- en: Figure 16.11 – Ansible inventory with a web group
+  id: totrans-96
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 16.11 – 带有 web 组的 Ansible 清单
+- en: 'Create the `group_vars` and `host_vars` directories for storing group variables
+    and host variables, respectively:'
+  id: totrans-97
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 为了存储组变量和主机变量，创建 `group_vars` 和 `host_vars` 目录：
+- en: '![Figure 16.12 – Creating directories for group variables and host variables
+    ](img/B18383_16_12.jpg)'
+  id: totrans-98
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 16.12 – 创建组变量和主机变量的目录](img/B18383_16_12.jpg)'
+- en: Figure 16.12 – Creating directories for group variables and host variables
+  id: totrans-99
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 16.12 – 创建组变量和主机变量的目录
+- en: 'Create a group variable file called `inventories/stg/group_vars/web.yaml` with
+    the following content:'
+  id: totrans-100
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 创建一个名为 `inventories/stg/group_vars/web.yaml` 的组变量文件，内容如下：
+- en: '![Figure 16.13 – Creating a group variable file ](img/B18383_16_13.jpg)'
+  id: totrans-101
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 16.13 – 创建组变量文件](img/B18383_16_13.jpg)'
+- en: Figure 16.13 – Creating a group variable file
+  id: totrans-102
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 16.13 – 创建一个组变量文件
+- en: 'Configure a different value for `web_server_port` (`8080`) for `node1`. Create
+    a host variable file called `inventories/stg/host_vars/node1.yaml` with the following
+    content:'
+  id: totrans-103
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 为 `node1` 配置不同的 `web_server_port` 值（`8080`）。创建一个名为 `inventories/stg/host_vars/node1.yaml`
+    的主机变量文件，内容如下：
+- en: '![Figure 16.14 – Creating a host variable file ](img/B18383_16_14.jpg)'
+  id: totrans-104
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 16.14 – 创建主机变量文件](img/B18383_16_14.jpg)'
+- en: Figure 16.14 – Creating a host variable file
+  id: totrans-105
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 16.14 – 创建主机变量文件
+- en: 'Configure a different value for `web_server_port` (`8081`) for `node2`. Then,
+    create a host variable file for `node2` in `inventories/stg/host_vars/node2.yaml`
+    with the following content:'
+  id: totrans-106
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 为 `node2` 配置不同的 `web_server_port` 值（`8081`）。然后，在 `inventories/stg/host_vars/node2.yaml`
+    中创建一个名为 `node2` 的主机变量文件，内容如下：
+- en: '![Figure 16.15 – Creating a host variable file for node2 ](img/B18383_16_15.jpg)'
+  id: totrans-107
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 16.15 – 为 node2 创建主机变量文件](img/B18383_16_15.jpg)'
+- en: Figure 16.15 – Creating a host variable file for node2
+  id: totrans-108
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 16.15 – 为 node2 创建主机变量文件
+- en: 'Now that all the variable files have been created, you must verify them, as
+    shown in the following screenshot:'
+  id: totrans-109
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在，所有变量文件已创建，您必须验证它们，如下图所示：
+- en: '![Figure 16.16 – Project directory structure with group variables and host
+    variables ](img/B18383_16_10.jpg)'
+  id: totrans-110
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 16.16 – 带有组变量和主机变量的项目目录结构](img/B18383_16_10.jpg)'
+- en: Figure 16.16 – Project directory structure with group variables and host variables
+  id: totrans-111
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 16.16 – 带有组变量和主机变量的项目目录结构
+- en: 'Now, verify the variable values for each host with the `ansible-inventory`
+    command:'
+  id: totrans-112
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在，使用 `ansible-inventory` 命令验证每个主机的变量值：
+- en: '![Figure 16.17 – Verifying the inventory and variables using the ansible-inventory
+    command ](img/B18383_16_17.jpg)'
+  id: totrans-113
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 16.17 – 使用 ansible-inventory 命令验证清单和变量](img/B18383_16_17.jpg)'
+- en: Figure 16.17 – Verifying the inventory and variables using the ansible-inventory
+    command
+  id: totrans-114
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 16.17 – 使用 ansible-inventory 命令验证清单和变量
+- en: 'Now, you must verify and understand the host variables that have been assigned,
+    as follows:'
+  id: totrans-115
+  prefs:
+  - PREF_OL
+  type: TYPE_NORMAL
+  zh: 现在，您必须验证并理解已分配的主机变量，如下所示：
+- en: '`node1` has been assigned with `web_server_port: 8080`, which is coming from
+    `host_vars/node1.yaml`.'
+  id: totrans-116
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`node1` 已分配了 `web_server_port: 8080`，该值来自 `host_vars/node1.yaml`。'
+- en: '`node2` has been assigned with `web_server_port: 8081`, which is coming from
+    `host_vars/node2.yaml`.'
+  id: totrans-117
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`node2` 已分配了 `web_server_port: 8081`，该值来自 `host_vars/node2.yaml`。'
+- en: '`node3` has been assigned with `web_server_port: 80`, which is coming from
+    `group_vars/web.yaml`.'
+  id: totrans-118
+  prefs:
+  - PREF_IND
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '`node3` 已分配了 `web_server_port: 80`，该值来自 `group_vars/web.yaml`。'
+- en: 'Based on variable precedence, the nodes will get different values for the same
+    variable, as shown in the following diagram:'
+  id: totrans-119
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 根据变量优先级，节点将为相同的变量获取不同的值，如下图所示：
+- en: '![Figure 16.18 – Ansible group variables and host variables on target nodes
+    ](img/B18383_16_18.jpg)'
+  id: totrans-120
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图16.18 – 目标节点上的 An能组变量和主机变量](img/B18383_16_18.jpg)'
+- en: Figure 16.18 – Ansible group variables and host variables on target nodes
+  id: totrans-121
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图16.18 – 目标节点上的 Ansible 组变量和主机变量
+- en: It is important to configure the host-specific variable in `host_vars` or `group_vars`
+    so that you don’t miss important values at the playbook level. If you have the
+    same variable and values being shared by multiple hosts in the same group, then
+    configure them under `group_vars`.
+  id: totrans-122
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 配置 `host_vars` 或 `group_vars` 中的主机特定变量非常重要，这样你就不会在 playbook 级别丢失重要的值。如果多个主机共享相同的变量和值，那么应在
+    `group_vars` 中进行配置。
+- en: In the next section, you will learn about the best practices for storing credentials
+    in Ansible.
+  id: totrans-123
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一节中，你将学习如何在 Ansible 中存储凭据的最佳实践。
+- en: Ansible credentials best practices
+  id: totrans-124
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Ansible 凭据最佳实践
+- en: Ansible supports multiple credentials and authentication methods, such as username
+    and password, SSH keys, API tokens, webhooks, and even the ability to create custom
+    credentials. You should use a simple authentication mechanism as a starting point,
+    but you need to consider the best practices to ensure security and safety are
+    in place.
+  id: totrans-125
+  prefs: []
+  type: TYPE_NORMAL
+  zh: Ansible 支持多种凭据和认证方法，如用户名和密码、SSH 密钥、API 令牌、Webhooks，甚至可以创建自定义凭据。你应该使用一个简单的认证机制作为起点，但你需要考虑最佳实践，以确保安全性和防护措施到位。
+- en: Avoid using default admin user accounts
+  id: totrans-126
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 避免使用默认的管理员用户帐户
+- en: It is common for engineers to configure the default administrator accounts as
+    a `remote_user` such as `root` in Linux or as an **administrator** in Microsoft
+    Windows. This is not a best practice; you should create dedicated accounts for
+    Ansible and configure them for managed nodes.
+  id: totrans-127
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 工程师通常会将默认的管理员帐户配置为 Linux 中的 `root` 或 Microsoft Windows 中的 **administrator**
+    作为 `remote_user`。这不是最佳实践；你应该为 Ansible 创建专用帐户并为管理节点进行配置。
+- en: Split the login credentials for environments and nodes
+  id: totrans-128
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 将环境和节点的登录凭据分开
+- en: 'In the previous examples, you created user accounts in Linux and Microsoft
+    Windows for Ansible to log in and execute tasks. It is possible to create the
+    same user account for all of your nodes, but this is not required or recommended.
+    It is possible to create different user accounts for different managed nodes since
+    you have the option to specify `remote_user` or `ansible_user` for every managed
+    node or host group, as shown here:'
+  id: totrans-129
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在之前的示例中，你为 Ansible 创建了 Linux 和 Microsoft Windows 用户帐户，用于登录和执行任务。你可以为所有节点创建相同的用户帐户，但这不是必须的，也不推荐。你可以为不同的管理节点创建不同的用户帐户，因为你可以为每个管理节点或主机组指定
+    `remote_user` 或 `ansible_user`，如下面所示：
+- en: '![Figure 16.19 – A different user account for remote nodes ](img/B18383_16_19.jpg)'
+  id: totrans-130
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图16.19 – 远程节点的不同用户帐户](img/B18383_16_19.jpg)'
+- en: Figure 16.19 – A different user account for remote nodes
+  id: totrans-131
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图16.19 – 远程节点的不同用户帐户
+- en: In the preceding inventory output, notice different `ansible_user` instances
+    have been configured for different nodes, such as `ansibleadmin` for `node1`,
+    `user1` for `node2`, `devops` for `node3`, and more.
+  id: totrans-132
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在上面的库存输出中，可以看到不同的 `ansible_user` 实例已为不同的节点配置，例如 `node1` 使用 `ansibleadmin`，`node2`
+    使用 `user1`，`node3` 使用 `devops` 等。
+- en: Avoid passwords in plain text
+  id: totrans-133
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 避免使用明文密码
+- en: 'If you are using password-based authentication, then the password should be
+    encrypted and saved separately. Refer to [*Chapter 3*](B18383_03.xhtml#_idTextAnchor052)*''s*,
+    *Encrypting Sensitive Data Using Ansible Vault* section, to learn more about Ansible
+    Vault and secret management. Once encrypted using Ansible Vault, the password
+    file will be safe and cannot be read by anyone else, as shown in the following
+    screenshot:'
+  id: totrans-134
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你使用基于密码的认证方式，则密码应加密并单独保存。请参考 [*第3章*](B18383_03.xhtml#_idTextAnchor052)*的*，*使用
+    Ansible Vault 加密敏感数据* 部分，了解更多关于 Ansible Vault 和秘密管理的内容。通过 Ansible Vault 加密后，密码文件将安全且无法被其他人读取，如下图所示：
+- en: '![Figure 16.20 – Encrypting sensitive files using Ansible Vault ](img/B18383_16_20.jpg)'
+  id: totrans-135
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图16.20 – 使用 Ansible Vault 加密敏感文件](img/B18383_16_20.jpg)'
+- en: Figure 16.20 – Encrypting sensitive files using Ansible Vault
+  id: totrans-136
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图16.20 – 使用 Ansible Vault 加密敏感文件
+- en: 'When you execute the playbook, it is also possible to instruct Ansible to prompt
+    for a password using the `--ask-pass` switch:'
+  id: totrans-137
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当你执行 playbook 时，也可以指示 Ansible 使用 `--ask-pass` 开关提示输入密码：
+- en: '![Figure 16.21 – Ansible Vault password prompt ](img/B18383_16_21.jpg)'
+  id: totrans-138
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 16.21 – Ansible Vault 密码提示](img/B18383_16_21.jpg)'
+- en: Figure 16.21 – Ansible Vault password prompt
+  id: totrans-139
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 16.21 – Ansible Vault 密码提示
+- en: Based on your organization’s best practices and compliance requirements, add
+    more restrictions and best practices for handling sensitive data in Ansible.
+  id: totrans-140
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 根据你组织的最佳实践和合规要求，为 Ansible 中的敏感数据处理添加更多的限制和最佳实践。
+- en: In the next section, you will learn about some of the best practices for Ansible
+    playbooks.
+  id: totrans-141
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在下一部分中，你将学习一些 Ansible playbook 的最佳实践。
+- en: Ansible playbook best practices
+  id: totrans-142
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: Ansible playbook 最佳实践
+- en: It is important to develop your Ansible playbooks with reader-friendliness and
+    reusability in mind. Since the YAML format is human readable, it is easy to develop
+    and follow some style guides for your Ansible playbooks.
+  id: totrans-143
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在编写 Ansible playbook 时，考虑到可读性和可重用性是很重要的。由于 YAML 格式是人类可读的，因此很容易为你的 Ansible playbook
+    制定并遵循一些样式指南。
+- en: In [*Chapter 15*](B18383_15.xhtml#_idTextAnchor275), *Using Raw Commands for
+    Network Operations*, you learned when to use the `raw` module and commands. Always
+    check the documentation and see if there are modules available for your task.
+    The `command`, `shell`, `raw`, and `script` modules can be used if no suitable
+    modules are available for the task. But always keep in mind that the `command`,
+    `shell`, `raw`, and `script` modules are not idempotent and will always report
+    as `changed` when executed.
+  id: totrans-144
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 [*第 15 章*](B18383_15.xhtml#_idTextAnchor275)，《使用原始命令进行网络操作》中，你学习了何时使用 `raw`
+    模块和命令。始终查看文档，看看是否有适合任务的模块。如果没有合适的模块，可以使用 `command`、`shell`、`raw` 和 `script` 模块。但请始终记住，`command`、`shell`、`raw`
+    和 `script` 模块不是幂等的，每次执行时都会报告为 `changed`。
+- en: Always give your tasks names
+  id: totrans-145
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 始终为你的任务命名
+- en: Even though the `name` parameter is an optional component, it is a best practice
+    to provide an appropriate and meaningful name for the plays, tasks, blocks, and
+    other components in your Ansible playbooks. Refer to *Figure 16.22*, where you
+    can see the sample names that were used for the tasks.
+  id: totrans-146
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 即使`name`参数是可选的，最佳实践是为你的 plays、tasks、blocks 及其他组件提供适当且有意义的名称。参见*图 16.22*，其中可以看到为任务使用的示例名称。
+- en: Use the appropriate comments
+  id: totrans-147
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 使用适当的注释
+- en: Adding comments to your playbooks will help you troubleshoot when there is an
+    issue. Comments are also useful when further developments or enhancements are
+    required so that the original author and other developers can easily understand
+    the task or steps that are required in the Ansible playbook.
+  id: totrans-148
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在你的 playbook 中添加注释将帮助你在出现问题时进行故障排除。注释在需要进一步开发或增强时也非常有用，这样原作者和其他开发人员就能轻松理解 Ansible
+    playbook 中需要的任务或步骤。
+- en: 'The following screenshot shows that comments have been added before the tasks:'
+  id: totrans-149
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下截图显示了在任务之前添加了注释：
+- en: '![Figure 16.22 – Ansible playbook with comments, extra lines, and tags ](img/B18383_16_22.jpg)'
+  id: totrans-150
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 16.22 – 带有注释、额外行和标签的 Ansible playbook](img/B18383_16_22.jpg)'
+- en: Figure 16.22 – Ansible playbook with comments, extra lines, and tags
+  id: totrans-151
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 16.22 – 带有注释、额外行和标签的 Ansible playbook
+- en: Extra lines and whitespaces
+  id: totrans-152
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 额外的行和空格
+- en: Adding whitespaces and extra lines in a playbook will increase its readability.
+    As shown in the preceding screenshot, adding an extra line after each task will
+    help you identify the individual tasks easily.
+  id: totrans-153
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在 playbook 中添加空格和额外的行将增加其可读性。如前面截图所示，在每个任务后添加一个额外的行可以帮助你更容易地识别各个任务。
+- en: Implement your own style guide and follow the best practices for YAML writing
+    to achieve better readability and reusability of Ansible artifacts.
+  id: totrans-154
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 实现你自己的样式指南，并遵循 YAML 编写的最佳实践，以提高 Ansible 制品的可读性和可重用性。
+- en: Add tags to the tasks
+  id: totrans-155
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 为任务添加标签
+- en: 'When you have large or complex playbooks, you may need to run some tasks specifically
+    instead of executing every task in the playbooks and roles. It is possible to
+    achieve this by using `--tags` argument, as follows:'
+  id: totrans-156
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当你拥有大型或复杂的 playbook 时，可能需要单独运行某些任务，而不是执行 playbook 和角色中的每个任务。可以通过使用`--tags`参数来实现，方法如下：
+- en: '[PRE1]'
+  id: totrans-157
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE1]'
+- en: 'These tasks can be skipped by using the `--skip-tags` argument, as follows:'
+  id: totrans-158
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 可以通过使用`--skip-tags`参数来跳过这些任务，方法如下：
+- en: '[PRE2]'
+  id: totrans-159
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE2]'
+- en: Refer to the Ansible tags documentation ([https://docs.ansible.com/ansible/latest/user_guide/playbooks_tags.xhtml](https://docs.ansible.com/ansible/latest/user_guide/playbooks_tags.xhtml))
+    to learn more about the usage and methods of tags in Ansible playbooks.
+  id: totrans-160
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请参考 Ansible 标签文档（[https://docs.ansible.com/ansible/latest/user_guide/playbooks_tags.xhtml](https://docs.ansible.com/ansible/latest/user_guide/playbooks_tags.xhtml)），了解更多关于
+    Ansible playbook 中标签的使用和方法。
+- en: Use explicit declarations
+  id: totrans-161
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 使用显式声明
+- en: 'The modules may have default parameter values and these values may apply automatically
+    if we do not mention them in the playbook. But declaring such parameters explicitly
+    in your playbooks will help you identify the desired result of the task. For example,
+    in the `ansible.posix.firewalld` module, the default value for `immediate` is
+    **no**, as shown in the documentation at [https://docs.ansible.com/ansible/latest/collections/ansible/posix/firewalld_module.xhtml](https://docs.ansible.com/ansible/latest/collections/ansible/posix/firewalld_module.xhtml):'
+  id: totrans-162
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 模块可能具有默认的参数值，如果我们在 playbook 中没有提到这些值，它们可能会自动应用。但在 playbook 中显式声明这些参数将帮助你明确任务的期望结果。例如，在
+    `ansible.posix.firewalld` 模块中，`immediate` 的默认值是 **no**，如文档中所示：[https://docs.ansible.com/ansible/latest/collections/ansible/posix/firewalld_module.xhtml](https://docs.ansible.com/ansible/latest/collections/ansible/posix/firewalld_module.xhtml)：
+- en: '![Figure 16.23 – firewalld module showing immediate parameter details ](img/B18383_16_23.jpg)'
+  id: totrans-163
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 16.23 – firewalld 模块显示立即参数详情](img/B18383_16_23.jpg)'
+- en: Figure 16.23 – firewalld module showing immediate parameter details
+  id: totrans-164
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 16.23 – firewalld 模块显示立即参数详情
+- en: 'Leave it as-is or declare it explicitly as `immediate: yes` if you need to
+    apply the firewall entry immediately. The following screenshot shows an example
+    `firewalld` task:'
+  id: totrans-165
+  prefs: []
+  type: TYPE_NORMAL
+  zh: '保持原样，或在需要立即应用防火墙条目时显式声明为 `immediate: yes`。以下截图展示了一个示例 `firewalld` 任务：'
+- en: '![Figure 16.24 – firewalld task with explicit declarations ](img/B18383_16_24.jpg)'
+  id: totrans-166
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 16.24 – 带有显式声明的 firewalld 任务](img/B18383_16_24.jpg)'
+- en: Figure 16.24 – firewalld task with explicit declarations
+  id: totrans-167
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 16.24 – 带有显式声明的 firewalld 任务
+- en: Always declare the desired result in the Ansible playbook so that it is possible
+    to troubleshoot and remediate issues when they occur.
+  id: totrans-168
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 始终在 Ansible playbook 中声明期望的结果，以便在出现问题时可以进行故障排除和修复。
+- en: Use native YAML for playbooks
+  id: totrans-169
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 使用本地 YAML 格式编写 playbook
+- en: 'It is possible to write tasks in any acceptable YAML format, so long as Ansible
+    can read and understand it. The following screenshot shows some example tasks
+    in an Ansible playbook:'
+  id: totrans-170
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 可以使用任何可接受的 YAML 格式编写任务，只要 Ansible 能够读取并理解它。以下截图展示了在 Ansible playbook 中的一些示例任务：
+- en: '![Figure 16.25 – Ansible tasks in the non-native YAML format ](img/B18383_16_25.jpg)'
+  id: totrans-171
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 16.25 – 非本地 YAML 格式的 Ansible 任务](img/B18383_16_25.jpg)'
+- en: Figure 16.25 – Ansible tasks in the non-native YAML format
+  id: totrans-172
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 16.25 – 非本地 YAML 格式的 Ansible 任务
+- en: 'The same playbook can be written in native YAML, which is tidier and more readable.
+    This can be seen in the following screenshot:'
+  id: totrans-173
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 相同的 playbook 可以用本地 YAML 编写，这样更整洁且更具可读性。可以在以下截图中看到：
+- en: '![Figure 16.26 – Ansible tasks written in native YAML format ](img/B18383_16_26.jpg)'
+  id: totrans-174
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 16.26 – 使用本地 YAML 格式编写的 Ansible 任务](img/B18383_16_26.jpg)'
+- en: Figure 16.26 – Ansible tasks written in native YAML format
+  id: totrans-175
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 16.26 – 使用本地 YAML 格式编写的 Ansible 任务
+- en: Refer to the Ansible YAML syntax ([https://docs.ansible.com/ansible/latest/reference_appendices/YAMLSyntax.xhtml](https://docs.ansible.com/ansible/latest/reference_appendices/YAMLSyntax.xhtml))
+    and advanced syntax ([https://docs.ansible.com/ansible/latest/user_guide/playbooks_advanced_syntax.xhtml](https://docs.ansible.com/ansible/latest/user_guide/playbooks_advanced_syntax.xhtml))
+    documentation to learn more about YAML for Ansible.
+  id: totrans-176
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 参阅 Ansible YAML 语法（[https://docs.ansible.com/ansible/latest/reference_appendices/YAMLSyntax.xhtml](https://docs.ansible.com/ansible/latest/reference_appendices/YAMLSyntax.xhtml)）和高级语法（[https://docs.ansible.com/ansible/latest/user_guide/playbooks_advanced_syntax.xhtml](https://docs.ansible.com/ansible/latest/user_guide/playbooks_advanced_syntax.xhtml)）文档，了解更多有关
+    Ansible 的 YAML 知识。
+- en: Avoid hardcoding variables and details
+  id: totrans-177
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 避免硬编码变量和细节
+- en: 'The following screenshot shows a play where the target nodes and package details
+    have been mentioned (hardcoded) inside the playbook:'
+  id: totrans-178
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 以下截图展示了一个在 playbook 中提到（硬编码）目标节点和软件包详情的 play：
+- en: '![Figure 16.27 – Ansible playbook with hardcoded values ](img/B18383_16_27.jpg)'
+  id: totrans-179
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 16.27 – 带有硬编码值的 Ansible playbook](img/B18383_16_27.jpg)'
+- en: Figure 16.27 – Ansible playbook with hardcoded values
+  id: totrans-180
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 16.27 – 带有硬编码值的 Ansible playbook
+- en: 'If you need to execute the playbook for other target nodes, then you must modify
+    the playbook file and update its values. The same playbook can be written like
+    so:'
+  id: totrans-181
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你需要在其他目标节点上执行 playbook，那么你必须修改 playbook 文件并更新其值。相同的 playbook 可以这样编写：
+- en: '![Figure 16.28 – Ansible playbook with dynamic variables  ](img/B18383_16_28.jpg)'
+  id: totrans-182
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 16.28 – 带有动态变量的 Ansible playbook](img/B18383_16_28.jpg)'
+- en: Figure 16.28 – Ansible playbook with dynamic variables
+  id: totrans-183
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 16.28 – 带有动态变量的 Ansible playbook
+- en: 'Now, pass the variable while executing the playbook, as follows:'
+  id: totrans-184
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 现在，在执行 playbook 时传递变量，如下所示：
+- en: '[PRE3]'
+  id: totrans-185
+  prefs: []
+  type: TYPE_PRE
+  zh: '[PRE3]'
+- en: By avoiding hardcoding, it is possible to dynamically use the same playbook
+    for different target nodes with different values.
+  id: totrans-186
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 通过避免硬编码，可以动态地使用相同的 playbook 针对不同的目标节点，使用不同的值。
+- en: Use blocks in Ansible playbooks
+  id: totrans-187
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 在 Ansible playbook 中使用块
+- en: 'Blocks are a logical grouping of tasks in Ansible playbooks and help handle
+    errors during execution. Instead of validating the success rate of tasks, use
+    `block` in a playbook, as shown here:'
+  id: totrans-188
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 块是 Ansible playbook 中任务的逻辑分组，有助于处理执行过程中的错误。与其验证任务的成功率，不如在 playbook 中使用`block`，如下所示：
+- en: '![Figure 16.29 – Using blocks in an Ansible playbook ](img/B18383_16_29.jpg)'
+  id: totrans-189
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 16.29 – 在 Ansible playbook 中使用块](img/B18383_16_29.jpg)'
+- en: Figure 16.29 – Using blocks in an Ansible playbook
+  id: totrans-190
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 16.29 – 在 Ansible playbook 中使用块
+- en: If any of the tasks in `block` fail, Ansible will execute the tasks under the
+    `rescue` block. The tasks under the `always` block will be executed regardless
+    of the failure or success of the block and rescue tasks.
+  id: totrans-191
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果 `block` 中的任何任务失败，Ansible 会执行 `rescue` 块中的任务。无论 `block` 和 `rescue` 任务成功或失败，`always`
+    块中的任务都会执行。
+- en: Refer to the blocks documentation ([https://docs.ansible.com/ansible/latest/user_guide/playbooks_blocks.xhtml](https://docs.ansible.com/ansible/latest/user_guide/playbooks_blocks.xhtml))
+    to learn more about how to use blocks in Ansible.
+  id: totrans-192
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 请参考块文档（[https://docs.ansible.com/ansible/latest/user_guide/playbooks_blocks.xhtml](https://docs.ansible.com/ansible/latest/user_guide/playbooks_blocks.xhtml)），了解如何在
+    Ansible 中使用块。
+- en: Use roles and subtasks
+  id: totrans-193
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 使用角色和子任务
+- en: 'When you develop large and complex automation use cases, you should split the
+    playbook into small subtask files and roles. This practice will improve the modularity
+    and flexibility of Ansible artifacts and also help troubleshoot the playbook easily:'
+  id: totrans-194
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 当你开发大型复杂的自动化用例时，应该将 playbook 拆分成小的子任务文件和角色。这样做有助于提高 Ansible 工件的模块化和灵活性，同时也有助于更轻松地排除故障：
+- en: '![Figure 16.30 – An Ansible playbook calling roles and subtask files ](img/B18383_16_30.jpg)'
+  id: totrans-195
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 16.30 – 一个 Ansible playbook 调用角色和子任务文件](img/B18383_16_30.jpg)'
+- en: Figure 16.30 – An Ansible playbook calling roles and subtask files
+  id: totrans-196
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 16.30 – 一个 Ansible playbook 调用角色和子任务文件
+- en: The preceding screenshot shows an Ansible playbook calling the `linux-patching`
+    role and some of the specific task files from the role.
+  id: totrans-197
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 上图展示了一个 Ansible playbook，它调用了 `linux-patching` 角色以及来自该角色的一些特定任务文件。
+- en: Use meaningful names for variables
+  id: totrans-198
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 为变量使用有意义的名称
+- en: 'In the previous chapters, you learned about Ansible variables and their different
+    usages. It is possible to use multiple variables in your playbooks and roles,
+    so it is important to use meaningful names for the variables. The following screenshot
+    shows both good and bad examples of how to name variables:'
+  id: totrans-199
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在前几章中，你学习了 Ansible 变量及其不同的用法。在你的 playbook 和角色中使用多个变量是可能的，因此为变量使用有意义的名称非常重要。下图展示了命名变量的好例子和坏例子：
+- en: '![Figure 16.31 – Ansible variables with short and meaningful names ](img/B18383_16_31.jpg)'
+  id: totrans-200
+  prefs: []
+  type: TYPE_IMG
+  zh: '![图 16.31 – 使用简洁且有意义名称的 Ansible 变量](img/B18383_16_31.jpg)'
+- en: Figure 16.31 – Ansible variables with short and meaningful names
+  id: totrans-201
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 图 16.31 – 使用简洁且有意义名称的 Ansible 变量
+- en: Naming your variables appropriately will help you avoid duplicating variable
+    names and complexity in playbook development.
+  id: totrans-202
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 适当地命名变量有助于避免在 playbook 开发中重复使用变量名称和复杂性。
+- en: Learn playbook optimization
+  id: totrans-203
+  prefs:
+  - PREF_H2
+  type: TYPE_NORMAL
+  zh: 学习 playbook 优化
+- en: 'There are multiple ways to optimize Ansible playbooks and speed up their execution.
+    Some of them are as follows:'
+  id: totrans-204
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 有多种方法可以优化 Ansible playbook 并加速其执行。以下是其中的一些方法：
+- en: Use parallelism.
+  id: totrans-205
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用并行执行。
+- en: Use the appropriate execution strategy as needed.
+  id: totrans-206
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 根据需要使用适当的执行策略。
+- en: Use the appropriate value for `forks`.
+  id: totrans-207
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 根据需要使用适当的 `forks` 值。
+- en: Use `serial` to execute in batches.
+  id: totrans-208
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用 `serial` 批量执行。
+- en: Use `order` to control execution based on inventory.
+  id: totrans-209
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用 `order` 根据清单控制执行顺序。
+- en: Use `throttle` for high CPU-intensive tasks.
+  id: totrans-210
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: 使用 `throttle` 处理高 CPU 密集型任务。
+- en: 'Read *8 ways to speed up your Ansible playbooks* ([https://www.redhat.com/sysadmin/faster-ansible-playbook-execution](https://www.redhat.com/sysadmin/faster-ansible-playbook-execution))
+    and *5 ways to make your Ansible modules work faster* ([https://www.redhat.com/sysadmin/faster-ansible-modules](https://www.redhat.com/sysadmin/faster-ansible-modules))
+    to learn more about Ansible optimization techniques. To expand your learning on
+    Ansible best practices, refer to the official Red Hat course *Advanced Automation:
+    Red Hat Ansible Best Practices* ([https://www.redhat.com/en/services/training/do447-advanced-automation-ansible-best-practices](https://www.redhat.com/en/services/training/do447-advanced-automation-ansible-best-practices)).'
+  id: totrans-211
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 阅读 *加速 Ansible playbook 的 8 种方法* ([https://www.redhat.com/sysadmin/faster-ansible-playbook-execution](https://www.redhat.com/sysadmin/faster-ansible-playbook-execution))
+    和 *让 Ansible 模块更快工作的 5 种方法* ([https://www.redhat.com/sysadmin/faster-ansible-modules](https://www.redhat.com/sysadmin/faster-ansible-modules))，以了解更多关于
+    Ansible 优化技巧的内容。为了拓展你对 Ansible 最佳实践的学习，请参考官方的 Red Hat 课程 *高级自动化：Red Hat Ansible
+    最佳实践* ([https://www.redhat.com/en/services/training/do447-advanced-automation-ansible-best-practices](https://www.redhat.com/en/services/training/do447-advanced-automation-ansible-best-practices))。
+- en: Summary
+  id: totrans-212
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 总结
+- en: In this chapter, you learned about some of the best practices that can be implemented
+    in your Ansible development workflow. You explored the best practices for organizing
+    Ansible artifacts, including playbooks, roles, variables, inventories, and other
+    Ansible content. Then, you learned about the importance of storing the inventory
+    separately based on the managed node environment, criticality, and other facts.
+    You also learned how to use host variables and group variables to organize variables.
+  id: totrans-213
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在本章中，你学习了一些可以在 Ansible 开发工作流中实现的最佳实践。你探讨了组织 Ansible 工件（包括 playbook、角色、变量、清单和其他
+    Ansible 内容）的最佳实践。接着，你了解了根据受管理节点环境、重要性和其他因素分别存储清单的重要性。你还学习了如何使用主机变量和组变量来组织变量。
+- en: After that, you learned about some of the best practices for storing and managing
+    credentials in Ansible, such as avoiding plain text passwords and separating secrets
+    from regular variable files. Finally, you learned about the different best practices
+    and optimization techniques for improving the efficiency of Ansible playbooks.
+    Refer to the *Further reading* section to learn more about Ansible best practices.
+  id: totrans-214
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 之后，你学习了关于在 Ansible 中存储和管理凭据的一些最佳实践，如避免使用明文密码和将密钥与常规变量文件分开存储。最后，你学习了改善 Ansible
+    playbook 效率的不同最佳实践和优化技巧。请参考 *进一步阅读* 部分，了解更多关于 Ansible 最佳实践的内容。
+- en: Congratulations! With this chapter, you have reached the end of this book on
+    Ansible automation for real-life use cases.
+  id: totrans-215
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 恭喜你！通过本章内容，你已经完成了关于 Ansible 在实际使用案例中自动化的学习。
+- en: First, you were introduced to Ansible and learned how to install and deploy
+    it. Based on that knowledge, you learned about Ansible commands, modules, and
+    managed nodes. After that, you learned about Ansible playbooks and developed basic
+    automation use cases, such as collecting system information, weekly system reboots,
+    and system report generation. You also learned about the importance of version
+    control systems and practiced how to use them to store Ansible artifacts.
+  id: totrans-216
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 首先，你了解了 Ansible 并学习了如何安装和部署它。在此基础上，你学习了 Ansible 命令、模块和管理节点。之后，你学习了 Ansible playbook，并开发了基本的自动化用例，如收集系统信息、每周系统重启和系统报告生成。你还学习了版本控制系统的重要性，并练习了如何使用它们存储
+    Ansible 工件。
+- en: After that, you expanded your learning by understanding how to find Ansible
+    automation use cases. You learned how to automate Microsoft Windows and network
+    devices such as VyOS and Cisco ASA using Ansible. You also learned how to use
+    Ansible to manage virtualization platforms, cloud platforms (AWS, GCP, and VMware),
+    and database operations.
+  id: totrans-217
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 此后，你通过理解如何寻找 Ansible 自动化用例来扩展了学习内容。你学习了如何使用 Ansible 自动化 Microsoft Windows 和网络设备（如
+    VyOS 和 Cisco ASA）。你还学习了如何使用 Ansible 管理虚拟化平台、云平台（AWS、GCP 和 VMware）以及数据库操作。
+- en: Later, you learned how to use Ansible in DevOps practices and workflows and
+    practiced container management using Ansible. You also learned how to use Ansible
+    for Kubernetes management by deploying and scaling applications on Kubernetes.
+    To expand your knowledge, you learned about Ansible Automation Platform and its
+    various integration methods. After that, you learned how to manage sensitive information
+    in Ansible using Ansible Vault.
+  id: totrans-218
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 后来，你学习了如何在DevOps实践和工作流中使用Ansible，并通过Ansible进行容器管理。你还学习了如何通过在Kubernetes上部署和扩展应用程序来使用Ansible进行Kubernetes管理。为了扩展你的知识，你了解了Ansible自动化平台及其各种集成方法。之后，你学习了如何使用Ansible
+    Vault管理敏感信息。
+- en: In the last few chapters, you learned how to manage non-standard platforms and
+    operations using raw commands, API calls, and modules. You also learned the best
+    practices for developing and storing Ansible artifacts.
+  id: totrans-219
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在最后几章中，你学习了如何使用原始命令、API调用和模块来管理非标准平台和操作。你还学习了开发和存储Ansible工件的最佳实践。
+- en: Before moving on, remember to join the Ansible community, real-time chat groups,
+    and mailing lists. Refer to the Ansible community page ([https://www.ansible.com/community](https://www.ansible.com/community))
+    to find details about meetup events. Contact me on LinkedIn ([https://www.linkedin.com/in/gineesh](https://www.linkedin.com/in/gineesh))
+    if you have any questions or feedback on the content of this book.
+  id: totrans-220
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 在继续之前，记得加入Ansible社区、实时聊天群组和邮件列表。参考Ansible社区页面（[https://www.ansible.com/community](https://www.ansible.com/community)）以查找聚会活动的详细信息。如果你对本书的内容有任何问题或反馈，欢迎通过LinkedIn与我联系（[https://www.linkedin.com/in/gineesh](https://www.linkedin.com/in/gineesh)）。
+- en: If you are looking for official Ansible training, then check out the courses
+    from Red Hat ([https://www.ansible.com/products/training-certification](https://www.ansible.com/products/training-certification)).
+  id: totrans-221
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果你正在寻找官方的Ansible培训，查看来自Red Hat的课程（[https://www.ansible.com/products/training-certification](https://www.ansible.com/products/training-certification)）。
+- en: Raise issues in the book repository ([https://github.com/PacktPublishing/Ansible-for-Real-life-Automation/issues](https://github.com/PacktPublishing/Ansible-for-Real-life-Automation/issues))
+    if you have any issues while practicing the exercises in this book.
+  id: totrans-222
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 如果在练习本书中的内容时遇到问题，请在书籍仓库中提出问题（[https://github.com/PacktPublishing/Ansible-for-Real-life-Automation/issues](https://github.com/PacktPublishing/Ansible-for-Real-life-Automation/issues)）。
+- en: Thank you for your interest and your dedication to completing this book!
+  id: totrans-223
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 感谢你对本书的关注以及致力于完成本书的努力！
+- en: Further reading
+  id: totrans-224
+  prefs:
+  - PREF_H1
+  type: TYPE_NORMAL
+  zh: 进一步阅读
+- en: 'To learn more about the topics that were covered in this chapter, take a look
+    at the following resources:'
+  id: totrans-225
+  prefs: []
+  type: TYPE_NORMAL
+  zh: 要了解更多关于本章涵盖的主题，请查看以下资源：
+- en: '*Reusing Ansible artifacts (Include and Import)*: [https://docs.ansible.com/ansible/latest/user_guide/playbooks_reuse.xhtml#playbooks-reuse](https://docs.ansible.com/ansible/latest/user_guide/playbooks_reuse.xhtml#playbooks-reuse)'
+  id: totrans-226
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*重用Ansible工件（Include和Import）*： [https://docs.ansible.com/ansible/latest/user_guide/playbooks_reuse.xhtml#playbooks-reuse](https://docs.ansible.com/ansible/latest/user_guide/playbooks_reuse.xhtml#playbooks-reuse)'
+- en: '*Ansible tips and tricks*: [https://docs.ansible.com/ansible/latest/user_guide/playbooks_best_practices.xhtml](https://docs.ansible.com/ansible/latest/user_guide/playbooks_best_practices.xhtml)'
+  id: totrans-227
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*Ansible小技巧*： [https://docs.ansible.com/ansible/latest/user_guide/playbooks_best_practices.xhtml](https://docs.ansible.com/ansible/latest/user_guide/playbooks_best_practices.xhtml)'
+- en: '*Ansible Best Practices (Presentation Deck archive)*: [https://aap2.demoredhat.com/decks/ansible_best_practices.pdf](https://aap2.demoredhat.com/decks/ansible_best_practices.pdf)'
+  id: totrans-228
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*Ansible最佳实践（演示文稿归档）*： [https://aap2.demoredhat.com/decks/ansible_best_practices.pdf](https://aap2.demoredhat.com/decks/ansible_best_practices.pdf)'
+- en: '*10 habits of great Ansible users*: [https://www.redhat.com/sysadmin/10-great-ansible-practices](https://www.redhat.com/sysadmin/10-great-ansible-practices)'
+  id: totrans-229
+  prefs:
+  - PREF_UL
+  type: TYPE_NORMAL
+  zh: '*伟大的Ansible用户的10个习惯*： [https://www.redhat.com/sysadmin/10-great-ansible-practices](https://www.redhat.com/sysadmin/10-great-ansible-practices)'
