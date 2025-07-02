@@ -1,0 +1,8 @@
++   [Github 精要第二版](README.md)
++   [前言](gh-ess-2e_0.md)
++   [第一章：简要介绍仓库概述和问题追踪器的使用](gh-ess-2e_1.md)
++   [第二章：使用维基和管理代码版本控制](gh-ess-2e_2.md)
++   [第三章：管理组织和团队](gh-ess-2e_3.md)
++   [第四章：使用 GitHub 工作流进行协作](gh-ess-2e_4.md)
++   [第五章：GitHub Pages 和网络分析](gh-ess-2e_5.md)
++   [第六章：探索用户和仓库设置](gh-ess-2e_6.md)
