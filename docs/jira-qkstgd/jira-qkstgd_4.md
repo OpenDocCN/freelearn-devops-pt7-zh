@@ -1,4 +1,4 @@
-# 使用 Jira Service Desk 管理帮助台
+# 第四章：使用 Jira Service Desk 管理帮助台
 
 在本章中，我们将讨论如何使用 Jira Service Desk 实现一个帮助台，以处理 IT 帮助台和支持请求，这不仅易于使用，而且还自带预配置的工单系统功能。
 

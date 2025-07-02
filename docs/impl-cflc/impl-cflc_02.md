@@ -1,6 +1,6 @@
-# 2
 
-# 设置 Confluence
+
+# 第二章：设置 Confluence
 
 开始使用 Confluence 非常简单。但事情也可能会很快偏离轨道。
 

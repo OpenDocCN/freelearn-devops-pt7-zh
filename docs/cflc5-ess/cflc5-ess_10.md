@@ -1,4 +1,4 @@
-# 第十章 扩展 Confluence
+# 第十章：扩展 Confluence
 
 不是所有功能都可能在 Confluence 开箱即用或作为市场中的附加插件提供。Confluence 通过自定义插件非常可扩展，如果你是开发人员，你甚至可以使用 **Atlassian 软件开发工具包** (**SDK**) 创建自己的插件。
 

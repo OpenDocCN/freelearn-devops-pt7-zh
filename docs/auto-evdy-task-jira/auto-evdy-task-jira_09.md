@@ -1,4 +1,4 @@
-# *第六章*：自动化 Jira Service Management
+# 第六章：*第六章*：自动化 Jira Service Management
 
 今天，许多组织使用 Jira Service Management 提供客户支持门户、**人力资源**（**HR**）服务以及**信息技术**（**IT**）服务台等。
 

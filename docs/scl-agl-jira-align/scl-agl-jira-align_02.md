@@ -1,4 +1,4 @@
-# *第一章*：介绍 Jira Align
+# 第二章：*第一章*：介绍 Jira Align
 
 本章介绍了 Jira Align。你将了解 Jira Align 的过去和现在，以及将其推向市场的公司。本章还将介绍哪些类型的组织最能从实施 Jira Align 中受益，以及成功的关键因素。最后，你将了解 Jira Align 如何支持组织使用扩展敏捷框架。
 

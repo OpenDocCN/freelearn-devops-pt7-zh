@@ -1,4 +1,4 @@
-# Jira Software for Kanban
+# 第三章：Jira Software for Kanban
 
 在过去的两章中，我们已经介绍了如何使用 Jira Software 来支持 Scrum 敏捷方法。Jira Software 还支持另一种敏捷方法——Kanban，许多敏捷团队选择使用 Kanban 而不是 Scrum。在本章中，我们将探讨如何在 Jira Software 中使用 Kanban。
 

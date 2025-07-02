@@ -1,4 +1,4 @@
-# Jira 软件与 Scrum
+# 第二章：Jira 软件与 Scrum
 
 Scrum 是 Jira 软件支持的敏捷方法之一。与过去的方式不同，那时单一的项目经理会使用电子表格或 Microsoft Project 来跟踪项目进展，而在 Jira 软件和 Scrum 的帮助下，团队成员的参与被鼓励，以促进不同项目利益相关者之间的协作。在本章中，我们将探讨如何利用 Jira 软件释放 Scrum 的力量。
 

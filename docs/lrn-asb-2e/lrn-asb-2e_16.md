@@ -1,6 +1,6 @@
-# 16
 
-# 介绍 Ansible AWX 和 Red Hat Ansible Automation Platform
+
+# 第十六章：介绍 Ansible AWX 和 Red Hat Ansible Automation Platform
 
 本章将探讨两种 Ansible 的图形化界面：商业版 **Red Hat Ansible Automation Platform** 和开源版 **Ansible AWX** —— 或者更完整的名称，**Ansible** **Web eXecutable**。
 

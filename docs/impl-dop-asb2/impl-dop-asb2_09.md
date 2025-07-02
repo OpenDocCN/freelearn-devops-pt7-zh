@@ -1,4 +1,4 @@
-# 将 Ansible 与 CI 和 CD 解决方案集成
+# 第九章：将 Ansible 与 CI 和 CD 解决方案集成
 
 Ansible、DevOps、敏捷、**持续集成**（**CI**）和 **持续交付**（**CD**）的实现是密不可分的。每个阶段都顺利过渡到下一个。通过我们在上一章学习到的 Ansible 的全面模块实现，我们看到 Ansible 如何与许多行业标准的敏捷、持续集成和持续交付解决方案良好集成。一些 Ansible 集成的常见 CI->CD 解决方案包括 Jenkins、Artifactory、Maven、Bamboo 等。Ansible 与这些解决方案的集成非常紧密，实际上，Ansible 甚至提供了完整的 CI->CD 集成指南，网址为 [`www.ansible.com/continuous-delivery`](https://www.ansible.com/continuous-delivery)。
 

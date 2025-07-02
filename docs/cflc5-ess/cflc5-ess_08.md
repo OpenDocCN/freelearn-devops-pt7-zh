@@ -1,4 +1,4 @@
-# 第八章 高级 Confluence
+# 第八章：高级 Confluence
 
 到目前为止，我们一直在使用 Confluence 的默认功能，利用所有与安装包捆绑在一起的特性、模板和宏。Confluence 还提供了添加自己特性、模板和宏的功能。这样，你可以根据公司的需求定制你的 Confluence 安装。
 

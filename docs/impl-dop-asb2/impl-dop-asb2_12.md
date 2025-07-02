@@ -1,4 +1,4 @@
-# Ansible Galaxy
+# 第十二章：Ansible Galaxy
 
 在本书的这个阶段，我们应该已经对 DevOps 和 Ansible 有了比较扎实的理解，并且知道如何有效地使用 Ansible 2 来实施 DevOps 模式和组织策略。从这里开始，我们将看看 Ansible 提供的社区资源（Ansible Galaxy），并了解如何利用丰富的开源社区提供的 Ansible 角色和剧本。
 

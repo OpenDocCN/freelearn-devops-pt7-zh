@@ -1,4 +1,4 @@
-# Jira Service Desk
+# 第九章：Jira Service Desk
 
 在前几章中，我们集中讲解了 Atlassian 的 Jira 平台，它主要用于问题跟踪。我们涵盖了诸如通过屏幕和字段定制项目以及将 Jira 与其他第三方服务集成的主题。
 

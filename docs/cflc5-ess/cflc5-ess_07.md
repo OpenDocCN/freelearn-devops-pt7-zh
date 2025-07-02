@@ -1,4 +1,4 @@
-# 第七章 自定义 Confluence
+# 第七章：自定义 Confluence
 
 如果你打算将 Confluence 引入公司，使用公司品牌和徽标会有很大帮助。本章将介绍不同的方式来定制 Confluence 的外观和感觉，并修改用户体验的方法。
 

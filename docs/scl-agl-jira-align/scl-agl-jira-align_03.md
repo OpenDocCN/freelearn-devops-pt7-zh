@@ -1,4 +1,4 @@
-# *第二章*：实施 Jira Align
+# 第三章：*第二章*：实施 Jira Align
 
 在本章中，我们将介绍实施 Jira Align 的基础知识，以映射关键对象和属性。您将学习如何分析 Jira Software 中的现有项目以及如何将实际工作转化为 Jira Align。本章还将进一步阐述 Jira Align 和 Jira Software 工具集中支持的人员、工作、时间和结果的维度。最后，您将了解从项目到投资组合的扩展方法，并将战略与执行连接起来。
 

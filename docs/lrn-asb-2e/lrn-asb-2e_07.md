@@ -1,6 +1,6 @@
-# 7
 
-# Ansible Windows 模块
+
+# 第七章：Ansible Windows 模块
 
 在本章中，我们将探讨内置的 Ansible 模块集，这些模块支持并与基于 Windows 的服务器进行交互；对于几乎完全依赖 macOS 和 Linux 背景的人来说，使用一个在 Windows 上不受原生支持的工具来管理 Windows 似乎有些奇怪。
 

@@ -1,6 +1,6 @@
-# 5
 
-# 部署 WordPress
+
+# 第五章：部署 WordPress
 
 在上一章中，我们构建了一个安装和配置基本 **LAMP 堆栈** 的 playbook。在本章中，我们将在那里使用的技术基础上构建一个 playbook，用于安装 **LEMP 堆栈**，正如你可能记得的，它用 NGINX 替代了 Apache，然后安装 WordPress。
 

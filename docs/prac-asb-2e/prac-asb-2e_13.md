@@ -1,6 +1,6 @@
-# 13
 
-# 开始使用 Ansible Automation Controller
+
+# 第十三章：开始使用 Ansible Automation Controller
 
 Ansible 非常强大，但它要求用户使用 CLI。在某些情况下，这不是最佳选择，比如需要从另一个任务触发 Ansible 任务时（在这种情况下，使用 API 会更好），或者在需要触发任务的人员只能触发特定任务时。在这些情况下，AWX 和 Ansible Automation Controller 是最佳选择。
 

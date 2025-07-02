@@ -1,4 +1,4 @@
-# 开发团队使用 Jira Software
+# 第三章：开发团队使用 Jira Software
 
 本章中，我们将了解 Jira Software 的工作原理。我们将首先学习如何在 Jira Cloud 实例中启用 Jira Software，然后我们将快速创建一个新的 Jira Software 项目。接着，我们将花一些时间了解敏捷概念的概述，然后介绍 Scrum 和 Kanban 方法论，并讨论它们之间的主要区别。最后，我们将讨论 Jira Software 中的关键报告，用于分析项目的进展。
 

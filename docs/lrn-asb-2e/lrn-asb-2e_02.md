@@ -1,6 +1,6 @@
-# 2
 
-# 探索 Ansible Galaxy
+
+# 第二章：探索 Ansible Galaxy
 
 欢迎来到我们的第二章。在这一章中，我们将学习 `ansible-galaxy` 命令；我们将介绍该命令提供的功能，并讨论它在过去几年中对 Ansible 发展的重要性。
 

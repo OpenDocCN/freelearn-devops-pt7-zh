@@ -1,4 +1,4 @@
-# Jinja 在 Ansible 中的应用。
+# 第六章：Jinja 在 Ansible 中的应用。
 
 JINJA 由 Armin Ronacher 于 2008 年创建，旨在用更现代、结构化的解决方案替代类似的模板引擎。Jinja 是为 Python（Ansible 所用的编程语言）设计的，并且与 Ansible 结合，提供了一个能够与 YAML 无缝集成的框架。Ansible 的 YAML 实现和程序化的 playbook 解决方案整合了这个强大的 Jinja 模板引擎。像许多其他模板解决方案（Django、Smarty 等）一样，Jinja 旨在为可重用的文本提供结构支持，并根据具体环境（如环境、主机等）进行特定的修改，以及为开发人员提供他们所依赖的全面功能。
 

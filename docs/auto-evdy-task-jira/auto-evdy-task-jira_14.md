@@ -1,4 +1,4 @@
-# *第十一章*：超越自动化；脚本编写简介
+# 第十一章：*第十一章*：超越自动化；脚本编写简介
 
 本书重点介绍了使用无代码的方法在 Jira 中自动化日常任务。这种自动化功能原生支持 Jira Cloud，并且在 Jira Server 和 Jira Data Center 中可以通过添加 *Automation for Jira* 应用程序来使用。
 
